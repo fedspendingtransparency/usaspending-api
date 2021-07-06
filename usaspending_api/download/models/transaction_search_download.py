@@ -12,9 +12,6 @@ class TransactionSearchDownloadView(AbstractTransactionSearch):
         * need to be manually defined in the query for performance
     """
 
-    # Override to prevent duplicate back references (related_name)
-    award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True)
-
     # Additional values from the View
     treasury_accounts_funding_this_award = models.TextField()
     federal_accounts_funding_this_award = models.TextField()

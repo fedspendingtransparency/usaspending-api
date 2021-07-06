@@ -4,6 +4,7 @@ import logging
 from django.db.models import Q, Subquery
 
 from usaspending_api.awards.models.award import Award
+from usaspending_api.awards.models.transaction_fabs import TransactionFABS 
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -233,7 +234,7 @@ def subaward_filter(filters, for_downloads=False):
             if len(value) != 0:
                 queryset &= SubawardView.objects.filter(
                     award__in=Subquery(
-                        Award.objects.filter(transactions__cfda_number__in=value).values("id").distinct()
+                        TransactionFABS.objects.filter(cfda_number__in=value).values("award_id")
                     )
                 )
 
