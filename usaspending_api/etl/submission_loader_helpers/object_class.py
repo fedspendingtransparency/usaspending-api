@@ -23,7 +23,6 @@ def get_object_class_row(row):
      Args:
          row.object_class: object class from the broker
          row.by_direct_reimbursable_fun: direct/reimbursable flag from the broker
-             (used only when the object_class is 3 digits instead of 4)
     """
     global OBJECT_CLASSES
     if OBJECT_CLASSES is None:
