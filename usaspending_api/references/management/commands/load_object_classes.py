@@ -60,7 +60,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             "--object_class_file",
             metavar="FILE",
             help="Path or URI of the raw object class CSV file to be loaded.",
-            default="https://files-nonprod.usaspending.gov/reference_data/object_class.csv",
+            default="https://files.usaspending.gov/reference_data/object_class.csv",
         )
 
     def handle(self, *args, **options):
