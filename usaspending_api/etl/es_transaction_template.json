@@ -297,7 +297,12 @@
         }
       },
       "awarding_office_code": {
-        "type": "integer"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "awarding_office_name": {
         "type": "text",
@@ -308,7 +313,12 @@
         }
       },
       "funding_office_code": {
-        "type": "integer"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "funding_office_name": {
         "type": "text",
