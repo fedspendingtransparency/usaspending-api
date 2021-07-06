@@ -204,6 +204,8 @@ Returns budgetary resources and obligations for the agency and fiscal year reque
 ## AgencyData (object)
 + `fiscal_year` (required, number)
 + `agency_budgetary_resources` (required, number, nullable)
+    The agency's budget for the provided fiscal year
 + `total_budgetary_resources` (required, number, nullable)
+    The budget for all agencies in the provided fiscal year
 + `agency_total_obligated` (required, number, nullable)
 + `agency_obligation_by_period` (required, array[ObligationAndPeriod])
