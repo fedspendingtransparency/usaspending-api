@@ -5,7 +5,6 @@ from django.db.models import Q
 
 class AbstractTransactionSearch(models.Model):
     transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
-    award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True, related_name="transactions")
     modification_number = models.TextField(null=True)
     detached_award_proc_unique = models.TextField(null=True)
     afa_generated_unique = models.TextField(null=True)
