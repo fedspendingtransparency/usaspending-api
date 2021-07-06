@@ -3,7 +3,6 @@ import logging
 
 from django.db.models import Q, Subquery
 
-from usaspending_api.awards.models.transaction_fabs import TransactionFABS
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -13,6 +12,7 @@ from usaspending_api.search.filters.postgres.psc import PSCCodes
 from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
 from usaspending_api.search.models import SubawardView
+from usaspending_api.search.models.transaction_search import TransactionSearch
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -232,7 +232,7 @@ def subaward_filter(filters, for_downloads=False):
         elif key == "program_numbers":
             if len(value) != 0:
                 queryset &= SubawardView.objects.filter(
-                    award__in=Subquery(TransactionFABS.objects.filter(cfda_number__in=value).values("award_id"))
+                    award__in=Subquery(TransactionSearch.objects.filter(cfda_number__in=value).values("award_id"))
                 )
 
         elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
