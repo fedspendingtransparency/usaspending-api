@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from django.db.models import Q
+from django.db.models import Q, Subquery
 
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
@@ -12,6 +12,7 @@ from usaspending_api.search.filters.postgres.psc import PSCCodes
 from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
 from usaspending_api.search.models import SubawardView
+from usaspending_api.search.models.transaction_search import TransactionSearch
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -224,14 +225,15 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(q) if q else queryset
 
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
-        elif key in ("program_numbers", "contract_pricing_type_codes"):
-            filter_to_col = {
-                "program_numbers": "cfda_number",
-                "contract_pricing_type_codes": "type_of_contract_pricing",
-            }
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset &= SubawardView.objects.filter(**{"{}__in".format(filter_to_col[key]): in_query})
+        elif key in ("contract_pricing_type_codes"):
+            if len(value) != 0:
+                queryset &= SubawardView.objects.filter(type_of_contract_pricing__in=value)
+
+        elif key == "program_numbers":
+            if len(value) != 0:
+                queryset &= SubawardView.objects.filter(
+                    award__in=Subquery(TransactionSearch.objects.filter(cfda_number__in=value).values("award_id"))
+                )
 
         elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
             or_queryset = Q()
