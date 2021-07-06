@@ -16,8 +16,8 @@ SELECT
     "treasury_appropriation_account"."sub_account_code" AS "sub_account_code",
     "treasury_appropriation_account"."tas_rendering_label" AS "treasury_account_symbol",
     "treasury_appropriation_account"."account_title" AS "treasury_account_name",
-    (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = ("treasury_appropriation_account"."agency_id")) AS "agency_identifier_name",
-    (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = ("treasury_appropriation_account"."allocation_transfer_agency_id")) AS "allocation_transfer_agency_identifier_name",
+    "cgac_aid"."agency_name" AS "agency_identifier_name",
+    "cgac_ata"."agency_name" AS "allocation_transfer_agency_identifier_name",
     "treasury_appropriation_account"."budget_function_title" AS "budget_function",
     "treasury_appropriation_account"."budget_subfunction_title" AS "budget_subfunction",
     "federal_account"."federal_account_code" AS "federal_account_symbol",
@@ -37,12 +37,14 @@ SELECT
     (MAX("submission_attributes"."published_date")) ::date AS "last_modified_date"
 FROM "financial_accounts_by_program_activity_object_class"
 LEFT OUTER JOIN "treasury_appropriation_account" ON ("financial_accounts_by_program_activity_object_class"."treasury_account_id" = "treasury_appropriation_account"."treasury_account_identifier")
+INNER JOIN "federal_account" ON ("treasury_appropriation_account"."federal_account_id" = "federal_account"."id")
 INNER JOIN "submission_attributes" ON ("financial_accounts_by_program_activity_object_class"."submission_id" = "submission_attributes"."submission_id")
 INNER JOIN "disaster_emergency_fund_code" ON ("financial_accounts_by_program_activity_object_class"."disaster_emergency_fund_code" = "disaster_emergency_fund_code"."code")
 INNER JOIN "ref_program_activity" ON ("financial_accounts_by_program_activity_object_class"."program_activity_id" = "ref_program_activity"."id")
 INNER JOIN "object_class" ON ("financial_accounts_by_program_activity_object_class"."object_class_id" = "object_class"."id")
 LEFT OUTER JOIN "toptier_agency" ON ("treasury_appropriation_account"."funding_toptier_agency_id" = "toptier_agency"."toptier_agency_id")
-INNER JOIN "federal_account" ON ("treasury_appropriation_account"."federal_account_id" = "federal_account"."id")
+LEFT OUTER JOIN "cgac" AS "cgac_aid" ON ("treasury_appropriation_account"."agency_id" = "cgac_aid"."cgac_code")
+LEFT OUTER JOIN "cgac" AS "cgac_ata" ON ("treasury_appropriation_account"."allocation_transfer_agency_id" = "cgac_ata"."cgac_code")
 WHERE (
     "disaster_emergency_fund_code"."group_name" = 'covid_19'
     AND "submission_attributes"."is_final_balances_for_fy" = TRUE
@@ -55,8 +57,8 @@ GROUP BY
         ELSE
             CONCAT('FY', EXTRACT(YEAR FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months'), 'P', lpad(EXTRACT(MONTH FROM ("financial_accounts_by_program_activity_object_class"."reporting_period_end") + INTERVAL '3 months')::text, 2, '0'))
     END,
-    (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = ("treasury_appropriation_account"."allocation_transfer_agency_id")),
-    (SELECT U0."agency_name" FROM "cgac" U0 WHERE U0."cgac_code" = ("treasury_appropriation_account"."agency_id")) ,
+    "cgac_aid"."agency_name",
+    "cgac_ata"."agency_name",
     "toptier_agency"."name",
     "submission_attributes"."reporting_agency_name",
     "treasury_appropriation_account"."allocation_transfer_agency_id",
