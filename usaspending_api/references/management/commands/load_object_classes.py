@@ -60,7 +60,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             "--object_class_file",
             metavar="FILE",
             help="Path or URI of the raw object class CSV file to be loaded.",
-            default="https://files.usaspending.gov/reference_data/object_class.csv",
+            default="https://files-nonprod.usaspending.gov/reference_data/object_class.csv",
         )
 
     def handle(self, *args, **options):
@@ -161,7 +161,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         # Alias to cut down on line lengths below.
         ocdr = ObjectClass.DIRECT_REIMBURSABLE
 
-        def derive_remaining_fields(raw_object_class: RawObjectClass, direct_reimbursable: string) -> FullObjectClass:
+        def derive_remaining_fields(raw_object_class: RawObjectClass, direct_reimbursable: str) -> FullObjectClass:
             object_class = raw_object_class.object_class
             major_object_class = object_class[0] + "0"
             object_class = f"{object_class[:2]}.{object_class[2:]}"
@@ -176,6 +176,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 direct_reimbursable_name=ocdr.LOOKUP[direct_reimbursable],
             )
 
+        self.full_object_classes = []
         for roc in self.raw_object_classes:
             # for each object class, we're including the three possible versions
             for dr in [ocdr.UNKNOWN, ocdr.DIRECT, ocdr.REIMBURSABLE]:
