@@ -41,7 +41,7 @@ def get_object_class_row(row):
     # Alias this to cut down on line lengths a little below.
     ocdr = ObjectClass.DIRECT_REIMBURSABLE
 
-    if len(object_class) == 4 and object_class[3] == '0':
+    if len(object_class) == 4 and object_class[3] == "0":
         # this is a 4 digit object class, first three digits are the code, last one's a redundant 0
         object_class = object_class[:3]
 
