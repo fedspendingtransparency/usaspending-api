@@ -6,6 +6,7 @@ from usaspending_api.download.models.download_job import DownloadJob, JobStatus
 from usaspending_api.download.models.financial_accounts_by_program_activity_object_class_download import (
     FinancialAccountsByProgramActivityObjectClassDownloadView,
 )
+from usaspending_api.download.models.transaction_search_download import TransactionSearchDownloadView
 
 __all__ = [
     "AppropriationAccountBalancesDownloadView",
@@ -13,4 +14,5 @@ __all__ = [
     "FinancialAccountsByAwardsDownloadView",
     "FinancialAccountsByProgramActivityObjectClassDownloadView",
     "JobStatus",
+    "TransactionSearchDownloadView",
 ]

@@ -793,10 +793,10 @@ query_paths = {
                 ("funding_sub_agency_name", "transaction__contract_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "transaction__contract_data__funding_office_code"),
                 ("funding_office_name", "transaction__contract_data__funding_office_name"),
-                ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
-                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
-                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
-                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
+                ("treasury_accounts_funding_this_award", "treasury_accounts_funding_this_award"),
+                ("federal_accounts_funding_this_award", "federal_accounts_funding_this_award"),
+                ("object_classes_funding_this_award", "object_classes_funding_this_award"),
+                ("program_activities_funding_this_award", "program_activities_funding_this_award"),
                 ("foreign_funding", "transaction__contract_data__foreign_funding"),
                 ("foreign_funding_description", "transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "transaction__contract_data__sam_exception"),
@@ -1165,10 +1165,10 @@ query_paths = {
                 ("funding_sub_agency_name", "transaction__assistance_data__funding_sub_tier_agency_na"),
                 ("funding_office_code", "transaction__assistance_data__funding_office_code"),
                 ("funding_office_name", "transaction__assistance_data__funding_office_name"),
-                ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
-                ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
-                ("object_classes_funding_this_award", None),  # Annotation is used to create this column
-                ("program_activities_funding_this_award", None),  # Annotation is used to create this column
+                ("treasury_accounts_funding_this_award", "treasury_accounts_funding_this_award"),
+                ("federal_accounts_funding_this_award", "federal_accounts_funding_this_award"),
+                ("object_classes_funding_this_award", "object_classes_funding_this_award"),
+                ("program_activities_funding_this_award", "program_activities_funding_this_award"),
                 ("recipient_duns", "transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "transaction__assistance_data__awardee_or_recipient_legal"),
                 ("recipient_parent_duns", "transaction__assistance_data__ultimate_parent_unique_ide"),

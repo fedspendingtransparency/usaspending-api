@@ -2,18 +2,10 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 from django.db.models import Q
 
-from usaspending_api.awards.models import TransactionNormalized, Award
 
-
-class TransactionSearch(models.Model):
-    """
-    Fields in this model have all, with the exception of primary/foreign keys, been made nullable because it
-    is directly populated by the contents of a materialized view. The fields used to create the materialized view
-    may or may not be nullable, but those constraints are not enforced in this table.
-    """
-
-    transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
-    award = models.ForeignKey(Award, on_delete=models.DO_NOTHING, null=True)
+class AbstractTransactionSearch(models.Model):
+    transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
+    award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True)
     modification_number = models.TextField(null=True)
     detached_award_proc_unique = models.TextField(null=True)
     afa_generated_unique = models.TextField(null=True)
@@ -102,6 +94,10 @@ class TransactionSearch(models.Model):
     funding_toptier_agency_name = models.TextField(null=True)
     awarding_subtier_agency_name = models.TextField(null=True)
     funding_subtier_agency_name = models.TextField(null=True)
+    awarding_office_code = models.TextField(null=True)
+    awarding_office_name = models.TextField(null=True)
+    funding_office_code = models.TextField(null=True)
+    funding_office_name = models.TextField(null=True)
     awarding_toptier_agency_abbreviation = models.TextField(null=True)
     funding_toptier_agency_abbreviation = models.TextField(null=True)
     awarding_subtier_agency_abbreviation = models.TextField(null=True)
@@ -112,6 +108,17 @@ class TransactionSearch(models.Model):
     tas_components = ArrayField(models.TextField(), null=True)
     federal_accounts = JSONField(null=True)
     disaster_emergency_fund_codes = ArrayField(models.TextField(), null=True)
+
+    class Meta:
+        abstract = True
+
+
+class TransactionSearch(AbstractTransactionSearch):
+    """
+    Fields in this model have all, with the exception of primary/foreign keys, been made nullable because it
+    is directly populated by the contents of a materialized view. The fields used to create the materialized view
+    may or may not be nullable, but those constraints are not enforced in this table.
+    """
 
     class Meta:
         db_table = "transaction_search"

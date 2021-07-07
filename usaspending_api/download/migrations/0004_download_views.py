@@ -12,7 +12,9 @@ class Migration(migrations.Migration):
         ("accounts", "0002_auto_20200320_1307"),
         ("awards", "0074_financialaccountsbyawards_distinct_award_key"),
         ("download", "0003_auto_20180306_1726"),
-        ("financial_activities", "0003_financialaccountsbyprogramactivityobjectclass_disaster_emergency_fund")
+        ("financial_activities", "0003_financialaccountsbyprogramactivityobjectclass_disaster_emergency_fund"),
+        ("search", "0002_auto_20210121_2235"),
+        ("submissions", "0014_auto_20200901_1710")
     ]
 
     operations = [
@@ -52,4 +54,16 @@ class Migration(migrations.Migration):
             sql=[f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_program_activity_object_class_download.sql').read_text()}"],
             reverse_sql=["DROP VIEW IF EXISTS vw_financial_accounts_by_program_activity_object_class_download;"],
         ),
+        migrations.CreateModel(
+            name="TransactionSearchDownloadView",
+            fields=[],
+            options={
+                "db_table": "vw_transaction_search_download",
+                "managed": False
+            }
+        ),
+        migrations.RunSQL(
+            sql=[f"{Path('usaspending_api/download/sql/vw_transaction_search_download.sql').read_text()}"],
+            reverse_sql=["DROP VIEW IF EXISTS vw_transaction_search_download;"]
+        )
     ]
