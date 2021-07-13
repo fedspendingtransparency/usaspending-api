@@ -10,15 +10,14 @@ from usaspending_api.references.models import ObjectClass
 OBJECT_CLASS_FILE = Path(__file__).resolve().parent / "data" / "test_object_classes.csv"
 
 # Several data samples.
-GOOD_SAMPLE = [("100", "Test 100"), ("1100", "Test 1100"), ("2100", "Test 2100")]
-IGNORE_BLANK_SAMPLE = [("100", "Test 100"), ("1100", "Test 1100"), ("2100", "Test 2100"), ("", "")]
-ADDITIONAL_SAMPLE = [("200", "Test 200"), ("1200", "Test 1200"), ("2200", "Test 2200")]
-UPDATE_SAMPLE = [("100", "Test 100 update"), ("1100", "Test 1100 update"), ("2100", "Test 2100 update")]
+GOOD_SAMPLE = [("100", "Test 100"), ("1000", "Test 1000")]
+IGNORE_BLANK_SAMPLE = [("100", "Test 100"), ("1000", "Test 1000"), ("", "")]
+ADDITIONAL_SAMPLE = [("200", "Test 200"), ("2000", "Test 2000")]
+UPDATE_SAMPLE = [("100", "Test 100 update"), ("1000", "Test 1000 update")]
 NON_DIGIT_SAMPLE = [("x00", "Not digits")]
 TOO_MANY_DIGITS_SAMPLE = [("11100", "too many digits")]
-BAD_DR_DIGIT_SAMPLE = [("5100", "Bad D/R digit")]
 MISSING_NAME_SAMPLE = [("1100", "")]
-LEADING_TRAILING_SPACES_SAMPLE = [(" 100 ", " Test 100 "), (" 1100 ", " Test 1100 "), (" 2100 ", " Test 2100 ")]
+LEADING_TRAILING_SPACES_SAMPLE = [(" 100 ", " Test 100 "), (" 1000 ", " Test 1000 ")]
 
 
 @pytest.fixture
@@ -68,7 +67,7 @@ def test_happy_path(remove_csv_file):
     assert oc.major_object_class == "10"
     assert oc.major_object_class_name == "Personnel compensation and benefits"
     assert oc.object_class == "10.0"
-    assert oc.object_class_name == "Test 1100"
+    assert oc.object_class_name == "Test 100"
     assert oc.direct_reimbursable == "D"
     assert oc.direct_reimbursable_name == "Direct"
     assert oc.create_date is not None
@@ -126,7 +125,7 @@ def test_updating_rows(disable_vacuuming, remove_csv_file):
     assert ObjectClass.objects.count() == 6
 
     oc = ObjectClass.objects.get(object_class="10.0", direct_reimbursable="D")
-    assert oc.object_class_name == "Test 1100 update"
+    assert oc.object_class_name == "Test 100 update"
 
 
 @pytest.mark.django_db
@@ -136,8 +135,8 @@ def test_leading_trailing_spaces(disable_vacuuming, remove_csv_file):
     mock_data(LEADING_TRAILING_SPACES_SAMPLE)
     call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
     assert ObjectClass.objects.get(object_class="10.0", direct_reimbursable=None).object_class_name == "Test 100"
-    assert ObjectClass.objects.get(object_class="10.0", direct_reimbursable="D").object_class_name == "Test 1100"
-    assert ObjectClass.objects.get(object_class="10.0", direct_reimbursable="R").object_class_name == "Test 2100"
+    assert ObjectClass.objects.get(object_class="10.0", direct_reimbursable="D").object_class_name == "Test 100"
+    assert ObjectClass.objects.get(object_class="10.0", direct_reimbursable="R").object_class_name == "Test 100"
 
 
 @pytest.mark.django_db
@@ -150,10 +149,6 @@ def test_bad_data(remove_csv_file):
         call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
 
     mock_data(TOO_MANY_DIGITS_SAMPLE)
-    with pytest.raises(RuntimeError):
-        call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
-
-    mock_data(BAD_DR_DIGIT_SAMPLE)
     with pytest.raises(RuntimeError):
         call_command("load_object_classes", object_class_file=str(OBJECT_CLASS_FILE))
 

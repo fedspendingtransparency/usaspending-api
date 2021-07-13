@@ -23,7 +23,6 @@ def get_object_class_row(row):
      Args:
          row.object_class: object class from the broker
          row.by_direct_reimbursable_fun: direct/reimbursable flag from the broker
-             (used only when the object_class is 3 digits instead of 4)
     """
     global OBJECT_CLASSES
     if OBJECT_CLASSES is None:
@@ -42,19 +41,21 @@ def get_object_class_row(row):
     ocdr = ObjectClass.DIRECT_REIMBURSABLE
 
     if len(object_class) == 4:
-        # this is a 4 digit object class, 1st digit = direct/reimbursable information
-        direct_reimbursable = ocdr.LEADING_DIGIT_MAPPING[object_class[0]]
-        object_class = object_class[1:]
-    else:
-        # the object class field is the 3 digit version, so grab direct/reimbursable information from a separate field
-        try:
-            direct_reimbursable = ocdr.BY_DIRECT_REIMBURSABLE_FUN_MAPPING[row.by_direct_reimbursable_fun]
-        except KeyError:
-            # So Broker sort of validates this data, but not really.  It warns submitters that their data
-            # is bad but doesn't force them to actually fix it.  As such, we are going to just ignore
-            # anything we do not recognize.  Terrible solution, but it's what we've been doing to date
-            # and I don't have a better one.
-            direct_reimbursable = None
+        # this is a 4 digit object class, first three digits should be the code and last one's a redundant 0
+        if object_class[3] == "0":
+            object_class = object_class[:3]
+        else:
+            raise ValueError(f"Invalid format for object_class={object_class}.")
+
+    # grab direct/reimbursable information from a separate field
+    try:
+        direct_reimbursable = ocdr.BY_DIRECT_REIMBURSABLE_FUN_MAPPING[row.by_direct_reimbursable_fun]
+    except KeyError:
+        # So Broker sort of validates this data, but not really.  It warns submitters that their data
+        # is bad but doesn't force them to actually fix it.  As such, we are going to just ignore
+        # anything we do not recognize.  Terrible solution, but it's what we've been doing to date
+        # and I don't have a better one.
+        direct_reimbursable = None
 
     object_class = f"{object_class[:2]}.{object_class[2:]}"
 
@@ -73,8 +74,6 @@ def get_object_class(row_object_class, row_direct_reimbursable):
     Args:
         row_object_class: object class from the broker
         row_direct_reimbursable: direct/reimbursable flag from the broker
-            (used only when the object_class is 3 digits instead of 4)
     """
-
     row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)
     return get_object_class_row(row)

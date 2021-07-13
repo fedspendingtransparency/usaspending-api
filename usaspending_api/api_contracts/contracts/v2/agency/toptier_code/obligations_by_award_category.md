@@ -18,6 +18,7 @@ This endpoint returns a breakdown of obligations by award category (contracts, I
 + Response 200 (application/json)
     + Attributes (object)
         + `total_aggregated_amount` (required, number)
+            The agency's total award obligations for the provided fiscal year
         + `results` (required, array[ObligationSubtotals], fixed-type)
             Sorted by aggregated_amount, descending. Categories with $0 of obligations within the FY are not included.
 
