@@ -9,6 +9,7 @@
 # IDEs
 **/.idea/
 .vscode
+force PR checks
 
 # Temporary and generated files
 bulk_downloads/*
