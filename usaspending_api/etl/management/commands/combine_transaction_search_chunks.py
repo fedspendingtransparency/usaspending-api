@@ -9,6 +9,7 @@ from usaspending_api.common.data_connectors.async_sql_query import async_run_cre
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.matview_manager import DEFAULT_CHUNKED_MATIVEW_DIR
+from usaspending_api.search.models.transaction_search import TransactionSearch
 
 logger = logging.getLogger("script")
 
@@ -144,14 +145,18 @@ class Command(BaseCommand):
         loop = asyncio.new_event_loop()
         tasks = []
 
-        insert_table_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__inserts.sql").read_text().strip()
+        columns = [f.column for f in TransactionSearch._meta.fields]
+        column_string = ",".join(columns)
 
-        for i, sql in enumerate(sqlparse.split(insert_table_sql)):
+        for chunk in range(chunk_count):
+            sql = (
+                f"INSERT INTO {TABLE_NAME}_temp ({column_string}) SELECT {column_string} FROM {TABLE_NAME}_{chunk}"
+            )
             tasks.append(
                 asyncio.ensure_future(
                     async_run_creates(
                         sql,
-                        wrapper=Timer(f"Insert into table {i}"),
+                        wrapper=Timer(f"Insert into table from transaction_search_{chunk}"),
                     ),
                     loop=loop,
                 )
