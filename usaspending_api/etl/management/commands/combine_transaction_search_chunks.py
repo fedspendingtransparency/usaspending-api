@@ -1,6 +1,5 @@
 import logging
 import asyncio
-import sqlparse
 from pathlib import Path
 
 from django.db import connection, transaction
@@ -149,9 +148,7 @@ class Command(BaseCommand):
         column_string = ",".join(columns)
 
         for chunk in range(chunk_count):
-            sql = (
-                f"INSERT INTO {TABLE_NAME}_temp ({column_string}) SELECT {column_string} FROM {TABLE_NAME}_{chunk}"
-            )
+            sql = f"INSERT INTO {TABLE_NAME}_temp ({column_string}) SELECT {column_string} FROM {TABLE_NAME}_{chunk}"
             tasks.append(
                 asyncio.ensure_future(
                     async_run_creates(
