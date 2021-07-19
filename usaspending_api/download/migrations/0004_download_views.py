@@ -54,16 +54,4 @@ class Migration(migrations.Migration):
             sql=[f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_program_activity_object_class_download.sql').read_text()}"],
             reverse_sql=["DROP VIEW IF EXISTS vw_financial_accounts_by_program_activity_object_class_download;"],
         ),
-        migrations.CreateModel(
-            name="TransactionSearchDownloadView",
-            fields=[],
-            options={
-                "db_table": "vw_transaction_search_download",
-                "managed": False
-            }
-        ),
-        migrations.RunSQL(
-            sql=[f"{Path('usaspending_api/download/sql/vw_transaction_search_download.sql').read_text()}"],
-            reverse_sql=["DROP VIEW IF EXISTS vw_transaction_search_download;"]
-        )
     ]

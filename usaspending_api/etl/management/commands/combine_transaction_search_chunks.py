@@ -195,7 +195,6 @@ class Command(BaseCommand):
     def swap_tables(self, rename_indexes, rename_constraints):
 
         swap_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__renames.sql").read_text()
-        transaction_download_view = Path("usaspending_api/download/sql/vw_transaction_search_download.sql").read_text()
 
         swap_sql += "\n".join(rename_indexes + rename_constraints)
 
@@ -203,5 +202,3 @@ class Command(BaseCommand):
 
         with connection.cursor() as cursor:
             cursor.execute(swap_sql)
-            # The transaction download view needs to be updated to the new transaction_search table
-            cursor.execute(transaction_download_view)
