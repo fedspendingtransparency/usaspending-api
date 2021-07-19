@@ -6,7 +6,6 @@ from model_mommy import mommy
 import json
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
 @pytest.fixture
@@ -113,7 +112,6 @@ def account_models():
         _fill_optional=True,
         submission=subm_2016_2,
     )
-    FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
 
 
 @pytest.mark.django_db

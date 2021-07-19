@@ -717,3 +717,66 @@ def test_federal_account_list_pagination(client, agency_account_data, helpers):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
+
+
+@pytest.mark.django_db
+def test_latest_submission_per_agency_used(client, agency_account_data, helpers):
+    # Test File B record is in latest submission for agency
+    query_params = f"?fiscal_year=2016"
+    resp = client.get(url.format(code="011", query_params=query_params))
+
+    expected_result = {
+        "fiscal_year": 2016,
+        "results": [
+            {
+                "children": [
+                    {"code": "005-X-0000-000", "gross_outlay_amount": 7000.0, "name": "TA 7", "obligated_amount": 700.0}
+                ],
+                "code": "005-0000",
+                "gross_outlay_amount": 7000.0,
+                "name": "FA 5",
+                "obligated_amount": 700.0,
+            }
+        ],
+        "toptier_code": "011",
+        "page_metadata": {
+            "hasNext": False,
+            "hasPrevious": False,
+            "limit": 10,
+            "next": None,
+            "page": 1,
+            "previous": None,
+            "total": 1,
+        },
+        "messages": [
+            "Account data powering this endpoint were first collected in "
+            "FY2017 Q2 under the DATA Act; as such, there are no data "
+            "available for prior fiscal years."
+        ],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
+
+    # Test agency submitted recently, but most recent File B record is in prior submission
+    query_params = f"?fiscal_year=2017"
+    resp = client.get(url.format(code="011", query_params=query_params))
+
+    expected_result = {
+        "fiscal_year": 2017,
+        "results": [],
+        "toptier_code": "011",
+        "page_metadata": {
+            "hasNext": False,
+            "hasPrevious": False,
+            "limit": 10,
+            "next": None,
+            "page": 1,
+            "previous": None,
+            "total": 0,
+        },
+        "messages": [],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result

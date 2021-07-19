@@ -6,6 +6,7 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
 
 class BudgetFunctionCount(AgencyBase):
@@ -36,11 +37,11 @@ class BudgetFunctionCount(AgencyBase):
         )
 
     def get_budget_function_queryset(self):
+        submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         filters = [
             Q(treasury_account_id=OuterRef("pk")),
-            Q(final_of_fy=True),
+            Q(submission_id__in=submission_ids),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
-            Q(submission__reporting_fiscal_year=self.fiscal_year),
             Q(
                 Q(obligations_incurred_by_program_object_class_cpe__gt=0)
                 | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
