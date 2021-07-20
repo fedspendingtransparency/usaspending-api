@@ -13,8 +13,8 @@ FROM (
 	SELECT
 		fiscal_year, toptier_code, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
-          WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.awardee_or_recipient_uei) IS NOT NULL
-            THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, awardee_or_recipient_uei))
+          WHEN transaction_normalized.is_fpds AND transaction_fpds.awardee_or_recipient_uei IS NOT NULL
+            THEN CONCAT('uei-', transaction_fpds.awardee_or_recipient_uei)
           WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
             THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
           ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END
@@ -29,9 +29,12 @@ FROM (
 
 	WHERE fiscal_year >= 2017 and toptier_code is not NULL
 
-	GROUP BY toptier_code,  recipient_lookup.legal_business_name, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
+	GROUP BY toptier_code, recipient_lookup.legal_business_name, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
-          WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
+          WHEN transaction_normalized.is_fpds AND transaction_fpds.awardee_or_recipient_uei IS NOT NULL
+            THEN CONCAT('uei-', transaction_fpds.awardee_or_recipient_uei)
+          WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
+            THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
           ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END
       ))::uuid), fiscal_year
 	HAVING SUM(COALESCE(CASE WHEN transaction_normalized.type IN('07','08') THEN transaction_normalized.original_loan_subsidy_cost ELSE transaction_normalized.federal_action_obligation END, 0)) > 0) as recipient_agency_content;
