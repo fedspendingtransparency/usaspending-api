@@ -453,5 +453,5 @@ def test_data_transfer_from_broker(load_broker_data):
             "N",
             "N",
             "uei_id",
-            "ultimate_p_id"
+            "ultimate_p_id",
         )
