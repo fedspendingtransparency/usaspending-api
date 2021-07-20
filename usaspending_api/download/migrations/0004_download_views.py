@@ -13,8 +13,6 @@ class Migration(migrations.Migration):
         ("awards", "0074_financialaccountsbyawards_distinct_award_key"),
         ("download", "0003_auto_20180306_1726"),
         ("financial_activities", "0003_financialaccountsbyprogramactivityobjectclass_disaster_emergency_fund"),
-        ("search", "0002_auto_20210121_2235"),
-        ("submissions", "0014_auto_20200901_1710")
     ]
 
     operations = [
