@@ -24,6 +24,29 @@ cases. These must be numbered from 1, and store conditions in the "case_<INT>" a
 For an example, see TransactionNormalized.action_type_map
 """
 
+change_reasons = {
+    "A": "Additional Work (new agreement, FAR part 6 applies)",
+    "B": "Supplemental Agreement for work within scope",
+    "C": "Funding Only Action",
+    "D": "Change Order",
+    "E": "Terminate for Default (complete or partial)",
+    "F": "Terminate for Convenience (complete or partial)",
+    "G": "Exercise an Option",
+    "H": "Definitize Letter Contract",
+    "J": "Novation Agreement",
+    "K": "Close Out",
+    "L": "Definitize Change Order",
+    "M": "Other Administrative Action",
+    "N": "Legal Contract Cancellation",
+    "P": "Representation of Non-Novated Merger/Acquisition",
+    "R": "Representation",
+    "S": "Change PIID",
+    "T": "Transfer Action",
+    "V": "Vendor DUNS or Name Change - Non-Novation",
+    "W": "Vendor Address Change",
+    "X": "Terminate for Cause",
+}
+
 daims_maps = {
     # D1, D2 DAIMS MAPS - These are found in awards.models unless noted
     # This map is an example of how to have TWO different maps for the same field, on the same object, separated by a
@@ -39,28 +62,7 @@ daims_maps = {
         },
         # When we are a contract
         "case_2": {"assistance_data__isnull": True, "contract_data__isnull": False},
-        "case_2_map": {
-            "A": "Additional Work (new agreement, FAR part 6 applies)",
-            "B": "Supplemental Agreement for work within scope",
-            "C": "Funding Only Action",
-            "D": "Change Order",
-            "E": "Terminate for Default (complete or partial)",
-            "F": "Terminate for Convenience (complete or partial)",
-            "G": "Exercise an Option",
-            "H": "Definitize Letter Contract",
-            "J": "Novation Agreement",
-            "K": "Close Out",
-            "L": "Definitize Change Order",
-            "M": "Other Administrative Action",
-            "N": "Legal Contract Cancellation",
-            "P": "Representation of Non-Novated Merger/Acquisition",
-            "R": "Representation",
-            "S": "Change PIID",
-            "T": "Transfer Action",
-            "V": "Vendor DUNS or Name Change - Non-Novation",
-            "W": "Vendor Address Change",
-            "X": "Terminate for Cause",
-        },
+        "case_2_map": {**change_reasons},
     },
     "business_funds_indicator_map": {
         "REC": "Funds are provided by the Recovery Act",
@@ -234,28 +236,7 @@ daims_maps = {
         "L": "Manufactured outside U.S. - Qualifying County (DoD Only)",
     },
     # There is currently no field for this at the moment
-    "reason_for_modification_map": {
-        "A": "Additional Work (new agreement, FAR part 6 applies)",
-        "B": "Supplemental Agreement for work within scope",
-        "C": "Funding Only Action",
-        "D": "Change Order",
-        "E": "Terminate for Default (complete or partial)",
-        "F": "Terminate for Convenience (complete or partial)",
-        "G": "Exercise an Option",
-        "H": "Definitize Letter Contract",
-        "J": "Novation Agreement",
-        "K": "Close Out",
-        "L": "Definitize Change Order",
-        "M": "Other Administrative Action",
-        "N": "Legal Contract Cancellation",
-        "P": "Representation of Non-Novated Merger/Acquisition",
-        "R": "Representation",
-        "S": "Change PIID",
-        "T": "Transfer Action",
-        "V": "Vendor DUNS or Name Change - Non-Novation",
-        "W": "Vendor Address Change",
-        "X": "Terminate for Cause",
-    },
+    "reason_for_modification_map": {**change_reasons},
     # No field current exists for this
     "not_competed_reason_map": {
         "UNQ": "Unique Source (FAR 6.302-1(b)(1)) ",
