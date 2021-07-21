@@ -94,7 +94,6 @@ def generic_account_data():
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
-        final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=1000,
         gross_outlay_amount_by_program_object_class_cpe=100,
         deobligations_recoveries_refund_pri_program_object_class_cpe=-900,
@@ -106,7 +105,6 @@ def generic_account_data():
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
-        final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=500,
         gross_outlay_amount_by_program_object_class_cpe=20,
         deobligations_recoveries_refund_pri_program_object_class_cpe=-300,
@@ -118,7 +116,6 @@ def generic_account_data():
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
-        final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=6,
         gross_outlay_amount_by_program_object_class_cpe=7,
         deobligations_recoveries_refund_pri_program_object_class_cpe=-4,
@@ -130,7 +127,6 @@ def generic_account_data():
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
-        final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=10,
         gross_outlay_amount_by_program_object_class_cpe=4,
         deobligations_recoveries_refund_pri_program_object_class_cpe=-9,
@@ -142,7 +138,6 @@ def generic_account_data():
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
-        final_of_fy=True,
         obligations_incurred_by_program_object_class_cpe=13,
         gross_outlay_amount_by_program_object_class_cpe=296,
         deobligations_recoveries_refund_pri_program_object_class_cpe=-10,
