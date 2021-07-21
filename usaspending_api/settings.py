@@ -20,7 +20,7 @@ MAX_DOWNLOAD_LIMIT = 500000
 
 # Timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
-
+# DELETE THIS
 # Default timeout for SQL statements in Django
 DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
 DOWNLOAD_DB_TIMEOUT_IN_HOURS = 4
