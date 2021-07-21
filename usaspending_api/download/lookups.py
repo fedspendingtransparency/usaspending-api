@@ -20,9 +20,8 @@ from usaspending_api.download.models import (
     AppropriationAccountBalancesDownloadView,
     FinancialAccountsByAwardsDownloadView,
     FinancialAccountsByProgramActivityObjectClassDownloadView,
-    TransactionSearchDownloadView,
 )
-from usaspending_api.search.models import AwardSearchView, SubawardView
+from usaspending_api.search.models import AwardSearchView, SubawardView, TransactionSearch
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,
@@ -34,7 +33,7 @@ from usaspending_api.awards.v2.filters.award_filters import (
     awards_treasury_account_funding_filter,
 )
 from usaspending_api.awards.v2.filters.search import (
-    transaction_search_download_filter,
+    transaction_search_filter,
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.download.helpers.download_annotation_functions import (
@@ -77,19 +76,19 @@ VALUE_MAPPINGS = {
     # Transaction Level
     "transactions": {
         "source_type": "award",
-        "table": TransactionSearchDownloadView,
+        "table": TransactionSearch,
         "table_name": "transaction",
         "type_name": "PrimeTransactions",
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
         "contract_data": "transaction__contract_data",
         "assistance_data": "transaction__assistance_data",
-        "filter_function": transaction_search_download_filter,
+        "filter_function": transaction_search_filter,
         "annotations_function": transaction_search_annotations,
     },
     # Elasticsearch Transaction Level
     "elasticsearch_transactions": {
         "source_type": "award",
-        "table": TransactionSearchDownloadView,
+        "table": TransactionSearch,
         "table_name": "transaction",
         "type_name": "PrimeTransactions",
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
