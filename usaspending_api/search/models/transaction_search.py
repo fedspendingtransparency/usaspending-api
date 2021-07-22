@@ -3,7 +3,13 @@ from django.db import models
 from django.db.models import Q
 
 
-class AbstractTransactionSearch(models.Model):
+class TransactionSearch(models.Model):
+    """
+    Fields in this model have all, with the exception of primary/foreign keys, been made nullable because it
+    is directly populated by the contents of a materialized view. The fields used to create the materialized view
+    may or may not be nullable, but those constraints are not enforced in this table.
+    """
+
     transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
     award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True)
     modification_number = models.TextField(null=True)
@@ -108,17 +114,6 @@ class AbstractTransactionSearch(models.Model):
     tas_components = ArrayField(models.TextField(), null=True)
     federal_accounts = JSONField(null=True)
     disaster_emergency_fund_codes = ArrayField(models.TextField(), null=True)
-
-    class Meta:
-        abstract = True
-
-
-class TransactionSearch(AbstractTransactionSearch):
-    """
-    Fields in this model have all, with the exception of primary/foreign keys, been made nullable because it
-    is directly populated by the contents of a materialized view. The fields used to create the materialized view
-    may or may not be nullable, but those constraints are not enforced in this table.
-    """
 
     class Meta:
         db_table = "transaction_search"

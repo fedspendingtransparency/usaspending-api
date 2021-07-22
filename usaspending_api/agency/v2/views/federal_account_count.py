@@ -1,11 +1,12 @@
 from django.db.models import Exists, OuterRef, Q
 from rest_framework.request import Request
 from rest_framework.response import Response
-from typing import Any
+from typing import Any, List
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
 
 class FederalAccountCount(AgencyBase):
@@ -22,22 +23,22 @@ class FederalAccountCount(AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         return Response(
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
-                "federal_account_count": self.get_federal_account_count(),
-                "treasury_account_count": self.get_treasury_account_count(),
+                "federal_account_count": self.get_federal_account_count(submission_ids),
+                "treasury_account_count": self.get_treasury_account_count(submission_ids),
                 "messages": self.standard_response_messages,
             }
         )
 
-    def get_federal_account_count(self):
+    def get_federal_account_count(self, submission_ids: List[int]):
         filters = [
             Q(treasury_account__federal_account_id=OuterRef("pk")),
-            Q(final_of_fy=True),
+            Q(submission_id__in=submission_ids),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
-            Q(submission__reporting_fiscal_year=self.fiscal_year),
             Q(
                 Q(obligations_incurred_by_program_object_class_cpe__gt=0)
                 | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
@@ -54,13 +55,13 @@ class FederalAccountCount(AgencyBase):
             .count()
         )
 
-    def get_treasury_account_count(self):
+    def get_treasury_account_count(self, submission_ids: List[int]):
         return (
             TreasuryAppropriationAccount.objects.annotate(
                 include=Exists(
                     FinancialAccountsByProgramActivityObjectClass.objects.filter(
                         treasury_account_id=OuterRef("pk"),
-                        final_of_fy=True,
+                        submission_id__in=submission_ids,
                         treasury_account__funding_toptier_agency=self.toptier_agency,
                         submission__reporting_fiscal_year=self.fiscal_year,
                     ).values("pk")

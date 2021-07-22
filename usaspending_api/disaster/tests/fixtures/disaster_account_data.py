@@ -288,7 +288,6 @@ def disaster_account_data():
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas1,
         submission=sub1,
         program_activity=pa1,
@@ -302,7 +301,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas1,
         submission=sub1,
         program_activity=pa2,
@@ -316,7 +314,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas1,
         submission=sub1,
         program_activity=pa3,
@@ -330,7 +327,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas2,
         submission=sub2,
         program_activity=pa4,
@@ -344,7 +340,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas2,
         submission=sub3,
         program_activity=pa4,
@@ -358,7 +353,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas3,
         submission=sub3,
         program_activity=pa4,
@@ -372,7 +366,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas3,
         submission=sub4,
         program_activity=pa4,
@@ -386,7 +379,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas3,
         submission=sub4,
         program_activity=pa4,
@@ -400,7 +392,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas4,
         submission=sub5,
         program_activity=pa5,
@@ -414,7 +405,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas5,
         submission=sub1,
         disaster_emergency_fund=None,
@@ -426,7 +416,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas6,
         submission=sub1,
         disaster_emergency_fund=None,
