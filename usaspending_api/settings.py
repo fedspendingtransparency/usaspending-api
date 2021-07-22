@@ -26,7 +26,8 @@ DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECOND
 DOWNLOAD_DB_TIMEOUT_IN_HOURS = 4
 CONNECTION_MAX_SECONDS = 10
 
-# Value is set per environment using formula: ( TOTAL_MEMORY * 0.25 ) / MAX_CONNECTIONS
+# Value is set per environment using formula: ( TOTAL_MEMORY * 0.25 ) / MAX_CONNECTIONS;
+# MAX_CONNECTIONS in this case refers to those serving downloads
 DOWNLOAD_DB_WORK_MEM_IN_MB = os.environ.get("DOWNLOAD_DB_WORK_MEM_IN_MB", 128)
 
 API_MAX_DATE = "2024-09-30"  # End of FY2024
