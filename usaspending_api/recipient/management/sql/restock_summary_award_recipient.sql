@@ -11,8 +11,8 @@ UPDATE public.summary_award_recipient AS sar SET
   action_date = a.date_signed,
   recipient_hash = MD5(UPPER(
     CASE
-      WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.awardee_or_recipient_uei) IS NOT NULL
-        THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, awardee_or_recipient_uei))
+       WHEN tn.is_fpds AND fpds.awardee_or_recipient_uei IS NOT NULL
+         THEN CONCAT('uei-', fpds.awardee_or_recipient_uei)
       WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL
         THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
       ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) END
@@ -47,8 +47,8 @@ SELECT
     a.date_signed AS action_date,
     MD5(UPPER(
       CASE
-        WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.awardee_or_recipient_uei) IS NOT NULL
-          THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, awardee_or_recipient_uei))
+         WHEN tn.is_fpds AND fpds.awardee_or_recipient_uei IS NOT NULL
+          THEN CONCAT('uei-', fpds.awardee_or_recipient_uei)
         WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL
           THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
         ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) END
