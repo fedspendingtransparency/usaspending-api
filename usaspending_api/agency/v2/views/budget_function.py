@@ -6,6 +6,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMi
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
 
 class BudgetFunctionList(PaginationMixin, AgencyBase):
@@ -58,10 +59,10 @@ class BudgetFunctionList(PaginationMixin, AgencyBase):
         )
 
     def get_budget_function_queryset(self):
+        submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         filters = [
-            Q(final_of_fy=True),
+            Q(submission_id__in=submission_ids),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
-            Q(submission__reporting_fiscal_year=self.fiscal_year),
             Q(
                 Q(obligations_incurred_by_program_object_class_cpe__gt=0)
                 | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
