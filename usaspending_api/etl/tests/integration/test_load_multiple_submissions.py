@@ -54,6 +54,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         )
 
         mommy.make("references.ObjectClass", major_object_class="10", object_class="10.1", direct_reimbursable="D")
+        mommy.make("references.ObjectClass", major_object_class="01", object_class="01.0", direct_reimbursable="D")
 
         mommy.make("references.DisasterEmergencyFundCode", code="B", title="BB")
         mommy.make("references.DisasterEmergencyFundCode", code="L", title="LL")
