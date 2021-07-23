@@ -10,7 +10,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
 )
 SELECT
   DISTINCT ON (ultimate_parent_unique_ide, ultimate_parent_legal_enti)
-  MD5(UPPER(CONCAT('duns-', ultimate_parent_unique_ide)))::uuid AS recipient_hash,
+  MD5(COALESCE(UPPER(CONCAT('uei-', ultimate_parent_uei)), UPPER(CONCAT('duns-', ultimate_parent_unique_ide))))::uuid AS recipient_hash,
   UPPER(ultimate_parent_legal_enti) AS legal_business_name,
   ultimate_parent_unique_ide AS duns,
   'sam-parent' as source,
