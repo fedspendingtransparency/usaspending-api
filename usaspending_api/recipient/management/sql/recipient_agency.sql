@@ -13,8 +13,8 @@ FROM (
 	SELECT
 		fiscal_year, toptier_code, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
-          WHEN transaction_normalized.is_fpds AND transaction_fpds.awardee_or_recipient_uei IS NOT NULL
-            THEN CONCAT('uei-', transaction_fpds.awardee_or_recipient_uei)
+          WHEN COALSCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
+            THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
           WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
             THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
           ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END
@@ -31,8 +31,8 @@ FROM (
 
 	GROUP BY toptier_code, recipient_lookup.legal_business_name, COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
         CASE
-          WHEN transaction_normalized.is_fpds AND transaction_fpds.awardee_or_recipient_uei IS NOT NULL
-            THEN CONCAT('uei-', transaction_fpds.awardee_or_recipient_uei)
+          WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
+            THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
           WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
             THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
           ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END
