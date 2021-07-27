@@ -19,7 +19,9 @@ CREATE TABLE public.temporary_restock_duns AS (
     broker_duns.zip4 AS zip4,
     broker_duns.business_types_codes AS business_types_codes,
     broker_duns.dba_name as dba_name,
-    broker_duns.entity_structure as entity_structure
+    broker_duns.entity_structure as entity_structure,
+    broker_duns.uei,
+    broker_duns.ultimate_parent_uei
   FROM
     dblink ('broker_server', '(
       SELECT
@@ -41,6 +43,8 @@ CREATE TABLE public.temporary_restock_duns AS (
         duns.entity_structure,
         duns.duns_id,
         COALESCE(duns.activation_date, duns.deactivation_date) as record_date
+        duns.uei,
+        duns.ultimate_parent_uei
       FROM
         duns
       ORDER BY
@@ -63,7 +67,9 @@ CREATE TABLE public.temporary_restock_duns AS (
             business_types_codes text[],
             entity_structure text,
             duns_id text,
-            record_date date
+            record_date date,
+            uei text,
+            ultimate_parent_uei text
           )
 );
 
