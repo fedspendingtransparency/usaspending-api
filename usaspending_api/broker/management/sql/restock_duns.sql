@@ -20,8 +20,8 @@ CREATE TABLE public.temporary_restock_duns AS (
     broker_duns.business_types_codes AS business_types_codes,
     broker_duns.dba_name as dba_name,
     broker_duns.entity_structure as entity_structure,
-    broker_duns.uei,
-    broker_duns.ultimate_parent_uei
+    broker_duns.uei AS uei,
+    broker_duns.ultimate_parent_uei AS ultimate_parent_uei
   FROM
     dblink ('broker_server', '(
       SELECT
