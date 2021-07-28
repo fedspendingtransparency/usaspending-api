@@ -33,7 +33,6 @@ def financial_spending_data(db):
         obligations_incurred_by_program_object_class_cpe=1000,
         submission=submission_1,
         treasury_account=tas1,
-        final_of_fy=True,
     )
 
     # Object 2 (contains 2 fabpaoc s)
@@ -56,7 +55,6 @@ def financial_spending_data(db):
         obligations_incurred_by_program_object_class_cpe=1000,
         submission=submission_2,
         treasury_account=tas1,
-        final_of_fy=True,
     )
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -64,7 +62,6 @@ def financial_spending_data(db):
         obligations_incurred_by_program_object_class_cpe=2000,
         submission=submission_2,
         treasury_account=tas1,
-        final_of_fy=True,
     )
 
     # 2018, not reported by 2017 api call
@@ -88,7 +85,6 @@ def financial_spending_data(db):
         obligations_incurred_by_program_object_class_cpe=1000,
         submission=submission_3,
         treasury_account=tas3,
-        final_of_fy=True,
     )
 
 
