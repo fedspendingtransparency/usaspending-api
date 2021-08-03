@@ -590,7 +590,10 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
             temp_env = os.environ.copy()
             if download_job and not download_job.monthly_download:
                 # Since terminating the process isn't guaranteed to end the DB statement, add timeout to client connection
-                temp_env["PGOPTIONS"] = f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h"
+                temp_env["PGOPTIONS"] = (
+                    f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
+                    f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
+                )
 
             cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
             subprocess.check_output(

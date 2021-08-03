@@ -121,15 +121,6 @@ def write_sql_file(str_list, filename):
         f.write("\n")
 
 
-def make_table_inserts(table_name, matview_name, chunk_count):
-    sql_strings = []
-    for i in range(chunk_count):
-        matview_chunk_name = f"{matview_name}_{i}"
-        sql_strings.append(TEMPLATE["insert_into_table"].format(table_name, matview_chunk_name))
-
-    return sql_strings
-
-
 def make_matview_empty(matview_name, chunk_count):
     sql_strings = []
     for i in range(chunk_count):
@@ -146,9 +137,6 @@ def create_componentized_files(sql_json):
 
     create_table = make_temp_table_create(matview_name, matview_temp_name)
     write_sql_file(create_table, filename_base + "__create")
-
-    insert_into_table = make_table_inserts(matview_temp_name, matview_name, GLOBAL_ARGS.chunk_count)
-    write_sql_file(insert_into_table, filename_base + "__inserts")
 
     sql_strings = make_rename_sql(matview_name)
     write_sql_file(sql_strings, filename_base + "__renames")
