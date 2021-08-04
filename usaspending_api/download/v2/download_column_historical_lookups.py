@@ -77,6 +77,7 @@ query_paths = {
                 ("sam_exception_description", "award__latest_transaction__contract_data__sam_exception_description"),
                 ("recipient_duns", "award__latest_transaction__contract_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+                ("recipient_uei", "award__latest_transaction__contract_data__awardee_or_recipient_uei"),
                 (
                     "recipient_doing_business_as_name",
                     "award__latest_transaction__contract_data__vendor_doing_as_business_n",
@@ -84,6 +85,7 @@ query_paths = {
                 ("cage_code", "award__latest_transaction__contract_data__cage_code"),
                 ("recipient_parent_duns", "award__latest_transaction__contract_data__ultimate_parent_unique_ide"),
                 ("recipient_parent_name", "award__latest_transaction__contract_data__ultimate_parent_legal_enti"),
+                ("recipient_parent_uei", "award__latest_transaction__contract_data__ultimate_parent_uei"),
                 ("recipient_country_code", "award__latest_transaction__contract_data__legal_entity_country_code"),
                 ("recipient_country_name", "award__latest_transaction__contract_data__legal_entity_country_name"),
                 ("recipient_address_line_1", "award__latest_transaction__contract_data__legal_entity_address_line1"),
@@ -642,8 +644,10 @@ query_paths = {
                 ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
+                ("recipient_uei", "award__latest_transaction__assistance_data__uei"),
                 ("recipient_parent_duns", "award__latest_transaction__assistance_data__ultimate_parent_unique_ide"),
                 ("recipient_parent_name", "award__latest_transaction__assistance_data__ultimate_parent_legal_enti"),
+                ("recipient_parent_uei", "award__latest_transaction__assistance_data__ultimate_parent_uei"),
                 ("recipient_country_code", "award__latest_transaction__assistance_data__legal_entity_country_code"),
                 ("recipient_country_name", "award__latest_transaction__assistance_data__legal_entity_country_name"),
                 ("recipient_address_line_1", "award__latest_transaction__assistance_data__legal_entity_address_line1"),
@@ -803,10 +807,12 @@ query_paths = {
                 ("sam_exception_description", "transaction__contract_data__sam_exception_description"),
                 ("recipient_duns", "transaction__contract_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "transaction__contract_data__awardee_or_recipient_legal"),
+                ("recipient_uei", "transaction__contract_data__awardee_or_recipient_uei"),
                 ("recipient_doing_business_as_name", "transaction__contract_data__vendor_doing_as_business_n"),
                 ("cage_code", "transaction__contract_data__cage_code"),
                 ("recipient_parent_duns", "transaction__contract_data__ultimate_parent_unique_ide"),
                 ("recipient_parent_name", "transaction__contract_data__ultimate_parent_legal_enti"),
+                ("recipient_parent_uei", "transaction__contract_data__ultimate_parent_uei"),
                 ("recipient_country_code", "transaction__contract_data__legal_entity_country_code"),
                 ("recipient_country_name", "transaction__contract_data__legal_entity_country_name"),
                 ("recipient_address_line_1", "transaction__contract_data__legal_entity_address_line1"),
@@ -1171,8 +1177,10 @@ query_paths = {
                 ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_duns", "transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "transaction__assistance_data__awardee_or_recipient_legal"),
+                ("recipient_uei", "transaction__assistance_data__uei"),
                 ("recipient_parent_duns", "transaction__assistance_data__ultimate_parent_unique_ide"),
                 ("recipient_parent_name", "transaction__assistance_data__ultimate_parent_legal_enti"),
+                ("recipient_parent_uei", "transaction__assistance_data__ultimate_parent_uei"),
                 ("recipient_country_code", "transaction__assistance_data__legal_entity_country_code"),
                 ("recipient_country_name", "transaction__assistance_data__legal_entity_country_name"),
                 ("recipient_address_line_1", "transaction__assistance_data__legal_entity_address_line1"),
@@ -1292,9 +1300,11 @@ query_paths = {
                 ("prime_award_program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
+                ("prime_awardee_uei", "award__latest_transaction__contract_data__awardee_or_recipient_uei"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
                 ("prime_awardee_parent_duns", "broker_subaward__ultimate_parent_unique_ide"),
                 ("prime_awardee_parent_name", "broker_subaward__ultimate_parent_legal_enti"),
+                ("prime_awardee_parent_uei", "award__latest_transaction__contract_data__ultimate_parent_uei"),
                 ("prime_awardee_country_code", "broker_subaward__legal_entity_country_code"),
                 ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "broker_subaward__legal_entity_address_line1"),
@@ -1439,9 +1449,11 @@ query_paths = {
                 ("prime_award_program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
+                ("prime_awardee_uei", "award__latest_transaction__assistance_data__uei"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
                 ("prime_awardee_parent_duns", "broker_subaward__ultimate_parent_unique_ide"),
                 ("prime_awardee_parent_name", "broker_subaward__ultimate_parent_legal_enti"),
+                ("prime_awardee_parent_uei", "award__latest_transaction__assistance_data__ultimate_parent_uei"),
                 ("prime_awardee_country_code", "broker_subaward__legal_entity_country_code"),
                 ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "broker_subaward__legal_entity_address_line1"),
@@ -1808,8 +1820,10 @@ query_paths = {
                 ("funding_office_name", "funding_office_name"),  # Column is annotated in account_download.py
                 ("recipient_duns", "recipient_duns"),  # Column is annotated in account_download.py
                 ("recipient_name", "recipient_name"),  # Column is annotated in account_download.py
+                ("recipient_uei", "recipient_uei"), # Column is annotated in account_download.py
                 ("recipient_parent_duns", "recipient_parent_duns"),  # Column is annotated in account_download.py
                 ("recipient_parent_name", "recipient_parent_name"),  # Column is annotated in account_download.py
+                ("recipient_parent_uei", "recipient_parent_uei"),  # Column is annotated in account_download.py
                 ("recipient_country", "recipient_country"),  # Column is annotated in account_download.py
                 ("recipient_state", "recipient_state"),  # Column is annotated in account_download.py
                 ("recipient_county", "recipient_county"),  # Column is annotated in account_download.py
@@ -1922,8 +1936,10 @@ query_paths = {
                 ("funding_office_name", "funding_office_name"),  # Column is annotated in account_download.py
                 ("recipient_duns", "recipient_duns"),  # Column is annotated in account_download.py
                 ("recipient_name", "recipient_name"),  # Column is annotated in account_download.py
+                ("recipient_uei", "recipient_uei"),  # Column is annotated in account_download.py
                 ("recipient_parent_duns", "recipient_parent_duns"),  # Column is annotated in account_download.py
                 ("recipient_parent_name", "recipient_parent_name"),  # Column is annotated in account_download.py
+                ("recipient_parent_uei", "recipient_parent_uei"),  # Column is annotated in account_download.py
                 ("recipient_country", "recipient_country"),  # Column is annotated in account_download.py
                 ("recipient_state", "recipient_state"),  # Column is annotated in account_download.py
                 ("recipient_county", "recipient_county"),  # Column is annotated in account_download.py
