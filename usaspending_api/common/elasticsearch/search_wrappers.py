@@ -88,6 +88,7 @@ class _Search(Search):
         return result
 
     def handle_execute(self, retries: int = 5, timeout: str = "90s") -> Response:
+        print(self.to_dict())
         return self._handle_errors(self._execute, retries, timeout)
 
     def handle_count(self, retries: int = 5) -> int:

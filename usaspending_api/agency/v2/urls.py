@@ -11,6 +11,7 @@ from usaspending_api.agency.v2.views.obligations_by_award_category import Obliga
 from usaspending_api.agency.v2.views.program_activity_count import ProgramActivityCount
 from usaspending_api.agency.v2.views.program_activity_list import ProgramActivityList
 from usaspending_api.agency.v2.views.recipients import RecipientList
+from usaspending_api.agency.v2.views.awards import Awards
 
 urlpatterns = [
     re_path(
@@ -29,6 +30,7 @@ urlpatterns = [
                 path("program_activity/", ProgramActivityList.as_view()),
                 path("program_activity/count/", ProgramActivityCount.as_view()),
                 path("recipients/", RecipientList.as_view()),
+                path("awards/", Awards.as_view()),
             ]
         ),
     )
