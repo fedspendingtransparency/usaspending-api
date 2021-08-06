@@ -6,7 +6,11 @@ from usaspending_api.common.models import DataSourceTrackedModel
 class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True, db_index=True)
-    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
+    submission = models.ForeignKey(
+        "submissions.SubmissionAttributes",
+        models.CASCADE,
+        related_name="financial_accounts_by_program_activity_object_classes",
+    )
     object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True, db_index=True)
     treasury_account = models.ForeignKey(
         "accounts.TreasuryAppropriationAccount", models.CASCADE, related_name="program_balances", null=True

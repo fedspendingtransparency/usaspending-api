@@ -212,6 +212,28 @@ class FilterQuerysetMixin(object):
         else:
             return queryset
 
+    def get_federal_account_id(self):
+        """
+        Returns the federal_account_id from the list of query parameters. If parameter
+        is not present, return None instead.
+        """
+        federal_account_id = None
+        for filter in self.request.data["filters"]:
+            if filter["field"] == "treasury_account__federal_account_id":
+                federal_account_id = filter["value"]
+        return federal_account_id
+
+    def get_fiscal_years(self):
+        """
+        Returns the list of fiscal_years from the list of query parameters. If parameter
+        is not present, return an empty list instead.
+        """
+        fiscal_years = []
+        for filter in self.request.data["filters"]:
+            if filter["field"] == "submission__reporting_fiscal_year":
+                fiscal_years = filter["value"]
+        return fiscal_years
+
 
 class AutocompleteResponseMixin(object):
     """Handles autocomplete responses and requests"""
