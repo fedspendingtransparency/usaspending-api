@@ -218,9 +218,10 @@ class FilterQuerysetMixin(object):
         is not present, return None instead.
         """
         federal_account_id = None
-        for filter in self.request.data["filters"]:
-            if filter["field"] == "treasury_account__federal_account_id":
-                federal_account_id = filter["value"]
+        if "filters" in self.request.data:
+            for filter in self.request.data["filters"]:
+                if filter["field"] == "treasury_account__federal_account_id":
+                    federal_account_id = filter["value"]
         return federal_account_id
 
     def get_fiscal_years(self):
@@ -229,9 +230,10 @@ class FilterQuerysetMixin(object):
         is not present, return an empty list instead.
         """
         fiscal_years = []
-        for filter in self.request.data["filters"]:
-            if filter["field"] == "submission__reporting_fiscal_year":
-                fiscal_years = filter["value"]
+        if "filters" in self.request.data:
+            for filter in self.request.data["filters"]:
+                if filter["field"] == "submission__reporting_fiscal_year":
+                    fiscal_years = filter["value"]
         return fiscal_years
 
 
