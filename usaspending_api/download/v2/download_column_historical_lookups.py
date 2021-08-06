@@ -1818,7 +1818,7 @@ query_paths = {
                 ("funding_office_code", "funding_office_code"),  # Column is annotated in account_download.py
                 ("funding_office_name", "funding_office_name"),  # Column is annotated in account_download.py
                 ("recipient_duns", "recipient_duns"),  # Column is annotated in account_download.py
-                ("recipient_uei", "recipient_uei"), # Column is annotated in account_download.py
+                ("recipient_uei", "recipient_uei"),  # Column is annotated in account_download.py
                 ("recipient_name", "recipient_name"),  # Column is annotated in account_download.py
                 ("recipient_parent_duns", "recipient_parent_duns"),  # Column is annotated in account_download.py
                 ("recipient_parent_uei", "recipient_parent_uei"),  # Column is annotated in account_download.py
