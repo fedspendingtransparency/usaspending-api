@@ -25,13 +25,15 @@ This endpoint returns a list of toptier agencies, their budgetary resources, and
 + `active_fq` (required, string)
 + `active_fy` (required, string)
 + `agency_id` (required, number)
-    `agency_id` is the unique USAspending.gov identifier for the agency. You will need to use this ID in other endpoints when requesting detailed information about this specific agency.
+    + `agency_id` is the unique USAspending.gov identifier for the agency. You will need to use this ID in other endpoints when requesting detailed information about this specific agency.
 + `agency_name` (required, string)
++ `url_name` (required, string)
+    + `url_name` is the "URL-friendly" agency name (lower-case, hyphenated words)
 + `budget_authority_amount` (required, number)
 + `congressional_justification_url` (required, string, nullable)
 + `current_total_budget_authority_amount` (required, number)
 + `obligated_amount` (required, number)
 + `outlay_amount` (required, number)
 + `percentage_of_total_budget_authority` (required, number)
-    `percentage_of_total_budget_authority` is the percentage of the agency's budget authority compared to the total government budget authority, expressed as a decimal value.
+    + `percentage_of_total_budget_authority` is the percentage of the agency's budget authority compared to the total government budget authority, expressed as a decimal value.
 + `toptier_code` (required, string)
