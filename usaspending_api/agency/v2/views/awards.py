@@ -1,3 +1,4 @@
+from django.utils.functional import cached_property
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
@@ -35,6 +36,13 @@ class Awards(AgencyBase):
             },
         ]
         self.params_to_validate = ["fiscal_year", "award_type", "agency_type"]
+
+    @cached_property
+    def _query_params(self):
+        query_params = self.request.query_params.copy()
+        if query_params.get("award_type") is not None:
+            query_params["award_type"] = query_params["award_type"].strip("[]").split(",")
+        return self._validate_params(query_params)
 
     @cache_response()
     def get(self, request, *args, **kwargs):
