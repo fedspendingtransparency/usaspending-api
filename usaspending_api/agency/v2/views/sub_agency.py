@@ -79,10 +79,25 @@ class SubAgencyList(PaginationMixin, AgencyBase):
                     .get(f"{self._query_params.get('agency_type')}_subtier_agency_abbreviation"),
                     "total_obligations": bucket.get("total_subagency_obligations").get("value"),
                     "transaction_count": bucket.get("doc_count"),
-                    "new_award_counts": 0,
-                    "children": [],
+                    "new_award_count": 0,
+                    "children": self.format_child_response(bucket.get("offices").get("buckets"))
                 }
             )
+        return response
+
+    def format_child_response(self, children):
+        response = []
+        for child in children:
+            response.append({
+                "office_name": child.get("office_info")
+                    .get("hits")
+                    .get("hits")[0]
+                    .get("_source")
+                    .get(f"{self._query_params.get('agency_type')}_office_name"),
+                "total_obligations": child.get("total_office_obligations").get("value"),
+                "transaction_count": child.get("doc_count"),
+                "new_award_count": 0,
+            })
         return response
 
     def generate_query(self):
