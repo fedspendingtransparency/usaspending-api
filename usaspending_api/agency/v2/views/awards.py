@@ -14,7 +14,7 @@ class Awards(AgencyBase):
     that have ever awarded.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/awards.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/awards.md"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
