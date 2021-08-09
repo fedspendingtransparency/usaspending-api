@@ -1,11 +1,11 @@
 from django.utils.functional import cached_property
+from elasticsearch_dsl import A
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.v2.elasticsearch_helper import get_scaled_sum_aggregations
 
 
 class Awards(AgencyBase):
@@ -57,6 +57,7 @@ class Awards(AgencyBase):
         )
 
     def generate_query(self):
+        print(self.toptier_agency.name)
         return {
             "agencies": [
                 {"type": self._query_params.get("agency_type"), "tier": "toptier", "name": self.toptier_agency.name}
@@ -75,7 +76,7 @@ class Awards(AgencyBase):
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.generate_query())
         search = TransactionSearch().filter(filter_query)
         search.aggs.bucket(
-            "total_obligation", get_scaled_sum_aggregations("generated_pragmatic_obligation")["sum_field"]
+            "total_obligation", A("sum", field="generated_pragmatic_obligation")
         )
         response = search.handle_execute()
         results = response.aggs.to_dict().get("total_obligation", {}).get("value", 0)
