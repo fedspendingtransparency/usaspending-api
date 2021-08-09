@@ -75,9 +75,7 @@ class Awards(AgencyBase):
     def get_obligations(self):
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.generate_query())
         search = TransactionSearch().filter(filter_query)
-        search.aggs.bucket(
-            "total_obligation", A("sum", field="generated_pragmatic_obligation")
-        )
+        search.aggs.bucket("total_obligation", A("sum", field="generated_pragmatic_obligation"))
         response = search.handle_execute()
         results = response.aggs.to_dict().get("total_obligation", {}).get("value", 0)
         return results
