@@ -7,6 +7,7 @@ from django.utils.functional import cached_property
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.dict_helpers import update_list_of_dictionaries
@@ -31,7 +32,7 @@ class AgencyBase(APIView):
     def _validate_params(self, param_values, params_to_validate=None):
         params_to_validate = params_to_validate or getattr(self, "params_to_validate", [])
         additional_models = getattr(self, "additional_models", [])
-
+        award_type_codes = sorted(award_type_mapping.keys())
         all_models = [
             {
                 "key": "fiscal_year",
@@ -48,6 +49,23 @@ class AgencyBase(APIView):
                 "max": 12,
             },
             {"key": "filter", "name": "filter", "type": "text", "text_type": "search"},
+            {
+                "key": "agency_type",
+                "name": "agency_type",
+                "type": "enum",
+                "enum_values": ["awarding", "funding"],
+                "optional": True,
+                "default": "awarding",
+            },
+            {
+                "key": "award_type_codes",
+                "name": "award_type_codes",
+                "type": "array",
+                "array_type": "enum",
+                "enum_values": award_type_codes,
+                "optional": True,
+                "default": award_type_codes,
+            },
         ]
         all_models = update_list_of_dictionaries(all_models, additional_models, "key")
 
@@ -120,6 +138,14 @@ class AgencyBase(APIView):
     @property
     def filter(self):
         return self._query_params.get("filter")
+
+    @property
+    def agency_type(self):
+        return self._query_params.get("agency_type")
+
+    @property
+    def award_type_codes(self):
+        return self._query_params.get("award_type_codes")
 
     @property
     def standard_response_messages(self):

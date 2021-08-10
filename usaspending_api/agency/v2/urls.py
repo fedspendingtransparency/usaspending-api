@@ -11,6 +11,7 @@ from usaspending_api.agency.v2.views.obligations_by_award_category import Obliga
 from usaspending_api.agency.v2.views.program_activity_count import ProgramActivityCount
 from usaspending_api.agency.v2.views.program_activity_list import ProgramActivityList
 from usaspending_api.agency.v2.views.recipients import RecipientList
+from usaspending_api.agency.v2.views.new_award_count import NewAwardCount
 
 urlpatterns = [
     re_path(
@@ -18,6 +19,7 @@ urlpatterns = [
         include(
             [
                 path("", AgencyOverview.as_view()),
+                path("award/new/count/", NewAwardCount.as_view()),
                 path("budget_function/", BudgetFunctionList.as_view()),
                 path("budget_function/count/", BudgetFunctionCount.as_view()),
                 path("budgetary_resources/", BudgetaryResources.as_view()),
