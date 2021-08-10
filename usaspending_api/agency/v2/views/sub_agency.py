@@ -150,9 +150,15 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             "total_office_obligations", office_obligation_agg
         ).metric(
             "office_info", office_dim_metadata
-        ).bucket("office_award_count", new_award_filter).metric("office_award_value", new_award_agg)
+        ).bucket(
+            "office_award_count", new_award_filter
+        ).metric(
+            "office_award_value", new_award_agg
+        )
 
-        search.aggs["subtier_agencies"].bucket("agency_award_count", A("filter", term={"award_fiscal_year": self.fiscal_year})).metric("agency_award_value",A("cardinality", field="award_id"))
+        search.aggs["subtier_agencies"].bucket(
+            "agency_award_count", A("filter", term={"award_fiscal_year": self.fiscal_year})
+        ).metric("agency_award_value", A("cardinality", field="award_id"))
         search.update_from_dict({"size": 0})
         response = search.handle_execute()
         return response
