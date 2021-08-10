@@ -1,11 +1,11 @@
-from django.db.models import Sum, Q
 from django.utils.functional import cached_property
 from elasticsearch_dsl import A
 from rest_framework.request import Request
 from rest_framework.response import Response
-from typing import Any, List
+from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from fiscalyear import FiscalYear
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
@@ -25,8 +25,8 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         super().__init__(*args, **kwargs)
         self.additional_models = [
             {
-                "name": "award_type",
-                "key": "award_type",
+                "name": "award_type_codes",
+                "key": "award_type_codes",
                 "type": "array",
                 "array_type": "enum",
                 "enum_values": list(award_type_mapping.keys()) + ["no intersection"],
@@ -40,27 +40,31 @@ class SubAgencyList(PaginationMixin, AgencyBase):
                 "default": "awarding",
             },
         ]
-        self.params_to_validate = ["fiscal_year", "agency_type", "award_type", "order", "sort"]
+        self.params_to_validate = ["fiscal_year", "agency_type", "award_type"]
 
     @cached_property
     def _query_params(self):
         query_params = self.request.query_params.copy()
-        if query_params.get("award_type") is not None:
-            query_params["award_type"] = query_params["award_type"].strip("[]").split(",")
+        if query_params.get("award_type_codes") is not None:
+            query_params["award_type_codes"] = query_params["award_type_codes"].strip("[]").split(",")
         return self._validate_params(query_params)
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.sortable_columns = ["name", "obligated_amount", "transaction_count", "new_award_count"]
-        self.default_sort_column = "obligated_amount"
-        results = self.get_sub_agency_list()
+        self.sortable_columns = ["subtier_agency_name", "total_obligations", "transaction_count", "new_award_count"]
+        self.default_sort_column = "total_obligations"
+        results = sorted(
+            self.get_sub_agency_list(),
+            key=lambda x: x.get(self.pagination.sort_key),
+            reverse=self.pagination.sort_order == "desc",
+        )
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
                 "page_metadata": page_metadata,
-                "results": results,
+                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
                 "messages": self.standard_response_messages,
             }
         )
@@ -79,8 +83,12 @@ class SubAgencyList(PaginationMixin, AgencyBase):
                     .get(f"{self._query_params.get('agency_type')}_subtier_agency_abbreviation"),
                     "total_obligations": bucket.get("total_subagency_obligations").get("value"),
                     "transaction_count": bucket.get("doc_count"),
-                    "new_award_count": 0,
-                    "children": self.format_child_response(bucket.get("offices").get("buckets"))
+                    "new_award_count": bucket.get("agency_award_count").get("agency_award_value").get("value"),
+                    "children": sorted(
+                        self.format_child_response(bucket.get("offices").get("buckets")),
+                        key=lambda x: x.get(self.pagination.sort_key),
+                        reverse=self.pagination.sort_order == "desc",
+                    ),
                 }
             )
         return response
@@ -88,25 +96,28 @@ class SubAgencyList(PaginationMixin, AgencyBase):
     def format_child_response(self, children):
         response = []
         for child in children:
-            response.append({
-                "office_name": child.get("office_info")
+            response.append(
+                {
+                    "office_name": child.get("office_info")
                     .get("hits")
                     .get("hits")[0]
                     .get("_source")
                     .get(f"{self._query_params.get('agency_type')}_office_name"),
-                "total_obligations": child.get("total_office_obligations").get("value"),
-                "transaction_count": child.get("doc_count"),
-                "new_award_count": 0,
-            })
+                    "total_obligations": child.get("total_office_obligations").get("value"),
+                    "transaction_count": child.get("doc_count"),
+                    "new_award_count": child.get("office_award_count").get("office_award_value").get("value"),
+                }
+            )
         return response
 
     def generate_query(self):
+        fiscal_year = FiscalYear(self.fiscal_year)
         return {
             "agencies": [
                 {"type": self._query_params.get("agency_type"), "tier": "toptier", "name": self.toptier_agency.name}
             ],
-            "time_period": [{"start_date": f"{self.fiscal_year - 1}-10-01", "end_date": f"{self.fiscal_year}-09-30"}],
-            "award_type_codes": self._query_params.get("award_type", []),
+            "time_period": [{"start_date": fiscal_year.start.date(), "end_date": fiscal_year.end.date()}],
+            "award_type_codes": self._query_params.get("award_type_codes", []),
         }
 
     def get_sub_agency_list(self):
@@ -128,13 +139,20 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         )
         subtier_agency_agg = A("terms", field=f"{self._query_params.get('agency_type')}_subtier_agency_name.keyword")
         office_agg = A("terms", field=f"{self._query_params.get('agency_type')}_office_code.keyword")
-        obligation_agg = A("sum", field="generated_pragmatic_obligation")
+        agency_obligation_agg = A("sum", field="generated_pragmatic_obligation")
+        office_obligation_agg = A("sum", field="generated_pragmatic_obligation")
+        new_award_filter = A("filter", term={"award_fiscal_year": self.fiscal_year})
+        new_award_agg = A("cardinality", field="award_id")
+
         search.aggs.bucket("subtier_agencies", subtier_agency_agg).metric(
-            "total_subagency_obligations", obligation_agg
+            "total_subagency_obligations", agency_obligation_agg
         ).metric("subagency_info", subagency_dim_metadata).bucket("offices", office_agg).metric(
-            "total_office_obligations", A("sum", field="generated_pragmatic_obligation")
+            "total_office_obligations", office_obligation_agg
         ).metric(
             "office_info", office_dim_metadata
-        )
+        ).bucket("office_award_count", new_award_filter).metric("office_award_value", new_award_agg)
+
+        search.aggs["subtier_agencies"].bucket("agency_award_count", A("filter", term={"award_fiscal_year": self.fiscal_year})).metric("agency_award_value",A("cardinality", field="award_id"))
+        search.update_from_dict({"size": 0})
         response = search.handle_execute()
         return response
