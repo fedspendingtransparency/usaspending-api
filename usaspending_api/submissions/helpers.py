@@ -200,21 +200,25 @@ def get_latest_submission_ids_for_fiscal_year(fiscal_year: int):
     return submission_ids
 
 
-def get_latest_submission_ids_for_each_fiscal_quarter(fiscal_years: List[int] = [], federal_account_id: int = None):
+def get_latest_submission_ids_for_each_fiscal_quarter(
+    is_file_a, fiscal_years: List[int] = [], federal_account_id: int = None
+):
     """
     Returns a list of submission_ids that consists of the latest submission_id for each quarter of a given
     fiscal year and federal account. This list will capture cases where a Reporting Agency might not submit
     in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
     """
 
+    if is_file_a:
+        federal_account_id_filter_obj = "appropriation_account_balances"
+    else:
+        federal_account_id_filter_obj = "financial_accounts_by_program_activity_object_classes"
+
     filters = {"submission_window__submission_reveal_date__lte": now()}
     if len(fiscal_years) > 0:
         filters["reporting_fiscal_year__in"] = fiscal_years
     if federal_account_id:
-        pass
-        filters[
-            "financial_accounts_by_program_activity_object_classes__treasury_account__federal_account_id"
-        ] = federal_account_id
+        filters[f"{federal_account_id_filter_obj}__treasury_account__federal_account_id"] = federal_account_id
 
     cte = With(
         SubmissionAttributes.objects.filter(**filters)

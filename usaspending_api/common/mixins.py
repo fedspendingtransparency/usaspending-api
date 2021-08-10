@@ -214,7 +214,7 @@ class FilterQuerysetMixin(object):
 
     def get_federal_account_id(self):
         """
-        Returns the federal_account_id from the list of query parameters. If parameter
+        Returns the federal_account_id from the list of filters. If the filter
         is not present, return None instead.
         """
         federal_account_id = None
@@ -226,7 +226,7 @@ class FilterQuerysetMixin(object):
 
     def get_fiscal_years(self):
         """
-        Returns the list of fiscal_years from the list of query parameters. If parameter
+        Returns the list of fiscal_years from the list of filters. If the filter
         is not present, return an empty list instead.
         """
         fiscal_years = []
