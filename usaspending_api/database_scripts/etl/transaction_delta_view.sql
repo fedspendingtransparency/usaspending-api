@@ -27,6 +27,7 @@ SELECT
   "fiscal_year",
   "award_certified_date",
   "award_fiscal_year",
+  "award_date_signed",
   "update_date",
   "award_update_date",
   "etl_update_date",

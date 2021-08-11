@@ -110,22 +110,21 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             )
         return response
 
-    def generate_query(self):
-        fiscal_year = FiscalYear(self.fiscal_year)
-        return {
-            "agencies": [
-                {"type": self._query_params.get("agency_type"), "tier": "toptier", "name": self.toptier_agency.name}
-            ],
-            "time_period": [{"start_date": fiscal_year.start.date(), "end_date": fiscal_year.end.date()}],
-            "award_type_codes": self._query_params.get("award_type_codes", []),
-        }
-
     def get_sub_agency_list(self):
         response = self.query_elasticsearch()
         return self.format_elasticsearch_results(response)
 
     def query_elasticsearch(self):
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.generate_query())
+        fiscal_year = FiscalYear(self.fiscal_year)
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
+            {
+                "agencies": [
+                    {"type": self._query_params.get("agency_type"), "tier": "toptier", "name": self.toptier_agency.name}
+                ],
+                "time_period": [{"start_date": fiscal_year.start.date(), "end_date": fiscal_year.end.date()}],
+                "award_type_codes": self._query_params.get("award_type_codes", []),
+            }
+        )
         search = TransactionSearch().filter(filter_query)
         subagency_dim_metadata = A(
             "top_hits",
@@ -141,7 +140,9 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         office_agg = A("terms", field=f"{self._query_params.get('agency_type')}_office_code.keyword")
         agency_obligation_agg = A("sum", field="generated_pragmatic_obligation")
         office_obligation_agg = A("sum", field="generated_pragmatic_obligation")
-        new_award_filter = A("filter", term={"award_fiscal_year": self.fiscal_year})
+        new_award_filter = A(
+            "filter", range={"award_date_signed": {"gte": fiscal_year.start.date(), "lte": fiscal_year.end.date()}}
+        )
         new_award_agg = A("cardinality", field="award_id")
 
         search.aggs.bucket("subtier_agencies", subtier_agency_agg).metric(
@@ -157,7 +158,8 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         )
 
         search.aggs["subtier_agencies"].bucket(
-            "agency_award_count", A("filter", term={"award_fiscal_year": self.fiscal_year})
+            "agency_award_count",
+            A("filter", range={"award_date_signed": {"gte": fiscal_year.start.date(), "lte": fiscal_year.end.date()}}),
         ).metric("agency_award_value", A("cardinality", field="award_id"))
         search.update_from_dict({"size": 0})
         response = search.handle_execute()
