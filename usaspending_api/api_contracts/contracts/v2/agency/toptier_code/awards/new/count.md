@@ -17,7 +17,6 @@ Return the count of new Awards under the Agency
     + Parameters
         + `toptier_code`: 086 (required, number)
             The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
-    + Attributes
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
         + `agency_type` (optional, enum[string])
