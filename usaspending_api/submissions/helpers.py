@@ -200,20 +200,9 @@ def get_latest_submission_ids_for_fiscal_year(fiscal_year: int):
     return submission_ids
 
 
-def get_latest_submission_ids_for_each_fiscal_quarter(
-    is_file_a, fiscal_years: List[int] = [], federal_account_id: int = None
+def _get_latest_submission_ids_for_each_fiscal_quarter(
+    federal_account_id_filter_obj, fiscal_years: List[int], federal_account_id: int
 ):
-    """
-    Returns a list of submission_ids that consists of the latest submission_id for each quarter of a given
-    fiscal year and federal account. This list will capture cases where a Reporting Agency might not submit
-    in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
-    """
-
-    if is_file_a:
-        federal_account_id_filter_obj = "appropriationaccountbalances"
-    else:
-        federal_account_id_filter_obj = "financialaccountsbyprogramactivityobjectclass"
-
     filters = {"submission_window__submission_reveal_date__lte": now()}
     if len(fiscal_years) > 0:
         filters["reporting_fiscal_year__in"] = fiscal_years
@@ -235,3 +224,29 @@ def get_latest_submission_ids_for_each_fiscal_quarter(
         .values_list("submission_id", flat=True)
     )
     return submission_ids
+
+
+def get_latest_submission_ids_for_each_fiscal_quarter_file_a(
+    fiscal_years: List[int] = [], federal_account_id: int = None
+):
+    """
+    Returns a list of submission_ids that consists of the latest submission_id containing file a data for each quarter
+    of a given fiscal year and federal account. This list will capture cases where a Reporting Agency might not submit
+    in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
+    """
+    return _get_latest_submission_ids_for_each_fiscal_quarter(
+        "appropriationaccountbalances", fiscal_years, federal_account_id
+    )
+
+
+def get_latest_submission_ids_for_each_fiscal_quarter_file_b(
+    fiscal_years: List[int] = [], federal_account_id: int = None
+):
+    """
+    Returns a list of submission_ids that consists of the latest submission_id containing file b data for each quarter
+    of a given fiscal year and federal account. This list will capture cases where a Reporting Agency might not submit
+    in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
+    """
+    return _get_latest_submission_ids_for_each_fiscal_quarter(
+        "financialaccountsbyprogramactivityobjectclass", fiscal_years, federal_account_id
+    )
