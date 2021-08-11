@@ -41,8 +41,9 @@ class TASBalancesQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
 
         submission_ids = get_latest_submission_ids_for_each_fiscal_quarter(True, fiscal_years, federal_account_id)
 
-        queryset = AppropriationAccountBalances.objects.filter(submission_id__in=submission_ids)
+        queryset = AppropriationAccountBalances.objects.all()
         queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = queryset.filter(submission_id__in=submission_ids)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)
         return queryset
@@ -80,10 +81,11 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
 
         submission_ids = get_latest_submission_ids_for_each_fiscal_quarter(False, fiscal_years, federal_account_id)
 
-        queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(submission_id__in=submission_ids)
+        queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
         queryset = self.filter_records(self.request, queryset=queryset)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)
+        queryset = queryset.filter(submission_id__in=submission_ids)
         return queryset
 
 

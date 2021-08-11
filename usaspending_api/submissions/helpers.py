@@ -212,7 +212,7 @@ def get_latest_submission_ids_for_each_fiscal_quarter(
     if is_file_a:
         federal_account_id_filter_obj = "appropriationaccountbalances"
     else:
-        federal_account_id_filter_obj = "financialaccountsbyprogramactivityobjectclasses"
+        federal_account_id_filter_obj = "financialaccountsbyprogramactivityobjectclass"
 
     filters = {"submission_window__submission_reveal_date__lte": now()}
     if len(fiscal_years) > 0:
