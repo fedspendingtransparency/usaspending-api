@@ -29,6 +29,7 @@ The currently available endpoints are listed in the following table.
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/](/api/v2/agency/012/)|GET| Returns agency overview information for USAspending.gov's Agency Details page for agencies that have ever awarded |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/awards/new/count/](/api/v2/agency/012/awards/new/count/)|GET| Returns a count of New Awards for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/](/api/v2/agency/012/budget_function/)|GET| Returns a list of Budget Functions and Budget Subfunctions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/count/](/api/v2/agency/012/budget_function/count/)|GET| Returns the count of Budget Functions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budgetary_resources/](/api/v2/agency/012/budgetary_resources/)|GET| Returns budgetary resources and obligations for the agency and fiscal year requested |

@@ -86,6 +86,8 @@ class AgencyBase(APIView):
     @cached_property
     def _query_params(self):
         query_params = self.request.query_params.copy()
+        if query_params.get("award_type_codes") is not None:
+            query_params["award_type_codes"] = query_params["award_type_codes"].strip("[]").split(",")
         return self._validate_params(query_params)
 
     @cached_property

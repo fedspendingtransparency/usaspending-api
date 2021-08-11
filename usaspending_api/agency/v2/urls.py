@@ -19,7 +19,7 @@ urlpatterns = [
         include(
             [
                 path("", AgencyOverview.as_view()),
-                path("award/new/count/", NewAwardCount.as_view()),
+                path("awards/new/count/", NewAwardCount.as_view()),
                 path("budget_function/", BudgetFunctionList.as_view()),
                 path("budget_function/count/", BudgetFunctionCount.as_view()),
                 path("budgetary_resources/", BudgetaryResources.as_view()),
