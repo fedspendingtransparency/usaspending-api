@@ -210,7 +210,7 @@ def get_latest_submission_ids_for_each_fiscal_quarter(
     """
 
     if is_file_a:
-        federal_account_id_filter_obj = "appropriation_account_balances"
+        federal_account_id_filter_obj = "appropriationaccountbalances"
     else:
         federal_account_id_filter_obj = "financial_accounts_by_program_activity_object_classes"
 

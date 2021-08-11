@@ -10,9 +10,7 @@ class AbstractAppropriationAccountBalances(DataSourceTrackedModel):
         db_column="treasury_account_identifier",
         related_name="account_balances",
     )
-    submission = models.ForeignKey(
-        "submissions.SubmissionAttributes", models.CASCADE, related_name="appropriation_account_balances"
-    )
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
