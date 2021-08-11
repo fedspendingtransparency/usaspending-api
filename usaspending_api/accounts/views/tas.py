@@ -39,8 +39,7 @@ class TASBalancesQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
-        fiscal_years = self.get_fiscal_years()
-        federal_account_id = self.get_federal_account_id()
+        federal_account_id, fiscal_years = self.get_submission_id_filters()
 
         submission_ids = get_latest_submission_ids_for_each_fiscal_quarter_file_a(fiscal_years, federal_account_id)
 
@@ -79,8 +78,7 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
-        fiscal_years = self.get_fiscal_years()
-        federal_account_id = self.get_federal_account_id()
+        federal_account_id, fiscal_years = self.get_submission_id_filters()
 
         submission_ids = get_latest_submission_ids_for_each_fiscal_quarter_file_b(fiscal_years, federal_account_id)
 
