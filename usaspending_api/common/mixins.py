@@ -227,6 +227,7 @@ class FilterQuerysetMixin(object):
                     fiscal_years = filter["value"]
         return federal_account_id, fiscal_years
 
+
 class AutocompleteResponseMixin(object):
     """Handles autocomplete responses and requests"""
 
