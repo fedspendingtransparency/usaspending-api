@@ -8,8 +8,7 @@ class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedMod
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True, db_index=True)
     submission = models.ForeignKey(
         "submissions.SubmissionAttributes",
-        models.CASCADE,
-        related_name="financial_accounts_by_program_activity_object_classes",
+        models.CASCADE
     )
     object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True, db_index=True)
     treasury_account = models.ForeignKey(
