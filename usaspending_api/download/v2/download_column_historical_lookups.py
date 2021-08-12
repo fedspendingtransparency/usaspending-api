@@ -1304,6 +1304,7 @@ query_paths = {
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
                 ("prime_awardee_parent_duns", "broker_subaward__ultimate_parent_unique_ide"),
                 ("prime_awardee_parent_uei", "award__latest_transaction__contract_data__ultimate_parent_uei"),
+                ("prime_awardee_parent_name", "broker_subaward__ultimate_parent_legal_enti"),
                 ("prime_awardee_country_code", "broker_subaward__legal_entity_country_code"),
                 ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "broker_subaward__legal_entity_address_line1"),
