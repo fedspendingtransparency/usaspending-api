@@ -20,13 +20,13 @@ Return the count of new Awards under the Agency
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
         + `agency_type` (optional, enum[string])
-            The agency type to pull the overview for.
+            The agency type to pull the count for.
             + Default: `awarding`
             + Members
                 + `awarding`
                 + `funding`
-        + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
-            + Default: `["02", "03", "04", "05", "07", "08", "10", "06", "09", "11", "A", "B", "C", "D", "IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]`
+        + `award_type_codes` (optional, AwardTypeCodes)
+            Comma-separated award type codes to pull the count for (e.g. `A,B,C,D` for all Contracts).
 
 + Response 200 (application/json)
     + Attributes

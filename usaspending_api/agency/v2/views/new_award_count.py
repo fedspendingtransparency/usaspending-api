@@ -37,10 +37,11 @@ class NewAwardCount(AgencyBase):
     def new_awards_count(self):
         fiscal_year = FiscalYear(self.fiscal_year)
         filters = {
-            "award_type_codes": self.award_type_codes,
             "agencies": [{"type": self.agency_type, "tier": "toptier", "toptier_code": self.toptier_code}],
             "time_period": [{"start_date": fiscal_year.start.date(), "end_date": fiscal_year.end.date()}],
         }
+        if self.award_type_codes:
+            filters["award_type_codes"] = self.award_type_codes
         options = {"gte_field": "date_signed", "lte_field": "date_signed"}
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **options)
         search = AwardSearch().filter(filter_query)

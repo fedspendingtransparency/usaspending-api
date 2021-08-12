@@ -3,7 +3,7 @@ import logging
 
 from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
-from typing import List
+from typing import List, Tuple
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
@@ -133,40 +133,45 @@ class _AwardTypeCodes(_Filter):
 class _Agencies(_Filter):
     underscore_name = "agencies"
 
+    @staticmethod
+    def _build_query_object(filter_value: dict, query_type: _QueryType) -> Tuple[str, ES_Q]:
+        agency_name = filter_value.get("name")
+        agency_toptier_code = filter_value.get("toptier_code")
+        agency_tier = filter_value["tier"]
+        agency_type = filter_value["type"]
+        toptier_id = filter_value.get("toptier_id")
+        toptier_name = filter_value.get("toptier_name")
+
+        query_object = ES_Q()
+
+        if query_type == _QueryType.AWARDS:
+            if agency_toptier_code:
+                query_object &= ES_Q(
+                    "match", **{f"{agency_type}_{agency_tier}_agency_code__keyword": agency_toptier_code}
+                )
+        elif query_type == _QueryType.TRANSACTIONS:
+            if toptier_id:
+                if toptier_name and toptier_name != "awarding":
+                    raise InvalidParameterException(
+                        "Incompatible parameters: `toptier_id` can only be used with `awarding` agency type."
+                    )
+                query_object &= ES_Q("match", **{"awarding_toptier_agency_id": toptier_id})
+
+        if agency_name:
+            query_object &= ES_Q("match", **{f"{agency_type}_{agency_tier}_agency_name__keyword": agency_name})
+
+        if agency_tier == "subtier" and toptier_name is not None:
+            query_object &= ES_Q("match", **{f"{agency_type}_toptier_agency_name__keyword": toptier_name})
+
+        return agency_type, query_object
+
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> List[ES_Q]:
         awarding_agency_query = []
         funding_agency_query = []
 
         for v in filter_values:
-            agency_name = v.get("name")
-            agency_toptier_code = v.get("toptier_code")
-            agency_tier = v["tier"]
-            agency_type = v["type"]
-            toptier_id = v.get("toptier_id")
-            toptier_name = v.get("toptier_name")
-
-            agency_query = ES_Q()
-
-            # Some aspects of this filter are accessible on only one Elasticsearch Index
-            if query_type == _QueryType.AWARDS:
-                if agency_toptier_code:
-                    agency_query &= ES_Q(
-                        "match", **{f"{agency_type}_{agency_tier}_agency_code__keyword": agency_toptier_code}
-                    )
-            elif query_type == _QueryType.TRANSACTIONS:
-                if toptier_id:
-                    if toptier_name and toptier_name != "awarding":
-                        raise InvalidParameterException(
-                            "Incompatible parameters: `toptier_id` can only be used with `awarding` agency type."
-                        )
-                    agency_query &= ES_Q("match", **{"awarding_toptier_agency_id": toptier_id})
-
-            if agency_name:
-                agency_query &= ES_Q("match", **{f"{agency_type}_{agency_tier}_agency_name__keyword": agency_name})
-
-            if agency_tier == "subtier" and toptier_name is not None:
-                agency_query &= ES_Q("match", **{f"{agency_type}_toptier_agency_name__keyword": toptier_name})
+            agency_type, agency_query = cls._build_query_object(v, query_type)
 
             if agency_type == "awarding":
                 awarding_agency_query.append(agency_query)

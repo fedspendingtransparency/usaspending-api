@@ -78,7 +78,7 @@ class TreasuryAccounts(_Filter):
     underscore_name = "treasury_account_components"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: list, query_type: _QueryType) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: list, query_type: _QueryType, **options) -> ES_Q:
         tas_codes_query = []
 
         for v in filter_values:

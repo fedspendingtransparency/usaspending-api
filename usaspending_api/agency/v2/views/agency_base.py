@@ -64,7 +64,6 @@ class AgencyBase(APIView):
                 "array_type": "enum",
                 "enum_values": award_type_codes,
                 "optional": True,
-                "default": award_type_codes,
             },
         ]
         all_models = update_list_of_dictionaries(all_models, additional_models, "key")
