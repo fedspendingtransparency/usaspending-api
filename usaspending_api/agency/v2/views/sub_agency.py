@@ -1,10 +1,8 @@
-from django.utils.functional import cached_property
 from elasticsearch_dsl import A
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from fiscalyear import FiscalYear
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
