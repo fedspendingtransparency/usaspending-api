@@ -51,7 +51,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.sortable_columns = ["subtier_agency_name", "total_obligations", "transaction_count", "new_award_count"]
+        self.sortable_columns = ["name", "total_obligations", "transaction_count", "new_award_count"]
         self.default_sort_column = "total_obligations"
         results = sorted(
             self.get_sub_agency_list(),
@@ -75,8 +75,8 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         for bucket in buckets:
             response.append(
                 {
-                    "subtier_agency_name": bucket.get("key"),
-                    "subtier_agency_abbreviation": bucket.get("subagency_info")
+                    "name": bucket.get("key"),
+                    "abbreviation": bucket.get("subagency_info")
                     .get("hits")
                     .get("hits")[0]
                     .get("_source")
@@ -98,7 +98,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         for child in children:
             response.append(
                 {
-                    "office_name": child.get("office_info")
+                    "name": child.get("office_info")
                     .get("hits")
                     .get("hits")[0]
                     .get("_source")
