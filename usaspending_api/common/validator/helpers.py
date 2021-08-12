@@ -90,7 +90,6 @@ def validate_array(rule):
     rule["min"] = rule.get("min") or 1
     rule["max"] = rule.get("max") or MAX_ITEMS
     value = rule["value"]
-    print(type(value))
     if type(value) is not list:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
     _check_max(rule)

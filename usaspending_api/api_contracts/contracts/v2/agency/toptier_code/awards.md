@@ -1,14 +1,14 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Agency Awards [/api/v2/agency/{toptier_code}/awards/{?fiscal_year,agency_type,award_type}]
+# Agency Awards [/api/v2/agency/{toptier_code}/awards/{?fiscal_year,agency_type,award_type_codes}]
 
 Returns the number of transactions and award obligations for a given agency and fiscal year.
 
 ## GET
 
 + Parameters
-    + `toptier_code`: `086` (required, string)
+    + `toptier_code`: `020` (required, string)
         The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
     + `fiscal_year` (optional, number)
         The desired appropriations fiscal year. Defaults to the current FY.
@@ -18,7 +18,8 @@ Returns the number of transactions and award obligations for a given agency and 
         + Members
             + `awarding`
             + `funding`
-    + `award_type` (optional, FilterObjectAwardTypes)
+    + `award_type_codes` (optional, AwardTypes)
+        Filters the results by the provided award types. Defaults to all award types
 
 + Response 200 (application/json)
     + Attributes
@@ -30,6 +31,7 @@ Returns the number of transactions and award obligations for a given agency and 
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
     + Body
+
             {
                 "toptier_code": "020",
                 "fiscal_year": 2021,
@@ -39,7 +41,7 @@ Returns the number of transactions and award obligations for a given agency and 
             }
 
 
-### FilterObjectAwardTypes (array)
+### AwardTypes (array)
 List of filterable award types
 
 #### Sample

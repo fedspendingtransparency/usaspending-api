@@ -52,6 +52,7 @@ def transaction_search_1():
         federal_action_obligation=101,
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
+        type="A",
     )
 
     mommy.make(
@@ -60,6 +61,7 @@ def transaction_search_1():
         federal_action_obligation=102,
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
+        type="IDV_A",
     )
 
     mommy.make(
@@ -68,6 +70,7 @@ def transaction_search_1():
         federal_action_obligation=103,
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
+        type="02",
     )
 
     mommy.make(
@@ -76,6 +79,7 @@ def transaction_search_1():
         federal_action_obligation=104,
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
+        type="08",
     )
 
     mommy.make(
@@ -84,6 +88,7 @@ def transaction_search_1():
         federal_action_obligation=105,
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
+        type="10",
     )
 
     mommy.make(
@@ -101,6 +106,7 @@ def transaction_search_1():
         federal_action_obligation=300,
         action_date="2020-04-01",
         awarding_agency=awarding_agency_1,
+        type="IDV_A",
     )
 
     # Alternate Agency
@@ -110,6 +116,7 @@ def transaction_search_1():
         federal_action_obligation=400,
         action_date="2021-04-01",
         awarding_agency=awarding_agency_2,
+        type="IDV_C",
     )
 
 
@@ -129,6 +136,32 @@ def test_all_categories(client, monkeypatch, transaction_search_1, elasticsearch
         "messages": [],
     }
 
+    assert resp.json() == expected_results
+
+
+@pytest.mark.django_db
+def test_award_categories(client, monkeypatch, transaction_search_1, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.get(url.format(toptier_code="001", filter="?fiscal_year=2021&award_type_codes=[A]"))
+
+    expected_results = {
+        "fiscal_year": 2021,
+        "toptier_code": "001",
+        "transaction_count": 1,
+        "obligations": 101.0,
+        "messages": [],
+    }
+    assert resp.json() == expected_results
+
+    resp = client.get(url.format(toptier_code="001", filter="?fiscal_year=2021&award_type_codes=[10]"))
+
+    expected_results = {
+        "fiscal_year": 2021,
+        "toptier_code": "001",
+        "transaction_count": 1,
+        "obligations": 105.0,
+        "messages": [],
+    }
     assert resp.json() == expected_results
 
 
