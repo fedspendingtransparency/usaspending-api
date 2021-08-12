@@ -44,7 +44,6 @@ def transaction_search_1():
     award_grant = mommy.make("awards.Award", category="grant")
     award_loan = mommy.make("awards.Award", category="loans")
     award_dp = mommy.make("awards.Award", category="direct payment")
-    award_bc = mommy.make("awards.Award", category="bad_cat")
 
     mommy.make(
         TransactionNormalized,
@@ -91,14 +90,6 @@ def transaction_search_1():
         type="10",
     )
 
-    mommy.make(
-        TransactionNormalized,
-        award=award_bc,
-        federal_action_obligation=106,
-        action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
-    )
-
     # Alternate Year
     mommy.make(
         TransactionNormalized,
@@ -131,8 +122,8 @@ def test_all_categories(client, monkeypatch, transaction_search_1, elasticsearch
     expected_results = {
         "fiscal_year": 2021,
         "toptier_code": "001",
-        "transaction_count": 6,
-        "obligations": 621.0,
+        "transaction_count": 5,
+        "obligations": 411.0,
         "messages": [],
     }
 
