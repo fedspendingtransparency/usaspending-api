@@ -19,6 +19,7 @@ urlpatterns = [
         include(
             [
                 path("", AgencyOverview.as_view()),
+                path("awards/", Awards.as_view()),
                 path("budget_function/", BudgetFunctionList.as_view()),
                 path("budget_function/count/", BudgetFunctionCount.as_view()),
                 path("budgetary_resources/", BudgetaryResources.as_view()),
@@ -30,7 +31,6 @@ urlpatterns = [
                 path("program_activity/", ProgramActivityList.as_view()),
                 path("program_activity/count/", ProgramActivityCount.as_view()),
                 path("recipients/", RecipientList.as_view()),
-                path("awards/", Awards.as_view()),
             ]
         ),
     )
