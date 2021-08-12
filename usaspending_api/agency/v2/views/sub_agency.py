@@ -23,31 +23,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.additional_models = [
-            {
-                "name": "award_type_codes",
-                "key": "award_type_codes",
-                "type": "array",
-                "array_type": "enum",
-                "enum_values": list(award_type_mapping.keys()) + ["no intersection"],
-                "optional": True,
-            },
-            {
-                "name": "agency_type",
-                "key": "agency_type",
-                "type": "enum",
-                "enum_values": ("awarding", "funding"),
-                "default": "awarding",
-            },
-        ]
         self.params_to_validate = ["fiscal_year", "agency_type", "award_type"]
-
-    @cached_property
-    def _query_params(self):
-        query_params = self.request.query_params.copy()
-        if query_params.get("award_type_codes") is not None:
-            query_params["award_type_codes"] = query_params["award_type_codes"].strip("[]").split(",")
-        return self._validate_params(query_params)
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -80,7 +56,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
                     .get("hits")
                     .get("hits")[0]
                     .get("_source")
-                    .get(f"{self._query_params.get('agency_type')}_subtier_agency_abbreviation"),
+                    .get(f"{self.agency_type}_subtier_agency_abbreviation"),
                     "total_obligations": bucket.get("total_subagency_obligations").get("value"),
                     "transaction_count": bucket.get("doc_count"),
                     "new_award_count": bucket.get("agency_award_count").get("agency_award_value").get("value"),
@@ -102,7 +78,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
                     .get("hits")
                     .get("hits")[0]
                     .get("_source")
-                    .get(f"{self._query_params.get('agency_type')}_office_name"),
+                    .get(f"{self.agency_type}_office_name"),
                     "total_obligations": child.get("total_office_obligations").get("value"),
                     "transaction_count": child.get("doc_count"),
                     "new_award_count": child.get("office_award_count").get("office_award_value").get("value"),
@@ -118,9 +94,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         fiscal_year = FiscalYear(self.fiscal_year)
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
             {
-                "agencies": [
-                    {"type": self._query_params.get("agency_type"), "tier": "toptier", "name": self.toptier_agency.name}
-                ],
+                "agencies": [{"type": self.agency_type, "tier": "toptier", "name": self.toptier_agency.name}],
                 "time_period": [{"start_date": fiscal_year.start.date(), "end_date": fiscal_year.end.date()}],
                 "award_type_codes": self._query_params.get("award_type_codes", []),
             }
@@ -129,15 +103,15 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         subagency_dim_metadata = A(
             "top_hits",
             size=1,
-            _source={"includes": [f"{self._query_params.get('agency_type')}_subtier_agency_abbreviation"]},
+            _source={"includes": [f"{self.agency_type}_subtier_agency_abbreviation"]},
         )
         office_dim_metadata = A(
             "top_hits",
             size=1,
-            _source={"includes": [f"{self._query_params.get('agency_type')}_office_name"]},
+            _source={"includes": [f"{self.agency_type}_office_name"]},
         )
-        subtier_agency_agg = A("terms", field=f"{self._query_params.get('agency_type')}_subtier_agency_name.keyword")
-        office_agg = A("terms", field=f"{self._query_params.get('agency_type')}_office_code.keyword")
+        subtier_agency_agg = A("terms", field=f"{self.agency_type}_subtier_agency_name.keyword")
+        office_agg = A("terms", field=f"{self.agency_type}_office_code.keyword")
         agency_obligation_agg = A("sum", field="generated_pragmatic_obligation")
         office_obligation_agg = A("sum", field="generated_pragmatic_obligation")
         new_award_filter = A(

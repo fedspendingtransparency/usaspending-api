@@ -188,14 +188,14 @@ def test_all_categories(client, monkeypatch, transaction_search_1, elasticsearch
 
     expected_results = [
         {
-            "subtier_agency_name": "Sub-Agency 1",
-            "subtier_agency_abbreviation": "A1",
+            "name": "Sub-Agency 1",
+            "abbreviation": "A1",
             "total_obligations": 515,
             "transaction_count": 5,
             "new_award_count": 4,
             "children": [
-                {"office_name": "Office 2", "total_obligations": 312.0, "transaction_count": 3, "new_award_count": 3},
-                {"office_name": "Office 1", "total_obligations": 203.0, "transaction_count": 2, "new_award_count": 1},
+                {"name": "Office 2", "total_obligations": 312.0, "transaction_count": 3, "new_award_count": 3},
+                {"name": "Office 1", "total_obligations": 203.0, "transaction_count": 2, "new_award_count": 1},
             ],
         }
     ]
@@ -211,13 +211,13 @@ def test_alternate_year(client, monkeypatch, transaction_search_1, elasticsearch
 
     expected_results = [
         {
-            "subtier_agency_name": "Sub-Agency 1",
-            "subtier_agency_abbreviation": "A1",
+            "name": "Sub-Agency 1",
+            "abbreviation": "A1",
             "total_obligations": 300.0,
             "transaction_count": 1,
             "new_award_count": 1,
             "children": [
-                {"office_name": "Office 1", "total_obligations": 300.0, "transaction_count": 1, "new_award_count": 1}
+                {"name": "Office 1", "total_obligations": 300.0, "transaction_count": 1, "new_award_count": 1}
             ],
         }
     ]
@@ -233,13 +233,13 @@ def test_alternate_agency(client, monkeypatch, transaction_search_1, elasticsear
 
     expected_results = [
         {
-            "subtier_agency_name": "Sub-Agency 2",
-            "subtier_agency_abbreviation": "A2",
+            "name": "Sub-Agency 2",
+            "abbreviation": "A2",
             "total_obligations": 400.0,
             "transaction_count": 1,
-            "new_award_count": 1,
+            "new_award_count": 0,
             "children": [
-                {"office_name": "Office 2", "total_obligations": 400.0, "transaction_count": 1, "new_award_count": 1}
+                {"name": "Office 2", "total_obligations": 400.0, "transaction_count": 1, "new_award_count": 0}
             ],
         }
     ]
