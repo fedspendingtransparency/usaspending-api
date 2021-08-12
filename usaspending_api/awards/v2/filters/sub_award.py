@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from django.db.models import Q, Subquery
+from django.db.models import Q, Exists, OuterRef
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
@@ -231,11 +231,16 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "program_numbers":
             if len(value) != 0:
-                queryset &= SubawardView.objects.filter(
-                    award__in=Subquery(
-                        TransactionNormalized.objects.filter(assistance_data__cfda_number__in=value).values("award_id")
+                # TODO: Refactor the use of Exists once Django is upgraded to version 3.x
+                # Versions <3.0 of Django require that uses of Exist in the filter must be annotated
+                queryset = queryset.annotate(
+                    has_cfda=Exists(
+                        TransactionNormalized.objects.filter(
+                            award_id=OuterRef("award_id"),
+                            assistance_data__cfda_number__in=value,
+                        ).values("award_id")
                     )
-                )
+                ).filter(has_cfda=True)
 
         elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
             or_queryset = Q()
