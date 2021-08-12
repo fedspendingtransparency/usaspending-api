@@ -40,17 +40,18 @@ Returns the number of transactions and award obligations for a given agency and 
                 "messages": []
             }
 
+# Data Structures
 
-### AwardTypes (array)
+## AwardTypes (array)
 List of filterable award types
 
-#### Sample
+### Sample
 - `A`
 - `B`
 - `C`
 - `D`
 
-#### Default
+### Default
 - `02`
 - `03`
 - `04`
