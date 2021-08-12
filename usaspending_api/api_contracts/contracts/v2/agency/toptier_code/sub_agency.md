@@ -28,11 +28,12 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
             + `asc`
     + `sort` (optional, enum[string])
         Optional parameter indicating what value results should be sorted by.
-        + Default: `obligated_amount`
+        + Default: `total_obligations`
         + Members
             + `name`
             + `total_obligations`
-            + 
+            + `transaction_count`
+            + `new_award_count`
     + `page` (optional, number)
         The page number that is currently returned.
         + Default: 1
