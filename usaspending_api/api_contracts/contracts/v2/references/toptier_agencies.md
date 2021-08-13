@@ -27,8 +27,8 @@ This endpoint returns a list of toptier agencies, their budgetary resources, and
 + `agency_id` (required, number)
     `agency_id` is the unique USAspending.gov identifier for the agency. You will need to use this ID in other endpoints when requesting detailed information about this specific agency.
 + `agency_name` (required, string)
-+ `url_name` (required, string)
-    `url_name` is the "URL-friendly" agency name (lower-case, hyphenated words)
++ `agency_slug` (required, string)
+    `agency_slug` is the "URL-friendly" agency name (lower-case, hyphenated words)
 + `budget_authority_amount` (required, number)
 + `congressional_justification_url` (required, string, nullable)
 + `current_total_budget_authority_amount` (required, number)
