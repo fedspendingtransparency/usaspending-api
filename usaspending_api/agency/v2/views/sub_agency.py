@@ -21,7 +21,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.params_to_validate = ["fiscal_year", "agency_type", "award_type"]
+        self.params_to_validate = ["fiscal_year", "agency_type", "award_type_codes"]
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -55,7 +55,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
                     .get("hits")[0]
                     .get("_source")
                     .get(f"{self.agency_type}_subtier_agency_abbreviation"),
-                    "total_obligations": bucket.get("total_subagency_obligations").get("value"),
+                    "total_obligations": round(bucket.get("total_subagency_obligations").get("value"), 2),
                     "transaction_count": bucket.get("doc_count"),
                     "new_award_count": bucket.get("agency_award_count").get("agency_award_value").get("value"),
                     "children": sorted(
@@ -77,7 +77,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
                     .get("hits")[0]
                     .get("_source")
                     .get(f"{self.agency_type}_office_name"),
-                    "total_obligations": child.get("total_office_obligations").get("value"),
+                    "total_obligations": round(child.get("total_office_obligations").get("value"), 2),
                     "transaction_count": child.get("doc_count"),
                     "new_award_count": child.get("office_award_count").get("office_award_value").get("value"),
                 }
@@ -115,7 +115,25 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         new_award_filter = A(
             "filter", range={"award_date_signed": {"gte": fiscal_year.start.date(), "lte": fiscal_year.end.date()}}
         )
-        new_award_agg = A("cardinality", field="award_id")
+        # new_award_agg = A("cardinality", field="award_id")
+
+        agency_new_award_agg = A(
+            "scripted_metric",
+            params={"fieldName": "award_id"},
+            init_script="state.list = []",
+            map_script="if(doc[params.fieldName] != null) state.list.add(doc[params.fieldName].value);",
+            combine_script="return state.list;",
+            reduce_script="Map uniqueValueMap = new HashMap(); int count = 0;for(shardList in states) {if(shardList != null) { for(key in shardList) {if(!uniqueValueMap.containsKey(key)) {count +=1;uniqueValueMap.put(key, key); }}}}  return count;",
+        )
+
+        office_new_award_agg = A(
+            "scripted_metric",
+            params={"fieldName": "award_id"},
+            init_script="state.list = []",
+            map_script="if(doc[params.fieldName] != null) state.list.add(doc[params.fieldName].value);",
+            combine_script="return state.list;",
+            reduce_script="Map uniqueValueMap = new HashMap(); int count = 0;for(shardList in states) {if(shardList != null) { for(key in shardList) {if(!uniqueValueMap.containsKey(key)) {count +=1;uniqueValueMap.put(key, key); }}}}  return count;",
+        )
 
         search.aggs.bucket("subtier_agencies", subtier_agency_agg).metric(
             "total_subagency_obligations", agency_obligation_agg
@@ -126,13 +144,13 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         ).bucket(
             "office_award_count", new_award_filter
         ).metric(
-            "office_award_value", new_award_agg
+            "office_award_value", office_new_award_agg
         )
 
         search.aggs["subtier_agencies"].bucket(
             "agency_award_count",
             A("filter", range={"award_date_signed": {"gte": fiscal_year.start.date(), "lte": fiscal_year.end.date()}}),
-        ).metric("agency_award_value", A("cardinality", field="award_id"))
+        ).metric("agency_award_value", agency_new_award_agg)
         search.update_from_dict({"size": 0})
         response = search.handle_execute()
         return response

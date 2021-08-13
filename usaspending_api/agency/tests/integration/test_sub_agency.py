@@ -81,13 +81,17 @@ def transaction_search_1():
         federal_action_obligation=101,
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
+        funding_agency=awarding_agency_1,
         is_fpds=True,
+        type="A",
     )
     mommy.make(
         TransactionFPDS,
         transaction=contract_transaction,
         awarding_office_name="Office 1",
         awarding_office_code="0001",
+        funding_office_name="Office 2",
+        funding_office_code="0002",
     )
 
     idv_transaction = mommy.make(
@@ -97,6 +101,7 @@ def transaction_search_1():
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
         is_fpds=True,
+        type="IDV_A",
     )
     mommy.make(
         TransactionFPDS,
@@ -112,6 +117,7 @@ def transaction_search_1():
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
         is_fpds=False,
+        type="04",
     )
     mommy.make(
         TransactionFABS,
@@ -126,6 +132,7 @@ def transaction_search_1():
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
         is_fpds=False,
+        type="09",
     )
     mommy.make(
         TransactionFABS,
@@ -140,6 +147,7 @@ def transaction_search_1():
         action_date="2021-04-01",
         awarding_agency=awarding_agency_1,
         is_fpds=False,
+        type="10",
     )
     mommy.make(
         TransactionFABS,
@@ -240,6 +248,50 @@ def test_alternate_agency(client, monkeypatch, transaction_search_1, elasticsear
             "new_award_count": 0,
             "children": [
                 {"name": "Office 2", "total_obligations": 400.0, "transaction_count": 1, "new_award_count": 0}
+            ],
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+
+@pytest.mark.django_db
+def test_award_types(client, monkeypatch, transaction_search_1, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.get(url.format(toptier_code="001", filter="?fiscal_year=2021&award_type_codes=[A]"))
+    assert resp.status_code == status.HTTP_200_OK
+
+    expected_results = [
+        {
+            "name": "Sub-Agency 1",
+            "abbreviation": "A1",
+            "total_obligations": 101.0,
+            "transaction_count": 1,
+            "new_award_count": 1,
+            "children": [
+                {"name": "Office 1", "total_obligations": 101.0, "transaction_count": 1, "new_award_count": 1}
+            ],
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+
+@pytest.mark.django_db
+def test_agency_types(client, monkeypatch, transaction_search_1, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.get(url.format(toptier_code="001", filter="?fiscal_year=2021&agency_type=funding"))
+    assert resp.status_code == status.HTTP_200_OK
+
+    expected_results = [
+        {
+            "name": "Sub-Agency 1",
+            "abbreviation": "A1",
+            "total_obligations": 101.0,
+            "transaction_count": 1,
+            "new_award_count": 1,
+            "children": [
+                {"name": "Office 2", "total_obligations": 101.0, "transaction_count": 1, "new_award_count": 1}
             ],
         }
     ]
