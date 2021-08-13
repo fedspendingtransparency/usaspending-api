@@ -12,6 +12,7 @@ from usaspending_api.agency.v2.views.program_activity_count import ProgramActivi
 from usaspending_api.agency.v2.views.program_activity_list import ProgramActivityList
 from usaspending_api.agency.v2.views.recipients import RecipientList
 from usaspending_api.agency.v2.views.sub_agency import SubAgencyList
+from usaspending_api.agency.v2.views.awards import Awards
 
 urlpatterns = [
     re_path(
@@ -19,6 +20,7 @@ urlpatterns = [
         include(
             [
                 path("", AgencyOverview.as_view()),
+                path("awards/", Awards.as_view()),
                 path("budget_function/", BudgetFunctionList.as_view()),
                 path("budget_function/count/", BudgetFunctionCount.as_view()),
                 path("budgetary_resources/", BudgetaryResources.as_view()),
