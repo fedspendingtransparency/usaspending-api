@@ -141,6 +141,14 @@ class AgencyBase(APIView):
         return self._query_params.get("filter")
 
     @property
+    def agency_type(self):
+        return self._query_params.get("agency_type")
+
+    @property
+    def award_type_codes(self):
+        return self._query_params.get("award_type_codes")
+
+    @property
     def standard_response_messages(self):
         return [get_account_data_time_period_message()] if self.fiscal_year < 2017 else []
 

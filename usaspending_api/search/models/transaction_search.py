@@ -29,6 +29,7 @@ class TransactionSearch(models.Model):
     award_fiscal_year = models.IntegerField(null=True)
     update_date = models.DateTimeField(null=True)
     award_update_date = models.DateTimeField(null=True)
+    award_date_signed = models.DateTimeField(null=True)
     etl_update_date = models.DateTimeField(null=True)
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
