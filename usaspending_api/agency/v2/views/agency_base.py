@@ -7,6 +7,7 @@ from django.utils.functional import cached_property
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.dict_helpers import update_list_of_dictionaries
@@ -48,6 +49,21 @@ class AgencyBase(APIView):
                 "max": 12,
             },
             {"key": "filter", "name": "filter", "type": "text", "text_type": "search"},
+            {
+                "name": "award_type_codes",
+                "key": "award_type_codes",
+                "type": "array",
+                "array_type": "enum",
+                "enum_values": list(award_type_mapping.keys()) + ["no intersection"],
+                "optional": True,
+            },
+            {
+                "name": "agency_type",
+                "key": "agency_type",
+                "type": "enum",
+                "enum_values": ("awarding", "funding"),
+                "default": "awarding",
+            },
         ]
         all_models = update_list_of_dictionaries(all_models, additional_models, "key")
 
@@ -68,6 +84,9 @@ class AgencyBase(APIView):
     @cached_property
     def _query_params(self):
         query_params = self.request.query_params.copy()
+        # ensure that `award_type_codes` is an array and not a string
+        if query_params.get("award_type_codes") is not None:
+            query_params["award_type_codes"] = query_params["award_type_codes"].strip("[]").split(",")
         return self._validate_params(query_params)
 
     @cached_property
