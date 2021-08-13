@@ -115,8 +115,6 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         new_award_filter = A(
             "filter", range={"award_date_signed": {"gte": fiscal_year.start.date(), "lte": fiscal_year.end.date()}}
         )
-        # new_award_agg = A("cardinality", field="award_id")
-
         agency_new_award_agg = A(
             "scripted_metric",
             params={"fieldName": "award_id"},
