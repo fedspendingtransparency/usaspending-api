@@ -219,6 +219,7 @@ def _get_latest_submission_ids_for_each_fiscal_quarter(
             SubmissionAttributes,
             toptier_code=cte.col.toptier_code,
             reporting_fiscal_period=cte.col.latest_fiscal_period,
+            reporting_fiscal_year=cte.col.reporting_fiscal_year,
         )
         .with_cte(cte)
         .values_list("submission_id", flat=True)
