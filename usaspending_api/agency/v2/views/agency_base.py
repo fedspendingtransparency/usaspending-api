@@ -32,7 +32,7 @@ class AgencyBase(APIView):
     def _validate_params(self, param_values, params_to_validate=None):
         params_to_validate = params_to_validate or getattr(self, "params_to_validate", [])
         additional_models = getattr(self, "additional_models", [])
-
+        award_type_codes = sorted(award_type_mapping.keys())
         all_models = [
             {
                 "key": "fiscal_year",
@@ -50,19 +50,20 @@ class AgencyBase(APIView):
             },
             {"key": "filter", "name": "filter", "type": "text", "text_type": "search"},
             {
+                "key": "agency_type",
+                "name": "agency_type",
+                "type": "enum",
+                "enum_values": ["awarding", "funding"],
+                "optional": True,
+                "default": "awarding",
+            },
+            {
                 "name": "award_type_codes",
                 "key": "award_type_codes",
                 "type": "array",
                 "array_type": "enum",
-                "enum_values": list(award_type_mapping.keys()) + ["no intersection"],
+                "enum_values": award_type_codes + ["no intersection"],
                 "optional": True,
-            },
-            {
-                "name": "agency_type",
-                "key": "agency_type",
-                "type": "enum",
-                "enum_values": ("awarding", "funding"),
-                "default": "awarding",
             },
         ]
         all_models = update_list_of_dictionaries(all_models, additional_models, "key")
