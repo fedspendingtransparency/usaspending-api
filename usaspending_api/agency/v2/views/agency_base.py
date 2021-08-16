@@ -58,11 +58,11 @@ class AgencyBase(APIView):
                 "default": "awarding",
             },
             {
-                "key": "award_type_codes",
                 "name": "award_type_codes",
+                "key": "award_type_codes",
                 "type": "array",
                 "array_type": "enum",
-                "enum_values": award_type_codes,
+                "enum_values": award_type_codes + ["no intersection"],
                 "optional": True,
             },
         ]
@@ -85,6 +85,7 @@ class AgencyBase(APIView):
     @cached_property
     def _query_params(self):
         query_params = self.request.query_params.copy()
+        # ensure that `award_type_codes` is an array and not a string
         if query_params.get("award_type_codes") is not None:
             query_params["award_type_codes"] = query_params["award_type_codes"].strip("[]").split(",")
         return self._validate_params(query_params)
