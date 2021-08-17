@@ -17,7 +17,7 @@ def test_all_categories(client, monkeypatch, sub_agency_data_1, elasticsearch_tr
         "fiscal_year": 2021,
         "sub_agency_count": 1,
         "office_count": 2,
-        "messages": []
+        "messages": [],
     }
 
     assert resp.status_code == status.HTTP_200_OK
@@ -34,7 +34,7 @@ def test_alternate_year(client, monkeypatch, sub_agency_data_1, elasticsearch_tr
         "fiscal_year": 2020,
         "sub_agency_count": 1,
         "office_count": 1,
-        "messages": []
+        "messages": [],
     }
 
     assert resp.status_code == status.HTTP_200_OK
@@ -51,7 +51,7 @@ def test_alternate_agency(client, monkeypatch, sub_agency_data_1, elasticsearch_
         "fiscal_year": 2021,
         "sub_agency_count": 1,
         "office_count": 1,
-        "messages": []
+        "messages": [],
     }
 
     assert resp.status_code == status.HTTP_200_OK
@@ -69,7 +69,7 @@ def test_award_types(client, monkeypatch, sub_agency_data_1, elasticsearch_trans
         "fiscal_year": 2021,
         "sub_agency_count": 1,
         "office_count": 1,
-        "messages": []
+        "messages": [],
     }
 
     assert resp.status_code == status.HTTP_200_OK
@@ -87,7 +87,7 @@ def test_agency_types(client, monkeypatch, sub_agency_data_1, elasticsearch_tran
         "fiscal_year": 2021,
         "sub_agency_count": 1,
         "office_count": 1,
-        "messages": []
+        "messages": [],
     }
 
     assert resp.status_code == status.HTTP_200_OK
