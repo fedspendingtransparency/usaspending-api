@@ -38,8 +38,8 @@ class UsaspendingPagination(BasePagination):
         return list(queryset[self.offset : self.offset + self.limit])
 
     def next_page_exists(self, queryset):
-        # If our next page has a count > 0, return true
-        return queryset[(self.offset + self.limit) : (self.offset + self.limit * 2)].exists()
+        # If there are more results than the number of records returned so far, return True
+        return (self.offset + self.limit) < self.count
 
     def get_limit(self, request):
         # Check both POST and GET parameters for limit
