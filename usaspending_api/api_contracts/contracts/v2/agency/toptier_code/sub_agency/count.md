@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Sub-Agency Count [/api/v2/agency/{toptier_code}/awards/count/{?fiscal_year,agency_type}]
+# Sub-Agency Count [/api/v2/agency/{toptier_code}/sub_agency/count/{?fiscal_year,agency_type}]
 
 Returns the count of unique Sub-Agencies and Offices associated with an agency for a single fiscal year
 

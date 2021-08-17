@@ -14,6 +14,7 @@ from usaspending_api.agency.v2.views.program_activity_count import ProgramActivi
 from usaspending_api.agency.v2.views.program_activity_list import ProgramActivityList
 from usaspending_api.agency.v2.views.recipients import RecipientList
 from usaspending_api.agency.v2.views.sub_agency import SubAgencyList
+from usaspending_api.agency.v2.views.sub_agency_count import SubAgencyCount
 
 
 urlpatterns = [
@@ -36,6 +37,7 @@ urlpatterns = [
                 path("program_activity/count/", ProgramActivityCount.as_view()),
                 path("recipients/", RecipientList.as_view()),
                 path("sub_agency/", SubAgencyList.as_view()),
+                path("sub_agency/count/", SubAgencyCount.as_view()),
             ]
         ),
     )
