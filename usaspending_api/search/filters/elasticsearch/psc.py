@@ -6,7 +6,7 @@ from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import Hier
 
 class PSCCodes(PSCCodesMixin, _Filter, HierarchicalFilter):
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType, nested_path: str = "") -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType, **options) -> ES_Q:
         cls.validate_filter_values(filter_values)
         require, exclude = cls.split_filter_values(filter_values)
         require = cls.handle_tier1_names(require)
