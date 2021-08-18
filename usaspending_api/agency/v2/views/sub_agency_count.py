@@ -15,6 +15,7 @@ class SubAgencyCount(PaginationMixin, AgencyBase):
     fiscal_year, award_type, and agency_type (funding or awarding agency). This is based
     on transaction data.
     """
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/sub_agency/count.md"
 
     def __init__(self, *args, **kwargs):
