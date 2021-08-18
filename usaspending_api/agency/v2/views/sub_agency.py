@@ -5,6 +5,7 @@ from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from fiscalyear import FiscalYear
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -115,23 +116,8 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         new_award_filter = A(
             "filter", range={"award_date_signed": {"gte": fiscal_year.start.date(), "lte": fiscal_year.end.date()}}
         )
-        agency_new_award_agg = A(
-            "scripted_metric",
-            params={"fieldName": "award_id"},
-            init_script="state.list = []",
-            map_script="if(doc[params.fieldName] != null) state.list.add(doc[params.fieldName].value);",
-            combine_script="return state.list;",
-            reduce_script="Map uniqueValueMap = new HashMap(); int count = 0;for(shardList in states) {if(shardList != null) { for(key in shardList) {if(!uniqueValueMap.containsKey(key)) {count +=1;uniqueValueMap.put(key, key); }}}}  return count;",
-        )
-
-        office_new_award_agg = A(
-            "scripted_metric",
-            params={"fieldName": "award_id"},
-            init_script="state.list = []",
-            map_script="if(doc[params.fieldName] != null) state.list.add(doc[params.fieldName].value);",
-            combine_script="return state.list;",
-            reduce_script="Map uniqueValueMap = new HashMap(); int count = 0;for(shardList in states) {if(shardList != null) { for(key in shardList) {if(!uniqueValueMap.containsKey(key)) {count +=1;uniqueValueMap.put(key, key); }}}}  return count;",
-        )
+        agency_new_award_agg = create_count_aggregation("award_id")
+        office_new_award_agg = create_count_aggregation("award_id")
 
         search.aggs.bucket("subtier_agencies", subtier_agency_agg).metric(
             "total_subagency_obligations", agency_obligation_agg
