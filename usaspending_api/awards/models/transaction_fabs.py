@@ -29,7 +29,7 @@ class TransactionFABS(models.Model):
     business_funds_ind_desc = models.TextField(blank=True, null=True)
     business_types = models.TextField(blank=True, null=True)
     business_types_desc = models.TextField(blank=True, null=True)
-    cfda_number = models.TextField(blank=True, null=True, db_index=False)
+    cfda_number = models.TextField(blank=True, null=True, db_index=True)
     cfda_title = models.TextField(blank=True, null=True)
     correction_delete_indicatr = models.TextField(blank=True, null=True)
     correction_delete_ind_desc = models.TextField(blank=True, null=True)
