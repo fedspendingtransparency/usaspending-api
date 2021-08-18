@@ -10,6 +10,11 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 
 
 class SubAgencyCount(PaginationMixin, AgencyBase):
+    """
+    Obtain the count of sub-agencies and offices for a given agency based on a toptier_code,
+    fiscal_year, award_type, and agency_type (funding or awarding agency). This is based
+    on transaction data.
+    """
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/sub_agency/count.md"
 
     def __init__(self, *args, **kwargs):
