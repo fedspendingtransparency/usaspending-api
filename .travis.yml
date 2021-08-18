@@ -14,7 +14,6 @@ addons:
     packages:
     - postgresql-10
     - postgresql-client-10
-    - libc6
 
 env:
   global:
