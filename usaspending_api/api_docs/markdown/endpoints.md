@@ -29,6 +29,8 @@ The currently available endpoints are listed in the following table.
 | Endpoint | Methods | Description |
 | -------- | ------- | ----------- |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/](/api/v2/agency/012/)|GET| Returns agency overview information for USAspending.gov's Agency Details page for agencies that have ever awarded |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/awards/](/api/v2/agency/012/awards/)|GET| Returns agency summary information, specifically the number of transactions and award obligations for the sub agency section of USAspending.gov's Agency Details page |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/awards/new/count/](/api/v2/agency/012/awards/new/count/)|GET| Returns a count of New Awards for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/](/api/v2/agency/012/budget_function/)|GET| Returns a list of Budget Functions and Budget Subfunctions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budget_function/count/](/api/v2/agency/012/budget_function/count/)|GET| Returns the count of Budget Functions for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/budgetary_resources/](/api/v2/agency/012/budgetary_resources/)|GET| Returns budgetary resources and obligations for the agency and fiscal year requested |
@@ -40,6 +42,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/program_activity/](/api/v2/agency/012/program_activity/)|GET| Returns a list of Program Activity categories for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/recipients/](/api/v2/agency/012/recipients/)|GET| Returns a list of data points relating to recipient award amounts for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/program_activity/count/](/api/v2/agency/012/program_activity/count/)|GET| Returns the count of Program Activity categories for the agency in a single fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/sub_agency/](/api/v2/agency/012/sub_agency/)|GET| Returns a list of sub-agencies and offices with obligated amounts, transaction counts and new award counts for the agency in a single fiscal year |
+|[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/sub_agency/count/](/api/v2/agency/012/sub_agency/count/)|GET| Returns the number of sub-agencies and offices for the agency in a single fiscal year |
 |[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Treasury Account Symbol Availability Type Code (A) filtered by other components provided in the request filter |
 |[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Treasury Account Symbol/Federal Account Agency Identifier (AID) filtered by other components provided in the request filter |
 |[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Treasury Account Symbol Allocation Transfer Agency Identifier (ATA) filtered by other components provided in the request filter |

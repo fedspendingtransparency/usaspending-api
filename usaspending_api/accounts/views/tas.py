@@ -8,6 +8,10 @@ from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.common.views import AutocompleteView
 from usaspending_api.common.serializers import AggregateSerializer
 from usaspending_api.common.api_versioning import deprecated, removed
+from usaspending_api.submissions.helpers import (
+    get_latest_submission_ids_for_each_fiscal_quarter_file_a,
+    get_latest_submission_ids_for_each_fiscal_quarter_file_b,
+)
 from django.utils.decorators import method_decorator
 
 
@@ -35,8 +39,13 @@ class TASBalancesQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
+        federal_account_id, fiscal_years = self.get_submission_id_filters()
+
+        submission_ids = get_latest_submission_ids_for_each_fiscal_quarter_file_a(fiscal_years, federal_account_id)
+
         queryset = AppropriationAccountBalances.objects.all()
         queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = queryset.filter(submission_id__in=submission_ids)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)
         return queryset
@@ -69,8 +78,13 @@ class TASCategoryQuarterAggregate(FilterQuerysetMixin, AggregateQuerysetMixin, C
     serializer_class = AggregateSerializer
 
     def get_queryset(self):
+        federal_account_id, fiscal_years = self.get_submission_id_filters()
+
+        submission_ids = get_latest_submission_ids_for_each_fiscal_quarter_file_b(fiscal_years, federal_account_id)
+
         queryset = FinancialAccountsByProgramActivityObjectClass.objects.all()
         queryset = self.filter_records(self.request, queryset=queryset)
+        queryset = queryset.filter(submission_id__in=submission_ids)
         queryset = self.aggregate(self.request, queryset=queryset)
         queryset = self.order_records(self.request, queryset=queryset)
         return queryset
