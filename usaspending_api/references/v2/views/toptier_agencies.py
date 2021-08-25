@@ -190,6 +190,7 @@ class ToptierAgenciesViewSet(APIView):
                         if total_budgetary_resources > 0
                         else None
                     ),
+                    "agency_slug": agency["toptier_name"].lower().replace(" ", "-")
                 }
             )
 
