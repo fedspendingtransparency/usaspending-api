@@ -10,13 +10,13 @@ def create_agency_data():
     # Create AGENCY AND TopTier AGENCY
     ttagency1 = mommy.make(
         "references.ToptierAgency",
-        name="tta_name",
+        name="TTA Name",
         toptier_code="100",
         abbreviation="tta_abrev",
         justification="test.com/cj",
     )
     ttagency2 = mommy.make(
-        "references.ToptierAgency", name="tta_name_2", toptier_code="200", abbreviation="tta_abrev_2"
+        "references.ToptierAgency", name="TTA Name 2", toptier_code="200", abbreviation="tta_abrev_2"
     )
 
     mommy.make("references.Agency", id=1, toptier_agency=ttagency1, toptier_flag=True)
@@ -130,7 +130,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "active_fq": "2",
                 "active_fy": "2017",
                 "agency_id": 1,
-                "agency_name": "tta_name",
+                "agency_name": "TTA Name",
                 "congressional_justification_url": "test.com/cj",
                 "budget_authority_amount": 2.0,
                 "current_total_budget_authority_amount": 200.00,
@@ -138,13 +138,14 @@ def test_award_type_endpoint(client, create_agency_data):
                 "outlay_amount": 2.0,
                 "percentage_of_total_budget_authority": 0.01,
                 "toptier_code": "100",
+                "agency_slug": "tta-name",
             },
             {
                 "abbreviation": "tta_abrev_2",
                 "active_fq": "2",
                 "active_fy": "2017",
                 "agency_id": 2,
-                "agency_name": "tta_name_2",
+                "agency_name": "TTA Name 2",
                 "congressional_justification_url": None,
                 "budget_authority_amount": 14.0,
                 "current_total_budget_authority_amount": 200.00,
@@ -152,6 +153,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "outlay_amount": 14.00,
                 "percentage_of_total_budget_authority": 0.07,
                 "toptier_code": "200",
+                "agency_slug": "tta-name-2",
             },
         ]
     }
@@ -165,7 +167,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "active_fq": "2",
                 "active_fy": "2017",
                 "agency_id": 2,
-                "agency_name": "tta_name_2",
+                "agency_name": "TTA name 2",
                 "congressional_justification_url": None,
                 "budget_authority_amount": 14.0,
                 "current_total_budget_authority_amount": 200.00,
@@ -173,13 +175,14 @@ def test_award_type_endpoint(client, create_agency_data):
                 "outlay_amount": 14.0,
                 "percentage_of_total_budget_authority": 0.07,
                 "toptier_code": "200",
+                "agency_slug": "tta-name-2",
             },
             {
                 "abbreviation": "tta_abrev",
                 "active_fq": "2",
                 "active_fy": "2017",
                 "agency_id": 1,
-                "agency_name": "tta_name",
+                "agency_name": "TTA Name",
                 "congressional_justification_url": "test.com/cj",
                 "budget_authority_amount": 2.0,
                 "current_total_budget_authority_amount": 200.00,
@@ -187,6 +190,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "outlay_amount": 2.0,
                 "percentage_of_total_budget_authority": 0.01,
                 "toptier_code": "100",
+                "agency_slug": "tta-name",
             },
         ]
     }
