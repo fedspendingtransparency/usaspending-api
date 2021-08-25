@@ -5,6 +5,11 @@
 # So if a pull request only touches javascript files, only these owners
 # will be requested to review.
 
-.github/*                           @tony-sappe
+# Require approval from listed person(s) to make changes to .github config files, like this CODEOWNERS file
+.github/*                           @kwhickey
+
+# Oversight of all JavaScript files falls to this person to approve
 *.js                                @ebdabbs
-usaspending_api/api_contracts/**    @tony-sappe @ebdabbs
+
+# Either/any of the people listed below can approve the contract-change
+usaspending_api/api_contracts/**    @ebdabbs @dpb-bah
