@@ -167,7 +167,7 @@ def test_award_type_endpoint(client, create_agency_data):
                 "active_fq": "2",
                 "active_fy": "2017",
                 "agency_id": 2,
-                "agency_name": "TTA name 2",
+                "agency_name": "TTA Name 2",
                 "congressional_justification_url": None,
                 "budget_authority_amount": 14.0,
                 "current_total_budget_authority_amount": 200.00,
