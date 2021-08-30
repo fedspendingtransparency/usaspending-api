@@ -6,7 +6,7 @@ from multiprocessing import Pool, Event, Value
 from time import perf_counter
 from typing import Generator, List, Tuple
 
-from usaspending_api.broker.helpers.last_load_date import update_last_load_date
+from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
@@ -154,6 +154,9 @@ class Controller:
             delete_awards(client, self.config)
         elif self.config["data_type"] == "transaction":
             delete_transactions(client, self.config)
+            # TODO Add explanation here
+            last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
+            update_last_load_date("es_deletes", last_db_delete_time)
         else:
             raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
 

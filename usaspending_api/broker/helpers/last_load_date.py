@@ -38,6 +38,42 @@ def get_last_load_date(key, lookback_minutes=None, default=None):
     return last_load_date
 
 
+def get_earliest_load_date(keys, default=None):
+    earliest_date = default
+
+    for key in keys:
+        key_date = get_last_load_date(key)
+
+        if key_date:
+            if earliest_date is None:
+                earliest_date = key_date
+            elif key_date < earliest_date:
+                earliest_date = key_date
+
+    if earliest_date is None:
+        logger.warning(f"No earliest load date could be calculated because no dates for keys `{keys}` were found!")
+
+    return key_date
+
+
+def get_latest_load_date(keys, default=None):
+    latest_date = default
+
+    for key in keys:
+        key_date = get_last_load_date(key)
+
+        if key_date:
+            if latest_date is None:
+                latest_date = key_date
+            elif key_date < latest_date:
+                latest_date = key_date
+
+    if latest_date is None:
+        logger.warning(f"No latest load date could be calculated because no dates for keys `{keys}` were found!")
+
+    return key_date
+
+
 def update_last_load_date(key, last_load_date):
     """
     Save the provided last_load_date to the database as UTC (which is our standard timezone).
