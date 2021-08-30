@@ -110,14 +110,20 @@ class Command(BaseCommand):
             incoming_schedule_objs = self.generate_schedules_from_broker()
 
         logger.info("Loading existing DABS Submission Window Schedules")
-        existing_schedules = DABSSubmissionWindowSchedule.objects.all()
+        existing_schedules = list(DABSSubmissionWindowSchedule.objects.all())
+        existing_schedule_lookup = {}
+        for schedule in existing_schedules:
+            existing_schedule_lookup[schedule.id] = schedule
 
         for incoming_schedule in incoming_schedule_objs:
             # If an incoming schedule has a matching existing schedule, use the existing
             # schedule's submission_reveal_date
-            for existing_schedule in existing_schedules:
-                if int(incoming_schedule.id) == existing_schedule.id:
-                    incoming_schedule.submission_reveal_date = existing_schedule.submission_reveal_date
+            existing_schedule = existing_schedule_lookup.get(int(incoming_schedule.id))
+            if existing_schedule:
+                incoming_schedule.submission_reveal_date = existing_schedule.submission_reveal_date
+            elif incoming_schedule.submission_reveal_date is None:
+                # Setting a default of FUTURE_DATE if no 'submission_reveal_date' is found
+                incoming_schedule.submission_reveal_date = FUTURE_DATE
 
             incoming_schedule.parse_dates_fields(timezone.utc)
 
