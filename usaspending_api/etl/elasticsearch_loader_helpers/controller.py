@@ -154,7 +154,8 @@ class Controller:
             delete_awards(client, self.config)
         elif self.config["data_type"] == "transaction":
             delete_transactions(client, self.config)
-            # TODO Add explanation here
+            # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
+            # ensures all records deleted since either job was run are taken into account
             last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
             update_last_load_date("es_deletes", last_db_delete_time)
         else:

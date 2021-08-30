@@ -39,6 +39,12 @@ def get_last_load_date(key, lookback_minutes=None, default=None):
 
 
 def get_earliest_load_date(keys, default=None):
+    """
+    Retrieve the earliest last_load_date from a supplied list of keys.
+
+    default will be returned if no last_load_date is found for any of the supplied
+    keys
+    """
     earliest_date = default
 
     for key in keys:
@@ -57,6 +63,12 @@ def get_earliest_load_date(keys, default=None):
 
 
 def get_latest_load_date(keys, default=None):
+    """
+    Retrieve the latest last_load_date from a supplied list of keys.
+
+    default will be returned if no last_load_date is found for any of the supplied
+    keys
+    """
     latest_date = default
 
     for key in keys:

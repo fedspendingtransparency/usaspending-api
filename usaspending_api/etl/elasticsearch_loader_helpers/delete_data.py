@@ -330,10 +330,11 @@ def delete_transactions(client: Elasticsearch, config: dict, task_id: str = "Syn
     Returns: Number of ES docs deleted in the index
     """
     deleted_tx_keys = _gather_deleted_transaction_keys(config)
+    deleted_tx_keys = _check_transactions_for_deletes([*deleted_tx_keys])
     return delete_docs_by_unique_key(
         client,
         key=config["unique_key_field"],
-        value_list=[*deleted_tx_keys],
+        value_list=deleted_tx_keys,
         task_id="Sync DB Deletes",
         index=config["index_name"],
         delete_chunk_size=config["partition_size"],
@@ -357,6 +358,8 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
     logger.info(format_log(f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'", action="Delete"))
 
     start_date = get_last_load_date("es_deletes")
+    # An `end_date` is used, so we don't try to delete records from ES that have not yet
+    # been deleted in postgres by the fabs/fpds loader
     end_date = get_latest_load_date(["fabs", "fpds"])
 
     if config["verbose"]:
@@ -418,6 +421,9 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
 
 def _check_awards_for_deletes(id_list: list) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
+    if len(id_list) < 1:
+        return []
+
     formatted_value_ids = ""
     for x in id_list:
         formatted_value_ids += "('" + x + "'),"
@@ -432,9 +438,13 @@ def _check_awards_for_deletes(id_list: list) -> list:
 
 
 def _check_transactions_for_deletes(id_list: list) -> list:
-    """Takes a list of transaction key values and returns them if they are NOT found in the
+    """
+    Takes a list of transaction key values and returns them if they are NOT found in the
     transaction_normalized DB table
     """
+    if len(id_list) < 1:
+        return []
+
     formatted_value_ids = ""
     for x in id_list:
         formatted_value_ids += "('" + x + "'),"
