@@ -243,7 +243,7 @@ def get_scaled_sum_aggregations(field_to_sum: str, pagination: Optional[Paginati
         return {"sum_field": sum_field}
 
 
-def get_summed_value_as_float(bucket: dict, field: str) -> float:
+def get_summed_value_as_float(bucket: dict, field: str) -> Decimal:
     """
     Elasticsearch commonly has problems handling the sum of floating point numbers (even if they are stored as
     "Scaled Float" type). Due to that the Elasticsearch sum aggregations handle the Scaled Floats as integers
