@@ -420,8 +420,6 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
 
 def _check_awards_for_deletes(id_list: list) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
-    if len(id_list) < 1:
-        return []
 
     formatted_value_ids = ""
     for x in id_list:
