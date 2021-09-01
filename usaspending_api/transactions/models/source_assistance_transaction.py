@@ -111,7 +111,9 @@ class SourceAssistanceTransaction(models.Model):
     sai_number = models.TextField(blank=True, null=True)
     submission_id = NumericField(blank=True, null=True)
     total_funding_amount = models.TextField(blank=True, null=True)
+    uei = models.TextField(blank=True, null=True)
     ultimate_parent_legal_enti = models.TextField(blank=True, null=True)
+    ultimate_parent_uei = models.TextField(blank=True, null=True)
     ultimate_parent_unique_ide = models.TextField(blank=True, null=True)
     unique_award_key = models.TextField(null=True, db_index=True)
     updated_at = NaiveTimestampField(

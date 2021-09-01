@@ -2,8 +2,6 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.db import models
 from django.db.models import Q
 
-from usaspending_api.awards.models import TransactionNormalized, Award
-
 
 class TransactionSearch(models.Model):
     """
@@ -12,8 +10,8 @@ class TransactionSearch(models.Model):
     may or may not be nullable, but those constraints are not enforced in this table.
     """
 
-    transaction = models.OneToOneField(TransactionNormalized, on_delete=models.DO_NOTHING, primary_key=True)
-    award = models.ForeignKey(Award, on_delete=models.DO_NOTHING, null=True)
+    transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
+    award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True)
     modification_number = models.TextField(null=True)
     detached_award_proc_unique = models.TextField(null=True)
     afa_generated_unique = models.TextField(null=True)
@@ -31,6 +29,7 @@ class TransactionSearch(models.Model):
     award_fiscal_year = models.IntegerField(null=True)
     update_date = models.DateTimeField(null=True)
     award_update_date = models.DateTimeField(null=True)
+    award_date_signed = models.DateTimeField(null=True)
     etl_update_date = models.DateTimeField(null=True)
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
@@ -102,6 +101,10 @@ class TransactionSearch(models.Model):
     funding_toptier_agency_name = models.TextField(null=True)
     awarding_subtier_agency_name = models.TextField(null=True)
     funding_subtier_agency_name = models.TextField(null=True)
+    awarding_office_code = models.TextField(null=True)
+    awarding_office_name = models.TextField(null=True)
+    funding_office_code = models.TextField(null=True)
+    funding_office_name = models.TextField(null=True)
     awarding_toptier_agency_abbreviation = models.TextField(null=True)
     funding_toptier_agency_abbreviation = models.TextField(null=True)
     awarding_subtier_agency_abbreviation = models.TextField(null=True)

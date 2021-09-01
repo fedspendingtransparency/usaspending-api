@@ -54,6 +54,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         )
 
         mommy.make("references.ObjectClass", major_object_class="10", object_class="10.1", direct_reimbursable="D")
+        mommy.make("references.ObjectClass", major_object_class="01", object_class="01.0", direct_reimbursable="D")
 
         mommy.make("references.DisasterEmergencyFundCode", code="B", title="BB")
         mommy.make("references.DisasterEmergencyFundCode", code="L", title="LL")
@@ -116,10 +117,12 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     availability_type_code,
                     main_account_code,
                     sub_account_code,
-                    internal_start_date
+                    internal_start_date,
+                    tas,
+                    display_tas
                 ) (values
-                    (1, 1, '111', 'X', '1111', '111', '1900-01-01'),
-                    (2, 2, '222', 'X', '2222', '222', '1900-01-01')
+                    (1, 1, '111', 'X', '1111', '111', '1900-01-01', '00011100000000X1111111', '000-111-X-1111-111'),
+                    (2, 2, '222', 'X', '2222', '222', '1900-01-01', '00022200000000X2222222', '000-222-X-2222-222')
                 )
                 """
             )
@@ -198,7 +201,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_appropriation (
                     certified_appropriation_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     total_budgetary_resources_cpe
                 ) (values
                     (1, 1, 1, 11),
@@ -217,24 +220,25 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_object_class_program_activity (
                     certified_object_class_program_activity_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     object_class,
+                    by_direct_reimbursable_fun,
                     gross_outlay_amount_by_pro_cpe,
                     disaster_emergency_fund_code
                 ) (values
-                    (1, 1, 1, '1101', 1111, null),
-                    (2, 1, 1, '1101', 2222, 'B'),
-                    (3, 1, 1, '1101', 3333, 'L'),
-                    (4, 2, 1, '1101', 4444, null),
-                    (5, 2, 1, '1101', 5555, null),
-                    (6, 2, 1, '1101', 6666, null),
-                    (7, 3, 2, '1101', 7777, 'L'),
-                    (8, 3, 2, '1101', 8888, 'L'),
-                    (9, 3, 2, '1101', 9999, 'L'),
-                    (10, 4, 2, '1101', 1010, null),
-                    (11, 5, 2, '1101', 1111, 'B'),
-                    (12, 6, 2, '1101', 1212, 'L'),
-                    (13, 7, 2, '1101', 1313, 'N')
+                    (1, 1, 1, '1010', 'D', 1111, null),
+                    (2, 1, 1, '1010', 'D', 2222, 'B'),
+                    (3, 1, 1, '1010', 'D', 3333, 'L'),
+                    (4, 2, 1, '1010', 'D', 4444, null),
+                    (5, 2, 1, '1010', 'D', 5555, null),
+                    (6, 2, 1, '1010', 'D', 6666, null),
+                    (7, 3, 2, '1010', 'D', 7777, 'L'),
+                    (8, 3, 2, '1010', 'D', 8888, 'L'),
+                    (9, 3, 2, '1010', 'D', 9999, 'L'),
+                    (10, 4, 2, '1010', 'D', 1010, null),
+                    (11, 5, 2, '1010', 'D', 1111, 'B'),
+                    (12, 6, 2, '1010', 'D', 1212, 'L'),
+                    (13, 7, 2, '1010', 'D', 1313, 'N')
                 )
                 """
             )
@@ -244,32 +248,33 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 insert into certified_award_financial (
                     certified_award_financial_id,
                     submission_id,
-                    tas_id,
+                    account_num,
                     object_class,
+                    by_direct_reimbursable_fun,
                     gross_outlay_amount_by_awa_cpe,
                     transaction_obligated_amou,
                     ussgl487200_downward_adjus_cpe,
                     ussgl497200_downward_adjus_cpe,
                     disaster_emergency_fund_code
                 ) (values
-                    (1, 1, 1, '1101', 11111, 111110, -11, -111, null),
-                    (2, 1, 1, '1101', 22222, 222220, -22, -222, 'B'),
-                    (3, 1, 1, '1101', 33333, 333330, -33, -333, 'L'),
-                    (4, 2, 1, '1101', 44444, 444440, -44, -444, null),
-                    (5, 2, 1, '1101', 55555, 555550, -55, -555, null),
-                    (6, 2, 1, '1101', 66666, 666660, -66, -666, null),
-                    (7, 3, 2, '1101', 77777, 777770, -77, -777, 'L'),
-                    (8, 3, 2, '1101', 88888, 888880, -88, -888, 'L'),
-                    (9, 3, 2, '1101', 99999, 999990, -99, -999, 'L'),
-                    (10, 4, 2, '1101', 10101, 101010, -10, -101, null),
-                    (11, 5, 2, '1101', 11111, 111110, 0, 0, 'B'),
-                    (12, 5, 2, '1101', null, null, 0, 0, 'M'), -- this should not load because of 0/null values
-                    (13, 5, 2, '1101', 0, 0, null, 0, 'M'), -- this should not load because of 0/null values
-                    (14, 5, 2, '1101', null, 0, null, 0, 'M'), -- this should not load because of 0/null values
-                    (15, 5, 2, '1101', 0, null, 0, null, 'M'), -- this should not load because of 0/null values
-                    (16, 6, 2, '1101', 12121, 121210, -12, -121, 'L'),
-                    (17, 7, 2, '1101', 13131, 131310, -13, -131, 'N'),
-                    (18, 5, 2, '1101', 0, 0, 0, -1010, 'N')
+                    (1, 1, 1, '1010', 'D', 11111, 111110, -11, -111, null),
+                    (2, 1, 1, '1010', 'D', 22222, 222220, -22, -222, 'B'),
+                    (3, 1, 1, '1010', 'D', 33333, 333330, -33, -333, 'L'),
+                    (4, 2, 1, '1010', 'D', 44444, 444440, -44, -444, null),
+                    (5, 2, 1, '1010', 'D', 55555, 555550, -55, -555, null),
+                    (6, 2, 1, '1010', 'D', 66666, 666660, -66, -666, null),
+                    (7, 3, 2, '1010', 'D', 77777, 777770, -77, -777, 'L'),
+                    (8, 3, 2, '1010', 'D', 88888, 888880, -88, -888, 'L'),
+                    (9, 3, 2, '1010', 'D', 99999, 999990, -99, -999, 'L'),
+                    (10, 4, 2, '1010', 'D', 10101, 101010, -10, -101, null),
+                    (11, 5, 2, '1010', 'D', 11111, 111110, 0, 0, 'B'),
+                    (12, 5, 2, '1010', 'D', null, null, 0, 0, 'M'), -- this should not load because of 0/null values
+                    (13, 5, 2, '1010', 'D', 0, 0, null, 0, 'M'), -- this should not load because of 0/null values
+                    (14, 5, 2, '1010', 'D', null, 0, null, 0, 'M'), -- this should not load because of 0/null values
+                    (15, 5, 2, '1010', 'D', 0, null, 0, null, 'M'), -- this should not load because of 0/null values
+                    (16, 6, 2, '1010', 'D', 12121, 121210, -12, -121, 'L'),
+                    (17, 7, 2, '1010', 'D', 13131, 131310, -13, -131, 'N'),
+                    (18, 5, 2, '1010', 'D', 0, 0, 0, -1010, 'N')
                 )
                 """
             )

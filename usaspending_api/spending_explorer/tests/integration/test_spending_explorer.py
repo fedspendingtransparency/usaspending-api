@@ -7,15 +7,10 @@ from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-    SubmissionAttributes,
-    TreasuryAppropriationAccount,
-)
-from usaspending_api.accounts.models import FederalAccount
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.references.models import Agency, GTASSF133Balances, ToptierAgency, ObjectClass
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
-
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 ENDPOINT_URL = "/api/v2/spending/"
 CONTENT_TYPE = "application/json"

@@ -196,6 +196,10 @@
         "type": "date",
         "format": "yyyy-MM-dd"
       },
+      "award_date_signed": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
       "period_of_performance_start_date": {
         "type": "date",
         "format": "yyyy-MM-dd"
@@ -289,6 +293,38 @@
         }
       },
       "funding_toptier_agency_abbreviation": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "awarding_office_code": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "awarding_office_name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "funding_office_code": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "funding_office_name": {
         "type": "text",
         "fields": {
           "keyword": {

@@ -1,14 +1,17 @@
 import json
 
 from datetime import datetime, timezone
-from typing import Optional, Type
+from typing import Optional, Type, List
 
 from django.conf import settings
+from django.db.models import QuerySet, Max
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
+from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
@@ -18,8 +21,9 @@ from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
-from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -53,14 +57,7 @@ class BaseDownloadViewSet(APIView):
         ordered_json_request = json.dumps(json_request)
 
         # Check if the same request has been called today
-        # TODO!!! Use external_data_load_date to determine data freshness
-        updated_date_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d")
-        cached_download = (
-            DownloadJob.objects.filter(json_request=ordered_json_request, update_date__gte=updated_date_timestamp)
-            .exclude(job_status_id=JOB_STATUS_DICT["failed"])
-            .values("download_job_id", "file_name")
-            .first()
-        )
+        cached_download = self._get_cached_download(ordered_json_request, json_request.get("download_types", []))
 
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
@@ -124,6 +121,45 @@ class BaseDownloadViewSet(APIView):
                 host = f"{settings.DOWNLOAD_ENV}-{host}"
 
         return f"{protocol}://{host}/api/v2/download/status?file_name={file_name}"
+
+    @staticmethod
+    def _get_cached_download(
+        ordered_json_request: str, download_types: Optional[List[str]] = None
+    ) -> Optional[QuerySet]:
+        # External data types that directly affect download results
+        if download_types and "elasticsearch_awards" in download_types:
+            external_data_type_name_list = ["es_awards"]
+        elif download_types and "elasticsearch_transactions" in download_types:
+            external_data_type_name_list = ["es_transactions"]
+        else:
+            external_data_type_name_list = ["fpds", "fabs", "es_transactions", "es_awards"]
+
+        external_data_type_id_list = [
+            id for name, id in EXTERNAL_DATA_TYPE_DICT.items() if name in external_data_type_name_list
+        ]
+
+        # Clear the download "cache" based on most recent date in the list of relevant ExternalDataLoadDate objects
+        updated_date_timestamp = ExternalDataLoadDate.objects.filter(
+            external_data_type_id__in=external_data_type_id_list
+        ).aggregate(Max("last_load_date"))["last_load_date__max"]
+
+        # Conditional put in place for local development where the external dates may not be defined
+        cached_download = None
+        if updated_date_timestamp:
+            recent_submission_window_date = DABSSubmissionWindowSchedule.objects.filter(
+                submission_reveal_date__lt=datetime.max.replace(tzinfo=timezone.utc)
+            ).aggregate(Max("submission_reveal_date"))["submission_reveal_date__max"]
+            cached_download = (
+                DownloadJob.objects.filter(
+                    json_request=ordered_json_request,
+                    update_date__gte=max(updated_date_timestamp, recent_submission_window_date),
+                )
+                .order_by("-update_date")
+                .exclude(job_status_id=JOB_STATUS_DICT["failed"])
+                .values("download_job_id", "file_name")
+                .first()
+            )
+        return cached_download
 
 
 def get_file_path(file_name: str) -> str:

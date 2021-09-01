@@ -82,6 +82,7 @@ SELECT
 
   "cfda_number",
   "cfda_program_title" as cfda_title,
+  "cfdas",
 
   "sai_number",
   "type_of_contract_pricing",
@@ -96,6 +97,7 @@ SELECT
   "tas_paths",
   "tas_components",
   "disaster_emergency_fund_codes",
+  "covid_spending_by_defc",
   "total_covid_outlay",
   "total_covid_obligation"
 

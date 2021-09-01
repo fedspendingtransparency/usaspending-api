@@ -1,0 +1,33 @@
+{"SELECT office_code, office_name, sub_tier_code, agency_code, contract_awards_office, contract_funding_office, financial_assistance_awards_office, financial_assistance_funding_office FROM office": [
+    {
+      "office_code" : "033103",
+      "office_name" : "LIBRARY OF CONGRESS FEDLINK",
+      "sub_tier_code" : "0300",
+      "agency_code" : "003",
+      "contract_awards_office" : true,
+      "contract_funding_office" : true,
+      "financial_assistance_awards_office" : false,
+      "financial_assistance_funding_office" : false
+    },
+    {
+      "office_code" : "040897",
+      "office_name" : "Customer Services",
+      "sub_tier_code" : "0400",
+      "agency_code" : "004",
+      "contract_awards_office" : false,
+      "contract_funding_office" : false,
+      "financial_assistance_awards_office" : false,
+      "financial_assistance_funding_office" : false
+    },
+    {
+      "office_code" : "040ADV",
+      "office_name" : "Acquisition Services",
+      "sub_tier_code" : "0400",
+      "agency_code" : "004",
+      "contract_awards_office" : false,
+      "contract_funding_office" : false,
+      "financial_assistance_awards_office" : false,
+      "financial_assistance_funding_office" : false
+    }
+  ]
+}

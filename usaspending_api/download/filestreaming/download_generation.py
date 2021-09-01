@@ -34,7 +34,7 @@ from usaspending_api.download.filestreaming.file_description import build_file_d
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.helpers import verify_requested_columns_available, write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
-from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.models.download_job import DownloadJob
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
@@ -192,14 +192,18 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
                 or "procurement" in award_type_codes
             ):
                 # only generate d1 files if the user is asking for contract data
-                d1_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id)
+                d1_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id, filters
+                )
                 d1_filters = {f"{VALUE_MAPPINGS[download_type]['contract_data']}__isnull": False}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
                 download_sources.append(d1_source)
 
             if award_type_codes & set(assistance_type_mapping.keys()) or ("grant" in award_type_codes):
                 # only generate d2 files if the user is asking for assistance data
-                d2_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id)
+                d2_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id, filters
+                )
                 d2_filters = {f"{VALUE_MAPPINGS[download_type]['assistance_data']}__isnull": False}
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
                 download_sources.append(d2_source)
@@ -586,7 +590,10 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
             temp_env = os.environ.copy()
             if download_job and not download_job.monthly_download:
                 # Since terminating the process isn't guaranteed to end the DB statement, add timeout to client connection
-                temp_env["PGOPTIONS"] = f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h"
+                temp_env["PGOPTIONS"] = (
+                    f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
+                    f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
+                )
 
             cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
             subprocess.check_output(
@@ -600,6 +607,8 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
             write_to_log(
                 message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job
             )
+        except subprocess.CalledProcessError as e:
+            logger.error(f"PSQL Error: {e.output.decode()}")
         except Exception as e:
             if not settings.IS_LOCAL:
                 # Not logging the command as it can contain the database connection string

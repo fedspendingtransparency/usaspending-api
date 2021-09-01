@@ -18,7 +18,6 @@ class DirectReimbursableConstants:
 
     LOOKUP = dict(CHOICES)
 
-    LEADING_DIGIT_MAPPING = {"1": "D", "2": "R"}
     BY_DIRECT_REIMBURSABLE_FUN_MAPPING = {None: None, "D": "D", "d": "D", "R": "R", "r": "R"}
 
 

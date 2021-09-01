@@ -5,10 +5,7 @@
     "index.refresh_interval": -1,
     "index": {
       "number_of_shards": 5,
-      "number_of_replicas": 0,
-      "sort.field" : ["total_obligation.keyword", "award_id"],
-      "sort.order" : ["desc", "desc"],
-      "sort.missing": ["_last", "_last"]
+      "number_of_replicas": 0
     },
     "analysis": {
       "analyzer": {
@@ -476,6 +473,9 @@
             }
           }
         },
+        "cfdas": {
+          "type": "keyword"
+        },
         "sai_number": {
           "type": "text",
           "fields": {
@@ -538,6 +538,22 @@
         },
         "disaster_emergency_fund_codes": {
           "type": "keyword"
+        },
+        "covid_spending_by_defc": {
+          "type": "nested",
+          "properties": {
+            "defc": {
+              "type": "keyword"
+            },
+            "obligation": {
+              "scaling_factor": 100,
+              "type": "scaled_float"
+            },
+            "outlay": {
+              "scaling_factor": 100,
+              "type": "scaled_float"
+            }
+          }
         },
         "total_covid_obligation": {
           "type": "scaled_float",

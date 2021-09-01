@@ -329,6 +329,22 @@ def spending_by_award_test_data():
         awarding_toptier_agency_name="awarding toptier 8006",
         awarding_subtier_agency_name="awarding subtier 8006",
     )
+    mommy.make(
+        "awards.Subaward",
+        id=9,
+        award_id=4,
+        latest_transaction_id=6,
+        subaward_number=99999,
+        prime_award_type="02",
+        award_type="procurement",
+        action_date="2019-01-01",
+        amount=60000,
+        prime_recipient_name="recipient_name_for_award_1003",
+        recipient_unique_id="duns_1003",
+        piid="PIID6003",
+        awarding_toptier_agency_name="awarding toptier 8006",
+        awarding_subtier_agency_name="awarding subtier 8006",
+    )
 
     # Ref Program Activity
     ref_program_activity_1 = {"id": 1}

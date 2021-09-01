@@ -1,8 +1,9 @@
 import itertools
 import logging
 
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -224,14 +225,22 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(q) if q else queryset
 
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
-        elif key in ("program_numbers", "contract_pricing_type_codes"):
-            filter_to_col = {
-                "program_numbers": "cfda_number",
-                "contract_pricing_type_codes": "type_of_contract_pricing",
-            }
-            in_query = [v for v in value]
-            if len(in_query) != 0:
-                queryset &= SubawardView.objects.filter(**{"{}__in".format(filter_to_col[key]): in_query})
+        elif key in ("contract_pricing_type_codes"):
+            if len(value) != 0:
+                queryset &= SubawardView.objects.filter(type_of_contract_pricing__in=value)
+
+        elif key == "program_numbers":
+            if len(value) != 0:
+                # TODO: Refactor the use of Exists once Django is upgraded to version 3.x
+                # Versions <3.0 of Django require that uses of Exist in the filter must be annotated
+                queryset = queryset.annotate(
+                    has_cfda=Exists(
+                        TransactionNormalized.objects.filter(
+                            award_id=OuterRef("award_id"),
+                            assistance_data__cfda_number__in=value,
+                        ).values("award_id")
+                    )
+                ).filter(has_cfda=True)
 
         elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
             or_queryset = Q()

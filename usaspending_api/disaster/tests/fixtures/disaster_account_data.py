@@ -282,11 +282,12 @@ def disaster_account_data():
         defc, code="P", public_law="PUBLIC LAW FOR CODE P", title="TITLE FOR CODE P", group_name="covid_19"
     )
     mommy.make(defc, code="9", public_law="PUBLIC LAW FOR CODE 9", title="TITLE FOR CODE 9")
-
+    defc_q = mommy.make(
+        defc, code="Q", public_law="PUBLIC LAW FOR CODE Q", title="TITLE FOR CODE Q", group_name="covid_19"
+    )
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas1,
         submission=sub1,
         program_activity=pa1,
@@ -300,7 +301,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas1,
         submission=sub1,
         program_activity=pa2,
@@ -314,7 +314,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas1,
         submission=sub1,
         program_activity=pa3,
@@ -328,7 +327,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas2,
         submission=sub2,
         program_activity=pa4,
@@ -342,7 +340,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas2,
         submission=sub3,
         program_activity=pa4,
@@ -356,7 +353,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas3,
         submission=sub3,
         program_activity=pa4,
@@ -370,7 +366,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas3,
         submission=sub4,
         program_activity=pa4,
@@ -384,7 +379,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas3,
         submission=sub4,
         program_activity=pa4,
@@ -398,7 +392,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas4,
         submission=sub5,
         program_activity=pa5,
@@ -412,7 +405,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas5,
         submission=sub1,
         disaster_emergency_fund=None,
@@ -424,7 +416,6 @@ def disaster_account_data():
     )
     mommy.make(
         fabpaoc,
-        final_of_fy=True,
         treasury_account=tas6,
         submission=sub1,
         disaster_emergency_fund=None,
@@ -568,6 +559,18 @@ def disaster_account_data():
         submission=sub4,
         disaster_emergency_fund=defc_o,
         transaction_obligated_amount=20000000,
+        gross_outlay_amount_by_award_cpe=2,
+        award=a3,
+        distinct_award_key=3,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
+    )
+    mommy.make(
+        faba,
+        treasury_account=tas3,
+        submission=sub4,
+        disaster_emergency_fund=defc_q,
+        transaction_obligated_amount=2,
         gross_outlay_amount_by_award_cpe=2,
         award=a3,
         distinct_award_key=3,

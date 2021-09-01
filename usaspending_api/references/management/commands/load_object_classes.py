@@ -14,7 +14,7 @@ from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.references.models import ObjectClass
 
 
-OBJECT_CLASS_PATTERN = re.compile("[12]?[0-9]{3}")
+OBJECT_CLASS_PATTERN = re.compile("^[0-9]{3}0?$")
 
 CREATE_TEMP_TABLE = """
     drop table if exists temp_load_object_classes;
@@ -103,6 +103,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         if len(object_classes) < 1:
             raise RuntimeError("Object class file '{}' appears to be empty".format(self.object_class_file))
 
+        # only importing the 3-digit versions of the codes to prevent unnecessary dups
         self.raw_object_classes = [
             RawObjectClass(
                 row_number=row_number,
@@ -124,7 +125,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             messages.append(
                 f"Invalid object class code '{raw_object_class.object_class}' in row "
                 f"{raw_object_class.row_number:,}.  Object class codes must be three or four numeric "
-                f"digits and, if four digits, must begin with '1' or '2'."
+                f"digits and, if four digits, must end with '0'."
             )
 
         if not raw_object_class.object_class_name:
@@ -146,13 +147,17 @@ class Command(mixins.ETLMixin, BaseCommand):
                 f"{len(messages):,} problem(s) have been found with the raw object class file.  See log for details."
             )
 
+    def _keep_only_3_digit_object_classes(self):
+        """ While the file and users can provide both versions, this loader only needs the 3-digits when processing """
+        self.raw_object_classes = [
+            raw_object_class for raw_object_class in self.raw_object_classes if len(raw_object_class.object_class) == 3
+        ]
+
     def _add_unknown_object_classes(self):
         """ These are not officially sanctioned object classes but we use them on the website. """
 
         unknown = ObjectClass.MAJOR_OBJECT_CLASS.UNKNOWN_NAME
         self.raw_object_classes = [
-            RawObjectClass(row_number=None, object_class="1000", object_class_name=unknown),
-            RawObjectClass(row_number=None, object_class="2000", object_class_name=unknown),
             RawObjectClass(row_number=None, object_class="000", object_class_name=unknown),
         ] + self.raw_object_classes
 
@@ -162,15 +167,8 @@ class Command(mixins.ETLMixin, BaseCommand):
         # Alias to cut down on line lengths below.
         ocdr = ObjectClass.DIRECT_REIMBURSABLE
 
-        def derive_remaining_fields(raw_object_class: RawObjectClass) -> FullObjectClass:
-
-            if len(raw_object_class.object_class) == 4:
-                direct_reimbursable = ocdr.LEADING_DIGIT_MAPPING[raw_object_class.object_class[0]]
-                object_class = raw_object_class.object_class[1:]
-            else:
-                direct_reimbursable = None
-                object_class = raw_object_class.object_class
-
+        def derive_remaining_fields(raw_object_class: RawObjectClass, direct_reimbursable: str) -> FullObjectClass:
+            object_class = raw_object_class.object_class
             major_object_class = object_class[0] + "0"
             object_class = f"{object_class[:2]}.{object_class[2:]}"
 
@@ -184,7 +182,11 @@ class Command(mixins.ETLMixin, BaseCommand):
                 direct_reimbursable_name=ocdr.LOOKUP[direct_reimbursable],
             )
 
-        self.full_object_classes = [derive_remaining_fields(roc) for roc in self.raw_object_classes]
+        self.full_object_classes = []
+        for roc in self.raw_object_classes:
+            # for each object class, we're including the three possible versions
+            for dr in [ocdr.UNKNOWN, ocdr.DIRECT, ocdr.REIMBURSABLE]:
+                self.full_object_classes.append(derive_remaining_fields(roc, dr))
 
     def _import_object_classes(self):
 
@@ -221,6 +223,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         self._execute_dml_sql(CREATE_TEMP_TABLE, "Create object_class temp table")
         self._execute_function_and_log(self._read_raw_object_classes_csv, "Read raw object class csv")
         self._execute_function(self._validate_raw_object_classes, "Validate raw object classes")
+        self._execute_function(self._keep_only_3_digit_object_classes, "Keep 3-digit object classes")
         self._execute_function(self._add_unknown_object_classes, 'Add "unknown" object classes')
         self._execute_function(self._derive_remaining_fields, "Derive remaining fields")
         self._execute_function_and_log(self._import_object_classes, "Import object classes")

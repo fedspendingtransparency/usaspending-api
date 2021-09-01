@@ -83,11 +83,11 @@ class CertifiedAwardFinancial:
         return self.db_cursor.fetchall()[0][0]
 
     @property
-    def tas_ids(self):
+    def account_nums(self):
         sql = f"""
-            select distinct c.tas_id
+            select distinct c.account_num
             {self.get_from_where(self.submission_attributes.submission_id)}
-            and c.tas_id is not null
+            and c.account_num is not null
         """
         self.db_cursor.execute(sql)
         return dictfetchall(self.db_cursor)
@@ -132,7 +132,7 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
     total_rows = certified_award_financial.count
     start_time = datetime.now()
 
-    bulk_treasury_appropriation_account_tas_lookup(certified_award_financial.tas_ids, db_cursor)
+    bulk_treasury_appropriation_account_tas_lookup(certified_award_financial.account_nums, db_cursor)
 
     _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse)
 
@@ -159,7 +159,7 @@ def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped
         upper_case_dict_values(row)
 
         # Check and see if there is an entry for this TAS
-        treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(row.get("tas_id"))
+        treasury_account, tas_rendering_label = get_treasury_appropriation_account_tas_lookup(row.get("account_num"))
         if treasury_account is None:
             skipped_tas[tas_rendering_label] += 1
             continue

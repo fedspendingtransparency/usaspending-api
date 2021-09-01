@@ -49,8 +49,8 @@ base_mapping = {
     "prime_award_recipient_id": "prime_award_recipient_id",
     "generated_internal_id": "generated_unique_award_id",
     "def_codes": "disaster_emergency_fund_codes",
-    "COVID-19 Obligations": "total_covid_obligation",
-    "COVID-19 Outlays": "total_covid_outlay",
+    "COVID-19 Obligations": "covid_spending_by_defc",
+    "COVID-19 Outlays": "covid_spending_by_defc",
 }
 contracts_mapping = {
     **base_mapping,

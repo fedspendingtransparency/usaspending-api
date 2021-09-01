@@ -6,7 +6,6 @@ from model_mommy import mommy
 import json
 
 from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
 @pytest.fixture
@@ -16,20 +15,45 @@ def account_models():
         "submissions.SubmissionAttributes",
         reporting_period_start=date(2014, 10, 1),
         reporting_fiscal_year=2015,
+        reporting_fiscal_period=10,
+        reporting_fiscal_quarter=4,
+        toptier_code="a",
+        is_final_balances_for_fy=False,
     )
     subm_2015_2 = mommy.make(
         "submissions.SubmissionAttributes",
         reporting_period_start=date(2015, 8, 1),
         reporting_fiscal_year=2015,
+        reporting_fiscal_period=8,
+        reporting_fiscal_quarter=3,
+        toptier_code="a",
         is_final_balances_for_fy=True,
     )
     subm_2016_1 = mommy.make(
-        "submissions.SubmissionAttributes", reporting_period_start=date(2016, 1, 1), reporting_fiscal_year=2016
+        "submissions.SubmissionAttributes",
+        reporting_period_start=date(2016, 1, 1),
+        reporting_fiscal_year=2016,
+        reporting_fiscal_period=1,
+        reporting_fiscal_quarter=1,
+        toptier_code="a",
+        is_final_balances_for_fy=False,
     )
     subm_2016_2 = mommy.make(
         "submissions.SubmissionAttributes",
+        reporting_period_start=date(2016, 4, 1),
+        reporting_fiscal_year=2016,
+        reporting_fiscal_period=4,
+        reporting_fiscal_quarter=2,
+        toptier_code="a",
+        is_final_balances_for_fy=False,
+    )
+    subm_2016_3 = mommy.make(
+        "submissions.SubmissionAttributes",
         reporting_period_start=date(2016, 6, 1),
         reporting_fiscal_year=2016,
+        reporting_fiscal_period=6,
+        reporting_fiscal_quarter=2,
+        toptier_code="a",
         is_final_balances_for_fy=True,
     )
 
@@ -44,6 +68,7 @@ def account_models():
     # add tas data
     tas_1 = mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="ABC", _fill_optional=True)
     tas_2 = mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="XYZ", _fill_optional=True)
+    tas_3 = mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="ZZZ", _fill_optional=True)
 
     # add file A data
     mommy.make(
@@ -73,6 +98,13 @@ def account_models():
         budget_authority_unobligated_balance_brought_forward_fyb=10,
         _fill_optional=True,
         submission=subm_2016_2,
+    )
+    mommy.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas_3,
+        budget_authority_unobligated_balance_brought_forward_fyb=5,
+        _fill_optional=True,
+        submission=subm_2016_3,
     )
     AppropriationAccountBalances.populate_final_of_fy()
 
@@ -113,7 +145,15 @@ def account_models():
         _fill_optional=True,
         submission=subm_2016_2,
     )
-    FinancialAccountsByProgramActivityObjectClass.populate_final_of_fy()
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        object_class=obj_clas_2,
+        program_activity=prg_atvy_2,
+        treasury_account=tas_3,
+        obligations_undelivered_orders_unpaid_total_cpe=100,
+        _fill_optional=True,
+        submission=subm_2016_3,
+    )
 
 
 @pytest.mark.django_db
@@ -122,7 +162,7 @@ def test_tas_balances_total(account_models, client):
     Ensure the categories aggregation counts properly
     """
 
-    response_tas_sums = {"ABC": "20.00", "XYZ": "20.00"}
+    response_tas_sums = {"XYZ": "10.00", "ZZZ": "5.00"}
 
     resp = client.post(
         "/api/v1/tas/balances/total/",
@@ -136,6 +176,7 @@ def test_tas_balances_total(account_models, client):
     )
 
     assert resp.status_code == 200
+    assert len(resp.data["results"]) == 2
     for result in resp.data["results"]:
         assert response_tas_sums[result["item"]] == result["aggregate"]
 
@@ -146,9 +187,9 @@ def test_tas_categories_total(account_models, client):
     Ensure the categories aggregation counts properly
     """
 
-    response_prg_sums = {"1": "17000.00", "2": "3000.00"}
-    response_obj_sums = {"1": "17000.00", "2": "3000.00"}
-    response_tas_1_obj_sums = {"1": "17000.00", "2": "3000.00"}
+    response_prg_sums = {"2": "1100.00"}
+    response_obj_sums = {"2": "1100.00"}
+    response_tas_1_obj_sums = {"2": "100.00"}
 
     resp = client.post(
         "/api/v1/tas/categories/total/",
@@ -157,6 +198,7 @@ def test_tas_categories_total(account_models, client):
     )
 
     assert resp.status_code == 200
+    assert len(resp.data["results"]) == 1
     for result in resp.data["results"]:
         assert response_prg_sums[result["item"]] == result["aggregate"]
 
@@ -169,6 +211,7 @@ def test_tas_categories_total(account_models, client):
     )
 
     assert resp.status_code == 200
+    assert len(resp.data["results"]) == 1
     for result in resp.data["results"]:
         assert response_obj_sums[result["item"]] == result["aggregate"]
 
@@ -179,12 +222,13 @@ def test_tas_categories_total(account_models, client):
             {
                 "field": "obligations_undelivered_orders_unpaid_total_cpe",
                 "group": "object_class__object_class",
-                "filters": [{"field": "treasury_account__tas_rendering_label", "operation": "equals", "value": "ABC"}],
+                "filters": [{"field": "treasury_account__tas_rendering_label", "operation": "equals", "value": "ZZZ"}],
             }
         ),
     )
 
     assert resp.status_code == 200
+    assert len(resp.data["results"]) == 1
     for result in resp.data["results"]:
         assert response_tas_1_obj_sums[result["item"]] == result["aggregate"]
 
@@ -195,9 +239,9 @@ def test_tas_categories_quarters_total(account_models, client):
     Ensure the categories quarters aggregation counts properly
     """
 
-    response_prg_sums = {"1": "17000.00", "2": "3000.00"}
-    response_obj_sums = {"1": "17000.00", "2": "3000.00"}
-    response_tas_1_obj_sums = {"1": "17000.00", "2": "3000.00"}
+    response_prg_sums = {"1": "17000.00", "2": "1100.00"}
+    response_obj_sums = {"1": "17000.00", "2": "1100.00"}
+    response_tas_1_obj_sums = {"2": "100.00"}
 
     resp = client.post(
         "/api/v1/tas/categories/quarters/total/",
@@ -206,6 +250,7 @@ def test_tas_categories_quarters_total(account_models, client):
     )
 
     assert resp.status_code == 200
+    assert len(resp.data["results"]) == 2
     for result in resp.data["results"]:
         assert response_prg_sums[result["item"]] == result["aggregate"]
 
@@ -218,6 +263,7 @@ def test_tas_categories_quarters_total(account_models, client):
     )
 
     assert resp.status_code == 200
+    assert len(resp.data["results"]) == 2
     for result in resp.data["results"]:
         assert response_obj_sums[result["item"]] == result["aggregate"]
 
@@ -228,12 +274,13 @@ def test_tas_categories_quarters_total(account_models, client):
             {
                 "field": "obligations_undelivered_orders_unpaid_total_cpe",
                 "group": "object_class__object_class",
-                "filters": [{"field": "treasury_account__tas_rendering_label", "operation": "equals", "value": "ABC"}],
+                "filters": [{"field": "treasury_account__tas_rendering_label", "operation": "equals", "value": "ZZZ"}],
             }
         ),
     )
 
     assert resp.status_code == 200
+    assert len(resp.data["results"]) == 1
     for result in resp.data["results"]:
         assert response_tas_1_obj_sums[result["item"]] == result["aggregate"]
 
@@ -244,10 +291,10 @@ def test_tas_balances_quarter_total(account_models, client):
     Ensure the categories aggregation counts properly
     """
 
-    response_tas_sums = {"ABC": "20.00", "XYZ": "20.00"}
+    response_tas_sums = {"ABC": "20.00", "XYZ": "10.00", "ZZZ": "5.00"}
 
     resp = client.post(
-        "/api/v1/tas/balances/total/",
+        "/api/v1/tas/balances/quarters/total/",
         content_type="application/json",
         data=json.dumps(
             {
@@ -258,6 +305,7 @@ def test_tas_balances_quarter_total(account_models, client):
     )
 
     assert resp.status_code == 200
+    assert len(resp.data["results"]) == 3
     for result in resp.data["results"]:
         print(response_tas_sums[result["item"]] + " " + result["aggregate"])
         assert response_tas_sums[result["item"]] == result["aggregate"]

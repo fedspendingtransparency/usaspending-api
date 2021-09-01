@@ -11,11 +11,13 @@
 .vscode
 
 # Temporary and generated files
-log/*
-usaspending_api/logs/*
-csv_downloads/*
 bulk_downloads/*
+chunked_matviews/*
+csv_downloads/*
+log/*
+matviews/*
 tmp/*
+usaspending_api/logs/*
 
 # pyenv ignores
 .python-version

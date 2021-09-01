@@ -2,7 +2,7 @@ import random
 
 from django.db import DEFAULT_DB_ALIAS
 from usaspending_api.references.models import FilterHash
-from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.models.download_job import DownloadJob
 
 
 class ReadReplicaRouter:

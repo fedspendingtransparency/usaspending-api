@@ -299,3 +299,16 @@ END$$;"""
 def generate_test_db_connection_string():
     db = connection.cursor().db.settings_dict
     return "postgres://{}:{}@{}:5432/{}".format(db["USER"], db["PASSWORD"], db["HOST"], db["NAME"])
+
+
+def sort_with_null_last(to_sort, sort_key, sort_order, tie_breaker=None):
+    """
+    Use tuples to sort results so that None can be converted to a Boolean for comparison
+    """
+    if tie_breaker is None:
+        tie_breaker = sort_key
+    return sorted(
+        to_sort,
+        key=lambda x: ((x[sort_key] is None) == (sort_order == "asc"), x[sort_key], x[tie_breaker]),
+        reverse=(sort_order == "desc"),
+    )

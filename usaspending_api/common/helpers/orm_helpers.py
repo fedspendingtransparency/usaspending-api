@@ -1,8 +1,7 @@
 from datetime import date
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, CharField, Func, IntegerField, Case, When, Value, Subquery, OuterRef
+from django.db.models import Aggregate, Case, CharField, Func, IntegerField, Subquery, Value, When
 from django.db.models.functions import Concat, LPad, Cast
-from usaspending_api.references.models import CGAC
 
 from usaspending_api.search.models import (
     ContractAwardSearchMatview,
@@ -88,14 +87,16 @@ class ConcatAll(Func):
     function = "CONCAT"
 
 
-def get_agency_name_annotation(relation_name: str, cgac_column_name: str) -> Subquery:
+class AvoidSubqueryInGroupBy(Subquery):
     """
-    Accepts the Django foreign key relation name for the outer queryset to TreasuryAppropriationAccount
-    or FederalAccount join and the CGAC column name and returns an annotation ready Subquery object that
-    retrieves the CGAC agency name.
+    Django currently adds Subqueries to the Group By clause by default when an Aggregation or Annotation is
+    used. This is not always needed and for those queries where it is not needed it can hurt performance.
+    The ability to avoid this was implemented in Django 3.2:
+    https://github.com/django/django/commit/fb3f034f1c63160c0ff13c609acd01c18be12f80
     """
-    outer_ref = f"{relation_name}__{cgac_column_name}"
-    return Subquery(CGAC.objects.filter(cgac_code=OuterRef(outer_ref)).values("agency_name"))
+
+    def get_group_by_cols(self):
+        return []
 
 
 def get_fyp_notation(relation_name=None):

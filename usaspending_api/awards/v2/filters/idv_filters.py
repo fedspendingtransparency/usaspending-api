@@ -53,5 +53,5 @@ def idv_treasury_account_funding_filter(account_type, download_table, filters, a
         queryset = download_table.objects.filter(financial_accounts_by_awards_id__isnull=True)
     else:
         queryset = download_table.objects.filter(award_id__in=award_ids)
-    queryset = generate_treasury_account_query(queryset, "award_financial", account_level, filters)
+    queryset = generate_treasury_account_query(queryset, "award_financial", filters)
     return queryset

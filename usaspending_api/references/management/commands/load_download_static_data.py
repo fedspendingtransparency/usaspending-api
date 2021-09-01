@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from usaspending_api.download.models import JobStatus
+from usaspending_api.download.models.download_job import JobStatus
 from usaspending_api.download import lookups
 
 from django.db import transaction

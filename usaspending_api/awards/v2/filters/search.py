@@ -6,7 +6,6 @@ from django.db.models import Q
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.search.filters.postgres.psc import PSCCodes
-from usaspending_api.search.models import AwardSearchView, TransactionSearch
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
 from usaspending_api.common.exceptions import InvalidParameterException, NotImplementedException
@@ -15,15 +14,12 @@ from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
 from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
 
 logger = logging.getLogger(__name__)
-
-
-def universal_award_matview_filter(filters):
-    return matview_search_filter(filters, AwardSearchView, for_downloads=True)
 
 
 def transaction_search_filter(filters):

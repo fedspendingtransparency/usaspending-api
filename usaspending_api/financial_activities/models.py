@@ -1,28 +1,15 @@
-from django.db import models, connection
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from django.db import models
 from usaspending_api.references.models import ObjectClass, RefProgramActivity
-from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
-class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
-    def get_queryset(self):
-        """
-        Get only records from the last submission per TAS per fiscal year.
-        """
-
-        return super(FinancialAccountsByProgramActivityObjectClassManager, self).get_queryset().filter(final_of_fy=True)
-
-
-class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
-    """ Model corresponding to Agency File B """
-
+class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     financial_accounts_by_program_activity_object_class_id = models.AutoField(primary_key=True)
     program_activity = models.ForeignKey(RefProgramActivity, models.DO_NOTHING, null=True, db_index=True)
-    submission = models.ForeignKey(SubmissionAttributes, models.CASCADE)
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
     object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True, db_index=True)
     treasury_account = models.ForeignKey(
-        TreasuryAppropriationAccount, models.CASCADE, related_name="program_balances", null=True
+        "accounts.TreasuryAppropriationAccount", models.CASCADE, related_name="program_balances", null=True
     )
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
@@ -76,7 +63,26 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
-    final_of_fy = models.BooleanField(blank=False, null=False, default=False, db_index=True)
+
+    class Meta:
+        abstract = True
+
+
+class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
+    def get_queryset(self):
+        """
+        Get only records from the last submission per TAS per fiscal year.
+        """
+
+        return (
+            super(FinancialAccountsByProgramActivityObjectClassManager, self)
+            .get_queryset()
+            .filter(submission__is_final_balances_for_fy=True)
+        )
+
+
+class FinancialAccountsByProgramActivityObjectClass(AbstractFinancialAccountsByProgramActivityObjectClass):
+    """ Model corresponding to Agency File B """
 
     class Meta:
         managed = True
@@ -84,54 +90,3 @@ class FinancialAccountsByProgramActivityObjectClass(DataSourceTrackedModel):
 
     objects = models.Manager()
     final_objects = FinancialAccountsByProgramActivityObjectClassManager()
-
-    """
-    Note: The FINAL_OF_FY_SQL will be used despite UPDATED_FINAL_OF_FY_SQL being more accurate.
-          Reasons for this decision are twofold
-            1. It is significantly more performant than the more accurate SQL
-            2. The endpoints which use this field are V1 which don't require the effort for accuracy and performance.
-    """
-    FINAL_OF_FY_SQL = """
-        with submission_ids as (
-            select distinct submission_id from (
-                select distinct on (f.treasury_account_id, s.reporting_fiscal_year)
-                    s.submission_id
-                from
-                    submission_attributes s
-                    inner join financial_accounts_by_program_activity_object_class f on s.submission_id = f.submission_id
-                order by
-                    f.treasury_account_id,
-                    s.reporting_fiscal_year,
-                    s.reporting_period_end desc
-            ) t
-        )
-        update  financial_accounts_by_program_activity_object_class f
-        set     final_of_fy = (submission_id in (select submission_id from submission_ids))
-        where   final_of_fy != (submission_id in (select submission_id from submission_ids))
-    """
-
-    UPDATED_FINAL_OF_FY_SQL = """
-        UPDATE financial_accounts_by_program_activity_object_class
-        SET final_of_fy = (treasury_account_id, program_activity_id, object_class_id, submission_id) in
-        ( SELECT DISTINCT ON
-            (fabpaoc.treasury_account_id,
-             fabpaoc.program_activity_id,
-             fabpaoc.object_class_id,
-             FY(s.reporting_period_start))
-          fabpaoc.treasury_account_id,
-          fabpaoc.program_activity_id,
-          fabpaoc.object_class_id,
-          s.submission_id
-          FROM submission_attributes s
-          JOIN financial_accounts_by_program_activity_object_class fabpaoc
-              ON (s.submission_id = fabpaoc.submission_id)
-          ORDER BY fabpaoc.treasury_account_id,
-                   fabpaoc.program_activity_id,
-                   fabpaoc.object_class_id,
-                   FY(s.reporting_period_start),
-                   s.reporting_period_start DESC)"""
-
-    @classmethod
-    def populate_final_of_fy(cls):
-        with connection.cursor() as cursor:
-            cursor.execute(cls.FINAL_OF_FY_SQL)
