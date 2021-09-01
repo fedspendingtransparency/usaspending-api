@@ -330,11 +330,10 @@ def delete_transactions(client: Elasticsearch, config: dict, task_id: str = "Syn
     Returns: Number of ES docs deleted in the index
     """
     deleted_tx_keys = _gather_deleted_transaction_keys(config)
-    deleted_tx_keys = _check_transactions_for_deletes([*deleted_tx_keys])
     return delete_docs_by_unique_key(
         client,
         key=config["unique_key_field"],
-        value_list=deleted_tx_keys,
+        value_list=[*deleted_tx_keys],
         task_id="Sync DB Deletes",
         index=config["index_name"],
         delete_chunk_size=config["partition_size"],
@@ -433,26 +432,5 @@ def _check_awards_for_deletes(id_list: list) -> list:
         FROM (values {ids}) AS x(generated_unique_award_id)
         LEFT JOIN awards a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id IS NULL"""
-
-    return execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
-
-
-def _check_transactions_for_deletes(id_list: list) -> list:
-    """
-    Takes a list of transaction key values and returns them if they are NOT found in the
-    transaction_normalized DB table
-    """
-    if len(id_list) < 1:
-        return []
-
-    formatted_value_ids = ""
-    for x in id_list:
-        formatted_value_ids += "('" + x + "'),"
-
-    sql = """
-        SELECT x.generated_unique_transaction_id
-        FROM (values {ids}) AS x(generated_unique_transaction_id)
-        LEFT JOIN awards a ON a.generated_unique_transaction_id = x.generated_unique_transaction_id
-        WHERE a.generated_unique_transaction_id IS NULL"""
 
     return execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
