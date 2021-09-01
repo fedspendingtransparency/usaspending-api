@@ -365,6 +365,7 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
         logger.info(format_log(f"CSV data from {start_date} to {end_date}", action="Delete"))
 
     print(f"Starting date (gather_deletes): {start_date}")
+    print(f"End date (gather_deletes): {end_date}")
 
     filtered_csv_list = [
         x
@@ -420,7 +421,6 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
 
 def _check_awards_for_deletes(id_list: list) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
-
     formatted_value_ids = ""
     for x in id_list:
         formatted_value_ids += "('" + x + "'),"
