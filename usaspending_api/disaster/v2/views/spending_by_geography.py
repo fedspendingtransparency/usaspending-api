@@ -107,7 +107,9 @@ class SpendingByGeographyViewSet(DisasterBase):
             self.metric_agg = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
         elif self.spending_type == "face_value_of_loan":
             self.metric_field = "total_loan_value"
-            self.metric_agg = A("sum", field="total_loan_value", script="_value * 100")
+            self.metric_agg = A("reverse_nested", **{}).metric(
+                self.spending_type, A("sum", field="total_loan_value", script="_value * 100")
+            )
         else:
             raise UnprocessableEntityException(
                 f"Unrecognized value '{self.spending_type}' for field " f"'spending_type'"
@@ -177,9 +179,18 @@ class SpendingByGeographyViewSet(DisasterBase):
                     shape_code = f"{state_fips}{geo_info['congressional_code']}"
 
             per_capita = None
-            amount = int(
-                bucket.get("nested", {}).get("filtered_aggs", {}).get(f"{self.spending_type}", {"value": 0})["value"]
-            ) / Decimal("100")
+            if self.spending_type != "face_value_of_loan":
+                amount = int(
+                    bucket.get("nested", {}).get("filtered_aggs", {}).get(self.spending_type, {}).get("value", 0)
+                ) / Decimal("100")
+            else:
+                amount = int(
+                    bucket.get("nested", {})
+                    .get("filtered_aggs", {})
+                    .get(self.spending_type, {})
+                    .get(self.spending_type, {})
+                    .get("value", 0)
+                ) / Decimal("100")
 
             if population:
                 per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
