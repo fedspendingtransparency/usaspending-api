@@ -361,11 +361,7 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
     # been deleted in postgres by the fabs/fpds loader
     end_date = get_latest_load_date(["fabs", "fpds"])
 
-    if config["verbose"]:
-        logger.info(format_log(f"CSV data from {start_date} to {end_date}", action="Delete"))
-
-    print(f"Starting date (gather_deletes): {start_date}")
-    print(f"End date (gather_deletes): {end_date}")
+    logger.info(format_log(f"CSV data from {start_date} to {end_date}", action="Delete"))
 
     filtered_csv_list = [
         x
