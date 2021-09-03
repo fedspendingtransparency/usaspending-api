@@ -2,11 +2,14 @@ import pytest
 
 from rest_framework import status
 
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
 url = "/api/v2/disaster/award/count/"
 
 
 @pytest.mark.django_db
-def test_award_count_basic(client, monkeypatch, basic_award, helpers):
+def test_award_count_basic(client, monkeypatch, basic_award, helpers, elasticsearch_account_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
@@ -15,7 +18,10 @@ def test_award_count_basic(client, monkeypatch, basic_award, helpers):
 
 
 @pytest.mark.django_db
-def test_award_count_quarterly(client, monkeypatch, award_with_quarterly_submission, helpers):
+def test_award_count_quarterly(
+    client, monkeypatch, award_with_quarterly_submission, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
@@ -23,7 +29,8 @@ def test_award_count_quarterly(client, monkeypatch, award_with_quarterly_submiss
 
 
 @pytest.mark.django_db
-def test_award_count_early(client, monkeypatch, award_with_early_submission, helpers):
+def test_award_count_early(client, monkeypatch, award_with_early_submission, helpers, elasticsearch_account_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
@@ -31,7 +38,10 @@ def test_award_count_early(client, monkeypatch, award_with_early_submission, hel
 
 
 @pytest.mark.django_db
-def test_award_count_obligations_incurred(client, monkeypatch, basic_award, obligations_incurred_award, helpers):
+def test_award_count_obligations_incurred(
+    client, monkeypatch, basic_award, obligations_incurred_award, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
@@ -39,7 +49,10 @@ def test_award_count_obligations_incurred(client, monkeypatch, basic_award, obli
 
 
 @pytest.mark.django_db
-def test_multiple_faba_per_award(client, monkeypatch, multiple_file_c_to_same_award, helpers):
+def test_multiple_faba_per_award(
+    client, monkeypatch, multiple_file_c_to_same_award, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
@@ -48,8 +61,9 @@ def test_multiple_faba_per_award(client, monkeypatch, multiple_file_c_to_same_aw
 
 @pytest.mark.django_db
 def test_multiple_faba_per_award_that_cancel_out(
-    client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers
+    client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers, elasticsearch_account_index
 ):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
@@ -57,7 +71,10 @@ def test_multiple_faba_per_award_that_cancel_out(
 
 
 @pytest.mark.django_db
-def test_award_count_non_matching_defc(client, monkeypatch, non_matching_defc_award, helpers):
+def test_award_count_non_matching_defc(
+    client, monkeypatch, non_matching_defc_award, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
@@ -65,7 +82,10 @@ def test_award_count_non_matching_defc(client, monkeypatch, non_matching_defc_aw
 
 
 @pytest.mark.django_db
-def test_award_count_non_matching_award_type(client, monkeypatch, non_matching_defc_award, helpers):
+def test_award_count_non_matching_award_type(
+    client, monkeypatch, non_matching_defc_award, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = helpers.post_for_count_endpoint(client, url, ["M"], ["B"])
@@ -73,7 +93,10 @@ def test_award_count_non_matching_award_type(client, monkeypatch, non_matching_d
 
 
 @pytest.mark.django_db
-def test_no_award_with_award_types_provided(client, monkeypatch, file_c_with_no_award, helpers):
+def test_no_award_with_award_types_provided(
+    client, monkeypatch, file_c_with_no_award, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
@@ -81,7 +104,10 @@ def test_no_award_with_award_types_provided(client, monkeypatch, file_c_with_no_
 
 
 @pytest.mark.django_db
-def test_no_award_with_award_types_not_provided(client, monkeypatch, file_c_with_no_award, helpers):
+def test_no_award_with_award_types_not_provided(
+    client, monkeypatch, file_c_with_no_award, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_count_endpoint(client, url, ["M"])
     assert resp.data["count"] == 2
