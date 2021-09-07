@@ -16,6 +16,7 @@ EXTERNAL_DATA_TYPE = [
     # "opposite" side of the broker data load, data from USAspending DB -> Elasticsearch
     LookupType(100, "es_transactions", "Load elasticsearch with transactions from USAspending"),
     LookupType(101, "es_awards", "Load elasticsearch with awards from USAspending"),
+    LookupType(102, "es_deletes", "Award and Transaction deletions from elasticsearch"),
     # Additional times to keep track of
     LookupType(120, "touch_last_period_awards", "Touch awards from last period, so they will be updated in ES"),
 ]
