@@ -59,7 +59,7 @@ def get_earliest_load_date(keys, default=None):
     if earliest_date is None:
         logger.warning(f"No earliest load date could be calculated because no dates for keys `{keys}` were found!")
 
-    return key_date
+    return earliest_date
 
 
 def get_latest_load_date(keys, default=None):
@@ -77,13 +77,13 @@ def get_latest_load_date(keys, default=None):
         if key_date:
             if latest_date is None:
                 latest_date = key_date
-            elif key_date < latest_date:
+            elif key_date > latest_date:
                 latest_date = key_date
 
     if latest_date is None:
         logger.warning(f"No latest load date could be calculated because no dates for keys `{keys}` were found!")
 
-    return key_date
+    return latest_date
 
 
 def update_last_load_date(key, last_load_date):
