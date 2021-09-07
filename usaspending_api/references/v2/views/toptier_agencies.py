@@ -1,3 +1,5 @@
+import urllib
+
 from django.db.models import F, Sum, OuterRef, Max, Q
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
@@ -190,7 +192,7 @@ class ToptierAgenciesViewSet(APIView):
                         if total_budgetary_resources > 0
                         else None
                     ),
-                    "agency_slug": agency["toptier_name"].lower().replace(" ", "-"),
+                    "agency_slug": urllib.parse.quote_plus(agency["toptier_name"].lower().replace(" ", "-")),
                 }
             )
 
