@@ -10,6 +10,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
 
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, get_latest_load_date
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_AWARDS_UNIQUE_KEY_FIELD,
@@ -355,13 +356,22 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
     bucket_objects = retrieve_s3_bucket_object_list(bucket_name=config["s3_bucket"])
     logger.info(format_log(f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'", action="Delete"))
 
-    if config["verbose"]:
-        logger.info(format_log(f"CSV data from {config['starting_date']} to now", action="Delete"))
+    start_date = get_last_load_date("es_deletes")
+    # An `end_date` is used, so we don't try to delete records from ES that have not yet
+    # been deleted in postgres by the fabs/fpds loader
+    end_date = get_latest_load_date(["fabs", "fpds"])
+
+    logger.info(format_log(f"CSV data from {start_date} to {end_date}", action="Delete"))
 
     filtered_csv_list = [
         x
         for x in bucket_objects
-        if (x.key.endswith(".csv") and not x.key.startswith("staging") and x.last_modified >= config["starting_date"])
+        if (
+            x.key.endswith(".csv")
+            and not x.key.startswith("staging")
+            and x.last_modified >= start_date
+            and x.last_modified <= end_date
+        )
     ]
 
     if config["verbose"]:
