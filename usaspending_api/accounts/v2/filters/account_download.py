@@ -43,6 +43,7 @@ from usaspending_api.settings import HOST
 from usaspending_api.submissions.helpers import (
     ClosedPeriod,
     get_submission_ids_for_periods,
+    get_last_closed_periods_per_year,
 )
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
@@ -88,7 +89,7 @@ def account_download_filter(account_type, download_table, filters, account_level
 
     # Make derivations based on the account level
     if account_level == "treasury_account":
-        queryset = generate_treasury_account_query(download_table.objects, account_type, filters)
+        queryset = generate_treasury_account_query(download_table.objects, account_type)
     elif account_level == "federal_account":
         queryset = generate_federal_account_query(download_table.objects, account_type, tas_id, filters)
     else:
@@ -159,51 +160,66 @@ def get_nonzero_filter():
     return nonzero_outlay | nonzero_toa
 
 
-def _generate_closed_period_for_derived_field(filters, column_name):
+def _build_submission_queryset(closed_period: ClosedPeriod):
+    if closed_period.is_final:
+        q = closed_period.build_period_q("submission")
+    else:
+        q = closed_period.build_submission_id_q("submission")
+    return q
+
+
+def build_queryset_for_closed_submissions(filters):
     filter_year = filters.get("fy")
 
+    q = Q()
     if filter_year:
         selected_period = ClosedPeriod(filter_year, filters.get("quarter"), filters.get("period"))
-        if selected_period.is_final:
-            q = selected_period.build_period_q("submission")
-        else:
-            q = selected_period.build_submission_id_q("submission")
+        q = _build_submission_queryset(selected_period)
+    else:
+        closed_periods = get_last_closed_periods_per_year()
+        for closed_period in closed_periods:
+            q |= _build_submission_queryset(closed_period)
 
-        submission_filter = Case(
-            When(q, then=F(column_name)), default=Cast(Value(None), DecimalField(max_digits=23, decimal_places=2))
+    return q
+
+
+def _build_submission_queryset_for_derived_fields(submission_closed_period_queryset, column_name):
+    if submission_closed_period_queryset:
+        queryset = Case(
+            When(submission_closed_period_queryset, then=F(column_name)),
+            default=Cast(Value(None), DecimalField(max_digits=23, decimal_places=2)),
         )
     else:
-        submission_filter = Cast(Value(None), DecimalField(max_digits=23, decimal_places=2))
+        queryset = F(column_name)
+    return queryset
 
-    return submission_filter
 
-
-def generate_ussgl487200_derived_field(filters):
+def generate_ussgl487200_derived_field(submission_queryset=None):
     column_name = "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"
-    return _generate_closed_period_for_derived_field(filters, column_name)
+    return _build_submission_queryset_for_derived_fields(submission_queryset, column_name)
 
 
-def generate_ussgl497200_derived_field(filters):
+def generate_ussgl497200_derived_field(submission_queryset=None):
     column_name = "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"
-    return _generate_closed_period_for_derived_field(filters, column_name)
+    return _build_submission_queryset_for_derived_fields(submission_queryset, column_name)
 
 
-def generate_gross_outlay_amount_derived_field(filters, account_type):
+def generate_gross_outlay_amount_derived_field(account_type, submission_queryset=None):
     column_name = {
         "account_balances": "gross_outlay_amount_by_tas_cpe",
         "object_class_program_activity": "gross_outlay_amount_by_program_object_class_cpe",
         "award_financial": "gross_outlay_amount_by_award_cpe",
     }[account_type]
 
-    return _generate_closed_period_for_derived_field(filters, column_name)
+    return _build_submission_queryset_for_derived_fields(submission_queryset, column_name)
 
 
-def generate_treasury_account_query(queryset, account_type, filters):
+def generate_treasury_account_query(queryset, account_type):
     """ Derive necessary fields for a treasury account-grouped query """
     derived_fields = {
         "submission_period": get_fyp_or_q_notation("submission"),
-        "gross_outlay_amount": generate_gross_outlay_amount_derived_field(filters, account_type),
-        "gross_outlay_amount_fyb_to_period_end": generate_gross_outlay_amount_derived_field(filters, account_type),
+        "gross_outlay_amount": generate_gross_outlay_amount_derived_field(account_type),
+        "gross_outlay_amount_fyb_to_period_end": generate_gross_outlay_amount_derived_field(account_type),
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
@@ -211,12 +227,8 @@ def generate_treasury_account_query(queryset, account_type, filters):
     if account_type != "account_balances":
         derived_fields.update(
             {
-                "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": generate_ussgl487200_derived_field(
-                    filters
-                ),
-                "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": generate_ussgl497200_derived_field(
-                    filters
-                ),
+                "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": generate_ussgl487200_derived_field(),
+                "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": generate_ussgl497200_derived_field(),
             }
         )
 
@@ -233,6 +245,10 @@ def generate_treasury_account_query(queryset, account_type, filters):
 
 def generate_federal_account_query(queryset, account_type, tas_id, filters):
     """ Group by federal account (and budget function/subfunction) and SUM all other fields """
+    # Submission Queryset is only built for Federal Account downloads since the TAS are rolled up into
+    # the Federal Account. For cases such as Treasury Account download where there is no GROUP BY in
+    # the resulting SQL query this is not needed.
+    closed_submission_queryset = build_queryset_for_closed_submissions(filters)
     derived_fields = {
         "reporting_agency_name": StringAgg("submission__reporting_agency_name", "; ", distinct=True),
         "budget_function": StringAgg(f"{tas_id}__budget_function_title", "; ", distinct=True),
@@ -240,18 +256,22 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "submission_period": get_fyp_or_q_notation("submission"),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
-        "gross_outlay_amount": Sum(generate_gross_outlay_amount_derived_field(filters, account_type)),
-        "gross_outlay_amount_fyb_to_period_end": Sum(generate_gross_outlay_amount_derived_field(filters, account_type)),
+        "gross_outlay_amount": Sum(
+            generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
+        ),
+        "gross_outlay_amount_fyb_to_period_end": Sum(
+            generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
+        ),
     }
 
     if account_type != "account_balances":
         derived_fields.update(
             {
                 "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": Sum(
-                    generate_ussgl487200_derived_field(filters)
+                    generate_ussgl487200_derived_field(closed_submission_queryset)
                 ),
                 "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": Sum(
-                    generate_ussgl497200_derived_field(filters)
+                    generate_ussgl497200_derived_field(closed_submission_queryset)
                 ),
             }
         )
