@@ -445,7 +445,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     where
                         rl.duns = {recipient_id} and
                         rp.recipient_level = case
-                            when {parent_recipient_unique_id} is null then 'R'
+                            when '{parent_recipient_unique_id}' is null then 'R'
                             else 'C'
                         end and
                     rp.recipient_name not in {special_cases}
