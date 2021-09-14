@@ -2,44 +2,50 @@ import pytest
 
 from rest_framework import status
 
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
 url = "/api/v2/disaster/award/amount/"
 
 
 @pytest.mark.django_db
-def test_award_amount_success(client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers):
+def test_award_amount_success(
+    client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
     resp = helpers.post_for_amount_endpoint(client, url, ["L"], ["A", "09", "10"])
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["award_count"] == 1
-    assert resp.data["outlay"] == 333
-    assert resp.data["obligation"] == 300
+    assert resp.data["outlay"] == 222.0
+    assert resp.data["obligation"] == 200.0
 
     resp = helpers.post_for_amount_endpoint(client, url, ["N", "O"], ["A", "07", "08"])
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["award_count"] == 2
-    assert resp.data["outlay"] == 334
-    assert resp.data["obligation"] == 4
+    assert resp.data["outlay"] == 334.0
+    assert resp.data["obligation"] == 4.0
 
     resp = helpers.post_for_amount_endpoint(client, url, ["9"], ["B"])
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["award_count"] == 0
-    assert resp.data["outlay"] == 0
-    assert resp.data["obligation"] == 0
+    assert resp.data["outlay"] == 0.0
+    assert resp.data["obligation"] == 0.0
 
     resp = helpers.post_for_amount_endpoint(client, url, ["L", "M", "N", "O", "P"], ["07", "08"])
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["award_count"] == 2
-    assert resp.data["outlay"] == 334
-    assert resp.data["obligation"] == 4
+    assert resp.data["outlay"] == 334.0
+    assert resp.data["obligation"] == 4.0
     assert resp.data["face_value_of_loan"] == 7777.0
 
 
 @pytest.mark.django_db
 def test_award_amount_no_award_type_success(
-    client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers
+    client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers, elasticsearch_account_index
 ):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_amount_endpoint(client, url, ["N"], None)
@@ -56,7 +62,10 @@ def test_award_amount_no_award_type_success(
 
 
 @pytest.mark.django_db
-def test_award_amount_on_sum_non_zero_toa(client, monkeypatch, multiple_file_c_to_same_award, helpers):
+def test_award_amount_on_sum_non_zero_toa(
+    client, monkeypatch, multiple_file_c_to_same_award, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
@@ -68,7 +77,10 @@ def test_award_amount_on_sum_non_zero_toa(client, monkeypatch, multiple_file_c_t
 
 
 @pytest.mark.django_db
-def test_award_amount_on_sum_non_zero_outlay(client, monkeypatch, multiple_outlay_file_c_to_same_award, helpers):
+def test_award_amount_on_sum_non_zero_outlay(
+    client, monkeypatch, multiple_outlay_file_c_to_same_award, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
@@ -80,7 +92,10 @@ def test_award_amount_on_sum_non_zero_outlay(client, monkeypatch, multiple_outla
 
 
 @pytest.mark.django_db
-def test_award_amount_on_sum_zero_toa(client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers):
+def test_award_amount_on_sum_zero_toa(
+    client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
@@ -114,7 +129,10 @@ def test_award_amount_bad_award_type_value(client, helpers):
 
 
 @pytest.mark.django_db
-def test_award_type_filters(client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers):
+def test_award_type_filters(
+    client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers, elasticsearch_account_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 

@@ -1,13 +1,17 @@
-from django.contrib.postgres.fields import ArrayField
-from django.db.models import Count, Sum, TextField, F
-from django.db.models.functions import Coalesce, Cast
+from copy import deepcopy
+
+from elasticsearch_dsl import Q as ES_Q, A
 from rest_framework.response import Response
-from usaspending_api.awards.models import FinancialAccountsByAwards, CovidFinancialAccountMatview
+
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
+from usaspending_api.common.elasticsearch.search_wrappers import AccountSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardTypeMixin, FabaOutlayMixin
+from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 
 class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
@@ -36,58 +40,93 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         if all(x in self.filters for x in ["award_type_codes", "award_type"]):
             raise UnprocessableEntityException("Cannot provide both 'award_type_codes' and 'award_type'")
 
+        self.nonzero_fields = ["obligated_sum", "outlay_sum"]
+
+        if self.award_type_codes and set(self.award_type_codes) <= set(loan_type_mapping.keys()):
+            self.nonzero_fields.append("total_loan_value")
+
+        search = self.build_elasticsearch_search()
+        result = self.build_result(search)
         if self.count_only:
-            return Response({"count": self.aggregation["award_count"]})
+            return Response({"count": result["award_count"]})
         else:
-            return Response(self.aggregation)
+            return Response(result)
 
-    @property
-    def aggregation(self):
-        return self._file_d_aggregation() if self.award_type_codes else self._file_c_aggregation()
+    def build_elasticsearch_search(self) -> AccountSearch:
+        if self.award_type_codes:
+            count_field = "award_id"
+        else:
+            count_field = "financial_account_distinct_award_key"
 
-    def _file_d_aggregation(self):
-        aggregations = {
-            "award_count": Count("award_id"),
-            "obligation": Coalesce(Sum("obligation"), 0),
-            "outlay": Coalesce(Sum("outlay"), 0),
-        }
+        filter_query = self._build_elasticsearch_query()
+        search = AccountSearch().filter(filter_query)
 
-        if set(self.award_type_codes) <= set(loan_type_mapping.keys()):
-            aggregations["face_value_of_loan"] = Coalesce(Sum("total_loan_value"), 0)
+        count_agg = create_count_aggregation(count_field)
 
-        return (
-            CovidFinancialAccountMatview.objects.annotate(cast_def_codes=Cast("def_codes", ArrayField(TextField())))
-            .filter(type__in=self.award_type_codes, cast_def_codes__overlap=self.def_codes)
-            .values("award_id")
-            .aggregate(**aggregations)
+        financial_accounts_agg = A("nested", path="financial_accounts_by_award")
+        filter_agg_query = ES_Q(
+            "terms", **{"financial_accounts_by_award.disaster_emergency_fund_code": self.filters.get("def_codes")}
+        )
+        filtered_aggs = A("filter", filter_agg_query)
+        outlay_sum_agg = A(
+            "sum",
+            script="""doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? (
+                (doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0)
+                + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
+                + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0)
+            ) * 100 : 0""",
+        )
+        obligation_sum_agg = A(
+            "sum", field="financial_accounts_by_award.transaction_obligated_amount", script="_value * 100"
+        )
+        reverse_nested_agg = A("reverse_nested", **{})
+        face_value_of_loan_sum_agg = A("sum", field="total_loan_value", script="_value * 100")
+
+        search.aggs.bucket("nested_agg", financial_accounts_agg).bucket("filter_agg", filtered_aggs).metric(
+            "obligation_sum_agg", obligation_sum_agg
+        ).metric("outlay_sum_agg", outlay_sum_agg).bucket("reverse_nested_agg", reverse_nested_agg).metric(
+            "count_agg", count_agg
+        ).metric(
+            "face_value_of_loan_sum_agg", face_value_of_loan_sum_agg
         )
 
-    def _file_c_aggregation(self):
-        filters = [
-            self.all_closed_defc_submissions,
-            self.has_award_of_classification,
-            self.is_in_provided_def_codes,
-        ]
+        return search
 
-        group_by_annotations = {"award_identifier": F("distinct_award_key")}
+    def _build_elasticsearch_query(self) -> ES_Q:
+        filters = deepcopy(self.filters)
+        award_type_filter = filters.pop("award_type", None)
+        filters["nonzero_fields"] = self.nonzero_fields
 
-        dollar_annotations = {
-            "inner_obligation": self.obligated_field_annotation,
-            "inner_outlay": self.outlay_field_annotation,
-        }
+        if filters.get("def_codes"):
+            filters["nested_def_codes"] = filters.pop("def_codes")
 
-        all_annotations = {**group_by_annotations, **dollar_annotations}
+        filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
 
-        return (
-            FinancialAccountsByAwards.objects.filter(*filters)
-            .annotate(**group_by_annotations)
-            .values(*group_by_annotations)
-            .annotate(**dollar_annotations)
-            .exclude(inner_obligation=0, inner_outlay=0)
-            .values(*all_annotations)
-            .aggregate(
-                award_count=Count("award_identifier"),
-                obligation=Coalesce(Sum("inner_obligation"), 0),
-                outlay=Coalesce(Sum("inner_outlay"), 0),
+        if award_type_filter:
+            is_procurement = award_type_filter == "procurement"
+            exists_query = ES_Q("exists", field="financial_accounts_by_award.piid")
+            nested_query = ES_Q(
+                "nested",
+                path="financial_accounts_by_award",
+                query=ES_Q("bool", **{f"must{'' if is_procurement else '_not'}": exists_query}),
             )
-        )
+            filter_query.must.append(nested_query)
+
+        return filter_query
+
+    def build_result(self, search: AccountSearch) -> dict:
+        response = search.handle_execute()
+        response = response.aggs.to_dict()
+        filter_agg = response.get("nested_agg", {}).get("filter_agg", {})
+        reverse_nested_agg = filter_agg.get("reverse_nested_agg", {})
+
+        result = {
+            "award_count": reverse_nested_agg.get("count_agg", {"value": 0})["value"],
+            "obligation": get_summed_value_as_float(filter_agg, "obligation_sum_agg"),
+            "outlay": get_summed_value_as_float(filter_agg, "outlay_sum_agg"),
+        }
+
+        if "total_loan_value" in self.nonzero_fields:
+            result["face_value_of_loan"] = get_summed_value_as_float(reverse_nested_agg, "face_value_of_loan_sum_agg")
+
+        return result
