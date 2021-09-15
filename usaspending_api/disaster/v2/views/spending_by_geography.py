@@ -16,7 +16,6 @@ from usaspending_api.common.validator import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.references.abbreviations import code_to_state
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_awards,
 )
 
@@ -102,10 +101,15 @@ class SpendingByGeographyViewSet(DisasterBase):
         # Set which field will be the aggregation amount
         if self.spending_type == "obligation":
             self.metric_field = "total_covid_obligation"
+            self.metric_agg = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
         elif self.spending_type == "outlay":
             self.metric_field = "total_covid_outlay"
+            self.metric_agg = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
         elif self.spending_type == "face_value_of_loan":
             self.metric_field = "total_loan_value"
+            self.metric_agg = A("reverse_nested", **{}).metric(
+                self.spending_type, A("sum", field="total_loan_value", script="_value * 100")
+            )
         else:
             raise UnprocessableEntityException(
                 f"Unrecognized value '{self.spending_type}' for field " f"'spending_type'"
@@ -138,11 +142,11 @@ class SpendingByGeographyViewSet(DisasterBase):
 
         # Add 100 to make sure that we consider enough records in each shard for accurate results
         group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
-        sum_aggregations = get_scaled_sum_aggregations(self.metric_field)
-        sum_field = sum_aggregations["sum_field"]
+        filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
 
-        search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field)
-
+        search.aggs.bucket("group_by_agg_key", group_by_agg_key).bucket(
+            "nested", A("nested", path="covid_spending_by_defc")
+        ).bucket("filtered_aggs", A("filter", filter_agg_query)).metric(self.spending_type, self.metric_agg)
         # Set size to 0 since we don't care about documents returned
         search.update_from_dict({"size": 0})
 
@@ -175,7 +179,18 @@ class SpendingByGeographyViewSet(DisasterBase):
                     shape_code = f"{state_fips}{geo_info['congressional_code']}"
 
             per_capita = None
-            amount = int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100")
+            if self.spending_type != "face_value_of_loan":
+                amount = int(
+                    bucket.get("nested", {}).get("filtered_aggs", {}).get(self.spending_type, {}).get("value", 0)
+                ) / Decimal("100")
+            else:
+                amount = int(
+                    bucket.get("nested", {})
+                    .get("filtered_aggs", {})
+                    .get(self.spending_type, {})
+                    .get(self.spending_type, {})
+                    .get("value", 0)
+                ) / Decimal("100")
 
             if population:
                 per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))

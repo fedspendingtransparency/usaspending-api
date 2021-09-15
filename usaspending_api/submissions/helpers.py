@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from django.db import connection
-from django.db.models import Q, Max
+from django.db.models import Q, Max, Case, When, F, IntegerField, Value
 from typing import Optional, List
 
+from django.db.models.functions import Cast
 from django_cte import With
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -108,6 +109,35 @@ class ClosedPeriod:
         return Q(**{f"{prefix}submission_id__in": submission_ids})
 
 
+def get_last_closed_periods_per_year():
+    """
+    Returns a list of ClosedPeriods.  fiscal_quarter or fiscal_month may be None if the year didn't
+    have a corresponding period or the period hasn't passed its reveal date yet.
+    """
+    submission_periods = (
+        SubmissionAttributes.objects.filter(submission_window__submission_reveal_date__lte=now())
+        .values("reporting_fiscal_year")
+        .annotate(
+            annotated_fiscal_quarter=Max(
+                Case(
+                    When(quarter_format_flag=True, then=F("reporting_fiscal_quarter")),
+                    default=Cast(Value(None), IntegerField()),
+                )
+            ),
+            annotated_fiscal_period=Max(
+                Case(
+                    When(quarter_format_flag=False, then=F("reporting_fiscal_period")),
+                    default=Cast(Value(None), IntegerField()),
+                )
+            ),
+        )
+    )
+    return [
+        ClosedPeriod(r["reporting_fiscal_year"], r["annotated_fiscal_quarter"], r["annotated_fiscal_period"])
+        for r in submission_periods
+    ]
+
+
 def get_last_closed_quarter_relative_to_month(fiscal_year: int, fiscal_month: int) -> Optional[dict]:
     """ Returns the most recently closed fiscal quarter in the fiscal year less than or equal to the fiscal month. """
     return (
@@ -198,3 +228,56 @@ def get_latest_submission_ids_for_fiscal_year(fiscal_year: int):
         .values_list("submission_id", flat=True)
     )
     return submission_ids
+
+
+def _get_latest_submission_ids_for_each_fiscal_quarter(
+    federal_account_id_filter_obj, fiscal_years: List[int], federal_account_id: int
+):
+    filters = {"submission_window__submission_reveal_date__lte": now()}
+    if len(fiscal_years) > 0:
+        filters["reporting_fiscal_year__in"] = fiscal_years
+    if federal_account_id:
+        filters[f"{federal_account_id_filter_obj}__treasury_account__federal_account_id"] = federal_account_id
+
+    cte = With(
+        SubmissionAttributes.objects.filter(**filters)
+        .values("toptier_code", "reporting_fiscal_year", "reporting_fiscal_quarter")
+        .annotate(latest_fiscal_period=Max("reporting_fiscal_period"))
+    )
+    submission_ids = list(
+        cte.join(
+            SubmissionAttributes,
+            toptier_code=cte.col.toptier_code,
+            reporting_fiscal_period=cte.col.latest_fiscal_period,
+            reporting_fiscal_year=cte.col.reporting_fiscal_year,
+        )
+        .with_cte(cte)
+        .values_list("submission_id", flat=True)
+    )
+    return submission_ids
+
+
+def get_latest_submission_ids_for_each_fiscal_quarter_file_a(
+    fiscal_years: List[int] = [], federal_account_id: int = None
+):
+    """
+    Returns a list of submission_ids that consists of the latest submission_id containing file a data for each quarter
+    of a given fiscal year and federal account. This list will capture cases where a Reporting Agency might not submit
+    in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
+    """
+    return _get_latest_submission_ids_for_each_fiscal_quarter(
+        "appropriationaccountbalances", fiscal_years, federal_account_id
+    )
+
+
+def get_latest_submission_ids_for_each_fiscal_quarter_file_b(
+    fiscal_years: List[int] = [], federal_account_id: int = None
+):
+    """
+    Returns a list of submission_ids that consists of the latest submission_id containing file b data for each quarter
+    of a given fiscal year and federal account. This list will capture cases where a Reporting Agency might not submit
+    in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
+    """
+    return _get_latest_submission_ids_for_each_fiscal_quarter(
+        "financialaccountsbyprogramactivityobjectclass", fiscal_years, federal_account_id
+    )

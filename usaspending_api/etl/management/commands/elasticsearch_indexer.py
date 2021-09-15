@@ -70,7 +70,7 @@ class Command(BaseCommand):
             "--start-datetime",
             type=datetime_command_line_argument_type(naive=False),
             help="Processes transactions updated on or after the UTC date/time provided. yyyy-mm-dd hh:mm:ss "
-            "is always a safe format. Wrap in quotes if date/time contains spaces.",
+            "is always a safe format. Wrap in quotes if date/time contains spaces. Does not apply to deletes",
             metavar="",
         )
         parser.add_argument(
