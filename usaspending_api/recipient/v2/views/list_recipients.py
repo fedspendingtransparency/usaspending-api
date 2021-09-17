@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from django.db.models import F, Q
+from django.db.models import F, Q, Subquery, OuterRef
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -10,7 +10,7 @@ from usaspending_api.common.helpers.generic_helper import get_pagination_metadat
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.utils import update_model_in_list
-from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.recipient.models import RecipientProfile, DUNS
 from usaspending_api.recipient.v2.lookups import AWARD_TYPES, SPECIAL_CASES
 
 logger = logging.getLogger(__name__)
@@ -48,6 +48,9 @@ def get_recipients(filters={}, count=None):
         RecipientProfile.objects.filter(qs_filter)
         .values("recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column)
         .exclude(recipient_name__in=SPECIAL_CASES)
+        .annotate(
+            uei=Subquery(DUNS.objects.filter(awardee_or_recipient_uniqu=OuterRef("recipient_unique_id")).values("uei"))
+        )
     )
     api_to_db_mapper = {"amount": amount_column, "duns": "recipient_unique_id", "name": "recipient_name"}
 
@@ -69,6 +72,7 @@ def get_recipients(filters={}, count=None):
         {
             "id": "{}-{}".format(row["recipient_hash"], row["recipient_level"]),
             "duns": row["recipient_unique_id"],
+            "uei": row["uei"],
             "name": row["recipient_name"],
             "recipient_level": row["recipient_level"],
             "amount": row[amount_column],

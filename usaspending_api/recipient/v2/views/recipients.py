@@ -349,6 +349,7 @@ class RecipientOverView(APIView):
             "name": recipient_name,
             "alternate_names": alternate_names,
             "duns": recipient_duns,
+            "uei": DUNS.objects.get(awardee_or_recipient_uniqu=recipient_duns).uei,
             "recipient_id": recipient_id,
             "recipient_level": recipient_level,
             "parent_id": parent_id,
@@ -406,6 +407,7 @@ class ChildRecipients(APIView):
                     "recipient_id": "{}-C".format(total["recipient_hash"]),
                     "name": total["recipient_name"],
                     "duns": total["recipient_unique_id"],
+                    # "uei": DUNS.objects.get(awardee_or_recipient_uniqu=total["recipient_unique_id"]).uei,
                     "amount": total["total_obligation_amount"],
                 }
             )

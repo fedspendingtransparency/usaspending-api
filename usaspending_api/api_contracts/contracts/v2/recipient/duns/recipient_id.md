@@ -87,6 +87,8 @@ This endpoint returns a high-level overview of a specific recipient, given its i
     Additional names that the recipient has been / is known by.
 + `duns` (required, string, nullable)
     Recipient's DUNS (Data Universal Numbering System) number. `null` when no DUNS is provided.
++ `uei` (required, string, nullable)
+    Recipient's UEI (Unique Entity Identifier). `null` when no UEI is provided.
 + `recipient_id` (required, string)
     A unique identifier for the recipient.
 + `parents` (required, array[ParentRecipient], fixed-type)
