@@ -17,6 +17,7 @@ This endpoint provides funding and spending details from emergency/disaster supp
         + `funding` (required, array[Funding], fixed-type)
         + `total_budget_authority` (required, number)
         + `spending` (required, Spending, fixed-type)
+        + `additional` (optional, Additional, fixed-type)
 
     + Body
 
@@ -37,6 +38,13 @@ This endpoint provides funding and spending details from emergency/disaster supp
                     "award_outlays": 413100000000,
                     "total_obligations": 963000000000,
                     "total_outlays": 459000000000
+                },
+                "additional": {
+                    "spending": {
+                        "total_obligations": 45600000,
+                        "total_outlays": 12300000
+                    },
+                    "total_budget_authority": 789000000
                 }
             }
 
@@ -60,6 +68,16 @@ This endpoint provides funding and spending details from emergency/disaster supp
 + `total_outlays` (required, number, nullable)
     Total amount of Disaster Spending which has been obligated and outlayed.
     Note: (`total_obligations` - `award_obligations`) - (`total_outlays` - `award_outlays`) = "Other Obligated But Not Yet Outlayed"
+
+## Additional (object)
+Special cases where financial details were not labeled with the searched DEFC, but they should be considered in the overview
++ `total_budget_authority` (required, number)
++ `spending` (object)
+    + `total_obligations` (required, number, nullable)
+        Total amount of Disaster Spending which has been obligated.
+    + `total_outlays` (required, number, nullable)
+        Total amount of Disaster Spending which has been obligated and outlayed.
+
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
