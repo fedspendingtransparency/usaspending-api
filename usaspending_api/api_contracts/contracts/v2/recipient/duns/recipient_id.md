@@ -36,6 +36,7 @@ This endpoint returns a high-level overview of a specific recipient, given its i
                     "ARTLINE WHOLESALERS INC"
                 ],
                 "duns": "058675323",
+                "uei": "NUDGYLBB4S99",        
                 "recipient_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
                 "recipient_level": "P",
                 "parent_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
