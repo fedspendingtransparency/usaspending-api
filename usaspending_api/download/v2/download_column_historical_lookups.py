@@ -1637,7 +1637,7 @@ query_paths = {
             ]
         ),
     },
-    "object_class_program_activity": {  ##
+    "object_class_program_activity": {
         "treasury_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account__funding_toptier_agency__name"),

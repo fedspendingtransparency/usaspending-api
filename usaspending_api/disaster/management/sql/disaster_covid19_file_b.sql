@@ -29,7 +29,7 @@ SELECT
     "object_class"."object_class" AS "object_class_code",
     "object_class"."object_class_name" AS "object_class_name",
     "object_class"."direct_reimbursable" AS "direct_or_reimbursable_funding_source",
-    "financial_accounts_by_program_activity_object_class"."obligations_incurred_by_program_object_class_cpe" AS "obligations_incurred",
+    "financial_accounts_by_program_activity_object_class"."obligations_incurred_by_program_object_class_cpe" AS "obligations_incurred_by_program_object_class_cpe",
     "financial_accounts_by_program_activity_object_class"."obligations_undelivered_orders_unpaid_total_cpe" AS "obligations_undelivered_orders_unpaid_total",
     "financial_accounts_by_program_activity_object_class"."obligations_undelivered_orders_unpaid_total_fyb" AS "obligations_undelivered_orders_unpaid_total_FYB",
     "financial_accounts_by_program_activity_object_class"."ussgl480100_undelivered_orders_obligations_unpaid_cpe" AS "USSGL480100_undelivered_orders_obligations_unpaid",
