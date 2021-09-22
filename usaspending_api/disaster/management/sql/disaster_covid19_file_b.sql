@@ -40,7 +40,6 @@ SELECT
     "financial_accounts_by_program_activity_object_class"."ussgl490100_delivered_orders_obligations_unpaid_cpe" AS "USSGL490100_delivered_orders_obligations_unpaid",
     "financial_accounts_by_program_activity_object_class"."ussgl490100_delivered_orders_obligations_unpaid_fyb" AS "USSGL490100_delivered_orders_obligations_unpaid_FYB",
     "financial_accounts_by_program_activity_object_class"."ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe" AS "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
-    "financial_accounts_by_program_activity_object_class"."gross_outlay_amount_by_program_object_class_cpe" AS "gross_outlay_amount_fyb_to_period_end",
     "financial_accounts_by_program_activity_object_class"."gross_outlay_amount_by_program_object_class_fyb" AS "gross_outlay_amount_fyb",
     "financial_accounts_by_program_activity_object_class"."gross_outlays_undelivered_orders_prepaid_total_cpe" AS "gross_outlays_undelivered_orders_prepaid_total",
     "financial_accounts_by_program_activity_object_class"."gross_outlays_undelivered_orders_prepaid_total_cpe" AS "gross_outlays_undelivered_orders_prepaid_total_FYB",
