@@ -139,6 +139,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
         "recipient_affiliations": ["000000001"],
+        "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 2 - different from parent duns
     "392052ae-92ab-f3f4-d9fa-b57f45b7750b-C": {
@@ -529,6 +530,7 @@ def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index
         "name": "PARENT RECIPIENT",
         "alternate_names": [],
         "duns": "000000001",
+        "uei": "AAAAAAAAAAAA",
         "recipient_id": "00077a9a-5a70-8919-fd19-330762af6b84-C",
         "recipient_level": "C",
         "parent_name": "PARENT RECIPIENT",

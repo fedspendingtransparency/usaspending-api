@@ -290,6 +290,7 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
             result = {
                 "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
                 "recipient_unique_id": recipient_info.get("unique_id"),
+                "uei": recipient_info.get("uei"),
                 "recipient_name": recipient_info.get("name"),
             }
         loan_info = bucket.get("filter_loans", {})
@@ -349,7 +350,7 @@ class RecipientOverView(APIView):
             "name": recipient_name,
             "alternate_names": alternate_names,
             "duns": recipient_duns,
-            "uei": DUNS.objects.get(awardee_or_recipient_uniqu=recipient_duns).uei,
+            "uei": RecipientProfile.objects.get(recipient_hash=recipient_hash).uei,
             "recipient_id": recipient_id,
             "recipient_level": recipient_level,
             "parent_id": parent_id,
@@ -407,7 +408,7 @@ class ChildRecipients(APIView):
                     "recipient_id": "{}-C".format(total["recipient_hash"]),
                     "name": total["recipient_name"],
                     "duns": total["recipient_unique_id"],
-                    # "uei": DUNS.objects.get(awardee_or_recipient_uniqu=total["recipient_unique_id"]).uei,
+                    "uei": RecipientProfile.objects.filter(recipient_hash=total["recipient_hash"]).first().uei,
                     "amount": total["total_obligation_amount"],
                 }
             )
@@ -426,13 +427,14 @@ class ChildRecipients(APIView):
             missing_duns = [duns for duns in children if duns not in found_duns]
             missing_duns_qs = RecipientProfile.objects.filter(
                 recipient_unique_id__in=missing_duns, recipient_level="C"
-            ).values("recipient_hash", "recipient_name", "recipient_unique_id")
+            ).values("recipient_hash", "recipient_name", "recipient_unique_id", "uei")
             for child_duns in list(missing_duns_qs):
                 results.append(
                     {
                         "recipient_id": "{}-C".format(child_duns["recipient_hash"]),
                         "name": child_duns["recipient_name"],
                         "duns": child_duns["recipient_unique_id"],
+                        "uei": child_duns["uei"],
                         "amount": 0,
                     }
                 )
