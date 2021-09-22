@@ -40,7 +40,11 @@ class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedMod
     obligations_delivered_orders_unpaid_total_fyb = models.DecimalField(max_digits=23, decimal_places=2)
     obligations_delivered_orders_unpaid_total_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     gross_outlays_undelivered_orders_prepaid_total_fyb = models.DecimalField(max_digits=23, decimal_places=2)
+
     gross_outlays_undelivered_orders_prepaid_total_cpe = models.DecimalField(max_digits=23, decimal_places=2)
+    # New  -- USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
+    # Orig -- downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe
+
     gross_outlays_delivered_orders_paid_total_fyb = models.DecimalField(max_digits=23, decimal_places=2)
     gross_outlays_delivered_orders_paid_total_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     gross_outlay_amount_by_program_object_class_fyb = models.DecimalField(max_digits=23, decimal_places=2)
