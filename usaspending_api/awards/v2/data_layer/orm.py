@@ -162,7 +162,6 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
         response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
     if transaction["naics"]:
         response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
-
     return delete_keys_from_dict(response)
 
 

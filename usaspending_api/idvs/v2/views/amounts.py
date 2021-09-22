@@ -107,6 +107,51 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     return results
 
 
+def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
+    sql = """
+    SELECT
+        COALESCE(sum(CASE WHEN sa.is_final_balances_for_fy = TRUE AND  THEN (COALESCE(faba.gross_outlay_amount_by_award_cpe,0)
+            + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+            + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)) END), 0) AS total_outlay
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN submission_attributes sa
+        ON faba.submission_id = sa.submission_id
+    INNER JOIN awards a
+        ON faba.award_id = a.id
+        AND a.date_signed >= '2019-10-01'
+    WHERE {award_id_sql}
+    """
+    children = execute_sql_to_ordered_dictionary(
+        child_award_sql.format(award_id=award_id, award_id_column=award_id_column)
+    )
+    grandchildren = execute_sql_to_ordered_dictionary(
+        grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column)
+    )
+    child_award_ids = []
+    grandchild_award_ids = []
+    child_award_ids.extend([x["award_id"] for x in children])
+    grandchild_award_ids.extend([x["award_id"] for x in grandchildren])
+    award_id_sql = "faba.award_id in {award_id}".format(award_id="(" + str(child_award_ids).strip("[]") + ")")
+    child_results = (
+        execute_sql_to_ordered_dictionary(sql.format(award_id_sql=award_id_sql)) if child_award_ids != [] else {}
+    )
+    award_id_sql = "faba.award_id in {award_id}".format(award_id="(" + str(grandchild_award_ids).strip("[]") + ")")
+    grandchild_results = (
+        execute_sql_to_ordered_dictionary(sql.format(award_id_sql=award_id_sql)) if grandchild_award_ids != [] else {}
+    )
+    if len(child_results) == 0:
+        child_results = None
+    else:
+        child_results = child_results[0]["total_outlay"]
+    if len(grandchild_results) == 0:
+        grandchild_results = None
+    else:
+        grandchild_results = grandchild_results[0]["total_outlay"]
+
+    return {"child_award_total_outlay": child_results, "grandchild_award_total_outlay": grandchild_results}
+
+
 class IDVAmountsViewSet(APIView):
     """
     Returns counts and dollar figures for a specific IDV.
@@ -129,6 +174,7 @@ class IDVAmountsViewSet(APIView):
         try:
             parent_award = ParentAward.objects.get(**{award_id_column: award_id})
             account_data = fetch_account_details_idv(award_id, award_id_column)
+            outlays = fetch_idv_child_outlays(award_id, award_id_column)
             return OrderedDict(
                 (
                     ("award_id", parent_award.award_id),
@@ -136,6 +182,7 @@ class IDVAmountsViewSet(APIView):
                     ("child_idv_count", parent_award.direct_idv_count),
                     ("child_award_count", parent_award.direct_contract_count),
                     ("child_award_total_obligation", parent_award.direct_total_obligation),
+                    ("child_award_total_outlay", outlays["child_award_total_outlay"]),
                     ("child_award_base_and_all_options_value", parent_award.direct_base_and_all_options_value),
                     ("child_award_base_exercised_options_val", parent_award.direct_base_exercised_options_val),
                     ("child_total_account_outlay", account_data["child_total_account_outlay"]),
@@ -147,6 +194,7 @@ class IDVAmountsViewSet(APIView):
                         "grandchild_award_total_obligation",
                         parent_award.rollup_total_obligation - parent_award.direct_total_obligation,
                     ),
+                    ("grandchild_award_total_outlay", outlays["grandchild_award_total_outlay"]),
                     (
                         "grandchild_award_base_and_all_options_value",
                         parent_award.rollup_base_and_all_options_value - parent_award.direct_base_and_all_options_value,
