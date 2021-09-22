@@ -205,9 +205,9 @@ def setup_test_data(db):
     )
 
 
-assurance_statement_2019_6 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/P06/123%20-%20Test%20Agency%20(ABC)/2019-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
-assurance_statement_2020_12 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2020/P12/123%20-%20Test%20Agency%20(ABC)/2020-P12-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
-assurance_statement_quarter = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/2019/Q3/123%20-%20Quarterly%20Agency%20(QA)/2019-Q3-123_Quarterly%20Agency%20(QA)-Assurance_Statement.txt"
+assurance_statement_2019_6 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/2019-P06-123_Test%20Agency%20(ABC)-Agency_Comments.txt"
+assurance_statement_2020_12 = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/2020-P12-123_Test%20Agency%20(ABC)-Agency_Comments.txt"
+assurance_statement_quarter = f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/2019-Q3-123_Quarterly%20Agency%20(QA)-Agency_Comments.txt"
 
 
 def test_basic_success(setup_test_data, client):
