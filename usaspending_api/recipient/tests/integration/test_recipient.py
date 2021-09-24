@@ -41,6 +41,7 @@ TEST_DUNS = {
         "zip": "PARENT ZIP",
         "zip4": "PARENT ZIP4",
         "business_types_codes": ["2X"],
+        "uei": "AAAAAAAAAAAA",
     },
     "000000002": {
         "awardee_or_recipient_uniqu": "000000002",
@@ -131,6 +132,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
         "recipient_affiliations": ["000000001", "000000002", "000000005"],
+        "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 1 - lists itself as both parent and child
     "00077a9a-5a70-8919-fd19-330762af6b84-C": {
