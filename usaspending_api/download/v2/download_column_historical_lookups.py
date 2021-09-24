@@ -1780,7 +1780,6 @@ query_paths = {
                 ("agency_identifier_name", "agency_identifier_name"),
                 ("budget_function", "budget_function"),  # Column is annotated in account_download.py
                 ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
-
                 ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
