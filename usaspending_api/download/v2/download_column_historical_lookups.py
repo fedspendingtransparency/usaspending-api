@@ -1932,11 +1932,11 @@ query_paths = {
                     "gross_outlay_amount_fyb_to_period_end",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                 ),  # Column is annotated in account_download.py
                 ("award_unique_key", "award__generated_unique_award_id"),
@@ -2046,11 +2046,11 @@ query_paths = {
                     "gross_outlay_amount_fyb_to_period_end",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                 ),  # Column is annotated in account_download.py
                 ("award_unique_key", "award__generated_unique_award_id"),
