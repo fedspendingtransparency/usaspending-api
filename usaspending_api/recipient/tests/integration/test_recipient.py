@@ -615,7 +615,7 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
         "recipient_id": child1_id,
         "name": "PARENT RECIPIENT",
         "duns": parent_child1_duns,
-        "uei": None,
+        "uei": "AAAAAAAAAAAA",
         "amount": 100,
         "state_province": "PARENT STATE",
     }
