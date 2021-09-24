@@ -175,13 +175,12 @@ class AgencyBase(APIView):
             return None
 
         host = settings.FILES_SERVER_BASE_URL
-        agency_directory = "%20".join([toptier_code, "-", *agency_name_split, abbreviation_wrapped])
         file_name = (
             f"{fiscal_year}-{fiscal_period}-{toptier_code}_"
             + "%20".join([*agency_name_split, abbreviation_wrapped])
-            + "-Assurance_Statement.txt"
+            + "-Agency_Comments.txt"
         )
-        return f"{host}/agency_submissions/Raw%20DATA%20Act%20Files/{fiscal_year}/{fiscal_period}/{agency_directory}/{file_name}"
+        return f"{host}/agency_submissions/{file_name}"
 
 
 class PaginationMixin:
