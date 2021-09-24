@@ -1698,7 +1698,7 @@ query_paths = {
                     "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_fyb_to_period_end",
                 ),  # Column is annotated in account_download.py
-                ("gross_outlay_amount_FYB", "GROSS_outlay_amount_by_program_object_class_fyb"),
+                ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
                 (
                     "gross_outlays_undelivered_orders_prepaid_total",
                     "gross_outlays_undelivered_orders_prepaid_total_cpe",
