@@ -1695,10 +1695,10 @@ query_paths = {
                     "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe",
                 ),
                 (
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_fyb_to_period_end",
                 ),  # Column is annotated in account_download.py
-                ("gross_outlay_amount_fyb", "gross_outlay_amount_by_program_object_class_fyb"),
+                ("gross_outlay_amount_FYB", "GROSS_outlay_amount_by_program_object_class_fyb"),
                 (
                     "gross_outlays_undelivered_orders_prepaid_total",
                     "gross_outlays_undelivered_orders_prepaid_total_cpe",
@@ -1789,7 +1789,7 @@ query_paths = {
                 ("direct_or_reimbursable_funding_source", "object_class__direct_reimbursable"),
                 ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
-                ("obligations_incurred", "obligations_incurred_by_program_object_class_cpe"),
+                ("obligations_incurred", "obligations_incurred"),
                 ("obligations_undelivered_orders_unpaid_total", "obligations_undelivered_orders_unpaid_total_cpe"),
                 ("obligations_undelivered_orders_unpaid_total_FYB", "obligations_undelivered_orders_unpaid_total_fyb"),
                 (
@@ -1819,10 +1819,10 @@ query_paths = {
                     "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe",
                 ),
                 (
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_fyb_to_period_end",
                 ),  # Column is annotated in account_download.py
-                ("gross_outlay_amount_fyb", "gross_outlay_amount_by_program_object_class_fyb"),
+                ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
                 (
                     "gross_outlays_undelivered_orders_prepaid_total",
                     "gross_outlays_undelivered_orders_prepaid_total_cpe",
@@ -1928,7 +1928,7 @@ query_paths = {
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
                 (
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_fyb_to_period_end",
                 ),  # Column is annotated in account_download.py
                 (
@@ -2042,7 +2042,7 @@ query_paths = {
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
                 (
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_fyb_to_period_end",
                 ),  # Column is annotated in account_download.py
                 (
