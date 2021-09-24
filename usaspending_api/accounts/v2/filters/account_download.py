@@ -149,8 +149,8 @@ def get_submission_filter(account_type, filters):
 
 def get_nonzero_filter():
     nonzero_outlay = Q(
-        Q(gross_outlay_amount_fyb_to_period_end__gt=0)
-        | Q(gross_outlay_amount_fyb_to_period_end__lt=0)
+        Q(gross_outlay_amount_FYB_to_period_end__gt=0)
+        | Q(gross_outlay_amount_FYB_to_period_end__lt=0)
         | Q(USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig__gt=0)
         | Q(USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig__lt=0)
         | Q(USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig__gt=0)
@@ -219,7 +219,7 @@ def generate_treasury_account_query(queryset, account_type):
     derived_fields = {
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(account_type),
-        "gross_outlay_amount_fyb_to_period_end": generate_gross_outlay_amount_derived_field(account_type),
+        "gross_outlay_amount_FYB_to_period_end": generate_gross_outlay_amount_derived_field(account_type),
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
@@ -259,7 +259,7 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "gross_outlay_amount": Sum(
             generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
         ),
-        "gross_outlay_amount_fyb_to_period_end": Sum(
+        "gross_outlay_amount_FYB_to_period_end": Sum(
             generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
         ),
     }

@@ -1696,7 +1696,7 @@ query_paths = {
                 ),
                 (
                     "gross_outlay_amount_FYB_to_period_end",
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                 ),  # Column is annotated in account_download.py
                 ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
                 (
@@ -1820,7 +1820,7 @@ query_paths = {
                 ),
                 (
                     "gross_outlay_amount_FYB_to_period_end",
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                 ),  # Column is annotated in account_download.py
                 ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
                 (
@@ -1929,7 +1929,7 @@ query_paths = {
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
                 (
                     "gross_outlay_amount_FYB_to_period_end",
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                 ),  # Column is annotated in account_download.py
                 (
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
@@ -2043,7 +2043,7 @@ query_paths = {
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
                 (
                     "gross_outlay_amount_FYB_to_period_end",
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                 ),  # Column is annotated in account_download.py
                 (
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
