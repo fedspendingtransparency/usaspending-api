@@ -71,35 +71,7 @@ AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/
 
 def account_download_filter(account_type, download_table, filters, account_level="treasury_account"):
 
-    if account_level not in ("treasury_account", "federal_account"):
-        raise InvalidParameterException(
-            'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
-        )
-
-    query_filters = {}
-
-    tas_id = "treasury_account_identifier" if account_type == "account_balances" else "treasury_account"
-
-    if filters.get("agency") and filters["agency"] != "all":
-        if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
-            raise InvalidParameterException("Agency with that ID does not exist")
-        query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
-
-    if filters.get("federal_account") and filters["federal_account"] != "all":
-        if not FederalAccount.objects.filter(id=filters["federal_account"]).exists():
-            raise InvalidParameterException("Federal Account with that ID does not exist")
-        query_filters[f"{tas_id}__federal_account__id"] = filters["federal_account"]
-
-    if filters.get("budget_function") and filters["budget_function"] != "all":
-        query_filters[f"{tas_id}__budget_function_code"] = filters["budget_function"]
-
-    if filters.get("budget_subfunction") and filters["budget_subfunction"] != "all":
-        query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
-
-    if account_type != "account_balances":  # file A does not have DEFC field so we do not attempt to filter
-        if len(filters.get("def_codes") or []) > 0:
-            # joining to disaster_emergency_fund_code table for observed performance benefits
-            query_filters["disaster_emergency_fund__code__in"] = filters["def_codes"]
+    query_filters, tas_id = build_query_filters(account_type, filters, account_level)
 
     nonzero_filter = Q()
     if account_type == "award_financial":
@@ -130,6 +102,42 @@ def account_download_filter(account_type, download_table, filters, account_level
 
     # Apply filter and return
     return queryset.filter(nonzero_filter, **query_filters)
+
+
+def build_query_filters(account_type, filters, account_level):
+    if account_level not in ("treasury_account", "federal_account"):
+        raise InvalidParameterException(
+            'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
+        )
+
+    query_filters = {}
+
+    tas_id = (
+        "treasury_account_identifier" if account_type in ("account_balances", "gtas_balances") else "treasury_account"
+    )
+
+    if filters.get("agency") and filters["agency"] != "all":
+        if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
+            raise InvalidParameterException("Agency with that ID does not exist")
+        query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
+
+    if filters.get("federal_account") and filters["federal_account"] != "all":
+        if not FederalAccount.objects.filter(id=filters["federal_account"]).exists():
+            raise InvalidParameterException("Federal Account with that ID does not exist")
+        query_filters[f"{tas_id}__federal_account__id"] = filters["federal_account"]
+
+    if filters.get("budget_function") and filters["budget_function"] != "all":
+        query_filters[f"{tas_id}__budget_function_code"] = filters["budget_function"]
+
+    if filters.get("budget_subfunction") and filters["budget_subfunction"] != "all":
+        query_filters[f"{tas_id}__budget_subfunction_code"] = filters["budget_subfunction"]
+
+    if account_type != "account_balances":  # file A does not have DEFC field so we do not attempt to filter
+        if len(filters.get("def_codes") or []) > 0:
+            # joining to disaster_emergency_fund_code table for observed performance benefits
+            query_filters["disaster_emergency_fund__code__in"] = filters["def_codes"]
+
+    return query_filters, tas_id
 
 
 def get_gtas_submission_filter():

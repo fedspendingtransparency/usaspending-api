@@ -242,8 +242,6 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
 
 
 def build_data_file_name(source, download_job, piid, assistance_id):
-    d_map = {"d1": "Contracts", "d2": "Assistance", "treasury_account": "TAS", "federal_account": "FA"}
-
     if download_job and download_job.monthly_download:
         # For monthly archives, use the existing detailed zip filename for the data files
         # e.g. FY(All)-012_Contracts_Delta_20191108.zip -> FY(All)-012_Contracts_Delta_20191108_%.csv
@@ -253,14 +251,14 @@ def build_data_file_name(source, download_job, piid, assistance_id):
     timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
 
     if source.is_for_idv or source.is_for_contract:
-        data_file_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
+        file_name_values = {"piid": slugify_text_for_file_names(piid, "UNKNOWN", 50)}
     elif source.is_for_assistance:
-        data_file_name = file_name_pattern.format(
-            assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)
-        )
+        file_name_values = {"assistance_id": slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)}
     elif source.source_type == "disaster_recipient":
-        data_file_name = file_name_pattern.format(award_category=source.award_category, timestamp=timestamp)
+        file_name_values = {"award_category": source.award_category, "timestamp": timestamp}
     else:
+        d_map = {"d1": "Contracts", "d2": "Assistance", "treasury_account": "TAS", "federal_account": "FA"}
+
         if source.agency_code == "all":
             agency = "All"
         else:
@@ -268,6 +266,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
 
         request = json.loads(download_job.json_request)
         filters = request["filters"]
+
         if request.get("limit") or (
             request.get("request_type") == "disaster" and source.source_type in ("elasticsearch_awards", "sub_awards")
         ):
@@ -284,15 +283,15 @@ def build_data_file_name(source, download_job, piid, assistance_id):
         else:
             data_quarters = construct_data_date_range(filters)
 
-        data_file_name = file_name_pattern.format(
-            agency=agency,
-            data_quarters=data_quarters,
-            level=d_map[source.file_type],
-            timestamp=timestamp,
-            type=d_map[source.file_type],
-        )
+        file_name_values = {
+            "agency": agency,
+            "data_quarters": data_quarters,
+            "level": d_map[source.file_type],
+            "timestamp": timestamp,
+            "type": d_map[source.file_type],
+        }
 
-    return data_file_name
+    return file_name_pattern.format(**file_name_values)
 
 
 def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format):
