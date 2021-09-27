@@ -7,10 +7,9 @@ This endpoint provides funding and spending details from emergency/disaster supp
 
 ## GET
 
-+ Request (application/json)
-    + Parameters
-        + `def_codes` (optional, array[DEFC])
-           Comma-delimited list of DEF codes to limit results to.
++ Parameters
+    + `def_codes` (optional, array[DEFC])
+       Comma-delimited list of DEF codes to limit results to.
 
 + Response 200 (application/json)
     + Attributes (object)
