@@ -149,12 +149,12 @@ def get_submission_filter(account_type, filters):
 
 def get_nonzero_filter():
     nonzero_outlay = Q(
-        Q(gross_outlay_amount_fyb_to_period_end__gt=0)
-        | Q(gross_outlay_amount_fyb_to_period_end__lt=0)
-        | Q(downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe__gt=0)
-        | Q(downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe__lt=0)
-        | Q(downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe__gt=0)
-        | Q(downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe__lt=0)
+        Q(gross_outlay_amount_FYB_to_period_end__gt=0)
+        | Q(gross_outlay_amount_FYB_to_period_end__lt=0)
+        | Q(USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig__gt=0)
+        | Q(USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig__lt=0)
+        | Q(USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig__gt=0)
+        | Q(USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig__lt=0)
     )
     nonzero_toa = Q(Q(transaction_obligated_amount__gt=0) | Q(transaction_obligated_amount__lt=0))
     return nonzero_outlay | nonzero_toa
@@ -219,7 +219,7 @@ def generate_treasury_account_query(queryset, account_type):
     derived_fields = {
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(account_type),
-        "gross_outlay_amount_fyb_to_period_end": generate_gross_outlay_amount_derived_field(account_type),
+        "gross_outlay_amount_FYB_to_period_end": generate_gross_outlay_amount_derived_field(account_type),
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
@@ -227,8 +227,8 @@ def generate_treasury_account_query(queryset, account_type):
     if account_type != "account_balances":
         derived_fields.update(
             {
-                "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": generate_ussgl487200_derived_field(),
-                "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": generate_ussgl497200_derived_field(),
+                "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": generate_ussgl487200_derived_field(),
+                "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": generate_ussgl497200_derived_field(),
             }
         )
 
@@ -259,7 +259,7 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "gross_outlay_amount": Sum(
             generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
         ),
-        "gross_outlay_amount_fyb_to_period_end": Sum(
+        "gross_outlay_amount_FYB_to_period_end": Sum(
             generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
         ),
     }
@@ -267,10 +267,10 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
     if account_type != "account_balances":
         derived_fields.update(
             {
-                "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe": Sum(
+                "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": Sum(
                     generate_ussgl487200_derived_field(closed_submission_queryset)
                 ),
-                "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe": Sum(
+                "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": Sum(
                     generate_ussgl497200_derived_field(closed_submission_queryset)
                 ),
             }

@@ -1678,22 +1678,106 @@ query_paths = {
                 ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("obligations_incurred", "obligations_incurred_by_program_object_class_cpe"),
+                ("obligations_undelivered_orders_unpaid_total", "obligations_undelivered_orders_unpaid_total_cpe"),
+                ("obligations_undelivered_orders_unpaid_total_FYB", "obligations_undelivered_orders_unpaid_total_fyb"),
+                (
+                    "USSGL480100_undelivered_orders_obligations_unpaid",
+                    "ussgl480100_undelivered_orders_obligations_unpaid_cpe",
+                ),
+                (
+                    "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
+                    "ussgl480100_undelivered_orders_obligations_unpaid_fyb",
+                ),
+                (
+                    "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
+                    "ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe",
+                ),
+                ("obligations_delivered_orders_unpaid_total", "obligations_delivered_orders_unpaid_total_cpe"),
+                ("obligations_delivered_orders_unpaid_total_FYB", "obligations_delivered_orders_unpaid_total_cpe"),
+                (
+                    "USSGL490100_delivered_orders_obligations_unpaid",
+                    "ussgl490100_delivered_orders_obligations_unpaid_cpe",
+                ),
+                (
+                    "USSGL490100_delivered_orders_obligations_unpaid_FYB",
+                    "ussgl490100_delivered_orders_obligations_unpaid_fyb",
+                ),
+                (
+                    "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
+                    "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe",
+                ),
+                (
+                    "gross_outlay_amount_FYB_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
+                ),  # Column is annotated in account_download.py
+                ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
+                (
+                    "gross_outlays_undelivered_orders_prepaid_total",
+                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
+                ),
+                (
+                    "gross_outlays_undelivered_orders_prepaid_total_FYB",
+                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
+                ),
+                (
+                    "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
+                    "gross_outlays_delivered_orders_paid_total_cpe",
+                ),
+                (
+                    "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
+                    "gross_outlays_delivered_orders_paid_total_fyb",
+                ),
+                (
+                    "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
+                    "ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe",
+                ),
+                ("gross_outlays_delivered_orders_paid_total", "gross_outlays_delivered_orders_paid_total_cpe"),
+                ("gross_outlays_delivered_orders_paid_total_FYB", "gross_outlays_delivered_orders_paid_total_fyb"),
+                ("USSGL490200_delivered_orders_obligations_paid", "ussgl490200_delivered_orders_obligations_paid_cpe"),
+                (
+                    "USSGL490800_authority_outlayed_not_yet_disbursed",
+                    "ussgl490800_authority_outlayed_not_yet_disbursed_cpe",
+                ),
+                (
+                    "USSGL490800_authority_outlayed_not_yet_disbursed_FYB",
+                    "ussgl490800_authority_outlayed_not_yet_disbursed_fyb",
+                ),
+                (
+                    "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
+                    "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe",
+                ),
                 (
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                     "deobligations_recoveries_refund_pri_program_object_class_cpe",
                 ),
                 (
-                    "gross_outlay_amount_fyb_to_period_end",
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig",
+                    "ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe",
+                ),
+                (
+                    "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig",
+                    "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe",
+                ),
+                (
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
+                ),
+                (
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                ),  # Column is annotated in account_download.py
+                    "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
+                    "ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe",
+                ),
                 (
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                ),  # Column is annotated in account_download.py
+                    "USSGL493100_delivered_orders_obligations_transferred_unpaid",
+                    "ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe",
+                ),
+                (
+                    "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
+                    "ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe",
+                ),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1705,11 +1789,11 @@ query_paths = {
                 ("owning_agency_name", "treasury_account__federal_account__parent_toptier_agency__name"),
                 ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
                 ("submission_period", "submission_period"),  # Column is annotated in account_download.py
-                ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
-                ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("agency_identifier_name", "agency_identifier_name"),
                 ("budget_function", "budget_function"),  # Column is annotated in account_download.py
                 ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
+                ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
+                ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
                 ("object_class_code", "object_class__object_class"),
@@ -1718,22 +1802,106 @@ query_paths = {
                 ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("obligations_incurred", "obligations_incurred"),
+                ("obligations_undelivered_orders_unpaid_total", "obligations_undelivered_orders_unpaid_total_cpe"),
+                ("obligations_undelivered_orders_unpaid_total_FYB", "obligations_undelivered_orders_unpaid_total_fyb"),
                 (
-                    "deobligations_or_recoveries_or_refunds_from_prior_year",
-                    "deobligations_or_recoveries_or_refunds_from_prior_year",
+                    "USSGL480100_undelivered_orders_obligations_unpaid",
+                    "ussgl480100_undelivered_orders_obligations_unpaid_cpe",
                 ),
                 (
-                    "gross_outlay_amount_fyb_to_period_end",
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
+                    "ussgl480100_undelivered_orders_obligations_unpaid_fyb",
+                ),
+                (
+                    "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
+                    "ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe",
+                ),
+                ("obligations_delivered_orders_unpaid_total", "obligations_delivered_orders_unpaid_total_cpe"),
+                ("obligations_delivered_orders_unpaid_total_FYB", "obligations_delivered_orders_unpaid_total_cpe"),
+                (
+                    "USSGL490100_delivered_orders_obligations_unpaid",
+                    "ussgl490100_delivered_orders_obligations_unpaid_cpe",
+                ),
+                (
+                    "USSGL490100_delivered_orders_obligations_unpaid_FYB",
+                    "ussgl490100_delivered_orders_obligations_unpaid_fyb",
+                ),
+                (
+                    "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
+                    "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe",
+                ),
+                (
+                    "gross_outlay_amount_FYB_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
+                ),  # Column is annotated in account_download.py
+                ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
+                (
+                    "gross_outlays_undelivered_orders_prepaid_total",
+                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
+                ),
+                (
+                    "gross_outlays_undelivered_orders_prepaid_total_FYB",
+                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
+                ),
+                (
+                    "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
+                    "gross_outlays_delivered_orders_paid_total_cpe",
+                ),
+                (
+                    "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
+                    "gross_outlays_delivered_orders_paid_total_fyb",
+                ),
+                (
+                    "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
+                    "ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe",
+                ),
+                ("gross_outlays_delivered_orders_paid_total", "gross_outlays_delivered_orders_paid_total_cpe"),
+                ("gross_outlays_delivered_orders_paid_total_FYB", "gross_outlays_delivered_orders_paid_total_fyb"),
+                ("USSGL490200_delivered_orders_obligations_paid", "ussgl490200_delivered_orders_obligations_paid_cpe"),
+                (
+                    "USSGL490800_authority_outlayed_not_yet_disbursed",
+                    "ussgl490800_authority_outlayed_not_yet_disbursed_cpe",
+                ),
+                (
+                    "USSGL490800_authority_outlayed_not_yet_disbursed_FYB",
+                    "ussgl490800_authority_outlayed_not_yet_disbursed_fyb",
+                ),
+                (
+                    "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
+                    "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe",
+                ),
+                (
+                    "deobligations_or_recoveries_or_refunds_from_prior_year",
+                    "deobligations_recoveries_refund_pri_program_object_class_cpe",
+                ),
+                (
+                    "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig",
+                    "ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe",
+                ),
+                (
+                    "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig",
+                    "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe",
+                ),
+                (
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
+                ),
+                (
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                ),  # Column is annotated in account_download.py
+                    "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
+                    "ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe",
+                ),
                 (
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                ),  # Column is annotated in account_download.py
+                    "USSGL493100_delivered_orders_obligations_transferred_unpaid",
+                    "ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe",
+                ),
+                (
+                    "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
+                    "ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe",
+                ),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -1772,16 +1940,16 @@ query_paths = {
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
                 (
-                    "gross_outlay_amount_fyb_to_period_end",
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                 ),  # Column is annotated in account_download.py
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_piid", "piid"),
@@ -1888,16 +2056,16 @@ query_paths = {
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("transaction_obligated_amount", "transaction_obligated_amount"),
                 (
-                    "gross_outlay_amount_fyb_to_period_end",
-                    "gross_outlay_amount_fyb_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
+                    "gross_outlay_amount_FYB_to_period_end",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_ppaid_undeliv_orders_oblig_refunds_cpe",
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                 ),  # Column is annotated in account_download.py
                 (
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
-                    "downward_adj_prior_yr_paid_delivered_orders_oblig_refunds_cpe",
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                 ),  # Column is annotated in account_download.py
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_piid", "piid"),
