@@ -527,6 +527,7 @@ expected_response_idv = {
     "account_outlays_by_defc": [],
     "total_account_obligation": 0,
     "total_account_outlay": 0,
+    "total_outlay": 0,
 }
 
 
