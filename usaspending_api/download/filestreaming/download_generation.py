@@ -267,14 +267,25 @@ def build_data_file_name(source, download_job, piid, assistance_id):
 
         request = json.loads(download_job.json_request)
         filters = request["filters"]
-        if request.get("limit"):
+        if request.get("limit") or (
+            request.get("request_type") == "disaster" and source.source_type in ("elasticsearch_awards", "sub_awards")
+        ):
             agency = ""
         elif source.file_type not in ("treasury_account", "federal_account"):
             agency = f"{agency}_"
 
+        if request.get("request_type") == "disaster":
+            account_filters = request["account_filters"]
+            current_fiscal_period = (
+                f"FY{account_filters['latest_fiscal_year']}P{str(account_filters['latest_fiscal_period']).zfill(2)}"
+            )
+            data_quarters = f"{current_fiscal_period}-Present"
+        else:
+            data_quarters = construct_data_date_range(filters)
+
         data_file_name = file_name_pattern.format(
             agency=agency,
-            data_quarters=construct_data_date_range(filters),
+            data_quarters=data_quarters,
             level=d_map[source.file_type],
             timestamp=timestamp,
             type=d_map[source.file_type],

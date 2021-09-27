@@ -50,10 +50,10 @@ class OverviewViewSet(DisasterBase):
     def funding(self):
         funding = list(
             latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=self.defc)
-            .values("disaster_emergency_fund_code")
+            .filter(disaster_emergency_fund_id__in=self.defc)
+            .values("disaster_emergency_fund_id")
             .annotate(
-                def_code=F("disaster_emergency_fund_code"),
+                def_code=F("disaster_emergency_fund_id"),
                 amount=(
                     Sum("total_budgetary_resources_cpe")
                     - (
@@ -104,7 +104,7 @@ class OverviewViewSet(DisasterBase):
     def total_obligations(self):
         return (
             latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=self.defc)
+            .filter(disaster_emergency_fund_id__in=self.defc)
             .values("obligations_incurred_total_cpe", "deobligations_or_recoveries_or_refunds_from_prior_year_cpe")
             .aggregate(
                 total=(
@@ -117,7 +117,7 @@ class OverviewViewSet(DisasterBase):
     def total_outlays(self):
         return (
             latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=self.defc)
+            .filter(disaster_emergency_fund_id__in=self.defc)
             .values("gross_outlay_amount_by_tas_cpe", "anticipated_prior_year_obligation_recoveries")
             .aggregate(
                 total=(Sum("gross_outlay_amount_by_tas_cpe") - Sum("anticipated_prior_year_obligation_recoveries"))

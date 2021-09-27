@@ -25,6 +25,7 @@ from usaspending_api.download.lookups import (
 )
 from usaspending_api.references.models import DisasterEmergencyFundCode, ToptierAgency
 from usaspending_api.submissions import helpers as sub_helpers
+from usaspending_api.submissions.helpers import get_last_closed_submission_date
 
 
 class DownloadValidatorBase:
@@ -626,6 +627,73 @@ class AccountDownloadValidator(DownloadValidatorBase):
         self._json_request["filters"]["quarter"] = quarter
         self._json_request["filters"]["period"] = period
         self._json_request["download_types"] = self._json_request["filters"]["submission_types"]
+
+
+class DisasterDownloadValidator(DownloadValidatorBase):
+    name = "disaster"
+
+    def __init__(self, request_date: dict):
+        super().__init__(request_date)
+
+        covid_defc = list(
+            DisasterEmergencyFundCode.objects.filter(group_name="covid_19")
+            .order_by("code")
+            .values_list("code", flat=True)
+        )
+        self.tinyshield_models.extend(
+            [
+                {
+                    "name": "def_codes",
+                    "key": "filters|def_codes",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": covid_defc,
+                    "allow_nulls": False,
+                    "optional": True,
+                    "default": covid_defc,
+                },
+            ]
+        )
+        self._json_request["filters"] = request_date.get("filters")
+        self._json_request = self.get_validated_request()
+
+        # Add all Award Type Codes to filters to support current Award and Subaward download logic
+        self._json_request["filters"]["award_type_codes"] = list(award_type_mapping)
+
+        # Limit the DEFC options to either a complete group or a single DEFC;
+        defc_filter = sorted(self._json_request["filters"]["def_codes"])
+        if len(defc_filter) > 1:
+            if set(defc_filter) == set(covid_defc):
+                self._json_request["pre_generated_download"] = settings.COVID19_DOWNLOAD_FILENAME_PREFIX
+            else:
+                raise InvalidParameterException(
+                    "The Disaster Download is currently limited to either all COVID-19 DEFC or a single COVID-19 DEFC."
+                )
+
+        # Add Date filters to allow correct filename for account CSVs
+        latest = get_last_closed_submission_date(is_quarter=False)
+
+        self._json_request.update(
+            {
+                "account_level": "treasury_account",
+                "account_filters": {
+                    "latest_fiscal_year": latest["submission_fiscal_year"],
+                    "latest_fiscal_period": latest["submission_fiscal_month"],
+                    "start_date": "2020-04-01",
+                },
+                "download_types": [
+                    "gtas_balances",
+                    "object_class_program_activity",
+                    "elasticsearch_awards",
+                    "sub_awards",
+                ],
+                "include_data_dictionary": True,
+                "include_file_description": {
+                    "source": settings.COVID19_DOWNLOAD_README_FILE_PATH,
+                    "destination": "COVID-19_download_readme.txt",
+                },
+            }
+        )
 
 
 def _validate_award_id(award_id):

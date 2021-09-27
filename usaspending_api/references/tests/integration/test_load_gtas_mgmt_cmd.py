@@ -15,14 +15,15 @@ def test_program_activity_fresh_load(monkeypatch):
     Test the gtas totals load to ensure data is loaded with the correct totals.
     """
 
+    mommy.make("references.DisasterEmergencyFundCode", code="A")
+    mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="999-X-111")
+
     data_broker_mock = MagicMock()
     data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_gtas.json")
     mock_connections = {
         DEFAULT_DB_ALIAS: MagicMock(),
         "data_broker": data_broker_mock,
     }
-
-    mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="999-X-111")
 
     monkeypatch.setattr("usaspending_api.references.management.commands.load_gtas.connections", mock_connections)
 

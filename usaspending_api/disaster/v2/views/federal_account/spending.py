@@ -178,7 +178,7 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                 Subquery(
                     latest_gtas_of_each_year_queryset()
                     .filter(
-                        disaster_emergency_fund_code__in=self.def_codes,
+                        disaster_emergency_fund_id__in=self.def_codes,
                         treasury_account_identifier=OuterRef("treasury_account"),
                     )
                     .annotate(

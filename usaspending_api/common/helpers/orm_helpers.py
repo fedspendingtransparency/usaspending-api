@@ -139,6 +139,18 @@ def get_fyp_or_q_notation(relation_name=None):
     )
 
 
+def get_gtas_fyp_notation():
+    """
+    Generates FYyyyyPpp syntax from gtas_sf133_balances table.
+    """
+    return Concat(
+        Value("FY"),
+        Cast("fiscal_year", output_field=CharField()),
+        Value("P"),
+        LPad(Cast("fiscal_period", output_field=CharField()), 2, Value("0")),
+    )
+
+
 def generate_raw_quoted_query(queryset):
     """Generates the raw sql from a queryset with quotable types quoted.
 

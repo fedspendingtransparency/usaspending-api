@@ -10,9 +10,8 @@ Creates a new download job for the requested account and award. Returns a link t
 + Request (application/json)
     + Attributes (object)
         + `filters` (optional, Filters, fixed-type)
-            Currently ignored, download will only be generated for COVID-19 spending data
         + `file_format` (optional, enum[string])
-            Currently ignored, download will only be generated with CSV data files
+            Currently only works for a download filtered on a single DEFC
     + Body
 
             {
@@ -40,11 +39,7 @@ Creates a new download job for the requested account and award. Returns a link t
                 "download_request": {
                     "filters": {
                         "def_codes": [
-                            "L",
-                            "M",
-                            "N",
-                            "O",
-                            "P"
+                            "L"
                         ],
                         "latest_fiscal_period": "8",
                         "latest_fiscal_year": "2020",
@@ -56,31 +51,18 @@ Creates a new download job for the requested account and award. Returns a link t
 # Data Structures
 
 ## Filters (object)
-+ `def_codes` (required, array[DEFC], fixed-type)
++ `def_codes` (optional, array[DEFC], fixed-type)
+  + Default: `["L", "M", "N", "O", "P", "U", "V"]`
 
 ## DEFC (enum[string])
-List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
+Currently, the download is limited to either All COVID-19 DEFC or a single COVID-19 DEFC.
 
 ### Members
-+ `A`
-+ `B`
-+ `C`
-+ `D`
-+ `E`
-+ `F`
-+ `G`
-+ `H`
-+ `I`
-+ `J`
-+ `K`
 + `L`
 + `M`
 + `N`
 + `O`
 + `P`
-+ `Q`
-+ `R`
-+ `S`
-+ `T`
 + `U`
-+ `9`
++ `V`
