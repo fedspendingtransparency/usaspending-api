@@ -113,6 +113,8 @@ def defc_codes():
         mommy.make("references.DisasterEmergencyFundCode", code="A", group_name=NOT_COVID_NAME),
         mommy.make("references.DisasterEmergencyFundCode", code="M", group_name=COVID_19_GROUP_NAME),
         mommy.make("references.DisasterEmergencyFundCode", code="N", group_name=COVID_19_GROUP_NAME),
+        mommy.make("references.DisasterEmergencyFundCode", code="O", group_name=COVID_19_GROUP_NAME),
+        mommy.make("references.DisasterEmergencyFundCode", code="V", group_name=COVID_19_GROUP_NAME),
     ]
 
 
