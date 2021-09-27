@@ -108,6 +108,8 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
 
 
 def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
+    if award_id_column != "award_id":
+        award_id = re.sub(r"[']", r"''", award_id)
     sql = """
     SELECT
         COALESCE(sum(CASE WHEN sa.is_final_balances_for_fy = TRUE AND  THEN (COALESCE(faba.gross_outlay_amount_by_award_cpe,0)
