@@ -378,6 +378,10 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction__contract_data__awardee_or_recipient_legal",
         "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
     )
+    derived_fields["recipient_uei"] = Coalesce(
+        "award__latest_transaction__contract_data__awardee_or_recipient_uei",
+        "award__latest_transaction__assistance_data__uei",
+    )
     derived_fields["recipient_parent_duns"] = Coalesce(
         "award__latest_transaction__contract_data__ultimate_parent_unique_ide",
         "award__latest_transaction__assistance_data__ultimate_parent_unique_ide",
@@ -385,6 +389,10 @@ def award_financial_derivations(derived_fields):
     derived_fields["recipient_parent_name"] = Coalesce(
         "award__latest_transaction__contract_data__ultimate_parent_legal_enti",
         "award__latest_transaction__assistance_data__ultimate_parent_legal_enti",
+    )
+    derived_fields["recipient_parent_uei"] = Coalesce(
+        "award__latest_transaction__contract_data__ultimate_parent_uei",
+        "award__latest_transaction__assistance_data__ultimate_parent_uei",
     )
     derived_fields["recipient_country"] = Coalesce(
         "award__latest_transaction__contract_data__legal_entity_country_code",
