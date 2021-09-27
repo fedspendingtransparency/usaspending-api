@@ -5,7 +5,7 @@ from pathlib import Path
 from django.db import connection, transaction
 from django.core.management.base import BaseCommand
 
-from psycopg2 import OperationalError 
+from psycopg2 import OperationalError
 
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
@@ -48,11 +48,7 @@ class Command(BaseCommand):
             default=False,
             help="Indicates whether or not to empty data from chunked matviews at the end of command",
         )
-        parser.add_argument(
-            "--retry-count",
-            default=5,
-            help="Number of retry attempts for removing old data"
-        )
+        parser.add_argument("--retry-count", default=5, help="Number of retry attempts for removing old data")
 
     def handle(self, *args, **options):
         warnings = []  # Warnings returned to Jenkins to send to Slack
@@ -116,9 +112,7 @@ class Command(BaseCommand):
             rename_constraints_temp.append(
                 f"ALTER TABLE public.{TABLE_NAME} RENAME CONSTRAINT {constraint_name_temp} TO {constraint_name};"
             )
-            delete_contraints_old.append(
-                f"ALTER TABLE public.{TABLE_NAME}_old DROP CONSTRAINT {constraint_name};"
-            )
+            delete_contraints_old.append(f"ALTER TABLE public.{TABLE_NAME}_old DROP CONSTRAINT {constraint_name};")
 
             self.constraint_names.append(constraint_name)
 
@@ -227,7 +221,9 @@ class Command(BaseCommand):
                 execute_sql_simple((self.matview_dir / "componentized" / f"{TABLE_NAME}__drops.sql").read_text())
                 table_is_dropped = True
             except OperationalError as e:
-                logger.warning(f"Error when attempting to drop ${TABLE_NAME}_old. {retries_remaining} retries remaining.")
+                logger.warning(
+                    f"Error when attempting to drop ${TABLE_NAME}_old. {retries_remaining} retries remaining."
+                )
                 logger.warning(f"Error: {e}")
                 retries_remaining -= 1
 
