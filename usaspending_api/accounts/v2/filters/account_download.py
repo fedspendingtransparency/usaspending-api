@@ -115,11 +115,15 @@ def account_download_filter(account_type, download_table, filters, account_level
             'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
         )
 
-    if account_type == "gtas_balances":
-        # TODO: Refactor to remove need for annotation with Exists() once upgraded to Django 3.2
-        queryset = queryset.annotate(latest_submission_of_fy=Exists(get_gtas_submission_filter())).filter(
-            latest_submission_of_fy=True
-        )
+    if filters.get("is_multi_year"):
+        if account_type == "gtas_balances":
+            # TODO: Refactor to remove need for annotation with Exists() once upgraded to Django 3.2
+            queryset = queryset.annotate(latest_submission_of_fy=Exists(get_gtas_submission_filter())).filter(
+                latest_submission_of_fy=True
+            )
+        else:
+            submission_filter = Q(submission__is_final_balances_for_fy=True)
+            queryset = queryset.filter(submission_filter)
     else:
         submission_filter = get_submission_filter(account_type, filters)
         queryset = queryset.filter(submission_filter)
@@ -606,7 +610,7 @@ def gtas_balances_derivations(derived_fields):
     derived_fields["agency_identifier_name"] = Subquery(
         CGAC.objects.filter(cgac_code=OuterRef("agency_identifier_code")).values("agency_name")
     )
-    derived_fields["allocation_transfer_agency_identifer_name"] = Subquery(
+    derived_fields["allocation_transfer_agency_identifier_name"] = Subquery(
         CGAC.objects.filter(cgac_code=OuterRef("allocation_transfer_agency_identifier_code")).values("agency_name")
     )
 

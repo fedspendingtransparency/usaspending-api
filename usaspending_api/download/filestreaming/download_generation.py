@@ -213,10 +213,11 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
             account_source = DownloadSource(
                 VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
             )
+            filters = {**json_request["filters"], **json_request.get("account_filters", {})}
             account_source.queryset = filter_function(
                 download_type,
                 VALUE_MAPPINGS[download_type]["table"],
-                json_request["filters"],
+                filters,
                 json_request["account_level"],
             )
             download_sources.append(account_source)

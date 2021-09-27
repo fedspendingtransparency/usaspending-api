@@ -32,7 +32,7 @@ SELECT
     "broker_subaward"."awardee_or_recipient_legal" AS "prime_awardee_name",
     "broker_subaward"."dba_name" AS "prime_awardee_dba_name",
     "broker_subaward"."ultimate_parent_unique_ide" AS "prime_awardee_parent_duns",
-    "transaction_fabs"."ultimate_parent_uei" AS "primate_awardee_parent_uei",
+    "transaction_fabs"."ultimate_parent_uei" AS "prime_awardee_parent_uei",
     "broker_subaward"."ultimate_parent_legal_enti" AS "prime_awardee_parent_name",
     "broker_subaward"."legal_entity_country_code" AS "prime_awardee_country_code",
     "broker_subaward"."legal_entity_country_name" AS "prime_awardee_country_name",

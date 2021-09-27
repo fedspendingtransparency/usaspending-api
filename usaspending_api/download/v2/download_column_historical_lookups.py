@@ -31,11 +31,6 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
-                (
-                    "award_latest_action_date",
-                    "award__latest_transaction__action_date",
-                ),  # Annotation is used to create this column
-                ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "award__total_obligation"),
                 ("current_total_value_of_award", "award__latest_transaction__contract_data__current_total_value_award"),
                 (
@@ -44,6 +39,11 @@ query_paths = {
                 ),
                 ("award_base_action_date", "award__date_signed"),
                 ("award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
+                (
+                    "award_latest_action_date",
+                    "award__latest_transaction__action_date",
+                ),  # Annotation is used to create this column
+                ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 (
                     "period_of_performance_current_end_date",
@@ -1577,8 +1577,8 @@ query_paths = {
                 ("treasury_account_name", "treasury_account_identifier__account_title"),
                 ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
                 (
-                    "allocation_transfer_agency_identifer_name",
-                    "allocation_transfer_agency_identifer_name",
+                    "allocation_transfer_agency_identifier_name",
+                    "allocation_transfer_agency_identifier_name",
                 ),  # Column is annotated in account_download.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),

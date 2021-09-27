@@ -45,7 +45,7 @@ SELECT
     gtas."tas_rendering_label" AS "treasury_account_symbol",
     taa."account_title" AS "treasury_account_name",
     cgac_aid."agency_name" AS "agency_identifier_name",
-    cgac_ata."agency_name" AS "allocation_transfer_agency_identifer_name",
+    cgac_ata."agency_name" AS "allocation_transfer_agency_identifier_name",
     taa."budget_function_title" AS "budget_function",
     taa."budget_subfunction_title" AS "budget_subfunction",
     fa."federal_account_code" AS "federal_account_symbol",

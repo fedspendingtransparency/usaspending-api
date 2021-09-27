@@ -677,6 +677,7 @@ class DisasterDownloadValidator(DownloadValidatorBase):
             {
                 "account_level": "treasury_account",
                 "account_filters": {
+                    "is_multi_year": True,
                     "latest_fiscal_year": latest["submission_fiscal_year"],
                     "latest_fiscal_period": latest["submission_fiscal_month"],
                     "start_date": "2020-04-01",
