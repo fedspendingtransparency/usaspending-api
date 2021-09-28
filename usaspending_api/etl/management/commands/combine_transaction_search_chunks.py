@@ -4,6 +4,9 @@ from pathlib import Path
 
 from django.db import connection, transaction
 from django.core.management.base import BaseCommand
+
+from psycopg2 import OperationalError
+
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
@@ -45,16 +48,20 @@ class Command(BaseCommand):
             default=False,
             help="Indicates whether or not to empty data from chunked matviews at the end of command",
         )
+        parser.add_argument("--retry-count", default=5, help="Number of retry attempts for removing old data")
 
     def handle(self, *args, **options):
+        warnings = []  # Warnings returned to Jenkins to send to Slack
+
         chunk_count = options["chunk_count"]
         index_concurrency = options["index_concurrency"]
         self.matview_dir = options["matview_dir"]
+        self.retry_count = options["retry_count"]
 
         logger.info(f"Chunk Count: {chunk_count}")
 
         # Constraints must be read first, so indexes created by pk/fk are not repeated
-        create_temp_constraints, rename_constraints = self.read_constraint_definitions()
+        create_temp_constraints, rename_constraints, delete_constraints = self.read_constraint_definitions()
         create_temp_indexes, rename_indexes = self.read_index_definitions()
 
         with Timer("Recreating table"):
@@ -70,11 +77,11 @@ class Command(BaseCommand):
             self.create_indexes(create_temp_indexes, index_concurrency)
 
         with Timer("Swapping Tables/Indexes"):
-            self.swap_tables(rename_indexes, rename_constraints)
+            self.swap_tables(rename_indexes, rename_constraints, delete_constraints)
 
         if not options["keep_old_data"]:
             with Timer("Clearing old table"):
-                execute_sql_simple((self.matview_dir / "componentized" / f"{TABLE_NAME}__drops.sql").read_text())
+                warnings.append(self.drop_old_data())
 
         if not options["keep_matview_data"]:
             with Timer("Emptying Matviews"):
@@ -82,6 +89,8 @@ class Command(BaseCommand):
 
         with Timer("Granting Table Permissions"):
             execute_sql_simple((self.matview_dir / "componentized" / f"{TABLE_NAME}__mods.sql").read_text())
+
+        return "\n".join(warnings)
 
     def read_constraint_definitions(self):
         indexes_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__constraints.sql").read_text()
@@ -91,26 +100,23 @@ class Command(BaseCommand):
             rows = cursor.fetchall()
 
         create_temp_constraints = []
-        rename_constraints_old = []
         rename_constraints_temp = []
+        delete_contraints_old = []
         for row in rows:
             constraint_name = row[0]
             constraint_name_temp = constraint_name + "_temp"
-            constraint_name_old = constraint_name + "_old"
 
             create_temp_constraints.append(
                 f"ALTER TABLE public.{TABLE_NAME}_temp ADD CONSTRAINT {constraint_name_temp} {row[1]};"
             )
-            rename_constraints_old.append(
-                f"ALTER TABLE public.{TABLE_NAME}_old RENAME CONSTRAINT {constraint_name} TO {constraint_name_old};"
-            )
             rename_constraints_temp.append(
                 f"ALTER TABLE public.{TABLE_NAME} RENAME CONSTRAINT {constraint_name_temp} TO {constraint_name};"
             )
+            delete_contraints_old.append(f"ALTER TABLE public.{TABLE_NAME}_old DROP CONSTRAINT {constraint_name};")
 
             self.constraint_names.append(constraint_name)
 
-        return create_temp_constraints, rename_constraints_old + rename_constraints_temp
+        return create_temp_constraints, rename_constraints_temp, delete_contraints_old
 
     def read_index_definitions(self):
         indexes_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__indexes.sql").read_text()
@@ -194,13 +200,35 @@ class Command(BaseCommand):
         return await asyncio.gather(*tasks)
 
     @transaction.atomic
-    def swap_tables(self, rename_indexes, rename_constraints):
+    def swap_tables(self, rename_indexes, rename_constraints, delete_constraints):
 
         swap_sql = (self.matview_dir / "componentized" / f"{TABLE_NAME}__renames.sql").read_text()
 
-        swap_sql += "\n".join(rename_indexes + rename_constraints)
+        swap_sql += "\n".join(rename_indexes + delete_constraints + rename_constraints)
 
         logger.debug(swap_sql)
 
         with connection.cursor() as cursor:
             cursor.execute(swap_sql)
+
+    def drop_old_data(self):
+        retries_remaining = self.retry_count
+        table_is_dropped = False
+        warning = ""
+
+        while retries_remaining >= 0 and not table_is_dropped:
+            try:
+                execute_sql_simple((self.matview_dir / "componentized" / f"{TABLE_NAME}__drops.sql").read_text())
+                table_is_dropped = True
+            except OperationalError as e:
+                logger.warning(
+                    f"Error when attempting to drop ${TABLE_NAME}_old. {retries_remaining} retries remaining."
+                )
+                logger.warning(e)
+                retries_remaining -= 1
+
+        if retries_remaining < 0 and not table_is_dropped:
+            warning = f"Table ${TABLE_NAME}_old could not be dropped."
+            logger.error(warning + " No retries remaining.")
+
+        return warning
