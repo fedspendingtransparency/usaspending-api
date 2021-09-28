@@ -66,7 +66,7 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
     response["recipient"] = create_recipient_object(transaction)
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
-
+    response["total_outlay"] = fetch_total_outlays(award["id"])
     return delete_keys_from_dict(response)
 
 
@@ -110,7 +110,7 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
         response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
     if transaction["naics"]:
         response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
-
+    response["total_outlay"] = fetch_total_outlays(award["id"])
     return delete_keys_from_dict(response)
 
 
@@ -162,7 +162,7 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
         response["psc_hierarchy"] = fetch_psc_hierarchy(transaction["product_or_service_code"])
     if transaction["naics"]:
         response["naics_hierarchy"] = fetch_naics_hierarchy(transaction["naics"])
-
+    response["total_outlay"] = fetch_total_outlays(award["id"])
     return delete_keys_from_dict(response)
 
 
@@ -609,3 +609,35 @@ def fetch_account_details_award(award_id: int) -> dict:
         "account_obligations_by_defc": obligation_by_code,
     }
     return results
+
+
+def fetch_total_outlays(award_id: int) -> dict:
+    sql = """
+    with date_signed_outlay_amounts (award_id, last_period_total_outlay) as (
+        SELECT faba. award_id, COALESCE(sum(COALESCE(faba.gross_outlay_amount_by_award_cpe,0)
+            + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+            + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)), 0) as last_period_total_outlay
+        FROM
+            financial_accounts_by_awards faba
+        INNER JOIN submission_attributes sa
+            ON faba.submission_id = sa.submission_id
+        INNER JOIN awards a
+            ON faba.award_id = a.id
+            AND a.date_signed >= '2019-10-01'
+        INNER JOIN transaction_normalized tn ON tn.id = a.earliest_transaction_id
+        WHERE sa.is_final_balances_for_fy AND sa.reporting_fiscal_year = tn.fiscal_year AND {award_id_sql}
+        GROUP BY faba.award_id
+    )
+    SELECT sum(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN (COALESCE(faba.gross_outlay_amount_by_award_cpe,0)
+            + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+            + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)) END) AS total_outlay
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN submission_attributes sa
+        ON faba.submission_id = sa.submission_id
+    INNER JOIN date_signed_outlay_amounts o ON faba.award_id = o.award_id AND o.last_period_total_outlay != 0;
+    """
+    results = execute_sql_to_ordered_dictionary(sql.format(award_id_sql=f"faba.award_id = {award_id}"))
+    if len(results) > 0:
+        return results[0]["total_outlay"]
+    return None
