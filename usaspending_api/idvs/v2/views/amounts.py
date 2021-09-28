@@ -111,7 +111,8 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
     if award_id_column != "award_id":
         award_id = re.sub(r"[']", r"''", award_id)
     sql = """
-        with date_signed_outlay_amounts (award_id, last_period_total_outlay) as (
+        with child_cte (award_id) as ({child_sql}),
+        date_signed_outlay_amounts (award_id, last_period_total_outlay) as (
             SELECT faba. award_id, COALESCE(sum(COALESCE(faba.gross_outlay_amount_by_award_cpe,0)
                 + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
                 + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)), 0) as last_period_total_outlay
@@ -122,8 +123,9 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
             INNER JOIN awards a
                 ON faba.award_id = a.id
                 AND a.date_signed >= '2019-10-01'
+            INNER JOIN child_cte a2 ON faba.award_id = a2.award_id
             INNER JOIN transaction_normalized tn ON tn.id = a.earliest_transaction_id
-            WHERE sa.is_final_balances_for_fy AND sa.reporting_fiscal_year = tn.fiscal_year AND {award_id_sql}
+            WHERE sa.is_final_balances_for_fy AND sa.reporting_fiscal_year = tn.fiscal_year
             GROUP BY faba.award_id
         )
         SELECT sum(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN (COALESCE(faba.gross_outlay_amount_by_award_cpe,0)
@@ -135,23 +137,11 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
             ON faba.submission_id = sa.submission_id
         INNER JOIN date_signed_outlay_amounts o ON faba.award_id = o.award_id AND o.last_period_total_outlay != 0;
         """
-    children = execute_sql_to_ordered_dictionary(
-        child_award_sql.format(award_id=award_id, award_id_column=award_id_column)
+    child_results = execute_sql_to_ordered_dictionary(
+        sql.format(child_sql=child_award_sql.format(award_id=award_id, award_id_column=award_id_column))
     )
-    grandchildren = execute_sql_to_ordered_dictionary(
-        grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column)
-    )
-    child_award_ids = []
-    grandchild_award_ids = []
-    child_award_ids.extend([x["award_id"] for x in children])
-    grandchild_award_ids.extend([x["award_id"] for x in grandchildren])
-    award_id_sql = "faba.award_id in {award_id}".format(award_id="(" + str(child_award_ids).strip("[]") + ")")
-    child_results = (
-        execute_sql_to_ordered_dictionary(sql.format(award_id_sql=award_id_sql)) if child_award_ids != [] else {}
-    )
-    award_id_sql = "faba.award_id in {award_id}".format(award_id="(" + str(grandchild_award_ids).strip("[]") + ")")
-    grandchild_results = (
-        execute_sql_to_ordered_dictionary(sql.format(award_id_sql=award_id_sql)) if grandchild_award_ids != [] else {}
+    grandchild_results = execute_sql_to_ordered_dictionary(
+        sql.format(child_sql=grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column))
     )
     if len(child_results) == 0:
         child_results = None
