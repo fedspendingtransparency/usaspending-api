@@ -287,9 +287,17 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
         if children:
             recipient_info = json.loads(bucket.get("key"))
             hash_with_level = recipient_info.get("hash_with_level") or None
+            uei = (
+                RecipientProfile.objects.filter(recipient_hash=hash_with_level[:-2]).values("uei").first()
+                if hash_with_level
+                else None
+            )
+            if uei is not None:
+                uei = uei["uei"]
             result = {
                 "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
                 "recipient_unique_id": recipient_info.get("unique_id"),
+                "uei": uei,
                 "recipient_name": recipient_info.get("name"),
             }
         loan_info = bucket.get("filter_loans", {})
@@ -344,11 +352,14 @@ class RecipientOverView(APIView):
             parent_id = parents[0].get("parent_id")
             parent_name = parents[0].get("parent_name")
             parent_duns = parents[0].get("parent_duns")
-
+        uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
+        if uei is not None:
+            uei = uei["uei"]
         result = {
             "name": recipient_name,
             "alternate_names": alternate_names,
             "duns": recipient_duns,
+            "uei": uei,
             "recipient_id": recipient_id,
             "recipient_level": recipient_level,
             "parent_id": parent_id,
@@ -401,11 +412,15 @@ class ChildRecipients(APIView):
         # Get child info for each child DUNS
         results = []
         for total in totals:
+            uei = RecipientProfile.objects.filter(recipient_hash=total["recipient_hash"]).values("uei").first()
+            if uei is not None:
+                uei = uei["uei"]
             results.append(
                 {
                     "recipient_id": "{}-C".format(total["recipient_hash"]),
                     "name": total["recipient_name"],
                     "duns": total["recipient_unique_id"],
+                    "uei": uei,
                     "amount": total["total_obligation_amount"],
                 }
             )
@@ -424,13 +439,14 @@ class ChildRecipients(APIView):
             missing_duns = [duns for duns in children if duns not in found_duns]
             missing_duns_qs = RecipientProfile.objects.filter(
                 recipient_unique_id__in=missing_duns, recipient_level="C"
-            ).values("recipient_hash", "recipient_name", "recipient_unique_id")
+            ).values("recipient_hash", "recipient_name", "recipient_unique_id", "uei")
             for child_duns in list(missing_duns_qs):
                 results.append(
                     {
                         "recipient_id": "{}-C".format(child_duns["recipient_hash"]),
                         "name": child_duns["recipient_name"],
                         "duns": child_duns["recipient_unique_id"],
+                        "uei": child_duns["uei"],
                         "amount": 0,
                     }
                 )

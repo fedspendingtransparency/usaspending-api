@@ -84,6 +84,7 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
                     {
                         "id": "1c3edaaa-611b-840c-bf2b-fd34df49f21f-P",
                         "duns": "071549000",
+                        "uei": "NUDGYLBB4S99",                
                         "name": "CALIFORNIA, STATE OF",
                         "recipient_level": "P",
                         "amount": 125645635660.93
@@ -91,6 +92,7 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
                     {
                         "id": "9f972e57-c05f-b374-bf11-0408f30da215-R",
                         "duns": null,
+                        "uei": null,                
                         "name": "OPTUM BANK",
                         "recipient_level": "R",
                         "amount": 99578072991.9
@@ -98,6 +100,7 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
                     {
                         "id": "b0e81504-fe4b-96fb-ae3c-27b1a7fb4cda-P",
                         "duns": "041002973",
+                        "uei": "DKBAJQ45GQS8",                
                         "name": "NEW YORK, STATE OF",
                         "recipient_level": "P",
                         "amount": 81273339054.44
@@ -105,6 +108,7 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
                     {
                         "id": "bf782d74-80d4-581e-ae9f-3b5b57092d7d-C",
                         "duns": "796528263",
+                        "uei": "JE73CDQUAPA7",                
                         "name": "HEALTH CARE SERVICES, CALIFORNIA DEPARTMENT OF",
                         "recipient_level": "C",
                         "amount": 66803275488.0
@@ -122,6 +126,8 @@ This endpoint returns a list of recipients, their level, DUNS, and amount.
     Name of the recipient. `null` when the name is not provided.
 + `duns` (required, string, nullable)
     Recipient's DUNS (Data Universal Numbering System) number. `null` when no DUNS is provided.
++ `uei` (required, string, nullable)
+    Recipient's UEI (Unique Entity Identifier). `null` when no UEI is provided.
 + `id` (required, string)
     A unique identifier for the recipient at this `recipient_level`.
 + `amount` (required, number)
