@@ -26,6 +26,10 @@ class Migration(migrations.Migration):
             name='disaster_emergency_fund',
             field=models.ForeignKey(blank=True, db_column='disaster_emergency_fund_code_temp', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='references.DisasterEmergencyFundCode'),
         ),
+        migrations.AlterUniqueTogether(
+            name='gtassf133balances',
+            unique_together={('fiscal_year', 'fiscal_period', 'disaster_emergency_fund', 'tas_rendering_label')},
+        ),
         migrations.RunPython(copy_defc_column, reverse_code=migrations.RunPython.noop),
         migrations.RenameField(
             model_name='gtassf133balances',
@@ -38,10 +42,6 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(blank=True, db_column='disaster_emergency_fund_code', null=True,
                                     on_delete=django.db.models.deletion.DO_NOTHING,
                                     to='references.DisasterEmergencyFundCode'),
-        ),
-        migrations.AlterUniqueTogether(
-            name='gtassf133balances',
-            unique_together={('fiscal_year', 'fiscal_period', 'disaster_emergency_fund', 'tas_rendering_label')},
         ),
         migrations.RemoveField(
             model_name='gtassf133balances',
