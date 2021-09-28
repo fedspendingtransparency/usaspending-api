@@ -11,7 +11,12 @@ Creates a new download job for the requested account and award. Returns a link t
     + Attributes (object)
         + `filters` (optional, Filters, fixed-type)
         + `file_format` (optional, enum[string])
-            Currently only works for a download filtered on a single DEFC
+            The format of the file(s) in the zip file containing the data. Currently, only works for a download filtered on a single DEFC.
+            + Default: `csv`
+            + Members
+                + `csv`
+                + `tsv`
+                + `pstxt`
     + Body
 
             {
