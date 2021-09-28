@@ -224,7 +224,7 @@ class Command(BaseCommand):
                 logger.warning(
                     f"Error when attempting to drop ${TABLE_NAME}_old. {retries_remaining} retries remaining."
                 )
-                logger.warning(f"Error: {e}")
+                logger.warning(e)
                 retries_remaining -= 1
 
         if retries_remaining < 0 and not table_is_dropped:
