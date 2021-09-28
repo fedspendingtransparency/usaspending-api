@@ -27,6 +27,8 @@ This endpoint returns a list of child recipients belonging to the given parent r
     Name of the child recipient. `null` if the child recipient's name is not provided.
 + `duns`: `001006360` (required, string, nullable)
     Child recipient's DUNS. `null` if the child recipient's DUNS is not provided.
++ `uei` (required, string, nullable)
+    Recipient's UEI (Unique Entity Identifier). `null` when no UEI is provided.
 + `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-C` (required, string)
     A unique identifier for the child recipient.
 + `state_province`: New Jersey (required, string, nullable)

@@ -41,6 +41,7 @@ TEST_DUNS = {
         "zip": "PARENT ZIP",
         "zip4": "PARENT ZIP4",
         "business_types_codes": ["2X"],
+        "uei": "AAAAAAAAAAAA",
     },
     "000000002": {
         "awardee_or_recipient_uniqu": "000000002",
@@ -131,6 +132,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
         "recipient_affiliations": ["000000001", "000000002", "000000005"],
+        "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 1 - lists itself as both parent and child
     "00077a9a-5a70-8919-fd19-330762af6b84-C": {
@@ -139,6 +141,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
         "recipient_affiliations": ["000000001"],
+        "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 2 - different from parent duns
     "392052ae-92ab-f3f4-d9fa-b57f45b7750b-C": {
@@ -529,6 +532,7 @@ def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index
         "name": "PARENT RECIPIENT",
         "alternate_names": [],
         "duns": "000000001",
+        "uei": "AAAAAAAAAAAA",
         "recipient_id": "00077a9a-5a70-8919-fd19-330762af6b84-C",
         "recipient_level": "C",
         "parent_name": "PARENT RECIPIENT",
@@ -611,6 +615,7 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
         "recipient_id": child1_id,
         "name": "PARENT RECIPIENT",
         "duns": parent_child1_duns,
+        "uei": "AAAAAAAAAAAA",
         "amount": 100,
         "state_province": "PARENT STATE",
     }
@@ -618,6 +623,7 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
         "recipient_id": child2_id,
         "name": "CHILD RECIPIENT",
         "duns": child2_duns,
+        "uei": None,
         "amount": 50,
         "state_province": "CHILD STATE",
     }
