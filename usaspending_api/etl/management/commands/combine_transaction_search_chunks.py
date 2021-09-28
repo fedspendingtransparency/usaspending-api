@@ -228,7 +228,7 @@ class Command(BaseCommand):
                 retries_remaining -= 1
 
         if retries_remaining < 0 and not table_is_dropped:
-            warning = f"Table ${TABLE_NAME}_old could not be dropped. No retries remaining"
-            logger.error(warning + "No retries remaining.")
+            warning = f"Table ${TABLE_NAME}_old could not be dropped."
+            logger.error(warning + " No retries remaining.")
 
         return warning
