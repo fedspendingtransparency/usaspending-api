@@ -7,6 +7,7 @@ from rest_framework import status
 
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -329,12 +330,15 @@ def awards_and_transactions(transactional_db):
         awardee_or_recipient_uniqu=None,
     )
 
+    def_codes = list(
+        DisasterEmergencyFundCode.objects.filter(group_name="covid_19").order_by("code").values_list("code", flat=True)
+    )
     mommy.make(
         "download.DownloadJob",
         job_status_id=1,
         file_name="COVID-19_Profile_2021-09-20_H20M11S49647843.zip",
         error_message=None,
-        json_request="{}",
+        json_request=json.dumps({"filters": {"def_codes": def_codes}}),
     )
 
     # Set latest_award for each award
@@ -343,24 +347,23 @@ def awards_and_transactions(transactional_db):
 
 def test_csv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    resp = _post(client, def_codes=["L", "M", "N"])
 
+    resp = _post(client, def_codes=["L"])
+    resp_json = resp.json()
+    assert resp.status_code == status.HTTP_200_OK
+    assert re.match(r".*COVID-19_Profile_.*\.zip", resp_json["file_url"])
+    assert resp_json["download_request"]["file_format"] == "csv"
+
+    # "def_codes" intentionally out of order to test that the order doesn't matter
+    resp = _post(client, def_codes=["M", "N", "L"])
     resp_json = resp.json()
     assert resp.status_code == status.HTTP_200_OK
     assert re.match(r".*COVID-19_Profile_2021-09-20_H20M11S49647843.zip", resp_json["file_url"])
 
     resp = _post(client)
-
     resp_json = resp.json()
     assert resp.status_code == status.HTTP_200_OK
     assert re.match(r".*COVID-19_Profile_2021-09-20_H20M11S49647843.zip", resp_json["file_url"])
-
-    resp = _post(client, def_codes=["L"])
-
-    resp_json = resp.json()
-    assert resp.status_code == status.HTTP_200_OK
-    assert re.match(r".*COVID-19_Profile_.*\.zip", resp_json["file_url"])
-    assert resp_json["download_request"]["file_format"] == "csv"
 
 
 def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):

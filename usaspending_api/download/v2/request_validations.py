@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 from datetime import datetime, MINYEAR, MAXYEAR
 from django.conf import settings
@@ -664,7 +665,10 @@ class DisasterDownloadValidator(DownloadValidatorBase):
         defc_filter = sorted(self._json_request["filters"]["def_codes"])
         if len(defc_filter) > 1:
             if set(defc_filter) == set(covid_defc):
-                self._json_request["pre_generated_download"] = settings.COVID19_DOWNLOAD_FILENAME_PREFIX
+                self._json_request["pre_generated_download"] = {
+                    "name_match": settings.COVID19_DOWNLOAD_FILENAME_PREFIX,
+                    "request_match": f'"def_codes": {json.dumps(covid_defc)}',
+                }
             else:
                 raise InvalidParameterException(
                     "The Disaster Download is currently limited to either all COVID-19 DEFC or a single COVID-19 DEFC."

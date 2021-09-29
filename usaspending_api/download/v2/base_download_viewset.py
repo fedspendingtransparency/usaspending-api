@@ -40,7 +40,11 @@ class BaseDownloadViewSet(APIView):
         pre_generated_download = json_request.pop("pre_generated_download", None)
         if pre_generated_download:
             filename = (
-                DownloadJob.objects.filter(file_name__startswith=pre_generated_download, error_message__isnull=True)
+                DownloadJob.objects.filter(
+                    file_name__startswith=pre_generated_download["name_match"],
+                    json_request__contains=pre_generated_download["request_match"],
+                    error_message__isnull=True,
+                )
                 .order_by("-update_date")
                 .values_list("file_name", flat=True)
                 .first()
