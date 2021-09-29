@@ -794,6 +794,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `account_outlays_by_defc` (required, array[DEFCAmount], fixed-type)
 + `total_outlay` (required, number, nullable)
 
+
 ## FinancialAssistanceResponse (object)
 + `id` (required, number)
 + `category` (required, enum[string])

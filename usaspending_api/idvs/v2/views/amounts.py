@@ -107,6 +107,54 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     return results
 
 
+def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
+    if award_id_column != "award_id":
+        award_id = re.sub(r"[']", r"''", award_id)
+    sql = """
+        with child_cte (award_id) as ({child_sql}),
+        date_signed_outlay_amounts (award_id, last_period_total_outlay) as (
+            SELECT faba. award_id, COALESCE(sum(COALESCE(faba.gross_outlay_amount_by_award_cpe,0)
+                + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)), 0) as last_period_total_outlay
+            FROM
+                financial_accounts_by_awards faba
+            INNER JOIN submission_attributes sa
+                ON faba.submission_id = sa.submission_id
+            INNER JOIN awards a
+                ON faba.award_id = a.id
+                AND a.date_signed >= '2019-10-01'
+            INNER JOIN child_cte a2 ON faba.award_id = a2.award_id
+            INNER JOIN transaction_normalized tn ON tn.id = a.earliest_transaction_id
+            WHERE sa.is_final_balances_for_fy AND sa.reporting_fiscal_year = tn.fiscal_year
+            GROUP BY faba.award_id
+        )
+        SELECT sum(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN (COALESCE(faba.gross_outlay_amount_by_award_cpe,0)
+                + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)) END) AS total_outlay
+        FROM
+            financial_accounts_by_awards faba
+        INNER JOIN submission_attributes sa
+            ON faba.submission_id = sa.submission_id
+        INNER JOIN date_signed_outlay_amounts o ON faba.award_id = o.award_id AND o.last_period_total_outlay != 0;
+        """
+    child_results = execute_sql_to_ordered_dictionary(
+        sql.format(child_sql=child_award_sql.format(award_id=award_id, award_id_column=award_id_column))
+    )
+    grandchild_results = execute_sql_to_ordered_dictionary(
+        sql.format(child_sql=grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column))
+    )
+    if len(child_results) == 0:
+        child_results = None
+    else:
+        child_results = child_results[0]["total_outlay"]
+    if len(grandchild_results) == 0:
+        grandchild_results = None
+    else:
+        grandchild_results = grandchild_results[0]["total_outlay"]
+
+    return {"child_award_total_outlay": child_results, "grandchild_award_total_outlay": grandchild_results}
+
+
 class IDVAmountsViewSet(APIView):
     """
     Returns counts and dollar figures for a specific IDV.
@@ -129,6 +177,7 @@ class IDVAmountsViewSet(APIView):
         try:
             parent_award = ParentAward.objects.get(**{award_id_column: award_id})
             account_data = fetch_account_details_idv(award_id, award_id_column)
+            outlays = fetch_idv_child_outlays(award_id, award_id_column)
             return OrderedDict(
                 (
                     ("award_id", parent_award.award_id),
@@ -136,6 +185,7 @@ class IDVAmountsViewSet(APIView):
                     ("child_idv_count", parent_award.direct_idv_count),
                     ("child_award_count", parent_award.direct_contract_count),
                     ("child_award_total_obligation", parent_award.direct_total_obligation),
+                    ("child_award_total_outlay", outlays["child_award_total_outlay"]),
                     ("child_award_base_and_all_options_value", parent_award.direct_base_and_all_options_value),
                     ("child_award_base_exercised_options_val", parent_award.direct_base_exercised_options_val),
                     ("child_total_account_outlay", account_data["child_total_account_outlay"]),
@@ -147,6 +197,7 @@ class IDVAmountsViewSet(APIView):
                         "grandchild_award_total_obligation",
                         parent_award.rollup_total_obligation - parent_award.direct_total_obligation,
                     ),
+                    ("grandchild_award_total_outlay", outlays["grandchild_award_total_outlay"]),
                     (
                         "grandchild_award_base_and_all_options_value",
                         parent_award.rollup_base_and_all_options_value - parent_award.direct_base_and_all_options_value,
