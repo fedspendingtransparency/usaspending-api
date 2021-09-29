@@ -640,7 +640,7 @@ def disaster_account_data():
 
     mommy.make(
         "references.GTASSF133Balances",
-        disaster_emergency_fund_code="M",
+        disaster_emergency_fund=defc_m,
         tas_rendering_label="003-X-0000-000",
         treasury_account_identifier=tas3,
         budget_authority_appropriation_amount_cpe=2398472389.78,
@@ -653,7 +653,7 @@ def disaster_account_data():
     )
     mommy.make(
         "references.GTASSF133Balances",
-        disaster_emergency_fund_code="N",
+        disaster_emergency_fund=defc_n,
         tas_rendering_label="002-X-0000-000",
         treasury_account_identifier=tas2,
         budget_authority_appropriation_amount_cpe=892743123.12,

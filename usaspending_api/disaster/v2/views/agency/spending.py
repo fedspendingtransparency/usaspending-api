@@ -182,7 +182,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
                 Subquery(
                     latest_gtas_of_each_year_queryset()
                     .filter(
-                        disaster_emergency_fund_code__in=self.def_codes,
+                        disaster_emergency_fund_id__in=self.def_codes,
                         treasury_account_identifier__funding_toptier_agency_id=OuterRef("toptier_agency_id"),
                     )
                     .annotate(

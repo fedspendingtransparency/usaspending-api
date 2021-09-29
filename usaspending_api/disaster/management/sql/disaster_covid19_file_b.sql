@@ -22,13 +22,13 @@ SELECT
     "treasury_appropriation_account"."budget_subfunction_title" AS "budget_subfunction",
     "federal_account"."federal_account_code" AS "federal_account_symbol",
     "federal_account"."account_title" AS "federal_account_name",
-    "disaster_emergency_fund_code"."code" AS "disaster_emergency_fund_code",
-    "disaster_emergency_fund_code"."public_law" AS "disaster_emergency_fund_name",
     "ref_program_activity"."program_activity_code" AS "program_activity_code",
     "ref_program_activity"."program_activity_name" AS "program_activity_name",
     "object_class"."object_class" AS "object_class_code",
     "object_class"."object_class_name" AS "object_class_name",
     "object_class"."direct_reimbursable" AS "direct_or_reimbursable_funding_source",
+    "disaster_emergency_fund_code"."code" AS "disaster_emergency_fund_code",
+    "disaster_emergency_fund_code"."public_law" AS "disaster_emergency_fund_name",
     "financial_accounts_by_program_activity_object_class"."obligations_incurred_by_program_object_class_cpe" AS "obligations_incurred",
     "financial_accounts_by_program_activity_object_class"."obligations_undelivered_orders_unpaid_total_cpe" AS "obligations_undelivered_orders_unpaid_total",
     "financial_accounts_by_program_activity_object_class"."obligations_undelivered_orders_unpaid_total_fyb" AS "obligations_undelivered_orders_unpaid_total_FYB",
@@ -40,7 +40,8 @@ SELECT
     "financial_accounts_by_program_activity_object_class"."ussgl490100_delivered_orders_obligations_unpaid_cpe" AS "USSGL490100_delivered_orders_obligations_unpaid",
     "financial_accounts_by_program_activity_object_class"."ussgl490100_delivered_orders_obligations_unpaid_fyb" AS "USSGL490100_delivered_orders_obligations_unpaid_FYB",
     "financial_accounts_by_program_activity_object_class"."ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe" AS "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
-    "financial_accounts_by_program_activity_object_class"."gross_outlay_amount_by_program_object_class_fyb" AS "gross_outlay_amount_fyb",
+    "financial_accounts_by_program_activity_object_class"."gross_outlay_amount_by_program_object_class_cpe" AS "gross_outlay_amount_FYB_to_period_end",
+    "financial_accounts_by_program_activity_object_class"."gross_outlay_amount_by_program_object_class_fyb" AS "gross_outlay_amount_FYB",
     "financial_accounts_by_program_activity_object_class"."gross_outlays_undelivered_orders_prepaid_total_cpe" AS "gross_outlays_undelivered_orders_prepaid_total",
     "financial_accounts_by_program_activity_object_class"."gross_outlays_undelivered_orders_prepaid_total_cpe" AS "gross_outlays_undelivered_orders_prepaid_total_FYB",
     "financial_accounts_by_program_activity_object_class"."gross_outlays_delivered_orders_paid_total_cpe" AS "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
@@ -60,7 +61,6 @@ SELECT
     "financial_accounts_by_program_activity_object_class"."ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe" AS "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
     "financial_accounts_by_program_activity_object_class"."ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe" AS "USSGL493100_delivered_orders_obligations_transferred_unpaid",
     "financial_accounts_by_program_activity_object_class"."ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe" AS "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
-    "financial_accounts_by_program_activity_object_class"."gross_outlay_amount_by_program_object_class_cpe" AS "gross_outlay_amount",
     (MAX("submission_attributes"."published_date")) ::date AS "last_modified_date"
 FROM "financial_accounts_by_program_activity_object_class"
 LEFT OUTER JOIN "treasury_appropriation_account" ON ("financial_accounts_by_program_activity_object_class"."treasury_account_id" = "treasury_appropriation_account"."treasury_account_identifier")

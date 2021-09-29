@@ -31,11 +31,6 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
-                (
-                    "award_latest_action_date",
-                    "award__latest_transaction__action_date",
-                ),  # Annotation is used to create this column
-                ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "award__total_obligation"),
                 ("current_total_value_of_award", "award__latest_transaction__contract_data__current_total_value_award"),
                 (
@@ -44,6 +39,11 @@ query_paths = {
                 ),
                 ("award_base_action_date", "award__date_signed"),
                 ("award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
+                (
+                    "award_latest_action_date",
+                    "award__latest_transaction__action_date",
+                ),  # Annotation is used to create this column
+                ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 (
                     "period_of_performance_current_end_date",
@@ -1551,6 +1551,51 @@ query_paths = {
                 ("subaward_fsrs_report_last_modified_date", "broker_subaward__date_submitted"),
             ]
         ),
+    },
+    "gtas_balances": {
+        "treasury_account": OrderedDict(
+            [
+                ("owning_agency_name", "treasury_account_identifier__federal_account__parent_toptier_agency__name"),
+                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                (
+                    "allocation_transfer_agency_identifier_code",
+                    "allocation_transfer_agency_identifier_code",
+                ),  # Column is annotated in account_download.py
+                ("agency_identifier_code", "agency_identifier_code"),  # Column is annotated in account_download.py
+                (
+                    "beginning_period_of_availability",
+                    "beginning_period_of_availability",
+                ),  # Column is annotated in account_download.py
+                (
+                    "ending_period_of_availability",
+                    "ending_period_of_availability",
+                ),  # Column is annotated in account_download.py
+                ("availability_type_code", "availability_type_code"),  # Column is annotated in account_download.py
+                ("main_account_code", "main_account_code"),  # Column is annotated in account_download.py
+                ("sub_account_code", "sub_account_code"),  # Column is annotated in account_download.py
+                ("treasury_account_symbol", "tas_rendering_label"),
+                ("treasury_account_name", "treasury_account_identifier__account_title"),
+                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
+                (
+                    "allocation_transfer_agency_identifier_name",
+                    "allocation_transfer_agency_identifier_name",
+                ),  # Column is annotated in account_download.py
+                ("budget_function", "treasury_account_identifier__budget_function_title"),
+                ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
+                ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
+                ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
+                ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
+                ("disaster_emergency_fund_name", "disaster_emergency_fund__public_law"),
+                ("budget_authority_appropriated_amount", "budget_authority_appropriation_amount_cpe"),
+                ("total_other_budgetary_resources_amount", "other_budgetary_resources_amount_cpe"),
+                ("total_budgetary_resources", "total_budgetary_resources_cpe"),
+                ("prior_year_paid_obligation_recoveries", "prior_year_paid_obligation_recoveries"),
+                ("anticipated_prior_year_obligation_recoveries", "anticipated_prior_year_obligation_recoveries"),
+                ("obligations_incurred", "obligations_incurred_total_cpe"),
+                ("unobligated_balance", "unobligated_balance_cpe"),
+                ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
+            ]
+        )
     },
     "account_balances": {
         "treasury_account": OrderedDict(

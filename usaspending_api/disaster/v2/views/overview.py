@@ -57,10 +57,10 @@ class OverviewViewSet(DisasterBase):
     def funding(self):
         funding = list(
             latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=self.defc)
-            .values("disaster_emergency_fund_code")
+            .filter(disaster_emergency_fund__in=self.defc)
+            .values("disaster_emergency_fund")
             .annotate(
-                def_code=F("disaster_emergency_fund_code"),
+                def_code=F("disaster_emergency_fund"),
                 amount=(
                     Sum("total_budgetary_resources_cpe")
                     - (
@@ -112,7 +112,7 @@ class OverviewViewSet(DisasterBase):
 
         results = (
             latest_gtas_of_each_year_queryset()
-            .filter(disaster_emergency_fund_code__in=self.defc)
+            .filter(disaster_emergency_fund__in=self.defc)
             .values(*obligation_values, *outlay_values)
             .aggregate(
                 obligation_totals=(
@@ -155,7 +155,7 @@ class OverviewViewSet(DisasterBase):
 
         filters = {
             "tas_rendering_label__in": ["016-X-0168-000", "016-X-1801-000", "016-X-8042-000"],
-            "disaster_emergency_fund_code": "O",
+            "disaster_emergency_fund": "O",
             "treasury_account_identifier__funding_toptier_agency__abbreviation": "DOL",
         }
 

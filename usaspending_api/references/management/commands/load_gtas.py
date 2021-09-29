@@ -79,15 +79,15 @@ class Command(mixins.ETLMixin, BaseCommand):
         return f"""
             SELECT
                 fiscal_year,
-                period as fiscal_period,
+                period AS fiscal_period,
                 {self.column_statements}
-                disaster_emergency_fund_code,
+                disaster_emergency_fund_code AS disaster_emergency_fund_id,
                 CONCAT(
                     CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,
                     sf.agency_identifier, '-',
                     CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END,
                     '-', sf.main_account_code, '-', sf.sub_account_code)
-                as tas_rendering_label
+                AS tas_rendering_label
             FROM
                 sf_133 sf
             GROUP BY

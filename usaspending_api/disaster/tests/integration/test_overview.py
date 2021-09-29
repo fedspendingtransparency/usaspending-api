@@ -96,8 +96,8 @@ def test_summing_multiple_years(
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [
         {
-            "amount": +YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"]
-            + LATE_GTAS_CALCULATIONS["total_budgetary_resources"],
+            "amount": LATE_GTAS_CALCULATIONS["total_budgetary_resources"]
+            + YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"],
             "def_code": "M",
         }
     ]
@@ -247,7 +247,7 @@ def test_dol_defc_v_special_case(client, monkeypatch, helpers, defc_codes, basic
         return {
             # Constants
             "treasury_account_identifier": taa,
-            "disaster_emergency_fund_code": "O",
+            "disaster_emergency_fund_id": "O",
             "tas_rendering_label": "016-X-0168-000",
             # Values with multiplier
             "obligations_incurred_total_cpe": 10000000 * multiplier,
@@ -265,7 +265,7 @@ def test_dol_defc_v_special_case(client, monkeypatch, helpers, defc_codes, basic
     mommy.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **_gtas_values(4))
     defc_v_values = _gtas_values(6)
     defc_v_values.update(
-        {"disaster_emergency_fund_code": "V", "treasury_account_identifier": None, "tas_rendering_label": None}
+        {"disaster_emergency_fund_id": "V", "treasury_account_identifier": None, "tas_rendering_label": None}
     )
     mommy.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **defc_v_values)
     resp = client.get(f"{OVERVIEW_URL}?def_codes=V")

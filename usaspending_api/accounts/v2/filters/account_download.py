@@ -26,8 +26,26 @@ Account Breakdown by Award (C file):
            same FY that have TOA != 0
         2. Group by Federal Account
 """
+from datetime import timezone, datetime
+
 from django.contrib.postgres.aggregates import StringAgg
-from django.db.models import Case, CharField, DateField, DecimalField, F, Func, Max, Sum, Value, When, Q
+from django.db.models import (
+    Case,
+    CharField,
+    DateField,
+    DecimalField,
+    F,
+    Func,
+    Max,
+    Q,
+    Subquery,
+    Sum,
+    TextField,
+    Value,
+    When,
+    OuterRef,
+    Exists,
+)
 from django.db.models.functions import Cast, Coalesce, Concat
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -35,22 +53,58 @@ from usaspending_api.common.helpers.orm_helpers import (
     ConcatAll,
     FiscalYear,
     get_fyp_or_q_notation,
+    get_gtas_fyp_notation,
 )
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
-from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models import ToptierAgency, CGAC
 from usaspending_api.settings import HOST
 from usaspending_api.submissions.helpers import (
     ClosedPeriod,
     get_submission_ids_for_periods,
     get_last_closed_periods_per_year,
 )
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
 
 def account_download_filter(account_type, download_table, filters, account_level="treasury_account"):
 
+    query_filters, tas_id = build_query_filters(account_type, filters, account_level)
+
+    nonzero_filter = Q()
+    if account_type == "award_financial":
+        nonzero_filter = get_nonzero_filter()
+
+    # Make derivations based on the account level
+    if account_level == "treasury_account":
+        queryset = generate_treasury_account_query(download_table.objects, account_type)
+    elif account_level == "federal_account":
+        queryset = generate_federal_account_query(download_table.objects, account_type, tas_id, filters)
+    else:
+        raise InvalidParameterException(
+            'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
+        )
+
+    if filters.get("is_multi_year"):
+        if account_type == "gtas_balances":
+            # TODO: Refactor to remove need for annotation with Exists() once upgraded to Django 3.2
+            queryset = queryset.annotate(latest_submission_of_fy=Exists(get_gtas_submission_filter())).filter(
+                latest_submission_of_fy=True
+            )
+        else:
+            submission_filter = Q(submission__is_final_balances_for_fy=True)
+            queryset = queryset.filter(submission_filter)
+    else:
+        submission_filter = get_submission_filter(account_type, filters)
+        queryset = queryset.filter(submission_filter)
+
+    # Apply filter and return
+    return queryset.filter(nonzero_filter, **query_filters)
+
+
+def build_query_filters(account_type, filters, account_level):
     if account_level not in ("treasury_account", "federal_account"):
         raise InvalidParameterException(
             'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
@@ -58,7 +112,9 @@ def account_download_filter(account_type, download_table, filters, account_level
 
     query_filters = {}
 
-    tas_id = "treasury_account_identifier" if account_type == "account_balances" else "treasury_account"
+    tas_id = (
+        "treasury_account_identifier" if account_type in ("account_balances", "gtas_balances") else "treasury_account"
+    )
 
     if filters.get("agency") and filters["agency"] != "all":
         if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
@@ -81,24 +137,18 @@ def account_download_filter(account_type, download_table, filters, account_level
             # joining to disaster_emergency_fund_code table for observed performance benefits
             query_filters["disaster_emergency_fund__code__in"] = filters["def_codes"]
 
-    submission_filter = get_submission_filter(account_type, filters)
+    return query_filters, tas_id
 
-    nonzero_filter = Q()
-    if account_type == "award_financial":
-        nonzero_filter = get_nonzero_filter()
 
-    # Make derivations based on the account level
-    if account_level == "treasury_account":
-        queryset = generate_treasury_account_query(download_table.objects, account_type)
-    elif account_level == "federal_account":
-        queryset = generate_federal_account_query(download_table.objects, account_type, tas_id, filters)
-    else:
-        raise InvalidParameterException(
-            'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
+def get_gtas_submission_filter():
+    return (
+        DABSSubmissionWindowSchedule.objects.filter(
+            submission_reveal_date__lte=datetime.now(timezone.utc), is_quarter=False
         )
-
-    # Apply filter and return
-    return queryset.filter(submission_filter, nonzero_filter, **query_filters)
+        .values("submission_fiscal_year", "is_quarter")
+        .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
+        .filter(submission_fiscal_year=OuterRef("fiscal_year"), max_submission_fiscal_month=OuterRef("fiscal_period"))
+    )
 
 
 def get_submission_filter(account_type, filters):
@@ -207,6 +257,7 @@ def generate_ussgl497200_derived_field(submission_queryset=None):
 def generate_gross_outlay_amount_derived_field(account_type, submission_queryset=None):
     column_name = {
         "account_balances": "gross_outlay_amount_by_tas_cpe",
+        "gtas_balances": "gross_outlay_amount_by_tas_cpe",
         "object_class_program_activity": "gross_outlay_amount_by_program_object_class_cpe",
         "award_financial": "gross_outlay_amount_by_award_cpe",
     }[account_type]
@@ -224,7 +275,15 @@ def generate_treasury_account_query(queryset, account_type):
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
 
-    if account_type != "account_balances":
+    if account_type == "gtas_balances":
+        derived_fields = gtas_balances_derivations(derived_fields)
+        derived_fields.update(
+            {
+                "submission_period": get_gtas_fyp_notation(),
+            }
+        )
+
+    if account_type not in ("account_balances", "gtas_balances"):
         derived_fields.update(
             {
                 "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": generate_ussgl487200_derived_field(),
@@ -237,7 +296,7 @@ def generate_treasury_account_query(queryset, account_type):
         # C TAS download.  Keeping it as MAX caused grouping on every single column in the SQL statement.
         derived_fields[lmd] = Cast("submission__published_date", output_field=DateField())
         derived_fields = award_financial_derivations(derived_fields)
-    else:
+    elif account_type != "gtas_balances":
         derived_fields[lmd] = Cast(Max("submission__published_date"), output_field=DateField())
 
     return queryset.annotate(**derived_fields)
@@ -454,6 +513,113 @@ def award_financial_derivations(derived_fields):
         ),
         default=Value(""),
         output_field=CharField(),
+    )
+
+    return derived_fields
+
+
+def gtas_balances_derivations(derived_fields):
+    # These derivations are used by the following derivation; however they are NOT included in the final download
+    derived_fields["tas_component_count"] = Func(
+        Func(F("tas_rendering_label"), Value("-"), function="string_to_array"), 1, function="array_upper"
+    )
+    derived_fields["tas_component_third_from_end"] = Func(
+        Func(F("tas_rendering_label"), function="REVERSE"), Value("-"), Value("3"), function="SPLIT_PART"
+    )
+
+    # These derivations appear in the final download
+    derived_fields["allocation_transfer_agency_identifier_code"] = Coalesce(
+        F("treasury_account_identifier__allocation_transfer_agency_id"),
+        Case(
+            When(
+                tas_component_count=5, then=Func(F("tas_rendering_label"), Value("-"), Value(1), function="SPLIT_PART")
+            ),
+            default=None,
+            output_field=TextField(),
+        ),
+    )
+    derived_fields["agency_identifier_code"] = Coalesce(
+        F("treasury_account_identifier__agency_id"),
+        Case(
+            When(
+                tas_component_count=5, then=Func(F("tas_rendering_label"), Value("-"), Value(2), function="SPLIT_PART")
+            ),
+            default=Func(F("tas_rendering_label"), Value("-"), Value(1), function="SPLIT_PART"),
+            output_field=TextField(),
+        ),
+    )
+    derived_fields["beginning_period_of_availability"] = Coalesce(
+        F("treasury_account_identifier__beginning_period_of_availability"),
+        Case(
+            When(
+                ~Q(tas_component_third_from_end=Value("X")),
+                then=Func(
+                    Func(
+                        Func(
+                            Func(F("tas_rendering_label"), function="REVERSE"),
+                            Value("-"),
+                            Value(3),
+                            function="SPLIT_PART",
+                        ),
+                        Value("/"),
+                        Value(2),
+                        function="SPLIT_PART",
+                    ),
+                    function="REVERSE",
+                ),
+            ),
+            default=None,
+            output_field=TextField(),
+        ),
+    )
+    derived_fields["ending_period_of_availability"] = Coalesce(
+        F("treasury_account_identifier__ending_period_of_availability"),
+        Case(
+            When(
+                ~Q(tas_component_third_from_end=Value("X")),
+                then=Func(
+                    Func(
+                        Func(
+                            Func(F("tas_rendering_label"), function="REVERSE"),
+                            Value("-"),
+                            Value(3),
+                            function="SPLIT_PART",
+                        ),
+                        Value("/"),
+                        Value(1),
+                        function="SPLIT_PART",
+                    ),
+                    function="REVERSE",
+                ),
+            ),
+            default=None,
+            output_field=TextField(),
+        ),
+    )
+    derived_fields["availability_type_code"] = Coalesce(
+        F("treasury_account_identifier__availability_type_code"),
+        Case(
+            When(
+                Q(tas_component_third_from_end=Value("X")),
+                then=Value("X"),
+            ),
+            default=None,
+            output_field=TextField(),
+        ),
+    )
+    derived_fields["main_account_code"] = Func(
+        Func(Func(F("tas_rendering_label"), function="REVERSE"), Value("-"), Value(2), function="SPLIT_PART"),
+        function="REVERSE",
+    )
+    derived_fields["sub_account_code"] = Func(
+        Func(Func(F("tas_rendering_label"), function="REVERSE"), Value("-"), Value(1), function="SPLIT_PART"),
+        function="REVERSE",
+    )
+    derived_fields["agency_identifier_name"] = Subquery(
+        CGAC.objects.filter(cgac_code=OuterRef("agency_identifier_code")).values("agency_name")
+    )
+    derived_fields["allocation_transfer_agency_identifier_name"] = Subquery(
+        CGAC.objects.filter(cgac_code=OuterRef("allocation_transfer_agency_identifier_code")).values("agency_name")
     )
 
     return derived_fields
