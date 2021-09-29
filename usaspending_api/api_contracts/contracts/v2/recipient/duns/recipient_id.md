@@ -36,6 +36,7 @@ This endpoint returns a high-level overview of a specific recipient, given its i
                     "ARTLINE WHOLESALERS INC"
                 ],
                 "duns": "058675323",
+                "uei": "NUDGYLBB4S99",        
                 "recipient_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
                 "recipient_level": "P",
                 "parent_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
@@ -87,6 +88,8 @@ This endpoint returns a high-level overview of a specific recipient, given its i
     Additional names that the recipient has been / is known by.
 + `duns` (required, string, nullable)
     Recipient's DUNS (Data Universal Numbering System) number. `null` when no DUNS is provided.
++ `uei` (required, string, nullable)
+    Recipient's UEI (Unique Entity Identifier). `null` when no UEI is provided.
 + `recipient_id` (required, string)
     A unique identifier for the recipient.
 + `parents` (required, array[ParentRecipient], fixed-type)
