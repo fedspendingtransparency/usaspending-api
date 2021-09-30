@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
+from usaspending_api.common.custom_django_fields import NumericField
 from usaspending_api.references.models import Cfda
 
 
@@ -41,9 +42,12 @@ class TransactionFABS(models.Model):
     funding_agency_name = models.TextField(blank=True, null=True)
     funding_office_code = models.TextField(blank=True, null=True)
     funding_office_name = models.TextField(blank=True, null=True)
+    funding_opportunity_goals = models.TextField(blank=True, null=True)
+    funding_opportunity_number = models.TextField(blank=True, null=True)
     funding_sub_tier_agency_co = models.TextField(blank=True, null=True)
     funding_sub_tier_agency_na = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(null=False, default=False)
+    indirect_federal_sharing = NumericField(blank=True, null=True)
     is_historical = models.NullBooleanField()
     legal_entity_address_line1 = models.TextField(blank=True, null=True)
     legal_entity_address_line2 = models.TextField(blank=True, null=True)
