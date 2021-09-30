@@ -13,7 +13,6 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
@@ -31,14 +30,20 @@ class BaseDownloadViewSet(APIView):
     def post(
         self,
         request: Request,
+        validator_type: Type[DownloadValidatorBase],
         origination: Optional[str] = None,
-        special_request_type: Optional[str] = None,
-        validator_type: Optional[Type[DownloadValidatorBase]] = None,
     ):
-        if special_request_type == "disaster":
+        validator = validator_type(request.data)
+        json_request = order_nested_object(validator.json_request)
+
+        # Check if download is pre-generated
+        pre_generated_download = json_request.pop("pre_generated_download", None)
+        if pre_generated_download:
             filename = (
                 DownloadJob.objects.filter(
-                    file_name__startswith=settings.COVID19_DOWNLOAD_FILENAME_PREFIX, error_message__isnull=True
+                    file_name__startswith=pre_generated_download["name_match"],
+                    json_request__contains=pre_generated_download["request_match"],
+                    error_message__isnull=True,
                 )
                 .order_by("-update_date")
                 .values_list("file_name", flat=True)
@@ -46,17 +51,8 @@ class BaseDownloadViewSet(APIView):
             )
             return self.get_download_response(file_name=filename)
 
-        if validator_type is None:
-            # This should only ever occur for developers, but helps to track down possible issues
-            raise InvalidParameterException(
-                "Invalid parameters: require valid 'special_request_type' or 'validator_type'"
-            )
-
-        validator = validator_type(request.data)
-        json_request = order_nested_object(validator.json_request)
-        ordered_json_request = json.dumps(json_request)
-
         # Check if the same request has been called today
+        ordered_json_request = json.dumps(json_request)
         cached_download = self._get_cached_download(ordered_json_request, json_request.get("download_types", []))
 
         if cached_download and not settings.IS_LOCAL:

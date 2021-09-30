@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from django.conf import settings
+
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.download.helpers import write_to_download_log
@@ -18,6 +20,8 @@ def create_unique_filename(json_request, origination=None):
     elif json_request.get("is_for_assistance"):
         slug_text = slugify_text_for_file_names(json_request.get("assistance_id"), "UNKNOWN", 50)
         download_name = f"ASST_{slug_text}_{timestamp}.zip"
+    elif json_request["request_type"] == "disaster":
+        download_name = f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{timestamp}.zip"
     elif json_request["request_type"] == "disaster_recipient":
         download_name = f"COVID-19_Recipients_{json_request['award_category']}_{timestamp}.zip"
     elif json_request["request_type"] == "account":

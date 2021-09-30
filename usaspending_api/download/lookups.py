@@ -21,6 +21,7 @@ from usaspending_api.download.models import (
     FinancialAccountsByAwardsDownloadView,
     FinancialAccountsByProgramActivityObjectClassDownloadView,
 )
+from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.search.models import AwardSearchView, SubawardView, TransactionSearch
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
@@ -114,6 +115,14 @@ VALUE_MAPPINGS = {
         "source_type": "account",
         "table": AppropriationAccountBalancesDownloadView,
         "table_name": "account_balances",
+        "download_name": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
+        "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
+        "filter_function": account_download_filter,
+    },
+    "gtas_balances": {
+        "source_type": "account",
+        "table": GTASSF133Balances,
+        "table_name": "gtas_balances",
         "download_name": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBalances_{timestamp}",
         "filter_function": account_download_filter,
