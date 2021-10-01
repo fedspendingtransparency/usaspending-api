@@ -96,13 +96,16 @@ def extract_parents_from_hash(recipient_hash):
 
     for duns in affiliations["recipient_affiliations"]:
         parent = RecipientLookup.objects.filter(duns=duns).values("recipient_hash", "legal_business_name").first()
-        name, parent_id = None, None
+        name, parent_id, uei = None, None, None
 
         if parent:
             name = parent["legal_business_name"]
             parent_id = "{}-P".format(parent["recipient_hash"])
+            uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
+            if uei is not None:
+                uei = uei["uei"]
 
-        parents.append({"parent_duns": duns, "parent_name": name, "parent_id": parent_id})
+        parents.append({"parent_duns": duns, "parent_name": name, "parent_id": parent_id, "parent_uei": uei})
     return parents
 
 
