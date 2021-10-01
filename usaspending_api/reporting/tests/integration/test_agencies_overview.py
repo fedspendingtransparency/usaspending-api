@@ -12,18 +12,15 @@ CURRENT_LAST_QUARTER = 2
 CURRENT_LAST_PERIOD = 6
 
 assurance_statement_1 = (
-    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
-    "2018/P06/123%20-%20Test%20Agency%20(ABC)/2018-P06-123_Test%20Agency%20(ABC)-Assurance_Statement.txt"
+    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/2018-P06-123_Test%20Agency%20(ABC)-Agency_Comments.txt"
 )
 assurance_statement_2 = (
-    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
-    f"{CURRENT_FISCAL_YEAR}/P{CURRENT_LAST_PERIOD:02}/987%20-%20Test%20Agency%202%20(XYZ)/"
-    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD:02}-987_Test%20Agency%202%20(XYZ)-Assurance_Statement.txt"
+    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/"
+    f"{CURRENT_FISCAL_YEAR}-P{CURRENT_LAST_PERIOD:02}-987_Test%20Agency%202%20(XYZ)-Agency_Comments.txt"
 )
 assurance_statement_3 = (
-    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/Raw%20DATA%20Act%20Files/"
-    f"{CURRENT_FISCAL_YEAR}/Q{CURRENT_LAST_QUARTER}/001%20-%20Test%20Agency%203%20(AAA)/"
-    f"{CURRENT_FISCAL_YEAR}-Q{CURRENT_LAST_QUARTER}-001_Test%20Agency%203%20(AAA)-Assurance_Statement.txt"
+    f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/"
+    f"{CURRENT_FISCAL_YEAR}-Q{CURRENT_LAST_QUARTER}-001_Test%20Agency%203%20(AAA)-Agency_Comments.txt"
 )
 
 

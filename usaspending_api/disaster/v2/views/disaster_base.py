@@ -38,7 +38,7 @@ def latest_gtas_of_each_year_queryset():
     return GTASSF133Balances.objects.filter(q)
 
 
-def latest_faba_of_each_year_queryset() -> FinancialAccountsByAwards:
+def latest_faba_of_each_year_queryset() -> FinancialAccountsByAwards.objects:
     q = filter_by_latest_closed_periods()
     if not q:
         return FinancialAccountsByAwards.objects.none()

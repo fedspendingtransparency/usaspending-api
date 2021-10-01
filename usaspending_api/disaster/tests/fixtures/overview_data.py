@@ -113,6 +113,8 @@ def defc_codes():
         mommy.make("references.DisasterEmergencyFundCode", code="A", group_name=NOT_COVID_NAME),
         mommy.make("references.DisasterEmergencyFundCode", code="M", group_name=COVID_19_GROUP_NAME),
         mommy.make("references.DisasterEmergencyFundCode", code="N", group_name=COVID_19_GROUP_NAME),
+        mommy.make("references.DisasterEmergencyFundCode", code="O", group_name=COVID_19_GROUP_NAME),
+        mommy.make("references.DisasterEmergencyFundCode", code="V", group_name=COVID_19_GROUP_NAME),
     ]
 
 
@@ -133,7 +135,7 @@ def late_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
-        disaster_emergency_fund_code="M",
+        disaster_emergency_fund_id="M",
         **LATE_GTAS,
     )
 
@@ -145,7 +147,7 @@ def quarterly_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
-        disaster_emergency_fund_code="M",
+        disaster_emergency_fund_id="M",
         **QUARTERLY_GTAS,
     )
 
@@ -156,7 +158,7 @@ def early_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
-        disaster_emergency_fund_code="M",
+        disaster_emergency_fund_id="M",
         **EARLY_GTAS,
     )
 
@@ -167,7 +169,7 @@ def unobligated_balance_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
-        disaster_emergency_fund_code="A",
+        disaster_emergency_fund_id="A",
         **UNOBLIGATED_BALANCE_GTAS,
     )
 
@@ -178,7 +180,7 @@ def other_budget_authority_gtas(defc_codes):
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
-        disaster_emergency_fund_code="M",
+        disaster_emergency_fund_id="M",
         **OTHER_BUDGET_AUTHORITY_GTAS,
     )
 
@@ -203,7 +205,7 @@ def _year_2_gtas(code):
         "references.GTASSF133Balances",
         fiscal_year=LATE_YEAR,
         fiscal_period=EARLY_MONTH,
-        disaster_emergency_fund_code=code,
+        disaster_emergency_fund_id=code,
         **YEAR_2_GTAS,
     )
 

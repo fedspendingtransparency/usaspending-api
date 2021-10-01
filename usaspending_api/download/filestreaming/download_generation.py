@@ -213,10 +213,11 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
             account_source = DownloadSource(
                 VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
             )
+            filters = {**json_request["filters"], **json_request.get("account_filters", {})}
             account_source.queryset = filter_function(
                 download_type,
                 VALUE_MAPPINGS[download_type]["table"],
-                json_request["filters"],
+                filters,
                 json_request["account_level"],
             )
             download_sources.append(account_source)
@@ -241,8 +242,6 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
 
 
 def build_data_file_name(source, download_job, piid, assistance_id):
-    d_map = {"d1": "Contracts", "d2": "Assistance", "treasury_account": "TAS", "federal_account": "FA"}
-
     if download_job and download_job.monthly_download:
         # For monthly archives, use the existing detailed zip filename for the data files
         # e.g. FY(All)-012_Contracts_Delta_20191108.zip -> FY(All)-012_Contracts_Delta_20191108_%.csv
@@ -252,14 +251,14 @@ def build_data_file_name(source, download_job, piid, assistance_id):
     timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S")
 
     if source.is_for_idv or source.is_for_contract:
-        data_file_name = file_name_pattern.format(piid=slugify_text_for_file_names(piid, "UNKNOWN", 50))
+        file_name_values = {"piid": slugify_text_for_file_names(piid, "UNKNOWN", 50)}
     elif source.is_for_assistance:
-        data_file_name = file_name_pattern.format(
-            assistance_id=slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)
-        )
+        file_name_values = {"assistance_id": slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)}
     elif source.source_type == "disaster_recipient":
-        data_file_name = file_name_pattern.format(award_category=source.award_category, timestamp=timestamp)
+        file_name_values = {"award_category": source.award_category, "timestamp": timestamp}
     else:
+        d_map = {"d1": "Contracts", "d2": "Assistance", "treasury_account": "TAS", "federal_account": "FA"}
+
         if source.agency_code == "all":
             agency = "All"
         else:
@@ -267,20 +266,32 @@ def build_data_file_name(source, download_job, piid, assistance_id):
 
         request = json.loads(download_job.json_request)
         filters = request["filters"]
-        if request.get("limit"):
+
+        if request.get("limit") or (
+            request.get("request_type") == "disaster" and source.source_type in ("elasticsearch_awards", "sub_awards")
+        ):
             agency = ""
         elif source.file_type not in ("treasury_account", "federal_account"):
             agency = f"{agency}_"
 
-        data_file_name = file_name_pattern.format(
-            agency=agency,
-            data_quarters=construct_data_date_range(filters),
-            level=d_map[source.file_type],
-            timestamp=timestamp,
-            type=d_map[source.file_type],
-        )
+        if request.get("request_type") == "disaster":
+            account_filters = request["account_filters"]
+            current_fiscal_period = (
+                f"FY{account_filters['latest_fiscal_year']}P{str(account_filters['latest_fiscal_period']).zfill(2)}"
+            )
+            data_quarters = f"{current_fiscal_period}-Present"
+        else:
+            data_quarters = construct_data_date_range(filters)
 
-    return data_file_name
+        file_name_values = {
+            "agency": agency,
+            "data_quarters": data_quarters,
+            "level": d_map[source.file_type],
+            "timestamp": timestamp,
+            "type": d_map[source.file_type],
+        }
+
+    return file_name_pattern.format(**file_name_values)
 
 
 def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format):

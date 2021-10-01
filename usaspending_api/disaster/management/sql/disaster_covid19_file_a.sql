@@ -19,7 +19,7 @@ SELECT
         CASE WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
         THEN SPLIT_PART(gtas."tas_rendering_label", '-', 1)
         ELSE NULL END
-    ) AS "allocation_transfer_agency_identifer_code",
+    ) AS "allocation_transfer_agency_identifier_code",
     COALESCE(taa."agency_id",
         CASE WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
         THEN SPLIT_PART(gtas."tas_rendering_label", '-', 2)
@@ -45,7 +45,7 @@ SELECT
     gtas."tas_rendering_label" AS "treasury_account_symbol",
     taa."account_title" AS "treasury_account_name",
     cgac_aid."agency_name" AS "agency_identifier_name",
-    cgac_ata."agency_name" AS "allocation_transfer_agency_identifer_name",
+    cgac_ata."agency_name" AS "allocation_transfer_agency_identifier_name",
     taa."budget_function_title" AS "budget_function",
     taa."budget_subfunction_title" AS "budget_subfunction",
     fa."federal_account_code" AS "federal_account_symbol",
@@ -68,23 +68,23 @@ LEFT OUTER JOIN treasury_appropriation_account AS taa ON (gtas."treasury_account
 LEFT OUTER JOIN federal_account AS fa ON (taa."federal_account_id" = fa."id")
 LEFT OUTER JOIN toptier_agency AS agency ON (fa."parent_toptier_agency_id" = agency."toptier_agency_id")
 LEFT OUTER JOIN cgac AS cgac_aid ON (
-	COALESCE(
-		taa."agency_id",
-		CASE
+    COALESCE(
+        taa."agency_id",
+        CASE
             WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
             THEN SPLIT_PART(gtas."tas_rendering_label", '-', 2)
             ELSE SPLIT_PART(gtas."tas_rendering_label", '-', 1)
         END
-	) = cgac_aid."cgac_code"
+    ) = cgac_aid."cgac_code"
 )
 LEFT OUTER JOIN cgac AS cgac_ata ON (
-	COALESCE(
+    COALESCE(
         taa."allocation_transfer_agency_id",
         CASE
             WHEN array_upper(string_to_array(gtas."tas_rendering_label", '-'), 1) = 5
             THEN SPLIT_PART(gtas."tas_rendering_label", '-', 1)
             ELSE NULL
         END
-	) = cgac_ata."cgac_code"
+    ) = cgac_ata."cgac_code"
 )
 WHERE defc."group_name" = 'covid_19'

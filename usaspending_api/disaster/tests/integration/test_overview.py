@@ -1,6 +1,9 @@
 import pytest
 
 from decimal import Decimal
+
+from model_mommy import mommy
+
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     EARLY_MONTH,
     LATE_MONTH,
@@ -30,6 +33,7 @@ def test_basic_data_set(client, monkeypatch, helpers, defc_codes, basic_ref_data
             "total_obligations": EARLY_GTAS_CALCULATIONS["total_obligations"],
             "total_outlays": EARLY_GTAS_CALCULATIONS["total_outlays"],
         },
+        "additional": None,
     }
 
 
@@ -92,8 +96,8 @@ def test_summing_multiple_years(
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [
         {
-            "amount": +YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"]
-            + LATE_GTAS_CALCULATIONS["total_budgetary_resources"],
+            "amount": LATE_GTAS_CALCULATIONS["total_budgetary_resources"]
+            + YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"],
             "def_code": "M",
         }
     ]
@@ -230,3 +234,52 @@ def test_award_outlays_ignores_future_faba(
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["spending"]["award_outlays"] == Decimal("0.35")
+
+
+@pytest.mark.django_db
+def test_dol_defc_v_special_case(client, monkeypatch, helpers, defc_codes, basic_ref_data):
+    helpers.patch_datetime_now(monkeypatch, 2022, 6, 1)
+    helpers.reset_dabs_cache()
+    fta = mommy.make("references.ToptierAgency", abbreviation="DOL")
+    taa = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=fta)
+
+    def _gtas_values(multiplier):
+        return {
+            # Constants
+            "treasury_account_identifier": taa,
+            "disaster_emergency_fund_id": "O",
+            "tas_rendering_label": "016-X-0168-000",
+            # Values with multiplier
+            "obligations_incurred_total_cpe": 10000000 * multiplier,
+            "gross_outlay_amount_by_tas_cpe": 1000000 * multiplier,
+            "total_budgetary_resources_cpe": 100000 * multiplier,
+            "budget_authority_unobligated_balance_brought_forward_cpe": 1 * multiplier,
+            "deobligations_or_recoveries_or_refunds_from_prior_year_cpe": 10 * multiplier,
+            "prior_year_paid_obligation_recoveries": 100 * multiplier,
+            "anticipated_prior_year_obligation_recoveries": 1000 * multiplier,
+        }
+
+    mommy.make("references.GTASSF133Balances", fiscal_year=2020, fiscal_period=12, **_gtas_values(1))
+    mommy.make("references.GTASSF133Balances", fiscal_year=2021, fiscal_period=6, **_gtas_values(2))
+    mommy.make("references.GTASSF133Balances", fiscal_year=2021, fiscal_period=12, **_gtas_values(3))
+    mommy.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **_gtas_values(4))
+    defc_v_values = _gtas_values(6)
+    defc_v_values.update(
+        {"disaster_emergency_fund_id": "V", "treasury_account_identifier": None, "tas_rendering_label": None}
+    )
+    mommy.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **defc_v_values)
+    resp = client.get(f"{OVERVIEW_URL}?def_codes=V")
+    assert resp.data == {
+        "funding": [{"amount": 599334.0, "def_code": "V"}],
+        "total_budget_authority": 599334.0,
+        "spending": {
+            "award_obligations": 0.0,
+            "award_outlays": 0.0,
+            "total_obligations": 59999940.0,
+            "total_outlays": 5994000.0,
+        },
+        "additional": {
+            "total_budget_authority": 499445.0,
+            "spending": {"total_obligations": 49999950.0, "total_outlays": 4995000.0},
+        },
+    }
