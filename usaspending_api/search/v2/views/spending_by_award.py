@@ -429,13 +429,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
     def append_recipient_hash_level(self, result) -> dict:
+
         if "recipient_id" not in self.fields:
             result.pop("recipient_id")
             return result
-
-        id = result.get("recipient_id")
+        recipient_id = result.get("recipient_id")
         parent_id = result.get("parent_recipient_unique_id")
-        if id:
+        if recipient_id:
+            special_cases = ", ".join([f"'{case}'" for case in SPECIAL_CASES])
             sql = """(
                     select
                         rp.recipient_hash || '-' ||  rp.recipient_level as hash
@@ -445,21 +446,45 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     where
                         rl.duns = {recipient_id} and
                         rp.recipient_level = case
-                            when '{parent_recipient_unique_id}' is null then 'R'
+                            when {parent_recipient_unique_id} is null then 'R'
                             else 'C'
                         end and
-                    rp.recipient_name not in {special_cases}
-            )"""
-
-            special_cases = ["'" + case + "'" for case in SPECIAL_CASES]
-            SQL = sql.format(
-                recipient_id="'" + id + "'",
-                parent_recipient_unique_id=parent_id if parent_id else "null",
-                special_cases="(" + ", ".join(special_cases) + ")",
+                    rp.recipient_name not in ({special_cases})
+            )""".format(
+                recipient_id=f"'{recipient_id}'",
+                parent_recipient_unique_id=f"'{parent_id}'" if parent_id else "null",
+                special_cases=special_cases,
             )
-            row = execute_sql_to_ordered_dictionary(SQL)
+            row = execute_sql_to_ordered_dictionary(sql)
+        # id = result.get("recipient_id")
+        # parent_id = result.get("parent_recipient_unique_id")
+        # if id:
+        #     sql = """(
+        #             select
+        #                 rp.recipient_hash || '-' ||  rp.recipient_level as hash
+        #             from
+        #                 recipient_profile rp
+        #                 inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
+        #             where
+        #                 rl.duns = {recipient_id} and
+        #                 rp.recipient_level = case
+        #                     when '{parent_recipient_unique_id}' is null then 'R'
+        #                     else 'C'
+        #                 end and
+        #             rp.recipient_name not in {special_cases}
+        #     )"""
+        #
+        #     special_cases = ["'" + case + "'" for case in SPECIAL_CASES]
+        #     SQL = sql.format(
+        #         recipient_id="'" + id + "'",
+        #         parent_recipient_unique_id=parent_id if parent_id else "null",
+        #         special_cases="(" + ", ".join(special_cases) + ")",
+        #     )
+        #     row = execute_sql_to_ordered_dictionary(SQL)
             if len(row) > 0:
                 result["recipient_id"] = row[0].get("hash")
             else:
                 result["recipient_id"] = None
         return result
+
+
