@@ -76,13 +76,15 @@ INSERT INTO public.temporary_restock_recipient_profile (
   recipient_level,
   recipient_hash,
   recipient_unique_id,
-  recipient_name
+  recipient_name,
+  uei
 )
   SELECT
     'P' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup
 UNION ALL
@@ -90,7 +92,8 @@ UNION ALL
     'C' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup
 UNION ALL
@@ -98,7 +101,8 @@ UNION ALL
     'R' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup;
 
@@ -115,7 +119,6 @@ WITH grouped_by_category AS (
     SELECT
       recipient_hash,
       recipient_level,
-      uei,
       CASE
         WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
         THEN 'other' ELSE award_category
@@ -131,12 +134,11 @@ WITH grouped_by_category AS (
       public.temporary_recipients_from_transactions_view AS trft
     WHERE
       trft.action_date >= now() - INTERVAL '1 year'
-    GROUP BY recipient_hash, recipient_level, uei, award_category
+    GROUP BY recipient_hash, recipient_level, award_category
   )
   SELECT
     recipient_hash,
     recipient_level,
-    uei,
     array_agg(award_category) AS award_types,
     SUM(inner_contracts) AS last_12_contracts,
     SUM(inner_grants) AS last_12_grants,
@@ -147,7 +149,7 @@ WITH grouped_by_category AS (
     SUM(inner_count) AS count
   FROM
     grouped_by_category_inner AS gbci
-  GROUP BY recipient_hash, recipient_level, uei
+  GROUP BY recipient_hash, recipient_level
 )
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
@@ -159,7 +161,6 @@ SET
   last_12_loans = rpv.last_12_loans + gbc.last_12_loans,
   last_12_other = rpv.last_12_other + gbc.last_12_other,
   last_12_months_count = rpv.last_12_months_count + gbc.count,
-  uei = COALESCE(gbc.uei, rpv.uei),
   unused = false
 FROM
   grouped_by_category AS gbc
