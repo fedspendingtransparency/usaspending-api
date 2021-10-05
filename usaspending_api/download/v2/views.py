@@ -6,6 +6,7 @@ from usaspending_api.download.v2.request_validations import (
     AssistanceDownloadValidator,
     AwardDownloadValidator,
     ContractDownloadValidator,
+    DisasterDownloadValidator,
     DisasterRecipientDownloadValidator,
     IdvDownloadValidator,
 )
@@ -99,7 +100,7 @@ class DisasterDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         """Return url to pre-generated zip file"""
 
-        return BaseDownloadViewSet.post(self, request, special_request_type="disaster")
+        return BaseDownloadViewSet.post(self, request, validator_type=DisasterDownloadValidator)
 
 
 class DisasterRecipientDownloadViewSet(BaseDownloadViewSet):
