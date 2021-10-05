@@ -159,7 +159,7 @@ SET
   last_12_loans = rpv.last_12_loans + gbc.last_12_loans,
   last_12_other = rpv.last_12_other + gbc.last_12_other,
   last_12_months_count = rpv.last_12_months_count + gbc.count,
-  uei = COALESCE(gbc.uei,rpv.uei),
+  uei = COALESCE(gbc.uei, rpv.uei),
   unused = false
 FROM
   grouped_by_category AS gbc
@@ -176,7 +176,6 @@ WITH grouped_by_parent AS (
   WITH grouped_by_parent_inner AS (
     SELECT
       parent_recipient_unique_id,
-      uei,
       CASE
         WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
         THEN 'other' ELSE award_category
@@ -193,11 +192,10 @@ WITH grouped_by_parent AS (
     WHERE
       trft.action_date >= now() - INTERVAL '1 year' AND
       parent_recipient_unique_id IS NOT NULL
-    GROUP BY parent_recipient_unique_id, uei, award_category
+    GROUP BY parent_recipient_unique_id, award_category
   )
   SELECT
     parent_recipient_unique_id AS duns,
-    uei,
     array_agg(award_category) AS award_types,
     SUM(inner_contracts) AS last_12_contracts,
     SUM(inner_grants) AS last_12_grants,
@@ -208,13 +206,12 @@ WITH grouped_by_parent AS (
     SUM(inner_count) AS count
   FROM
     grouped_by_parent_inner AS gbpi
-  GROUP BY parent_recipient_unique_id, uei
+  GROUP BY parent_recipient_unique_id
 )
 
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
   award_types = gbp.award_types || rpv.award_types,
-  uei = COALESCE(gbp.uei, rpv.uei),
   last_12_months = rpv.last_12_months + gbp.amount,
   last_12_contracts = rpv.last_12_contracts + gbp.last_12_contracts,
   last_12_grants = rpv.last_12_grants + gbp.last_12_grants,
