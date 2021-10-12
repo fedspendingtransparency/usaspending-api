@@ -21,6 +21,7 @@ UPDATE public.recipient_lookup rl SET
     congressional_district      = tem.congressional_district,
     country_code                = tem.country_code,
     duns                        = tem.duns,
+    uei                         = tem.uei,
     legal_business_name         = tem.legal_business_name,
     parent_duns                 = tem.parent_duns,
     parent_legal_business_name  = tem.parent_legal_business_name,
@@ -41,6 +42,7 @@ UPDATE public.recipient_lookup rl SET
     OR rl.congressional_district      IS DISTINCT FROM tem.congressional_district
     OR rl.country_code                IS DISTINCT FROM tem.country_code
     OR rl.duns                        IS DISTINCT FROM tem.duns
+    OR rl.uei                         IS DISTINCT FROM tem.uei
     OR rl.legal_business_name         IS DISTINCT FROM tem.legal_business_name
     OR rl.parent_duns                 IS DISTINCT FROM tem.parent_duns
     OR rl.parent_legal_business_name  IS DISTINCT FROM tem.parent_legal_business_name
@@ -56,6 +58,7 @@ INSERT INTO public.recipient_lookup (
   recipient_hash,
   legal_business_name,
   duns,
+  uei,
   address_line_1,
   address_line_2,
   city,
@@ -75,6 +78,7 @@ SELECT
   recipient_hash,
   legal_business_name,
   duns,
+  uei,
   address_line_1,
   address_line_2,
   city,
@@ -128,7 +132,7 @@ WHERE
   AND rl.alternate_names IS DISTINCT FROM array_remove(an.all_names, rl.legal_business_name);
 
 DO $$ BEGIN RAISE NOTICE 'Post ETL clean up'; END $$;
-DROP TABLE public.temporary_restock_recipient_lookup;
-DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
+--DROP TABLE public.temporary_restock_recipient_lookup;
+--DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
 
 COMMIT;
