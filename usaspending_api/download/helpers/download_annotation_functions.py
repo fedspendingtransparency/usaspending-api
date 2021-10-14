@@ -128,6 +128,7 @@ def _covid_obligation_subquery(
 def _award_outlay_subquery(sum_columns: List[str], award_id_col: Optional[str] = "award_id") -> Case:
     summed_cols = reduce(add, [Coalesce(F(col), 0) for col in sum_columns])
     when_params = {
+        # Do not want to highlight outlays for Awards that started prior to FY20
         f"{'award__' if award_id_col == 'award_id' else ''}date_signed__gte": datetime.date(2019, 10, 1),
         "then": Subquery(
             FinancialAccountsByAwards.objects.filter(
