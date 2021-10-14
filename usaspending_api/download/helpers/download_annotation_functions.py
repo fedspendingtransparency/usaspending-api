@@ -125,22 +125,29 @@ def _covid_obligation_subquery(
     )
 
 
-def _award_outlay_subquery(sum_columns: List[str], award_id_col: Optional[str] = "award_id") -> Subquery:
+def _award_outlay_subquery(sum_columns: List[str], award_id_col: Optional[str] = "award_id") -> Case:
     summed_cols = reduce(add, [Coalesce(F(col), 0) for col in sum_columns])
-    return Subquery(
-        FinancialAccountsByAwards.objects.filter(
-            award_id=OuterRef(award_id_col), submission__is_final_balances_for_fy=True
-        )
-        .values("award_id")
-        .annotate(
-            date_signed_fiscal_year=FiscalYear("award__date_signed"),
-            min_reporting_fiscal_year=Min("submission__reporting_fiscal_year"),
-        )
-        .filter(date_signed_fiscal_year=F("min_reporting_fiscal_year"))
-        .values("award_id")
-        .annotate(summed_value=Sum(summed_cols))
-        .values("summed_value")
-    )
+    when_params = {
+        f"{'award__' if award_id_col == 'award_id' else ''}date_signed__gte": datetime.date(2019, 10, 1),
+        "then": Subquery(
+            FinancialAccountsByAwards.objects.filter(
+                award_id=OuterRef(award_id_col), submission__is_final_balances_for_fy=True
+            )
+            .values("award_id")
+            .annotate(
+                # The "award__date_signed" query path here is the same value but a different path than
+                # the When statement above. Django 2.2 does not allow OuterRef in an annotation of a Subquery so this
+                # joins the FABA table to the Award while the above use of "date_signed" is outside of the Subquery
+                date_signed_fiscal_year=FiscalYear("award__date_signed"),
+                min_reporting_fiscal_year=Min("submission__reporting_fiscal_year"),
+            )
+            .filter(date_signed_fiscal_year=F("min_reporting_fiscal_year"))
+            .values("award_id")
+            .annotate(summed_value=Sum(summed_cols))
+            .values("summed_value")
+        ),
+    }
+    return Case(When(**when_params), default=None, output_field=DecimalField(max_digits=23, decimal_places=2))
 
 
 def transaction_search_annotations(filters: dict):
@@ -184,39 +191,20 @@ def transaction_search_annotations(filters: dict):
                 then=_covid_obligation_subquery(def_codes=def_codes),
             ),
         ),
-        "gross_outlay_by_award_net_of_refunds_cpe": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "gross_outlay_amount_by_award_cpe",
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                        "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
-                    ]
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "gross_outlay_by_award_net_of_refunds_cpe": _award_outlay_subquery(
+            [
+                "gross_outlay_amount_by_award_cpe",
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
+            ]
         ),
-        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                    ]
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": _award_outlay_subquery(
+            [
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+            ]
         ),
-        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"]),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": _award_outlay_subquery(
+            ["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"]
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
@@ -283,39 +271,20 @@ def universal_award_matview_annotations(filters: dict):
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(def_codes=def_codes),
         "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(def_codes=def_codes),
         "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(def_codes=def_codes),
-        "gross_outlay_by_award_net_of_refunds_cpe": Case(
-            When(
-                date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "gross_outlay_amount_by_award_cpe",
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                        "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
-                    ]
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "gross_outlay_by_award_net_of_refunds_cpe": _award_outlay_subquery(
+            [
+                "gross_outlay_amount_by_award_cpe",
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
+            ]
         ),
-        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": Case(
-            When(
-                date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                    ]
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": _award_outlay_subquery(
+            [
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+            ]
         ),
-        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": Case(
-            When(
-                date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"]),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": _award_outlay_subquery(
+            ["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"]
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
@@ -395,43 +364,22 @@ def idv_order_annotations(filters: dict):
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(award_id_col="id"),
         "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(award_id_col="id"),
         "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(award_id_col="id"),
-        "gross_outlay_by_award_net_of_refunds_cpe": Case(
-            When(
-                date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "gross_outlay_amount_by_award_cpe",
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                        "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
-                    ],
-                    award_id_col="id",
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "gross_outlay_by_award_net_of_refunds_cpe": _award_outlay_subquery(
+            [
+                "gross_outlay_amount_by_award_cpe",
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
+            ],
+            award_id_col="id",
         ),
-        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": Case(
-            When(
-                date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                    ],
-                    award_id_col="id",
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": _award_outlay_subquery(
+            [
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+            ],
+            award_id_col="id",
         ),
-        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": Case(
-            When(
-                date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    ["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"], award_id_col="id"
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": _award_outlay_subquery(
+            ["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"], award_id_col="id"
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
         "object_classes_funding_this_award": Subquery(
@@ -510,39 +458,20 @@ def idv_transaction_annotations(filters: dict):
                 then=_covid_obligation_subquery(),
             ),
         ),
-        "gross_outlay_by_award_net_of_refunds_cpe": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "gross_outlay_amount_by_award_cpe",
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                        "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
-                    ]
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "gross_outlay_by_award_net_of_refunds_cpe": _award_outlay_subquery(
+            [
+                "gross_outlay_amount_by_award_cpe",
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
+            ]
         ),
-        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                    ]
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": _award_outlay_subquery(
+            [
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+            ]
         ),
-        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"]),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": _award_outlay_subquery(
+            ["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"]
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
@@ -661,39 +590,20 @@ def subaward_annotations(filters: dict):
                 then=_covid_obligation_subquery(def_codes=def_codes),
             ),
         ),
-        "prime_award_gross_outlay_by_award_net_of_refunds_cpe": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "gross_outlay_amount_by_award_cpe",
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                        "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
-                    ]
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "prime_award_gross_outlay_by_award_net_of_refunds_cpe": _award_outlay_subquery(
+            [
+                "gross_outlay_amount_by_award_cpe",
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
+            ]
         ),
-        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(
-                    [
-                        "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                    ]
-                ),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": _award_outlay_subquery(
+            [
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+            ]
         ),
-        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": Case(
-            When(
-                award__date_signed__gte=datetime.date(2019, 10, 1),
-                then=_award_outlay_subquery(["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"]),
-            ),
-            default=None,
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": _award_outlay_subquery(
+            ["ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"]
         ),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("award__latest_transaction__action_date"),
         "prime_award_cfda_numbers_and_titles": Subquery(
