@@ -37,7 +37,7 @@ def missing_public_law_test_data():
 def test_happy_path(happy_path_test_data):
     def_codes = list(DisasterEmergencyFundCode.objects.order_by("code").all())
 
-    assert len(def_codes) == 4
+    assert len(def_codes) == 5
 
     assert def_codes[0].code == "A2"
     assert def_codes[0].public_law == "This is a test code"
@@ -58,6 +58,11 @@ def test_happy_path(happy_path_test_data):
     assert def_codes[3].public_law == "Excluded from tracking"
     assert def_codes[3].title is None
     assert def_codes[3].group_name is None
+
+    assert def_codes[4].code == "ZZZ"
+    assert def_codes[4].public_law == "This is a test code"
+    assert def_codes[4].title is None
+    assert def_codes[4].group_name is None
 
 
 @pytest.mark.django_db(transaction=True)
