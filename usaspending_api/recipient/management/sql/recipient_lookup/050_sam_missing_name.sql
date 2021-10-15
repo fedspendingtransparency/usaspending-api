@@ -23,7 +23,7 @@ SELECT
   MD5(UPPER(CONCAT('duns-', awardee_or_recipient_uniqu)))::uuid AS recipient_hash,
   UPPER(legal_business_name) AS legal_business_name,
   awardee_or_recipient_uniqu AS duns,
-  ultimate_parent_uei as uei,
+  uei,
   'sam' as source,
   address_line_1,
   address_line_2,
