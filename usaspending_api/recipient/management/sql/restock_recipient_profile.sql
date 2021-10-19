@@ -19,6 +19,7 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
     ))::uuid AS recipient_hash,
     COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
     COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
+    COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) AS uei,
     CASE
       WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
       WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
