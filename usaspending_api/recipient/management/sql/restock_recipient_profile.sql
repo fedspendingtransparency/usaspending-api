@@ -58,6 +58,7 @@ CREATE TABLE public.temporary_restock_recipient_profile (
   recipient_unique_id TEXT,
   uei TEXT,
   recipient_name TEXT,
+  uei TEXT,
   unused BOOLEAN DEFAULT true,
   recipient_affiliations TEXT[] DEFAULT '{}'::text[],
   award_types TEXT[] DEFAULT '{}'::text[],
