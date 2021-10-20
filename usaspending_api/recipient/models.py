@@ -138,6 +138,7 @@ class RecipientLookup(models.Model):
     recipient_hash = models.UUIDField(unique=True, null=True)
     legal_business_name = models.TextField(null=True, db_index=True)
     duns = models.TextField(unique=True, null=True)
+    uei = models.TextField(null=True)
     parent_duns = models.TextField(null=True)
     parent_legal_business_name = models.TextField(null=True)
     address_line_1 = models.TextField(null=True)
