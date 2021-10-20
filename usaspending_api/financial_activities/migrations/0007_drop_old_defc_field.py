@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RemoveField(
             model_name='financialaccountsbyprogramactivityobjectclass',
-            name='disaster_emergency_fund_old',
+            name='disaster_emergency_fund',
         )
     ]

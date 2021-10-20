@@ -22,19 +22,9 @@ class Migration(migrations.Migration):
                 to='references.DisasterEmergencyFundCode'
             ),
         ),
-        migrations.RenameField(
-            model_name='financialaccountsbyprogramactivityobjectclass',
-            old_name='disaster_emergency_fund',
-            new_name='disaster_emergency_fund_old'
-        ),
         migrations.AlterField(
             model_name='financialaccountsbyprogramactivityobjectclass',
             name='disaster_emergency_fund_temp',
             field=models.TextField(null=True, db_column='disaster_emergency_fund_code')
-        ),
-        migrations.RenameField(
-            model_name='financialaccountsbyprogramactivityobjectclass',
-            old_name='disaster_emergency_fund_temp',
-            new_name='disaster_emergency_fund'
         ),
     ]

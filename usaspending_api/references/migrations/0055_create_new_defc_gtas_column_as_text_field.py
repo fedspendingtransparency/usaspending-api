@@ -11,7 +11,7 @@ def copy_def_code(apps, _):
         it can be converted to a Foreign Key. This approach minimizes any downtime.
     """
     DisasterEmergencyFundCode = apps.get_model("references", "DisasterEmergencyFundCode")
-    DisasterEmergencyFundCode.objects.all().update(code=F("code_old"))
+    DisasterEmergencyFundCode.objects.all().update(code_temp=F("code"))
 
 
 class Migration(migrations.Migration):
@@ -21,14 +21,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
+        # The different in field_name and db_column name here are to allow query paths
+        # to still function while Views are recreated
+        migrations.AlterField(
             model_name='disasteremergencyfundcode',
-            old_name='code',
-            new_name='code_old'
+            name='code',
+            field=models.TextField(primary_key=True, serialize=False, db_column='code_old'),
         ),
         migrations.AddField(
             model_name='disasteremergencyfundcode',
-            name='code',
+            name='code_temp',
             field=models.TextField(null=True, db_index=False),
         ),
         migrations.RunPython(copy_def_code, reverse_code=migrations.RunPython.noop),

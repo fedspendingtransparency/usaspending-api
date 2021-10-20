@@ -26,23 +26,13 @@ class Migration(migrations.Migration):
                 to='references.DisasterEmergencyFundCode'
             ),
         ),
-        migrations.RenameField(
-            model_name='gtassf133balances',
-            old_name='disaster_emergency_fund',
-            new_name='disaster_emergency_fund_old'
-        ),
         migrations.AlterField(
             model_name='gtassf133balances',
             name='disaster_emergency_fund_temp',
             field=models.TextField(null=True, db_column='disaster_emergency_fund_code')
         ),
-        migrations.RenameField(
-            model_name='gtassf133balances',
-            old_name='disaster_emergency_fund_temp',
-            new_name='disaster_emergency_fund'
-        ),
         migrations.AlterUniqueTogether(
             name='gtassf133balances',
-            unique_together={('fiscal_year', 'fiscal_period', 'disaster_emergency_fund', 'tas_rendering_label')},
+            unique_together={('fiscal_year', 'fiscal_period', 'disaster_emergency_fund_temp', 'tas_rendering_label')},
         ),
     ]

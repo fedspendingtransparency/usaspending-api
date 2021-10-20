@@ -15,11 +15,21 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RemoveField(
             model_name='gtassf133balances',
-            name='disaster_emergency_fund_old',
+            name='disaster_emergency_fund',
         ),
         migrations.RemoveField(
             model_name='disasteremergencyfundcode',
-            name='code_old',
+            name='code',
+        ),
+        migrations.RenameField(
+            model_name='gtassf133balances',
+            old_name='disaster_emergency_fund_temp',
+            new_name='disaster_emergency_fund'
+        ),
+        migrations.RenameField(
+            model_name='disasteremergencyfundcode',
+            old_name='code_temp',
+            new_name='code'
         ),
         migrations.AlterField(
             model_name='disasteremergencyfundcode',

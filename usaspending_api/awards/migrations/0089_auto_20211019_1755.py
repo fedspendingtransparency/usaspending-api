@@ -12,6 +12,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RenameField(
+            model_name='financialaccountsbyawards',
+            old_name='disaster_emergency_fund_temp',
+            new_name='disaster_emergency_fund'
+        ),
         migrations.AlterField(
             model_name='financialaccountsbyawards',
             name='disaster_emergency_fund',
