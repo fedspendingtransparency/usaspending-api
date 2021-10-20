@@ -19,6 +19,7 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
     ))::uuid AS recipient_hash,
     COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
     COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
+    COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) AS uei,
     CASE
       WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
       WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
@@ -55,6 +56,7 @@ CREATE TABLE public.temporary_restock_recipient_profile (
   recipient_level character(1) NOT NULL,
   recipient_hash UUID,
   recipient_unique_id TEXT,
+  uei TEXT,
   recipient_name TEXT,
   unused BOOLEAN DEFAULT true,
   recipient_affiliations TEXT[] DEFAULT '{}'::text[],
@@ -74,13 +76,15 @@ INSERT INTO public.temporary_restock_recipient_profile (
   recipient_level,
   recipient_hash,
   recipient_unique_id,
-  recipient_name
+  recipient_name,
+  uei
 )
   SELECT
     'P' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup
 UNION ALL
@@ -88,7 +92,8 @@ UNION ALL
     'C' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup
 UNION ALL
@@ -96,7 +101,8 @@ UNION ALL
     'R' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup;
 
@@ -344,6 +350,7 @@ WHERE NOT EXISTS (
 UPDATE public.recipient_profile rp
 SET
     recipient_unique_id = temp_p.recipient_unique_id,
+    uei = temp_p.uei,
     recipient_name = temp_p.recipient_name,
     recipient_affiliations = temp_p.recipient_affiliations,
     award_types = temp_p.award_types,
@@ -370,17 +377,18 @@ WHERE
         OR rp.last_12_direct_payments IS DISTINCT FROM temp_p.last_12_direct_payments
         OR rp.last_12_other IS DISTINCT FROM temp_p.last_12_other
         OR rp.last_12_months_count IS DISTINCT FROM temp_p.last_12_months_count
+        OR rp.uei IS DISTINCT FROM temp_p.uei
     )
 ;
 
 
 INSERT INTO public.recipient_profile (
-    recipient_level, recipient_hash, recipient_unique_id,
+    recipient_level, recipient_hash, recipient_unique_id, uei,
     recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
     )
-  SELECT recipient_level, recipient_hash, recipient_unique_id,
+  SELECT recipient_level, recipient_hash, recipient_unique_id, uei,
     recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
