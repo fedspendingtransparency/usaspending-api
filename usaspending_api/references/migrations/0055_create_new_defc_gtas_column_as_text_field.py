@@ -26,12 +26,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='disasteremergencyfundcode',
             name='code',
-            field=models.TextField(primary_key=True, serialize=False, db_column='code_old'),
+            field=models.CharField(max_length=2, primary_key=True, serialize=False, db_column='code_old'),
         ),
         migrations.AddField(
             model_name='disasteremergencyfundcode',
             name='code_temp',
-            field=models.TextField(null=True, db_index=False),
+            field=models.TextField(null=True, db_index=False, db_column='code'),
         ),
         migrations.RunPython(copy_def_code, reverse_code=migrations.RunPython.noop),
         migrations.AddField(
