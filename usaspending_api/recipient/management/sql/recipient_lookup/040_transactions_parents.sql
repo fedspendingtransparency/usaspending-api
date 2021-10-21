@@ -4,6 +4,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
   legal_business_name,
   duns,
+  uei,
   source,
   parent_duns,
   parent_legal_business_name
@@ -13,6 +14,7 @@ SELECT
   parent_recipient_hash AS recipient_hash,
   ultimate_parent_legal_enti,
   ultimate_parent_unique_ide,
+  ultimate_parent_uei as uei,
   CONCAT(source, '-parent'),
   ultimate_parent_unique_ide AS parent_duns,
   ultimate_parent_legal_enti AS parent_legal_business_name
