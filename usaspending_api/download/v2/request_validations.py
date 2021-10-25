@@ -231,7 +231,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
             if key in [
                 "recipient_locations",
                 "recipient_scope",
-                "place_of_performance_location",
+                "place_of_performance_locations",
                 "place_of_performance_scope",
             ]:
                 final_award_filters[key] = value
