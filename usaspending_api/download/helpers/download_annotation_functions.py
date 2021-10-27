@@ -18,7 +18,7 @@ from django.db.models import (
     Value,
     When,
 )
-from usaspending_api.common.helpers.orm_helpers import FiscalYear, ConcatAll
+from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, TransactionFABS
 from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_latest_closed_periods,
@@ -47,7 +47,7 @@ def filter_limit_to_closed_periods(submission_query_path: str = "") -> Q:
 
 def _disaster_emergency_fund_codes(
     def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id"
-) -> Q:
+) -> Subquery:
     filters = [filter_limit_to_closed_periods(), Q(award_id=OuterRef(award_id_col))]
     if def_codes:
         filters.append(Q(disaster_emergency_fund__code__in=def_codes))
@@ -78,7 +78,7 @@ def _disaster_emergency_fund_codes(
     )
 
 
-def _covid_outlay_subquery(def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id") -> Q:
+def _covid_outlay_subquery(def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id") -> Subquery:
     filters = [
         filter_by_latest_closed_periods(),
         Q(award_id=OuterRef(award_id_col)),
@@ -101,7 +101,9 @@ def _covid_outlay_subquery(def_codes: Optional[List[str]] = None, award_id_col: 
     )
 
 
-def _covid_obligation_subquery(def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id") -> Q:
+def _covid_obligation_subquery(
+    def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id"
+) -> Subquery:
     filters = [
         filter_limit_to_closed_periods(),
         Q(award_id=OuterRef(award_id_col)),

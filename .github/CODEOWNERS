@@ -6,10 +6,12 @@
 # will be requested to review.
 
 # Require approval from listed person(s) to make changes to .github config files, like this CODEOWNERS file
-.github/*                           @kwhickey
+.github/*                           @fedspendingtransparency/Admins
 
 # Oversight of all JavaScript files falls to this person to approve
-*.js                                @ebdabbs
+# Commenting out for now. Governing this as part of the code-review process
+#*.js                                @ebdabbs
 
 # Either/any of the people listed below can approve the contract-change
-usaspending_api/api_contracts/**    @ebdabbs @dpb-bah
+# Commenting out for now. Governing this as part of the code-review process
+#usaspending_api/api_contracts/**    @ebdabbs @dpb-bah
