@@ -1,4 +1,5 @@
 import json
+import urllib
 
 from abc import ABCMeta
 from decimal import Decimal
@@ -6,11 +7,13 @@ from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
+from usaspending_api.references.models import Agency
 from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
     AbstractSpendingByCategoryViewSet,
 )
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class AgencyType(Enum):
@@ -32,16 +35,29 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
         agency_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in agency_info_buckets:
             agency_info = json.loads(bucket.get("key"))
+            result = {
+                "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                "name": agency_info.get("name"),
+                "code": agency_info.get("abbreviation"),
+                "id": agency_info.get("id"),
+            }
+            if self.agency_type == AgencyType.AWARDING_TOPTIER:
+                agency_code = Agency.objects.filter(id=agency_info.get("id"), toptier_flag=True).values(
+                    "toptier_agency__toptier_code"
+                )
+                code = agency_code[0].get("toptier_agency__toptier_code") if len(agency_code) > 0 else None
+                print(code)
+                submission = (
+                    SubmissionAttributes.objects.filter(toptier_code=code).first() if code is not None else None
+                )
+                print(submission)
+                result["agency_slug"] = (
+                    urllib.parse.quote_plus(agency_info.get("name").lower().replace(" ", "-"))
+                    if submission is not None
+                    else None
+                )
 
-            results.append(
-                {
-                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "name": agency_info.get("name"),
-                    "code": agency_info.get("abbreviation"),
-                    "id": agency_info.get("id"),
-                }
-            )
-
+            results.append(result)
         return results
 
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:

@@ -1,5 +1,6 @@
 import json
 
+from model_mommy import mommy
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
@@ -27,7 +28,7 @@ def test_correct_response_with_more_awards(
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-
+    mommy.make("submissions.SubmissionAttributes", toptier_code="001")
     resp = client.post(
         "/api/v2/search/spending_by_category/awarding_agency",
         content_type="application/json",
@@ -38,8 +39,14 @@ def test_correct_response_with_more_awards(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003},
-            {"amount": 5.0, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001},
+            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+            {
+                "amount": 5.0,
+                "name": "Awarding Toptier Agency 1",
+                "code": "TA1",
+                "id": 1001,
+                "agency_slug": "awarding-toptier-agency-1",
+            },
         ],
         "messages": [get_time_period_message()],
     }
