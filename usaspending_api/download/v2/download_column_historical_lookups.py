@@ -31,15 +31,6 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
-                ("gross_outlay_by_award_net_of_refunds_cpe", None),  # Annotation is used to create this column
-                (
-                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
-                    None,
-                ),  # Annotation is used to create this column
                 ("total_obligated_amount", "award__total_obligation"),
                 ("current_total_value_of_award", "award__latest_transaction__contract_data__current_total_value_award"),
                 (
@@ -621,15 +612,6 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
-                ("gross_outlay_by_award_net_of_refunds_cpe", None),  # Annotation is used to create this column
-                (
-                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
-                    None,
-                ),  # Annotation is used to create this column
                 (
                     "award_latest_action_date",
                     "award__latest_transaction__action_date",
@@ -794,15 +776,6 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 (
                     "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
-                    None,
-                ),  # Annotation is used to create this column
-                ("gross_outlay_by_award_net_of_refunds_cpe", None),  # Annotation is used to create this column
-                (
-                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     None,
                 ),  # Annotation is used to create this column
                 ("action_date", "transaction__action_date"),
@@ -1182,15 +1155,6 @@ query_paths = {
                     "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
-                ("gross_outlay_by_award_net_of_refunds_cpe", None),  # Annotation is used to create this column
-                (
-                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
-                    None,
-                ),  # Annotation is used to create this column
                 ("action_date", "transaction__action_date"),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "transaction__period_of_performance_start_date"),
@@ -1306,18 +1270,6 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 (
                     "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "prime_award_gross_outlay_by_award_net_of_refunds_cpe",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     None,
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "broker_subaward__action_date"),
@@ -1471,18 +1423,6 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 (
                     "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "prime_award_gross_outlay_by_award_net_of_refunds_cpe",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                    None,
-                ),  # Annotation is used to create this column
-                (
-                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     None,
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "broker_subaward__action_date"),
