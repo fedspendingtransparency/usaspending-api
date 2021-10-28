@@ -46,11 +46,9 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                     "toptier_agency__toptier_code"
                 )
                 code = agency_code[0].get("toptier_agency__toptier_code") if len(agency_code) > 0 else None
-                print(code)
                 submission = (
                     SubmissionAttributes.objects.filter(toptier_code=code).first() if code is not None else None
                 )
-                print(submission)
                 result["agency_slug"] = (
                     urllib.parse.quote_plus(agency_info.get("name").lower().replace(" ", "-"))
                     if submission is not None

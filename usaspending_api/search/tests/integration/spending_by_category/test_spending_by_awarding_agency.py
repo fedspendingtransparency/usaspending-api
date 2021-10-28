@@ -67,7 +67,9 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "category": "awarding_agency",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 5.0, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001}],
+        "results": [
+            {"amount": 5.0, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001, "agency_slug": None}
+        ],
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
