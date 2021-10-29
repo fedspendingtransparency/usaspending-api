@@ -1,4 +1,5 @@
 import copy
+import urllib
 
 from sys import maxsize
 from django.conf import settings
@@ -8,7 +9,7 @@ from rest_framework.views import APIView
 
 import logging
 from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import Agency, ToptierAgency
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -335,6 +336,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return None
         return agency_id.id
 
+    def get_agency_slug(self, code):
+        if len(str(int(code))) < 3:
+            code = "{zeroes}{code}".format(zeroes=("0" * (3 - len(str(int(code))))), code=int(code))
+        toptier_agency = ToptierAgency.objects.get(toptier_code=code)
+        submission = SubmissionAttributes.objects.filter(toptier_code=code).first()
+        if submission is None or toptier_agency is None:
+            return None
+        return (urllib.parse.quote_plus(toptier_agency.name.lower().replace(" ", "-")),)
+
     def construct_es_response_for_prime_awards(self, response) -> dict:
         results = []
         for res in response:
@@ -363,6 +373,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("Awarding Agency"):
                 code = row.pop("agency_code")
                 row["awarding_agency_id"] = self.get_agency_database_id(code)
+                row["agency_slug"] = self.get_agency_slug(code)
             if row.get("COVID-19 Obligations"):
                 row["COVID-19 Obligations"] = sum(
                     [
