@@ -609,7 +609,9 @@ def test_category_awarding_agency_awards(agency_test_data, monkeypatch, elastics
         "category": "awarding_agency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 15, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001, "agency_slug": None}],
+        "results": [
+            {"amount": 15, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001, "agency_slug": None}
+        ],
         "messages": [get_time_period_message()],
     }
 
