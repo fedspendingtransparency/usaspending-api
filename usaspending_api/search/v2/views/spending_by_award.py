@@ -4,6 +4,7 @@ import urllib
 from sys import maxsize
 from django.conf import settings
 from django.db.models import F
+from django.utils.text import slugify
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -343,7 +344,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         submission = SubmissionAttributes.objects.filter(toptier_code=code).first()
         if submission is None or toptier_agency is None:
             return None
-        return (urllib.parse.quote_plus(toptier_agency.name.lower().replace(" ", "-")),)
+        return slugify(toptier_agency.name)
 
     def construct_es_response_for_prime_awards(self, response) -> dict:
         results = []
