@@ -7,6 +7,8 @@ from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
+from django.utils.text import slugify
+
 from usaspending_api.references.models import Agency
 from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
@@ -49,11 +51,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 submission = (
                     SubmissionAttributes.objects.filter(toptier_code=code).first() if code is not None else None
                 )
-                result["agency_slug"] = (
-                    urllib.parse.quote_plus(agency_info.get("name").lower().replace(" ", "-"))
-                    if submission is not None
-                    else None
-                )
+                result["agency_slug"] = slugify(agency_info.get("name")) if submission is not None else None
 
             results.append(result)
         return results
