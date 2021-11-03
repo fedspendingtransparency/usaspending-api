@@ -95,7 +95,7 @@ This endpoint returns a list of the top results of Awarding Agencies sorted by t
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
 + `agency_slug` (required, string, nullable)
-  `agency_slug` is a string used to generate a link to the agency profile page. Will be `NULL` if the agency does not have a profile page.
+    `agency_slug` is a string used to generate a link to the agency profile page. Will be `NULL` if the agency does not have a profile page.
 
 ## PageMetadataObject (object)
 + `page` (required, number)

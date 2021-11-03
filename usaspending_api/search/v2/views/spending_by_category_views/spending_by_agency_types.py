@@ -1,5 +1,4 @@
 import json
-import urllib
 
 from abc import ABCMeta
 from decimal import Decimal
