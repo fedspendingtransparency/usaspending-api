@@ -3,6 +3,7 @@ import logging
 import urllib
 
 from django.core.management.base import BaseCommand
+from django.utils.text import slugify
 
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.references.models.bureau_title_lookup import BureauTitleLookup
@@ -56,7 +57,7 @@ class Command(BaseCommand):
                     **{
                         "federal_account_code": federal_account_code,
                         "bureau_title": bureau_title,
-                        "bureau_slug": urllib.parse.quote_plus(bureau_title.lower().replace(" ", "-")),
+                        "bureau_slug": slugify(bureau_title)
                     }
                 )
 
