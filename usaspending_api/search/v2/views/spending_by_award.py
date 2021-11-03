@@ -1,5 +1,4 @@
 import copy
-import urllib
 
 from sys import maxsize
 from django.conf import settings

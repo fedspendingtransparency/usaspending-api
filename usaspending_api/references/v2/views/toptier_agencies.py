@@ -1,5 +1,3 @@
-import urllib
-
 from django.db.models import F, Sum, OuterRef, Max, Q
 from django.db.models.functions import Coalesce
 from django.utils.text import slugify
