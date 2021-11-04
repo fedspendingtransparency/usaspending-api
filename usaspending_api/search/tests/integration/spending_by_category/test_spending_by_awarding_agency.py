@@ -45,7 +45,7 @@ def test_correct_response_with_more_awards(
                 "name": "Awarding Toptier Agency 1",
                 "code": "TA1",
                 "id": 1001,
-                "agency_slug": "awarding-toptier-agency-1",
+                "agency_slug": None,
             },
         ],
         "messages": [get_time_period_message()],
