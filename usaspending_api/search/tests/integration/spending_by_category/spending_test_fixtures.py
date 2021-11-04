@@ -52,6 +52,7 @@ def _setup_agency(id, subtiers, special_name):
         toptier_agency_id=id + 2000,
         name=f"{special_name} Toptier Agency {id}",
         abbreviation=f"TA{id}",
+        toptier_code=f"00{id}",
     )
     mommy.make(
         "references.SubtierAgency",
