@@ -8,13 +8,12 @@ from typing import List
 
 from django.utils.text import slugify
 
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
     AbstractSpendingByCategoryViewSet,
 )
-from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class AgencyType(Enum):
@@ -42,16 +41,11 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "code": agency_info.get("abbreviation"),
                 "id": agency_info.get("id"),
             }
+            # Only returns a non-null value if the agency has a profile page -
+            # meaning it is an agency that has at least one submission.
             if self.agency_type == AgencyType.AWARDING_TOPTIER:
-                agency_code = Agency.objects.filter(id=agency_info.get("id"), toptier_flag=True).values(
-                    "toptier_agency__toptier_code"
-                )
-                code = agency_code[0].get("toptier_agency__toptier_code") if len(agency_code) > 0 else None
-                submission = (
-                    SubmissionAttributes.objects.filter(toptier_code=code).first() if code is not None else None
-                )
+                submission = ToptierAgencyPublishedDABSView.objects.filter(agency_id=agency_info.get("id")).first()
                 result["agency_slug"] = slugify(agency_info.get("name")) if submission is not None else None
-
             results.append(result)
         return results
 
