@@ -1,6 +1,5 @@
 import csv
 import logging
-import urllib
 
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
@@ -57,7 +56,7 @@ class Command(BaseCommand):
                     **{
                         "federal_account_code": federal_account_code,
                         "bureau_title": bureau_title,
-                        "bureau_slug": slugify(bureau_title)
+                        "bureau_slug": slugify(bureau_title),
                     }
                 )
 
