@@ -1,4 +1,5 @@
 from usaspending_api.references.models.agency import Agency
+from usaspending_api.references.models.bureau_title_lookup import BureauTitleLookup
 from usaspending_api.references.models.cfda import Cfda
 from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.city_county_state_code import CityCountyStateCode
@@ -24,6 +25,7 @@ from usaspending_api.references.models.office import Office
 
 __all__ = [
     "Agency",
+    "BureauTitleLookup",
     "Cfda",
     "CGAC",
     "CityCountyStateCode",

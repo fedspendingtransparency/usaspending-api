@@ -3,12 +3,13 @@ import copy
 from sys import maxsize
 from django.conf import settings
 from django.db.models import F
+from django.utils.text import slugify
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 import logging
 from usaspending_api.awards.models import Award
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -327,13 +328,19 @@ class SpendingByAwardVisualizationViewSet(APIView):
     # For an unknown reason, ES tends to return the awarding agency toptier codes as integers or floats, instead of as
     # text. This function casts the code back to a string and appends any leading zeroes that were lost.
     def get_agency_database_id(self, code):
-        if len(str(int(code))) < 3:
-            code = "{zeroes}{code}".format(zeroes=("0" * (3 - len(str(int(code))))), code=int(code))
+        code = str(code).zfill(3)
         agency_id = Agency.objects.filter(toptier_agency__toptier_code=code, toptier_flag=True).first()
         submission = SubmissionAttributes.objects.filter(toptier_code=code).first()
         if submission is None or agency_id is None:
             return None
         return agency_id.id
+
+    def get_agency_slug(self, code):
+        code = str(code).zfill(3)
+        submission = ToptierAgencyPublishedDABSView.objects.filter(toptier_code=code).first()
+        if submission is None:
+            return None
+        return slugify(submission.name)
 
     def construct_es_response_for_prime_awards(self, response) -> dict:
         results = []
@@ -363,6 +370,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("Awarding Agency"):
                 code = row.pop("agency_code")
                 row["awarding_agency_id"] = self.get_agency_database_id(code)
+                row["agency_slug"] = self.get_agency_slug(code)
             if row.get("COVID-19 Obligations"):
                 row["COVID-19 Obligations"] = sum(
                     [
