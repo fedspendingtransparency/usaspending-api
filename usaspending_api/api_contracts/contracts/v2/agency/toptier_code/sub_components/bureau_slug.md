@@ -10,7 +10,7 @@ Returns a list of Federal Accounts in the Agency's appropriations for a single f
 + Parameters
     + `toptier_code`: `086` (required, string)
         The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
-    + `bureau_slug` (required, string) The id of the Sub-Component to filter on
+    + `bureau_slug`: `bureau_of_the_census` (required, string) The id of the Sub-Component to filter on
     + `fiscal_year` (optional, number)
         The desired appropriations fiscal year. Defaults to the current FY.
     + `agency_type` (optional, enum[string])
