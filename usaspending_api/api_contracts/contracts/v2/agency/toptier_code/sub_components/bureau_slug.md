@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Federal Accounts by Sub-Component [/api/v2/agency/{toptier_code}/sub_component/{bureau_slug}/{?fiscal_year,order,sort,page,limit}]
+# List Federal Accounts by Sub-Component [/api/v2/agency/{toptier_code}/sub_component/{bureau_slug}/{?fiscal_year,agency_type,order,sort,page,limit}]
 
 Returns a list of Federal Accounts in the Agency's appropriations for a single fiscal year, filtered on the given Sub-Component
 
@@ -13,6 +13,12 @@ Returns a list of Federal Accounts in the Agency's appropriations for a single f
     + `bureau_slug` (required, string) The id of the Sub-Component to filter on
     + `fiscal_year` (optional, number)
         The desired appropriations fiscal year. Defaults to the current FY.
+    + `agency_type` (optional, enum[string])
+        Indicated if the data should be pulled from the awarding agency or the funding agency
+        + Default: `awarding`
+        + Members
+          + `awarding`
+          + `funding`
     + `order` (optional, enum[string])
         Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
         + Default: `desc`
