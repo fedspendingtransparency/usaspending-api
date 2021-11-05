@@ -28,7 +28,7 @@ class SourceAssistanceTransaction(models.Model):
     award_description = models.TextField(blank=True, null=True)
     award_modification_amendme = models.TextField(blank=True, null=True)
     awardee_or_recipient_legal = models.TextField(blank=True, null=True)
-    awardee_or_recipient_uniqu = models.TextField(blank=True, null=True)
+    awardee_or_recipient_uniqu = models.TextField(blank=True, null=True, db_index=True)
     awarding_agency_code = models.TextField(blank=True, null=True)
     awarding_agency_name = models.TextField(blank=True, null=True)
     awarding_office_code = models.TextField(blank=True, null=True)
@@ -114,10 +114,10 @@ class SourceAssistanceTransaction(models.Model):
     sai_number = models.TextField(blank=True, null=True)
     submission_id = NumericField(blank=True, null=True)
     total_funding_amount = models.TextField(blank=True, null=True)
-    uei = models.TextField(blank=True, null=True)
+    uei = models.TextField(blank=True, null=True, db_index=True)
     ultimate_parent_legal_enti = models.TextField(blank=True, null=True)
-    ultimate_parent_uei = models.TextField(blank=True, null=True)
-    ultimate_parent_unique_ide = models.TextField(blank=True, null=True)
+    ultimate_parent_uei = models.TextField(blank=True, null=True, db_index=True)
+    ultimate_parent_unique_ide = models.TextField(blank=True, null=True, db_index=True)
     unique_award_key = models.TextField(null=True, db_index=True)
     updated_at = NaiveTimestampField(
         help_text="record last update datetime in Broker", blank=True, null=True, db_index=True
