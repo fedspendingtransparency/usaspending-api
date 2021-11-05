@@ -53,8 +53,6 @@ class DUNS(models.Model):
     entity_structure = models.TextField(null=True, blank=True)
     broker_duns_id = models.TextField()
     update_date = models.DateField()
-    uei = models.TextField(null=True, blank=True)
-    ultimate_parent_uei = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = "duns"
