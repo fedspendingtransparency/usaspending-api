@@ -156,6 +156,8 @@ List of table columns
     Sub-Awards only
 + `Subsidy Cost` (optional, number)
     Assistance awards only
++ `agency_slug` (optional, string, nullable)
+    Returns with "Awarding Agency", is null when the agency does not have an agency profile page
 
 ## PageMetadataObject (object)
 + `page` (required, number)
