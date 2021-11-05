@@ -13,7 +13,7 @@ from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
 
-DEF_CODE_PATTERN = re.compile("[a-zA-Z0-9][a-zA-Z0-9]?")
+DEF_CODE_PATTERN = re.compile("[a-zA-Z0-9]+")
 
 CREATE_TEMP_TABLE = """
     drop table if exists temp_load_disaster_emergency_fund_codes;
