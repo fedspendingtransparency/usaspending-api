@@ -318,7 +318,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 },
             ]
         )
-        self._json_request["limit"] = settings.MAX_DOWNLOAD_LIMIT
+        self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
         self._json_request = self.get_validated_request()
 
 
