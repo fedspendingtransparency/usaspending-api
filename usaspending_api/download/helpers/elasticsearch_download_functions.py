@@ -9,6 +9,7 @@ from elasticsearch_dsl import A
 
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.download.models import DownloadJob
 from usaspending_api.search.models import AwardSearchView, TransactionSearch as TransactionSearchModel
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 
@@ -59,7 +60,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             yield results
 
     @classmethod
-    def _get_download_ids(cls, filters: dict, size: int = 10000) -> QuerySet:
+    def _get_download_ids(cls, filters: dict, size: int = 10000, download_job: DownloadJob = None) -> QuerySet:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
@@ -67,7 +68,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
         flat_ids = list(itertools.chain.from_iterable(ids))
-        write_to_log(message=f"Found {len(flat_ids)} {cls._source_field} based on filters")
+        write_to_log(message=f"Found {len(flat_ids)} {cls._source_field} based on filters", download_job=download_job)
 
         return flat_ids
 
@@ -83,9 +84,9 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     _search_type = AwardSearch
 
     @classmethod
-    def query(cls, filters: dict, values: List[str] = None) -> QuerySet:
+    def query(cls, filters: dict, values: List[str] = None, download_job: DownloadJob = None) -> QuerySet:
         base_queryset = AwardSearchView.objects.all()
-        flat_ids = cls._get_download_ids(filters)
+        flat_ids = cls._get_download_ids(filters, download_job=download_job)
         queryset = base_queryset.extra(
             where=[f'"vw_award_search"."award_id" = ANY(SELECT UNNEST(ARRAY{flat_ids}::INTEGER[]))']
         )
@@ -100,9 +101,9 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     _search_type = TransactionSearch
 
     @classmethod
-    def query(cls, filters: dict) -> QuerySet:
+    def query(cls, filters: dict, download_job: DownloadJob = None) -> QuerySet:
         base_queryset = TransactionSearchModel.objects.all()
-        flat_ids = cls._get_download_ids(filters)
+        flat_ids = cls._get_download_ids(filters, download_job=download_job)
         queryset = base_queryset.extra(
             where=[f'"transaction_normalized"."id" = ANY(SELECT UNNEST(ARRAY{flat_ids}::INTEGER[]))']
         )

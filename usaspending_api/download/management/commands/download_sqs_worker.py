@@ -88,11 +88,6 @@ def download_service_app(download_job_id):
         span_type=SpanTypes.WORKER,
     ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
-        limit = download_job.json_request.get("limit")
-        if limit is not None and limit > settings.MAX_DOWNLOAD_SIZE:
-            raise Exception(
-                f"Unable to process this download because it includes more than the current limit of {settings.MAX_DOWNLOAD_SIZE} records"
-            )
         download_job_details = download_job_to_log_dict(download_job)
         log_job_message(
             logger=logger,
@@ -102,6 +97,11 @@ def download_service_app(download_job_id):
             other_params=download_job_details,
         )
         span.set_tags(download_job_details)
+        limit = download_job.json_request.get("limit")
+        if limit is not None and limit > settings.MAX_DOWNLOAD_SIZE:
+            raise Exception(
+                f"Unable to process this download because it includes more than the current limit of {settings.MAX_DOWNLOAD_SIZE} records"
+            )
         generate_download(download_job=download_job)
 
 

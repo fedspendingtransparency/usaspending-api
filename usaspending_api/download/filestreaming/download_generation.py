@@ -77,7 +77,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
         write_to_log(message=f"Generating {file_name}", download_job=download_job)
 
         # Generate sources from the JSON request object
-        sources = get_download_sources(json_request, origination)
+        sources = get_download_sources(json_request, download_job, origination)
         for source in sources:
             # Parse and write data to the file; if there are no matching columns for a source then add an empty file
             source_column_count = len(source.columns(columns))
@@ -162,7 +162,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     return finish_download(download_job)
 
 
-def get_download_sources(json_request: dict, origination: Optional[str] = None):
+def get_download_sources(json_request: dict, download_job: DownloadJob = None, origination: Optional[str] = None):
     download_sources = []
     for download_type in json_request["download_types"]:
         agency_id = json_request.get("agency", "all")
@@ -180,8 +180,11 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
                 gte_date_type="action_date",
                 lte_date_type="date_signed",
             )
+            if download_type == "elasticsearch_awards" or download_type == "elasticsearch_transactions":
+                queryset = filter_function(filters, download_job=download_job)
+            else:
+                queryset = filter_function(filters)
 
-            queryset = filter_function(filters)
             if filters.get("prime_and_sub_award_types") is not None:
                 award_type_codes = set(filters["prime_and_sub_award_types"][download_type])
             else:
