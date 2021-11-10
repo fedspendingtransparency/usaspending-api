@@ -314,6 +314,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
     try:
         # Create a separate process to run the PSQL command; wait
         psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job))
+        write_to_log(message=f"Running {source.file_name} using psql", download_job=download_job)
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job)
 
