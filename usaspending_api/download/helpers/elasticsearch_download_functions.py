@@ -67,7 +67,6 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
         flat_ids = list(itertools.chain.from_iterable(ids))
-        logger.info(f"Found {len(flat_ids)} {cls._source_field} based on filters")
         write_to_log(message=f"Found {len(flat_ids)} {cls._source_field} based on filters")
 
         return flat_ids
