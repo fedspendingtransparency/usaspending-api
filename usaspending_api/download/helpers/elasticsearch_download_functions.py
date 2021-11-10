@@ -10,6 +10,7 @@ from elasticsearch_dsl import A
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.models import AwardSearchView, TransactionSearch as TransactionSearchModel
+from usaspending_api.download.helpers import write_to_download_log as write_to_log
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,8 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         ids = cls._get_download_ids_generator(search, size)
         flat_ids = list(itertools.chain.from_iterable(ids))
         logger.info(f"Found {len(flat_ids)} {cls._source_field} based on filters")
+        write_to_log(message=f"Found {len(flat_ids)} {cls._source_field} based on filters")
+
         return flat_ids
 
     @classmethod
