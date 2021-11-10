@@ -91,7 +91,7 @@ def download_service_app(download_job_id):
         limit = download_job.json_request.get("limit")
         if limit is not None and limit > settings.MAX_DOWNLOAD_SIZE:
             raise Exception(
-                f"Sorry, we cannot process this download because it includes more than the current limit of {settings.MAX_DOWNLOAD_SIZE} records"
+                f"Unable to process this download because it includes more than the current limit of {settings.MAX_DOWNLOAD_SIZE} records"
             )
         download_job_details = download_job_to_log_dict(download_job)
         log_job_message(
