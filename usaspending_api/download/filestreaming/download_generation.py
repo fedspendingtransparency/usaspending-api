@@ -18,6 +18,7 @@ from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
 
+from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
@@ -65,9 +66,9 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     file_name = start_download(download_job)
     working_dir = None
     try:
-        if limit is not None and limit > settings.MAX_DOWNLOAD_SIZE:
+        if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
             raise Exception(
-                f"Unable to process this download because it includes more than the current limit of {settings.MAX_DOWNLOAD_SIZE} records"
+                f"Unable to process this download because it includes more than the current limit of {MAX_DOWNLOAD_LIMIT} records"
             )
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
