@@ -65,6 +65,10 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     file_name = start_download(download_job)
     working_dir = None
     try:
+        if limit is not None and limit > settings.MAX_DOWNLOAD_SIZE:
+            raise Exception(
+                f"Unable to process this download because it includes more than the current limit of {settings.MAX_DOWNLOAD_SIZE} records"
+            )
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
         if not settings.IS_LOCAL and os.path.exists(zip_file_path):

@@ -7,7 +7,6 @@ from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 
 from django.core.management.base import BaseCommand
 
-from usaspending_api import settings
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.common.sqs.sqs_work_dispatcher import (
     SQSWorkDispatcher,
@@ -97,11 +96,6 @@ def download_service_app(download_job_id):
             other_params=download_job_details,
         )
         span.set_tags(download_job_details)
-        limit = download_job.json_request.get("limit")
-        if limit is not None and limit > settings.MAX_DOWNLOAD_SIZE:
-            raise Exception(
-                f"Unable to process this download because it includes more than the current limit of {settings.MAX_DOWNLOAD_SIZE} records"
-            )
         generate_download(download_job=download_job)
 
 
