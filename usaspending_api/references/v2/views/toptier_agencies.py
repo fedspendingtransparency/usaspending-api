@@ -1,7 +1,6 @@
-import urllib
-
 from django.db.models import F, Sum, OuterRef, Max, Q
 from django.db.models.functions import Coalesce
+from django.utils.text import slugify
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -192,7 +191,7 @@ class ToptierAgenciesViewSet(APIView):
                         if total_budgetary_resources > 0
                         else None
                     ),
-                    "agency_slug": urllib.parse.quote_plus(agency["toptier_name"].lower().replace(" ", "-")),
+                    "agency_slug": slugify(agency["toptier_name"]),
                 }
             )
 
