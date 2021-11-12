@@ -101,7 +101,6 @@ def download_service_app(download_job_id):
 
 def _retrieve_download_job_from_db(download_job_id):
     download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
-
     if download_job is None:
         raise DownloadJobNoneError(download_job_id)
 
