@@ -196,5 +196,5 @@ class OverviewViewSet(DisasterBase):
                 "total_obligations": total_values["obligation_totals"] - defc_o_values["obligation_totals"],
                 "total_outlays": total_values["outlay_totals"] - defc_o_values["outlay_totals"],
             },
-            "total_budget_authority": total_values["total_budget_authority"] - defc_o_values["total_budget_authority"],
+            "total_budget_authority": total_values["obligation_totals"] - defc_o_values["obligation_totals"],
         }
