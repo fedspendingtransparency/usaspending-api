@@ -2,6 +2,11 @@ import pytest
 
 from model_mommy import mommy
 
+from usaspending_api.common.helpers.fiscal_year_helpers import (
+    get_final_period_of_quarter,
+    calculate_last_completed_fiscal_quarter,
+)
+
 CURRENT_FISCAL_YEAR = 2020
 
 
@@ -337,4 +342,35 @@ def agency_account_data():
     )
 
 
-__all__ = ["agency_account_data", "helpers"]
+@pytest.fixture
+def bureau_data():
+    mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date=f"{CURRENT_FISCAL_YEAR}-01-01",
+        submission_fiscal_year=CURRENT_FISCAL_YEAR,
+        submission_fiscal_month=12,
+        submission_fiscal_quarter=4,
+        is_quarter=True,
+        period_start_date=f"{CURRENT_FISCAL_YEAR}-09-01",
+        period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
+    )
+    ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
+    sa1 = mommy.make("references.SubtierAgency", subtier_code="0001")
+    mommy.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
+    mommy.make("references.BureauTitleLookup", federal_account_code="001-0000", bureau_slug="test-bureau")
+    fa1 = mommy.make(
+        "accounts.FederalAccount", account_title="FA 1", federal_account_code="001-0000", parent_toptier_agency=ta1
+    )
+    taa1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR)) or 12,
+        treasury_account_identifier=taa1,
+        total_budgetary_resources_cpe=100,
+        gross_outlay_amount_by_tas_cpe=10,
+        obligations_incurred_total_cpe=1,
+    )
+
+
+__all__ = ["agency_account_data", "helpers", "bureau_data"]

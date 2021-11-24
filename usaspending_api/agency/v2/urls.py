@@ -39,7 +39,7 @@ urlpatterns = [
                 path("recipients/", RecipientList.as_view()),
                 path("sub_agency/", SubAgencyList.as_view()),
                 path("sub_agency/count/", SubAgencyCount.as_view()),
-                path("subcomponents/?P<bureau_slug>/", BureauFederalAccountList.as_view())
+                re_path("subcomponents/(?P<bureau_slug>[a-z0-9]+(?:-[a-z0-9]*)*)/", BureauFederalAccountList.as_view()),
             ]
         ),
     )
