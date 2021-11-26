@@ -25,7 +25,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.sortable_columns = ["name", "total_obligations", "total_outlay_amount", "total_budgetary_resouces"]
+        self.sortable_columns = ["name", "total_obligations", "total_outlays", "total_budgetary_resouces"]
         self.default_sort_column = "total_obligations"
         results = self.format_results(self.get_subcomponents_queryset())
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
@@ -54,7 +54,6 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             key=lambda x: x.get(self.pagination.sort_key),
             reverse=self.pagination.sort_order == "desc",
         )
-
         return results
 
     def get_subcomponents_queryset(self):
