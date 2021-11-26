@@ -68,6 +68,7 @@ Returns a list of Sub-Components in the Agency's appropriations for a single fis
                         "id": "bureau_of_the_census",
                         "total_budgetary_resources": 500000,
                         "total_obligations": 300000.72
+                        "total_outlays": 1000000.45                
                     }
                 ],
                 "messages": []
@@ -89,3 +90,4 @@ Returns a list of Sub-Components in the Agency's appropriations for a single fis
 + `id` (required, string) snake_case version of the Sub-Component name (bureau_slug)
 + `total_budgetary_resources` (required, number)
 + `total_obligations` (required, number)
++ `total_outlays` (required, number)
