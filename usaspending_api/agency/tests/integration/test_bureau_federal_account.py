@@ -8,7 +8,13 @@ url = "/api/v2/agency/{toptier_code}/subcomponents/{bureau_slug}/{query_params}"
 @pytest.mark.django_db
 def test_federal_account_list_success(client, monkeypatch, bureau_data, helpers):
     helpers.mock_current_fiscal_year(monkeypatch)
-    resp = client.get(url.format(toptier_code="001", bureau_slug="test-bureau-1", query_params=f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}"))
+    resp = client.get(
+        url.format(
+            toptier_code="001",
+            bureau_slug="test-bureau-1",
+            query_params=f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}",
+        )
+    )
     expected_result = {
         "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "001",
