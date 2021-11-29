@@ -74,15 +74,6 @@ def bureau_data():
         gross_outlay_amount_by_tas_cpe=10,
         obligations_incurred_total_cpe=1,
     )
-    mommy.make(
-        "references.GTASSF133Balances",
-        fiscal_year=2018,
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR)) or 12,
-        treasury_account_identifier=taa1,
-        total_budgetary_resources_cpe=2000,
-        gross_outlay_amount_by_tas_cpe=200,
-        obligations_incurred_total_cpe=20,
-    )
     ta2 = mommy.make("references.ToptierAgency", name="Agency 2", toptier_code="002")
     sa2 = mommy.make("references.SubtierAgency", name="Agency 2", subtier_code="0002")
     mommy.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
