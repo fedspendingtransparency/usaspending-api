@@ -15,7 +15,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
     fiscal year based on GTAS
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/subcomponents.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/sub_components.md"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,10 +42,10 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             [
                 {
                     "name": x["bureau_info"].split(";")[0],
-                    "id:": x["bureau_info"].split(";")[1],
+                    "id": x["bureau_info"].split(";")[1],
                     "total_obligations": x["total_obligations"],
                     "total_outlays": x["total_outlays"],
-                    "total_budgetary_resouces": x["total_budgetary_resources"],
+                    "total_budgetary_resources": x["total_budgetary_resources"],
                 }
                 for x in response
             ],

@@ -2,12 +2,11 @@ import pytest
 
 from rest_framework import status
 
-
 url = "/api/v2/agency/{toptier_code}/subcomponents/{filter}"
 
 
 @pytest.mark.django_db
-def test_all_categories(client, bureau_data, helpers):
+def test_success(client, bureau_data, helpers):
     resp = client.get(url.format(toptier_code="001", filter=f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}"))
 
     expected_results = [
@@ -31,7 +30,7 @@ def test_alternate_year(client, bureau_data):
     expected_results = [
         {
             "name": "Test Bureau 1",
-            "abbreviation": "test-bureau-1",
+            "id": "test-bureau-1",
             "total_obligations": 20.0,
             "total_outlays": 200.0,
             "total_budgetary_resources": 2000.0,
@@ -49,7 +48,7 @@ def test_alternate_agency(client, bureau_data):
     expected_results = [
         {
             "name": "Test Bureau 2",
-            "abbreviation": "test-bureau-2",
+            "id": "test-bureau-2",
             "total_obligations": 20.0,
             "total_outlays": 200.0,
             "total_budgetary_resources": 2000.0,

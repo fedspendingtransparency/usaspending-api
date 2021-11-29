@@ -31,6 +31,117 @@ def helpers():
 
 
 @pytest.fixture
+def bureau_data():
+    dabs1 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date=f"{CURRENT_FISCAL_YEAR}-01-01",
+        submission_fiscal_year=CURRENT_FISCAL_YEAR,
+        submission_fiscal_month=12,
+        submission_fiscal_quarter=4,
+        is_quarter=True,
+        period_start_date=f"{CURRENT_FISCAL_YEAR}-09-01",
+        period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
+    )
+    dabs2 = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date=f"2018-01-01",
+        submission_fiscal_year=2018,
+        submission_fiscal_month=12,
+        submission_fiscal_quarter=4,
+        is_quarter=True,
+        period_start_date=f"2018-09-01",
+        period_end_date=f"2018-10-01",
+    )
+    ta1 = mommy.make("references.ToptierAgency", name="Agency 1", toptier_code="001")
+    sa1 = mommy.make("references.SubtierAgency", name="Agency 1", subtier_code="0001")
+    mommy.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
+    mommy.make(
+        "references.BureauTitleLookup",
+        federal_account_code="001-0000",
+        bureau_title="Test Bureau 1",
+        bureau_slug="test-bureau-1",
+    )
+    fa1 = mommy.make(
+        "accounts.FederalAccount", account_title="FA 1", federal_account_code="001-0000", parent_toptier_agency=ta1
+    )
+    taa1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR)) or 12,
+        treasury_account_identifier=taa1,
+        total_budgetary_resources_cpe=100,
+        gross_outlay_amount_by_tas_cpe=10,
+        obligations_incurred_total_cpe=1,
+    )
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2018,
+        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR)) or 12,
+        treasury_account_identifier=taa1,
+        total_budgetary_resources_cpe=2000,
+        gross_outlay_amount_by_tas_cpe=200,
+        obligations_incurred_total_cpe=20,
+    )
+    ta2 = mommy.make("references.ToptierAgency", name="Agency 2", toptier_code="002")
+    sa2 = mommy.make("references.SubtierAgency", name="Agency 2", subtier_code="0002")
+    mommy.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
+    mommy.make(
+        "references.BureauTitleLookup",
+        federal_account_code="002-0000",
+        bureau_title="Test Bureau 2",
+        bureau_slug="test-bureau-2",
+    )
+    fa2 = mommy.make(
+        "accounts.FederalAccount", account_title="FA 2", federal_account_code="002-0000", parent_toptier_agency=ta2
+    )
+    taa2 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa2)
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2018,
+        fiscal_period=12,
+        treasury_account_identifier=taa2,
+        total_budgetary_resources_cpe=2000,
+        gross_outlay_amount_by_tas_cpe=200,
+        obligations_incurred_total_cpe=20,
+    )
+    mommy.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2018,
+        fiscal_period=12,
+        treasury_account_identifier=taa1,
+        total_budgetary_resources_cpe=2000,
+        gross_outlay_amount_by_tas_cpe=200,
+        obligations_incurred_total_cpe=20,
+    )
+
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=CURRENT_FISCAL_YEAR,
+        reporting_fiscal_period=12,
+        toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs1.id,
+    )
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2018,
+        reporting_fiscal_period=12,
+        toptier_code=ta2.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs2.id,
+    )
+    mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=2018,
+        reporting_fiscal_period=12,
+        toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs2.id,
+    )
+
+
+@pytest.fixture
 def agency_account_data():
     dabs = mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -339,83 +450,6 @@ def agency_account_data():
         submission=sub7,
         obligations_incurred_by_program_object_class_cpe=710,
         gross_outlay_amount_by_program_object_class_cpe=7100,
-    )
-
-
-@pytest.fixture
-def bureau_data():
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_reveal_date=f"{CURRENT_FISCAL_YEAR}-01-01",
-        submission_fiscal_year=CURRENT_FISCAL_YEAR,
-        submission_fiscal_month=12,
-        submission_fiscal_quarter=4,
-        is_quarter=True,
-        period_start_date=f"{CURRENT_FISCAL_YEAR}-09-01",
-        period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
-    )
-    mommy.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_reveal_date=f"2018-01-01",
-        submission_fiscal_year=2018,
-        submission_fiscal_month=12,
-        submission_fiscal_quarter=4,
-        is_quarter=True,
-        period_start_date=f"2018-09-01",
-        period_end_date=f"2018-10-01",
-    )
-    ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
-    sa1 = mommy.make("references.SubtierAgency", subtier_code="0001")
-    mommy.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
-    mommy.make(
-        "references.BureauTitleLookup",
-        federal_account_code="001-0000",
-        bureau_title="Test Bureau 1",
-        bureau_slug="test-bureau-1",
-    )
-    fa1 = mommy.make(
-        "accounts.FederalAccount", account_title="FA 1", federal_account_code="001-0000", parent_toptier_agency=ta1
-    )
-    taa1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
-    mommy.make(
-        "references.GTASSF133Balances",
-        fiscal_year=CURRENT_FISCAL_YEAR,
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR)) or 12,
-        treasury_account_identifier=taa1,
-        total_budgetary_resources_cpe=100,
-        gross_outlay_amount_by_tas_cpe=10,
-        obligations_incurred_total_cpe=1,
-    )
-    mommy.make(
-        "references.GTASSF133Balances",
-        fiscal_year=2018,
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR)) or 12,
-        treasury_account_identifier=taa1,
-        total_budgetary_resources_cpe=2000,
-        gross_outlay_amount_by_tas_cpe=200,
-        obligations_incurred_total_cpe=20,
-    )
-    ta2 = mommy.make("references.ToptierAgency", toptier_code="002")
-    sa2 = mommy.make("references.SubtierAgency", subtier_code="0002")
-    mommy.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
-    mommy.make(
-        "references.BureauTitleLookup",
-        federal_account_code="002-0000",
-        bureau_title="Test Bureau 2",
-        bureau_slug="test-bureau-2",
-    )
-    fa2 = mommy.make(
-        "accounts.FederalAccount", account_title="FA 2", federal_account_code="002-0000", parent_toptier_agency=ta2
-    )
-    taa2 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa2)
-    mommy.make(
-        "references.GTASSF133Balances",
-        fiscal_year=2018,
-        fiscal_period=12,
-        treasury_account_identifier=taa2,
-        total_budgetary_resources_cpe=100,
-        gross_outlay_amount_by_tas_cpe=10,
-        obligations_incurred_total_cpe=1,
     )
 
 
