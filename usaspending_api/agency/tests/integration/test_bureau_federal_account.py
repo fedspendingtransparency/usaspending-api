@@ -8,11 +8,11 @@ url = "/api/v2/agency/{toptier_code}/subcomponents/{bureau_slug}/{query_params}"
 @pytest.mark.django_db
 def test_federal_account_list_success(client, monkeypatch, bureau_data, helpers):
     helpers.mock_current_fiscal_year(monkeypatch)
-    resp = client.get(url.format(toptier_code="001", bureau_slug="test-bureau", query_params=""))
+    resp = client.get(url.format(toptier_code="001", bureau_slug="test-bureau-1", query_params=f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}"))
     expected_result = {
         "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "001",
-        "bureau_slug": "test-bureau",
+        "bureau_slug": "test-bureau-1",
         "totals": {
             "total_obligations": 1.0,
             "total_outlays": 10.0,
@@ -44,7 +44,7 @@ def test_federal_account_list_success(client, monkeypatch, bureau_data, helpers)
 
 @pytest.mark.django_db
 def test_alternate_year(client, bureau_data):
-    resp = client.get(url.format(toptier_code="001", bureau_slug="test-bureau", query_params="?fiscal_year=2018"))
+    resp = client.get(url.format(toptier_code="001", bureau_slug="test-bureau-1", query_params="?fiscal_year=2018"))
     assert resp.status_code == status.HTTP_200_OK
 
     expected_results = [
