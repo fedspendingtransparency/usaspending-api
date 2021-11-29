@@ -35,16 +35,26 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
             reverse=self.pagination.sort_order == "desc",
         )
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
+        totals = self.get_totals(results)
         return Response(
             {
                 "toptier_code": self.toptier_code,
                 "bureau_slug": self.bureau_slug,
                 "fiscal_year": self.fiscal_year,
+                "totals": totals,
                 "page_metadata": page_metadata,
                 "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
                 "messages": self.standard_response_messages,
             }
         )
+
+    def get_totals(self, results) -> dict:
+        totals = {
+            "total_obligations": sum(x["total_obligations"] for x in results),
+            "total_outlays": sum(x["total_outlays"] for x in results),
+            "total_budgetary_resources": sum(x["total_budgetary_resources"] for x in results),
+        }
+        return totals
 
     def get_federal_account_list(self) -> List[dict]:
         federal_accounts = [

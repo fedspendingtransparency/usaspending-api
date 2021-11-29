@@ -13,6 +13,11 @@ def test_federal_account_list_success(client, monkeypatch, bureau_data, helpers)
         "fiscal_year": helpers.get_mocked_current_fiscal_year(),
         "toptier_code": "001",
         "bureau_slug": "test-bureau",
+        "totals": {
+            "total_obligations": 1.0,
+            "total_outlays": 10.0,
+            "total_budgetary_resources": 100.0,
+        },
         "messages": [],
         "page_metadata": {
             "hasNext": False,
