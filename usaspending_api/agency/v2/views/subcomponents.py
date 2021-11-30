@@ -23,7 +23,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.sortable_columns = ["name", "total_obligations", "total_outlays", "total_budgetary_resouces"]
+        self.sortable_columns = ["name", "total_obligations", "total_outlays", "total_budgetary_resources"]
         self.default_sort_column = "total_obligations"
         results = self.format_results(self.get_subcomponents_queryset())
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
@@ -41,8 +41,8 @@ class SubcomponentList(PaginationMixin, AgencyBase):
         results = sorted(
             [
                 {
-                    "name": x["bureau_info"].split(";")[0],
-                    "id": x["bureau_info"].split(";")[1],
+                    "name": x["bureau_info"].split(";")[0] if x.get("bureau_info") is not None else None,
+                    "id": x["bureau_info"].split(";")[1] if x.get("bureau_info") is not None else None,
                     "total_obligations": x["total_obligations"],
                     "total_outlays": x["total_outlays"],
                     "total_budgetary_resources": x["total_budgetary_resources"],
@@ -76,9 +76,17 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             )
             .values("bureau_info")
             .annotate(
-                total_obligations=Sum("obligations_incurred_total_cpe"),
-                total_outlays=Sum("gross_outlay_amount_by_tas_cpe"),
-                total_budgetary_resources=Sum("total_budgetary_resources_cpe"),
+                amount=Sum("total_budgetary_resources_cpe"),
+                unobligated_balance=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
+                deobligation=Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
+                prior_year=Sum("prior_year_paid_obligation_recoveries"),
+            )
+            .annotate(
+                total_budgetary_resources=F("amount") - F("unobligated_balance") - F("deobligation") - F("prior_year"),
+                total_obligations=Sum("obligations_incurred_total_cpe")
+                - Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
+                total_outlays=Sum("gross_outlay_amount_by_tas_cpe")
+                - Sum("anticipated_prior_year_obligation_recoveries"),
             )
             .values("bureau_info", "total_obligations", "total_outlays", "total_budgetary_resources")
         )
