@@ -146,9 +146,6 @@ class OverviewViewSet(DisasterBase):
             "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
         ]
         outlay_values = ["gross_outlay_amount_by_tas_cpe", "anticipated_prior_year_obligation_recoveries"]
-        total_budget_authority_values = [
-            "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
-        ]
 
         filters = {
             "tas_rendering_label__in": ["016-X-0168-000", "016-X-1801-000", "016-X-8042-000"],
@@ -167,7 +164,7 @@ class OverviewViewSet(DisasterBase):
         }
         defc_o_values = (
             GTASSF133Balances.objects.filter(**filters, fiscal_year=2021, fiscal_period=6)
-            .values(*obligation_values, *outlay_values, *total_budget_authority_values)
+            .values(*obligation_values, *outlay_values)
             .aggregate(**aggregates)
         )
 
