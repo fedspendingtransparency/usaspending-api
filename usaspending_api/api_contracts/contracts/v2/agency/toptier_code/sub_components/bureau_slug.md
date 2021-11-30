@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Federal Accounts by Sub-Component [/api/v2/agency/{toptier_code}/sub_component/{bureau_slug}/{?fiscal_year,agency_type,order,sort,page,limit}]
+# List Federal Accounts by Sub-Component [/api/v2/agency/{toptier_code}/sub_components/{bureau_slug}/{?fiscal_year,agency_type,order,sort,page,limit}]
 
 Returns a list of Federal Accounts in the Agency's appropriations for a single fiscal year, filtered on the given Sub-Component
 
