@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Sub-Components [/api/v2/agency/{toptier_code}/sub_component/{?fiscal_year,agency_type,order,sort,page,limit}]
+# List Sub-Components [/api/v2/agency/{toptier_code}/sub_components/{?fiscal_year,agency_type,order,sort,page,limit}]
 
 Returns a list of Sub-Components in the Agency's appropriations for a single fiscal year
 
