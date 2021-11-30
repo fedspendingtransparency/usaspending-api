@@ -42,7 +42,7 @@ urlpatterns = [
                 path("sub_components/", SubcomponentList.as_view()),
                 re_path(
                     "sub_components/(?P<bureau_slug>[a-z0-9]+(?:-[a-z0-9]*)*)/", BureauFederalAccountList.as_view()
-                )
+                ),
             ]
         ),
     )
