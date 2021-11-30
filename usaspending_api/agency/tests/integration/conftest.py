@@ -76,7 +76,7 @@ def bureau_data():
         budget_authority_unobligated_balance_brought_forward_cpe=0,
         deobligations_or_recoveries_or_refunds_from_prior_year_cpe=0,
         prior_year_paid_obligation_recoveries=0,
-        anticipated_prior_year_obligation_recoveries=0
+        anticipated_prior_year_obligation_recoveries=0,
     )
     ta2 = mommy.make("references.ToptierAgency", name="Agency 2", toptier_code="002")
     sa2 = mommy.make("references.SubtierAgency", name="Agency 2", subtier_code="0002")
@@ -102,7 +102,7 @@ def bureau_data():
         budget_authority_unobligated_balance_brought_forward_cpe=0,
         deobligations_or_recoveries_or_refunds_from_prior_year_cpe=0,
         prior_year_paid_obligation_recoveries=0,
-        anticipated_prior_year_obligation_recoveries=0
+        anticipated_prior_year_obligation_recoveries=0,
     )
     mommy.make(
         "references.GTASSF133Balances",
@@ -115,7 +115,7 @@ def bureau_data():
         budget_authority_unobligated_balance_brought_forward_cpe=0,
         deobligations_or_recoveries_or_refunds_from_prior_year_cpe=0,
         prior_year_paid_obligation_recoveries=0,
-        anticipated_prior_year_obligation_recoveries=0
+        anticipated_prior_year_obligation_recoveries=0,
     )
 
     mommy.make(
