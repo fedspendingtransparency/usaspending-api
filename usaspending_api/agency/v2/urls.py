@@ -4,6 +4,7 @@ from usaspending_api.agency.v2.views.awards import Awards
 from usaspending_api.agency.v2.views.budget_function_count import BudgetFunctionCount
 from usaspending_api.agency.v2.views.budget_function import BudgetFunctionList
 from usaspending_api.agency.v2.views.budgetary_resources import BudgetaryResources
+from usaspending_api.agency.v2.views.bureau_federal_account import BureauFederalAccountList
 from usaspending_api.agency.v2.views.object_class_count import ObjectClassCount
 from usaspending_api.agency.v2.views.federal_account_count import FederalAccountCount
 from usaspending_api.agency.v2.views.federal_account_list import FederalAccountList
@@ -39,6 +40,9 @@ urlpatterns = [
                 path("sub_agency/", SubAgencyList.as_view()),
                 path("sub_agency/count/", SubAgencyCount.as_view()),
                 path("sub_components/", SubcomponentList.as_view()),
+                re_path(
+                    "sub_components/(?P<bureau_slug>[a-z0-9]+(?:-[a-z0-9]*)*)/", BureauFederalAccountList.as_view()
+                ),
             ]
         ),
     )
