@@ -2,7 +2,7 @@ import pytest
 
 from rest_framework import status
 
-url = "/api/v2/agency/{toptier_code}/subcomponents/{bureau_slug}/{query_params}"
+url = "/api/v2/agency/{toptier_code}/sub_components/{bureau_slug}/{query_params}"
 
 
 @pytest.mark.django_db
