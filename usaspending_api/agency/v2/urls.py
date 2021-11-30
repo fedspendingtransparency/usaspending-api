@@ -38,7 +38,7 @@ urlpatterns = [
                 path("recipients/", RecipientList.as_view()),
                 path("sub_agency/", SubAgencyList.as_view()),
                 path("sub_agency/count/", SubAgencyCount.as_view()),
-                path("subcomponents/", SubcomponentList.as_view()),
+                path("sub_components/", SubcomponentList.as_view()),
             ]
         ),
     )
