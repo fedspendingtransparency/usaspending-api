@@ -16,7 +16,7 @@ APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
 
 # Row-limited download limit
-MAX_DOWNLOAD_LIMIT = 500000
+MAX_DOWNLOAD_LIMIT = 10000
 
 # Timeout limit for streaming downloads
 DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
