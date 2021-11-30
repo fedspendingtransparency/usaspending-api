@@ -1,4 +1,5 @@
 from django.db.models import Sum, Q, F
+from django.db.models.functions import Coalesce
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
@@ -69,28 +70,28 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
             Q(fiscal_year=self.fiscal_year),
             Q(fiscal_period=self.fiscal_period),
         ]
-
         last_period_results = (
             GTASSF133Balances.objects.filter(*filters)
+            .filter(*filters)
             .annotate(
                 name=F("treasury_account_identifier__federal_account__account_title"),
                 account_code=F("treasury_account_identifier__federal_account__federal_account_code"),
             )
             .values("name", "account_code")
             .annotate(
-                total_budgetary_resources=Sum("total_budgetary_resources_cpe"),
-                total_obligations=Sum("obligations_incurred_total_cpe"),
-                total_outlays=Sum("gross_outlay_amount_by_tas_cpe"),
+                amount=Sum("total_budgetary_resources_cpe"),
+                unobligated_balance=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
+                deobligation=Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
+                prior_year=Sum("prior_year_paid_obligation_recoveries"),
             )
-            .values(
-                "name",
-                "account_code",
-                "total_obligations",
-                "total_outlays",
-                "total_budgetary_resources",
-                "fiscal_year",
-                "fiscal_period",
+            .annotate(
+                total_budgetary_resources=F("amount") - F("unobligated_balance") - F("deobligation") - F("prior_year"),
+                total_obligations=Sum("obligations_incurred_total_cpe")
+                - Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
+                total_outlays=Sum("gross_outlay_amount_by_tas_cpe")
+                - Sum("anticipated_prior_year_obligation_recoveries"),
             )
+            .values("name", "account_code", "total_obligations", "total_outlays", "total_budgetary_resources")
         )
         results = [
             {
