@@ -4,7 +4,7 @@ from django.db import models
 class DisasterEmergencyFundCode(models.Model):
     """Based on Disaster Emergency Fund Code (DEFC)"""
 
-    code = models.CharField(primary_key=True, max_length=2)
+    code = models.TextField(primary_key=True)
     public_law = models.TextField(null=False)
     title = models.TextField(null=True)
     group_name = models.TextField(null=True)
