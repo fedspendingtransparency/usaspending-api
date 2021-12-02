@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Federal Accounts by Sub-Component [/api/v2/agency/{toptier_code}/sub_component/{bureau_slug}/{?fiscal_year,agency_type,order,sort,page,limit}]
+# List Federal Accounts by Sub-Component [/api/v2/agency/{toptier_code}/sub_components/{bureau_slug}/{?fiscal_year,agency_type,order,sort,page,limit}]
 
 Returns a list of Federal Accounts in the Agency's appropriations for a single fiscal year, filtered on the given Sub-Component
 
@@ -45,6 +45,7 @@ Returns a list of Federal Accounts in the Agency's appropriations for a single f
         + `toptier_code` (required, string)
         + `bureau_slug` (required, string)
         + `fiscal_year` (required, number)
+        + `totals` (required, TotalObject)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
         + `results` (required, array[FederalAccount], fixed-type)
@@ -57,6 +58,11 @@ Returns a list of Federal Accounts in the Agency's appropriations for a single f
                 "toptier_code": "073",
                 "bureau_slug": "bureau_of_the_census",
                 "fiscal_year": 2018,
+                "totals": {
+                    "total_budgetary_resources": 400000,
+                    "total_obligations": 200000.72,
+                    "total_outlays": 393012.0   
+                }                                      
                 "page_metadata": {
                     "page": 1,
                     "total": 1,
@@ -71,7 +77,8 @@ Returns a list of Federal Accounts in the Agency's appropriations for a single f
                         "name": "Salaries and Expenses",
                         "id": "123-4567",
                         "total_budgetary_resources": 400000,
-                        "total_obligations": 200000.72
+                        "total_obligations": 200000.72,
+                        "total_outlays": 393012.0                
                     }
                 ],
                 "messages": []
@@ -93,3 +100,8 @@ Returns a list of Federal Accounts in the Agency's appropriations for a single f
 + `id` (required, string) Federal Account Number. Numeric 3-digit agency identifier followed by a dash and a numeric 4-digit main account code
 + `total_budgetary_resources` (required, number)
 + `total_obligations` (required, number)
+
+## TotalObject (object)
++ `total_budgetary_resources` (required, number)
++ `total_obligations` (required, number)
++ `total_outlays` (required, number)
