@@ -279,7 +279,7 @@ def test_dol_defc_v_special_case(client, monkeypatch, helpers, defc_codes, basic
             "total_outlays": 5994000.0,
         },
         "additional": {
-            "total_budget_authority": 499445.0,
+            "total_budget_authority": 49999950.0,
             "spending": {"total_obligations": 49999950.0, "total_outlays": 4995000.0},
         },
     }

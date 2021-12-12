@@ -6,6 +6,9 @@ from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
+from django.utils.text import slugify
+
+from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
@@ -32,16 +35,18 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
         agency_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         for bucket in agency_info_buckets:
             agency_info = json.loads(bucket.get("key"))
-
-            results.append(
-                {
-                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "name": agency_info.get("name"),
-                    "code": agency_info.get("abbreviation"),
-                    "id": agency_info.get("id"),
-                }
-            )
-
+            result = {
+                "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                "name": agency_info.get("name"),
+                "code": agency_info.get("abbreviation"),
+                "id": agency_info.get("id"),
+            }
+            # Only returns a non-null value if the agency has a profile page -
+            # meaning it is an agency that has at least one submission.
+            if self.agency_type == AgencyType.AWARDING_TOPTIER:
+                submission = ToptierAgencyPublishedDABSView.objects.filter(agency_id=agency_info.get("id")).first()
+                result["agency_slug"] = slugify(agency_info.get("name")) if submission is not None else None
+            results.append(result)
         return results
 
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:

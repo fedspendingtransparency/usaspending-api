@@ -9,17 +9,9 @@ Description of the endpoint as a whole not taking into account the different HTT
 
 Description of the endpoint using the above HTTP method.
 
-+ Request (application/json)
-    + Schema
-
-            {
-                "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "string"
-            }
-
-    + Parameters
-        + `param_for_endpoint`: `endpoint` (required, string)
-            Description of the parameter if not evident from the property name.
++ Parameters
+    + `param_for_endpoint`: `endpoint` (required, string)
+        Description of the parameter if not evident from the property name.
 
 
 + Response 200 (application/json)
