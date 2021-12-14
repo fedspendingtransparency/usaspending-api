@@ -18,6 +18,7 @@ from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
 
+from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
@@ -122,6 +123,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
         if working_dir and os.path.exists(working_dir):
             shutil.rmtree(working_dir)
         _kill_spawned_processes(download_job)
+        DownloadJobLookup.objects.filter(download_job_id=download_job.download_job_id).delete()
 
     # push file to S3 bucket, if not local
     if not settings.IS_LOCAL:

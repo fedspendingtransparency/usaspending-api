@@ -1,6 +1,7 @@
 import itertools
 import logging
 from abc import ABCMeta, abstractmethod
+from datetime import datetime, timezone
 from typing import Union, List
 
 from django.conf import settings
@@ -10,6 +11,7 @@ from elasticsearch_dsl import A
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.models import AwardSearchView, TransactionSearch as TransactionSearchModel
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 
@@ -60,21 +62,36 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             yield results
 
     @classmethod
-    def _get_download_ids(cls, filters: dict, size: int = 10000, download_job: DownloadJob = None) -> QuerySet:
+    def _get_download_lookups(
+        cls, filters: dict, download_job: DownloadJob, size: int = 10000
+    ) -> List[DownloadJobLookup]:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
         filter_query = cls._filter_query_func(filters)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
-        flat_ids = list(itertools.chain.from_iterable(ids))
-        write_to_log(message=f"Found {len(flat_ids)} {cls._source_field} based on filters", download_job=download_job)
+        lookup_id_type = cls._search_type.type_as_string()
+        now = datetime.now(timezone.utc)
+        download_lookup_obj_list = [
+            DownloadJobLookup(
+                created_at=now,
+                download_job_id=download_job.download_job_id,
+                lookup_id=es_id,
+                lookup_id_type=lookup_id_type,
+            )
+            for es_id in itertools.chain.from_iterable(ids)
+        ]
+        write_to_log(
+            message=f"Found {len(download_lookup_obj_list)} {cls._source_field} based on filters",
+            download_job=download_job,
+        )
 
-        return flat_ids
+        return download_lookup_obj_list
 
     @classmethod
     @abstractmethod
-    def query(cls, filters: dict) -> QuerySet:
+    def query(cls, filters: dict, download_job: DownloadJob) -> None:
         pass
 
 
@@ -84,14 +101,23 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     _search_type = AwardSearch
 
     @classmethod
-    def query(cls, filters: dict, values: List[str] = None, download_job: DownloadJob = None) -> QuerySet:
+    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         base_queryset = AwardSearchView.objects.all()
-        flat_ids = cls._get_download_ids(filters, download_job=download_job)
-        queryset = base_queryset.extra(
-            where=[f'"vw_award_search"."award_id" = ANY(SELECT UNNEST(ARRAY{flat_ids}::INTEGER[]))']
+        download_lookup_obj_list = cls._get_download_lookups(filters, download_job)
+
+        write_to_log(
+            message=f"Inserting {len(download_lookup_obj_list)} rows into download_job_lookup",
+            download_job=download_job,
         )
-        if values:
-            queryset = queryset.values(*values)
+        DownloadJobLookup.objects.bulk_create(download_lookup_obj_list)
+
+        lookup_table_name = DownloadJobLookup._meta.db_table
+        queryset = base_queryset.extra(
+            where=[
+                f'EXISTS(SELECT 1 FROM {lookup_table_name} WHERE download_job_id = {download_job.download_job_id} AND lookup_id = "vw_award_search"."award_id")'
+            ]
+        )
+
         return queryset
 
 
@@ -101,10 +127,16 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     _search_type = TransactionSearch
 
     @classmethod
-    def query(cls, filters: dict, download_job: DownloadJob = None) -> QuerySet:
+    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         base_queryset = TransactionSearchModel.objects.all()
-        flat_ids = cls._get_download_ids(filters, download_job=download_job)
+        download_lookup_obj_list = cls._get_download_lookups(filters, download_job)
+        DownloadJobLookup.objects.bulk_create(download_lookup_obj_list)
+
+        lookup_table_name = DownloadJobLookup._meta.db_table
         queryset = base_queryset.extra(
-            where=[f'"transaction_normalized"."id" = ANY(SELECT UNNEST(ARRAY{flat_ids}::INTEGER[]))']
+            where=[
+                f'EXISTS(SELECT 1 FROM {lookup_table_name} WHERE download_job_id = {download_job.download_job_id} AND lookup_id = "transaction_normalized"."id")'
+            ]
         )
+
         return queryset
