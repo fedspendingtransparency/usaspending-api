@@ -91,7 +91,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def query(cls, filters: dict, download_job: DownloadJob) -> None:
+    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         pass
 
 
