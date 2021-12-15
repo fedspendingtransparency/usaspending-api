@@ -2,17 +2,18 @@ import itertools
 import logging
 from abc import ABCMeta, abstractmethod
 from datetime import datetime, timezone
-from typing import Union, List
+from typing import Union
 
 from django.conf import settings
 from django.db.models import QuerySet
 from elasticsearch_dsl import A
 
+from usaspending_api.awards.models import Award
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
-from usaspending_api.search.models import AwardSearchView, TransactionSearch as TransactionSearchModel
+from usaspending_api.search.models import TransactionSearch as TransactionSearchModel
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 
 logger = logging.getLogger(__name__)
@@ -62,9 +63,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             yield results
 
     @classmethod
-    def _get_download_lookups(
-        cls, filters: dict, download_job: DownloadJob, size: int = 10000
-    ) -> List[DownloadJobLookup]:
+    def _populate_download_lookups(cls, filters: dict, download_job: DownloadJob, size: int = 10000) -> None:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
@@ -87,7 +86,11 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             download_job=download_job,
         )
 
-        return download_lookup_obj_list
+        DownloadJobLookup.objects.bulk_create(download_lookup_obj_list)
+        write_to_log(
+            message=f"Inserted {len(download_lookup_obj_list)} rows into download_job_lookup",
+            download_job=download_job,
+        )
 
     @classmethod
     @abstractmethod
@@ -102,19 +105,12 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
-        base_queryset = AwardSearchView.objects.all()
-        download_lookup_obj_list = cls._get_download_lookups(filters, download_job)
-
-        write_to_log(
-            message=f"Inserting {len(download_lookup_obj_list)} rows into download_job_lookup",
-            download_job=download_job,
-        )
-        DownloadJobLookup.objects.bulk_create(download_lookup_obj_list)
-
+        base_queryset = Award.objects.all()
+        cls._populate_download_lookups(filters, download_job)
         lookup_table_name = DownloadJobLookup._meta.db_table
         queryset = base_queryset.extra(
             where=[
-                f'EXISTS(SELECT 1 FROM {lookup_table_name} WHERE download_job_id = {download_job.download_job_id} AND lookup_id = "vw_award_search"."award_id")'
+                f'EXISTS(SELECT 1 FROM {lookup_table_name} WHERE download_job_id = {download_job.download_job_id} AND lookup_id = "awards"."id")'
             ]
         )
 
@@ -129,9 +125,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         base_queryset = TransactionSearchModel.objects.all()
-        download_lookup_obj_list = cls._get_download_lookups(filters, download_job)
-        DownloadJobLookup.objects.bulk_create(download_lookup_obj_list)
-
+        cls._populate_download_lookups(filters, download_job)
         lookup_table_name = DownloadJobLookup._meta.db_table
         queryset = base_queryset.extra(
             where=[
