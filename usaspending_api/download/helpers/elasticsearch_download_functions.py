@@ -8,12 +8,11 @@ from django.conf import settings
 from django.db.models import QuerySet
 from elasticsearch_dsl import A
 
-from usaspending_api.awards.models import Award
+from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
-from usaspending_api.search.models import TransactionSearch as TransactionSearchModel
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 
 logger = logging.getLogger(__name__)
@@ -124,7 +123,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
-        base_queryset = TransactionSearchModel.objects.all()
+        base_queryset = TransactionNormalized.objects.all()
         cls._populate_download_lookups(filters, download_job)
         lookup_table_name = DownloadJobLookup._meta.db_table
         queryset = base_queryset.extra(

@@ -38,11 +38,12 @@ from usaspending_api.awards.v2.filters.search import (
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.download.helpers.download_annotation_functions import (
-    transaction_search_annotations,
+    transaction_annotations,
     award_annotations,
     subaward_annotations,
     idv_order_annotations,
     idv_transaction_annotations,
+    transaction_search_annotations,
 )
 
 
@@ -78,7 +79,7 @@ VALUE_MAPPINGS = {
     "transactions": {
         "source_type": "award",
         "table": TransactionSearch,
-        "table_name": "transaction",
+        "table_name": "transaction_search",
         "type_name": "PrimeTransactions",
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
         "contract_data": "transaction__contract_data",
@@ -89,14 +90,14 @@ VALUE_MAPPINGS = {
     # Elasticsearch Transaction Level
     "elasticsearch_transactions": {
         "source_type": "award",
-        "table": TransactionSearch,
+        "table": TransactionNormalized,
         "table_name": "transaction",
         "type_name": "PrimeTransactions",
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
-        "contract_data": "transaction__contract_data",
-        "assistance_data": "transaction__assistance_data",
+        "contract_data": "contract_data",
+        "assistance_data": "assistance_data",
         "filter_function": TransactionsElasticsearchDownload.query,
-        "annotations_function": transaction_search_annotations,
+        "annotations_function": transaction_annotations,
     },
     # SubAward Level
     "sub_awards": {

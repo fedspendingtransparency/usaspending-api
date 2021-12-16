@@ -749,7 +749,7 @@ query_paths = {
             ]
         ),
     },
-    "transaction": {
+    "transaction_search": {
         "d1": OrderedDict(
             [
                 ("contract_transaction_unique_key", "transaction__contract_data__detached_award_proc_unique"),
@@ -2210,28 +2210,28 @@ query_paths = {
     },
 }
 
+# Transactions are identical to TransactionSearch but originate from TransactionNormalized
+query_paths["transaction"] = {
+    "d1": OrderedDict(
+        [
+            (k, v[13:] if v is not None and v.startswith("transaction__") else v)
+            for k, v in query_paths["transaction_search"]["d1"].items()
+        ]
+    ),
+    "d2": OrderedDict(
+        [
+            (k, v[13:] if v is not None and v.startswith("transaction__") else v)
+            for k, v in query_paths["transaction_search"]["d2"].items()
+        ]
+    ),
+}
+
 
 # IDV Orders are identical to Award but only contain "d1"
 query_paths["idv_orders"] = {"d1": copy.deepcopy(query_paths["award"]["d1"])}
 
-# IDV Transactions are identical to Transactions
-# but start directly in TransactionFPDS instead of TransactionSearch
-query_paths["idv_transaction_history"] = {
-    "d1": OrderedDict(
-        [
-            (k, v[13:] if v is not None and v.startswith("transaction__") else v)
-            for k, v in query_paths["transaction"]["d1"].items()
-        ]
-    )
-}
+# IDV Transactions are identical to Transactions but only contain "d1"
+query_paths["idv_transaction_history"] = {"d1": copy.deepcopy(query_paths["transaction"]["d1"])}
 
-# Assistance Transactions are identical to Transactions
-# but start directly in TransactionFABS instead of TransactionSearch
-query_paths["assistance_transaction_history"] = {
-    "d2": OrderedDict(
-        [
-            (k, v[13:] if v is not None and v.startswith("transaction__") else v)
-            for k, v in query_paths["transaction"]["d2"].items()
-        ]
-    )
-}
+# Assistance Transactions are identical to Transactions but only contain "d2"
+query_paths["assistance_transaction_history"] = {"d2": copy.deepcopy(query_paths["transaction"]["d2"])}
