@@ -128,12 +128,14 @@ def transaction_search_annotations(filters: dict):
         "action_date_fiscal_year": FiscalYear("action_date"),
         "treasury_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .values("award_id")
             .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .values("award_id")
             .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
@@ -203,12 +205,14 @@ def transaction_annotations(filters: dict):
         "action_date_fiscal_year": FiscalYear("action_date"),
         "treasury_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .values("award_id")
             .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .values("award_id")
             .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
@@ -277,18 +281,16 @@ def award_annotations(filters: dict):
     annotation_fields = {
         "award_base_action_date_fiscal_year": FiscalYear("date_signed"),
         "treasury_accounts_funding_this_award": Subquery(
-            Award.objects.filter(id=OuterRef("id"))
-            .annotate(value=StringAgg("financial_set__treasury_account__tas_rendering_label", ";", distinct=True))
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            .values("award_id")
+            .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
-            Award.objects.filter(id=OuterRef("id"))
-            .annotate(
-                value=StringAgg(
-                    "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
-                )
-            )
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            .values("award_id")
+            .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
@@ -359,13 +361,15 @@ def idv_order_annotations(filters: dict):
     annotation_fields = {
         "award_base_action_date_fiscal_year": FiscalYear("date_signed"),
         "treasury_accounts_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            .values("award_id")
             .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            .values("award_id")
             .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
@@ -418,18 +422,16 @@ def idv_transaction_annotations(filters: dict):
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
         "treasury_accounts_funding_this_award": Subquery(
-            Award.objects.filter(id=OuterRef("award_id"))
-            .annotate(value=StringAgg("financial_set__treasury_account__tas_rendering_label", ";", distinct=True))
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .values("award_id")
+            .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
-            Award.objects.filter(id=OuterRef("award_id"))
-            .annotate(
-                value=StringAgg(
-                    "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
-                )
-            )
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
+            .values("award_id")
+            .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
