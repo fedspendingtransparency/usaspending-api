@@ -146,12 +146,6 @@ class OverviewViewSet(DisasterBase):
             "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
         ]
         outlay_values = ["gross_outlay_amount_by_tas_cpe", "anticipated_prior_year_obligation_recoveries"]
-        total_budget_authority_values = [
-            "total_budgetary_resources_cpe",
-            "budget_authority_unobligated_balance_brought_forward_cpe",
-            "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
-            "prior_year_paid_obligation_recoveries",
-        ]
 
         filters = {
             "tas_rendering_label__in": ["016-X-0168-000", "016-X-1801-000", "016-X-8042-000"],
@@ -167,18 +161,10 @@ class OverviewViewSet(DisasterBase):
             "outlay_totals": (
                 Sum("gross_outlay_amount_by_tas_cpe") - Sum("anticipated_prior_year_obligation_recoveries")
             ),
-            "total_budget_authority": (
-                Sum("total_budgetary_resources_cpe")
-                - (
-                    Sum("budget_authority_unobligated_balance_brought_forward_cpe")
-                    + Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe")
-                    + Sum("prior_year_paid_obligation_recoveries")
-                )
-            ),
         }
         defc_o_values = (
             GTASSF133Balances.objects.filter(**filters, fiscal_year=2021, fiscal_period=6)
-            .values(*obligation_values, *outlay_values, *total_budget_authority_values)
+            .values(*obligation_values, *outlay_values)
             .aggregate(**aggregates)
         )
 
@@ -191,10 +177,13 @@ class OverviewViewSet(DisasterBase):
         if not all([val is not None for val in list(total_values.values()) + list(defc_o_values.values())]):
             return None
 
+        # Obligation values are used to calculate the adjustment for TBR here to match the calculations
+        # in DataLab. This should be capped at a specific period once new appropriates from DOL are not
+        # associated with ARP.
         return {
             "spending": {
                 "total_obligations": total_values["obligation_totals"] - defc_o_values["obligation_totals"],
                 "total_outlays": total_values["outlay_totals"] - defc_o_values["outlay_totals"],
             },
-            "total_budget_authority": total_values["total_budget_authority"] - defc_o_values["total_budget_authority"],
+            "total_budget_authority": total_values["obligation_totals"] - defc_o_values["obligation_totals"],
         }
