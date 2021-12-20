@@ -80,7 +80,7 @@ class Command(BaseCommand):
 
         # Create Source and update fields to include correction_delete_ind
         source = DownloadSource(
-            "transaction",
+            "transaction_search",
             award_map["letter_name"].lower(),
             "transactions",
             "all" if agency == "all" else agency["toptier_agency_id"],
