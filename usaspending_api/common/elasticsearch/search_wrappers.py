@@ -97,10 +97,22 @@ class _Search(Search):
 class TransactionSearch(_Search):
     _index_name = f"{settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX}*"
 
+    @staticmethod
+    def type_as_string():
+        return "transaction_search"
+
 
 class AwardSearch(_Search):
     _index_name = f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*"
 
+    @staticmethod
+    def type_as_string():
+        return "award_search"
+
 
 class AccountSearch(_Search):
     _index_name = f"{settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "account_search"
