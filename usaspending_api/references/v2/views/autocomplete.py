@@ -132,7 +132,14 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
             popular_name_filter = queryset.filter(popular_name__icontains=search_text)
             queryset = title_filter | popular_name_filter
 
-        return Response({"results": list(queryset.values("program_number", "program_title", "popular_name")[:limit])})
+        return Response(
+            {
+                "results": sorted(
+                    list(queryset.values("program_number", "program_title", "popular_name")[:limit]),
+                    key=lambda x: x["program_number"],
+                )
+            }
+        )
 
 
 class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):

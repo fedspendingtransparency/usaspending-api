@@ -20,6 +20,7 @@ EXCEL_COLUMNS = [
     "Definition",
     "FPDS Data Dictionary Element",
     "Grouping",
+    "Domain Values",
     "Award File",
     "Award Element",
     "Subaward File",

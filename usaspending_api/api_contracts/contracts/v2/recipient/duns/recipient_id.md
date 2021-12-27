@@ -42,10 +42,12 @@ This endpoint returns a high-level overview of a specific recipient, given its i
                 "parent_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
                 "parent_name": "ART LINE WHOLESALERS, INC.",
                 "parent_duns": "058675323",
+                "parent_uei": "D1RMTDTMKLE8",        
                 "parents": [
                     {
                         "parent_id": "1c0c11fa-ee74-ced4-75c3-0b5a0d4826db-P",
                         "parent_duns": "058675323",
+                        "parent_uei": "D1RMTDTMKLE8",                
                         "parent_name": "ART LINE WHOLESALERS, INC."
                     }
                 ],
@@ -99,6 +101,8 @@ This endpoint returns a high-level overview of a specific recipient, given its i
     Parent recipient's DUNS number. `null` if the recipient does not have a parent recipient, or the parent recipient's DUNS is not provided.
 + `parent_id` (required, string, nullable)
     A unique identifier for the parent recipient. `null` if the recipient does not have a parent recipient.
++ `parent_uei` (required, string, nullable)
+    Parent recipient's UEI (Unique Entity Identifier). `null` when no UEI is provided.
 + `location` (required, RecipientLocation, fixed-type)
 + `business_types` (required, array[string], fixed-type)
     An array of business type field names used to categorize recipients.
@@ -151,3 +155,6 @@ This endpoint returns a high-level overview of a specific recipient, given its i
     DUNS number
 + `parent_id` (required, string, nullable)
     A unique identifier for the parent recipient.
++ `parent_uei` (required, string, nullable)
+    Parent recipient's UEI (Unique Entity Identifier). `null` when no UEI is provided.
+

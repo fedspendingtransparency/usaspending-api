@@ -76,13 +76,15 @@ INSERT INTO public.temporary_restock_recipient_profile (
   recipient_level,
   recipient_hash,
   recipient_unique_id,
-  recipient_name
+  recipient_name,
+  uei
 )
   SELECT
     'P' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup
 UNION ALL
@@ -90,7 +92,8 @@ UNION ALL
     'C' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup
 UNION ALL
@@ -98,7 +101,8 @@ UNION ALL
     'R' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
-    legal_business_name AS recipient_name
+    legal_business_name AS recipient_name,
+    uei
   FROM
     public.recipient_lookup;
 
@@ -373,6 +377,7 @@ WHERE
         OR rp.last_12_direct_payments IS DISTINCT FROM temp_p.last_12_direct_payments
         OR rp.last_12_other IS DISTINCT FROM temp_p.last_12_other
         OR rp.last_12_months_count IS DISTINCT FROM temp_p.last_12_months_count
+        OR rp.uei IS DISTINCT FROM temp_p.uei
     )
 ;
 

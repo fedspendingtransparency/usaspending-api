@@ -18,6 +18,8 @@ from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
 
+from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
+from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
 from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
@@ -65,6 +67,10 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     file_name = start_download(download_job)
     working_dir = None
     try:
+        if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
+            raise Exception(
+                f"Unable to process this download because it includes more than the current limit of {MAX_DOWNLOAD_LIMIT} records"
+            )
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
         if not settings.IS_LOCAL and os.path.exists(zip_file_path):
@@ -77,7 +83,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
         write_to_log(message=f"Generating {file_name}", download_job=download_job)
 
         # Generate sources from the JSON request object
-        sources = get_download_sources(json_request, origination)
+        sources = get_download_sources(json_request, download_job, origination)
         for source in sources:
             # Parse and write data to the file; if there are no matching columns for a source then add an empty file
             source_column_count = len(source.columns(columns))
@@ -117,6 +123,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
         if working_dir and os.path.exists(working_dir):
             shutil.rmtree(working_dir)
         _kill_spawned_processes(download_job)
+        DownloadJobLookup.objects.filter(download_job_id=download_job.download_job_id).delete()
 
     # push file to S3 bucket, if not local
     if not settings.IS_LOCAL:
@@ -162,7 +169,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     return finish_download(download_job)
 
 
-def get_download_sources(json_request: dict, origination: Optional[str] = None):
+def get_download_sources(json_request: dict, download_job: DownloadJob = None, origination: Optional[str] = None):
     download_sources = []
     for download_type in json_request["download_types"]:
         agency_id = json_request.get("agency", "all")
@@ -180,8 +187,11 @@ def get_download_sources(json_request: dict, origination: Optional[str] = None):
                 gte_date_type="action_date",
                 lte_date_type="date_signed",
             )
+            if download_type == "elasticsearch_awards" or download_type == "elasticsearch_transactions":
+                queryset = filter_function(filters, download_job=download_job)
+            else:
+                queryset = filter_function(filters)
 
-            queryset = filter_function(filters)
             if filters.get("prime_and_sub_award_types") is not None:
                 award_type_codes = set(filters["prime_and_sub_award_types"][download_type])
             else:
@@ -314,6 +324,7 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
     try:
         # Create a separate process to run the PSQL command; wait
         psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job))
+        write_to_log(message=f"Running {source.file_name} using psql", download_job=download_job)
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job)
 

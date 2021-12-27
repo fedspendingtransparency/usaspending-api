@@ -538,11 +538,13 @@ def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index
         "parent_name": "PARENT RECIPIENT",
         "parent_duns": "000000001",
         "parent_id": "00077a9a-5a70-8919-fd19-330762af6b84-P",
+        "parent_uei": "AAAAAAAAAAAA",
         "parents": [
             {
                 "parent_duns": "000000001",
                 "parent_id": "00077a9a-5a70-8919-fd19-330762af6b84-P",
                 "parent_name": "PARENT RECIPIENT",
+                "parent_uei": "AAAAAAAAAAAA",
             }
         ],
         "business_types": sorted(["expected", "business", "cat"] + ["category_business"]),

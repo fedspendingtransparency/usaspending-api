@@ -96,13 +96,16 @@ def extract_parents_from_hash(recipient_hash):
 
     for duns in affiliations["recipient_affiliations"]:
         parent = RecipientLookup.objects.filter(duns=duns).values("recipient_hash", "legal_business_name").first()
-        name, parent_id = None, None
+        name, parent_id, uei = None, None, None
 
         if parent:
             name = parent["legal_business_name"]
             parent_id = "{}-P".format(parent["recipient_hash"])
+            uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
+            if uei is not None:
+                uei = uei["uei"]
 
-        parents.append({"parent_duns": duns, "parent_name": name, "parent_id": parent_id})
+        parents.append({"parent_duns": duns, "parent_name": name, "parent_id": parent_id, "parent_uei": uei})
     return parents
 
 
@@ -340,18 +343,30 @@ class RecipientOverView(APIView):
         if recipient_level == "C":
             parents = extract_parents_from_hash(recipient_hash)
         elif recipient_level == "P":
-            parents = [{"parent_id": recipient_id, "parent_duns": recipient_duns, "parent_name": recipient_name}]
+            uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
+            if uei is not None:
+                uei = uei["uei"]
+            parents = [
+                {
+                    "parent_id": recipient_id,
+                    "parent_duns": recipient_duns,
+                    "parent_uei": uei,
+                    "parent_name": recipient_name,
+                }
+            ]
 
         location = extract_location(recipient_hash)
         business_types = extract_business_categories(recipient_name, recipient_duns, recipient_hash)
         results = obtain_recipient_totals(recipient_id, year=year)
         recipient_totals = results[0] if results else {}
 
-        parent_id, parent_name, parent_duns = None, None, None
+        parent_id, parent_name, parent_duns, parent_uei = None, None, None, None
         if parents:
             parent_id = parents[0].get("parent_id")
             parent_name = parents[0].get("parent_name")
             parent_duns = parents[0].get("parent_duns")
+            parent_uei = parents[0].get("parent_uei")
+
         uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
         if uei is not None:
             uei = uei["uei"]
@@ -365,6 +380,7 @@ class RecipientOverView(APIView):
             "parent_id": parent_id,
             "parent_name": parent_name,
             "parent_duns": parent_duns,
+            "parent_uei": parent_uei,
             "parents": parents,
             "business_types": business_types,
             "location": location,
