@@ -57,9 +57,19 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
         return totals
 
     def get_federal_account_list(self) -> List[dict]:
+        fed_account_filter = Q(bureau_slug=self.bureau_slug)
+        if self.bureau_slug == "air-force":
+            fed_account_filter = Q(federal_account_code__startswith="057")
+        elif self.bureau_slug == "army":
+            fed_account_filter = Q(federal_account_code__startswith="021")
+        elif self.bureau_slug == "navy-marine-corps":
+            fed_account_filter = Q(federal_account_code__startswith="017")
+        elif self.bureau_slug == "defense-wide":
+            fed_account_filter = Q(federal_account_code__startswith="097")
+
         federal_accounts = [
             x["federal_account_code"]
-            for x in BureauTitleLookup.objects.filter(bureau_slug=self.bureau_slug).values("federal_account_code")
+            for x in BureauTitleLookup.objects.filter(fed_account_filter).values("federal_account_code")
         ]
         filters = [
             Q(

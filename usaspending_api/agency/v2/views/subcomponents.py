@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, OuterRef, Subquery, F, Value
+from django.db.models import Q, Sum, OuterRef, Subquery, F, Value, Case, When
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
@@ -70,7 +70,27 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                             "treasury_account_identifier__federal_account__federal_account_code"
                         )
                     )
-                    .annotate(bureau_info=ConcatAll(F("bureau_title"), Value(";"), F("bureau_slug")))
+                    .annotate(
+                        bureau_info=Case(
+                            When(
+                                federal_account_code__startswith="057",
+                                then=ConcatAll(Value("Air Force"), Value(";"), Value("air-force")),
+                            ),
+                            When(
+                                federal_account_code__startswith="021",
+                                then=ConcatAll(Value("Army"), Value(";"), Value("army")),
+                            ),
+                            When(
+                                federal_account_code__startswith="017",
+                                then=ConcatAll(Value("Navy, Marine Corps"), Value(";"), Value("navy-marine-corps")),
+                            ),
+                            When(
+                                federal_account_code__startswith="097",
+                                then=ConcatAll(Value("Defense-wide"), Value(";"), Value("defense-wide")),
+                            ),
+                            default=ConcatAll(F("bureau_title"), Value(";"), F("bureau_slug")),
+                        )
+                    )
                     .values("bureau_info")
                 )
             )
