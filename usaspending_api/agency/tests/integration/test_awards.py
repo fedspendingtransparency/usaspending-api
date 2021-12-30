@@ -121,6 +121,7 @@ def test_all_categories(client, monkeypatch, transaction_search_1, elasticsearch
 
     expected_results = {
         "fiscal_year": 2021,
+        "latest_action_date": "2021-04-01T00:00:00",
         "toptier_code": "001",
         "transaction_count": 5,
         "obligations": 411.0,
@@ -137,6 +138,7 @@ def test_award_categories(client, monkeypatch, transaction_search_1, elasticsear
 
     expected_results = {
         "fiscal_year": 2021,
+        "latest_action_date": "2021-04-01T00:00:00",
         "toptier_code": "001",
         "transaction_count": 1,
         "obligations": 101.0,
@@ -148,6 +150,7 @@ def test_award_categories(client, monkeypatch, transaction_search_1, elasticsear
 
     expected_results = {
         "fiscal_year": 2021,
+        "latest_action_date": "2021-04-01T00:00:00",
         "toptier_code": "001",
         "transaction_count": 1,
         "obligations": 105.0,
@@ -164,6 +167,7 @@ def test_alternate_year(client, monkeypatch, transaction_search_1, elasticsearch
 
     expected_results = {
         "fiscal_year": 2020,
+        "latest_action_date": "2020-04-01T00:00:00",
         "toptier_code": "001",
         "transaction_count": 1,
         "obligations": 300.0,
@@ -181,6 +185,7 @@ def test_alternate_agency(client, monkeypatch, transaction_search_1, elasticsear
 
     expected_results = {
         "fiscal_year": 2021,
+        "latest_action_date": "2021-04-01T00:00:00",
         "toptier_code": "002",
         "transaction_count": 1,
         "obligations": 400.0,
