@@ -32,6 +32,7 @@ class _Keywords(_Filter):
             "recipient_unique_id",
             "parent_recipient_unique_id",
             "description",
+            "recipient_uei",
         ]
         for v in filter_values:
             query = es_sanitize(v) + "*"

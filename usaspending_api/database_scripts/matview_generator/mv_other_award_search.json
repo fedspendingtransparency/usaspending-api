@@ -27,6 +27,7 @@
     "  UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,",
     "  transaction_fabs.awardee_or_recipient_uniqu AS recipient_unique_id,",
     "  transaction_fabs.ultimate_parent_unique_ide AS parent_recipient_unique_id,",
+    "  transaction_fabs.uei AS recipient_uei,",
     "  latest_transaction.business_categories,",
     "",
     "  latest_transaction.action_date,",
