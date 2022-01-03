@@ -178,6 +178,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                 ),
             ),
             ("recipient_name", db_row_dict["_recipient_name"]),
+            ("recipient_uei", db_row_dict["_recipient_uei"]),
             ("recipient_unique_id", db_row_dict["_recipient_unique_id"]),
             (
                 "parent_recipient_hash",
@@ -189,6 +190,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                 ),
             ),
             ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),
+            ("parent_recipient_uei", db_row_dict["_parent_recipient_uei"]),
             ("parent_recipient_unique_id", db_row_dict["_parent_recipient_unique_id"]),
             (
                 "business_categories",
