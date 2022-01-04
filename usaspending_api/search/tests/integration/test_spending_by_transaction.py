@@ -21,7 +21,7 @@ def transaction_data():
         type="A",
         description="test",
     )
-    mommy.make("awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323")
+    mommy.make("awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323", awardee_or_recipient_uei="testuei")
     mommy.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
 
@@ -176,3 +176,24 @@ def test_columns_can_be_sorted(client, monkeypatch, transaction_data, elasticsea
         request["sort"] = field
         resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
         assert resp.status_code == status.HTTP_200_OK, f"Failed to sort column: {field}"
+
+
+@pytest.mark.django_db
+def test_uei(client, monkeypatch, transaction_data, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID"]
+
+    request = {
+        "filters": {"keyword": "testuei", "award_type_codes": ["A", "B", "C", "D"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) > 0
