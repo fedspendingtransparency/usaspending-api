@@ -21,7 +21,13 @@ def transaction_data():
         type="A",
         description="test",
     )
-    mommy.make("awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323", awardee_or_recipient_uei="testuei")
+    mommy.make(
+        "awards.TransactionFPDS",
+        transaction_id=1,
+        legal_entity_zip5="abcde",
+        piid="IND12PB00323",
+        awardee_or_recipient_uei="testuei",
+    )
     mommy.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
 
