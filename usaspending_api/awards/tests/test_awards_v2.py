@@ -929,6 +929,9 @@ def awards_and_transactions(db):
     mommy.make("awards.ParentAward", **parent_award_2)
     mommy.make("awards.ParentAward", **parent_award_3)
 
+    dsws1 = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
+    mommy.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
+
 
 @pytest.fixture
 def update_awards(db):
@@ -1309,15 +1312,25 @@ expected_response_asst = {
     "transaction_obligated_amount": None,
     "awarding_agency": {
         "id": 1,
-        "has_agency_page": False,
-        "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
+        "has_agency_page": True,
+        "toptier_agency": {
+            "name": "TOPTIER AGENCY 1",
+            "abbreviation": "TA1",
+            "code": "ABC",
+            "slug": "toptier-agency-1",
+        },
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
-        "has_agency_page": False,
-        "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
+        "has_agency_page": True,
+        "toptier_agency": {
+            "name": "TOPTIER AGENCY 1",
+            "abbreviation": "TA1",
+            "code": "ABC",
+            "slug": "toptier-agency-1",
+        },
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "funding_office",
     },
@@ -1397,15 +1410,25 @@ expected_response_cont = {
     "description": "lorem ipsum",
     "awarding_agency": {
         "id": 1,
-        "has_agency_page": False,
-        "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
+        "has_agency_page": True,
+        "toptier_agency": {
+            "name": "TOPTIER AGENCY 1",
+            "abbreviation": "TA1",
+            "code": "ABC",
+            "slug": "toptier-agency-1",
+        },
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
-        "has_agency_page": False,
-        "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
+        "has_agency_page": True,
+        "toptier_agency": {
+            "name": "TOPTIER AGENCY 1",
+            "abbreviation": "TA1",
+            "code": "ABC",
+            "slug": "toptier-agency-1",
+        },
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "funding_office",
     },
