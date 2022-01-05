@@ -570,7 +570,7 @@
       },
       "disaster_emergency_fund_codes": {
           "type": "keyword"
-        },
+      },
       "recipient_uei": {
         "type": "text",
         "fields": {
