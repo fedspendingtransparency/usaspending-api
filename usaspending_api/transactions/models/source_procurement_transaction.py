@@ -274,7 +274,7 @@ class SourceProcurementTransaction(models.Model):
     self_certified_small_disad = models.TextField(blank=True, null=True)
     service_disabled_veteran_o = models.TextField(blank=True, null=True)
     small_agricultural_coopera = models.TextField(blank=True, null=True)
-    small_business_competitive = models.TextField(blank=True, null=True)
+    small_business_competitive = models.BooleanField(blank=True, null=True)
     small_disadvantaged_busine = models.TextField(blank=True, null=True)
     sole_proprietorship = models.TextField(blank=True, null=True)
     solicitation_date = models.TextField(blank=True, null=True)
