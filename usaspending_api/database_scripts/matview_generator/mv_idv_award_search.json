@@ -184,7 +184,7 @@
     "LEFT JOIN LATERAL (",
       "SELECT recipient_hash, recipient_unique_id, ARRAY_AGG(recipient_level) AS recipient_levels",
       "FROM recipient_profile",
-      "WHERE (recipient_hash = COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(CASE WHEN transaction_fpds.awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', transaction_fpds.awardee_or_recipient_uniqu) ELSE CONCAT('name-', transaction_fpds.awardee_or_recipient_legal) END))::uuid)",
+      "WHERE (recipient_hash = COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(CASE WHEN transaction_fpds.awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', transaction_fpds.awardee_or_recipient_uniqu) WHEN transaction_fpds.awardee_or_recipient_uei IS NOT NULL THEN CONCAT('uei-', transaction_fpds.awardee_or_recipient_uei) ELSE CONCAT('name-', transaction_fpds.awardee_or_recipient_legal) END))::uuid)",
         "OR recipient_unique_id = transaction_fpds.awardee_or_recipient_uniqu) and",
           "recipient_name NOT IN (",
           "'MULTIPLE RECIPIENTS',",
