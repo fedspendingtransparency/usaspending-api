@@ -124,7 +124,8 @@ This endpoint returns a list of data that is associated with the award profile p
                     "toptier_agency": {
                         "name": "Department of Defense",
                         "code": "097",
-                        "abbreviation": "DOD"
+                        "abbreviation": "DOD",
+                        "slug": "department-of-defense"
                     },
                     "subtier_agency": {
                         "name": "Defense Logistics Agency",
@@ -139,7 +140,8 @@ This endpoint returns a list of data that is associated with the award profile p
                     "toptier_agency": {
                         "name": "Department of Defense",
                         "code": "097",
-                        "abbreviation": "DOD"
+                        "abbreviation": "DOD",
+                        "slug": "department-of-defense"
                     },
                     "subtier_agency": {
                         "name": "Defense Logistics Agency",
@@ -304,7 +306,8 @@ This endpoint returns a list of data that is associated with the award profile p
                     "toptier_agency": {
                         "name": "Department of Agriculture",
                         "code": "012",
-                        "abbreviation": "USDA"
+                        "abbreviation": "USDA",
+                        "slug": "department-of-agriculture"
                     },
                     "subtier_agency": {
                         "name": "Farm Service Agency",
@@ -319,7 +322,8 @@ This endpoint returns a list of data that is associated with the award profile p
                     "toptier_agency": {
                         "name": "Department of Agriculture",
                         "code": "012",
-                        "abbreviation": "USDA"
+                        "abbreviation": "USDA",
+                        "slug": "department-of-agriculture"
                     },
                     "subtier_agency": {
                         "name": "Farm Service Agency",
@@ -555,7 +559,8 @@ This endpoint returns a list of data that is associated with the award profile p
                     "toptier_agency": {
                         "name": "Department of Defense",
                         "code": "097",
-                        "abbreviation": "DOD"
+                        "abbreviation": "DOD",
+                        "slug": "department-of-defense"
                     },
                     "subtier_agency": {
                         "name": "Department of the Air Force",
@@ -570,7 +575,8 @@ This endpoint returns a list of data that is associated with the award profile p
                     "toptier_agency": {
                         "name": "Department of Defense",
                         "code": "097",
-                        "abbreviation": "DOD"
+                        "abbreviation": "DOD",
+                        "slug": "department-of-defense"
                     },
                     "subtier_agency": {
                         "name": "Department of the Air Force",
@@ -893,6 +899,7 @@ This endpoint returns a list of data that is associated with the award profile p
 + `name` (required, string, nullable)
 + `code` (required, string)
 + `abbreviation` (required, string, nullable)
++ `slug` (required, string, nullable)
 
 ## SubTierAgency (object)
 + `name` (required, string, nullable)

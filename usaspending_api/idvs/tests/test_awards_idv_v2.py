@@ -376,14 +376,14 @@ expected_response_idv = {
     "awarding_agency": {
         "id": 1,
         "has_agency_page": False,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc"},
+        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc", "slug": None},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
         "has_agency_page": False,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc"},
+        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc", "slug": None},
         "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
         "office_agency_name": "funding_office",
     },
