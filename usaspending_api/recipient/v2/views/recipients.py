@@ -217,7 +217,7 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
         if d_business_cat["entity_structure"]:
             business_types_codes.append(d_business_cat["entity_structure"])
         business_types = {
-            duns_types_mapping[type]: "true"
+            duns_types_mapping[type]: True
             for type in d_business_cat["business_types_codes"]
             if type in duns_types_mapping
         }
