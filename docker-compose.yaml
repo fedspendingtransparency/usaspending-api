@@ -95,6 +95,7 @@ services:
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
 
   usaspending-bulk-download:
+    container_name: usaspending-bulk-download
     build: .
     restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
     volumes:
@@ -106,6 +107,7 @@ services:
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-es:
+      container_name: usaspending-es
       image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
       environment:
         - node.name=usaspending-es
@@ -134,3 +136,12 @@ services:
         target: /usr/share/elasticsearch/data
       ports:
         - 9200:9200
+
+  usaspending-kibana-es:
+      container_name: usaspending-kibana-es
+      image: docker.elastic.co/kibana/kibana-oss:7.1.1
+      # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
+      environment:
+        - ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
+      ports:
+        - 5601:5601
