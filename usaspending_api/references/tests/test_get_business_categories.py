@@ -61,10 +61,10 @@ def test_dev_2318_business_category_changes():
 
     business_categories = get_business_categories(
         {
-            "alaskan_native_owned_corpo": "true",
-            "native_hawaiian_owned_busi": "true",
-            "tribally_owned_business": "true",
-            "foreign_owned_and_located": "true",
+            "alaskan_native_owned_corpo": True,
+            "native_hawaiian_owned_busi": True,
+            "tribally_owned_business": True,
+            "foreign_owned_and_located": True,
         },
         "fpds",
     )

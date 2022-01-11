@@ -175,7 +175,9 @@ def awards_and_transactions(db):
         "place_of_performance_congr": "-0-",
         "place_of_performance_forei": None,
         "place_of_performance_zip5": "40221",
+        "uei": "DEF",
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
+        "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
     }
     asst_trans_2 = {
@@ -219,7 +221,9 @@ def awards_and_transactions(db):
         "place_of_performance_forei": None,
         "place_of_performance_zip5": "40221",
         "total_funding_amount": 100,
+        "uei": "DEF",
         "ultimate_parent_legal_enti": "Dave's Pizza LLC",
+        "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
     }
     asst_trans_3 = {
@@ -263,7 +267,9 @@ def awards_and_transactions(db):
         "place_of_performance_forei": None,
         "place_of_performance_zip5": "40221",
         "total_funding_amount": 400,
+        "uei": "DEF",
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
+        "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
     }
     asst_trans_4 = {
@@ -307,7 +313,9 @@ def awards_and_transactions(db):
         "place_of_performance_forei": None,
         "place_of_performance_zip5": "40221",
         "total_funding_amount": 100,
+        "uei": "DEF",
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
+        "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
     }
 
@@ -353,7 +361,9 @@ def awards_and_transactions(db):
         "place_of_performance_forei": None,
         "place_of_performance_zip5": "40221",
         "total_funding_amount": 100,
+        "uei": "DEF",
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
+        "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
     }
 
@@ -368,6 +378,7 @@ def awards_and_transactions(db):
         "pk": 2,
         "transaction": TransactionNormalized.objects.get(pk=2),
         "awardee_or_recipient_legal": "LEGAL ENTITY",
+        "awardee_or_recipient_uei": "DEF",
         "awardee_or_recipient_uniqu": "456",
         "awarding_office_name": "awarding_office",
         "clinger_cohen_act_pla_desc": "NO",
@@ -441,6 +452,7 @@ def awards_and_transactions(db):
         "type_of_idc_description": None,
         "type_set_aside_description": None,
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
+        "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
@@ -449,6 +461,7 @@ def awards_and_transactions(db):
         "pk": 6,
         "transaction": TransactionNormalized.objects.get(pk=6),
         "awardee_or_recipient_legal": "LEGAL ENTITY",
+        "awardee_or_recipient_uei": "DEF",
         "awardee_or_recipient_uniqu": "456",
         "awarding_office_name": "awarding_office",
         "clinger_cohen_act_pla_desc": "NO",
@@ -522,6 +535,7 @@ def awards_and_transactions(db):
         "type_of_idc_description": None,
         "type_set_aside_description": None,
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
+        "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
@@ -530,6 +544,7 @@ def awards_and_transactions(db):
         "pk": 7,
         "transaction": TransactionNormalized.objects.get(pk=7),
         "awardee_or_recipient_legal": "LEGAL ENTITY",
+        "awardee_or_recipient_uei": "DEF",
         "awardee_or_recipient_uniqu": "456",
         "awarding_office_name": "awarding_office",
         "clinger_cohen_act_pla_desc": "NO",
@@ -603,6 +618,7 @@ def awards_and_transactions(db):
         "type_of_idc_description": None,
         "type_set_aside_description": None,
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
+        "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
@@ -912,6 +928,9 @@ def awards_and_transactions(db):
     mommy.make("awards.ParentAward", **parent_award_1)
     mommy.make("awards.ParentAward", **parent_award_2)
     mommy.make("awards.ParentAward", **parent_award_3)
+
+    dsws1 = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
+    mommy.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
 
 
 @pytest.fixture
@@ -1293,24 +1312,36 @@ expected_response_asst = {
     "transaction_obligated_amount": None,
     "awarding_agency": {
         "id": 1,
-        "has_agency_page": False,
-        "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
+        "has_agency_page": True,
+        "toptier_agency": {
+            "name": "TOPTIER AGENCY 1",
+            "abbreviation": "TA1",
+            "code": "ABC",
+            "slug": "toptier-agency-1",
+        },
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
-        "has_agency_page": False,
-        "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
+        "has_agency_page": True,
+        "toptier_agency": {
+            "name": "TOPTIER AGENCY 1",
+            "abbreviation": "TA1",
+            "code": "ABC",
+            "slug": "toptier-agency-1",
+        },
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "funding_office",
     },
     "recipient": {
         "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
         "recipient_name": "LEGAL ENTITY",
+        "recipient_uei": "DEF",
         "recipient_unique_id": "456",
         "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
+        "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
         "business_categories": ["Small Business"],
         "location": {
@@ -1379,24 +1410,36 @@ expected_response_cont = {
     "description": "lorem ipsum",
     "awarding_agency": {
         "id": 1,
-        "has_agency_page": False,
-        "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
+        "has_agency_page": True,
+        "toptier_agency": {
+            "name": "TOPTIER AGENCY 1",
+            "abbreviation": "TA1",
+            "code": "ABC",
+            "slug": "toptier-agency-1",
+        },
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
-        "has_agency_page": False,
-        "toptier_agency": {"name": "TOPTIER AGENCY 1", "abbreviation": "TA1", "code": "ABC"},
+        "has_agency_page": True,
+        "toptier_agency": {
+            "name": "TOPTIER AGENCY 1",
+            "abbreviation": "TA1",
+            "code": "ABC",
+            "slug": "toptier-agency-1",
+        },
         "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "funding_office",
     },
     "recipient": {
         "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
         "recipient_name": "LEGAL ENTITY",
+        "recipient_uei": "DEF",
         "recipient_unique_id": "456",
         "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
+        "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
         "business_categories": ["Small Business"],
         "location": {

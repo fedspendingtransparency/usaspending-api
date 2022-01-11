@@ -90,8 +90,10 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("modified_at", "_modified_at"),
         # "Recipient" fields below
         ("awardee_or_recipient_legal", "_recipient_name"),
+        ("uei", "_recipient_uei"),
         ("awardee_or_recipient_uniqu", "_recipient_unique_id"),
         ("ultimate_parent_legal_enti", "_parent_recipient_name"),
+        ("ultimate_parent_uei", "_parent_recipient_uei"),
         ("ultimate_parent_unique_ide", "_parent_recipient_unique_id"),
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
@@ -203,8 +205,10 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("national_interest_desc", "national_interest_action_description"),
         # "Recipient" fields below
         ("awardee_or_recipient_legal", "_recipient_name"),
+        ("awardee_or_recipient_uei", "_recipient_uei"),
         ("awardee_or_recipient_uniqu", "_recipient_unique_id"),
         ("ultimate_parent_legal_enti", "_parent_recipient_name"),
+        ("ultimate_parent_uei", "_parent_recipient_uei"),
         ("ultimate_parent_unique_ide", "_parent_recipient_unique_id"),
         ("legal_entity_country_code", "_rl_location_country_code"),
         ("legal_entity_country_name", "_rl_country_name"),
