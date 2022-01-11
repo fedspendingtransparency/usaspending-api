@@ -240,6 +240,7 @@ def spending_by_award_test_data():
         type_of_contract_pricing="contract_pricing_test",
         type_set_aside="type_set_aside_test",
         extent_competed="extent_competed_test",
+        awardee_or_recipient_uei="testuei",
     )
     mommy.make(
         "awards.TransactionFPDS",
