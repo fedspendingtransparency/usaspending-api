@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
+from itertools import chain
 
 from psycopg2.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
@@ -12,7 +13,7 @@ from usaspending_api.common.helpers.sql_helpers import build_composable_order_by
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import validate_post_request
-
+from usaspending_api.references.helpers import generate_agency_slugs_for_agency_list
 
 SORTABLE_COLUMNS = {
     "account_title": "fa.account_title",
@@ -55,8 +56,10 @@ FUNDING_SQL = SQL(
             fa.account_title,
             fta.name                                                        funding_agency_name,
             faa.id                                                          funding_agency_id,
+            faa.toptier_agency_id                                           funding_toptier_agency_id,
             ata.name                                                        awarding_agency_name,
             aa.id                                                           awarding_agency_id,
+            aa.toptier_agency_id                                            awarding_toptier_agency_id,
             oc.object_class                                                 object_class,
             oc.object_class_name                                            object_class_name,
             pa.program_activity_code                                        program_activity_code,
@@ -123,6 +126,19 @@ class AwardFundingViewSet(APIView):
     def post(self, request: Request) -> Response:
         results = self._business_logic(request.data)
         page_metadata = get_simple_pagination_metadata(len(results), request.data["limit"], request.data["page"])
-        response = OrderedDict((("results", results[: request.data["limit"]]), ("page_metadata", page_metadata)))
+        limited_results = results[: request.data["limit"]]
+
+        agency_slugs = generate_agency_slugs_for_agency_list(
+            list(
+                chain.from_iterable(
+                    [(res["awarding_toptier_agency_id"], res["funding_toptier_agency_id"]) for res in limited_results]
+                )
+            )
+        )
+        for res in limited_results:
+            res["awarding_agency_slug"] = agency_slugs.get(res.get("awarding_toptier_agency_id"))
+            res["funding_agency_slug"] = agency_slugs.get(res.get("funding_toptier_agency_id"))
+
+        response = OrderedDict((("results", limited_results), ("page_metadata", page_metadata)))
 
         return Response(response)

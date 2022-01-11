@@ -73,8 +73,12 @@ List File C financial data for an IDV award's descendant contracts
                         "disaster_emergency_fund_code": null,
                         "piid": "AG3A94K160035",
                         "awarding_agency_id": 166,
+                        "awarding_toptier_agency_id": 123,
+                        "awarding_agency_slug": "department-of-agriculture",
                         "awarding_agency_name": "Department of Agriculture",
                         "funding_agency_id": 166,
+                        "funding_toptier_agency_id": 123,
+                        "funding_agency_slug": "department-of-agriculture",
                         "funding_agency_name": "Department of Agriculture",
                         "agency_id": "012",
                         "main_account_code": "3700",
@@ -96,8 +100,12 @@ List File C financial data for an IDV award's descendant contracts
                         "disaster_emergency_fund_code": null,
                         "piid": "AG3A94K160035",
                         "awarding_agency_id": 166,
+                        "awarding_toptier_agency_id": 123,
+                        "awarding_agency_slug": "department-of-agriculture",
                         "awarding_agency_name": "Department of Agriculture",
                         "funding_agency_id": 166,
+                        "funding_toptier_agency_id": 123,
+                        "funding_agency_slug": "department-of-agriculture",
                         "funding_agency_name": "Department of Agriculture",
                         "agency_id": "012",
                         "main_account_code": "3700",
@@ -147,9 +155,13 @@ List File C financial data for an IDV award's descendant contracts
     Procurement Instrument Identifier (PIID).
 + `awarding_agency_id`: 252 (required, number, nullable)
     Internal surrogate identifier of the awarding agency.
++ `awarding_toptier_agency_id` (required, number, nullable)
++ `awarding_agency_slug` (required, string, nullable)
 + `awarding_agency_name`: `Department of Justice` (required, string, nullable)
 + `funding_agency_id`: 252 (required, number, nullable)
     Internal surrogate identifier of the funding agency.
++ `funding_toptier_agency_id` (required, number, nullable)
++ `funding_agency_slug` (required, string, nullable)
 + `funding_agency_name`: `Department of Justice` (required, string, nullable)
 + `agency_id`: `015` (required, string, nullable)
     CGAC of the funding agency.
