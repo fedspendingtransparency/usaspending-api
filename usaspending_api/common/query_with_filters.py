@@ -87,6 +87,7 @@ class _KeywordSearch(_Filter):
             "recipient_location_congressional_code",
             "recipient_location_city_name",
             "modification_number",
+            "recipient_uei",
         ]
         for v in filter_values:
             keyword_queries.append(ES_Q("query_string", query=v, default_operator="OR", fields=fields))
