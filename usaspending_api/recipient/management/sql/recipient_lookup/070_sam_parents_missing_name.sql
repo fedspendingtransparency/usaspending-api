@@ -13,8 +13,7 @@ SELECT
   DISTINCT ON (ultimate_parent_unique_ide)
   MD5(UPPER(
     CASE WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
-    WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
-    ELSE CONCAT('name-', awardee_or_recipient_legal) END
+    ELSE CONCAT('uei-', uei) END
   ))::uuid AS recipient_hash,
   UPPER(ultimate_parent_legal_enti) AS ultimate_parent_legal_enti,
   ultimate_parent_unique_ide AS duns,

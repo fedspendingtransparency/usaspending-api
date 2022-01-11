@@ -22,8 +22,7 @@ SELECT
   DISTINCT ON (awardee_or_recipient_uniqu, legal_business_name)
   MD5(UPPER(
     CASE WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
-    WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
-    ELSE CONCAT('name-', awardee_or_recipient_legal) END
+    ELSE CONCAT('uei-', uei) END
   ))::uuid AS recipient_hash,
   UPPER(legal_business_name) AS legal_business_name,
   awardee_or_recipient_uniqu AS duns,
