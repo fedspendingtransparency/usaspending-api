@@ -4,7 +4,9 @@ import logging
 from collections import OrderedDict
 from decimal import Decimal
 from django.db.models import Sum, F, Subquery
+from django.utils.text import slugify
 from typing import Optional
+
 
 from usaspending_api.awards.models import (
     Award,
@@ -26,8 +28,15 @@ from usaspending_api.common.helpers.data_constants import state_code_from_name, 
 from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
-from usaspending_api.references.models import Agency, Cfda, PSC, NAICS, SubtierAgency, DisasterEmergencyFundCode
-from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.references.models import (
+    Agency,
+    Cfda,
+    DisasterEmergencyFundCode,
+    NAICS,
+    PSC,
+    SubtierAgency,
+    ToptierAgencyPublishedDABSView,
+)
 from usaspending_api.awards.v2.data_layer.sql import defc_sql
 
 logger = logging.getLogger("console")
@@ -390,14 +399,13 @@ def fetch_latest_ec_details(award_id: int, mapper: OrderedDict, transaction_type
     return retval.first()
 
 
-def agency_has_file_c_submission(agency_id):
-    return SubmissionAttributes.objects.filter(
-        toptier_code=Subquery(Agency.objects.filter(id=agency_id).values("toptier_agency__toptier_code")[:1])
-    ).exists()
+def agency_has_file_c_submission(toptier_agency_id):
+    return ToptierAgencyPublishedDABSView.objects.filter(toptier_agency_id=toptier_agency_id).exists()
 
 
 def fetch_agency_details(agency_id: int) -> Optional[dict]:
     values = [
+        "toptier_agency_id",
         "toptier_agency__toptier_code",
         "toptier_agency__name",
         "toptier_agency__abbreviation",
@@ -409,13 +417,15 @@ def fetch_agency_details(agency_id: int) -> Optional[dict]:
 
     agency_details = None
     if agency:
+        has_agency_page = agency_has_file_c_submission(agency["toptier_agency_id"])
         agency_details = {
             "id": agency_id,
-            "has_agency_page": agency_has_file_c_submission(agency_id),
+            "has_agency_page": has_agency_page,
             "toptier_agency": {
                 "name": agency["toptier_agency__name"],
                 "code": agency["toptier_agency__toptier_code"],
                 "abbreviation": agency["toptier_agency__abbreviation"],
+                "slug": slugify(agency["toptier_agency__name"]) if has_agency_page else None,
             },
             "subtier_agency": {
                 "name": agency["subtier_agency__name"],

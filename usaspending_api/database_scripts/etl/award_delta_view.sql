@@ -23,8 +23,8 @@ SELECT
   "recipient_unique_id",
   "recipient_hash",
   "recipient_levels",
-
   "parent_recipient_unique_id",
+  "recipient_uei",
   "business_categories",
 
   "action_date",
