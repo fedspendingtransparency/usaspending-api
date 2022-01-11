@@ -56,7 +56,7 @@ def award_from_id(award_id):
         "references.ToptierAgency",
         toptier_agency_id=8500 + award_id,
         toptier_code=str(award_id).zfill(3),
-        name="toptier_awarding_agency_name_%s" % (8500 + award_id),
+        name="Toptier Awarding Agency Name %s" % (8500 + award_id),
     )
 
     awarding_agency = mommy.make(
@@ -71,7 +71,7 @@ def award_from_id(award_id):
         "references.ToptierAgency",
         toptier_agency_id=9500 + award_id,
         toptier_code=str(100 + award_id).zfill(3),
-        name="toptier_funding_agency_name_%s" % (9500 + award_id),
+        name="Toptier Funding Agency Name %s" % (9500 + award_id),
     )
 
     funding_agency = mommy.make(
@@ -111,6 +111,19 @@ def award_from_id(award_id):
 
     submission_attributes = mommy.make(
         "submissions.SubmissionAttributes",
+        submission_id=1100 + award_id,
+        submission_window=DABSSubmissionWindowSchedule.objects.filter(
+            submission_fiscal_month=award_id % 12 + 1
+        ).first(),
+        reporting_fiscal_year=2100,
+        reporting_fiscal_period=award_id % 12 + 1,
+        reporting_fiscal_quarter=(award_id % 12 + 3) // 3,
+        quarter_format_flag=bool(award_id % 2),
+        toptier_code=str(100 + award_id).zfill(3),
+    )
+
+    mommy.make(
+        "submissions.SubmissionAttributes",
         submission_id=1000 + award_id,
         submission_window=DABSSubmissionWindowSchedule.objects.filter(
             submission_fiscal_month=award_id % 12 + 1
@@ -119,6 +132,7 @@ def award_from_id(award_id):
         reporting_fiscal_period=award_id % 12 + 1,
         reporting_fiscal_quarter=(award_id % 12 + 3) // 3,
         quarter_format_flag=bool(award_id % 2),
+        toptier_code=str(award_id).zfill(3),
     )
 
     # Create variable number of federal accounts for variance in awards

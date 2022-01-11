@@ -32,10 +32,10 @@ class IDVAwardsTestCase(TestCase):
                 {
                     "award_id": award_id,
                     "award_type": "type_description_%s" % string_award_id,
-                    "awarding_agency": "toptier_awarding_agency_name_%s" % (8500 + award_id),
+                    "awarding_agency": "Toptier Awarding Agency Name %s" % (8500 + award_id),
                     "awarding_agency_id": 8000 + award_id,
                     "description": "description_%s" % string_award_id,
-                    "funding_agency": "toptier_funding_agency_name_%s" % (9500 + award_id),
+                    "funding_agency": "Toptier Funding Agency Name %s" % (9500 + award_id),
                     "funding_agency_id": 9000 + award_id,
                     "generated_unique_award_id": "CONT_IDV_%s" % string_award_id,
                     "last_date_to_order": "2018-01-%02d" % award_id,
