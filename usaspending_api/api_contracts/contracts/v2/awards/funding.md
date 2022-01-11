@@ -70,8 +70,12 @@ Lists federal account financial data for the requested award
                         "account_title": "Salaries and Expenses, Social Security Administration",
                         "funding_agency_name": "Social Security Administration",
                         "funding_agency_id": 539,
+                        "funding_toptier_agency_id": 123,
+                        "funding_agency_slug": "social-security-administration",
                         "awarding_agency_name": "Social Security Administration",
                         "awarding_agency_id": 539,
+                        "awarding_toptier_agency_id": 123,
+                        "awarding_agency_slug": "social-security-administration",
                         "object_class": "254",
                         "object_class_name": "Operation and maintenance of facilities",
                         "program_activity_code": "0001",
@@ -89,8 +93,12 @@ Lists federal account financial data for the requested award
                         "account_title": "Office of the Inspector General, Social Security Administration",
                         "funding_agency_name": "Social Security Administration",
                         "funding_agency_id": 539,
+                        "funding_toptier_agency_id": 123,
+                        "funding_agency_slug": "social-security-administration",
                         "awarding_agency_name": "Social Security Administration",
                         "awarding_agency_id": 539,
+                        "awarding_toptier_agency_id": 123,
+                        "awarding_agency_slug": "social-security-administration",
                         "object_class": "254",
                         "object_class_name": "Operation and maintenance of facilities",
                         "program_activity_code": "0001",
@@ -132,9 +140,13 @@ Lists federal account financial data for the requested award
     Code indicating whether or not the funding record is associated with a disaster.
 + `awarding_agency_id` (required, number, nullable)
     Internal surrogate identifier of the awarding agency.
++ `awarding_toptier_agency_id` (required, number, nullable)
++ `awarding_agency_slug` (required, string, nullable)
 + `awarding_agency_name` (required, string, nullable)
 + `funding_agency_id` (required, number, nullable)
     Internal surrogate identifier of the funding agency.
++ `funding_toptier_agency_id` (required, number, nullable)
++ `funding_agency_slug` (required, string, nullable)
 + `funding_agency_name` (required, string, nullable)
 + `federal_account` (required, string, nullable)
     Identifier of the federal account
