@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from elasticsearch_dsl import A
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
@@ -20,12 +22,14 @@ class Awards(AgencyBase):
 
     @cache_response()
     def get(self, request, *args, **kwargs):
+        agg_results = self.get_aggregation_results()
         return Response(
             {
                 "fiscal_year": self.fiscal_year,
+                "latest_action_date": agg_results["latest_action_date"],
                 "toptier_code": self.toptier_agency.toptier_code,
                 "transaction_count": self.get_transaction_count(),
-                "obligations": self.get_obligations(),
+                "obligations": agg_results["obligations"],
                 "messages": self.standard_response_messages,
             }
         )
@@ -45,10 +49,16 @@ class Awards(AgencyBase):
         results = search.handle_count()
         return results
 
-    def get_obligations(self):
+    def get_aggregation_results(self):
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.generate_query())
         search = TransactionSearch().filter(filter_query)
         search.aggs.bucket("total_obligation", A("sum", field="generated_pragmatic_obligation"))
+        search.aggs.bucket("latest_action_date", A("max", field="action_date"))
         response = search.handle_execute()
-        results = round(response.aggs.to_dict().get("total_obligation", {}).get("value", 0), 2)
+        response = response.aggs.to_dict()
+        latest_action_date_epoch = response.get("latest_action_date", {}).get("value")
+        results = {
+            "latest_action_date": datetime.utcfromtimestamp(latest_action_date_epoch / 1000),
+            "obligations": round(response.get("total_obligation", {}).get("value", 0), 2),
+        }
         return results
