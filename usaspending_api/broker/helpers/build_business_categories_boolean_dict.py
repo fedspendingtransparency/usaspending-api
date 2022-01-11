@@ -1,6 +1,3 @@
-from distutils.util import strtobool
-
-
 def build_business_categories_boolean_dict(row):
     columns = [
         "small_business_competitive",
@@ -91,4 +88,4 @@ def build_business_categories_boolean_dict(row):
         "other_not_for_profit_organ",
         "us_local_government",
     ]
-    return {column: bool(strtobool(row.get(column, "false") or "false")) for column in columns}
+    return {column: row.get(column, False) for column in columns}
