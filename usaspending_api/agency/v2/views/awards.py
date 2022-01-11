@@ -58,7 +58,9 @@ class Awards(AgencyBase):
         response = response.aggs.to_dict()
         latest_action_date_epoch = response.get("latest_action_date", {}).get("value")
         results = {
-            "latest_action_date": datetime.utcfromtimestamp(latest_action_date_epoch / 1000),
+            "latest_action_date": datetime.utcfromtimestamp(latest_action_date_epoch / 1000)
+            if latest_action_date_epoch is not None
+            else None,
             "obligations": round(response.get("total_obligation", {}).get("value", 0), 2),
         }
         return results

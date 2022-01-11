@@ -196,9 +196,25 @@ def test_alternate_agency(client, monkeypatch, transaction_search_1, elasticsear
 
 
 @pytest.mark.django_db
-def test_invalid_agency(client, monkeypatch, transaction_search_1, elasticsearch_account_index):
+def test_invalid_agency(client, monkeypatch, transaction_search_1, elasticsearch_transaction_index):
     resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     resp = client.get(url.format(toptier_code="999", filter="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+def test_no_award_data_for_fy(client, transaction_search_1, elasticsearch_transaction_index):
+    resp = client.get(url.format(toptier_code="002", filter="?fiscal_year=2017"))
+    expected_result = {
+        "fiscal_year": 2017,
+        "latest_action_date": None,
+        "toptier_code": "002",
+        "transaction_count": 0,
+        "obligations": 0.0,
+        "messages": [],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
