@@ -15,6 +15,8 @@
     "    CASE",
     "      WHEN COALESCE(FPDS.awardee_or_recipient_uniqu, FABS.awardee_or_recipient_uniqu) IS NOT NULL",
     "        THEN CONCAT('duns-', COALESCE(FPDS.awardee_or_recipient_uniqu, FABS.awardee_or_recipient_uniqu))",
+    "      WHEN COALESCE(FPDS.awardee_or_recipient_uei, FABS.uei) IS NOT NULL",
+    "        THEN CONCAT('uei-', COALESCE(FPDS.awardee_or_recipient_uei, FABS.uei))",
     "      ELSE CONCAT('name-', COALESCE(FPDS.awardee_or_recipient_legal, FABS.awardee_or_recipient_legal))",
     "    END",
     "  ))::uuid) AS recipient_hash,",
