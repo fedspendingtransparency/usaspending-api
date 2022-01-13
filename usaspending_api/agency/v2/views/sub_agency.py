@@ -35,7 +35,6 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             key=lambda x: x.get(self.pagination.sort_key),
             reverse=self.pagination.sort_order == "desc",
         )
-        # results = self.get_sub_agency_list()
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
