@@ -96,17 +96,9 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             )
             .values("bureau_info")
             .annotate(
-                amount=Sum("total_budgetary_resources_cpe"),
-                unobligated_balance=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
-                deobligation=Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
-                prior_year=Sum("prior_year_paid_obligation_recoveries"),
-            )
-            .annotate(
-                total_budgetary_resources=F("amount") - F("unobligated_balance") - F("deobligation") - F("prior_year"),
-                total_obligations=Sum("obligations_incurred_total_cpe")
-                - Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
-                total_outlays=Sum("gross_outlay_amount_by_tas_cpe")
-                - Sum("anticipated_prior_year_obligation_recoveries"),
+                total_budgetary_resources=Sum("total_budgetary_resources_cpe"),
+                total_obligations=Sum("obligations_incurred_total_cpe"),
+                total_outlays=Sum("gross_outlay_amount_by_tas_cpe"),
             )
             .values("bureau_info", "total_obligations", "total_outlays", "total_budgetary_resources")
         )
