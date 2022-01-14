@@ -69,8 +69,8 @@ class ObligationsByAwardCategory(AgencyBase):
                 results_map[key] = round(obligation_value, 2)
             else:
                 other_total += obligation_value
+        results_map["other"] += round(other_total)
 
-        results_map["other"] = round(other_total)
 
         # Convert Map back to list with extra categories
         for category, category_mapping in category_map.items():
