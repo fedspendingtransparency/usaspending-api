@@ -156,7 +156,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         ).count()
 
         unique_subtier_agg = A(
-            "terms", field=f"{self.agency_type}_subtier_agency_name.keyword", size=max_subtier_agencies + 100
+            "terms", field=f"{self.agency_type}_subtier_agency_name.keyword", size=max_subtier_agencies
         )
         unique_office_count_agg = A("cardinality", field=f"{self.agency_type}_office_code.keyword")
         max_office_count_agg = A("max_bucket", buckets_path="unique_subtier_agg>unique_office_count_agg")
@@ -168,5 +168,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         search.update_from_dict({"size": 0})
         response = search.handle_execute()
         resp_as_dict = response.aggs.to_dict()
-        max_office_count = resp_as_dict.get("max_office_count_agg", {}).get("value", 10)
-        return {"office_size": max_office_count, "subtier_agency_size": max_subtier_agencies}
+        max_office_count = resp_as_dict.get("max_office_count_agg", {}).get("value")
+
+        # Default to Terms aggregation default of 10 to avoid parse error with size of 0
+        return {"office_size": max_office_count or 10, "subtier_agency_size": max_subtier_agencies or 10}

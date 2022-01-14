@@ -154,6 +154,26 @@ def test_agency_types(client, monkeypatch, sub_agency_data_1, elasticsearch_tran
 
 
 @pytest.mark.django_db
+def test_agency_without_office(client, monkeypatch, sub_agency_data_1, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.get(url.format(toptier_code="003", filter="?fiscal_year=2021&award_type_codes=[B]"))
+    assert resp.status_code == status.HTTP_200_OK
+
+    expected_results = [
+        {
+            "name": "Sub-Agency 3",
+            "abbreviation": "A3",
+            "total_obligations": 110.0,
+            "transaction_count": 1,
+            "new_award_count": 1,
+            "children": [],
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+
+@pytest.mark.django_db
 def test_invalid_agency(client, monkeypatch, sub_agency_data_1, elasticsearch_account_index):
     resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
