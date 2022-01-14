@@ -70,12 +70,12 @@ class ObligationsByAwardCategory(AgencyBase):
             else:
                 other_total += obligation_value
 
-        if results_map["other"] is not None:
+        if results_map.get("other") is not None:
             results_map["other"] += round(other_total)
         else:
             results_map["other"] = round(other_total)
 
-            # Convert Map back to list with extra categories
+        # Convert Map back to list with extra categories
         for category, category_mapping in category_map.items():
             if category in results_map:
                 formatted_categories.append(self.format_category(category_mapping, results_map[category]))
