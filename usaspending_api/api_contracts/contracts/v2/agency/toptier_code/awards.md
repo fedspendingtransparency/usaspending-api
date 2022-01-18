@@ -25,6 +25,7 @@ Returns the number of transactions and award obligations for a given agency and 
     + Attributes
         + `toptier_code` (required, string)
         + `fiscal_year` (required, number)
+        + `latest_action_date` (required, string, nullable)
         + `transaction_count` (required, number)
         + `obligations` (required, number)
         + `messages` (required, array[string], fixed-type)
@@ -35,6 +36,7 @@ Returns the number of transactions and award obligations for a given agency and 
             {
                 "toptier_code": "020",
                 "fiscal_year": 2021,
+                "latest_action_date": "2021-09-14T00:00:00",
                 "transaction_count": 2,
                 "obligations": 90000.0,
                 "messages": []

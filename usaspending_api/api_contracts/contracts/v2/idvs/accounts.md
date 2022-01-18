@@ -48,7 +48,9 @@ This endpoint returns a list of federal accounts under a given IDV.
                         "account_title": "Bureau of Consumer Financial Protection Fund",
                         "funding_agency_abbreviation": "NIH",
                         "funding_agency_name": "National Institutes of Health",
-                        "funding_agency_id": 123
+                        "funding_agency_id": 123,
+                        "funding_toptier_agency_id": 45,
+                        "funding_agency_slug": "national-institutes-of-health"
                     }
                 ],
                 "page_metadata": {
@@ -79,3 +81,5 @@ This endpoint returns a list of federal accounts under a given IDV.
 + `funding_agency_abbreviation` (required, string)
 + `funding_agency_name` (required, string)
 + `funding_agency_id` (required, number)
++ `funding_toptier_agency_id` (required, number, nullable)
++ `funding_agency_slug` (required, string, nullable)

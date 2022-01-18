@@ -29,7 +29,7 @@ class TransactionSearch(models.Model):
     award_fiscal_year = models.IntegerField(null=True)
     update_date = models.DateTimeField(null=True)
     award_update_date = models.DateTimeField(null=True)
-    award_date_signed = models.DateTimeField(null=True)
+    award_date_signed = models.DateField(null=True)
     etl_update_date = models.DateTimeField(null=True)
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
@@ -92,6 +92,7 @@ class TransactionSearch(models.Model):
     parent_recipient_hash = models.UUIDField(null=True)
     parent_recipient_name = models.TextField(null=True)
     parent_recipient_unique_id = models.TextField(null=True)
+    recipient_uei = models.TextField(null=True)
 
     awarding_toptier_agency_id = models.IntegerField(null=True)
     funding_toptier_agency_id = models.IntegerField(null=True)

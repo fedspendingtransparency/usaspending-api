@@ -31,7 +31,7 @@ class IDVAwardsTestCase(TestCase):
             results.append(
                 {
                     "award_id": award_id,
-                    "awarding_agency": "toptier_awarding_agency_name_%s" % (8500 + award_id),
+                    "awarding_agency": "Toptier Awarding Agency Name %s" % (8500 + award_id),
                     "awarding_agency_id": 8000 + award_id,
                     "generated_unique_award_id": "CONT_IDV_%s" % string_award_id,
                     "period_of_performance_potential_end_date": "2018-08-%02d" % award_id,

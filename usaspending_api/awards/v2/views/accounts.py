@@ -11,13 +11,13 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import validate_post_request
-
+from usaspending_api.references.helpers import generate_agency_slugs_for_agency_list
 
 SORTABLE_COLUMNS = {
     "federal_account": "federal_account",
     "total_transaction_obligated_amount": "total_transaction_obligated_amount",
     "agency": "funding_agency_name",
-    "account_title": "fa.account_title",
+    "account_title": "account_title",
 }
 
 
@@ -37,10 +37,11 @@ ACCOUNTS_SQL = SQL(
     select
         coalesce(sum(gfaba.transaction_obligated_amount), 0.0)         total_transaction_obligated_amount,
         taa.agency_id || '-' || taa.main_account_code                  federal_account,
-        fa.account_title,
+        fa.account_title                                               account_title,
         ta.abbreviation                                                funding_agency_abbreviation,
         ta.name                                                        funding_agency_name,
-        a.id                                                           funding_agency_id
+        a.id                                                           funding_agency_id,
+        a.toptier_agency_id                                            funding_toptier_agency_id
     from
         gather_financial_accounts_by_awards gfaba
         left outer join treasury_appropriation_account taa on
@@ -91,6 +92,14 @@ class AwardAccountsViewSet(APIView):
     def post(self, request: Request) -> Response:
         results = self._business_logic(request.data)
         paginated_results, page_metadata = get_pagination(results, request.data["limit"], request.data["page"])
+
+        agency_slugs = generate_agency_slugs_for_agency_list(
+            [res["funding_toptier_agency_id"] for res in paginated_results]
+        )
+
+        for res in paginated_results:
+            res["funding_agency_slug"] = agency_slugs.get(res.get("funding_toptier_agency_id"))
+
         response = OrderedDict((("results", paginated_results), ("page_metadata", page_metadata)))
 
         return Response(response)
