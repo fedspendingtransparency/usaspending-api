@@ -183,6 +183,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                 obtain_recipient_uri(
                     db_row_dict["_recipient_name"],
                     db_row_dict["_recipient_unique_id"],
+                    db_row_dict["_recipient_uei"],
                     db_row_dict["_parent_recipient_unique_id"],
                 ),
             ),
