@@ -5,7 +5,9 @@ from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
-def obtain_recipient_uri(recipient_name, recipient_unique_id, recipient_uei, parent_recipient_unique_id, is_parent_recipient=False):
+def obtain_recipient_uri(
+    recipient_name, recipient_unique_id, recipient_uei, parent_recipient_unique_id, is_parent_recipient=False
+):
     """Return a valid string to be used for api/v2/recipient/duns/<recipient-hash>/ (or None)
 
     Keyword Arguments:
@@ -49,6 +51,7 @@ def obtain_recipient_uri(recipient_name, recipient_unique_id, recipient_uei, par
 def generate_missing_recipient_hash(recipient_unique_id, recipient_uei, recipient_name):
     import hashlib
     import uuid
+
     if recipient_unique_id is None and recipient_uei is None:
         prefix = "name"
         value = recipient_name
