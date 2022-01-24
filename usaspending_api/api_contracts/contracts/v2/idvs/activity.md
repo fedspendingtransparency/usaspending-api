@@ -46,6 +46,7 @@ List child and grandchild awards for a given IDV
                         "award_id": 1867804,
                         "awarding_agency": "Department of Veterans Affairs",
                         "awarding_agency_id": 561,
+                        "awarding_agency_slug": "department-of-veterans-affairs,
                         "generated_unique_award_id": "CONT_AWD_00509200110C509C25044V509P6176_3600_V509P6176_3600",
                         "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
                         "parent_award_id": 69001298,
@@ -63,6 +64,7 @@ List child and grandchild awards for a given IDV
                         "award_id": 1867504,
                         "awarding_agency": "Department of Veterans Affairs",
                         "awarding_agency_id": 561,
+                        "awarding_agency_slug": "department-of-veterans-affairs,
                         "generated_unique_award_id": "CONT_AWD_00509200010C509C15099V509P6176_3600_V509P6176_3600",
                         "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
                         "parent_award_id": 69001298,
@@ -80,6 +82,7 @@ List child and grandchild awards for a given IDV
                         "award_id": 1867181,
                         "awarding_agency": "Department of Veterans Affairs",
                         "awarding_agency_id": 561,
+                        "awarding_agency_slug": "department-of-veterans-affairs,
                         "generated_unique_award_id": "CONT_AWD_00509199910C509C05018V509P6176_3600_V509P6176_3600",
                         "period_of_performance_potential_end_date": "2003-09-15 00:00:00",
                         "parent_award_id": 69001298,
@@ -125,6 +128,8 @@ List child and grandchild awards for a given IDV
     Unique internal natural identifier for an award.
 + `awarding_agency` (required, string)
 + `awarding_agency_id` (required, number)
++ `awarding_agency_slug` (required, string, nullable)
+    `agency_slug` is a string used to generate a link to the agency profile page. Will be `NULL` if the agency does not have a profile page.
 + `period_of_performance_potential_end_date` (required, string, nullable)
 + `parent_award_id` (required, number, nullable)
     Internal, surrogate id for the award's parent.  Deprecated.  Use `parent_generated_unique_award_id`.

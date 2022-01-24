@@ -1,10 +1,12 @@
 import json
 
 from django.test import TestCase
+from django.utils.text import slugify
 from model_mommy import mommy
 from rest_framework import status
 from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, IDVS, PARENTS
 from usaspending_api.idvs.v2.views.awards import SORTABLE_COLUMNS
+from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
 
 
 ENDPOINT = "/api/v2/idvs/awards/"
@@ -16,7 +18,7 @@ class IDVAwardsTestCase(TestCase):
         create_idv_test_data()
 
     @staticmethod
-    def _generate_expected_response(previous, next, page, has_previous, has_next, *award_ids):
+    def _generate_expected_response(previous, next, page, has_previous, has_next, no_submissions, *award_ids):
         """
         Rather than manually generate an insane number of potential responses
         to test the various parameter combinations, we're going to procedurally
@@ -28,14 +30,20 @@ class IDVAwardsTestCase(TestCase):
         results = []
         for award_id in award_ids:
             string_award_id = str(award_id).zfill(3)
+            funding_agency_name = "Toptier Funding Agency Name %s" % (9500 + award_id)
+            awarding_agency_name = "Toptier Awarding Agency Name %s" % (8500 + award_id)
+            funding_agency_slug = slugify(funding_agency_name) if not no_submissions else None
+            awarding_agency_slug = slugify(awarding_agency_name) if not no_submissions else None
             results.append(
                 {
                     "award_id": award_id,
                     "award_type": "type_description_%s" % string_award_id,
-                    "awarding_agency": "Toptier Awarding Agency Name %s" % (8500 + award_id),
+                    "awarding_agency": awarding_agency_name,
+                    "awarding_agency_slug": awarding_agency_slug,
                     "awarding_agency_id": 8000 + award_id,
                     "description": "description_%s" % string_award_id,
-                    "funding_agency": "Toptier Funding Agency Name %s" % (9500 + award_id),
+                    "funding_agency": funding_agency_name,
+                    "funding_agency_slug": funding_agency_slug,
                     "funding_agency_id": 9000 + award_id,
                     "generated_unique_award_id": "CONT_IDV_%s" % string_award_id,
                     "last_date_to_order": "2018-01-%02d" % award_id,
@@ -77,37 +85,39 @@ class IDVAwardsTestCase(TestCase):
 
     def test_defaults(self):
 
-        self._test_post({"award_id": 1}, (None, None, 1, False, False, 5, 4, 3))
+        self._test_post({"award_id": 1}, (None, None, 1, False, False, False, 5, 4, 3))
 
-        self._test_post({"award_id": "CONT_IDV_001"}, (None, None, 1, False, False, 5, 4, 3))
+        self._test_post({"award_id": "CONT_IDV_001"}, (None, None, 1, False, False, False, 5, 4, 3))
 
     def test_with_nonexistent_id(self):
 
-        self._test_post({"award_id": 0}, (None, None, 1, False, False))
+        self._test_post({"award_id": 0}, (None, None, 1, False, False, False))
 
-        self._test_post({"award_id": "CONT_IDV_000"}, (None, None, 1, False, False))
+        self._test_post({"award_id": "CONT_IDV_000"}, (None, None, 1, False, False, False))
 
     def test_with_bogus_id(self):
 
-        self._test_post({"award_id": "BOGUS_ID"}, (None, None, 1, False, False))
+        self._test_post({"award_id": "BOGUS_ID"}, (None, None, 1, False, False, None))
 
     def test_type(self):
 
-        self._test_post({"award_id": 1, "type": "child_idvs"}, (None, None, 1, False, False, 5, 4, 3))
+        self._test_post({"award_id": 1, "type": "child_idvs"}, (None, None, 1, False, False, False, 5, 4, 3))
 
-        self._test_post({"award_id": 1, "type": "child_awards"}, (None, None, 1, False, False, 6))
+        self._test_post({"award_id": 1, "type": "child_awards"}, (None, None, 1, False, False, False, 6))
 
-        self._test_post({"award_id": 1, "type": "grandchild_awards"}, (None, None, 1, False, False))
+        self._test_post({"award_id": 1, "type": "grandchild_awards"}, (None, None, 1, False, False, False))
 
-        self._test_post({"award_id": 2, "type": "grandchild_awards"}, (None, None, 1, False, False, 14, 13, 12, 11))
+        self._test_post(
+            {"award_id": 2, "type": "grandchild_awards"}, (None, None, 1, False, False, False, 14, 13, 12, 11)
+        )
 
         self._test_post({"award_id": 1, "type": "BOGUS TYPE"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_limit_values(self):
 
-        self._test_post({"award_id": 1, "limit": 1}, (None, 2, 1, False, True, 5))
+        self._test_post({"award_id": 1, "limit": 1}, (None, 2, 1, False, True, False, 5))
 
-        self._test_post({"award_id": 1, "limit": 5}, (None, None, 1, False, False, 5, 4, 3))
+        self._test_post({"award_id": 1, "limit": 5}, (None, None, 1, False, False, False, 5, 4, 3))
 
         self._test_post({"award_id": 1, "limit": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
@@ -117,11 +127,11 @@ class IDVAwardsTestCase(TestCase):
 
     def test_page_values(self):
 
-        self._test_post({"award_id": 1, "limit": 1, "page": 2}, (1, 3, 2, True, True, 4))
+        self._test_post({"award_id": 1, "limit": 1, "page": 2}, (1, 3, 2, True, True, False, 4))
 
-        self._test_post({"award_id": 1, "limit": 1, "page": 3}, (2, None, 3, True, False, 3))
+        self._test_post({"award_id": 1, "limit": 1, "page": 3}, (2, None, 3, True, False, False, 3))
 
-        self._test_post({"award_id": 1, "limit": 1, "page": 4}, (3, None, 4, True, False))
+        self._test_post({"award_id": 1, "limit": 1, "page": 4}, (3, None, 4, True, False, False))
 
         self._test_post(
             {"award_id": 1, "limit": 1, "page": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -136,20 +146,20 @@ class IDVAwardsTestCase(TestCase):
         for sortable_column in SORTABLE_COLUMNS:
 
             self._test_post(
-                {"award_id": 1, "order": "desc", "sort": sortable_column}, (None, None, 1, False, False, 5, 4, 3)
+                {"award_id": 1, "order": "desc", "sort": sortable_column}, (None, None, 1, False, False, False, 5, 4, 3)
             )
 
             self._test_post(
-                {"award_id": 1, "order": "asc", "sort": sortable_column}, (None, None, 1, False, False, 3, 4, 5)
+                {"award_id": 1, "order": "asc", "sort": sortable_column}, (None, None, 1, False, False, False, 3, 4, 5)
             )
 
         self._test_post({"award_id": 1, "sort": "BOGUS FIELD"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
 
     def test_sort_order_values(self):
 
-        self._test_post({"award_id": 1, "order": "desc"}, (None, None, 1, False, False, 5, 4, 3))
+        self._test_post({"award_id": 1, "order": "desc"}, (None, None, 1, False, False, False, 5, 4, 3))
 
-        self._test_post({"award_id": 1, "order": "asc"}, (None, None, 1, False, False, 3, 4, 5))
+        self._test_post({"award_id": 1, "order": "asc"}, (None, None, 1, False, False, False, 3, 4, 5))
 
         self._test_post({"award_id": 1, "order": "BOGUS ORDER"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -157,31 +167,31 @@ class IDVAwardsTestCase(TestCase):
 
         self._test_post(
             {"award_id": 1, "type": "child_idvs", "limit": 3, "page": 1, "sort": "description", "order": "asc"},
-            (None, None, 1, False, False, 3, 4, 5),
+            (None, None, 1, False, False, False, 3, 4, 5),
         )
 
         self._test_post(
             {"award_id": 1, "type": "child_awards", "limit": 3, "page": 1, "sort": "description", "order": "asc"},
-            (None, None, 1, False, False, 6),
+            (None, None, 1, False, False, False, 6),
         )
 
     def test_no_grandchildren_returned(self):
 
-        self._test_post({"award_id": 2, "type": "child_idvs"}, (None, None, 1, False, False, 8, 7))
+        self._test_post({"award_id": 2, "type": "child_idvs"}, (None, None, 1, False, False, False, 8, 7))
 
-        self._test_post({"award_id": 2, "type": "child_awards"}, (None, None, 1, False, False, 10, 9))
+        self._test_post({"award_id": 2, "type": "child_awards"}, (None, None, 1, False, False, False, 10, 9))
 
     def test_no_parents_returned(self):
 
-        self._test_post({"award_id": 7, "type": "child_idvs"}, (None, None, 1, False, False))
+        self._test_post({"award_id": 7, "type": "child_idvs"}, (None, None, 1, False, False, False))
 
-        self._test_post({"award_id": 7, "type": "child_awards"}, (None, None, 1, False, False, 12, 11))
+        self._test_post({"award_id": 7, "type": "child_awards"}, (None, None, 1, False, False, False, 12, 11))
 
     def test_nothing_returned_for_bogus_contract_relationship(self):
 
-        self._test_post({"award_id": 9, "type": "child_idvs"}, (None, None, 1, False, False))
+        self._test_post({"award_id": 9, "type": "child_idvs"}, (None, None, 1, False, False, False))
 
-        self._test_post({"award_id": 9, "type": "child_awards"}, (None, None, 1, False, False))
+        self._test_post({"award_id": 9, "type": "child_awards"}, (None, None, 1, False, False, False))
 
     def test_missing_agency(self):
         # A bug was found where awards wouldn't show up if the funding agency was
@@ -222,3 +232,9 @@ class IDVAwardsTestCase(TestCase):
 
         # This should return two results.  Prior to the bug, only one result would be returned.
         assert len(response.data["results"]) == 2
+
+    def test_no_submission(self):
+        SubmissionAttributes.objects.filter(reporting_fiscal_year=2008).delete()
+        self._test_post({"award_id": 1, "type": "child_idvs"}, (None, None, 1, False, False, True, 5, 4, 3))
+        self._test_post({"award_id": 1, "type": "child_awards"}, (None, None, 1, False, False, True, 6))
+        self._test_post({"award_id": 1, "type": "grandchild_awards"}, (None, None, 1, False, False, True))

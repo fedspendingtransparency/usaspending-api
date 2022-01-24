@@ -133,6 +133,10 @@ List child IDVs, child awards, or grandchild awards for IDV
 + `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string, nullable)
 + `funding_agency_id`: 634 (required, number, nullable)
 + `awarding_agency_id`: 634 (required, number, nullable)
++ `funding_agency_slug`: `general-services-administration-gsa` (required, string, nullable)
+    `funding_agency_slug` is a string used to generate a link to the funding agency's profile page. Will be `NULL` if the funding agency does not have a profile page.
++ `awarding_agency_slug`: `general-services-administration-gsa` (required, string, nullable)
+    `awarding_agency_slug` is a string used to generate a link to the awarding agency's profile page. Will be `NULL` if the awarding agency does not have a profile page.
 + `generated_unique_award_id`: `CONT_IDV_DJB30605051_1540` (required, string)
     Unique internal natural identifier for an award.
 + `last_date_to_order`: `2017-09-30` (required, string, nullable)
