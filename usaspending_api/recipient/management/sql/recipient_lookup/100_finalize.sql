@@ -41,8 +41,8 @@ UPDATE public.recipient_lookup rl SET
     OR rl.city                        IS DISTINCT FROM tem.city
     OR rl.congressional_district      IS DISTINCT FROM tem.congressional_district
     OR rl.country_code                IS DISTINCT FROM tem.country_code
-    OR rl.duns                        IS DISTINCT FROM tem.duns
-    OR rl.uei                         IS DISTINCT FROM tem.uei
+--    OR rl.duns                        IS DISTINCT FROM tem.duns
+--    OR rl.uei                         IS DISTINCT FROM tem.uei
     OR rl.legal_business_name         IS DISTINCT FROM tem.legal_business_name
     OR rl.parent_duns                 IS DISTINCT FROM tem.parent_duns
     OR rl.parent_legal_business_name  IS DISTINCT FROM tem.parent_legal_business_name
