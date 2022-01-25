@@ -85,9 +85,9 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             download_job=download_job,
         )
 
-        DownloadJobLookup.objects.bulk_create(download_lookup_obj_list, batch_size=10000)
+        created_obj_list = DownloadJobLookup.objects.bulk_create(download_lookup_obj_list, batch_size=10000)
         write_to_log(
-            message=f"Inserted {len(download_lookup_obj_list)} rows into download_job_lookup",
+            message=f"Inserted {len(created_obj_list)} rows into download_job_lookup",
             download_job=download_job,
         )
 
