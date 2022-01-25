@@ -349,21 +349,21 @@ def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]
                     ).values("toptier_agency_id")
                 ),
             )
-            .values("id", "toptier_agency__name")
+            .values("id", "toptier_agency_id", "toptier_agency__name")
             .first()
         )
         if parent_sub_agency
         else None
     )
 
-    agency_id = parent_agency["id"] if parent_agency else None
+    toptier_agency_id = parent_agency["toptier_agency_id"] if parent_agency else None
     agency_name = parent_agency["toptier_agency__name"] if parent_agency else None
 
-    has_agency_page = agency_has_file_c_submission(agency_id)
+    has_agency_page = agency_has_file_c_submission(toptier_agency_id)
 
     parent_object = OrderedDict(
         [
-            ("agency_id", agency_id),
+            ("agency_id", parent_agency["id"] if parent_agency else None),
             ("agency_name", agency_name),
             ("agency_slug", slugify(agency_name) if has_agency_page else None),
             ("sub_agency_id", parent_award["latest_transaction__contract_data__agency_id"]),

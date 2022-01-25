@@ -86,8 +86,6 @@ class IDVAwardsTestCase(TestCase):
 
     def test_defaults(self):
 
-        print(f"Submission attribute count: {SubmissionAttributes.objects.count()}")
-
         self._test_post({"award_id": 2}, (400002, 10, 1, False, 14, 13, 12, 11, 10, 9))
 
         self._test_post({"award_id": "CONT_IDV_002"}, (400002, 10, 1, False, 14, 13, 12, 11, 10, 9))

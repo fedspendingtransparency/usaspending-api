@@ -208,18 +208,16 @@ class IDVAwardsViewSet(APIView):
         )
         results = execute_sql_to_ordered_dictionary(sql)
 
-        funding_agency_slugs = generate_agency_slugs_for_agency_list(
+        toptier_ids = set(
             [res["funding_toptier_agency_id"] for res in results]
+            + [res["awarding_toptier_agency_id"] for res in results]
         )
-
-        awarding_agency_slugs = generate_agency_slugs_for_agency_list(
-            [res["awarding_toptier_agency_id"] for res in results]
-        )
+        agency_slugs = generate_agency_slugs_for_agency_list(toptier_ids)
 
         for res in results:
             # Set Agency Slugs
-            res["funding_agency_slug"] = funding_agency_slugs.get(res.get("funding_toptier_agency_id"))
-            res["awarding_agency_slug"] = awarding_agency_slugs.get(res.get("awarding_toptier_agency_id"))
+            res["funding_agency_slug"] = agency_slugs.get(res.get("funding_toptier_agency_id"))
+            res["awarding_agency_slug"] = agency_slugs.get(res.get("awarding_toptier_agency_id"))
 
             # Remove extra fields
             del res["funding_toptier_agency_id"]
