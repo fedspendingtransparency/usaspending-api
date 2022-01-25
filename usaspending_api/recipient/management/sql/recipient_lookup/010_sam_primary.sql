@@ -21,7 +21,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
 SELECT
   DISTINCT ON (awardee_or_recipient_uniqu, legal_business_name)
   MD5(UPPER(
-    CASE WHEN uei IS NOT NULL CONCAT('uei-', uei)
+    CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
     ELSE CONCAT('duns-', awardee_or_recipient_uniqu) END
   ))::uuid AS recipient_hash,
   UPPER(legal_business_name) AS legal_business_name,
