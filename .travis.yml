@@ -52,7 +52,7 @@ before_install:
   - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
   - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
   - sudo systemctl start elasticsearch
-  - sudo journalctl -u service-name.service -b
+  - sudo journalctl -u elasticsearch -b
   - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
   # Add dredd for API contract testing
   - travis_retry npm install --global dredd@13.1.2
