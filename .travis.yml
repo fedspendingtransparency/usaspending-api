@@ -71,5 +71,6 @@ script:
   - pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
 
 after_script:
+  # innocuous comment
   - docker-compose down
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
