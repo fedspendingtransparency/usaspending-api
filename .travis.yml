@@ -61,7 +61,7 @@ before_script:
   - echo -e '-XX:+DisableExplicitGC\n-Djdk.io.permissionsUseCanonicalPath=true\n-Dlog4j.skipJansi=true\n-server\n' | sudo tee -a /etc/elasticsearch/jvm.options
   - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
   - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
-  - sudo service elasticsearch restart
+  - sudo systemctl restart elasticsearch
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
