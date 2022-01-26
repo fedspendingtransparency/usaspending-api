@@ -2,11 +2,13 @@ from django.db.models import Q, Sum, OuterRef, Subquery, F, Value, Case, When
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
+from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
-from usaspending_api.references.models import GTASSF133Balances, BureauTitleLookup
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models import BureauTitleLookup
 
 
 class SubcomponentList(PaginationMixin, AgencyBase):
@@ -25,7 +27,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         self.sortable_columns = ["name", "total_obligations", "total_outlays", "total_budgetary_resources"]
         self.default_sort_column = "total_obligations"
-        results = self.format_results(self.get_subcomponents_queryset())
+        results = self.format_results(self.get_file_a_queryset(), self.get_file_b_queryset())
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
@@ -37,77 +39,110 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             }
         )
 
-    def format_results(self, response):
+    def format_results(self, file_a_response, file_b_response):
+
+        # Combine File A and B Responses
+        combined_list_dict = {}
+
+        for row in file_a_response:
+            combined_list_dict[row["bureau_info"]] = row
+
+        for row in file_b_response:
+            if row["bureau_info"] not in combined_list_dict:
+                combined_list_dict[row["bureau_info"]] = row
+            else:
+                combined_list_dict[row["bureau_info"]].update(row)
+
+        combined_response = [value for key, value in combined_list_dict.items()]
+
+        # Format Combined Response
         results = sorted(
             [
                 {
                     "name": x["bureau_info"].split(";")[0] if x.get("bureau_info") is not None else None,
                     "id": x["bureau_info"].split(";")[1] if x.get("bureau_info") is not None else None,
-                    "total_obligations": x["total_obligations"],
-                    "total_outlays": x["total_outlays"],
-                    "total_budgetary_resources": x["total_budgetary_resources"],
+                    "total_obligations": x["total_obligations"] if x["total_obligations"] else None,
+                    "total_outlays": x["total_outlays"] if x["total_outlays"] else None,
+                    "total_budgetary_resources": x["total_budgetary_resources"]
+                    if x["total_budgetary_resources"]
+                    else None,
                 }
-                for x in response
+                for x in combined_response
             ],
             key=lambda x: x.get(self.pagination.sort_key),
             reverse=self.pagination.sort_order == "desc",
         )
         return results
 
-    def get_subcomponents_queryset(self):
-        filters = [
-            Q(treasury_account_identifier__federal_account__parent_toptier_agency=self.toptier_agency),
-            Q(fiscal_year=self.fiscal_year),
-            Q(fiscal_period=self.fiscal_period),
-        ]
+    def get_file_a_queryset(self):
+        """
+        Query Obligations and Outlays per Bureau from File A for a single Period
+        """
+        filters, bureau_info_subquery = self.get_common_query_objects("treasury_account")
 
         results = (
-            (GTASSF133Balances.objects.filter(*filters))
+            (FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))
+            .annotate(bureau_info=bureau_info_subquery)
+            .values("bureau_info")
             .annotate(
-                bureau_info=Subquery(
-                    BureauTitleLookup.objects.filter(
-                        federal_account_code=OuterRef(
-                            "treasury_account_identifier__federal_account__federal_account_code"
-                        )
-                    )
-                    .annotate(
-                        bureau_info=Case(
-                            When(
-                                federal_account_code__startswith="057",
-                                then=ConcatAll(Value("Air Force"), Value(";"), Value("air-force")),
-                            ),
-                            When(
-                                federal_account_code__startswith="021",
-                                then=ConcatAll(Value("Army"), Value(";"), Value("army")),
-                            ),
-                            When(
-                                federal_account_code__startswith="017",
-                                then=ConcatAll(Value("Navy, Marine Corps"), Value(";"), Value("navy-marine-corps")),
-                            ),
-                            When(
-                                federal_account_code__startswith="097",
-                                then=ConcatAll(Value("Defense-wide"), Value(";"), Value("defense-wide")),
-                            ),
-                            default=ConcatAll(F("bureau_title"), Value(";"), F("bureau_slug")),
-                        )
-                    )
-                    .values("bureau_info")
+                total_obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
+                total_outlays=Sum("gross_outlay_amount_by_program_object_class_cpe"),
+            )
+            .values("bureau_info", "total_obligations", "total_outlays")
+        )
+        return results
+
+    def get_file_b_queryset(self):
+        """
+        Query Total Budgetary Resources per Bureau from File A for a single Period
+        """
+        filters, bureau_info_subquery = self.get_common_query_objects("treasury_account_identifier")
+
+        results = (
+            (AppropriationAccountBalances.objects.filter(*filters))
+            .annotate(bureau_info=bureau_info_subquery)
+            .values("bureau_info")
+            .annotate(
+                total_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"),
+            )
+            .values("bureau_info", "total_budgetary_resources")
+        )
+        return results
+
+    def get_common_query_objects(self, treasury_account_keyword):
+
+        filters = [
+            Q(**{f"{treasury_account_keyword}__federal_account__parent_toptier_agency": self.toptier_agency}),
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
+            Q(submission__reporting_fiscal_period=self.fiscal_period),
+        ]
+
+        bureau_info_subquery = Subquery(
+            BureauTitleLookup.objects.filter(
+                federal_account_code=OuterRef(f"{treasury_account_keyword}__federal_account__federal_account_code")
+            )
+            .annotate(
+                bureau_info=Case(
+                    When(
+                        federal_account_code__startswith="057",
+                        then=ConcatAll(Value("Air Force"), Value(";"), Value("air-force")),
+                    ),
+                    When(
+                        federal_account_code__startswith="021",
+                        then=ConcatAll(Value("Army"), Value(";"), Value("army")),
+                    ),
+                    When(
+                        federal_account_code__startswith="017",
+                        then=ConcatAll(Value("Navy, Marine Corps"), Value(";"), Value("navy-marine-corps")),
+                    ),
+                    When(
+                        federal_account_code__startswith="097",
+                        then=ConcatAll(Value("Defense-wide"), Value(";"), Value("defense-wide")),
+                    ),
+                    default=ConcatAll(F("bureau_title"), Value(";"), F("bureau_slug")),
                 )
             )
             .values("bureau_info")
-            .annotate(
-                amount=Sum("total_budgetary_resources_cpe"),
-                unobligated_balance=Sum("budget_authority_unobligated_balance_brought_forward_cpe"),
-                deobligation=Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
-                prior_year=Sum("prior_year_paid_obligation_recoveries"),
-            )
-            .annotate(
-                total_budgetary_resources=F("amount") - F("unobligated_balance") - F("deobligation") - F("prior_year"),
-                total_obligations=Sum("obligations_incurred_total_cpe")
-                - Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe"),
-                total_outlays=Sum("gross_outlay_amount_by_tas_cpe")
-                - Sum("anticipated_prior_year_obligation_recoveries"),
-            )
-            .values("bureau_info", "total_obligations", "total_outlays", "total_budgetary_resources")
         )
-        return results
+
+        return filters, bureau_info_subquery
