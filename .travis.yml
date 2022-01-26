@@ -16,7 +16,6 @@ addons:
     - postgresql-client-10
 
 env:
-  - DOCKER_COMPOSE_VERSION=1.4.2
   global:
   - USASPENDING_DB_HOST=localhost
   - USASPENDING_DB_PORT=5432
