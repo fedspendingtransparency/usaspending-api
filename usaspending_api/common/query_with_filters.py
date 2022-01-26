@@ -202,6 +202,10 @@ class _RecipientSearchText(_Filter):
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 recipient_duns_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
+
+            elif len(upper_recipient_string) == 12:
+                    recipient_uei_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
+                    recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_uei_query]))
             else:
                 recipient_search_query.append(recipient_name_query)
 
