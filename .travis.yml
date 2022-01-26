@@ -47,16 +47,6 @@ install:
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
   - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
   - travis_retry git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
-  # Install docker-compose
-  - sudo rm /usr/local/bin/docker-compose
-  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-  - chmod +x docker-compose
-  - sudo mv docker-compose /usr/local/bin
-  # Create Elasticsearch docker container
-  - cd ${TRAVIS_BUILD_DIR}
-  - docker-compose up -d usaspending-es
-  # Wait for Elasticsearch to become available
-  - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
 
 before_script:
   # Get dependencies to report code coverage to code climate
@@ -67,6 +57,10 @@ before_script:
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
+  # Create Elasticsearch docker container
+  - docker-compose up -d usaspending-es
+  # Wait for Elasticsearch to become available
+  - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
 
 script:
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
@@ -78,4 +72,5 @@ script:
   - pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
 
 after_script:
+  - docker-compose down
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
