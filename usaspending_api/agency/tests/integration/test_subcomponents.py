@@ -32,7 +32,7 @@ def test_alternate_year(client, bureau_data):
             "name": "Test Bureau 1",
             "id": "test-bureau-1",
             "total_obligations": 20.0,
-            "total_outlays": 200.0, 
+            "total_outlays": 200.0,
             "total_budgetary_resources": 2000.0,
         }
     ]

@@ -31,7 +31,7 @@ def helpers():
 
 
 @pytest.fixture
-def bureau_data(): 
+def bureau_data():
 
     ta1 = mommy.make("references.ToptierAgency", name="Agency 1", toptier_code="001")
     sa1 = mommy.make("references.SubtierAgency", name="Agency 1", subtier_code="0001")
