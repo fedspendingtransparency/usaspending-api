@@ -20,8 +20,20 @@ def test_all_categories(client, monkeypatch, sub_agency_data_1, elasticsearch_tr
             "transaction_count": 5,
             "new_award_count": 4,
             "children": [
-                {"name": "Office 2", "total_obligations": 312.0, "transaction_count": 3, "new_award_count": 3},
-                {"name": "Office 1", "total_obligations": 203.0, "transaction_count": 2, "new_award_count": 1},
+                {
+                    "name": "Office 2",
+                    "code": "0002",
+                    "total_obligations": 312.0,
+                    "transaction_count": 3,
+                    "new_award_count": 3,
+                },
+                {
+                    "name": "Office 1",
+                    "code": "0001",
+                    "total_obligations": 203.0,
+                    "transaction_count": 2,
+                    "new_award_count": 1,
+                },
             ],
         }
     ]
@@ -43,7 +55,13 @@ def test_alternate_year(client, monkeypatch, sub_agency_data_1, elasticsearch_tr
             "transaction_count": 1,
             "new_award_count": 1,
             "children": [
-                {"name": "Office 1", "total_obligations": 300.0, "transaction_count": 1, "new_award_count": 1}
+                {
+                    "name": "Office 1",
+                    "code": "0001",
+                    "total_obligations": 300.0,
+                    "transaction_count": 1,
+                    "new_award_count": 1,
+                }
             ],
         }
     ]
@@ -65,7 +83,13 @@ def test_alternate_agency(client, monkeypatch, sub_agency_data_1, elasticsearch_
             "transaction_count": 1,
             "new_award_count": 0,
             "children": [
-                {"name": "Office 2", "total_obligations": 400.0, "transaction_count": 1, "new_award_count": 0}
+                {
+                    "name": "Office 2",
+                    "code": "0002",
+                    "total_obligations": 400.0,
+                    "transaction_count": 1,
+                    "new_award_count": 0,
+                }
             ],
         }
     ]
@@ -87,7 +111,13 @@ def test_award_types(client, monkeypatch, sub_agency_data_1, elasticsearch_trans
             "transaction_count": 1,
             "new_award_count": 1,
             "children": [
-                {"name": "Office 1", "total_obligations": 101.0, "transaction_count": 1, "new_award_count": 1}
+                {
+                    "name": "Office 1",
+                    "code": "0001",
+                    "total_obligations": 101.0,
+                    "transaction_count": 1,
+                    "new_award_count": 1,
+                }
             ],
         }
     ]
@@ -109,8 +139,34 @@ def test_agency_types(client, monkeypatch, sub_agency_data_1, elasticsearch_tran
             "transaction_count": 1,
             "new_award_count": 1,
             "children": [
-                {"name": "Office 2", "total_obligations": 101.0, "transaction_count": 1, "new_award_count": 1}
+                {
+                    "name": "Office 2",
+                    "code": "0002",
+                    "total_obligations": 101.0,
+                    "transaction_count": 1,
+                    "new_award_count": 1,
+                }
             ],
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+
+@pytest.mark.django_db
+def test_agency_without_office(client, monkeypatch, sub_agency_data_1, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.get(url.format(toptier_code="003", filter="?fiscal_year=2021&award_type_codes=[B]"))
+    assert resp.status_code == status.HTTP_200_OK
+
+    expected_results = [
+        {
+            "name": "Sub-Agency 3",
+            "abbreviation": "A3",
+            "total_obligations": 110.0,
+            "transaction_count": 1,
+            "new_award_count": 1,
+            "children": [],
         }
     ]
     assert resp.status_code == status.HTTP_200_OK
