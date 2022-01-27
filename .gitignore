@@ -9,6 +9,7 @@
 # IDEs
 **/.idea/
 .vscode
+*.iml
 
 # Temporary and generated files
 bulk_downloads/*
@@ -25,6 +26,7 @@ pyvenv.cfg
 
 # for a project-local (rather than home-dir based) virtual environment directory
 .venv/
+venv
 
 # direnv ignores
 .direnv/
