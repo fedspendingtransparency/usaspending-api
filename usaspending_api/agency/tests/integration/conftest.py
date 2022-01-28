@@ -2,11 +2,6 @@ import pytest
 
 from model_mommy import mommy
 
-from usaspending_api.common.helpers.fiscal_year_helpers import (
-    get_final_period_of_quarter,
-    calculate_last_completed_fiscal_quarter,
-)
-
 CURRENT_FISCAL_YEAR = 2020
 
 
