@@ -76,24 +76,6 @@ class SubcomponentList(PaginationMixin, AgencyBase):
 
     def get_file_a_queryset(self):
         """
-        Query Obligations and Outlays per Bureau from File A for a single Period
-        """
-        filters, bureau_info_subquery = self.get_common_query_objects("treasury_account")
-
-        results = (
-            (FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))
-            .annotate(bureau_info=bureau_info_subquery)
-            .values("bureau_info")
-            .annotate(
-                total_obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
-                total_outlays=Sum("gross_outlay_amount_by_program_object_class_cpe"),
-            )
-            .values("bureau_info", "total_obligations", "total_outlays")
-        )
-        return results
-
-    def get_file_b_queryset(self):
-        """
         Query Total Budgetary Resources per Bureau from File A for a single Period
         """
         filters, bureau_info_subquery = self.get_common_query_objects("treasury_account_identifier")
@@ -106,6 +88,24 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                 total_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"),
             )
             .values("bureau_info", "total_budgetary_resources")
+        )
+        return results
+
+    def get_file_b_queryset(self):
+        """
+        Query Obligations and Outlays per Bureau from File B for a single Period
+        """
+        filters, bureau_info_subquery = self.get_common_query_objects("treasury_account")
+
+        results = (
+            (FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))
+            .annotate(bureau_info=bureau_info_subquery)
+            .values("bureau_info")
+            .annotate(
+                total_obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
+                total_outlays=Sum("gross_outlay_amount_by_program_object_class_cpe"),
+            )
+            .values("bureau_info", "total_obligations", "total_outlays")
         )
         return results
 

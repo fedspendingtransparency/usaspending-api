@@ -96,34 +96,6 @@ def bureau_data():
     )
     taa1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
 
-    mommy.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
-        treasury_account=taa1,
-        submission=sub_2020_ta1,
-        obligations_incurred_by_program_object_class_cpe=1,
-        gross_outlay_amount_by_program_object_class_cpe=10,
-    )
-
-    mommy.make(
-        "accounts.AppropriationAccountBalances",
-        treasury_account_identifier=taa1,
-        submission=sub_2020_ta1,
-        total_budgetary_resources_amount_cpe=100,
-    )
-
-    mommy.make(
-        "references.GTASSF133Balances",
-        fiscal_year=CURRENT_FISCAL_YEAR,
-        fiscal_period=get_final_period_of_quarter(calculate_last_completed_fiscal_quarter(CURRENT_FISCAL_YEAR)) or 12,
-        treasury_account_identifier=taa1,
-        total_budgetary_resources_cpe=100,
-        gross_outlay_amount_by_tas_cpe=10,
-        obligations_incurred_total_cpe=1,
-        budget_authority_unobligated_balance_brought_forward_cpe=0,
-        deobligations_or_recoveries_or_refunds_from_prior_year_cpe=0,
-        prior_year_paid_obligation_recoveries=0,
-        anticipated_prior_year_obligation_recoveries=0,
-    )
     mommy.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
     mommy.make(
         "references.BureauTitleLookup",
@@ -138,6 +110,20 @@ def bureau_data():
 
     mommy.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        treasury_account=taa1,
+        submission=sub_2020_ta1,
+        obligations_incurred_by_program_object_class_cpe=1,
+        gross_outlay_amount_by_program_object_class_cpe=10,
+    )
+    mommy.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=taa1,
+        submission=sub_2020_ta1,
+        total_budgetary_resources_amount_cpe=100,
+    )
+
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=taa2,
         submission=sub_2018_ta2,
         obligations_incurred_by_program_object_class_cpe=20,
@@ -148,19 +134,6 @@ def bureau_data():
         treasury_account_identifier=taa2,
         submission=sub_2018_ta2,
         total_budgetary_resources_amount_cpe=2000,
-    )
-    mommy.make(
-        "references.GTASSF133Balances",
-        fiscal_year=2018,
-        fiscal_period=12,
-        treasury_account_identifier=taa2,
-        total_budgetary_resources_cpe=2000,
-        gross_outlay_amount_by_tas_cpe=200,
-        obligations_incurred_total_cpe=20,
-        budget_authority_unobligated_balance_brought_forward_cpe=0,
-        deobligations_or_recoveries_or_refunds_from_prior_year_cpe=0,
-        prior_year_paid_obligation_recoveries=0,
-        anticipated_prior_year_obligation_recoveries=0,
     )
 
     mommy.make(
@@ -175,19 +148,6 @@ def bureau_data():
         treasury_account_identifier=taa1,
         submission=sub_2018_ta1,
         total_budgetary_resources_amount_cpe=2000,
-    )
-    mommy.make(
-        "references.GTASSF133Balances",
-        fiscal_year=2018,
-        fiscal_period=12,
-        treasury_account_identifier=taa1,
-        total_budgetary_resources_cpe=2000,
-        gross_outlay_amount_by_tas_cpe=200,
-        obligations_incurred_total_cpe=20,
-        budget_authority_unobligated_balance_brought_forward_cpe=0,
-        deobligations_or_recoveries_or_refunds_from_prior_year_cpe=0,
-        prior_year_paid_obligation_recoveries=0,
-        anticipated_prior_year_obligation_recoveries=0,
     )
 
 
