@@ -966,10 +966,15 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
 
 
 def test_award_endpoint_parent_award(client, awards_and_transactions):
+
+    dsws1 = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
+    mommy.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
+    mommy.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws1)
+
     # Test contract award with parent
     resp = client.get("/api/v2/awards/7/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_contract_award_parent
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_contract_award_parent()
 
     # Test contract award without parent
     resp = client.get("/api/v2/awards/10/")
@@ -979,7 +984,32 @@ def test_award_endpoint_parent_award(client, awards_and_transactions):
     # Test idv award with parent
     resp = client.get("/api/v2/awards/8/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_idv_award_parent
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_idv_award_parent()
+
+    # Test idv award without parent
+    resp = client.get("/api/v2/awards/9/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
+
+
+def test_award_endpoint_parent_award_no_submissions(client, awards_and_transactions):
+
+    # Test contract award with parent
+    resp = client.get("/api/v2/awards/7/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_contract_award_parent(
+        include_slug=False
+    )
+
+    # Test contract award without parent
+    resp = client.get("/api/v2/awards/10/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
+
+    # Test idv award with parent
+    resp = client.get("/api/v2/awards/8/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_idv_award_parent(include_slug=False)
 
     # Test idv award without parent
     resp = client.get("/api/v2/awards/9/")
@@ -1583,6 +1613,7 @@ expected_response_cont = {
     "parent_award": {
         "agency_id": None,
         "agency_name": None,
+        "agency_slug": None,
         "sub_agency_id": None,
         "sub_agency_name": None,
         "award_id": 4,
@@ -1599,28 +1630,34 @@ expected_response_cont = {
     "total_outlay": None,
 }
 
-expected_contract_award_parent = {
-    "agency_id": 2,
-    "agency_name": "TOPTIER AGENCY 2",
-    "sub_agency_id": "1000",
-    "sub_agency_name": "SUBTIER AGENCY 2",
-    "award_id": 8,
-    "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
-    "idv_type_description": "TYPE DESCRIPTION TRANS 9",
-    "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 9",
-    "piid": "AWARD8",
-    "type_of_idc_description": "IDC DESCRIPTION TRANS 9",
-}
 
-expected_idv_award_parent = {
-    "agency_id": 2,
-    "agency_name": "TOPTIER AGENCY 2",
-    "sub_agency_id": "1000",
-    "sub_agency_name": "SUBTIER AGENCY 2",
-    "award_id": 9,
-    "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
-    "idv_type_description": "TYPE DESCRIPTION TRANS 10",
-    "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 10",
-    "piid": "AWARD9",
-    "type_of_idc_description": "IDC DESCRIPTION TRANS 10",
-}
+def expected_contract_award_parent(include_slug=True):
+    return {
+        "agency_id": 2,
+        "agency_name": "TOPTIER AGENCY 2",
+        "agency_slug": "toptier-agency-2" if include_slug else None,
+        "sub_agency_id": "1000",
+        "sub_agency_name": "SUBTIER AGENCY 2",
+        "award_id": 8,
+        "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
+        "idv_type_description": "TYPE DESCRIPTION TRANS 9",
+        "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 9",
+        "piid": "AWARD8",
+        "type_of_idc_description": "IDC DESCRIPTION TRANS 9",
+    }
+
+
+def expected_idv_award_parent(include_slug=True):
+    return {
+        "agency_id": 2,
+        "agency_name": "TOPTIER AGENCY 2",
+        "agency_slug": "toptier-agency-2" if include_slug else None,
+        "sub_agency_id": "1000",
+        "sub_agency_name": "SUBTIER AGENCY 2",
+        "award_id": 9,
+        "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
+        "idv_type_description": "TYPE DESCRIPTION TRANS 10",
+        "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 10",
+        "piid": "AWARD9",
+        "type_of_idc_description": "IDC DESCRIPTION TRANS 10",
+    }

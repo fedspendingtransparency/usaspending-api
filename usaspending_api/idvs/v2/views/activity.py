@@ -12,6 +12,7 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.references.helpers import generate_agency_slugs_for_agency_list
 
 
 # In gather_award_ids, if any awards are found for IDVs in the second half of
@@ -35,6 +36,7 @@ ACTIVITY_SQL = SQL(
     select
         ca.id                                           award_id,
         ta.name                                         awarding_agency,
+        ta.toptier_agency_id                            toptier_agency_id,
         ca.awarding_agency_id                           awarding_agency_id,
         ca.generated_unique_award_id,
         tf.period_of_perf_potential_e                   period_of_performance_potential_end_date,
@@ -172,7 +174,18 @@ class IDVActivityViewSet(APIView):
             hide_edges_end_date=SQL(hide_edges_end_date),
         )
 
-        return execute_sql_to_ordered_dictionary(sql), overall_count
+        results = execute_sql_to_ordered_dictionary(sql)
+
+        agency_slugs = generate_agency_slugs_for_agency_list([res["toptier_agency_id"] for res in results])
+
+        for res in results:
+            # Set Agency Slug
+            res["awarding_agency_slug"] = agency_slugs.get(res.get("toptier_agency_id"))
+
+            # Remove extra fields
+            del res["toptier_agency_id"]
+
+        return results, overall_count
 
     @cache_response()
     def post(self, request: Request) -> Response:

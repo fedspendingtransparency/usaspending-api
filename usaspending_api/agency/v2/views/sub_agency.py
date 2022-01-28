@@ -9,6 +9,7 @@ from usaspending_api.common.elasticsearch.aggregation_helpers import create_coun
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.references.models import Agency
 
 
 class SubAgencyList(PaginationMixin, AgencyBase):
@@ -28,6 +29,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         self.sortable_columns = ["name", "total_obligations", "transaction_count", "new_award_count"]
         self.default_sort_column = "total_obligations"
+        self.filter_query = self.build_elasticsearch_filter_query()
         results = sorted(
             self.get_sub_agency_list(),
             key=lambda x: x.get(self.pagination.sort_key),
@@ -51,14 +53,14 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             response.append(
                 {
                     "name": bucket.get("key"),
-                    "abbreviation": bucket.get("subagency_info")
-                    .get("hits")
-                    .get("hits")[0]
-                    .get("_source")
+                    "abbreviation": bucket.get("subagency_info", {})
+                    .get("hits", {})
+                    .get("hits", [{}])[0]
+                    .get("_source", {})
                     .get(f"{self.agency_type}_subtier_agency_abbreviation"),
-                    "total_obligations": round(bucket.get("total_subagency_obligations").get("value"), 2),
+                    "total_obligations": round(bucket.get("total_subagency_obligations", {}).get("value", 0), 2),
                     "transaction_count": bucket.get("doc_count"),
-                    "new_award_count": bucket.get("agency_award_count").get("agency_award_value").get("value"),
+                    "new_award_count": bucket.get("agency_award_count", {}).get("agency_award_value", {}).get("value"),
                     "children": sorted(
                         self.format_child_response(bucket.get("offices").get("buckets")),
                         key=lambda x: x.get(self.pagination.sort_key),
@@ -73,14 +75,15 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         for child in children:
             response.append(
                 {
-                    "name": child.get("office_info")
-                    .get("hits")
-                    .get("hits")[0]
-                    .get("_source")
+                    "name": child.get("office_info", {})
+                    .get("hits", {})
+                    .get("hits", [{}])[0]
+                    .get("_source", {})
                     .get(f"{self.agency_type}_office_name"),
-                    "total_obligations": round(child.get("total_office_obligations").get("value"), 2),
+                    "code": child.get("key"),
+                    "total_obligations": round(child.get("total_office_obligations", {}).get("value", 0), 2),
                     "transaction_count": child.get("doc_count"),
-                    "new_award_count": child.get("office_award_count").get("office_award_value").get("value"),
+                    "new_award_count": child.get("office_award_count", {}).get("office_award_value", {}).get("value"),
                 }
             )
         return response
@@ -89,7 +92,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         response = self.query_elasticsearch()
         return self.format_elasticsearch_results(response)
 
-    def query_elasticsearch(self):
+    def build_elasticsearch_filter_query(self):
         fiscal_year = FiscalYear(self.fiscal_year)
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
             {
@@ -98,7 +101,12 @@ class SubAgencyList(PaginationMixin, AgencyBase):
                 "award_type_codes": self._query_params.get("award_type_codes", []),
             }
         )
-        search = TransactionSearch().filter(filter_query)
+        return filter_query
+
+    def query_elasticsearch(self):
+        fiscal_year = FiscalYear(self.fiscal_year)
+        search = TransactionSearch().filter(self.filter_query)
+        term_agg_sizes = self.get_term_agg_size_values()
         subagency_dim_metadata = A(
             "top_hits",
             size=1,
@@ -109,8 +117,10 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             size=1,
             _source={"includes": [f"{self.agency_type}_office_name"]},
         )
-        subtier_agency_agg = A("terms", field=f"{self.agency_type}_subtier_agency_name.keyword")
-        office_agg = A("terms", field=f"{self.agency_type}_office_code.keyword")
+        subtier_agency_agg = A(
+            "terms", field=f"{self.agency_type}_subtier_agency_name.keyword", size=term_agg_sizes["subtier_agency_size"]
+        )
+        office_agg = A("terms", field=f"{self.agency_type}_office_code.keyword", size=term_agg_sizes["office_size"])
         agency_obligation_agg = A("sum", field="generated_pragmatic_obligation")
         office_obligation_agg = A("sum", field="generated_pragmatic_obligation")
         new_award_filter = A(
@@ -138,3 +148,27 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         search.update_from_dict({"size": 0})
         response = search.handle_execute()
         return response
+
+    def get_term_agg_size_values(self):
+        search = TransactionSearch().filter(self.filter_query)
+        max_subtier_agencies = Agency.objects.filter(
+            toptier_agency__toptier_code=self.toptier_code, subtier_agency__isnull=False
+        ).count()
+
+        unique_subtier_agg = A(
+            "terms", field=f"{self.agency_type}_subtier_agency_name.keyword", size=max_subtier_agencies
+        )
+        unique_office_count_agg = A("cardinality", field=f"{self.agency_type}_office_code.keyword")
+        max_office_count_agg = A("max_bucket", buckets_path="unique_subtier_agg>unique_office_count_agg")
+
+        search.aggs.bucket("unique_subtier_agg", unique_subtier_agg).metric(
+            "unique_office_count_agg", unique_office_count_agg
+        )
+        search.aggs.bucket("max_office_count_agg", max_office_count_agg)
+        search.update_from_dict({"size": 0})
+        response = search.handle_execute()
+        resp_as_dict = response.aggs.to_dict()
+        max_office_count = resp_as_dict.get("max_office_count_agg", {}).get("value")
+
+        # Default to Terms aggregation default of 10 to avoid parse error with size of 0
+        return {"office_size": max_office_count or 10, "subtier_agency_size": max_subtier_agencies or 10}
