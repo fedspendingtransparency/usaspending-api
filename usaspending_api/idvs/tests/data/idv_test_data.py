@@ -181,9 +181,17 @@ def create_idv_test_data():
             recipient_unique_id="duns_%s" % (7000 + award_id),
         )
 
-        mommy.make("submissions.SubmissionAttributes", submission_window=dsws, toptier_code=str(award_id).zfill(3))
         mommy.make(
-            "submissions.SubmissionAttributes", submission_window=dsws, toptier_code=str(100 + award_id).zfill(3)
+            "submissions.SubmissionAttributes",
+            reporting_fiscal_year=2008,
+            submission_window=dsws,
+            toptier_code=awarding_toptier_agency.toptier_code,
+        )
+        mommy.make(
+            "submissions.SubmissionAttributes",
+            reporting_fiscal_year=2008,
+            submission_window=dsws,
+            toptier_code=funding_toptier_agency.toptier_code,
         )
 
     # We'll need some parent_awards.  We "hard code" values here rather than
