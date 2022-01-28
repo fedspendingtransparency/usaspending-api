@@ -5,17 +5,17 @@ cache: pip
 python:
   - '3.7'
 
-services:
-  - postgresql
+#services:
+#  - postgresql
   # NOTE: This is added, but re-installed at a different version below
 #  - elasticsearch
 
-addons:
-  postgresql: '10'
-  apt:
-    packages:
-    - postgresql-10
-    - postgresql-client-10
+#addons:
+#  postgresql: '10'
+#  apt:
+#    packages:
+#    - postgresql-10
+#    - postgresql-client-10
 
 env:
   global:
