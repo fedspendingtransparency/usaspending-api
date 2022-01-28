@@ -40,6 +40,9 @@ services:
     build: .
     volumes:
      - .:/dockermount
+     # Required to interact with host's docker daemon from within this running container,
+     # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
+     - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - usaspending-db
       - usaspending-es
@@ -48,11 +51,16 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
+      # Location in host machine where broker src code root can be found
+      DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 
   usaspending-ci:
     build: .
     volumes:
      - .:/dockermount
+     # Required to interact with host's docker daemon from within this running container,
+     # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
+     - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - usaspending-db
       - usaspending-es
@@ -66,13 +74,16 @@ services:
         flake8 && echo "Successfully passed"
         printf -- "-------\nChecking API documentation files:\n"
         python3 manage.py check_for_endpoint_documentation
-        printf -- "-------\nRunning unit and integration tests:\n"
-        pytest --sw --disable-warnings --no-cov
+        printf -- "-------\nRunning unit tests:\n"
+        pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
+        printf -- "-------\nRunning integration tests:\n"
+        pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
-
+      # Location in host machine where broker src code root can be found
+      DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 
   usaspending-api:
     build: .
