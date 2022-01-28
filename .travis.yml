@@ -92,7 +92,10 @@ before_script:
 #  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
 #  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
-  - docker-compose build --compress --progress=auto --quiet usaspending-ci
+  - docker-compose build --progress=tty usaspending-ci
+  - docker-compose up -d usaspending-db usaspending-es
+  - sleep 25
+  - docker-compose logs
 
 script:
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
@@ -101,4 +104,5 @@ script:
   - docker-compose run --rm usaspending-ci
 
 after_script:
+  - docker-compose down
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
