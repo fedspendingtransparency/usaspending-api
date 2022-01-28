@@ -20,17 +20,17 @@ python:
 env:
   global:
   # For usaspending-db container
-  - POSTGRES_HOST=localhost
+  - POSTGRES_HOST=usaspending-db  # must be relative to the docker compose network, and container hosts on it
   - POSTGRES_PORT=5432
   - POSTGRES_USER=usaspending
   - POSTGRES_PASSWORD=usaspender
   - POSTGRES_DB=data_store_api
   # For usaspending-ci container
   - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-  - ES_HOST=localhost
+  - ES_HOST=usaspending-es
   - ES_PORT=9200
   - ES_HOSTNAME=${ES_HOST}:${ES_PORT}
-  - BROKER_HOST=localhost
+  - BROKER_HOST=broker-db
   - BROKER_PORT=5432
   - BROKER_USER=admin
   - BROKER_PASSWORD=root
@@ -92,10 +92,12 @@ before_script:
 #  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
 #  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
-  - docker-compose build --progress=tty usaspending-ci
+  - docker-compose build --progress=tty --quiet usaspending-ci
   - docker-compose up -d usaspending-db usaspending-es
   - sleep 25
   - docker-compose logs
+  - ttl=30; echo "Try DB conn for $ttl seconds"; until [ $ttl -le 0 ] || psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
+  - ttl=30; echo "Try ES conn for $ttl seconds"; until [ $ttl -le 0 ] || curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
 
 script:
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
