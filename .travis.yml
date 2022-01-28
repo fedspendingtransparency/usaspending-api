@@ -8,7 +8,7 @@ python:
 services:
   - postgresql
   # NOTE: This is added, but re-installed at a different version below
-  - elasticsearch
+#  - elasticsearch
 
 addons:
   postgresql: '10'
@@ -19,20 +19,40 @@ addons:
 
 env:
   global:
-  - USASPENDING_DB_HOST=localhost
-  - USASPENDING_DB_PORT=5432
-  - USASPENDING_DB_USER=usaspending
-  - USASPENDING_DB_PASSWORD=usaspender
-  - USASPENDING_DB_NAME=data_store_api
-  - DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/${USASPENDING_DB_NAME}
-  - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
-  - ES_HOSTNAME='http://localhost:9200'
-  - BROKER_DB_HOST=localhost
-  - BROKER_DB_PORT=5432
-  - BROKER_DB_USER=admin
-  - BROKER_DB_PASSWORD=root
+  # For usaspending-db container
+  - POSTGRES_HOST=localhost
+  - POSTGRES_PORT=5432
+  - POSTGRES_USER=usaspending
+  - POSTGRES_PASSWORD=usaspender
+  - POSTGRES_DB=data_store_api
+  # For usaspending-ci container
+  - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+  - ES_HOST=localhost
+  - ES_PORT=9200
+  - ES_HOSTNAME=${ES_HOST}:${ES_PORT}
+  - BROKER_HOST=localhost
+  - BROKER_PORT=5432
+  - BROKER_USER=admin
+  - BROKER_PASSWORD=root
   - BROKER_DB_NAME=data_broker
-  - DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
+  - DATA_BROKER_DATABASE_URL=postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/${BROKER_DB_NAME}
+  # Location in host machine where broker src code root can be found
+  - DATA_BROKER_SRC_PATH="$PWD/../data-act-broker-backend"
+  # OLD
+#  - USASPENDING_DB_HOST=localhost
+#  - USASPENDING_DB_PORT=5432
+#  - USASPENDING_DB_USER=usaspending
+#  - USASPENDING_DB_PASSWORD=usaspender
+#  - USASPENDING_DB_NAME=data_store_api
+  #- DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/${USASPENDING_DB_NAME}
+  - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
+#  - ES_HOSTNAME='http://localhost:9200'
+#  - BROKER_DB_HOST=localhost
+#  - BROKER_DB_PORT=5432
+#  - BROKER_DB_USER=admin
+#  - BROKER_DB_PASSWORD=root
+#  - BROKER_DB_NAME=data_broker
+  #- DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
   - BROKER_REPO_URL=https://github.com/fedspendingtransparency/data-act-broker-backend.git
   - BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
@@ -41,18 +61,18 @@ env:
 
 before_install:
   # Re-install elasticsearch at the right version
-  - sudo systemctl stop elasticsearch
-  - sudo dpkg --remove elasticsearch
-  - sudo dpkg --purge elasticsearch
-  - sudo rm -rf /var/lib/elasticsearch
-  - travis_retry curl -s -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.1.1-amd64.deb
-  - sudo dpkg --install elasticsearch-7.1.1-amd64.deb
-  - sudo sed -i.old 's/-Xms1g/-Xms512m/' /etc/elasticsearch/jvm.options
-  - echo -e '-XX:+DisableExplicitGC\n-Djdk.io.permissionsUseCanonicalPath=true\n-Dlog4j.skipJansi=true\n-server\n' | sudo tee -a /etc/elasticsearch/jvm.options
-  - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
-  - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
-  - sudo systemctl start elasticsearch
-  - sudo journalctl -u elasticsearch -b
+#  - sudo systemctl stop elasticsearch
+#  - sudo dpkg --remove elasticsearch
+#  - sudo dpkg --purge elasticsearch
+#  - sudo rm -rf /var/lib/elasticsearch
+#  - travis_retry curl -s -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.1.1-amd64.deb
+#  - sudo dpkg --install elasticsearch-7.1.1-amd64.deb
+#  - sudo sed -i.old 's/-Xms1g/-Xms512m/' /etc/elasticsearch/jvm.options
+#  - echo -e '-XX:+DisableExplicitGC\n-Djdk.io.permissionsUseCanonicalPath=true\n-Dlog4j.skipJansi=true\n-server\n' | sudo tee -a /etc/elasticsearch/jvm.options
+#  - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
+#  - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
+#  - sudo systemctl start elasticsearch
+#  - sudo journalctl -u elasticsearch -b
   # Add dredd for API contract testing
   - travis_retry npm install --global dredd@13.1.2
 
@@ -69,19 +89,16 @@ before_script:
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
-  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
-  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
+#  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
+#  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
   - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
 
 script:
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
-  - flake8
-  - black --check --diff .
-  - python manage.py check_for_endpoint_documentation
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
-  - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
-  - pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
+  # See docker-compose.yaml. Runs black, flake8, endpoint doc check, unit tests, integration tests
+  - docker-compose run --rm usaspending-ci
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
