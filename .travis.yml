@@ -1,6 +1,9 @@
 language: python
 
-cache: pip
+cache:
+  - pip
+  directories:
+    - docker_images
 
 python:
   - '3.7'
@@ -19,45 +22,45 @@ python:
 
 env:
   global:
-  # For usaspending-db container
-  - POSTGRES_HOST=usaspending-db  # must be relative to the docker compose network, and container hosts on it
-  - POSTGRES_PORT=5432
-  - POSTGRES_USER=usaspending
-  - POSTGRES_PASSWORD=usaspender
-  - POSTGRES_DB=data_store_api
-  # For usaspending-ci container
-  - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-  - ES_HOST=usaspending-es
-  - ES_PORT=9200
-  - ES_HOSTNAME=${ES_HOST}:${ES_PORT}
-  - BROKER_HOST=broker-db
-  - BROKER_PORT=5432
-  - BROKER_USER=admin
-  - BROKER_PASSWORD=root
-  - BROKER_DB_NAME=data_broker
-  - DATA_BROKER_DATABASE_URL=postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/${BROKER_DB_NAME}
-  # Location in host machine where broker src code root can be found
-  - DATA_BROKER_SRC_PATH="${TRAVIS_BUILD_DIR}/../data-act-broker-backend"
-  # OLD
-#  - USASPENDING_DB_HOST=localhost
-#  - USASPENDING_DB_PORT=5432
-#  - USASPENDING_DB_USER=usaspending
-#  - USASPENDING_DB_PASSWORD=usaspender
-#  - USASPENDING_DB_NAME=data_store_api
-  #- DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/${USASPENDING_DB_NAME}
-  - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
-#  - ES_HOSTNAME='http://localhost:9200'
-#  - BROKER_DB_HOST=localhost
-#  - BROKER_DB_PORT=5432
-#  - BROKER_DB_USER=admin
-#  - BROKER_DB_PASSWORD=root
-#  - BROKER_DB_NAME=data_broker
-  #- DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
-  - BROKER_REPO_URL=https://github.com/fedspendingtransparency/data-act-broker-backend.git
-  - BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
-  - BROKER_REPO_FOLDER=${DATA_BROKER_SRC_PATH}
-  - BROKER_DOCKER_IMAGE=dataact-broker-backend
-  - GRANTS_API_KEY=${GRANTS_API_KEY}
+    # For usaspending-db container
+    - POSTGRES_HOST=usaspending-db  # host as seen from running test container
+    - POSTGRES_PORT=5432
+    - POSTGRES_USER=usaspending
+    - POSTGRES_PASSWORD=usaspender
+    - POSTGRES_DB=data_store_api
+    # For usaspending-ci container
+    - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    - ES_HOST=usaspending-es  # host as seen from running test container
+    - ES_PORT=9200
+    - ES_HOSTNAME=${ES_HOST}:${ES_PORT}
+    - BROKER_HOST=host.docker.internal  # broker container not on docker-compose network, so must connect out to localhost:5435 using host.docker.internal
+    - BROKER_PORT=5435
+    - BROKER_USER=admin
+    - BROKER_PASSWORD=root
+    - BROKER_DB_NAME=data_broker
+    - DATA_BROKER_DATABASE_URL=postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/${BROKER_DB_NAME}
+    # Location in host machine where broker src code root can be found
+    - DATA_BROKER_SRC_PATH="${TRAVIS_BUILD_DIR}/../data-act-broker-backend"
+    # OLD
+  #  - USASPENDING_DB_HOST=localhost
+  #  - USASPENDING_DB_PORT=5432
+  #  - USASPENDING_DB_USER=usaspending
+  #  - USASPENDING_DB_PASSWORD=usaspender
+  #  - USASPENDING_DB_NAME=data_store_api
+    #- DATABASE_URL=postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/${USASPENDING_DB_NAME}
+    - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
+  #  - ES_HOSTNAME='http://localhost:9200'
+  #  - BROKER_DB_HOST=localhost
+  #  - BROKER_DB_PORT=5432
+  #  - BROKER_DB_USER=admin
+  #  - BROKER_DB_PASSWORD=root
+  #  - BROKER_DB_NAME=data_broker
+    #- DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
+    - BROKER_REPO_URL=https://github.com/fedspendingtransparency/data-act-broker-backend.git
+    - BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
+    - BROKER_REPO_FOLDER=${DATA_BROKER_SRC_PATH}
+    - BROKER_DOCKER_IMAGE=dataact-broker-backend
+    - GRANTS_API_KEY=${GRANTS_API_KEY}
 
 before_install:
   # Re-install elasticsearch at the right version
@@ -73,6 +76,8 @@ before_install:
 #  - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
 #  - sudo systemctl start elasticsearch
 #  - sudo journalctl -u elasticsearch -b
+  # Reload any cached images and their layers from previous builds, to shorten docker pulls/builds
+  -  docker load -i docker_images/images.tar || true
   # Add dredd for API contract testing
   - travis_retry npm install --global dredd@13.1.2
 
@@ -104,6 +109,9 @@ script:
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   # See docker-compose.yaml. Runs black, flake8, endpoint doc check, unit tests, integration tests
   - docker-compose run --rm usaspending-ci
+
+before_cache:
+  - docker save -o docker_images/images.tar $(docker images -a -q)
 
 after_script:
   - docker-compose down
