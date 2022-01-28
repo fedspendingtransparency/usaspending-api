@@ -1,5 +1,7 @@
 import itertools
 import logging
+import time
+
 from abc import ABCMeta, abstractmethod
 from datetime import datetime, timezone
 from typing import Union
@@ -86,10 +88,38 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         )
 
         created_obj_list = DownloadJobLookup.objects.bulk_create(download_lookup_obj_list, batch_size=10000)
+        number_of_created_objects = len(created_obj_list)
         write_to_log(
-            message=f"Inserted {len(created_obj_list)} rows into download_job_lookup",
+            message=f"Inserted {number_of_created_objects} rows into download_job_lookup",
             download_job=download_job,
         )
+
+        # Wait for download lookup to be populated on the replica in the case of replication lag
+        if number_of_created_objects != 0:
+            # Waiting 10 minutes maximum for replication;
+            # Should be enough time except for extreme cases of replication lag
+            wait_start_time = time.time()
+            time_to_wait_in_seconds = 60 * 10
+            is_lookup_replicated = (
+                DownloadJobLookup.objects.using("db_download")
+                .filter(download_job_id=download_job.download_job_id)
+                .exists()
+            )
+            while not is_lookup_replicated and time.time() - wait_start_time < time_to_wait_in_seconds:
+                time.sleep(30)  # Wait 30 seconds before checking again; should catch majority of cases
+                is_lookup_replicated = (
+                    DownloadJobLookup.objects.using("db_download")
+                    .filter(download_job_id=download_job.download_job_id)
+                    .exists()
+                )
+                write_to_log(message=f"Waiting on replication for Download Lookup", download_job=download_job)
+
+            if is_lookup_replicated:
+                write_to_log(message="Download Lookup records have been replicated (if applicable)")
+            else:
+                message = f"Download Lookup failed to replicate in under {wait_start_time} seconds"
+                write_to_log(message=message, is_error=True, download_job=download_job)
+                raise Exception(message)
 
     @classmethod
     @abstractmethod
