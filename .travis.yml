@@ -96,8 +96,8 @@ before_script:
   - docker-compose up -d usaspending-db usaspending-es
   - sleep 25
   - docker-compose logs
-  - ttl=30; echo "Try DB conn for $ttl seconds"; until [ $ttl -le 0 ] || psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
-  - ttl=30; echo "Try ES conn for $ttl seconds"; until [ $ttl -le 0 ] || curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
+  - ttl=30; echo "Try DB conn from container for $ttl seconds"; until [ $ttl -le 0 ] || docker-compose run --rm usaspending-ci psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
+  - ttl=30; echo "Try ES conn from container for $ttl seconds"; until [ $ttl -le 0 ] || docker-compose run --rm usaspending-ci curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
 
 script:
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
