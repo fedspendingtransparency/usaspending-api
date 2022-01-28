@@ -92,6 +92,7 @@ before_script:
 #  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
 #  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
+  - docker-compose build --compress --progress=auto --quiet usaspending-ci
 
 script:
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
