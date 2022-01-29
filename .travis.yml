@@ -25,14 +25,14 @@ python:
 env:
   global:
     # For usaspending-db container
-    - POSTGRES_HOST=usaspending-db  # host as seen from running test container
+    - POSTGRES_HOST=localhost  # able to use localhost when network_mode=host (in docker-compose.yaml)
     - POSTGRES_PORT=5432
     - POSTGRES_USER=usaspending
     - POSTGRES_PASSWORD=usaspender
     - POSTGRES_DB=data_store_api
     # For usaspending-ci container
     - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-    - ES_HOST=usaspending-es  # host as seen from running test container
+    - ES_HOST=localhost  # able to use localhost when network_mode=host (in docker-compose.yaml)
     - ES_PORT=9200
     - ES_HOSTNAME=${ES_HOST}:${ES_PORT}
     - BROKER_HOST=localhost  # broker container not on docker-compose network, so must connect out to localhost. Both the spun-up broker db init container, and our our test container will run with network_mode=host in order to resolve localhost
