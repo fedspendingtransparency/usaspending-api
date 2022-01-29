@@ -111,6 +111,7 @@ script:
   - docker-compose run --rm usaspending-ci
 
 before_cache:
+  # Save off docker images+layers used by this build into the `docker_images` cache dir
   - docker save -o docker_images/images.tar $(docker images -a -q)
 
 after_script:
