@@ -106,7 +106,7 @@ before_script:
   - ttl=30; echo "Try DB conn from container for $ttl seconds"; until [ $ttl -le 0 ] || docker-compose run --rm usaspending-ci psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
   - ttl=30; echo "Try ES conn from container for $ttl seconds"; until [ $ttl -le 0 ] || docker-compose run --rm usaspending-ci curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
   # Broker integration tests use the same PG server, but need a broker user created
-  - psql postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/postgres -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
+  - psql postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/postgres -c "CREATE USER ${BROKER_USER} PASSWORD '${BROKER_PASSWORD}' SUPERUSER"
 
 
 script:
