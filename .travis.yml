@@ -1,11 +1,11 @@
 language: python
 
-cache: pip
-#
-#cache:
-#  - pip
-#  directories:
-#    - docker_images
+#cache: pip
+
+cache:
+  pip: true
+  directories:
+    - docker_images
 
 python:
   - '3.7'
@@ -79,7 +79,7 @@ before_install:
   #  - sudo systemctl start elasticsearch
   #  - sudo journalctl -u elasticsearch -b
   # Reload any cached images and their layers from previous builds, to shorten docker pulls/builds
-  #  -  docker load -i docker_images/images.tar || true
+  -  docker load -i docker_images/images.tar || true
   # Add dredd for API contract testing
   - travis_retry npm install --global dredd@13.1.2
 
@@ -99,7 +99,7 @@ before_script:
   #  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   #  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
-  - docker-compose build --progress=tty --quiet usaspending-ci
+  - docker-compose build usaspending-ci
   - docker-compose up -d usaspending-db usaspending-es
   - sleep 25
   - docker-compose logs
@@ -112,9 +112,9 @@ script:
   # See docker-compose.yaml. Runs black, flake8, endpoint doc check, unit tests, integration tests
   - docker-compose run --rm usaspending-ci
 
-#before_cache:
-#  # Save off docker images+layers used by this build into the `docker_images` cache dir
-#  - docker save -o docker_images/images.tar $(docker images -a -q)
+before_cache:
+  # Save off docker images+layers used by this build into the `docker_images` cache dir
+  - docker save -o docker_images/images.tar $(docker images -a -q)
 
 after_script:
   - docker-compose down
