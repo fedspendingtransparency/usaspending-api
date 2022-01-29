@@ -61,6 +61,7 @@ services:
      # Required to interact with host's docker daemon from within this running container,
      # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
      - /var/run/docker.sock:/var/run/docker.sock
+    network_mode: host  # ignored when mac/windows (or maybe not?). On Linux, will allow resolving the host as localhost
     depends_on:
       - usaspending-db
       - usaspending-es

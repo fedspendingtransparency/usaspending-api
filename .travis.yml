@@ -35,7 +35,7 @@ env:
     - ES_HOST=usaspending-es  # host as seen from running test container
     - ES_PORT=9200
     - ES_HOSTNAME=${ES_HOST}:${ES_PORT}
-    - BROKER_HOST=localhost  # broker container not on docker-compose network, so must connect out to localhost:5435. Our test container is setup with --net=host, so we can use localhost on linux instead of the mac/windows host.docker.internal
+    - BROKER_HOST=localhost  # broker container not on docker-compose network, so must connect out to localhost. Both the spun-up broker db init container, and our our test container will run with network_mode=host in order to resolve localhost
     - BROKER_PORT=5432  # and it shares the same PG server as usaspending DB, but different test db created
     - BROKER_USER=admin
     - BROKER_PASSWORD=root
