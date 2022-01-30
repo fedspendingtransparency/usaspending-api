@@ -22,7 +22,7 @@ WORKDIR /dockermount
 
 
 ##### Install PostgreSQL 10 client (psql)
-RUN apt-get install -y postgresql-client
+RUN apt-get -y update && apt-get install -y postgresql-client
 #RUN yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 #RUN yum -y install postgresql10
 
