@@ -20,7 +20,9 @@ WORKDIR /dockermount
 #RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel sqlite-devel
 #RUN yum -y groupinstall "Development Tools"
 
+
 ##### Install PostgreSQL 10 client (psql)
+RUN apt-get install -y postgresql-client
 #RUN yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 #RUN yum -y install postgresql10
 
