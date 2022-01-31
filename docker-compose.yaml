@@ -65,6 +65,7 @@ services:
     depends_on:
       - usaspending-db
       - usaspending-es
+    # use script_exit var to capture exit codes of each individual command
     command:
       - bash
       - -c
