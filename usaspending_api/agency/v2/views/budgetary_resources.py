@@ -56,21 +56,28 @@ class BudgetaryResources(AgencyBase):
             )
         )
 
-        for abb in results:
-            if periods.get(abb["fiscal_year"]) is not None:
-                periods[abb["fiscal_year"]].append(
+        for aab in results:
+            # This "continue" logic is in place to prevent the case where multiple agencies have submitted a mixture of
+            # quarterly and monthly with a single agency listed as the funding agency. In this case the total
+            # obligations are not displayed correctly on the monthly submissions that do not line up with a
+            # corresponding quarterly submission.
+            # TODO: Update with logic that takes into account the time period before required monthly submissions
+            if aab["fiscal_year"] < 2022 and aab["submission__reporting_fiscal_period"] not in (3, 6, 9, 12):
+                continue
+            if periods.get(aab["fiscal_year"]) is not None:
+                periods[aab["fiscal_year"]].append(
                     {
-                        "period": abb["submission__reporting_fiscal_period"],
-                        "obligated": abb["sum"],
+                        "period": aab["submission__reporting_fiscal_period"],
+                        "obligated": aab["sum"],
                     }
                 )
             else:
                 periods.update(
                     {
-                        abb["fiscal_year"]: [
+                        aab["fiscal_year"]: [
                             {
-                                "period": abb["submission__reporting_fiscal_period"],
-                                "obligated": abb["sum"],
+                                "period": aab["submission__reporting_fiscal_period"],
+                                "obligated": aab["sum"],
                             }
                         ]
                     }

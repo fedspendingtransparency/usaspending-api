@@ -21,7 +21,7 @@
     "  FY(awards.certified_date) AS award_fiscal_year,",
     "  transaction_normalized.update_date,",
     "  awards.update_date AS award_update_date,",
-    "  awards.date_signed AS award_date_signed,",
+    "  awards.date_signed::date AS award_date_signed,",
     "  GREATEST(transaction_normalized.update_date, awards.update_date) AS etl_update_date,",
     "  awards.period_of_performance_start_date,",
     "  awards.period_of_performance_current_end_date,",
