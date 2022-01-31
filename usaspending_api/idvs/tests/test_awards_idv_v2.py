@@ -12,14 +12,14 @@ from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgen
 def awards_and_transactions(db):
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    mommy.make("references.SubtierAgency", subtier_code="def", **subag)
-    mommy.make("references.ToptierAgency", toptier_code="abc", **subag)
+    sa1 = mommy.make("references.SubtierAgency", subtier_code="def", **subag)
+    ta1 = mommy.make("references.ToptierAgency", toptier_code="abc", **subag)
 
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
-    recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
+    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
     parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
+    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C", "uei": "DEF"}
     mommy.make("references.Cfda", program_number=1234)
     mommy.make("recipient.DUNS", **duns)
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
@@ -27,7 +27,7 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
 
-    ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
+    ag = {"pk": 1, "toptier_agency": ta1, "subtier_agency": sa1}
     mommy.make("references.Agency", **ag)
 
     trans_asst = {"pk": 1, "award_id": 1, "business_categories": ["small_business"]}
@@ -388,7 +388,7 @@ expected_response_idv = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "John's Pizza",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
