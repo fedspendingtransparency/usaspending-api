@@ -6,7 +6,7 @@ from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 def obtain_recipient_uri(
-    recipient_name, recipient_unique_id, recipient_uei, parent_recipient_unique_id, is_parent_recipient=False
+    recipient_name, recipient_unique_id, parent_recipient_unique_id, is_parent_recipient=False, recipient_uei=None,
 ):
     """Return a valid string to be used for api/v2/recipient/duns/<recipient-hash>/ (or None)
 
