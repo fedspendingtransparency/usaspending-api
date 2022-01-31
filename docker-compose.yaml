@@ -67,6 +67,7 @@ services:
       - usaspending-es
     command:
       - sh
+      - -o pipefail  # ensure if any command exits non-zero, the whole script does
       - -c
       - |
         printf "==============\nChecking code format:\n"
