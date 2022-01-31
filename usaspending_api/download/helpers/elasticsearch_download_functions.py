@@ -115,7 +115,9 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                 write_to_log(message=f"Waiting on replication for Download Lookup", download_job=download_job)
 
             if is_lookup_replicated:
-                write_to_log(message="Download Lookup records have been replicated (if applicable)")
+                write_to_log(
+                    message="Download Lookup records have been replicated (if applicable)", download_job=download_job
+                )
             else:
                 message = f"Download Lookup failed to replicate in under {wait_start_time} seconds"
                 write_to_log(message=message, is_error=True, download_job=download_job)
