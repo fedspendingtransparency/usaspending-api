@@ -35,12 +35,14 @@ UPDATE public.recipient_lookup rl SET
   WHERE
     rl.recipient_hash = tem.recipient_hash
     AND (
-       rl.address_line_1                  IS DISTINCT FROM tem.address_line_1
+        rl.address_line_1                  IS DISTINCT FROM tem.address_line_1
         OR rl.address_line_2              IS DISTINCT FROM tem.address_line_2
         OR rl.business_types_codes        IS DISTINCT FROM tem.business_types_codes
         OR rl.city                        IS DISTINCT FROM tem.city
         OR rl.congressional_district      IS DISTINCT FROM tem.congressional_district
         OR rl.country_code                IS DISTINCT FROM tem.country_code
+        OR rl.duns                        IS DISTINCT FROM tem.duns
+        OR rl.uei                         IS DISTINCT FROM tem.uei
         OR rl.legal_business_name         IS DISTINCT FROM tem.legal_business_name
         OR rl.parent_duns                 IS DISTINCT FROM tem.parent_duns
         OR rl.parent_legal_business_name  IS DISTINCT FROM tem.parent_legal_business_name
@@ -49,10 +51,6 @@ UPDATE public.recipient_lookup rl SET
         OR rl.state                       IS DISTINCT FROM tem.state
         OR rl.zip4                        IS DISTINCT FROM tem.zip4
         OR rl.zip5                        IS DISTINCT FROM tem.zip5
-  )
-  AND (
-        rl.duns                           IS DISTINCT FROM tem.duns
-        OR rl.uei                         IS DISTINCT FROM tem.uei
   );
 
 DO $$ BEGIN RAISE NOTICE 'Inserting new records into recipient_lookup'; END $$;
