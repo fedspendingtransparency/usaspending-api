@@ -279,25 +279,18 @@ def _configure_database_connection(environment_variable):
 # (which is "DATABASE_URL" by default). Generally speaking, DB_SOURCE is used to support server
 # environments that support the API/website and docker-compose local setup whereas DATABASE_URL
 # is used for development and operational environments (Jenkins primarily). If DB_SOURCE is provided,
-# then DB_R1 (read replica) and DOWNLOAD_DATABASE_URL (primary or read replica depending on environment)
-# must also be provided.
+# then DB_R1 (read replica) must also be provided.
 if os.environ.get("DB_SOURCE"):
     if not os.environ.get("DB_R1"):
         raise EnvironmentError("DB_SOURCE environment variable defined without DB_R1")
-    if not os.environ.get("DOWNLOAD_DATABASE_URL"):
-        raise EnvironmentError("DB_SOURCE environment variable defined without DOWNLOAD_DATABASE_URL")
     DATABASES = {
         DEFAULT_DB_ALIAS: _configure_database_connection("DB_SOURCE"),
         "db_r1": _configure_database_connection("DB_R1"),
-        "db_download": _configure_database_connection("DOWNLOAD_DATABASE_URL"),
     }
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASES = {
         DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV),
-        "db_download": _configure_database_connection(
-            "DOWNLOAD_DATABASE_URL" if "DOWNLOAD_DATABASE_URL" in os.environ else dj_database_url.DEFAULT_ENV
-        ),
     }
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.DefaultOnlyRouter"]
 else:
@@ -305,7 +298,11 @@ else:
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
     )
 
-DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
+# Initializing download DB as connection string (DOWNLOAD_DATABASE_URL) for PSQL command and
+# Django connection (DATABASES["db_download"]) to allow for Queryset directly against DB used for downloads
+if os.environ.get("DOWNLOAD_DATABASE_URL"):
+    DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
+    DATABASES["db_download"] = _configure_database_connection("DOWNLOAD_DATABASE_URL")
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set

@@ -32,7 +32,7 @@ def _post(client, def_codes=None, query=None, award_type_codes=None, file_format
 
 
 @pytest.fixture
-def awards_and_transactions(transactional_db):
+def awards_and_transactions():
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -345,6 +345,7 @@ def awards_and_transactions(transactional_db):
     update_awards()
 
 
+@pytest.mark.django_db(transaction=True)
 def test_csv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -366,6 +367,7 @@ def test_csv_download_success(client, monkeypatch, awards_and_transactions, elas
     assert re.match(r".*COVID-19_Profile_2021-09-20_H20M11S49647843.zip", resp_json["file_url"])
 
 
+@pytest.mark.django_db(transaction=True)
 def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L"], file_format="tsv")
@@ -376,6 +378,7 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
     assert resp_json["download_request"]["file_format"] == "tsv"
 
 
+@pytest.mark.django_db(transaction=True)
 def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L"], file_format="pstxt")
@@ -386,6 +389,7 @@ def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, el
     assert resp_json["download_request"]["file_format"] == "pstxt"
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_failure_with_two_defc(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L", "M"])
