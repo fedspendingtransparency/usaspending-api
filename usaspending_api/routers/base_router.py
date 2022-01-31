@@ -28,18 +28,18 @@ class BaseRouter:
         self.usaspending_databases = [self.primary_database] + self.read_replicas
 
     def db_for_read(self, model, **hints):
-        """
-
-        """
+        """ Route secondary data source models to their associated database (and/or schema). """
         if model in self.secondary_models:
             return self.secondary_database
 
         """
-        FilterHash and DownloadJob are writable tables so always read from source (default) to
+        Writable tables are always read from source (primary) to
         mitigate replication lag.  Otherwise, choose a connection randomly.
         """
         if model in self.primary_models:
             return self.primary_database
+
+        """ Otherwise, randomly choose a source. """
         return random.choice(self.usaspending_databases)
 
     def db_for_write(self, model, **hints):
