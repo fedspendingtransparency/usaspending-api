@@ -19,7 +19,7 @@ def awards_and_transactions(db):
 
     # Recipient Lookup
     parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
-    recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
+    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
 
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
