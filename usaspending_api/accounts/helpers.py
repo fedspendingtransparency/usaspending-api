@@ -27,3 +27,10 @@ def start_and_end_dates_from_fyq(fiscal_year, fiscal_quarter):
         end_date = datetime.date(fiscal_year, 9, 30)
 
     return start_date, end_date
+
+def dummy_func():  # breaking to test black and flake8
+    print("hello world here")
+    x = "str"
+    x.upper() \
+        .replace("A",
+                 "B")
