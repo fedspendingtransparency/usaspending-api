@@ -66,20 +66,21 @@ services:
       - usaspending-db
       - usaspending-es
     command:
-      - sh
-      - -o pipefail  # ensure if any command exits non-zero, the whole script does
+      - bash
       - -c
       - |
+        script_exit=0
         printf "==============\nChecking code format:\n"
-        black --check --diff .
+        black --check --diff . || ((script_exit++))
         printf -- "-------\nChecking code syntax:\n"
-        flake8 && echo "Successfully passed"
+        flake8 && echo "flake8 successfully passed" || ((script_exit++))
         printf -- "-------\nChecking API documentation files:\n"
-        python3 manage.py check_for_endpoint_documentation
+        python3 manage.py check_for_endpoint_documentation || ((script_exit++))
         printf -- "-------\nRunning unit tests:\n"
-        pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
+        pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx || ((script_exit++))
         printf -- "-------\nRunning integration tests:\n"
-        pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
+        pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx || ((script_exit++))
+        exit $$script_exit
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
