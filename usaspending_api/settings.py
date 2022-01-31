@@ -263,14 +263,19 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # see https://github.com/kennethreitz/dj-database-url for more info
 
 
-def _configure_database_connection(environment_variable):
+def _configure_database_connection(environment_variable, search_path=None):
     """
     Configure a Django database connection... configuration.  environment_variable is the name of
-    the operating system environment variable that contains the database connection string or DSN
+    the operating system environment variable that contains the database connection string or DSN.
+
+    Search path(s) can be supplied as part of a database configuration though not required.
     """
-    default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
+    db_options = ["-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)]
+    if search_path:
+        db_options.append(f"-c search_path={search_path}")
+    db_options = {"options": " ".join(db_options)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
-    config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
+    config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **db_options}
     config["TEST"] = {"SERIALIZE": False}
     return config
 
@@ -284,13 +289,17 @@ if os.environ.get("DB_SOURCE"):
     if not os.environ.get("DB_R1"):
         raise EnvironmentError("DB_SOURCE environment variable defined without DB_R1")
     DATABASES = {
-        DEFAULT_DB_ALIAS: _configure_database_connection("DB_SOURCE"),
-        "db_r1": _configure_database_connection("DB_R1"),
+        DEFAULT_DB_ALIAS: _configure_database_connection("DB_SOURCE", "public"),
+        "db_r1": _configure_database_connection("DB_R1", "public"),
+        "db_secondary": _configure_database_connection("SECONDARY_DB_URL", "secondary")
     }
-    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
+    DATABASE_ROUTERS = ["usaspending_api.routers.base_router.BaseRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
-    DATABASES = {DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)}
-    DATABASE_ROUTERS = ["usaspending_api.routers.replicas.DefaultOnlyRouter"]
+    DATABASES = {
+        DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV, "public"),
+        "db_secondary": _configure_database_connection("SECONDARY_DB_URL", "secondary")
+    }
+    DATABASE_ROUTERS = ["usaspending_api.routers.base_router.BaseRouter"]
 else:
     raise EnvironmentError(
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
@@ -301,7 +310,7 @@ DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
 # import a second database connection for ETL, connecting to the data broker
 # using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
 if os.environ.get("DATA_BROKER_DATABASE_URL"):
-    DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
+    DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL", "public")
 
 DATA_BROKER_DBLINK_NAME = "broker_server"
 
