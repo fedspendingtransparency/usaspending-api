@@ -263,15 +263,17 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # see https://github.com/kennethreitz/dj-database-url for more info
 
 
-def _configure_database_connection(environment_variable):
+def _configure_database_connection(environment_variable, test_options=None):
     """
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
     """
+    if test_options is None:
+        test_options = {}
     default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
-    config["TEST"] = {"SERIALIZE": False}
+    config["TEST"] = {**test_options, "SERIALIZE": False}
     return config
 
 
@@ -289,14 +291,22 @@ if os.environ.get("DB_SOURCE"):
     }
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.ReadReplicaRouter"]
 elif os.environ.get(dj_database_url.DEFAULT_ENV):
-    DATABASES = {DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV)}
+    DATABASES = {
+        DEFAULT_DB_ALIAS: _configure_database_connection(dj_database_url.DEFAULT_ENV),
+    }
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.DefaultOnlyRouter"]
 else:
     raise EnvironmentError(
         "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
     )
 
-DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
+# Initializing download DB as connection string (DOWNLOAD_DATABASE_URL) for PSQL command and
+# Django connection (DATABASES["db_download"]) to allow for Queryset directly against DB used for downloads
+if os.environ.get("DOWNLOAD_DATABASE_URL"):
+    DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
+    DATABASES["db_download"] = _configure_database_connection(
+        "DOWNLOAD_DATABASE_URL", test_options={"MIRROR": DEFAULT_DB_ALIAS}
+    )
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set

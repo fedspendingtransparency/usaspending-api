@@ -5,16 +5,19 @@ import random
 from django.conf import settings
 from model_mommy import mommy
 from rest_framework import status
+from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
-def download_test_data(db):
+def download_test_data():
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -102,10 +105,12 @@ def download_test_data(db):
     update_awards()
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_transactions_without_columns(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -117,8 +122,10 @@ def test_download_transactions_without_columns(
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_transactions_with_columns(client, monkeypatch, download_test_data, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -141,9 +148,10 @@ def test_download_transactions_with_columns(client, monkeypatch, download_test_d
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_download_transactions_bad_limit(client, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -153,10 +161,12 @@ def test_download_transactions_bad_limit(client, monkeypatch, elasticsearch_tran
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_transactions_excessive_limit(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -168,10 +178,12 @@ def test_download_transactions_excessive_limit(
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_transactions_bad_column_list_raises(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     payload = {"filters": {"award_type_codes": ["A"]}, "columns": ["modification_number", "bogus_column"]}
     resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
@@ -181,10 +193,12 @@ def test_download_transactions_bad_column_list_raises(
     assert "modification_number" not in resp.json()["detail"]
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_transactions_bad_filter_type_raises(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     payload = {"filters": "01", "columns": []}
     resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
