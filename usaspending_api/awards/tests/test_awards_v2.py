@@ -78,27 +78,27 @@ def awards_and_transactions(db):
     toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
     toptier_agency_2 = {"pk": 2, "abbreviation": "TA2", "name": "TOPTIER AGENCY 2", "toptier_code": "002"}
 
-    mommy.make("references.ToptierAgency", **toptier_agency_1)
-    mommy.make("references.ToptierAgency", **toptier_agency_2)
+    ta1 = mommy.make("references.ToptierAgency", **toptier_agency_1)
+    ta2 = mommy.make("references.ToptierAgency", **toptier_agency_2)
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
     subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
 
-    mommy.make("references.SubtierAgency", **subtier_agency_1)
-    mommy.make("references.SubtierAgency", **subtier_agency_2)
+    sa1 = mommy.make("references.SubtierAgency", **subtier_agency_1)
+    sa2 = mommy.make("references.SubtierAgency", **subtier_agency_2)
 
     # Agency
     agency = {
         "pk": 1,
-        "subtier_agency": SubtierAgency.objects.get(pk=1),
-        "toptier_agency": ToptierAgency.objects.get(pk=1),
+        "subtier_agency": sa1,
+        "toptier_agency": ta1,
         "toptier_flag": True,
     }
     agency_2 = {
         "pk": 2,
-        "subtier_agency": SubtierAgency.objects.get(pk=2),
-        "toptier_agency": ToptierAgency.objects.get(pk=2),
+        "subtier_agency": sa2,
+        "toptier_agency": ta2,
         "toptier_flag": True,
     }
 
@@ -1463,7 +1463,7 @@ expected_response_cont = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
