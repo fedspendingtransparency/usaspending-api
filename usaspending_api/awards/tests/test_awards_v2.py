@@ -26,7 +26,7 @@ def awards_and_transactions(db):
 
     # Recipient Profile
     parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
+    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
 
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
@@ -1365,7 +1365,7 @@ expected_response_asst = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "None",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",

@@ -342,7 +342,6 @@ def test_no_data_idv_award_endpoint(client):
 def test_award_endpoint_different_ids(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/CONT_AWD_03VD_9700_SPM30012D3486_9700/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
-    # print(json.loads(resp.content.decode("utf-8")))
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
 
     resp = client.get("/api/v2/awards/2/", content_type="application/json")
@@ -386,7 +385,7 @@ expected_response_idv = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "None",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "John's Pizza",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
