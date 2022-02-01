@@ -302,9 +302,10 @@ else:
 
 # Initializing download DB as connection string (DOWNLOAD_DATABASE_URL) for PSQL command and
 # Django connection (DATABASES["db_download"]) to allow for Queryset directly against DB used for downloads
+DOWNLOAD_DATABASE_ALIAS = "db_download"
 if os.environ.get("DOWNLOAD_DATABASE_URL"):
     DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
-    DATABASES["db_download"] = _configure_database_connection(
+    DATABASES[DOWNLOAD_DATABASE_ALIAS] = _configure_database_connection(
         "DOWNLOAD_DATABASE_URL", test_options={"MIRROR": DEFAULT_DB_ALIAS}
     )
 

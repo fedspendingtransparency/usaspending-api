@@ -101,14 +101,14 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             wait_start_time = time.time()
             time_to_wait_in_seconds = 60 * 10
             is_lookup_replicated = (
-                DownloadJobLookup.objects.using("db_download")
+                DownloadJobLookup.objects.using(settings.DOWNLOAD_DATABASE_ALIAS)
                 .filter(download_job_id=download_job.download_job_id)
                 .exists()
             )
             while not is_lookup_replicated and time.time() - wait_start_time < time_to_wait_in_seconds:
                 time.sleep(30)  # Wait 30 seconds before checking again; should catch majority of cases
                 is_lookup_replicated = (
-                    DownloadJobLookup.objects.using("db_download")
+                    DownloadJobLookup.objects.using(settings.DOWNLOAD_DATABASE_ALIAS)
                     .filter(download_job_id=download_job.download_job_id)
                     .exists()
                 )
@@ -119,7 +119,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                     message="Download Lookup records have been replicated (if applicable)", download_job=download_job
                 )
             else:
-                message = f"Download Lookup failed to replicate in under {wait_start_time} seconds"
+                message = f"Download Lookup failed to replicate in under {time_to_wait_in_seconds} seconds"
                 write_to_log(message=message, is_error=True, download_job=download_job)
                 raise Exception(message)
 
