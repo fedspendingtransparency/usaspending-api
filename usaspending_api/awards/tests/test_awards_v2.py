@@ -6,7 +6,7 @@ from rest_framework import status
 from model_mommy import mommy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import Agency
 
 
 @pytest.fixture
