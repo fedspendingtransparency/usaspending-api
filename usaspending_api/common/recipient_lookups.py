@@ -30,7 +30,9 @@ def obtain_recipient_uri(
     ):
         return None
 
-    if recipient_unique_id:
+    if recipient_uei:
+        recipient_hash = fetch_recipient_hash_using_uei(recipient_uei)
+    elif recipient_unique_id:
         recipient_hash = fetch_recipient_hash_using_duns(recipient_unique_id)
     else:
         recipient_hash = None
@@ -73,6 +75,12 @@ def generate_missing_recipient_hash(recipient_unique_id, recipient_uei, recipien
 
 def fetch_recipient_hash_using_duns(recipient_unique_id):
     recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
+
+    return recipient["recipient_hash"] if recipient else None
+
+
+def fetch_recipient_hash_using_uei(recipient_uei):
+    recipient = RecipientLookup.objects.filter(uei=recipient_uei).values("recipient_hash").first()
 
     return recipient["recipient_hash"] if recipient else None
 
