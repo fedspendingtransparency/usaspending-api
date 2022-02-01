@@ -25,7 +25,9 @@ def obtain_recipient_uri(
     Return example string: 11fcdf15-3490-cdad-3df4-3b410f3d9b20-C
 
     """
-    if (is_parent_recipient and not recipient_unique_id) or not (recipient_unique_id or recipient_name):
+    if (is_parent_recipient and not recipient_unique_id) or not (
+        recipient_unique_id or recipient_name or recipient_uei
+    ):
         return None
 
     if recipient_unique_id:

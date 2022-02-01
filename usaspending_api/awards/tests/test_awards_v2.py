@@ -1365,11 +1365,11 @@ expected_response_asst = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
+        "recipient_hash": "None",
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "None",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",

@@ -4,9 +4,6 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
-
 
 @pytest.fixture
 def awards_and_transactions(db):
@@ -28,14 +25,14 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientProfile", **recipient_profile)
 
     ag = {"pk": 1, "toptier_agency": ta1, "subtier_agency": sa1}
-    mommy.make("references.Agency", **ag)
+    a1 = mommy.make("references.Agency", **ag)
 
     trans_asst = {"pk": 1, "award_id": 1, "business_categories": ["small_business"]}
     trans_cont_1 = {"pk": 2, "award_id": 2, "business_categories": ["small_business"]}
     trans_cont_2 = {"pk": 3, "award_id": 3, "business_categories": ["small_business"]}
-    mommy.make("awards.TransactionNormalized", **trans_asst)
-    mommy.make("awards.TransactionNormalized", **trans_cont_1)
-    mommy.make("awards.TransactionNormalized", **trans_cont_2)
+    t1 = mommy.make("awards.TransactionNormalized", **trans_asst)
+    t2 = mommy.make("awards.TransactionNormalized", **trans_cont_1)
+    t3 = mommy.make("awards.TransactionNormalized", **trans_cont_2)
 
     mommy.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
     mommy.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")
@@ -46,7 +43,7 @@ def awards_and_transactions(db):
 
     award_1_model = {
         "pk": 1,
-        "latest_transaction": TransactionNormalized.objects.get(pk=1),
+        "latest_transaction": t1,
         "type": "IDV_B_B",
         "category": "idv",
         "piid": 1234,
@@ -55,21 +52,21 @@ def awards_and_transactions(db):
         "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency": a1,
+        "funding_agency": a1,
         "date_signed": "2005-04-03",
     }
     award_2_model = {
         "pk": 2,
-        "latest_transaction": TransactionNormalized.objects.get(pk=2),
+        "latest_transaction": t2,
         "type": "IDV_A",
         "type_description": "GWAC",
         "category": "idv",
         "piid": "5678",
         "parent_award_piid": "1234",
         "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency": a1,
+        "funding_agency": a1,
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -85,15 +82,15 @@ def awards_and_transactions(db):
     }
     award_3_model = {
         "pk": 3,
-        "latest_transaction": TransactionNormalized.objects.get(pk=3),
+        "latest_transaction": t3,
         "type": "IDV_A",
         "type_description": "GWAC",
         "category": "idv",
         "piid": "9123",
         "parent_award_piid": "1234",
         "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency": a1,
+        "funding_agency": a1,
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -107,7 +104,7 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", **award_2_model)
     mommy.make("awards.Award", **award_3_model)
 
-    asst_data = {"transaction": TransactionNormalized.objects.get(pk=1), "cfda_number": 1234, "cfda_title": "farms"}
+    asst_data = {"transaction": t1, "cfda_number": 1234, "cfda_title": "farms"}
 
     latest_transaction_contract_data = {
         "action_date": "2010-01-01",
@@ -206,7 +203,7 @@ def awards_and_transactions(db):
         "solicitation_procedur_desc": None,
         "subcontracting_plan": "B",
         "subcontracting_plan_desc": None,
-        "transaction": TransactionNormalized.objects.get(pk=2),
+        "transaction": t2,
         "type_of_contract_pricing": None,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
@@ -317,7 +314,7 @@ def awards_and_transactions(db):
         "solicitation_procedur_desc": None,
         "subcontracting_plan": "B",
         "subcontracting_plan_desc": None,
-        "transaction": TransactionNormalized.objects.get(pk=3),
+        "transaction": t3,
         "type_of_contract_pricing": None,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
@@ -345,6 +342,7 @@ def test_no_data_idv_award_endpoint(client):
 def test_award_endpoint_different_ids(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/CONT_AWD_03VD_9700_SPM30012D3486_9700/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
+    # print(json.loads(resp.content.decode("utf-8")))
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
 
     resp = client.get("/api/v2/awards/2/", content_type="application/json")
