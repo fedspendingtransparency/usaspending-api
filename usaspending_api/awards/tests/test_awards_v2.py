@@ -1369,7 +1369,7 @@ expected_response_asst = {
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "None",
+        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",

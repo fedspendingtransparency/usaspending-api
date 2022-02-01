@@ -386,7 +386,7 @@ expected_response_idv = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
+        "recipient_hash": "None",
         "recipient_name": "John's Pizza",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
