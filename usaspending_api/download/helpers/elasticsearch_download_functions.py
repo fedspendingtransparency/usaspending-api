@@ -121,7 +121,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             else:
                 message = f"Download Lookup failed to replicate in under {time_to_wait_in_seconds} seconds"
                 write_to_log(message=message, is_error=True, download_job=download_job)
-                raise Exception(message)
+                raise TimeoutError(message)
 
     @classmethod
     @abstractmethod
