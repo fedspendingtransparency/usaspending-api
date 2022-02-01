@@ -13,9 +13,9 @@ def awards_and_transactions(db):
     ta1 = mommy.make("references.ToptierAgency", toptier_code="abc", **subag)
 
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
-    parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
+    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
     recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
-    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
+    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
     recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C", "uei": "DEF"}
     mommy.make("references.Cfda", program_number=1234)
     mommy.make("recipient.DUNS", **duns)
@@ -389,7 +389,7 @@ expected_response_idv = {
         "recipient_name": "John's Pizza",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
         "parent_recipient_name": "Dave's Pizza LLC",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",

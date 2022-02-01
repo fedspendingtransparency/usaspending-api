@@ -18,14 +18,14 @@ def awards_and_transactions(db):
     mommy.make("recipient.DUNS", **duns)
 
     # Recipient Lookup
-    parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
+    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
     recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
 
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
 
     # Recipient Profile
-    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
+    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
     recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
 
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
@@ -1369,7 +1369,7 @@ expected_response_asst = {
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
@@ -1467,7 +1467,7 @@ expected_response_cont = {
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
