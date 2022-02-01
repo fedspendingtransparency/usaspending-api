@@ -606,7 +606,10 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         span_type=SpanTypes.SQL,
         source_path=source_path,
     ), tracer.trace(
-        name="postgres.query", service="db_downloaddb", resource=download_sql, span_type=SpanTypes.SQL
+        name="postgres.query",
+        service=f"{settings.DOWNLOAD_DATABASE_ALIAS}db",
+        resource=download_sql,
+        span_type=SpanTypes.SQL,
     ), tracer.trace(
         name="postgres.query", service="postgres", resource=download_sql, span_type=SpanTypes.SQL
     ):
