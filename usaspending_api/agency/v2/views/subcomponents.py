@@ -6,7 +6,7 @@ from usaspending_api.accounts.models.appropriation_account_balances import Appro
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.common.helpers.generic_helper import get_pagination_metadata, sort_with_null_last
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import BureauTitleLookup
@@ -58,8 +58,8 @@ class SubcomponentList(PaginationMixin, AgencyBase):
         combined_response = [value for key, value in combined_list_dict.items()]
 
         # Format Combined Response
-        results = sorted(
-            [
+        results = sort_with_null_last(
+            to_sort=[
                 {
                     "name": x["bureau_info"].split(";")[0] if x.get("bureau_info") is not None else None,
                     "id": x["bureau_info"].split(";")[1] if x.get("bureau_info") is not None else None,
@@ -71,8 +71,8 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                 }
                 for x in combined_response
             ],
-            key=lambda x: (x.get(self.pagination.sort_key) is not None, x.get(self.pagination.sort_key)),
-            reverse=self.pagination.sort_order == "desc",
+            sort_key=self.pagination.sort_key,
+            sort_order=self.pagination.sort_order,
         )
         return results
 
