@@ -203,7 +203,8 @@ _From Developer Desktop_
 
 (NOTE: `DATA_BROKER_DATABASE_URL` is set in the `.envrc` file and available in the shell)
 ```bash
-(usaspending-api) $ pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration```
+(usaspending-api) $ pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration
+```
 
 ## Contributing
 To submit fixes or enhancements, or to suggest changes, see [CONTRIBUTING.md](CONTRIBUTING.md)
