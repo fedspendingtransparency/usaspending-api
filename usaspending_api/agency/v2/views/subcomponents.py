@@ -1,14 +1,16 @@
-from django.db.models import Q, Sum, OuterRef, Subquery, F, Value, Case, When
+from django.db.models import Q, Sum, OuterRef, Subquery, F, Value, Case, When, Max
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
 from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import BureauTitleLookup
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class SubcomponentList(PaginationMixin, AgencyBase):
@@ -69,7 +71,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                 }
                 for x in combined_response
             ],
-            key=lambda x: x.get(self.pagination.sort_key),
+            key=lambda x: (x.get(self.pagination.sort_key) is not None, x.get(self.pagination.sort_key)),
             reverse=self.pagination.sort_order == "desc",
         )
         return results
@@ -110,11 +112,19 @@ class SubcomponentList(PaginationMixin, AgencyBase):
         return results
 
     def get_common_query_objects(self, treasury_account_keyword):
-
+        latest = (
+            SubmissionAttributes.objects.filter(
+                submission_window__submission_reveal_date__lte=now(), reporting_fiscal_year=self.fiscal_year
+            )
+            .values("reporting_fiscal_year")
+            .annotate(
+                max_fiscal_period=Max(F("reporting_fiscal_period"))
+            ).values("max_fiscal_period")
+        )
         filters = [
             Q(**{f"{treasury_account_keyword}__federal_account__parent_toptier_agency": self.toptier_agency}),
             Q(submission__reporting_fiscal_year=self.fiscal_year),
-            Q(submission__reporting_fiscal_period=self.fiscal_period),
+            Q(submission__reporting_fiscal_period=latest[0]["max_fiscal_period"]),
         ]
 
         bureau_info_subquery = Subquery(
