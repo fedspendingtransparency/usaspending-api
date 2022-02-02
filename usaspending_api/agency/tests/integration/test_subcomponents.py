@@ -63,5 +63,5 @@ def test_invalid_agency(client, bureau_data):
     resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-    resp = client.get(url.format(toptier_code="999", filter="?fiscal_year=2021"))
+    resp = client.get(url.format(toptier_code="999", filter="?fiscal_year=2018"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
