@@ -15,7 +15,8 @@ FROM centos:7
 WORKDIR /dockermount
 
 RUN yum -y update && yum clean all
-RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel
+# sqlite-devel added as prerequisite for coverage python lib, used by pytest-cov plugin
+RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel sqlite-devel
 RUN yum -y groupinstall "Development Tools"
 
 ##### Install PostgreSQL 10 client (psql)
