@@ -2,10 +2,12 @@ from django.db.models import Sum, Q, F
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
+from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.references.models import GTASSF133Balances, BureauTitleLookup
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models import BureauTitleLookup
 
 
 class BureauFederalAccountList(PaginationMixin, AgencyBase):
@@ -57,6 +59,7 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
         return totals
 
     def get_federal_account_list(self) -> List[dict]:
+        # Retreive List of Federal Accounts to Query
         fed_account_filter = Q(bureau_slug=self.bureau_slug)
         if self.bureau_slug == "air-force":
             fed_account_filter = Q(federal_account_code__startswith="057")
@@ -71,28 +74,25 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
             x["federal_account_code"]
             for x in BureauTitleLookup.objects.filter(fed_account_filter).values("federal_account_code")
         ]
-        filters = [
-            Q(
-                treasury_account_identifier__federal_account__parent_toptier_agency_id=self.toptier_agency.toptier_agency_id
-            ),
-            Q(treasury_account_identifier__federal_account__federal_account_code__in=federal_accounts),
-            Q(fiscal_year=self.fiscal_year),
-            Q(fiscal_period=self.fiscal_period),
-        ]
-        last_period_results = (
-            GTASSF133Balances.objects.filter(*filters)
-            .annotate(
-                name=F("treasury_account_identifier__federal_account__account_title"),
-                account_code=F("treasury_account_identifier__federal_account__federal_account_code"),
-            )
-            .values("name", "account_code")
-            .annotate(
-                total_budgetary_resources=Sum("total_budgetary_resources_cpe"),
-                total_obligations=Sum("obligations_incurred_total_cpe"),
-                total_outlays=Sum("gross_outlay_amount_by_tas_cpe"),
-            )
-            .values("name", "account_code", "total_obligations", "total_outlays", "total_budgetary_resources")
-        )
+
+        file_a_response = self.get_file_a_accounts(federal_accounts)
+        file_b_response = self.get_file_b_accounts(federal_accounts)
+
+        # Combine File A and B Responses
+        combined_list_dict = {}
+
+        for row in file_a_response:
+            combined_list_dict[row["account_code"]] = row
+
+        for row in file_b_response:
+            if row["account_code"] not in combined_list_dict:
+                combined_list_dict[row["account_code"]] = row
+            else:
+                combined_list_dict[row["account_code"]].update(row)
+
+        combined_response = [value for key, value in combined_list_dict.items()]
+
+        # Format Combined Response
         results = [
             {
                 "name": x["name"],
@@ -101,6 +101,58 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
                 "total_outlays": x["total_outlays"],
                 "total_budgetary_resources": x["total_budgetary_resources"],
             }
-            for x in last_period_results
+            for x in combined_response
         ]
         return results
+
+    def get_file_a_accounts(self, federal_accounts):
+        """
+        Query Total Budgetary Resources per Bureau from File A for a single Period
+        """
+        filters, annotations = self.get_common_query_objects(federal_accounts, "treasury_account_identifier")
+
+        return (
+            AppropriationAccountBalances.objects.filter(*filters)
+            .annotate(**annotations)
+            .values("name", "account_code")
+            .annotate(
+                total_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"),
+            )
+            .values("name", "account_code", "total_budgetary_resources")
+        )
+
+    def get_file_b_accounts(self, federal_accounts):
+        """
+        Query Obligations and Outlays per Bureau from File B for a single Period
+        """
+        filters, annotations = self.get_common_query_objects(federal_accounts, "treasury_account")
+
+        return (
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
+            .annotate(**annotations)
+            .values("name", "account_code")
+            .annotate(
+                total_obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
+                total_outlays=Sum("gross_outlay_amount_by_program_object_class_cpe"),
+            )
+            .values("name", "account_code", "total_obligations", "total_outlays")
+        )
+
+    def get_common_query_objects(self, federal_accounts, treasury_account_keyword):
+        filters = [
+            Q(
+                **{
+                    f"{treasury_account_keyword}__federal_account__parent_toptier_agency_id": self.toptier_agency.toptier_agency_id
+                }
+            ),
+            Q(**{f"{treasury_account_keyword}__federal_account__federal_account_code__in": federal_accounts}),
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
+            Q(submission__reporting_fiscal_period=self.fiscal_period),
+        ]
+
+        annotations = {
+            "name": F(f"{treasury_account_keyword}__federal_account__account_title"),
+            "account_code": F(f"{treasury_account_keyword}__federal_account__federal_account_code"),
+        }
+
+        return filters, annotations
