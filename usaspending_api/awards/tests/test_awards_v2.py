@@ -6,7 +6,7 @@ from rest_framework import status
 from model_mommy import mommy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import Agency
 
 
 @pytest.fixture
@@ -18,15 +18,15 @@ def awards_and_transactions(db):
     mommy.make("recipient.DUNS", **duns)
 
     # Recipient Lookup
-    parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
-    recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
+    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
+    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
 
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
 
     # Recipient Profile
-    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
+    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
+    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
 
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
@@ -78,27 +78,27 @@ def awards_and_transactions(db):
     toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
     toptier_agency_2 = {"pk": 2, "abbreviation": "TA2", "name": "TOPTIER AGENCY 2", "toptier_code": "002"}
 
-    mommy.make("references.ToptierAgency", **toptier_agency_1)
-    mommy.make("references.ToptierAgency", **toptier_agency_2)
+    ta1 = mommy.make("references.ToptierAgency", **toptier_agency_1)
+    ta2 = mommy.make("references.ToptierAgency", **toptier_agency_2)
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
     subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
 
-    mommy.make("references.SubtierAgency", **subtier_agency_1)
-    mommy.make("references.SubtierAgency", **subtier_agency_2)
+    sa1 = mommy.make("references.SubtierAgency", **subtier_agency_1)
+    sa2 = mommy.make("references.SubtierAgency", **subtier_agency_2)
 
     # Agency
     agency = {
         "pk": 1,
-        "subtier_agency": SubtierAgency.objects.get(pk=1),
-        "toptier_agency": ToptierAgency.objects.get(pk=1),
+        "subtier_agency": sa1,
+        "toptier_agency": ta1,
         "toptier_flag": True,
     }
     agency_2 = {
         "pk": 2,
-        "subtier_agency": SubtierAgency.objects.get(pk=2),
-        "toptier_agency": ToptierAgency.objects.get(pk=2),
+        "subtier_agency": sa2,
+        "toptier_agency": ta2,
         "toptier_flag": True,
     }
 
@@ -966,10 +966,15 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
 
 
 def test_award_endpoint_parent_award(client, awards_and_transactions):
+
+    dsws1 = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
+    mommy.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
+    mommy.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws1)
+
     # Test contract award with parent
     resp = client.get("/api/v2/awards/7/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_contract_award_parent
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_contract_award_parent()
 
     # Test contract award without parent
     resp = client.get("/api/v2/awards/10/")
@@ -979,7 +984,32 @@ def test_award_endpoint_parent_award(client, awards_and_transactions):
     # Test idv award with parent
     resp = client.get("/api/v2/awards/8/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_idv_award_parent
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_idv_award_parent()
+
+    # Test idv award without parent
+    resp = client.get("/api/v2/awards/9/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
+
+
+def test_award_endpoint_parent_award_no_submissions(client, awards_and_transactions):
+
+    # Test contract award with parent
+    resp = client.get("/api/v2/awards/7/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_contract_award_parent(
+        include_slug=False
+    )
+
+    # Test contract award without parent
+    resp = client.get("/api/v2/awards/10/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
+
+    # Test idv award with parent
+    resp = client.get("/api/v2/awards/8/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_idv_award_parent(include_slug=False)
 
     # Test idv award without parent
     resp = client.get("/api/v2/awards/9/")
@@ -1335,11 +1365,11 @@ expected_response_asst = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
@@ -1433,11 +1463,11 @@ expected_response_cont = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
@@ -1583,6 +1613,7 @@ expected_response_cont = {
     "parent_award": {
         "agency_id": None,
         "agency_name": None,
+        "agency_slug": None,
         "sub_agency_id": None,
         "sub_agency_name": None,
         "award_id": 4,
@@ -1599,28 +1630,34 @@ expected_response_cont = {
     "total_outlay": None,
 }
 
-expected_contract_award_parent = {
-    "agency_id": 2,
-    "agency_name": "TOPTIER AGENCY 2",
-    "sub_agency_id": "1000",
-    "sub_agency_name": "SUBTIER AGENCY 2",
-    "award_id": 8,
-    "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
-    "idv_type_description": "TYPE DESCRIPTION TRANS 9",
-    "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 9",
-    "piid": "AWARD8",
-    "type_of_idc_description": "IDC DESCRIPTION TRANS 9",
-}
 
-expected_idv_award_parent = {
-    "agency_id": 2,
-    "agency_name": "TOPTIER AGENCY 2",
-    "sub_agency_id": "1000",
-    "sub_agency_name": "SUBTIER AGENCY 2",
-    "award_id": 9,
-    "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
-    "idv_type_description": "TYPE DESCRIPTION TRANS 10",
-    "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 10",
-    "piid": "AWARD9",
-    "type_of_idc_description": "IDC DESCRIPTION TRANS 10",
-}
+def expected_contract_award_parent(include_slug=True):
+    return {
+        "agency_id": 2,
+        "agency_name": "TOPTIER AGENCY 2",
+        "agency_slug": "toptier-agency-2" if include_slug else None,
+        "sub_agency_id": "1000",
+        "sub_agency_name": "SUBTIER AGENCY 2",
+        "award_id": 8,
+        "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
+        "idv_type_description": "TYPE DESCRIPTION TRANS 9",
+        "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 9",
+        "piid": "AWARD8",
+        "type_of_idc_description": "IDC DESCRIPTION TRANS 9",
+    }
+
+
+def expected_idv_award_parent(include_slug=True):
+    return {
+        "agency_id": 2,
+        "agency_name": "TOPTIER AGENCY 2",
+        "agency_slug": "toptier-agency-2" if include_slug else None,
+        "sub_agency_id": "1000",
+        "sub_agency_name": "SUBTIER AGENCY 2",
+        "award_id": 9,
+        "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
+        "idv_type_description": "TYPE DESCRIPTION TRANS 10",
+        "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 10",
+        "piid": "AWARD9",
+        "type_of_idc_description": "IDC DESCRIPTION TRANS 10",
+    }

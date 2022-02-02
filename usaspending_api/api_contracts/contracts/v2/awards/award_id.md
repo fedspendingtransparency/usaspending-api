@@ -38,6 +38,7 @@ This endpoint returns a list of data that is associated with the award profile p
                 "parent_award": {
                     "agency_id": 1173,
                     "agency_name": "Department of Defense",
+                    "agency_slug": "department-of-defense",
                     "sub_agency_id": "9700",
                     "sub_agency_name": "Department of Defense",
                     "award_id": 69513842,
@@ -886,6 +887,8 @@ This endpoint returns a list of data that is associated with the award profile p
 ## ParentDetails (object)
 + `agency_id` (required, number)
 + `agency_name` (required, string)
++ `agency_slug` (required, string, nullable)
+    `agency_slug` is a string used to generate a link to the agency profile page. Will be `NULL` if the agency does not have a profile page.
 + `sub_agency_id` (required, string)
 + `sub_agency_name` (required, string)
 + `award_id` (required, number, nullable)

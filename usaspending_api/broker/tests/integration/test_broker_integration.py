@@ -26,7 +26,7 @@ class BrokerIntegrationTestCase(TestCase):
                 "Creation of table {} in Broker DB was not rolled back and still exists.".format(cls.dummy_table_name)
             )
 
-    @pytest.mark.django_db
+    @pytest.mark.usefixtures("broker_db_setup")
     def test_can_connect_to_broker(self):
         """Simple 'integration test' that checks a Broker DB exists to integrate with"""
         connection = connections["data_broker"]
@@ -36,7 +36,7 @@ class BrokerIntegrationTestCase(TestCase):
         assert results is not None
         assert len(str(results[0][0])) > 0
 
-    @pytest.mark.django_db
+    @pytest.mark.usefixtures("broker_db_setup")
     def test_broker_transactional_test(self):
         """Integration test that checks whether Django's default transactional test implementation works against the
         integrated Broker DB too.

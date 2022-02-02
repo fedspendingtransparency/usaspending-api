@@ -64,10 +64,12 @@ List child IDVs, child awards, or grandchild awards for IDV
                         "award_id": 69138778,
                         "award_type": "BPA",
                         "description": "IGF::OT::IGF GP-2600 FEDEX SHIPPING SERVICE - GREAT PLAINS REGIONAL OFFICE, BILLINGS, MONTANA",
-                        "funding_agency": "DEPARTMENT OF THE INTERIOR (DOI)",
-                        "awarding_agency": "DEPARTMENT OF THE INTERIOR (DOI)",
+                        "funding_agency": "DEPARTMENT OF THE INTERIOR",
+                        "awarding_agency": "DEPARTMENT OF THE INTERIOR",
                         "funding_agency_id": 228,
                         "awarding_agency_id": 228,
+                        "funding_agency_slug": "department-of-the-interior",
+                        "awarding_agency_slug": "department-of-the-interior",
                         "generated_unique_award_id": "CONT_IDV_INR17PA00008_1425",
                         "last_date_to_order": "2020-11-30",
                         "obligated_amount": 8000.0,
@@ -79,10 +81,12 @@ List child IDVs, child awards, or grandchild awards for IDV
                         "award_id": 69054107,
                         "award_type": "BPA",
                         "description": "OTHER THAN SCHEDULE,IGF::OT::IGF",
-                        "funding_agency": "GENERAL SERVICES ADMINISTRATION (GSA)",
-                        "awarding_agency": "GENERAL SERVICES ADMINISTRATION (GSA)",
+                        "funding_agency": "GENERAL SERVICES ADMINISTRATION",
+                        "awarding_agency": "GENERAL SERVICES ADMINISTRATION",
                         "funding_agency_id": 634,
                         "awarding_agency_id:: 634,
+                        "funding_agency_slug": "general-services-administration",
+                        "awarding_agency_slug": "general-services-administration",
                         "generated_unique_award_id": "CONT_IDV_GS33FCA001_4732",
                         "last_date_to_order": "2017-09-30",
                         "obligated_amount": 22570355.24,
@@ -94,10 +98,12 @@ List child IDVs, child awards, or grandchild awards for IDV
                         "award_id": 69216438,
                         "award_type": "BPA",
                         "description": "IGF::OT::IGF BPA WITH AN INTERNATIONAL MAIL DELIVERY SERVICE FOR PACKAGES GENERATED THROUGH TSED'S COCHRAN FELLOWSHIP PROGRAM",
-                        "funding_agency": "DEPARTMENT OF AGRICULTURE (USDA)",
-                        "awarding_agency": "DEPARTMENT OF AGRICULTURE (USDA)",
+                        "funding_agency": "DEPARTMENT OF AGRICULTURE",
+                        "awarding_agency": "DEPARTMENT OF AGRICULTURE",
                         "funding_agency_id": 153,
                         "awarding_agency_id": 153,
+                        "funding_agency_slug": "department-of-agriculture",
+                        "awarding_agency_slug": "department-of-agriculture",
                         "generated_unique_award_id": "CONT_IDV_AG3151B140009_12D2",
                         "last_date_to_order": "2015-04-06",
                         "obligated_amount": 47840.0,
@@ -133,6 +139,10 @@ List child IDVs, child awards, or grandchild awards for IDV
 + `awarding_agency`: `GENERAL SERVICES ADMINISTRATION (GSA)` (required, string, nullable)
 + `funding_agency_id`: 634 (required, number, nullable)
 + `awarding_agency_id`: 634 (required, number, nullable)
++ `funding_agency_slug`: `general-services-administration-gsa` (required, string, nullable)
+    `funding_agency_slug` is a string used to generate a link to the funding agency's profile page. Will be `NULL` if the funding agency does not have a profile page.
++ `awarding_agency_slug`: `general-services-administration-gsa` (required, string, nullable)
+    `awarding_agency_slug` is a string used to generate a link to the awarding agency's profile page. Will be `NULL` if the awarding agency does not have a profile page.
 + `generated_unique_award_id`: `CONT_IDV_DJB30605051_1540` (required, string)
     Unique internal natural identifier for an award.
 + `last_date_to_order`: `2017-09-30` (required, string, nullable)
