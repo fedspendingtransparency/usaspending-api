@@ -184,6 +184,8 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                     db_row_dict["_recipient_name"],
                     db_row_dict["_recipient_unique_id"],
                     db_row_dict["_parent_recipient_unique_id"],
+                    False,  # is parent recipient
+                    db_row_dict["_recipient_uei"],
                 ),
             ),
             ("recipient_name", db_row_dict["_recipient_name"]),
@@ -196,6 +198,7 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                     db_row_dict["_parent_recipient_unique_id"],
                     None,  # parent_recipient_unique_id
                     True,  # is_parent_recipient
+                    db_row_dict["_parent_recipient_uei"],
                 ),
             ),
             ("parent_recipient_name", db_row_dict["_parent_recipient_name"]),

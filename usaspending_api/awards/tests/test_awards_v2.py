@@ -6,7 +6,7 @@ from rest_framework import status
 from model_mommy import mommy
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import Agency
 
 
 @pytest.fixture
@@ -18,15 +18,15 @@ def awards_and_transactions(db):
     mommy.make("recipient.DUNS", **duns)
 
     # Recipient Lookup
-    parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
-    recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
+    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
+    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
 
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
     mommy.make("recipient.RecipientLookup", **recipient_lookup)
 
     # Recipient Profile
-    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
+    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
+    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
 
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
@@ -78,27 +78,27 @@ def awards_and_transactions(db):
     toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
     toptier_agency_2 = {"pk": 2, "abbreviation": "TA2", "name": "TOPTIER AGENCY 2", "toptier_code": "002"}
 
-    mommy.make("references.ToptierAgency", **toptier_agency_1)
-    mommy.make("references.ToptierAgency", **toptier_agency_2)
+    ta1 = mommy.make("references.ToptierAgency", **toptier_agency_1)
+    ta2 = mommy.make("references.ToptierAgency", **toptier_agency_2)
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
     subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
 
-    mommy.make("references.SubtierAgency", **subtier_agency_1)
-    mommy.make("references.SubtierAgency", **subtier_agency_2)
+    sa1 = mommy.make("references.SubtierAgency", **subtier_agency_1)
+    sa2 = mommy.make("references.SubtierAgency", **subtier_agency_2)
 
     # Agency
     agency = {
         "pk": 1,
-        "subtier_agency": SubtierAgency.objects.get(pk=1),
-        "toptier_agency": ToptierAgency.objects.get(pk=1),
+        "subtier_agency": sa1,
+        "toptier_agency": ta1,
         "toptier_flag": True,
     }
     agency_2 = {
         "pk": 2,
-        "subtier_agency": SubtierAgency.objects.get(pk=2),
-        "toptier_agency": ToptierAgency.objects.get(pk=2),
+        "subtier_agency": sa2,
+        "toptier_agency": ta2,
         "toptier_flag": True,
     }
 
@@ -1365,11 +1365,11 @@ expected_response_asst = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
@@ -1463,11 +1463,11 @@ expected_response_cont = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "LEGAL ENTITY",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
         "parent_recipient_name": "PARENT LEGAL ENTITY",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
