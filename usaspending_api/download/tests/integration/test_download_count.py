@@ -18,7 +18,7 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
-def download_test_data(db):
+def download_test_data():
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -106,10 +106,11 @@ def download_test_data(db):
     update_awards()
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_count(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-
     download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+
     resp = client.post(
         "/api/v2/download/count/",
         content_type="application/json",
