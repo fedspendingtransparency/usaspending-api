@@ -4,16 +4,19 @@ import random
 
 from model_mommy import mommy
 from rest_framework import status
+from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
-def download_test_data(db):
+def download_test_data():
     # Populate job status lookup table
     for js in JOB_STATUS:
         mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -101,8 +104,10 @@ def download_test_data(db):
     update_awards()
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
         "/api/v2/download/awards/",
@@ -114,8 +119,10 @@ def test_download_awards_without_columns(client, monkeypatch, download_test_data
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(transaction=True)
 def test_tsv_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
         "/api/v2/download/awards/",
@@ -127,8 +134,10 @@ def test_tsv_download_awards_without_columns(client, monkeypatch, download_test_
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(transaction=True)
 def test_pstxt_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
         "/api/v2/download/awards/",
@@ -140,8 +149,10 @@ def test_pstxt_download_awards_without_columns(client, monkeypatch, download_tes
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_awards_with_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     resp = client.post(
         "/api/v2/download/awards/",
@@ -164,8 +175,10 @@ def test_download_awards_with_columns(client, monkeypatch, download_test_data, e
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(transaction=True)
 def test_download_awards_bad_filter_type_raises(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
 
     payload = {"filters": "01", "columns": []}
     resp = client.post("/api/v2/download/awards/", content_type="application/json", data=json.dumps(payload))
