@@ -2,6 +2,7 @@ DO $$ BEGIN RAISE NOTICE '010 Adding Recipient records from SAM'; END $$;
 
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
+  duns_recipient_hash,
   legal_business_name,
   duns,
   uei,
@@ -24,6 +25,8 @@ SELECT
     CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
     ELSE CONCAT('duns-', awardee_or_recipient_uniqu) END
   ))::uuid AS recipient_hash,
+  MD5(UPPER(CONCAT('duns-', awardee_or_recipient_uniqu)
+  ))::uuid AS duns_recipient_hash,
   UPPER(legal_business_name) AS legal_business_name,
   awardee_or_recipient_uniqu AS duns,
   uei as uei,

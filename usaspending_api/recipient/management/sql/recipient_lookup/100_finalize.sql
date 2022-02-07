@@ -14,6 +14,7 @@ RETURNING rl.recipient_hash;
 
 DO $$ BEGIN RAISE NOTICE 'Updating records in recipient_lookup'; END $$;
 UPDATE public.recipient_lookup rl SET
+    recipient_hash              = tem.recipient_hash,
     address_line_1              = tem.address_line_1,
     address_line_2              = tem.address_line_2,
     business_types_codes        = tem.business_types_codes,
@@ -33,9 +34,9 @@ UPDATE public.recipient_lookup rl SET
     zip5                        = tem.zip5
   FROM public.temporary_restock_recipient_lookup tem
   WHERE
-    rl.recipient_hash = tem.recipient_hash
+    (rl.recipient_hash = tem.recipient_hash OR (rl.recipient_hash = tem.duns_recipient_hash AND tem.uei is not null))
     AND (
-        rl.address_line_1                  IS DISTINCT FROM tem.address_line_1
+        rl.address_line_1                 IS DISTINCT FROM tem.address_line_1
         OR rl.address_line_2              IS DISTINCT FROM tem.address_line_2
         OR rl.business_types_codes        IS DISTINCT FROM tem.business_types_codes
         OR rl.city                        IS DISTINCT FROM tem.city
