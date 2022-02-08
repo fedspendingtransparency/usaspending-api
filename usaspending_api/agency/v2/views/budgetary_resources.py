@@ -5,6 +5,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
@@ -45,39 +46,42 @@ class BudgetaryResources(AgencyBase):
 
     def get_periods_by_year(self):
         periods = {}
-        results = (
-            AppropriationAccountBalances.objects.filter(
-                treasury_account_identifier__funding_toptier_agency=self.toptier_agency,
+        fabpaoc = (
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(
+                treasury_account__funding_toptier_agency=self.toptier_agency,
                 submission__submission_window__submission_reveal_date__lte=now(),
             )
-            .values("submission__reporting_fiscal_period")
+            .values("submission__reporting_fiscal_year", "submission__reporting_fiscal_period")
             .annotate(
-                sum=Sum("obligations_incurred_total_by_tas_cpe"), fiscal_year=F("submission__reporting_fiscal_year")
+                fiscal_year=F("submission__reporting_fiscal_year"),
+                fiscal_period=F("submission__reporting_fiscal_period"),
+                obligation_sum=Sum("obligations_incurred_by_program_object_class_cpe"),
             )
+            .order_by("fiscal_year", "fiscal_period")
         )
 
-        for aab in results:
+        for val in fabpaoc:
             # This "continue" logic is in place to prevent the case where multiple agencies have submitted a mixture of
             # quarterly and monthly with a single agency listed as the funding agency. In this case the total
             # obligations are not displayed correctly on the monthly submissions that do not line up with a
             # corresponding quarterly submission.
             # TODO: Update with logic that takes into account the time period before required monthly submissions
-            if aab["fiscal_year"] < 2022 and aab["submission__reporting_fiscal_period"] not in (3, 6, 9, 12):
+            if val["fiscal_year"] < 2022 and val["fiscal_period"] not in (3, 6, 9, 12):
                 continue
-            if periods.get(aab["fiscal_year"]) is not None:
-                periods[aab["fiscal_year"]].append(
+            if periods.get(val["fiscal_year"]) is not None:
+                periods[val["fiscal_year"]].append(
                     {
-                        "period": aab["submission__reporting_fiscal_period"],
-                        "obligated": aab["sum"],
+                        "period": val["fiscal_period"],
+                        "obligated": val["obligation_sum"],
                     }
                 )
             else:
                 periods.update(
                     {
-                        aab["fiscal_year"]: [
+                        val["fiscal_year"]: [
                             {
-                                "period": aab["submission__reporting_fiscal_period"],
-                                "obligated": aab["sum"],
+                                "period": val["fiscal_period"],
+                                "obligated": val["obligation_sum"],
                             }
                         ]
                     }
@@ -92,32 +96,28 @@ class BudgetaryResources(AgencyBase):
                 submission__is_final_balances_for_fy=True,
             )
             .values("submission__reporting_fiscal_year")
-            .annotate(
-                agency_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"),
-                agency_total_obligated=Sum("obligations_incurred_total_by_tas_cpe"),
-            )
+            .annotate(agency_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"))
         )
+        aab_by_year = {val["submission__reporting_fiscal_year"]: val for val in aab}
+
+        fabpaoc = (
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(
+                treasury_account__funding_toptier_agency=self.toptier_agency,
+                submission__submission_window__submission_reveal_date__lte=now(),
+                submission__is_final_balances_for_fy=True,
+            )
+            .values("submission__reporting_fiscal_year")
+            .annotate(agency_total_obligated=Sum("obligations_incurred_by_program_object_class_cpe"))
+        )
+        fabpaoc_by_year = {val["submission__reporting_fiscal_year"]: val for val in fabpaoc}
 
         fbr = self.get_total_federal_budgetary_resources()
-        resources = {}
-        for z in fbr:
-            resources.update({z["fiscal_year"]: z["total_budgetary_resources"]})
-        periods = self.get_periods_by_year()
-        results = [
-            {
-                "fiscal_year": x["submission__reporting_fiscal_year"],
-                "agency_budgetary_resources": x["agency_budgetary_resources"],
-                "agency_total_obligated": x["agency_total_obligated"],
-                "total_budgetary_resources": resources.get(x["submission__reporting_fiscal_year"]),
-                "agency_obligation_by_period": sorted(
-                    periods[x["submission__reporting_fiscal_year"]], key=lambda z: z["period"]
-                ),
-            }
-            for x in aab
-        ]
-        years = [x["fiscal_year"] for x in results]
+        resources = {val["fiscal_year"]: val["total_budgetary_resources"] for val in fbr}
+        periods_by_year = self.get_periods_by_year()
+
+        results = []
         for year in range(2017, current_fiscal_year() + 1):
-            if year not in years:
+            if year not in aab_by_year:
                 results.append(
                     {
                         "fiscal_year": year,
@@ -127,4 +127,15 @@ class BudgetaryResources(AgencyBase):
                         "agency_obligation_by_period": [],
                     }
                 )
+            else:
+                results.append(
+                    {
+                        "fiscal_year": year,
+                        "agency_budgetary_resources": aab_by_year[year]["agency_budgetary_resources"],
+                        "agency_total_obligated": fabpaoc_by_year.get(year, {}).get("agency_total_obligated"),
+                        "total_budgetary_resources": resources.get(year),
+                        "agency_obligation_by_period": periods_by_year.get(year, []),
+                    }
+                )
+
         return sorted(results, key=lambda x: x["fiscal_year"], reverse=True)
