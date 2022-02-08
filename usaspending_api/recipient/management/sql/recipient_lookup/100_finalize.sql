@@ -12,9 +12,9 @@ WITH removed_recipients AS (
 DELETE FROM public.recipient_lookup rl WHERE rl.recipient_hash IN (SELECT recipient_hash FROM removed_recipients)
 RETURNING rl.recipient_hash;
 
+
 DO $$ BEGIN RAISE NOTICE 'Updating records in recipient_lookup'; END $$;
 UPDATE public.recipient_lookup rl SET
-    recipient_hash              = tem.recipient_hash,
     address_line_1              = tem.address_line_1,
     address_line_2              = tem.address_line_2,
     business_types_codes        = tem.business_types_codes,
@@ -34,7 +34,7 @@ UPDATE public.recipient_lookup rl SET
     zip5                        = tem.zip5
   FROM public.temporary_restock_recipient_lookup tem
   WHERE
-    (rl.recipient_hash = tem.recipient_hash OR (rl.recipient_hash = tem.duns_recipient_hash AND tem.uei is not null))
+    rl.recipient_hash = tem.recipient_hash
     AND (
         rl.address_line_1                 IS DISTINCT FROM tem.address_line_1
         OR rl.address_line_2              IS DISTINCT FROM tem.address_line_2
@@ -97,6 +97,16 @@ SELECT
 FROM public.temporary_restock_recipient_lookup
 ON CONFLICT(recipient_hash) DO NOTHING;
 
+DO $$ BEGIN RAISE NOTICE 'Updating DUNS hashes to UEI hashes in recipient_lookup'; END $$;
+
+DELETE FROM public.recipient_lookup WHERE recipient_hash IN (
+    SELECT rl.recipient_hash
+    FROM recipient_lookup rl
+        INNER JOIN public.temporary_restock_recipient_lookup tem
+            ON rl.recipient_hash = tem.duns_recipient_hash
+    WHERE tem.uei IS NOT NULL AND tem.duns IS NOT NULL
+) RETURNING recipient_hash;
+
 DO $$ BEGIN RAISE NOTICE 'Populating alternate_names in recipient_lookup'; END $$;
 WITH alternate_names AS (
   WITH alt_names AS (
@@ -133,7 +143,7 @@ WHERE
   AND rl.alternate_names IS DISTINCT FROM array_remove(an.all_names, rl.legal_business_name);
 
 DO $$ BEGIN RAISE NOTICE 'Post ETL clean up'; END $$;
-DROP TABLE public.temporary_restock_recipient_lookup;
+--DROP TABLE public.temporary_restock_recipient_lookup;
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
 
 COMMIT;
