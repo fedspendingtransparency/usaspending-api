@@ -4,19 +4,22 @@ import pytest
 from model_mommy import mommy
 from rest_framework import status
 
+from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+
 
 @pytest.fixture
 def awards_and_transactions(db):
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    sa1 = mommy.make("references.SubtierAgency", subtier_code="def", **subag)
-    ta1 = mommy.make("references.ToptierAgency", toptier_code="abc", **subag)
+    mommy.make("references.SubtierAgency", subtier_code="def", **subag)
+    mommy.make("references.ToptierAgency", toptier_code="abc", **subag)
 
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
-    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
-    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
-    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C", "uei": "DEF"}
+    parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
+    recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
+    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
+    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
     mommy.make("references.Cfda", program_number=1234)
     mommy.make("recipient.DUNS", **duns)
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
@@ -24,15 +27,15 @@ def awards_and_transactions(db):
     mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
     mommy.make("recipient.RecipientProfile", **recipient_profile)
 
-    ag = {"pk": 1, "toptier_agency": ta1, "subtier_agency": sa1}
-    a1 = mommy.make("references.Agency", **ag)
+    ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
+    mommy.make("references.Agency", **ag)
 
     trans_asst = {"pk": 1, "award_id": 1, "business_categories": ["small_business"]}
     trans_cont_1 = {"pk": 2, "award_id": 2, "business_categories": ["small_business"]}
     trans_cont_2 = {"pk": 3, "award_id": 3, "business_categories": ["small_business"]}
-    t1 = mommy.make("awards.TransactionNormalized", **trans_asst)
-    t2 = mommy.make("awards.TransactionNormalized", **trans_cont_1)
-    t3 = mommy.make("awards.TransactionNormalized", **trans_cont_2)
+    mommy.make("awards.TransactionNormalized", **trans_asst)
+    mommy.make("awards.TransactionNormalized", **trans_cont_1)
+    mommy.make("awards.TransactionNormalized", **trans_cont_2)
 
     mommy.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
     mommy.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")
@@ -43,7 +46,7 @@ def awards_and_transactions(db):
 
     award_1_model = {
         "pk": 1,
-        "latest_transaction": t1,
+        "latest_transaction": TransactionNormalized.objects.get(pk=1),
         "type": "IDV_B_B",
         "category": "idv",
         "piid": 1234,
@@ -52,21 +55,21 @@ def awards_and_transactions(db):
         "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
-        "awarding_agency": a1,
-        "funding_agency": a1,
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
         "date_signed": "2005-04-03",
     }
     award_2_model = {
         "pk": 2,
-        "latest_transaction": t2,
+        "latest_transaction": TransactionNormalized.objects.get(pk=2),
         "type": "IDV_A",
         "type_description": "GWAC",
         "category": "idv",
         "piid": "5678",
         "parent_award_piid": "1234",
         "description": "lorem ipsum",
-        "awarding_agency": a1,
-        "funding_agency": a1,
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -82,15 +85,15 @@ def awards_and_transactions(db):
     }
     award_3_model = {
         "pk": 3,
-        "latest_transaction": t3,
+        "latest_transaction": TransactionNormalized.objects.get(pk=3),
         "type": "IDV_A",
         "type_description": "GWAC",
         "category": "idv",
         "piid": "9123",
         "parent_award_piid": "1234",
         "description": "lorem ipsum",
-        "awarding_agency": a1,
-        "funding_agency": a1,
+        "awarding_agency": Agency.objects.get(pk=1),
+        "funding_agency": Agency.objects.get(pk=1),
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -104,7 +107,7 @@ def awards_and_transactions(db):
     mommy.make("awards.Award", **award_2_model)
     mommy.make("awards.Award", **award_3_model)
 
-    asst_data = {"transaction": t1, "cfda_number": 1234, "cfda_title": "farms"}
+    asst_data = {"transaction": TransactionNormalized.objects.get(pk=1), "cfda_number": 1234, "cfda_title": "farms"}
 
     latest_transaction_contract_data = {
         "action_date": "2010-01-01",
@@ -203,7 +206,7 @@ def awards_and_transactions(db):
         "solicitation_procedur_desc": None,
         "subcontracting_plan": "B",
         "subcontracting_plan_desc": None,
-        "transaction": t2,
+        "transaction": TransactionNormalized.objects.get(pk=2),
         "type_of_contract_pricing": None,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
@@ -314,7 +317,7 @@ def awards_and_transactions(db):
         "solicitation_procedur_desc": None,
         "subcontracting_plan": "B",
         "subcontracting_plan_desc": None,
-        "transaction": t3,
+        "transaction": TransactionNormalized.objects.get(pk=3),
         "type_of_contract_pricing": None,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
@@ -385,11 +388,11 @@ expected_response_idv = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
+        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
         "recipient_name": "John's Pizza",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
+        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
         "parent_recipient_name": "Dave's Pizza LLC",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",
