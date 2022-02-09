@@ -12,6 +12,7 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_di
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.references.helpers import generate_agency_slugs_for_agency_list
 
 
 # Columns upon which the client is allowed to sort.
@@ -44,7 +45,9 @@ GET_CHILD_IDVS_SQL = SQL(
         ac.type_description                        award_type,
         ac.description,
         tta.name                                   funding_agency,
+        tta.toptier_agency_id                      funding_toptier_agency_id,
         ttb.name                                   awarding_agency,
+        ttb.toptier_agency_id                      awarding_toptier_agency_id,
         ac.funding_agency_id,
         ac.awarding_agency_id,
         ac.generated_unique_award_id,
@@ -78,7 +81,9 @@ GET_CHILD_AWARDS_SQL = SQL(
         ac.type_description                        award_type,
         ac.description,
         tta.name                                   funding_agency,
+        tta.toptier_agency_id                      funding_toptier_agency_id,
         ttb.name                                   awarding_agency,
+        ttb.toptier_agency_id                      awarding_toptier_agency_id,
         ac.funding_agency_id,
         ac.awarding_agency_id,
         ac.generated_unique_award_id,
@@ -113,7 +118,9 @@ GET_GRANDCHILD_AWARDS_SQL = SQL(
         ac.type_description                        award_type,
         ac.description,
         tta.name                                   funding_agency,
+        tta.toptier_agency_id                      funding_toptier_agency_id,
         ttb.name                                   awarding_agency,
+        ttb.toptier_agency_id                      awarding_toptier_agency_id,
         ac.funding_agency_id,
         ac.awarding_agency_id,
         ac.generated_unique_award_id,
@@ -199,8 +206,24 @@ class IDVAwardsViewSet(APIView):
             limit=Literal(request_data["limit"] + 1),
             offset=Literal((request_data["page"] - 1) * request_data["limit"]),
         )
+        results = execute_sql_to_ordered_dictionary(sql)
 
-        return execute_sql_to_ordered_dictionary(sql)
+        toptier_ids = set(
+            [res["funding_toptier_agency_id"] for res in results]
+            + [res["awarding_toptier_agency_id"] for res in results]
+        )
+        agency_slugs = generate_agency_slugs_for_agency_list(toptier_ids)
+
+        for res in results:
+            # Set Agency Slugs
+            res["funding_agency_slug"] = agency_slugs.get(res.get("funding_toptier_agency_id"))
+            res["awarding_agency_slug"] = agency_slugs.get(res.get("awarding_toptier_agency_id"))
+
+            # Remove extra fields
+            del res["funding_toptier_agency_id"]
+            del res["awarding_toptier_agency_id"]
+
+        return results
 
     @cache_response()
     def post(self, request: Request) -> Response:

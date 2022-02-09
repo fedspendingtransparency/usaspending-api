@@ -60,7 +60,7 @@ See below for basic setup instructions. For help with Docker Compose:
 
 ##### Database Setup and Initialization with Docker Compose
 
-- **None of these commands will rebuild a Docker image! Use `--build` if you make changes to the code or want to rebuild the image before running the `up` steps.**
+:warning: _**None of these commands will rebuild the Docker images to bake in new code, config, or dependencies!** Use `docker-compose build` if you make changes to the code or config and want to rebuild the image before running containers with `up` steps._
 
 - **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
 
@@ -119,9 +119,11 @@ For details on how our data loaders modify incoming data, see [data_reformatting
 
 ### Test Setup
 
-To run all tests in the docker services run
+To run all USAspending tests in the docker services run
 
-    docker-compose run --rm usaspending-test
+    docker-compose run --rm -e DATA_BROKER_DATABASE_URL='' usaspending-test
+
+_NOTE: If an env var named `DATA_BROKER_DATABASE_URL` is set, Broker Integration tests will attempt to be run as well. If doing so, Broker dependencies must be met (see below) or ALL tests will fail hard. Running the above command with `-e DATA_BROKER_DATABASE_URL=''` is a precaution to keep them excluded, unless you really want them (see below if so)._
 
 To run tests locally and not in the docker services, you need:
 
@@ -167,22 +169,42 @@ If `direnv` does not pick this up after saving the file, type
 _Alternatively, you could skip using `direnv` and just export these variables in your shell environment._
 
 ### Including Broker Integration Tests
-Some automated integration tests run against a [Broker](https://github.com/fedspendingtransparency/data-act-broker-backend) database. If the dependencies to run such integration tests are not satisfied, those tests will bail out and be marked as _Skipped_.
+Some automated integration tests run against a [Broker](https://github.com/fedspendingtransparency/data-act-broker-backend) database. If certain dependencies to run such integration tests are not satisfied, those tests will bail out and be marked as _Skipped_.
 (You can see messages about those skipped tests by adding the `-rs` flag to pytest, like: `pytest -rs`)
 
 To satisfy these dependencies and include execution of these tests, do the following:
-1. Ensure you have [`Docker`](https://docs.docker.com/install/) installed and running on your machine
+
 1. Ensure the `Broker` source code is checked out alongside this repo at `../data-act-broker-backend`
-1. Ensure you have the `DATA_BROKER_DATABASE_URL` environment variable set, and pointing to a live PostgreSQL server (no database required)
+1. Ensure you have [`Docker`](https://docs.docker.com/install/) installed and running on your machine
 1. Ensure you have built the `Broker` backend Docker image by running:
 
-```shell
+    ```shell
     (usaspending-api) $ docker build -t dataact-broker-backend ../data-act-broker-backend
-```
+    ```
+1. Ensure you have the `DATA_BROKER_DATABASE_URL` environment variable set, and it points to what will be a live PostgreSQL server (no database required) at the time tests are run.
+    1. _WARNING: If this is set at all, then ALL above dependencies must be met or ALL tests will fail (Django will try this connection on ALL tests' run)_
+    1. This DB could be one you always have running in a local Postgres instance, or one you spin up in a Docker container just before tests are run
+1. If invoking `pytest` within a docker container (e.g. using the `usaspending-test` container), you _must_ mount the host's docker socket. This is declared already in the `docker-compose.yaml` file services, but would be done manually with: `-v /var/run/docker.sock:/var/run/docker.sock`
 
 _NOTE: Broker source code should be re-fetched and image rebuilt to ensure latest integration is tested_
 
 Re-running the test suite using `pytest -rs` with these dependencies satisfied should yield no more skips of the broker integration tests.
+
+**Example Test Invocations of _Just a Few_ Broker Integration Tests:** (_i.e. using `-k`_)
+
+_From within a container_
+
+(NOTE: `DATA_BROKER_DATABASE_URL` is set in the `docker-compose.yaml` file (and could pick up `.env` values, if set)
+```bash
+(usaspending-api) $ docker-compose run --rm usaspending-test pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration
+```
+
+_From Developer Desktop_
+
+(NOTE: `DATA_BROKER_DATABASE_URL` is set in the `.envrc` file and available in the shell)
+```bash
+(usaspending-api) $ pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration
+```
 
 ## Contributing
 To submit fixes or enhancements, or to suggest changes, see [CONTRIBUTING.md](CONTRIBUTING.md)
