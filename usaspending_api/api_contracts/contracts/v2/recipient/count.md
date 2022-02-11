@@ -19,7 +19,7 @@ This endpoint returns the count of recipients given an award_type and keyword st
 
     + Attributes (object)
         + `keyword` (optional, string)
-            The keyword results are filtered by. Searches on name and DUNS.
+            The keyword results are filtered by. Searches on name, UEI, and DUNS.
         + `award_type` (optional, enum[string])
             The award type results are filtered by.
             + Default: `all`
