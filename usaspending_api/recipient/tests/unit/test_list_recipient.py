@@ -9,7 +9,10 @@ class TestListRecipients(TestCase):
         expected_uei = "okmju7ygv"
         filters = {
             'keyword': 'okmju7ygv',
-            'award_type': 'all', 'page': 1, 'order': 'desc', 'sort': 'amount',
+            'award_type': 'all',
+            'page': 1,
+            'order': 'desc',
+            'sort': 'amount',
             'limit': 50
         }
         response = list_recipients.build_recipient_identifier_base_query(filters)

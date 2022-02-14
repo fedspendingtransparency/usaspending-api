@@ -55,7 +55,7 @@ def get_recipients(filters={}, count=None):
         "amount": amount_column,
         "duns": "recipient_unique_id",
         "uei": "recipient_unique_id",
-        "name": "recipient_name"
+        "name": "recipient_name",
     }
 
     # Nulls Last isn't enabled for the amount sort because it prevents queries sorted by amount columns DESC
@@ -112,7 +112,7 @@ class ListRecipients(APIView):
     This route takes a single keyword filter (and pagination filters), and returns a list of recipients
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipients.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient.md"
 
     def request_count(self, filters={}):
         response = RecipientCount.as_view()(request=self.request._request).data
