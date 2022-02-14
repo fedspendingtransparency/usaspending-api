@@ -24,7 +24,7 @@ RECIPIENT_MODELS = [
 ]
 
 
-def build_duns_base_query(filters):
+def build_recipient_identifier_base_query(filters):
     qs_filter = Q()
     if "keyword" in filters:
         qs_filter |= Q(recipient_name__contains=filters["keyword"].upper())
@@ -44,7 +44,7 @@ def get_recipients(filters={}, count=None):
     if filters["award_type"] != "all":
         amount_column = AWARD_TYPES[filters["award_type"]]["amount"]
 
-    qs_filter = build_duns_base_query(filters)
+    qs_filter = build_recipient_identifier_base_query(filters)
 
     queryset = (
         RecipientProfile.objects.filter(qs_filter)
@@ -84,7 +84,7 @@ def get_recipients(filters={}, count=None):
 
 
 def get_recipient_count(filters={}):
-    qs_filter = build_duns_base_query(filters)
+    qs_filter = build_recipient_identifier_base_query(filters)
     return RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES).count()
 
 
