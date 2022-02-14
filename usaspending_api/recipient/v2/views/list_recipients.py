@@ -48,8 +48,8 @@ def get_recipients(filters={}, count=None):
 
     queryset = (
         RecipientProfile.objects.filter(qs_filter)
-            .values("recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column, "uei")
-            .exclude(recipient_name__in=SPECIAL_CASES)
+        .values("recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column, "uei")
+        .exclude(recipient_name__in=SPECIAL_CASES)
     )
     api_to_db_mapper = {"amount": amount_column, "duns": "recipient_unique_id", "uei": "recipient_unique_id",
                         "name": "recipient_name"}
