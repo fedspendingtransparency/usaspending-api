@@ -51,8 +51,12 @@ def get_recipients(filters={}, count=None):
         .values("recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column, "uei")
         .exclude(recipient_name__in=SPECIAL_CASES)
     )
-    api_to_db_mapper = {"amount": amount_column, "duns": "recipient_unique_id", "uei": "recipient_unique_id",
-                        "name": "recipient_name"}
+    api_to_db_mapper = {
+        "amount": amount_column,
+        "duns": "recipient_unique_id",
+        "uei": "recipient_unique_id",
+        "name": "recipient_name"
+    }
 
     # Nulls Last isn't enabled for the amount sort because it prevents queries sorted by amount columns DESC
     # from using an index on those columns, even though they cannot contain nulls
