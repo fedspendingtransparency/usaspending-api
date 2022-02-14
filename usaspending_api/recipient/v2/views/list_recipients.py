@@ -12,6 +12,8 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.utils import update_model_in_list
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.recipient.v2.lookups import AWARD_TYPES, SPECIAL_CASES
+from usaspending_api.common.api_versioning import deprecated
+from django.utils.decorators import method_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ def build_duns_base_query(filters):
     qs_filter = Q()
     if "keyword" in filters:
         qs_filter |= Q(recipient_name__contains=filters["keyword"].upper())
-        qs_filter |= Q(recipient_unique_id__contains=filters["keyword"])
+        qs_filter |= Q(recipient_unique_id__contains=filters["keyword"]) | Q(uei__contains=filters["keyword"])
 
     if filters["award_type"] != "all":
         qs_filter &= Q(award_types__overlap=[AWARD_TYPES[filters["award_type"]]["filter"]])
@@ -46,10 +48,11 @@ def get_recipients(filters={}, count=None):
 
     queryset = (
         RecipientProfile.objects.filter(qs_filter)
-        .values("recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column, "uei")
-        .exclude(recipient_name__in=SPECIAL_CASES)
+            .values("recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column, "uei")
+            .exclude(recipient_name__in=SPECIAL_CASES)
     )
-    api_to_db_mapper = {"amount": amount_column, "duns": "recipient_unique_id", "name": "recipient_name"}
+    api_to_db_mapper = {"amount": amount_column, "duns": "recipient_unique_id", "uei": "recipient_unique_id",
+                        "name": "recipient_name"}
 
     # Nulls Last isn't enabled for the amount sort because it prevents queries sorted by amount columns DESC
     # from using an index on those columns, even though they cannot contain nulls
@@ -105,7 +108,7 @@ class ListRecipients(APIView):
     This route takes a single keyword filter (and pagination filters), and returns a list of recipients
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipients.md"
 
     def request_count(self, filters={}):
         response = RecipientCount.as_view()(request=self.request._request).data
@@ -130,3 +133,17 @@ class ListRecipients(APIView):
 
         results, page_metadata = get_recipients(filters=validated_payload, count=count)
         return Response({"page_metadata": page_metadata, "results": results})
+
+
+@method_decorator(deprecated, name="post")
+class ListRecipientsByDuns(ListRecipients):
+    """
+    Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
+
+    Please use the following endpoint instead: /api/v2/recipient/
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
+
+    def __init__(self):
+        super().__init__()
