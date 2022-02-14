@@ -17,5 +17,5 @@ class TestListRecipients(TestCase):
                 calculated_uei = child[1]
 
         self.assertIsNotNone(calculated_uei)
-        self.assertEqual(3,len(response.children))
+        self.assertEqual(3, len(response.children))
         self.assertEqual(expected_uei, calculated_uei)
