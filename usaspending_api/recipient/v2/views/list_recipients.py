@@ -54,7 +54,7 @@ def get_recipients(filters={}, count=None):
     api_to_db_mapper = {
         "amount": amount_column,
         "duns": "recipient_unique_id",
-        "uei": "recipient_unique_id",
+        "uei": "uei",
         "name": "recipient_name",
     }
 
