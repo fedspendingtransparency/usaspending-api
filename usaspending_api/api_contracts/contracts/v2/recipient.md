@@ -38,7 +38,7 @@ This endpoint returns a list of recipients, their level, DUNS, UEI, and amount.
             The page of results to return based on the limit.
             + Default: 1
         + `keyword` (optional, string)
-            The keyword results are filtered by. Searches on name, UEI, or DUNS (deprecated).
+            The keyword results are filtered by. Searches on name, UEI, or DUNS.
         + `award_type` (optional, enum[string])
             The award type results are filtered by.
             + Default: `all`
