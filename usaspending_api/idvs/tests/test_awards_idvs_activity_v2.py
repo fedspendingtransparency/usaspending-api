@@ -1,8 +1,10 @@
 import json
 
 from django.test import TestCase
+from django.utils.text import slugify
 from rest_framework import status
 from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, PARENTS, RECIPIENT_HASH_PREFIX
+from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
 
 
 ENDPOINT = "/api/v2/idvs/activity/"
@@ -14,7 +16,7 @@ class IDVAwardsTestCase(TestCase):
         create_idv_test_data()
 
     @staticmethod
-    def _generate_expected_response(total, limit, page, *award_ids):
+    def _generate_expected_response(total, limit, page, no_submissions, *award_ids):
         """
         Rather than manually generate an insane number of potential responses
         to test the various parameter combinations, we're going to procedurally
@@ -28,11 +30,14 @@ class IDVAwardsTestCase(TestCase):
             string_award_id = str(award_id).zfill(3)
             parent_award_id = PARENTS.get(award_id)
             string_parent_award_id = str(parent_award_id).zfill(3)
+            awarding_agency_name = "Toptier Awarding Agency Name %s" % (8500 + award_id)
+            agency_slug = slugify(awarding_agency_name) if not no_submissions else None
             results.append(
                 {
                     "award_id": award_id,
-                    "awarding_agency": "toptier_awarding_agency_name_%s" % (8500 + award_id),
+                    "awarding_agency": awarding_agency_name,
                     "awarding_agency_id": 8000 + award_id,
+                    "awarding_agency_slug": agency_slug,
                     "generated_unique_award_id": "CONT_IDV_%s" % string_award_id,
                     "period_of_performance_potential_end_date": "2018-08-%02d" % award_id,
                     "parent_award_id": parent_award_id,
@@ -81,25 +86,25 @@ class IDVAwardsTestCase(TestCase):
 
     def test_defaults(self):
 
-        self._test_post({"award_id": 2}, (400002, 10, 1, 14, 13, 12, 11, 10, 9))
+        self._test_post({"award_id": 2}, (400002, 10, 1, False, 14, 13, 12, 11, 10, 9))
 
-        self._test_post({"award_id": "CONT_IDV_002"}, (400002, 10, 1, 14, 13, 12, 11, 10, 9))
+        self._test_post({"award_id": "CONT_IDV_002"}, (400002, 10, 1, False, 14, 13, 12, 11, 10, 9))
 
     def test_with_nonexistent_id(self):
 
-        self._test_post({"award_id": 0}, (0, 10, 1))
+        self._test_post({"award_id": 0}, (0, 10, 1, False))
 
-        self._test_post({"award_id": "CONT_IDV_000"}, (0, 10, 1))
+        self._test_post({"award_id": "CONT_IDV_000"}, (0, 10, 1, False))
 
     def test_with_bogus_id(self):
 
-        self._test_post({"award_id": "BOGUS_ID"}, (0, 10, 1))
+        self._test_post({"award_id": "BOGUS_ID"}, (0, 10, 1, False))
 
     def test_limit_values(self):
 
-        self._test_post({"award_id": 2, "limit": 1}, (400002, 1, 1, 14))
+        self._test_post({"award_id": 2, "limit": 1}, (400002, 1, 1, False, 14))
 
-        self._test_post({"award_id": 2, "limit": 5}, (400002, 5, 1, 14, 13, 12, 11, 10))
+        self._test_post({"award_id": 2, "limit": 5}, (400002, 5, 1, False, 14, 13, 12, 11, 10))
 
         self._test_post({"award_id": 2, "limit": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
@@ -109,11 +114,11 @@ class IDVAwardsTestCase(TestCase):
 
     def test_page_values(self):
 
-        self._test_post({"award_id": 2, "limit": 1, "page": 2}, (400002, 1, 2, 13))
+        self._test_post({"award_id": 2, "limit": 1, "page": 2}, (400002, 1, 2, False, 13))
 
-        self._test_post({"award_id": 2, "limit": 1, "page": 3}, (400002, 1, 3, 12))
+        self._test_post({"award_id": 2, "limit": 1, "page": 3}, (400002, 1, 3, False, 12))
 
-        self._test_post({"award_id": 2, "limit": 1, "page": 10}, (400002, 1, 10))
+        self._test_post({"award_id": 2, "limit": 1, "page": 10}, (400002, 1, 10, False))
 
         self._test_post(
             {"award_id": 2, "limit": 1, "page": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -124,8 +129,14 @@ class IDVAwardsTestCase(TestCase):
         )
 
     def test_hide_edges(self):
-        self._test_post({"award_id": 2, "limit": 1, "hide_edge_cases": True}, (6, 1, 1, 14))
-        self._test_post({"award_id": 2, "limit": 1, "hide_edge_cases": False}, (400002, 1, 1, 14))
-        self._test_post({"award_id": "CONT_IDV_002", "hide_edge_cases": True}, (6, 10, 1, 14, 13, 12, 11, 10, 9))
+        self._test_post({"award_id": 2, "limit": 1, "hide_edge_cases": True}, (6, 1, 1, False, 14))
+        self._test_post({"award_id": 2, "limit": 1, "hide_edge_cases": False}, (400002, 1, 1, False, 14))
+        self._test_post({"award_id": "CONT_IDV_002", "hide_edge_cases": True}, (6, 10, 1, False, 14, 13, 12, 11, 10, 9))
 
-        self._test_post({"award_id": "CONT_IDV_002", "hide_edge_cases": False}, (400002, 10, 1, 14, 13, 12, 11, 10, 9))
+        self._test_post(
+            {"award_id": "CONT_IDV_002", "hide_edge_cases": False}, (400002, 10, 1, False, 14, 13, 12, 11, 10, 9)
+        )
+
+    def test_no_submission(self):
+        SubmissionAttributes.objects.filter(reporting_fiscal_year=2008).delete()
+        self._test_post({"award_id": 2}, (400002, 10, 1, True, 14, 13, 12, 11, 10, 9))

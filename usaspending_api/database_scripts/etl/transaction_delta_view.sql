@@ -86,6 +86,7 @@ SELECT
   "parent_recipient_hash",
   "parent_recipient_name",
   "parent_recipient_unique_id",
+  "recipient_uei",
   "awarding_agency_id",
   "funding_agency_id",
   "awarding_toptier_agency_id",

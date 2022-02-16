@@ -31,7 +31,7 @@ def data_fixture():
         reporting_fiscal_period=3,
         submission_window=dabs,
         toptier_code=ta1.toptier_code,
-        is_final_balances_for_fy=True,
+        is_final_balances_for_fy=False,
     )
     sa1_6 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -39,7 +39,15 @@ def data_fixture():
         reporting_fiscal_period=6,
         submission_window=dabs,
         toptier_code=ta1.toptier_code,
-        is_final_balances_for_fy=True,
+        is_final_balances_for_fy=False,
+    )
+    sa1_7 = mommy.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=FY,
+        reporting_fiscal_period=7,
+        submission_window=dabs,
+        toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=False,
     )
     sa1_9 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -47,7 +55,7 @@ def data_fixture():
         reporting_fiscal_period=9,
         submission_window=dabs,
         toptier_code=ta1.toptier_code,
-        is_final_balances_for_fy=True,
+        is_final_balances_for_fy=False,
     )
     sa1_12 = mommy.make(
         "submissions.SubmissionAttributes",
@@ -80,6 +88,14 @@ def data_fixture():
         obligations_incurred_total_by_tas_cpe=8886,
         treasury_account_identifier=tas1,
         submission=sa1_6,
+    )
+
+    mommy.make(
+        "accounts.AppropriationAccountBalances",
+        total_budgetary_resources_amount_cpe=9997,
+        obligations_incurred_total_by_tas_cpe=8887,
+        treasury_account_identifier=tas1,
+        submission=sa1_7,
     )
 
     mommy.make(
@@ -121,7 +137,6 @@ def data_fixture():
         treasury_account_identifier=tas2,
         submission=sa1_12,
     )
-
     mommy.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=63,
@@ -129,6 +144,62 @@ def data_fixture():
         treasury_account_identifier=tas2,
         submission=sa2_12,
     )
+
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=8883,
+        treasury_account=tas1,
+        submission=sa1_3,
+    )
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=8886,
+        treasury_account=tas1,
+        submission=sa1_6,
+    )
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=8887,
+        treasury_account=tas1,
+        submission=sa1_7,
+    )
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=8889,
+        treasury_account=tas1,
+        submission=sa1_9,
+    )
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=1,
+        treasury_account=tas1,
+        submission=sa1_12,
+    )
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=2,
+        treasury_account=tas1,
+        submission=sa1_12,
+    )
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=5,
+        treasury_account=tas1,
+        submission=sa2_12,
+    )
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=6,
+        treasury_account=tas2,
+        submission=sa1_12,
+    )
+    mommy.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        obligations_incurred_by_program_object_class_cpe=7,
+        treasury_account=tas2,
+        submission=sa2_12,
+    )
+
     for fy in range(2017, current_fiscal_year() + 1):
         mommy.make("references.GTASSF133Balances", fiscal_year=fy, fiscal_period=12, total_budgetary_resources_cpe=fy)
         mommy.make(
@@ -147,9 +218,9 @@ def test_budgetary_resources(client, data_fixture):
     expected_results = [
         {
             "fiscal_year": FY,
-            "agency_budgetary_resources": Decimal("29992.00"),
+            "agency_budgetary_resources": Decimal("4.00"),
             "total_budgetary_resources": Decimal(f"{FY}.00"),
-            "agency_total_obligated": Decimal("26661.00"),
+            "agency_total_obligated": Decimal("3.00"),
             "agency_obligation_by_period": [
                 {"obligated": Decimal("8883.00"), "period": 3},
                 {"obligated": Decimal("8886.00"), "period": 6},

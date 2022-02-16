@@ -75,12 +75,14 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                         "children": [
                             {
                                 "name": "OFC OF CAPITAL ACCESS",
+                                "code": "737010",
                                 "total_obligations": 549195419.92,
                                 "transaction_count": 13410,
                                 "new_award_count": 12417
                             },
                             {
                                 "name": "OFC OF DISASTER ASSISTANCE",
+                                "code": "732990",
                                 "total_obligations": 4577429.17,
                                 "transaction_count": 943,
                                 "new_award_count": 576
@@ -139,6 +141,7 @@ List of procurement and assistance award type codes supported by USAspending.gov
 
 ## Office (object)
 + `name` (required, string)
++ `code` (required, string)
 + `total_obligations` (required, number)
 + `transaction_count` (required, number)
 + `new_award_count` (required, number)

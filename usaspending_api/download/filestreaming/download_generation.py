@@ -333,9 +333,9 @@ def parse_source(source, columns, download_job, working_dir, piid, assistance_id
         # Log how many rows we have
         write_to_log(message="Counting rows in delimited text file", download_job=download_job)
         try:
-            download_job.number_of_rows += count_rows_in_delimited_file(
-                filename=source_path, has_header=True, delimiter=delim
-            )
+            number_of_rows = count_rows_in_delimited_file(filename=source_path, has_header=True, delimiter=delim)
+            download_job.number_of_rows += number_of_rows
+            write_to_log(message=f"Number of rows in text file: {number_of_rows}", download_job=download_job)
         except Exception:
             write_to_log(
                 message="Unable to obtain delimited text file line count", is_error=True, download_job=download_job
@@ -376,7 +376,11 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
             output_template = f"{data_file_name}_%s.{extension}"
             write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
             list_of_files = partition_large_delimited_file(
-                file_path=source_path, delimiter=delim, row_limit=EXCEL_ROW_LIMIT, output_name_template=output_template
+                download_job=download_job,
+                file_path=source_path,
+                delimiter=delim,
+                row_limit=EXCEL_ROW_LIMIT,
+                output_name_template=output_template,
             )
             span.set_tag("file_parts", len(list_of_files))
 
@@ -396,8 +400,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
             message = "Exception while partitioning text file"
             if download_job:
                 fail_download(download_job, e, message)
-                write_to_log(message=message, download_job=download_job, is_error=True)
-            logger.error(e)
+            write_to_log(message=message, download_job=download_job, is_error=True)
             raise e
 
 
@@ -603,7 +606,10 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         span_type=SpanTypes.SQL,
         source_path=source_path,
     ), tracer.trace(
-        name="postgres.query", service="db_downloaddb", resource=download_sql, span_type=SpanTypes.SQL
+        name="postgres.query",
+        service=f"{settings.DOWNLOAD_DATABASE_ALIAS}db",
+        resource=download_sql,
+        span_type=SpanTypes.SQL,
     ), tracer.trace(
         name="postgres.query", service="postgres", resource=download_sql, span_type=SpanTypes.SQL
     ):
@@ -630,14 +636,15 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
                 message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds", download_job=download_job
             )
         except subprocess.CalledProcessError as e:
-            logger.error(f"PSQL Error: {e.output.decode()}")
+            write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
+            raise e
         except Exception as e:
             if not settings.IS_LOCAL:
                 # Not logging the command as it can contain the database connection string
                 e.cmd = "[redacted psql command]"
-            logger.error(e)
+            write_to_log(message=e, is_error=True, download_job=download_job)
             sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
-            logger.error(f"Faulty SQL: {sql}")
+            write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
             raise e
 
 

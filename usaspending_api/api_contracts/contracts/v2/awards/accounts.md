@@ -60,7 +60,9 @@ This endpoint returns a list of federal accounts under a given award.
                         "account_title": "Bureau of Consumer Financial Protection Fund",
                         "funding_agency_abbreviation": "NIH",
                         "funding_agency_name": "National Institutes of Health",
-                        "funding_agency_id": 123
+                        "funding_agency_id": 123,
+                        "funding_toptier_agency_id": 45,
+                        "funding_agency_slug": "national-institutes-of-health"
                     }
                 ],
                 "page_metadata": {
@@ -91,3 +93,5 @@ This endpoint returns a list of federal accounts under a given award.
 + `funding_agency_abbreviation` (required, string, nullable)
 + `funding_agency_name` (required, string, nullable)
 + `funding_agency_id` (required, number, nullable)
++ `funding_toptier_agency_id` (required, number, nullable)
++ `funding_agency_slug` (required, string, nullable)

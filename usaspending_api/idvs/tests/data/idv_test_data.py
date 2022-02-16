@@ -25,6 +25,11 @@ RECIPIENT_HASH_PREFIX = "d0de516c-54af-4999-abda-428ce877"
 def create_idv_test_data():
     defc_a = mommy.make("references.DisasterEmergencyFundCode", code="A")
 
+    dsws = mommy.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date="2021-01-01",
+    )
+
     # You'll see a bunch of weird math and such in the code that follows.  The
     # goal is to try to mix values up a bit.  We don't want values to overlap
     # TOO much else it becomes difficult to ensure that a value came from a
@@ -45,7 +50,7 @@ def create_idv_test_data():
             "references.ToptierAgency",
             toptier_agency_id=8500 + award_id,
             toptier_code=str(award_id).zfill(3),
-            name="toptier_awarding_agency_name_%s" % (8500 + award_id),
+            name="Toptier Awarding Agency Name %s" % (8500 + award_id),
         )
 
         awarding_agency = mommy.make(
@@ -60,7 +65,7 @@ def create_idv_test_data():
             "references.ToptierAgency",
             toptier_agency_id=9500 + award_id,
             toptier_code=str(100 + award_id).zfill(3),
-            name="toptier_funding_agency_name_%s" % (9500 + award_id),
+            name="Toptier Funding Agency Name %s" % (9500 + award_id),
         )
 
         funding_agency = mommy.make(
@@ -174,6 +179,19 @@ def create_idv_test_data():
             recipient_level="R",
             recipient_name="recipient_name_%s" % (7000 + award_id),
             recipient_unique_id="duns_%s" % (7000 + award_id),
+        )
+
+        mommy.make(
+            "submissions.SubmissionAttributes",
+            reporting_fiscal_year=2008,
+            submission_window=dsws,
+            toptier_code=awarding_toptier_agency.toptier_code,
+        )
+        mommy.make(
+            "submissions.SubmissionAttributes",
+            reporting_fiscal_year=2008,
+            submission_window=dsws,
+            toptier_code=funding_toptier_agency.toptier_code,
         )
 
     # We'll need some parent_awards.  We "hard code" values here rather than
