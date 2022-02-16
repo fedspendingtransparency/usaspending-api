@@ -176,6 +176,7 @@ List of table columns
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
+    + A unique identifier for the recipient which includes the recipient hash and level. Unique identifier could include UEI or DUNS
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
