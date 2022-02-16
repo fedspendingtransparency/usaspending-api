@@ -90,6 +90,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "naics": NAICSViewSet().perform_search,
             "psc": PSCViewSet().perform_search,
             "recipient_duns": RecipientDunsViewSet().perform_search,
+            "recipient": RecipientDunsViewSet().perform_search,
             "state_territory": StateTerritoryViewSet().perform_search,
         }
         business_logic_func = business_logic_lookup.get(validated_payload["category"])
