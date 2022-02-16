@@ -455,13 +455,10 @@ class _DisasterEmergencyFundCodes(_Filter):
             query = ES_Q("bool", should=other_queries, minimum_should_match=1)
             def_codes_query.append(query)
 
-        if len(def_codes_query) > 1:
+        if len(def_codes_query) != 1:
             final_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
-        elif len(def_codes_query) == 1:
-            final_query = def_codes_query[0]
         else:
-            # This case should not happen, however, handling in case it does
-            final_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+            final_query = def_codes_query[0]
 
         return final_query
 
