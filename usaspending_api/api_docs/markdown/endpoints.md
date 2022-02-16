@@ -122,6 +122,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/idvs/count/federal_account/<AWARD_ID\>/](/api/v2/idvs/count/federal_account/CONT_IDV_NNK14MA74C_8000/)|GET| Returns the number of federal accounts associated with children and grandchild awards of an IDV. |
 |[/api/v2/idvs/funding/](/api/v2/idvs/funding/)|POST| Returns File C funding records associated with an IDV |
 |[/api/v2/idvs/funding_rollup/](/api/v2/idvs/funding_rollup/)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for all contracts under an IDV |
+|[/api/v2/recipient/](/api/v2/recipient/)|POST| Returns a list of recipients in USAspending DB |
 |[/api/v2/recipient/children/<DUNS\>/](/api/v2/recipient/children/006928857/)|GET| Returns recipient details based on DUNS number |
 |[/api/v2/recipient/count/](/api/v2/recipient/count/)|POST| Returns the count of recipents for the given filters |
 |[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/)|GET| Returns a high-level overview of a specific recipient, given its id |
