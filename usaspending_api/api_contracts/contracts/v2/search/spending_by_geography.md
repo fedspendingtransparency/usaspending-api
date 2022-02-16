@@ -106,7 +106,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
-  +     A unique identifier for the recipient which includes the recipient hash and level. Unique identifier could include UEI or DUNS
+  + A unique identifier for the recipient which includes the recipient hash and level. Unique identifier could include UEI or DUNS
 
 + `recipient_id` (optional, string)
     A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
