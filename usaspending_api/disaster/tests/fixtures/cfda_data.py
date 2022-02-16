@@ -72,6 +72,23 @@ def cfda_awards_and_transactions(db):
         submission_window_id=9999070,
     )
 
+    # Toptier Agency
+    ta1 = mommy.make("references.ToptierAgency", abbreviation="TA1", name="TOPTIER AGENCY 1", toptier_code="ABC")
+
+    # Federal Account
+    fed_acct1 = mommy.make(
+        "accounts.FederalAccount", id=1, parent_toptier_agency=ta1, agency_identifier="1", main_account_code="0001"
+    )
+
+    # TAS
+    taa1 = mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        treasury_account_identifier=1,
+        agency_id="097",
+        main_account_code="4930",
+        federal_account=fed_acct1,
+    )
+
     # Financial Accounts by Awards
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -79,6 +96,7 @@ def cfda_awards_and_transactions(db):
         award=award1,
         submission=sub1,
         disaster_emergency_fund=defc1,
+        treasury_account=taa1,
         gross_outlay_amount_by_award_cpe=1,
         transaction_obligated_amount=2,
     )
@@ -88,6 +106,7 @@ def cfda_awards_and_transactions(db):
         award=award2,
         submission=sub1,
         disaster_emergency_fund=defc1,
+        treasury_account=taa1,
         gross_outlay_amount_by_award_cpe=10,
         transaction_obligated_amount=20,
     )
@@ -97,6 +116,7 @@ def cfda_awards_and_transactions(db):
         award=award3,
         submission=sub2,
         disaster_emergency_fund=defc2,
+        treasury_account=taa1,
         gross_outlay_amount_by_award_cpe=100,
         transaction_obligated_amount=200,
     )
@@ -106,6 +126,7 @@ def cfda_awards_and_transactions(db):
         award=award4,
         submission=sub2,
         disaster_emergency_fund=defc1,
+        treasury_account=taa1,
         gross_outlay_amount_by_award_cpe=1000,
         transaction_obligated_amount=2000,
     )
@@ -115,6 +136,7 @@ def cfda_awards_and_transactions(db):
         award=award5,
         submission=sub3,
         disaster_emergency_fund=defc2,
+        treasury_account=taa1,
         gross_outlay_amount_by_award_cpe=10000,
         transaction_obligated_amount=20000,
     )
@@ -124,6 +146,7 @@ def cfda_awards_and_transactions(db):
         award=award1,
         submission=sub4,
         disaster_emergency_fund=defc1,
+        treasury_account=taa1,
         gross_outlay_amount_by_award_cpe=100,
         transaction_obligated_amount=200,
     )
