@@ -11,12 +11,19 @@ def award_recipient_agg_key(record: dict) -> str:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
     if record["recipient_hash"] is None or record["recipient_levels"] is None:
         return json.dumps(
-            {"name": record["recipient_name"], "unique_id": record["recipient_unique_id"], "hash": "", "levels": ""}
+            {
+                "name": record["recipient_name"],
+                "unique_id": record["recipient_unique_id"],
+                "uei": record["recipient_uei"],
+                "hash": "",
+                "levels": "",
+            }
         )
     return json.dumps(
         {
             "name": record["recipient_name"],
             "unique_id": record["recipient_unique_id"],
+            "uei": record["recipient_uei"],
             "hash": str(record["recipient_hash"]),
             "levels": record["recipient_levels"],
         }
@@ -27,12 +34,18 @@ def transaction_recipient_agg_key(record: dict) -> str:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
     if record["recipient_hash"] is None or record["recipient_levels"] is None:
         return json.dumps(
-            {"name": record["recipient_name"], "unique_id": record["recipient_unique_id"], "hash_with_level": ""}
+            {
+                "name": record["recipient_name"],
+                "unique_id": record["recipient_unique_id"],
+                "uei": record["recipient_uei"],
+                "hash_with_level": "",
+            }
         )
     return json.dumps(
         {
             "name": record["recipient_name"],
             "unique_id": record["recipient_unique_id"],
+            "uei": record["recipient_uei"],
             "hash_with_level": f"{record['recipient_hash']}-{_return_one_level(record['recipient_levels'])}",
         }
     )

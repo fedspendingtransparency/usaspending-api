@@ -229,14 +229,14 @@ WHERE
   rpv.recipient_level = 'P';
 
 --------------------------------------------------------------------------------
--- Step 5, Populating children list in parents
+-- Step 5, Populating child recipient list in parents
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 5: populating children list in parent records'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 5: Populating children list in parent records'; END $$;
 
 WITH parent_recipients AS (
   SELECT
     parent_recipient_unique_id,
-    array_agg(DISTINCT recipient_unique_id) AS duns_list
+    array_agg(DISTINCT recipient_hash) AS child_hash_list
   FROM
     public.temporary_recipients_from_transactions_view
   WHERE
@@ -246,21 +246,21 @@ WITH parent_recipients AS (
 )
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
-  recipient_affiliations = pr.duns_list,
+  recipient_affiliations = pr.child_hash_list,
   unused = false
 
 FROM parent_recipients AS pr
 WHERE rpv.recipient_unique_id = pr.parent_recipient_unique_id and rpv.recipient_level = 'P';
 
 --------------------------------------------------------------------------------
--- Step 6, Populate parent DUNS in children
+-- Step 6, Populate parent recipient list in children
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 6: Populating parent duns in children'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 6: Populating parent recipient list in child records'; END $$;
 
 WITH all_recipients AS (
   SELECT
     recipient_unique_id,
-    array_agg(DISTINCT parent_recipient_unique_id) AS parent_duns_list
+    array_agg(DISTINCT recipient_hash) AS parent_hash_list
   FROM
     public.temporary_recipients_from_transactions_view
   WHERE
@@ -270,7 +270,7 @@ WITH all_recipients AS (
 )
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
-  recipient_affiliations = ar.parent_duns_list,
+  recipient_affiliations = ar.parent_hash_list,
   unused = false
 FROM all_recipients AS ar
 WHERE

@@ -8,7 +8,7 @@ urlpatterns = [
     url(r"^duns/$", ListRecipients.as_view()),
     url(r"^count/$", RecipientCount.as_view()),
     url(r"^duns/(?P<recipient_id>.*)/$", RecipientOverView.as_view()),
-    url(r"^children/(?P<duns>[0-9]{9})/$", ChildRecipients.as_view()),
+    url(r"^children/(?P<duns_or_uei>[0-9a-zA-Z]{9,12})/$", ChildRecipients.as_view()),
     url(r"^state/(?P<fips>[0-9]{,2})/$", StateMetaDataViewSet.as_view()),
     url(r"^state/awards/(?P<fips>[0-9]{,2})/$", StateAwardBreakdownViewSet.as_view()),
     url(r"^state/$", ListStates.as_view()),

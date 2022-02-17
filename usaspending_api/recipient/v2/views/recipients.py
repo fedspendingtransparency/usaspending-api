@@ -57,7 +57,7 @@ def validate_recipient_id(recipient_id):
     return recipient_hash, recipient_level
 
 
-def extract_name_duns_from_hash(recipient_hash):
+def extract_duns_uei_name_from_hash(recipient_hash):
     """Extract the name and duns from the recipient hash
 
     Args:
@@ -67,12 +67,14 @@ def extract_name_duns_from_hash(recipient_hash):
         duns and name
     """
     name_duns_qs = (
-        RecipientLookup.objects.filter(recipient_hash=recipient_hash).values("duns", "legal_business_name").first()
+        RecipientLookup.objects.filter(recipient_hash=recipient_hash)
+        .values("duns", "uei", "legal_business_name")
+        .first()
     )
     if not name_duns_qs:
-        return None, None
+        return None, None, None
     else:
-        return name_duns_qs["duns"], name_duns_qs["legal_business_name"]
+        return name_duns_qs["duns"], name_duns_qs["uei"], name_duns_qs["legal_business_name"]
 
 
 def extract_parents_from_hash(recipient_hash):
@@ -94,16 +96,19 @@ def extract_parents_from_hash(recipient_hash):
         .first()
     )
 
-    for duns in affiliations["recipient_affiliations"]:
-        parent = RecipientLookup.objects.filter(duns=duns).values("recipient_hash", "legal_business_name").first()
-        name, parent_id, uei = None, None, None
+    for parent_hash in affiliations["recipient_affiliations"]:
+        parent = (
+            RecipientLookup.objects.filter(recipient_hash=parent_hash)
+            .values("duns", "uei", "legal_business_name")
+            .first()
+        )
+        name, duns, uei, parent_id = None, None, None, None
 
         if parent:
             name = parent["legal_business_name"]
-            parent_id = "{}-P".format(parent["recipient_hash"])
-            uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
-            if uei is not None:
-                uei = uei["uei"]
+            duns = parent["duns"]
+            uei = parent["uei"]
+            parent_id = "{}-P".format(parent_hash)
 
         parents.append({"parent_duns": duns, "parent_name": name, "parent_id": parent_id, "parent_uei": uei})
     return parents
@@ -290,17 +295,10 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
         if children:
             recipient_info = json.loads(bucket.get("key"))
             hash_with_level = recipient_info.get("hash_with_level") or None
-            uei = (
-                RecipientProfile.objects.filter(recipient_hash=hash_with_level[:-2]).values("uei").first()
-                if hash_with_level
-                else None
-            )
-            if uei is not None:
-                uei = uei["uei"]
             result = {
                 "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
                 "recipient_unique_id": recipient_info.get("unique_id"),
-                "uei": uei,
+                "uei": recipient_info.get("uei"),
                 "recipient_name": recipient_info.get("name"),
             }
         loan_info = bucket.get("filter_loans", {})
@@ -330,7 +328,7 @@ class RecipientOverView(APIView):
         get_request = request.query_params
         year = validate_year(get_request.get("year", "latest"))
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
-        recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
+        recipient_duns, recipient_uei, recipient_name = extract_duns_uei_name_from_hash(recipient_hash)
         if not (recipient_name or recipient_duns):
             raise InvalidParameterException("Recipient Hash not found: '{}'.".format(recipient_hash))
 
@@ -343,14 +341,11 @@ class RecipientOverView(APIView):
         if recipient_level == "C":
             parents = extract_parents_from_hash(recipient_hash)
         elif recipient_level == "P":
-            uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
-            if uei is not None:
-                uei = uei["uei"]
             parents = [
                 {
                     "parent_id": recipient_id,
                     "parent_duns": recipient_duns,
-                    "parent_uei": uei,
+                    "parent_uei": recipient_uei,
                     "parent_name": recipient_name,
                 }
             ]
@@ -367,14 +362,11 @@ class RecipientOverView(APIView):
             parent_duns = parents[0].get("parent_duns")
             parent_uei = parents[0].get("parent_uei")
 
-        uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
-        if uei is not None:
-            uei = uei["uei"]
         result = {
             "name": recipient_name,
             "alternate_names": alternate_names,
             "duns": recipient_duns,
-            "uei": uei,
+            "uei": recipient_uei,
             "recipient_id": recipient_id,
             "recipient_level": recipient_level,
             "parent_id": parent_id,
@@ -392,77 +384,82 @@ class RecipientOverView(APIView):
         return Response(result)
 
 
-def extract_hash_name_from_duns(duns):
-    """Extract the all the names and hashes associated with the DUNS provided
+def extract_hash_from_duns_or_uei(duns_or_uei):
+    """Extract the all the names and hashes associated with the DUNS or UEI provided
 
     Args:
-        duns: duns to find the equivalent hash and name
+        duns_or_uei: Either the duns or uei to find the equivalent hash
 
     Returns:
-        list of dictionaries containing hashes and names
+        list of dictionaries containing hashes
     """
-    qs_hash = RecipientLookup.objects.filter(duns=duns).values("recipient_hash", "legal_business_name").first()
-    if not qs_hash:
-        return None, None
-    else:
-        return qs_hash["recipient_hash"], qs_hash["legal_business_name"]
+    if len(duns_or_uei) == 9:
+        qs_hash = RecipientLookup.objects.filter(duns=duns_or_uei).values("recipient_hash").first()
+    if len(duns_or_uei) == 12:
+        qs_hash = RecipientLookup.objects.filter(uei=duns_or_uei).values("recipient_hash").first()
+
+    return qs_hash["recipient_hash"] if qs_hash else None
 
 
 class ChildRecipients(APIView):
     """
-    This endpoint returns a list of child recipients belonging to the given parent recipient DUNS.
+    This endpoint returns a list of child recipients belonging to the given parent recipient DUNS or UEI.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/children/duns.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/children/duns_or_uei.md"
 
     @cache_response()
-    def get(self, request, duns):
+    def get(self, request, duns_or_uei):
+        # Validate and extract data from request header
         get_request = request.query_params
         year = validate_year(get_request.get("year", "latest"))
-        parent_hash, parent_name = extract_hash_name_from_duns(duns)
+        parent_hash = extract_hash_from_duns_or_uei(duns_or_uei)
         if not parent_hash:
-            raise InvalidParameterException("DUNS not found: '{}'.".format(duns))
+            raise InvalidParameterException("Recipient not found: '{}'.".format(duns_or_uei))
 
+        # Get info for each child recipient
         totals = obtain_recipient_totals("{}-P".format(parent_hash), children=True, year=year)
 
-        # Get child info for each child DUNS
         results = []
         for total in totals:
-            uei = RecipientProfile.objects.filter(recipient_hash=total["recipient_hash"]).values("uei").first()
-            if uei is not None:
-                uei = uei["uei"]
             results.append(
                 {
                     "recipient_id": "{}-C".format(total["recipient_hash"]),
                     "name": total["recipient_name"],
                     "duns": total["recipient_unique_id"],
-                    "uei": uei,
+                    "uei": total["uei"],
                     "amount": total["total_obligation_amount"],
                 }
             )
+
         # Add children recipients without totals in this time period (if we already got all, ignore)
         if year != "all":
-            # Get all possible child duns
-            children_duns = RecipientProfile.objects.filter(recipient_hash=parent_hash, recipient_level="P").values(
+            # Get a list of recipient hashes for child recipients via the recipient_affiliations of a parent
+            child_response = RecipientProfile.objects.filter(recipient_hash=parent_hash, recipient_level="P").values(
                 "recipient_affiliations"
             )
-            if not children_duns:
-                raise InvalidParameterException("DUNS is not listed as a parent: '{}'.".format(duns))
-            children = children_duns[0]["recipient_affiliations"]
+            if not child_response:
+                raise InvalidParameterException("Recipient is not listed as a parent: '{}'.".format(duns_or_uei))
+            child_recipient_hashes = child_response[0]["recipient_affiliations"]
+
+            # Determine which child recipients still need data
+            found_recipients = [result["recipient_id"] for result in results]
+            missing_child_hashes = [
+                recipient_id for recipient_id in child_recipient_hashes if f"{recipient_id}-C" not in found_recipients
+            ]
 
             # Gather their data points with Recipient Profile
-            found_duns = [result["duns"] for result in results]
-            missing_duns = [duns for duns in children if duns not in found_duns]
-            missing_duns_qs = RecipientProfile.objects.filter(
-                recipient_unique_id__in=missing_duns, recipient_level="C"
+            missing_child_qs = RecipientProfile.objects.filter(
+                recipient_hash__in=missing_child_hashes, recipient_level="C"
             ).values("recipient_hash", "recipient_name", "recipient_unique_id", "uei")
-            for child_duns in list(missing_duns_qs):
+
+            for child_recipient in list(missing_child_qs):
                 results.append(
                     {
-                        "recipient_id": "{}-C".format(child_duns["recipient_hash"]),
-                        "name": child_duns["recipient_name"],
-                        "duns": child_duns["recipient_unique_id"],
-                        "uei": child_duns["uei"],
+                        "recipient_id": "{}-C".format(child_recipient["recipient_hash"]),
+                        "name": child_recipient["recipient_name"],
+                        "duns": child_recipient["recipient_unique_id"],
+                        "uei": child_recipient["uei"],
                         "amount": 0,
                     }
                 )
