@@ -142,9 +142,9 @@ class ListRecipients(APIView):
 @method_decorator(deprecated, name="post")
 class ListRecipientsByDuns(ListRecipients):
     """
-    Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
+    <em>Deprecated: Please see <a href="../">this endpoint</a> instead.</em>
 
-    Please use the following endpoint instead: /api/v2/recipient/
+    This route takes a single keyword filter (and pagination filters), and returns a list of recipients
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
