@@ -3,6 +3,8 @@ HOST: https://api.usaspending.gov
 
 # Spending By Recipient DUNS [/api/v2/search/spending_by_category/recipient_duns/]
 
+*Deprecated: Please see the following API contract instead: [usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient](recipient.md)*
+
 This endpoint supports the Advanced Search page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
