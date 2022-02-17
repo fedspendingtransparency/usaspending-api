@@ -5,6 +5,8 @@ HOST: https://api.usaspending.gov
 
 *Deprecated: Please see the following API contract instead: [usaspending_api/api_contracts/contracts/v2/recipient.md](../recipient.md)*
 
+These endpoints are used to power USAspending.gov's recipient profile pages. This data can be used to visualize the government spending that pertains to a specific recipient.
+
 ## POST
 
 This endpoint returns a list of recipients, their level, DUNS, and amount.
