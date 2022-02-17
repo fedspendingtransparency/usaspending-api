@@ -129,7 +129,7 @@ for hash, recipient in TEST_RECIPIENT_LOOKUPS.items():
     recipient.update(TEST_RECIPIENT_LOCATIONS[hash])
 
 TEST_RECIPIENT_PROFILES = {
-    # Parent Recipient, including non-existent child duns
+    # Parent Recipient, including non-existent child hash
     "00077a9a-5a70-8919-fd19-330762af6b84-P": {
         "recipient_level": "P",
         "recipient_hash": "00077a9a-5a70-8919-fd19-330762af6b84",
@@ -138,7 +138,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_affiliations": [
             "00077a9a-5a70-8919-fd19-330762af6b84",
             "392052ae-92ab-f3f4-d9fa-b57f45b7750b",
-            "000000005",
+            "00eadaa1-6e1f-22f2-419b-e5894374db96",  # Non existent
         ],
         "uei": "AAAAAAAAAAAA",
     },
@@ -637,7 +637,7 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    # Ignoring nonexistent child duns - 000000005
+    # Ignoring nonexistent child hash - 00eadaa1-6e1f-22f2-419b-e5894374db96
     child1_object = {
         "recipient_id": child1_id,
         "name": "PARENT RECIPIENT",

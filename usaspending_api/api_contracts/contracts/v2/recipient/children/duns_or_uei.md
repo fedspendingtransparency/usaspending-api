@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Recipient Children [/api/v2/recipient/children/{recipient_id}/{?year}]
+# Recipient Children [/api/v2/recipient/children/{duns_or_uei}/{?year}]
 
 This endpoint is used to power USAspending.gov's recipient profile pages. This data can be used to visualize the government spending that pertains to a specific recipient.
 
