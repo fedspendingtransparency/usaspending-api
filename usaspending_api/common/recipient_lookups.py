@@ -5,13 +5,7 @@ from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
-def obtain_recipient_uri(
-    recipient_name,
-    recipient_unique_id,
-    parent_recipient_unique_id,
-    is_parent_recipient=False,
-    recipient_uei=None,
-):
+def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id, is_parent_recipient=False):
     """Return a valid string to be used for api/v2/recipient/duns/<recipient-hash>/ (or None)
 
     Keyword Arguments:
@@ -25,26 +19,21 @@ def obtain_recipient_uri(
     Return example string: 11fcdf15-3490-cdad-3df4-3b410f3d9b20-C
 
     """
-    if (is_parent_recipient and not recipient_unique_id) or not (
-        recipient_unique_id or recipient_name or recipient_uei
-    ):
+    if (is_parent_recipient and not recipient_unique_id) or not (recipient_unique_id or recipient_name):
         return None
 
-    if recipient_uei:
-        recipient_hash = fetch_recipient_hash_using_uei(recipient_uei)
-    elif recipient_unique_id:
+    if recipient_unique_id:
         recipient_hash = fetch_recipient_hash_using_duns(recipient_unique_id)
     else:
         recipient_hash = None
 
     if recipient_hash is None:
-        recipient_hash = generate_missing_recipient_hash(recipient_unique_id, recipient_uei, recipient_name)
+        recipient_hash = generate_missing_recipient_hash(recipient_unique_id, recipient_name)
 
     recipient_level = obtain_recipient_level(
         {
             "duns": recipient_unique_id,
             "parent_duns": parent_recipient_unique_id,
-            "uei": recipient_uei,
             "is_parent_recipient": is_parent_recipient,
         }
     )
@@ -56,31 +45,27 @@ def obtain_recipient_uri(
     return None
 
 
-def generate_missing_recipient_hash(recipient_unique_id, recipient_uei, recipient_name):
+def generate_missing_recipient_hash(recipient_unique_id, recipient_name):
+    # SQL: MD5(UPPER(
+    #   CASE
+    #     WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
+    #     ELSE CONCAT('name-', awardee_or_recipient_legal) END
+    # ))::uuid AS recipient_hash,
     import hashlib
     import uuid
 
-    if recipient_unique_id is None and recipient_uei is None:
+    if recipient_unique_id is None:
         prefix = "name"
         value = recipient_name
-    elif recipient_uei is None:
+    else:
         prefix = "duns"
         value = recipient_unique_id
-    else:
-        prefix = "uei"
-        value = recipient_uei
 
     return str(uuid.UUID(hashlib.md5(f"{prefix}-{value}".upper().encode("utf-8")).hexdigest()))
 
 
 def fetch_recipient_hash_using_duns(recipient_unique_id):
     recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
-
-    return recipient["recipient_hash"] if recipient else None
-
-
-def fetch_recipient_hash_using_uei(recipient_uei):
-    recipient = RecipientLookup.objects.filter(uei=recipient_uei).values("recipient_hash").first()
 
     return recipient["recipient_hash"] if recipient else None
 

@@ -124,6 +124,7 @@ class RecipientProfile(models.Model):
         indexes = [
             GinIndex(fields=["award_types"]),
             models.Index(fields=["recipient_unique_id"]),
+            models.Index(fields=["uei"]),
             models.Index(fields=["last_12_months"]),
             models.Index(fields=["last_12_contracts"]),
             models.Index(fields=["last_12_grants"]),
@@ -137,7 +138,7 @@ class RecipientLookup(models.Model):
     id = models.BigAutoField(primary_key=True)
     recipient_hash = models.UUIDField(unique=True, null=True)
     legal_business_name = models.TextField(null=True, db_index=True)
-    duns = models.TextField(null=True)
+    duns = models.TextField(unique=True, null=True)
     uei = models.TextField(null=True)
     parent_duns = models.TextField(null=True)
     parent_legal_business_name = models.TextField(null=True)
@@ -157,8 +158,7 @@ class RecipientLookup(models.Model):
     class Meta:
         db_table = "recipient_lookup"
         indexes = [
-            PartialIndex(fields=["duns"], unique=False, where=PQ(duns__isnull=False)),
-            PartialIndex(fields=["uei"], unique=False, where=PQ(uei__isnull=False)),
+            PartialIndex(fields=["duns"], unique=True, where=PQ(duns__isnull=False)),
             PartialIndex(fields=["parent_duns"], unique=False, where=PQ(parent_duns__isnull=False)),
         ]
 

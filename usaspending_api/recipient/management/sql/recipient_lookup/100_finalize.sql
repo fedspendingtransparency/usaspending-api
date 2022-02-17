@@ -143,7 +143,7 @@ WHERE
   AND rl.alternate_names IS DISTINCT FROM array_remove(an.all_names, rl.legal_business_name);
 
 DO $$ BEGIN RAISE NOTICE 'Post ETL clean up'; END $$;
---DROP TABLE public.temporary_restock_recipient_lookup;
+DROP TABLE public.temporary_restock_recipient_lookup;
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
 
 COMMIT;
