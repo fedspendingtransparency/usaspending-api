@@ -30,7 +30,10 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_loca
     DistrictViewSet,
     StateTerritoryViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient_duns import RecipientDunsViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient import (
+    RecipientViewSet,
+    RecipientDunsViewSet
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +57,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "awarding_subagency",
             "funding_agency",
             "funding_subagency",
+            "recipient",
             "recipient_duns",
             "recipient_parent_duns",
             "cfda",
@@ -89,8 +93,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "funding_subagency": FundingSubagencyViewSet().perform_search,
             "naics": NAICSViewSet().perform_search,
             "psc": PSCViewSet().perform_search,
+            "recipient": RecipientViewSet().perform_search,
             "recipient_duns": RecipientDunsViewSet().perform_search,
-            "recipient": RecipientDunsViewSet().perform_search,
             "state_territory": StateTerritoryViewSet().perform_search,
         }
         business_logic_func = business_logic_lookup.get(validated_payload["category"])

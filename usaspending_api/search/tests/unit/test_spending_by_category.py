@@ -22,7 +22,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_loca
     StateTerritoryViewSet,
     CountryViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient_duns import RecipientDunsViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient import RecipientViewSet
 
 
 @pytest.fixture
@@ -742,7 +742,7 @@ def test_category_recipient_duns_awards(recipient_test_data, monkeypatch, elasti
 
     test_payload = {"category": "recipient_duns", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
+    spending_by_category_logic = RecipientViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "recipient_duns",
@@ -773,7 +773,7 @@ def test_category_recipient_duns_awards(recipient_test_data, monkeypatch, elasti
 def test_category_recipient_duns_subawards(recipient_test_data):
     test_payload = {"category": "recipient_duns", "subawards": True, "page": 1, "limit": 50}
 
-    spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
+    spending_by_category_logic = RecipientViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "recipient_duns",

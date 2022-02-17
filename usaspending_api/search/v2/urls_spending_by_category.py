@@ -18,7 +18,10 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_loca
     DistrictViewSet,
     StateTerritoryViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient_duns import RecipientDunsViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient import (
+    RecipientViewSet,
+    RecipientDunsViewSet
+)
 
 urlpatterns = [
     url(r"^awarding_agency", AwardingAgencyViewSet.as_view()),
@@ -32,6 +35,7 @@ urlpatterns = [
     url(r"^funding_subagency", FundingSubagencyViewSet.as_view()),
     url(r"^naics", NAICSViewSet.as_view()),
     url(r"^psc", PSCViewSet.as_view()),
+    url(r"^recipient/", RecipientViewSet.as_view()),
     url(r"^recipient_duns", RecipientDunsViewSet.as_view()),
     url(r"^state_territory", StateTerritoryViewSet.as_view()),
 ]
