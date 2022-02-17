@@ -217,7 +217,7 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
         if d_business_cat["entity_structure"]:
             business_types_codes.append(d_business_cat["entity_structure"])
         business_types = {
-            duns_types_mapping[type]: True
+            duns_types_mapping[type]: "true"
             for type in d_business_cat["business_types_codes"]
             if type in duns_types_mapping
         }
@@ -324,6 +324,79 @@ class RecipientOverView(APIView):
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md"
+
+    @cache_response()
+    def get(self, request, recipient_id):
+        get_request = request.query_params
+        year = validate_year(get_request.get("year", "latest"))
+        recipient_hash, recipient_level = validate_recipient_id(recipient_id)
+        recipient_duns, recipient_name = extract_name_duns_from_hash(recipient_hash)
+        if not (recipient_name or recipient_duns):
+            raise InvalidParameterException("Recipient Hash not found: '{}'.".format(recipient_hash))
+
+        alternate_names = (
+            RecipientLookup.objects.filter(recipient_hash=recipient_hash).values("alternate_names").first()
+        )
+        alternate_names = sorted(alternate_names.get("alternate_names", []))
+
+        parents = []
+        if recipient_level == "C":
+            parents = extract_parents_from_hash(recipient_hash)
+        elif recipient_level == "P":
+            uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
+            if uei is not None:
+                uei = uei["uei"]
+            parents = [
+                {
+                    "parent_id": recipient_id,
+                    "parent_duns": recipient_duns,
+                    "parent_uei": uei,
+                    "parent_name": recipient_name,
+                }
+            ]
+
+        location = extract_location(recipient_hash)
+        business_types = extract_business_categories(recipient_name, recipient_duns, recipient_hash)
+        results = obtain_recipient_totals(recipient_id, year=year)
+        recipient_totals = results[0] if results else {}
+
+        parent_id, parent_name, parent_duns, parent_uei = None, None, None, None
+        if parents:
+            parent_id = parents[0].get("parent_id")
+            parent_name = parents[0].get("parent_name")
+            parent_duns = parents[0].get("parent_duns")
+            parent_uei = parents[0].get("parent_uei")
+
+        uei = RecipientProfile.objects.filter(recipient_hash=recipient_hash).values("uei").first()
+        if uei is not None:
+            uei = uei["uei"]
+        result = {
+            "name": recipient_name,
+            "alternate_names": alternate_names,
+            "duns": recipient_duns,
+            "uei": uei,
+            "recipient_id": recipient_id,
+            "recipient_level": recipient_level,
+            "parent_id": parent_id,
+            "parent_name": parent_name,
+            "parent_duns": parent_duns,
+            "parent_uei": parent_uei,
+            "parents": parents,
+            "business_types": business_types,
+            "location": location,
+            "total_transaction_amount": recipient_totals.get("total_obligation_amount", 0),
+            "total_transactions": recipient_totals.get("total_obligation_count", 0),
+            "total_face_value_loan_amount": recipient_totals.get("total_face_value_loan_amount", 0),
+            "total_face_value_loan_transactions": recipient_totals.get("total_face_value_loan_count", 0),
+        }
+        return Response(result)
+
+class RecipientHashOverView(APIView):
+    """
+    This endpoint returns a high-level overview of a specific recipient, given its hash.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_hash.md"
 
     @cache_response()
     def get(self, request, recipient_id):
