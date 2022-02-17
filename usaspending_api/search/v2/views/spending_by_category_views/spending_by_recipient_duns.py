@@ -1,9 +1,11 @@
 import json
-
 from decimal import Decimal
-from django.db.models import QuerySet, F, Case, When, Value, IntegerField
 from typing import List
 
+from django.db.models import QuerySet, F, Case, When, Value, IntegerField
+from django.utils.decorators import method_decorator
+
+from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
@@ -13,6 +15,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_cate
 )
 
 
+@method_decorator(deprecated, name="post")
 class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
     """
     This route takes award filters and returns spending by Recipient DUNS.
