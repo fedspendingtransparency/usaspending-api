@@ -496,11 +496,13 @@ def recipient_overview_endpoint_hash(id):
 
     return endpoint
 
+
 def recipient_overview_endpoint(id, year="latest"):
     endpoint = "/api/v2/recipient/duns/{}/".format(id)
     if year:
         endpoint = "{}?year={}".format(endpoint, year)
     return endpoint
+
 
 @pytest.mark.django_db
 def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index):
