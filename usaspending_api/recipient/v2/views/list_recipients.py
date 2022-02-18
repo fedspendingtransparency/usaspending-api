@@ -140,7 +140,6 @@ class ListRecipients(APIView):
 
 
 @method_decorator(deprecated, name="post")
-
 class ListRecipientsBy(ListRecipients):
     """
     Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
@@ -153,12 +152,13 @@ class ListRecipientsBy(ListRecipients):
     def __init__(self):
         super().__init__()
 
+
 class ListRecipientsByDuns(ListRecipients):
     """
     Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
 
     Please use the following endpoint instead: /api/v2/recipient/
- 
+
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
