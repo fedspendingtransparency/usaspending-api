@@ -134,16 +134,15 @@ class ListRecipients(APIView):
         return Response({"page_metadata": page_metadata, "results": results})
 
 
-
 @method_decorator(deprecated, name="post")
 class ListRecipientsBy(ListRecipients):
-     """
-     Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
+    """
+    Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
 
-     Please use the following endpoint instead: /api/v2/recipient/recipient_hash
-     """
+    Please use the following endpoint instead: /api/v2/recipient/recipient_hash
+    """
 
-     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_hash.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_hash.md"
 
-     def __init__(self):
-         super().__init__()
+    def __init__(self):
+        super().__init__()
