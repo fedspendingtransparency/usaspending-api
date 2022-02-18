@@ -492,7 +492,7 @@ def test_obtain_recipient_totals_parent(monkeypatch, elasticsearch_transaction_i
 
 
 def recipient_overview_endpoint_hash(id):
-    endpoint = "/api/v2/recipient/duns/{}/".format(id)
+    endpoint = "/api/v2/recipient/{}/".format(id)
 
     return endpoint
 
