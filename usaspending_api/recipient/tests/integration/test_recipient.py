@@ -491,12 +491,6 @@ def test_obtain_recipient_totals_parent(monkeypatch, elasticsearch_transaction_i
     assert results[0]["total_face_value_loan_count"] == 2
 
 
-def recipient_overview_endpoint_hash(id):
-    endpoint = "/api/v2/recipient/{}/".format(id)
-
-    return endpoint
-
-
 def recipient_overview_endpoint(id, year="latest"):
     endpoint = "/api/v2/recipient/duns/{}/".format(id)
     if year:
