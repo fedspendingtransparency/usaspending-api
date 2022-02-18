@@ -391,6 +391,7 @@ class RecipientOverView(APIView):
         }
         return Response(result)
 
+
 class RecipientHashOverView(APIView):
     """
     This endpoint returns a high-level overview of a specific recipient, given its hash.
