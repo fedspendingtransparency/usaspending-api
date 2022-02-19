@@ -5,12 +5,15 @@ import pytest
 from django.core.management import call_command
 from model_mommy import mommy
 
-from usaspending_api.awards.models import Award, TransactionFPDS
+from usaspending_api.awards.models import Award, TransactionFPDS, TransactionNormalized
+from usaspending_api.broker.models import ExternalDataLoadDate, ExternalDataType
+from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
+    transaction_fpds_boolean_columns,
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
-    transaction_fpds_boolean_columns,
 )
+from usaspending_api.transactions.models import SourceProcurementTransaction
 
 
 def _assemble_dummy_source_data():
@@ -114,3 +117,79 @@ def test_load_source_procurement_by_ids():
     assert transactions_by_id[101].fiscal_year == 2010
     assert transactions_by_id[201].fiscal_year == 2010
     assert transactions_by_id[301].fiscal_year == 2011
+
+
+@pytest.mark.django_db(transaction=True)
+def test_delete_fpds_success(monkeypatch):
+    # Award/Transaction deleted based on 1-1 transaction
+    mommy.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
+    mommy.make(TransactionNormalized, id=1, award_id=1, unique_award_key="TEST_AWARD_1")
+    mommy.make(TransactionFPDS, transaction_id=1, detached_award_procurement_id=301, unique_award_key="TEST_AWARD_1")
+
+    # Award kept despite having one of their associated transactions removed
+    mommy.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
+    mommy.make(TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionFPDS, transaction_id=2, detached_award_procurement_id=302, unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionFPDS, transaction_id=3, detached_award_procurement_id=303, unique_award_key="TEST_AWARD_2")
+
+    # Award/Transaction untouched at all as control
+    mommy.make(Award, id=3, generated_unique_award_id="TEST_AWARD_3")
+    mommy.make(TransactionNormalized, id=4, award_id=3, unique_award_key="TEST_AWARD_3")
+    mommy.make(TransactionFPDS, transaction_id=4, detached_award_procurement_id=304, unique_award_key="TEST_AWARD_3")
+
+    # Award is not deleted; old transaction deleted; new transaction uses old award
+    mommy.make(Award, id=4, generated_unique_award_id="TEST_AWARD_4")
+    mommy.make(TransactionNormalized, id=5, award_id=4, unique_award_key="TEST_AWARD_4")
+    mommy.make(TransactionFPDS, transaction_id=5, detached_award_procurement_id=305, unique_award_key="TEST_AWARD_4")
+    mommy.make(
+        SourceProcurementTransaction,
+        detached_award_procurement_id=306,
+        detached_award_proc_unique="TEST_TRANSACTION_6",
+        unique_award_key="TEST_AWARD_4",
+        created_at="2022-02-18 18:27:50",
+        updated_at="2022-02-18 18:27:50",
+        action_date="2022-02-18 18:27:50",
+    )
+    mommy.make(ExternalDataType, external_data_type_id=1, name="fpds")
+    mommy.make(ExternalDataLoadDate, external_data_type_id=1, last_load_date="2022-02-01 18:27:50")
+
+    # Make sure current Awards and Transactions are linked
+    update_awards()
+
+    # Make sure we get the correct source transaction to delete
+    monkeypatch.setattr(
+        "usaspending_api.transactions.transaction_delete_journal_helpers.retrieve_deleted_fpds_transactions",
+        lambda start_datetime, end_datetime=None: {"2022-02-18": [301, 302, 305]},
+    )
+
+    # Main call
+    call_command("load_fpds_transactions", "--since-last-load")
+
+    # Awards
+    awards_left = Award.objects.all()
+    award_ids_left = set([award.id for award in awards_left])
+    expected_awards_ids_left = [2, 3, 4]
+    assert sorted(award_ids_left) == expected_awards_ids_left
+    assert len(award_ids_left) == len(expected_awards_ids_left)
+
+    latest_transaction_ids = set([award.latest_transaction_id for award in awards_left])
+    new_award_transaction_id = TransactionNormalized.objects.filter(award_id=4).values_list("id", flat=True).first()
+    expected_latest_transaction_ids = sorted([3, 4, new_award_transaction_id])
+    assert sorted(latest_transaction_ids) == expected_latest_transaction_ids
+
+    # Transaction Normalized
+    transactions_left = TransactionNormalized.objects.all()
+
+    transaction_norm_ids_left = set([transaction.id for transaction in transactions_left])
+    expected_transaction_norm_ids_left = sorted([3, 4, new_award_transaction_id])
+    assert sorted(transaction_norm_ids_left) == expected_transaction_norm_ids_left
+
+    # Transaction FPDS
+    transactions_fpds_left = TransactionFPDS.objects.all()
+
+    transaction_fpds_left = set(
+        [transaction_fpds.detached_award_procurement_id for transaction_fpds in transactions_fpds_left]
+    )
+    expected_transaction_fpds_left = [303, 304, 306]
+    assert sorted(transaction_fpds_left) == expected_transaction_fpds_left
