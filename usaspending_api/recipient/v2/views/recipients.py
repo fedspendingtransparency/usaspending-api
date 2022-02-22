@@ -217,7 +217,7 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
         if d_business_cat["entity_structure"]:
             business_types_codes.append(d_business_cat["entity_structure"])
         business_types = {
-            duns_types_mapping[type]: True
+            duns_types_mapping[type]: "true"
             for type in d_business_cat["business_types_codes"]
             if type in duns_types_mapping
         }
@@ -323,7 +323,7 @@ class RecipientOverView(APIView):
     This endpoint returns a high-level overview of a specific recipient, given its id.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_id.md"
 
     @cache_response()
     def get(self, request, recipient_id):
