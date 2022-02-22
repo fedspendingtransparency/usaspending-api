@@ -12,7 +12,6 @@ from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -200,11 +199,17 @@ class _RecipientSearchText(_Filter):
             query = es_sanitize(upper_recipient_string) + "*"
             if "\\" in es_sanitize(upper_recipient_string):
                 query = es_sanitize(upper_recipient_string) + r"\*"
+
             recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 recipient_duns_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
+
+            if len(upper_recipient_string) == 12:
+                recipient_uei_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
+                recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_uei_query]))
+
             else:
                 recipient_search_query.append(recipient_name_query)
 
@@ -493,7 +498,6 @@ class _NonzeroFields(_Filter):
 
 
 class QueryWithFilters:
-
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
         _KeywordSearch.underscore_name: _KeywordSearch,
