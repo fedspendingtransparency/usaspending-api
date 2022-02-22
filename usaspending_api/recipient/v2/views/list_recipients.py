@@ -147,13 +147,13 @@ class ListRecipientsBy(ListRecipients):
     Please use the following endpoint instead: /api/v2/recipient/recipient_id
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_id.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md"
 
     def __init__(self):
         super().__init__()
 
 
-class ListRecipientsByDuns(ListRecipients):
+class ListRecipients(ListRecipients):
     """
     Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
 
