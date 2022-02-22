@@ -128,7 +128,7 @@ class ListRecipients(APIView):
             if model["name"] == "limit":
                 model["max"] = 1000
 
-        new_sort = {"type": "enum", "enum_values": ["name", "duns", "amount"], "default": "amount"}
+        new_sort = {"type": "enum", "enum_values": ["name", "uei", "duns", "amount"], "default": "amount"}
         models = update_model_in_list(models, "sort", new_sort)
         models = update_model_in_list(models, "limit", {"default": 50})
         validated_payload = TinyShield(models).block(request.data)
