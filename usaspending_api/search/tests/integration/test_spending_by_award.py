@@ -1170,7 +1170,7 @@ def _test_correct_response_for_recipient_id(client):
             {
                 "filters": {
                     "award_type_codes": ["02", "03", "04", "05"],
-                    "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9",
+                    "recipient_id": "51c7c0ad-a793-de3f-72ba-be5c2895a9ca",
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
