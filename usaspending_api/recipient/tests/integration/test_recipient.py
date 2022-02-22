@@ -596,9 +596,9 @@ def recipient_children_endpoint(duns, year="latest"):
 @pytest.mark.django_db
 def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_index):
     """ Testing successful child recipient calls """
-    child1_id = "00077a9a-5a70-8919-fd19-330762af6b84-C"
+    child1_id = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-C"
     parent_child1_duns = "000000001"
-    child2_id = "392052ae-92ab-f3f4-d9fa-b57f45b7750b-C"
+    child2_id = "083ac6fa-3d08-8d35-79da-b658a84260df-C"
     child2_duns = "000000002"
 
     # Mock Recipient Profiles
