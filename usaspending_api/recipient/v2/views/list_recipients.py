@@ -128,7 +128,7 @@ class ListRecipients(APIView):
             if model["name"] == "limit":
                 model["max"] = 1000
 
-        new_sort = {"type": "enum", "enum_values": ["name", "duns", "amount"], "default": "amount"}
+        new_sort = {"type": "enum", "enum_values": ["name", "uei", "duns", "amount"], "default": "amount"}
         models = update_model_in_list(models, "sort", new_sort)
         models = update_model_in_list(models, "limit", {"default": 50})
         validated_payload = TinyShield(models).block(request.data)
@@ -142,9 +142,9 @@ class ListRecipients(APIView):
 @method_decorator(deprecated, name="post")
 class ListRecipientsByDuns(ListRecipients):
     """
-    Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
+    <em>Deprecated: Please see <a href="../">this endpoint</a> instead.</em>
 
-    Please use the following endpoint instead: /api/v2/recipient/
+    This route takes a single keyword filter (and pagination filters), and returns a list of recipients
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
