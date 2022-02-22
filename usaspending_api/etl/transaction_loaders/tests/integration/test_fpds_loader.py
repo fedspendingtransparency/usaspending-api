@@ -159,7 +159,7 @@ def test_delete_fpds_success(monkeypatch):
 
     # Make sure we get the correct source transaction to delete
     monkeypatch.setattr(
-        "usaspending_api.transactions.transaction_delete_journal_helpers.retrieve_deleted_fpds_transactions",
+        "usaspending_api.broker.management.commands.load_fpds_transactions.retrieve_deleted_fpds_transactions",
         lambda start_datetime, end_datetime=None: {"2022-02-18": [301, 302, 305]},
     )
 
