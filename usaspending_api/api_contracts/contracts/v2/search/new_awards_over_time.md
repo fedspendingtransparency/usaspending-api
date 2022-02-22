@@ -64,7 +64,7 @@ This endpoint returns the count of new awards grouped by time period in ascendin
 ## TimeFilterObject (object)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `recipient_id`: `0036a0cb-0d88-2db3-59e0-0f9af8ffef57-P` (optional, string)
-    A hash of recipient DUNS, name, and level. A unique identifier for recipients.
+    A hash of recipient UEI, DUNS, name, and level. A unique identifier for recipients.
 
 ## TimePeriodGroup (object)
 + `fiscal_year`: `2018` (required, string)
