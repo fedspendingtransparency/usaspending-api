@@ -18,14 +18,14 @@ def spending_by_award_test_data():
     mommy.make(
         "recipient.RecipientLookup",
         id=1002,
-        recipient_hash="180bddfc-67f0-42d6-8279-a014d1062d65",
+        recipient_hash="0c324830-6283-38d3-d52e-00a71847d92d",
         legal_business_name="recipient_name_for_award_1002",
         duns="duns_1002",
     )
     mommy.make(
         "recipient.RecipientLookup",
         id=1003,
-        recipient_hash="28aae030-b4b4-4494-8a75-3356208469cf",
+        recipient_hash="41874914-2c27-813b-1505-df94f35b42dc",
         legal_business_name="recipient_name_for_award_1003",
         duns="duns_1003",
     )
@@ -41,7 +41,7 @@ def spending_by_award_test_data():
     mommy.make(
         "recipient.RecipientProfile",
         id=2002,
-        recipient_hash="180bddfc-67f0-42d6-8279-a014d1062d65",
+        recipient_hash="0c324830-6283-38d3-d52e-00a71847d92d",
         recipient_level="R",
         recipient_name="recipient_name_1002",
         recipient_unique_id="duns_1002",
@@ -49,7 +49,7 @@ def spending_by_award_test_data():
     mommy.make(
         "recipient.RecipientProfile",
         id=2003,
-        recipient_hash="28aae030-b4b4-4494-8a75-3356208469cf",
+        recipient_hash="41874914-2c27-813b-1505-df94f35b42dc",
         recipient_level="R",
         recipient_name="recipient_name_1003",
         recipient_unique_id="duns_1003",
