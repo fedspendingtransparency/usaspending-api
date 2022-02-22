@@ -99,27 +99,22 @@ class RecipientProfile(models.Model):
         managed = True
         db_table = "recipient_profile"
         unique_together = ("recipient_hash", "recipient_level")
-        # Note:  Two custom indexes were added in migrations because there's
+        # Note:  Three custom indexes were added in migrations because there's
         # currently not a Django native means by which to add a GinIndex with
         # a specific Postgres operator class:
         #
         #     MIGRATION: 0001_initial
-        #     SQL: create index idx_recipient_profile_name on
-        #         public.recipient_profile using gin (recipient_name public.gin_trgm_ops)
-        #
         #     MIGRATION: 0006_auto_20210315_2028
-        #     sql: CREATE INDEX idx_recipient_unique_id_gin ON
-        #         public.recipient_profile USING gin (recipient_unique_id gin_trgm_ops)
+        #     MIGRATION: 0013_create_uei_indexes_for_performance
         #
-        # Two addtional indexes were added in a migration because there's
+        # Three additional indexes were added in a migration because there's
         # currently not a Django native means by with to add an index with
         # 'NULLS LAST' as a part of the sort
         #
-        #     MIGRATION: 0006_auto_20210315_2028
-        #     SQL: CREATE INDEX recipient_profile_recipient_name_d ON
-        #         public.recipient_profile USING btree (recipient_name DESC NULLS LAST)
-        #     SQL: CREATE INDEX recipient_profile_recipient_unique_id_d ON
-        #         public.recipient_profile USING btree (recipient_unique_id DESC NULLS LAST)
+        #     MIGRATION: 0006_auto_20210315_2028 (2 indexes)
+        #     MIGRATION: 0013_create_uei_indexes_for_performance (1 index)
+        #
+
         indexes = [
             GinIndex(fields=["award_types"]),
             models.Index(fields=["last_12_months"]),
