@@ -120,11 +120,8 @@ class RecipientProfile(models.Model):
         #         public.recipient_profile USING btree (recipient_name DESC NULLS LAST)
         #     SQL: CREATE INDEX recipient_profile_recipient_unique_id_d ON
         #         public.recipient_profile USING btree (recipient_unique_id DESC NULLS LAST)
-        #
         indexes = [
             GinIndex(fields=["award_types"]),
-            models.Index(fields=["recipient_unique_id"]),
-            models.Index(fields=["uei"]),
             models.Index(fields=["last_12_months"]),
             models.Index(fields=["last_12_contracts"]),
             models.Index(fields=["last_12_grants"]),
