@@ -32,7 +32,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_loca
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient import (
     RecipientViewSet,
-    RecipientDunsViewSet
+    RecipientDunsViewSet,
 )
 
 logger = logging.getLogger(__name__)

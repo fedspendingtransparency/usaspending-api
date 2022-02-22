@@ -44,8 +44,8 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
 
         profile = (
             RecipientProfile.objects.filter(**profile_filter)
-                .exclude(recipient_name__in=SPECIAL_CASES)
-                .annotate(
+            .exclude(recipient_name__in=SPECIAL_CASES)
+            .annotate(
                 sort_order=Case(
                     When(recipient_level="C", then=Value(0)),
                     When(recipient_level="R", then=Value(1)),
@@ -53,9 +53,9 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
                     output_field=IntegerField(),
                 )
             )
-                .values("recipient_hash", "recipient_level")
-                .order_by("sort_order")
-                .first()
+            .values("recipient_hash", "recipient_level")
+            .order_by("sort_order")
+            .first()
         )
 
         return (
