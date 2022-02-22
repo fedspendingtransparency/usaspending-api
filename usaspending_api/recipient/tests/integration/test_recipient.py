@@ -629,7 +629,7 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
         "amount": 50,
         "state_province": "CHILD STATE",
     }
-    expected = [child1_object, child2_object]
+    expected = [child2_object,child1_object]
     resp = client.get(recipient_children_endpoint(parent_child1_duns, "all"))
     assert resp.status_code == status.HTTP_200_OK
     # testing for equality-only, order unnecessary
