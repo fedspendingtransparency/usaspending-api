@@ -5,12 +5,12 @@ from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
 from typing import List, Tuple
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.v2.es_sanitization import es_sanitize
-
 
 logger = logging.getLogger(__name__)
 
@@ -199,11 +199,17 @@ class _RecipientSearchText(_Filter):
             query = es_sanitize(upper_recipient_string) + "*"
             if "\\" in es_sanitize(upper_recipient_string):
                 query = es_sanitize(upper_recipient_string) + r"\*"
+
             recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 recipient_duns_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
+
+            if len(upper_recipient_string) == 12:
+                recipient_uei_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
+                recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_uei_query]))
+
             else:
                 recipient_search_query.append(recipient_name_query)
 
@@ -422,16 +428,44 @@ class _DisasterEmergencyFundCodes(_Filter):
         nested_path = options.get("nested_path", "")
         def_codes_query = []
         def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{'s' if query_type != _QueryType.ACCOUNTS else ''}"
-        for v in filter_values:
-            def_codes_query.append(ES_Q("match", **{def_code_field: v}))
-        if query_type == _QueryType.TRANSACTIONS:
-            return ES_Q(
-                "bool",
-                should=def_codes_query,
-                minimum_should_match=1,
-                must=ES_Q("range", action_date={"gte": "2020-04-01"}),
-            )
-        return ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+
+        all_covid_defc = set(
+            DisasterEmergencyFundCode.objects.filter(group_name="covid_19").values_list("code", flat=True)
+        )
+        covid_filters = list(set(filter_values) & all_covid_defc)
+        other_filters = list(set(filter_values) - all_covid_defc)
+
+        covid_queries = [ES_Q("match", **{def_code_field: v}) for v in covid_filters]
+        other_queries = [ES_Q("match", **{def_code_field: v}) for v in other_filters]
+
+        if covid_queries:
+            if query_type == _QueryType.TRANSACTIONS:
+                query = ES_Q(
+                    "bool",
+                    must=ES_Q("range", action_date={"gte": "2020-04-01"}),
+                    should=covid_queries,
+                    minimum_should_match=1,
+                )
+            elif query_type == _QueryType.AWARDS:
+                nonzero_limit = _NonzeroFields.generate_elasticsearch_query(
+                    ["total_covid_outlay", "total_covid_obligation"], query_type
+                )
+                query = ES_Q("bool", must=[nonzero_limit], should=covid_queries, minimum_should_match=1)
+            else:
+                query = ES_Q("bool", should=covid_queries, minimum_should_match=1)
+
+            def_codes_query.append(query)
+
+        if other_queries:
+            query = ES_Q("bool", should=other_queries, minimum_should_match=1)
+            def_codes_query.append(query)
+
+        if len(def_codes_query) != 1:
+            final_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+        else:
+            final_query = def_codes_query[0]
+
+        return final_query
 
 
 class _QueryText(_Filter):
@@ -464,7 +498,6 @@ class _NonzeroFields(_Filter):
 
 
 class QueryWithFilters:
-
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
         _KeywordSearch.underscore_name: _KeywordSearch,
@@ -512,7 +545,6 @@ class QueryWithFilters:
 
         # tas_codes are unique in that the same query is spread across two keys
         must_queries = cls._handle_tas_query(must_queries, filters_copy, query_type)
-        must_queries.extend(cls._handle_defc_query(filters_copy, query_type))
         for filter_type, filter_values in filters_copy.items():
             # Validate the filters
             if filter_type in cls.unsupported_filters:
@@ -564,24 +596,6 @@ class QueryWithFilters:
             filters.pop(TreasuryAccounts.underscore_name, None)
             filters.pop(TasCodes.underscore_name, None)
         return must_queries
-
-    @classmethod
-    def _handle_defc_query(cls, filters: dict, query_type: _QueryType) -> list:
-        queries = []
-        if filters.get(_DisasterEmergencyFundCodes.underscore_name):
-            queries.append(
-                _DisasterEmergencyFundCodes.generate_elasticsearch_query(
-                    filters[_DisasterEmergencyFundCodes.underscore_name], query_type
-                )
-            )
-            if query_type == _QueryType.AWARDS:
-                queries.append(
-                    _NonzeroFields.generate_elasticsearch_query(
-                        ["total_covid_outlay", "total_covid_obligation"], query_type
-                    )
-                )
-            filters.pop(_DisasterEmergencyFundCodes.underscore_name, None)
-        return queries
 
     @classmethod
     def generate_awards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
