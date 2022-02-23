@@ -19,6 +19,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
     """
     This route takes award filters and returns spending by Recipient UEI.
     """
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient.md"
     category = Category(name="recipient", agg_key="recipient_agg_key")
 
