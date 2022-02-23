@@ -14,7 +14,7 @@ urlpatterns = [
     url(r"^spending_by_award_count", SpendingByAwardCountVisualizationViewSet.as_view()),
     url(r"^spending_by_award", SpendingByAwardVisualizationViewSet.as_view()),
     url(r"^spending_by_category/", include("usaspending_api.search.v2.urls_spending_by_category")),
-    url(r"^spending_by_category", SpendingByCategoryVisualizationViewSet.as_view()),
+    url(r"^spending_by_category$", SpendingByCategoryVisualizationViewSet.as_view()),
     url(r"^spending_by_geography", SpendingByGeographyVisualizationViewSet.as_view()),
     url(r"^spending_by_transaction_count", es.SpendingByTransactionCountVisualizaitonViewSet.as_view()),
     url(r"^spending_by_transaction", es.SpendingByTransactionVisualizationViewSet.as_view()),

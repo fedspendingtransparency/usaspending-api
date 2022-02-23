@@ -22,7 +22,10 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_loca
     StateTerritoryViewSet,
     CountryViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient_duns import RecipientDunsViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient import (
+    RecipientViewSet,
+    RecipientDunsViewSet,
+)
 
 
 @pytest.fixture
@@ -737,19 +740,19 @@ def test_category_funding_subagency_subawards(agency_test_data):
 
 
 @pytest.mark.django_db
-def test_category_recipient_duns_awards(recipient_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_recipient_awards(recipient_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "recipient_duns", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "recipient", "subawards": False, "page": 1, "limit": 50}
 
-    spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
+    spending_by_category_logic = RecipientViewSet().perform_search(test_payload, {})
 
     expected_response = {
-        "category": "recipient_duns",
+        "category": "recipient",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": "DUNS Number not provided", "recipient_id": None},
+            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": "Recipient not provided", "recipient_id": None},
             {
                 "amount": 11,
                 "name": "JOHN DOE",
@@ -770,7 +773,38 @@ def test_category_recipient_duns_awards(recipient_test_data, monkeypatch, elasti
 
 
 @pytest.mark.django_db
-def test_category_recipient_duns_subawards(recipient_test_data):
+def test_category_recipient_subawards(recipient_test_data):
+    test_payload = {"category": "recipient", "subawards": True, "page": 1, "limit": 50}
+
+    spending_by_category_logic = RecipientViewSet().perform_search(test_payload, {})
+
+    expected_response = {
+        "category": "recipient",
+        "limit": 50,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {"amount": 10000, "code": None, "name": "MULTIPLE RECIPIENTS", "recipient_id": None},
+            {
+                "amount": 1100,
+                "code": "1234JD4321",
+                "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
+                "name": "JOHN DOE",
+            },
+            {
+                "amount": 11,
+                "code": "00UOP00",
+                "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
+                "name": "UNIVERSITY OF PAWNEE",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_recipient_duns_subawards_deprecated(recipient_test_data):
     test_payload = {"category": "recipient_duns", "subawards": True, "page": 1, "limit": 50}
 
     spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
