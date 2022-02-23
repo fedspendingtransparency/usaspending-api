@@ -2,6 +2,7 @@ DO $$ BEGIN RAISE NOTICE '070 Adding Recipient records from SAM parent data with
 
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
+  duns_recipient_hash,
   legal_business_name,
   duns,
   uei,
@@ -11,7 +12,12 @@ INSERT INTO public.temporary_restock_recipient_lookup (
 )
 SELECT
   DISTINCT ON (ultimate_parent_unique_ide)
-  MD5(UPPER(CONCAT('duns-', ultimate_parent_unique_ide)))::uuid AS recipient_hash,
+  MD5(UPPER(
+    CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
+    ELSE  CONCAT('duns-', ultimate_parent_unique_ide) END
+  ))::uuid AS recipient_hash,
+  MD5(UPPER(CONCAT('duns-', ultimate_parent_unique_ide)
+  ))::uuid AS duns_recipient_hash,
   UPPER(ultimate_parent_legal_enti) AS ultimate_parent_legal_enti,
   ultimate_parent_unique_ide AS duns,
   ultimate_parent_uei as uei,

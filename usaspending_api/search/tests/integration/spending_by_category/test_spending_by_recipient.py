@@ -1,6 +1,5 @@
 import json
 import logging
-import uuid
 
 from model_mommy import mommy
 from elasticsearch_dsl import A
@@ -64,8 +63,8 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     """
 
     # Setup data for this test
-    recipient1 = uuid.uuid4()
-    recipient2 = uuid.uuid4()
+    recipient1 = "c870f759-d7bb-c074-784a-ab5867b1da3f"
+    recipient2 = "0aa0ab7e-efa0-e3f4-6f55-6b0ecaf636e6"
 
     # Recipient Lookup
     mommy.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
@@ -157,8 +156,8 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
 
     # Setup data for this test
 
-    recipient1 = uuid.uuid4()
-    recipient2 = uuid.uuid4()
+    recipient1 = "c870f759-d7bb-c074-784a-ab5867b1da3f"
+    recipient2 = "0aa0ab7e-efa0-e3f4-6f55-6b0ecaf636e6"
 
     # Recipient Lookup
     mommy.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
@@ -237,7 +236,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "results": [
             {
                 "amount": 5000000.0,
-                "code": "DUNS Number not provided",
+                "code": "Recipient not provided",
                 "name": "MULTIPLE RECIPIENTS",
                 "recipient_id": None,
             },
@@ -247,12 +246,12 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "amount": 500.0,
                 "code": "987654321",
                 "name": "RECIPIENT 3",
-                "recipient_id": "d2894d22-67fc-f9cb-4005-33fa6a29ef86-C",
+                "recipient_id": "bf05f751-6841-efd6-8f1b-0144163eceae-C",
             },
             {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
             {
                 "amount": 5.0,
-                "code": "DUNS Number not provided",
+                "code": "Recipient not provided",
                 "name": "RECIPIENT 1",
                 "recipient_id": "5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R",
             },

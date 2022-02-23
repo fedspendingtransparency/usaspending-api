@@ -12,13 +12,13 @@ def delete_fabs_transactions(ids_to_delete):
     """ids_to_delete are published_award_financial_assistance_ids"""
     if ids_to_delete:
         with timer(f"deleting {len(ids_to_delete)} stale FABS data", logger.info):
-            update_award_ids = delete_stale_fabs(ids_to_delete)
+            update_and_delete_award_ids = delete_stale_fabs(ids_to_delete)
 
     else:
-        update_award_ids = []
+        update_and_delete_award_ids = []
         logger.info("Nothing to delete...")
 
-    return update_award_ids
+    return update_and_delete_award_ids
 
 
 def get_delete_pks_for_afa_keys(afa_ids_to_delete):

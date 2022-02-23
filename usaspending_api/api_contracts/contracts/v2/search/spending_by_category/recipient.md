@@ -1,15 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By Recipient DUNS [/api/v2/search/spending_by_category/recipient_duns/]
-
-*Deprecated: Please see the following API contract instead: [usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient](recipient.md)*
+# Spending By Recipient [/api/v2/search/spending_by_category/recipient/]
 
 This endpoint supports the Advanced Search page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
 
-This endpoint returns a list of the top results of Recipient DUNS sorted by the total amounts in descending order.
+This endpoint returns a list of the top results of Recipients sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Schema

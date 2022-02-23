@@ -11,21 +11,21 @@ def spending_by_award_test_data():
     mommy.make(
         "recipient.RecipientLookup",
         id=1001,
-        recipient_hash="bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9",
+        recipient_hash="51c7c0ad-a793-de3f-72ba-be5c2895a9ca",
         legal_business_name="recipient_name_for_award_1001",
         duns="duns_1001",
     )
     mommy.make(
         "recipient.RecipientLookup",
         id=1002,
-        recipient_hash="180bddfc-67f0-42d6-8279-a014d1062d65",
+        recipient_hash="0c324830-6283-38d3-d52e-00a71847d92d",
         legal_business_name="recipient_name_for_award_1002",
         duns="duns_1002",
     )
     mommy.make(
         "recipient.RecipientLookup",
         id=1003,
-        recipient_hash="28aae030-b4b4-4494-8a75-3356208469cf",
+        recipient_hash="41874914-2c27-813b-1505-df94f35b42dc",
         legal_business_name="recipient_name_for_award_1003",
         duns="duns_1003",
     )
@@ -33,7 +33,7 @@ def spending_by_award_test_data():
     mommy.make(
         "recipient.RecipientProfile",
         id=2001,
-        recipient_hash="bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9",
+        recipient_hash="51c7c0ad-a793-de3f-72ba-be5c2895a9ca",
         recipient_level="R",
         recipient_name="recipient_name_1001",
         recipient_unique_id="duns_1001",
@@ -41,7 +41,7 @@ def spending_by_award_test_data():
     mommy.make(
         "recipient.RecipientProfile",
         id=2002,
-        recipient_hash="180bddfc-67f0-42d6-8279-a014d1062d65",
+        recipient_hash="0c324830-6283-38d3-d52e-00a71847d92d",
         recipient_level="R",
         recipient_name="recipient_name_1002",
         recipient_unique_id="duns_1002",
@@ -49,13 +49,13 @@ def spending_by_award_test_data():
     mommy.make(
         "recipient.RecipientProfile",
         id=2003,
-        recipient_hash="28aae030-b4b4-4494-8a75-3356208469cf",
+        recipient_hash="41874914-2c27-813b-1505-df94f35b42dc",
         recipient_level="R",
         recipient_name="recipient_name_1003",
         recipient_unique_id="duns_1003",
     )
 
-    mommy.make(
+    award_1 = mommy.make(
         "awards.Award",
         id=1,
         type="A",
@@ -70,7 +70,7 @@ def spending_by_award_test_data():
         funding_agency_id=1,
         total_obligation=999999.00,
     )
-    mommy.make(
+    award_2 = mommy.make(
         "awards.Award",
         id=2,
         type="A",
@@ -82,7 +82,7 @@ def spending_by_award_test_data():
         date_signed="2009-01-01",
         total_obligation=9016.00,
     )
-    mommy.make(
+    award_3 = mommy.make(
         "awards.Award",
         id=3,
         type="A",
@@ -94,7 +94,7 @@ def spending_by_award_test_data():
         date_signed="2010-01-01",
         total_obligation=500000001.00,
     )
-    mommy.make(
+    award_4 = mommy.make(
         "awards.Award",
         id=4,
         type="02",
@@ -106,16 +106,28 @@ def spending_by_award_test_data():
         date_signed="2019-01-01",
         total_obligation=12.00,
     )
+    award_5 = mommy.make(
+        "awards.Award",
+        id=5,
+        type="A",
+        category="contract",
+        piid="abcdef123",
+        earliest_transaction_id=8,
+        latest_transaction_id=8,
+        generated_unique_award_id="CONT_AWD_TESTING_5",
+        date_signed="2019-01-01",
+        total_obligation=120,
+    )
 
     # Toptier Agency
-    toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
+    ta1 = mommy.make("references.ToptierAgency", abbreviation="TA1", name="TOPTIER AGENCY 1", toptier_code="ABC")
 
-    mommy.make("references.ToptierAgency", **toptier_agency_1)
+    # Federal Account
+    mommy.make(
+        "accounts.FederalAccount", id=1, parent_toptier_agency=ta1, agency_identifier="1", main_account_code="0001"
+    )
 
     # TAS
-    mommy.make(
-        "accounts.FederalAccount", id=1, parent_toptier_agency_id=1, agency_identifier="1", main_account_code="0001"
-    )
     mommy.make(
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=1,
@@ -123,7 +135,12 @@ def spending_by_award_test_data():
         main_account_code="4930",
         federal_account_id=1,
     )
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+
+    # DEFC
+    defc_l = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    defc_q = mommy.make("references.DisasterEmergencyFundCode", code="Q", group_name=None)
+
+    # Submissions
     mommy.make(
         "submissions.DABSSubmissionWindowSchedule",
         id="2022080",
@@ -167,28 +184,37 @@ def spending_by_award_test_data():
 
     mommy.make(
         "awards.FinancialAccountsByAwards",
-        award_id=1,
+        award=award_1,
         treasury_account_id=1,
         transaction_obligated_amount=100,
         gross_outlay_amount_by_award_cpe=100,
-        disaster_emergency_fund=defc,
+        disaster_emergency_fund=defc_l,
         submission=sa1,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
-        award_id=1,
+        award=award_1,
         treasury_account_id=1,
         transaction_obligated_amount=99,
         gross_outlay_amount_by_award_cpe=99,
-        disaster_emergency_fund=defc,
+        disaster_emergency_fund=defc_l,
         submission=sa2,
     )
     mommy.make(
         "awards.FinancialAccountsByAwards",
-        award_id=2,
+        award=award_2,
         transaction_obligated_amount=0,
         gross_outlay_amount_by_award_cpe=0,
-        disaster_emergency_fund=defc,
+        disaster_emergency_fund=defc_l,
+        submission=sa2,
+    )
+    mommy.make(
+        "awards.FinancialAccountsByAwards",
+        award=award_5,
+        treasury_account_id=1,
+        transaction_obligated_amount=0,
+        gross_outlay_amount_by_award_cpe=0,
+        disaster_emergency_fund=defc_q,
         submission=sa2,
     )
 
@@ -200,29 +226,30 @@ def spending_by_award_test_data():
     mommy.make("references.SubtierAgency", **subtier_agency_2)
 
     # Agency
-    mommy.make("references.Agency", pk=1, toptier_agency_id=1, subtier_agency_id=1)
+    mommy.make("references.Agency", pk=1, toptier_agency=ta1, subtier_agency_id=1)
 
-    mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2020-04-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=1, award=award_1, action_date="2020-04-01", is_fpds=True)
     mommy.make(
         "awards.TransactionNormalized",
         id=2,
-        award_id=1,
+        award=award_1,
         action_date="2020-04-01",
         is_fpds=True,
         business_categories=["business_category_1_3"],
     )
-    mommy.make("awards.TransactionNormalized", id=3, award_id=2, action_date="2016-01-01", is_fpds=True)
-    mommy.make("awards.TransactionNormalized", id=4, award_id=3, action_date="2017-01-01", is_fpds=True)
-    mommy.make("awards.TransactionNormalized", id=5, award_id=3, action_date="2018-01-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=3, award=award_2, action_date="2016-01-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=4, award=award_3, action_date="2017-01-01", is_fpds=True)
+    mommy.make("awards.TransactionNormalized", id=5, award=award_3, action_date="2018-01-01", is_fpds=True)
     mommy.make(
         "awards.TransactionNormalized",
         id=6,
-        award_id=3,
+        award=award_3,
         action_date="2019-01-01",
         is_fpds=True,
         business_categories=["business_category_2_8"],
     )
-    mommy.make("awards.TransactionNormalized", id=7, award_id=4, action_date="2019-10-1", is_fpds=False)
+    mommy.make("awards.TransactionNormalized", id=7, award=award_4, action_date="2019-10-1", is_fpds=False)
+    mommy.make("awards.TransactionNormalized", id=8, award=award_5, action_date="2019-10-1", is_fpds=False)
     mommy.make("awards.TransactionFPDS", transaction_id=1)
     mommy.make(
         "awards.TransactionFPDS",
@@ -256,6 +283,7 @@ def spending_by_award_test_data():
     mommy.make("awards.TransactionFPDS", transaction_id=4)
     mommy.make("awards.TransactionFPDS", transaction_id=5)
     mommy.make("awards.TransactionFPDS", transaction_id=6)
+    mommy.make("awards.TransactionFPDS", transaction_id=8)
 
     mommy.make("awards.TransactionFABS", transaction_id=7, cfda_number="10.331", awardee_or_recipient_uniqu="duns_1001")
 
@@ -268,7 +296,7 @@ def spending_by_award_test_data():
     mommy.make(
         "awards.Subaward",
         id=1,
-        award_id=1,
+        award=award_1,
         latest_transaction_id=1,
         subaward_number=11111,
         prime_award_type="A",
@@ -285,7 +313,7 @@ def spending_by_award_test_data():
     mommy.make(
         "awards.Subaward",
         id=2,
-        award_id=1,
+        award=award_1,
         latest_transaction_id=2,
         subaward_number=22222,
         prime_award_type="A",
@@ -301,7 +329,7 @@ def spending_by_award_test_data():
     mommy.make(
         "awards.Subaward",
         id=3,
-        award_id=2,
+        award=award_2,
         latest_transaction_id=3,
         subaward_number=33333,
         prime_award_type="A",
@@ -317,7 +345,7 @@ def spending_by_award_test_data():
     mommy.make(
         "awards.Subaward",
         id=6,
-        award_id=3,
+        award=award_3,
         latest_transaction_id=6,
         subaward_number=66666,
         prime_award_type="A",
@@ -333,7 +361,7 @@ def spending_by_award_test_data():
     mommy.make(
         "awards.Subaward",
         id=9,
-        award_id=4,
+        award=award_4,
         latest_transaction_id=6,
         subaward_number=99999,
         prime_award_type="02",
