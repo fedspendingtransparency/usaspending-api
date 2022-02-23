@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
             detached_award_procurement_ids = retrieve_deleted_fpds_transactions(start_datetime=date)
             stale_awards = delete_stale_fpds(detached_award_procurement_ids)
-            self.update_award_records(awards=stale_awards, skip_cd_linkage=True)
+            self.modified_award_ids.extend(stale_awards)
 
         with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
             logger.info("Fetching records to update")
