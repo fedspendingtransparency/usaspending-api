@@ -575,14 +575,14 @@ def federal_accounts_test_data(db):
         "recipient.RecipientLookup",
         duns="000000000",
         legal_business_name="Sample Recipient",
-        recipient_hash="dece8b43-c2a8-d056-7e82-0fc2f1c7c4e4",
+        recipient_hash="ab4d44f6-7a16-4ca7-405a-dcb913effbaf",
     )
 
     mommy.make(
         "recipient.RecipientProfile",
         recipient_unique_id="000000000",
         recipient_level="R",
-        recipient_hash="dece8b43-c2a8-d056-7e82-0fc2f1c7c4e4",
+        recipient_hash="ab4d44f6-7a16-4ca7-405a-dcb913effbaf",
         recipient_name="Sample Recipient",
     )
 
@@ -1068,7 +1068,7 @@ def test_category_federal_accounts(federal_accounts_test_data, monkeypatch, elas
 
     test_payload = {
         "category": "federal_account",
-        "filters": {"recipient_id": "dece8b43-c2a8-d056-7e82-0fc2f1c7c4e4-R"},
+        "filters": {"recipient_id": "ab4d44f6-7a16-4ca7-405a-dcb913effbaf-R"},
         "subawards": False,
         "page": 1,
         "limit": 50,
@@ -1083,5 +1083,4 @@ def test_category_federal_accounts(federal_accounts_test_data, monkeypatch, elas
         "results": [{"amount": 3, "code": "020-0001", "name": "Test Federal Account", "id": 10}],
         "messages": [get_time_period_message()],
     }
-
     assert expected_response == spending_by_category_logic
