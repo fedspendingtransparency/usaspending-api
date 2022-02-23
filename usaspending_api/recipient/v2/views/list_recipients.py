@@ -2,9 +2,11 @@ import copy
 import logging
 
 from django.db.models import F, Q
+from django.utils.decorators import method_decorator
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -126,7 +128,7 @@ class ListRecipients(APIView):
             if model["name"] == "limit":
                 model["max"] = 1000
 
-        new_sort = {"type": "enum", "enum_values": ["name", "duns", "amount"], "default": "amount"}
+        new_sort = {"type": "enum", "enum_values": ["name", "uei", "duns", "amount"], "default": "amount"}
         models = update_model_in_list(models, "sort", new_sort)
         models = update_model_in_list(models, "limit", {"default": 50})
         validated_payload = TinyShield(models).block(request.data)
@@ -135,3 +137,17 @@ class ListRecipients(APIView):
 
         results, page_metadata = get_recipients(filters=validated_payload, count=count)
         return Response({"page_metadata": page_metadata, "results": results})
+
+
+@method_decorator(deprecated, name="post")
+class ListRecipientsByDuns(ListRecipients):
+    """
+    <em>Deprecated: Please see <a href="../">this endpoint</a> instead.</em>
+
+    This route takes a single keyword filter (and pagination filters), and returns a list of recipients
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns.md"
+
+    def __init__(self):
+        super().__init__()
