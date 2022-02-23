@@ -2,7 +2,6 @@ import pytest
 
 from collections import OrderedDict
 from datetime import datetime, timezone, timedelta
-
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_mommy import mommy
@@ -340,9 +339,8 @@ def test_delete_docs_by_unique_key_exceed_max_results_window(award_data_fixture,
     with override_settings(ES_AWARDS_MAX_RESULT_WINDOW=fake_max_results_window):
         elasticsearch_award_index.update_index()
         assert elasticsearch_award_index.etl_config["max_query_size"] == fake_max_results_window
-        from elasticsearch.exceptions import RequestError
 
-        with pytest.raises(RequestError) as exc_info:
+        with pytest.raises(Exception) as exc_info:
             delete_docs_by_unique_key(
                 elasticsearch_award_index.client,
                 "award_id",
