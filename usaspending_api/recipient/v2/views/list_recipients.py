@@ -12,8 +12,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.utils import update_model_in_list
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.recipient.v2.lookups import AWARD_TYPES, SPECIAL_CASES
-from usaspending_api.common.api_versioning import deprecated
-from django.utils.decorators import method_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -137,31 +135,3 @@ class ListRecipients(APIView):
 
         results, page_metadata = get_recipients(filters=validated_payload, count=count)
         return Response({"page_metadata": page_metadata, "results": results})
-
-
-@method_decorator(deprecated, name="post")
-class ListRecipientsBy(ListRecipients):
-    """
-    Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
-
-    Please use the following endpoint instead: /api/v2/recipient/recipient_id
-    """
-
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_id.md"
-
-    def __init__(self):
-        super().__init__()
-
-
-class ListRecipients(ListRecipients):
-    """
-    Deprecated: This route takes a single keyword filter (and pagination filters), and returns a list of recipients
-
-    Please use the following endpoint instead: /api/v2/recipient/
-
-    """
-
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_id.md"
-
-    def __init__(self):
-        super().__init__()
