@@ -100,7 +100,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
 @method_decorator(deprecated, name="post")
 class RecipientDunsViewSet(RecipientViewSet):
     """
-    <em>Deprecated: Please see <a href="recipient">this endpoint</a> instead.</em>
+    <em>Deprecated: Please see <a href="../recipient">this endpoint</a> instead.</em>
 
     This route takes award filters and returns spending by Recipient DUNS.
     """
