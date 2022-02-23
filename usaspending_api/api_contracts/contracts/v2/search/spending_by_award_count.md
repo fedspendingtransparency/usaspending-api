@@ -57,6 +57,7 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
+  + Text searched across a recipient’s name, UEI, and DUNS
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
