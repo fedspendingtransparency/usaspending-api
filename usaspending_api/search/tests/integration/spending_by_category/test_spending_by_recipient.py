@@ -237,7 +237,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "results": [
             {
                 "amount": 5000000.0,
-                "code": "DUNS Number not provided",
+                "code": "Recipient not provided",
                 "name": "MULTIPLE RECIPIENTS",
                 "recipient_id": None,
             },
@@ -252,7 +252,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
             {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
             {
                 "amount": 5.0,
-                "code": "DUNS Number not provided",
+                "code": "Recipient not provided",
                 "name": "RECIPIENT 1",
                 "recipient_id": "5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R",
             },

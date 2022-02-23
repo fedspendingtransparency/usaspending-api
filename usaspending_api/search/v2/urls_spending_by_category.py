@@ -35,7 +35,7 @@ urlpatterns = [
     url(r"^funding_subagency", FundingSubagencyViewSet.as_view()),
     url(r"^naics", NAICSViewSet.as_view()),
     url(r"^psc", PSCViewSet.as_view()),
-    url(r"^recipient/", RecipientViewSet.as_view()),
+    url(r"^recipient$", RecipientViewSet.as_view()),
     url(r"^recipient_duns", RecipientDunsViewSet.as_view()),
     url(r"^state_territory", StateTerritoryViewSet.as_view()),
 ]
