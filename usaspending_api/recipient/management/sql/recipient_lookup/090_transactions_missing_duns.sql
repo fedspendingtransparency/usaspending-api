@@ -15,7 +15,8 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   parent_legal_business_name,
   state,
   zip4,
-  zip5
+  zip5,
+  duns_recipient_hash
 )
 SELECT
   DISTINCT ON (recipient_hash)
@@ -33,7 +34,8 @@ SELECT
   ultimate_parent_legal_enti,
   state,
   zip4,
-  zip5
+  zip5,
+  duns_recipient_hash
 FROM temporary_transaction_recipients_view
 WHERE awardee_or_recipient_uniqu IS NULL
 ORDER BY recipient_hash, action_date DESC, is_fpds, transaction_unique_id
