@@ -150,7 +150,7 @@ class RecipientLookup(models.Model):
     class Meta:
         db_table = "recipient_lookup"
         indexes = [
-            PartialIndex(fields=["duns"], unique=True, where=PQ(duns__isnull=False)),
+            PartialIndex(fields=["duns"], unique=False, where=PQ(duns__isnull=False)),
             PartialIndex(fields=["parent_duns"], unique=False, where=PQ(parent_duns__isnull=False)),
         ]
 
