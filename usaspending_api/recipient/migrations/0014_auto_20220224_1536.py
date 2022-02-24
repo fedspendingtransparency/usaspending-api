@@ -10,13 +10,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RemoveIndex(
+            model_name='recipientlookup',
+            name='recipient_l_duns_bb057a_partial',
+        ),
+        migrations.AddIndex(
+            model_name='recipientlookup',
+            index=partial_index.PartialIndex(fields=['duns'], name='recipient_l_duns_a43c07_partial', unique=False,
+                                             where=partial_index.PQ(duns__isnull=False)),
+        ),
         migrations.AlterField(
             model_name='recipientlookup',
             name='duns',
             field=models.TextField(null=True),
-        ),
-        migrations.AddIndex(
-            model_name='recipientlookup',
-            index=partial_index.PartialIndex(fields=['duns'], name='recipient_l_duns_a43c07_partial', unique=False, where=partial_index.PQ(duns__isnull=False)),
         ),
     ]
