@@ -47,7 +47,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     obligation_column: str
     pagination: Pagination
     subawards: bool
-    high_cardinality_categories: List[str] = ["recipient_duns"]
+    high_cardinality_categories: List[str] = ["recipient", "recipient_duns"]
 
     @cache_response()
     def post(self, request: Request) -> Response:

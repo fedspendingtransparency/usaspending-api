@@ -39,14 +39,14 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
                         }
                     ]
                 },
-                "category": "recipient_duns",
+                "category": "recipient",
                 "limit": 5,
                 "page": 1
             }
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `recipient_duns` (required, string)
+        + `category`: `recipient` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -56,7 +56,7 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
 
             
             {
-                "category": "recipient_duns",
+                "category": "recipient",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
