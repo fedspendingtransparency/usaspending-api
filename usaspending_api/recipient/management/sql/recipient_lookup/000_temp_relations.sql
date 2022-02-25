@@ -26,7 +26,7 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
     ))::uuid AS duns_recipient_hash,
     MD5(UPPER(
       CASE
-        WHEN COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_unique_ide) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei))
+        WHEN COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei))
         WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT  NULL THEN CONCAT('duns-', COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide))
         ELSE CONCAT('name-', COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti)) END
     ))::uuid AS parent_recipient_hash,
