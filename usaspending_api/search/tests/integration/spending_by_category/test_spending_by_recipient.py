@@ -280,3 +280,50 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
+
+
+def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient_duns",
+        content_type="application/json",
+        data=json.dumps({"filters": {"recipient_search_text": ["UEIAAABBBCCC"]}}),
+    )
+    expected_response = {
+        "category": "recipient_duns",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None}],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+
+def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient_duns",
+        content_type="application/json",
+        data=json.dumps({"filters": {"recipient_search_text": ["987654321"]}}),
+    )
+    expected_response = {
+        "category": "recipient_duns",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {
+                "amount": 500.0,
+                "code": "987654321",
+                "name": "RECIPIENT 3",
+                "recipient_id": "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+            }
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
