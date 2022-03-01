@@ -4,22 +4,23 @@ from model_mommy import mommy
 from usaspending_api.awards.models import Award, TransactionNormalized, TransactionFABS
 from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
 from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
+from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db(transaction=True)
 def test_delete_fabs_success():
     """ Testing delete fabs works properly """
 
     # Award/Transaction deleted based on 1-1 transaction
-    mommy.make(Award, id=1, latest_transaction_id=1, generated_unique_award_id="TEST_AWARD_1")
+    mommy.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
     mommy.make(TransactionNormalized, id=1, award_id=1, unique_award_key="TEST_AWARD_1")
     mommy.make(
         TransactionFABS, transaction_id=1, published_award_financial_assistance_id=301, unique_award_key="TEST_AWARD_1"
     )
 
     # Award kept despite having one of their associated transactions removed
-    mommy.make(Award, id=2, latest_transaction_id=2, generated_unique_award_id="TEST_AWARD_2")
+    mommy.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
     mommy.make(TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2")
     mommy.make(TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2")
     mommy.make(
@@ -30,14 +31,14 @@ def test_delete_fabs_success():
     )
 
     # Award/Transaction untouched at all as control
-    mommy.make(Award, id=3, latest_transaction_id=4, generated_unique_award_id="TEST_AWARD_3")
+    mommy.make(Award, id=3, generated_unique_award_id="TEST_AWARD_3")
     mommy.make(TransactionNormalized, id=4, award_id=3, unique_award_key="TEST_AWARD_3")
     mommy.make(
         TransactionFABS, transaction_id=4, published_award_financial_assistance_id=304, unique_award_key="TEST_AWARD_3"
     )
 
     # Award is not deleted; old transaction deleted; new transaction uses old award
-    mommy.make(Award, id=4, latest_transaction_id=5, generated_unique_award_id="TEST_AWARD_4")
+    mommy.make(Award, id=4, generated_unique_award_id="TEST_AWARD_4")
     mommy.make(TransactionNormalized, id=5, award_id=4, unique_award_key="TEST_AWARD_4")
     mommy.make(
         TransactionFABS, transaction_id=5, published_award_financial_assistance_id=305, unique_award_key="TEST_AWARD_4"
@@ -53,6 +54,8 @@ def test_delete_fabs_success():
         updated_at="2022-02-18 18:27:50.813471",
         action_date="2022-02-18 18:27:50.813471",
     )
+
+    update_awards()
 
     # Main call
     updated_and_delete_awards = delete_stale_fabs([301, 302, 305])
