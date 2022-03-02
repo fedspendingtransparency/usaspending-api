@@ -15,12 +15,13 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   country_code,
   parent_duns,
   parent_legal_business_name,
+  parent_uei,
   state,
   zip4,
   zip5
 )
 SELECT
-  DISTINCT ON (awardee_or_recipient_uniqu, legal_business_name)
+  DISTINCT ON (uei, awardee_or_recipient_uniqu, legal_business_name)
   MD5(UPPER(
     CASE WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
     ELSE CONCAT('uei-', uei) END
@@ -39,10 +40,11 @@ SELECT
   country_code,
   ultimate_parent_unique_ide,
   UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name,
+  ultimate_parent_uei AS parent_uei,
   state,
   zip4,
   zip AS zip5
 FROM duns
-WHERE awardee_or_recipient_uniqu IS NOT NULL AND legal_business_name IS NULL
-ORDER BY awardee_or_recipient_uniqu, legal_business_name, update_date DESC
+WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NULL
+ORDER BY uei, awardee_or_recipient_uniqu, legal_business_name, update_date DESC
 ON CONFLICT (recipient_hash) DO NOTHING;

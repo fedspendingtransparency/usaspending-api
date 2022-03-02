@@ -132,6 +132,7 @@ class RecipientLookup(models.Model):
     legal_business_name = models.TextField(null=True, db_index=True)
     duns = models.TextField(null=True)
     uei = models.TextField(null=True)
+    parent_uei = models.TextField(null=True)
     parent_duns = models.TextField(null=True)
     parent_legal_business_name = models.TextField(null=True)
     address_line_1 = models.TextField(null=True)
