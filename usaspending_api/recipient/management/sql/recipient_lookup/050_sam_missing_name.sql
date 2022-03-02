@@ -43,6 +43,6 @@ SELECT
   zip4,
   zip AS zip5
 FROM duns
-WHERE awardee_or_recipient_uniqu IS NOT NULL AND legal_business_name IS NULL
+WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NULL
 ORDER BY awardee_or_recipient_uniqu, uei, legal_business_name, update_date DESC
 ON CONFLICT (recipient_hash) DO NOTHING;

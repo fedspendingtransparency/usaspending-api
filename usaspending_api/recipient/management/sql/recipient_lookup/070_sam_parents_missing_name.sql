@@ -25,6 +25,6 @@ SELECT
   ultimate_parent_unique_ide AS parent_duns,
   UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name
 FROM duns
-WHERE ultimate_parent_unique_ide IS NOT NULL
+WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL
 ORDER BY ultimate_parent_unique_ide, ultimate_parent_uei, update_date DESC
 ON CONFLICT (recipient_hash) DO NOTHING;
