@@ -440,17 +440,17 @@ class ChildRecipients(APIView):
             )
             if not child_response:
                 raise InvalidParameterException("Recipient is not listed as a parent: '{}'.".format(duns_or_uei))
-            child_recipient_hashes = child_response[0]["recipient_affiliations"]
+            child_recipient_duns = child_response[0]["recipient_affiliations"]
 
             # Determine which child recipients still need data (not in results from specific year)
-            found_recipients = [result["recipient_id"] for result in results]
-            missing_child_hashes = [
-                recipient_id for recipient_id in child_recipient_hashes if f"{recipient_id}-C" not in found_recipients
+            found_duns = [result["duns"] for result in results]
+            missing_child_duns = [
+                child_duns for child_duns in child_recipient_duns if child_duns not in found_duns
             ]
 
             # Gather their data points with Recipient Profile
             missing_child_qs = RecipientProfile.objects.filter(
-                recipient_hash__in=missing_child_hashes, recipient_level="C"
+                recipient_unique_id__in=missing_child_duns, recipient_level="C"
             ).values("recipient_hash", "recipient_name", "recipient_unique_id", "uei")
 
             for child_recipient in list(missing_child_qs):
