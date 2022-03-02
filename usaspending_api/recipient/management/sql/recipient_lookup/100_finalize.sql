@@ -103,8 +103,7 @@ DELETE FROM public.recipient_lookup WHERE recipient_hash IN (
     SELECT rl.recipient_hash
     FROM recipient_lookup rl
         INNER JOIN public.temporary_restock_recipient_lookup tem
-            ON rl.recipient_hash = tem.duns_recipient_hash
-    WHERE tem.uei IS NOT NULL AND tem.duns IS NOT NULL
+            ON rl.recipient_hash = tem.duns_recipient_hash AND tem.uei IS NOT NULL AND tem.duns IS NOT NULL AND rl.uei IS NULL
 ) RETURNING recipient_hash;
 
 DO $$ BEGIN RAISE NOTICE 'Populating alternate_names in recipient_lookup'; END $$;

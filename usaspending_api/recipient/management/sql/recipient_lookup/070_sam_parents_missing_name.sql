@@ -11,9 +11,9 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   parent_legal_business_name
 )
 SELECT
-  DISTINCT ON (ultimate_parent_unique_ide)
+  DISTINCT ON (ultimate_parent_unique_ide, ultimate_parent_uei)
   MD5(UPPER(
-    CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
+    CASE WHEN ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
     ELSE  CONCAT('duns-', ultimate_parent_unique_ide) END
   ))::uuid AS recipient_hash,
   MD5(UPPER(CONCAT('duns-', ultimate_parent_unique_ide)
@@ -25,6 +25,6 @@ SELECT
   ultimate_parent_unique_ide AS parent_duns,
   UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name
 FROM duns
-WHERE ultimate_parent_unique_ide IS NOT NULL
-ORDER BY ultimate_parent_unique_ide, ultimate_parent_legal_enti, update_date DESC
+WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL
+ORDER BY ultimate_parent_unique_ide, ultimate_parent_uei, update_date DESC
 ON CONFLICT (recipient_hash) DO NOTHING;
