@@ -24,11 +24,16 @@ def delete_stale_fabs(ids_to_delete):
     delete_transaction_str_ids = ",".join([str(deleted_result) for deleted_result in delete_transaction_ids])
 
     if delete_transaction_ids:
+        awards = (
+            "UPDATE awards SET latest_transaction_id = NULL, earliest_transaction_id = NULL "
+            "WHERE latest_transaction_id IN ({ids}) OR earliest_transaction_id IN ({ids});"
+        )
         fabs = 'DELETE FROM "transaction_fabs" tf WHERE tf."transaction_id" IN ({});'
         tn = 'DELETE FROM "transaction_normalized" tn WHERE tn."id" IN ({});'
         ts = 'DELETE FROM "transaction_search" ts WHERE ts."transaction_id" IN ({});'
         td = "DELETE FROM transaction_delta td WHERE td.transaction_id in ({});"
         queries = [
+            awards.format(ids=delete_transaction_str_ids),
             fabs.format(delete_transaction_str_ids),
             tn.format(delete_transaction_str_ids),
             ts.format(delete_transaction_str_ids),
