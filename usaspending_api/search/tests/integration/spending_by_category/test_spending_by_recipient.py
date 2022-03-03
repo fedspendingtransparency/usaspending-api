@@ -246,7 +246,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "amount": 500.0,
                 "code": "987654321",
                 "name": "RECIPIENT 3",
-                "recipient_id": "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+                "recipient_id": "3523fd0b-c1f0-ddac-e217-7b7b25fad06f-C",
             },
             {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
             {
@@ -320,7 +320,7 @@ def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transacti
                 "amount": 500.0,
                 "code": "987654321",
                 "name": "RECIPIENT 3",
-                "recipient_id": "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+                "recipient_id": "3523fd0b-c1f0-ddac-e217-7b7b25fad06f-C",
             }
         ],
         "messages": [get_time_period_message()],

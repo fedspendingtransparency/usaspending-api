@@ -40,5 +40,5 @@ SELECT
   duns_recipient_hash
 FROM temporary_transaction_recipients_view
 WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND awardee_or_recipient_legal IS NOT NULL
-ORDER BY uei, recipient_hash, action_date DESC, is_fpds, transaction_unique_id
+ORDER BY recipient_hash, action_date DESC, is_fpds, transaction_unique_id
 ON CONFLICT (recipient_hash) DO NOTHING;

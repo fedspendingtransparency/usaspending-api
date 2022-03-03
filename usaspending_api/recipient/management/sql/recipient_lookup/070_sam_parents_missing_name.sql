@@ -13,7 +13,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
 SELECT
   DISTINCT ON (ultimate_parent_uei, ultimate_parent_unique_ide)
   MD5(UPPER(
-    CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
+    CASE WHEN ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
     ELSE  CONCAT('duns-', ultimate_parent_unique_ide) END
   ))::uuid AS recipient_hash,
   MD5(UPPER(CONCAT('duns-', ultimate_parent_unique_ide)

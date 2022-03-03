@@ -423,7 +423,7 @@ def awards_and_transactions(db):
         "recipient.RecipientProfile",
         recipient_name="RECIPIENT 3",
         recipient_level="P",
-        recipient_hash="bf05f751-6841-efd6-8f1b-0144163eceae",
+        recipient_hash="3523fd0b-c1f0-ddac-e217-7b7b25fad06f",
         recipient_unique_id="987654321",
         uei="987654321AAA",
     )
@@ -431,7 +431,7 @@ def awards_and_transactions(db):
         "recipient.RecipientProfile",
         recipient_name="RECIPIENT 3",
         recipient_level="C",
-        recipient_hash="bf05f751-6841-efd6-8f1b-0144163eceae",
+        recipient_hash="3523fd0b-c1f0-ddac-e217-7b7b25fad06f",
         recipient_unique_id="987654321",
         uei="987654321AAA",
     )
@@ -456,7 +456,7 @@ def awards_and_transactions(db):
     mommy.make(
         "recipient.RecipientLookup",
         legal_business_name="RECIPIENT 3",
-        recipient_hash="bf05f751-6841-efd6-8f1b-0144163eceae",
+        recipient_hash="3523fd0b-c1f0-ddac-e217-7b7b25fad06f",
         duns="987654321",
         uei="987654321AAA",
     )
