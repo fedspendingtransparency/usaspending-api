@@ -40,7 +40,7 @@ SELECT
   country_code,
   ultimate_parent_unique_ide,
   UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name,
-  ulimate_parent_uei as parent_uei,
+  ultimate_parent_uei as parent_uei,
   state,
   zip4,
   zip AS zip5
