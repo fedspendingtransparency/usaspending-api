@@ -602,7 +602,7 @@ def test_extract_hash_from_duns_or_uei_via_duns():
 def test_extract_hash_from_duns_or_uei_via_uei():
     """ Testing extracting the hash/name from a DUNS """
     example_uei = "AAAAAAAAAAAA"
-    expected_hash = "00077a9a-5a70-8919-fd19-330762af6b84"
+    expected_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     mommy.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[expected_hash])
 
     recipient_hash = recipients.extract_hash_from_duns_or_uei(example_uei)
