@@ -216,8 +216,8 @@ class Command(BaseCommand):
         with timer("retrieving IDs of FABS to process", logger.info):
             ids_to_upsert = get_fabs_transaction_ids(ids, afa_ids, start_datetime, end_datetime)
 
-        update_award_ids = delete_fabs_transactions(ids_to_delete) if is_incremental_load else []
-        upsert_fabs_transactions(ids_to_upsert, update_award_ids)
+        update_and_delete_award_ids = delete_fabs_transactions(ids_to_delete) if is_incremental_load else []
+        upsert_fabs_transactions(ids_to_upsert, update_and_delete_award_ids)
 
         if is_incremental_load:
             logger.info(f"Storing {processing_start_datetime} for the next incremental run")
