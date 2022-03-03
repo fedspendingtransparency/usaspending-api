@@ -444,9 +444,7 @@ class ChildRecipients(APIView):
 
             # Determine which child recipients still need data (not in results from specific year)
             found_duns = [result["duns"] for result in results]
-            missing_child_duns = [
-                child_duns for child_duns in child_recipient_duns if child_duns not in found_duns
-            ]
+            missing_child_duns = [child_duns for child_duns in child_recipient_duns if child_duns not in found_duns]
 
             # Gather their data points with Recipient Profile
             missing_child_qs = RecipientProfile.objects.filter(
