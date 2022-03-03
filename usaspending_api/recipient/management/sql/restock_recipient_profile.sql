@@ -236,7 +236,7 @@ DO $$ BEGIN RAISE NOTICE 'Step 5: Populating children list in parent records'; E
 WITH parent_recipients AS (
   SELECT
     parent_recipient_unique_id,
-    array_agg(DISTINCT recipient_unique_id) AS duns_list 
+    array_agg(DISTINCT recipient_unique_id) AS duns_list
   FROM
     public.temporary_recipients_from_transactions_view
   WHERE
@@ -260,7 +260,7 @@ DO $$ BEGIN RAISE NOTICE 'Step 6: Populating parent recipient list in child reco
 WITH all_recipients AS (
   SELECT
     recipient_unique_id,
-    array_agg(DISTINCT parent_recipient_unique_id) AS parent_duns
+    array_agg(DISTINCT parent_recipient_unique_id) AS parent_duns_list
   FROM
     public.temporary_recipients_from_transactions_view
   WHERE
@@ -270,7 +270,7 @@ WITH all_recipients AS (
 )
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
-  recipient_affiliations = ar.parent_duns,
+  recipient_affiliations = ar.parent_duns_list,
   unused = false
 FROM all_recipients AS ar
 WHERE
