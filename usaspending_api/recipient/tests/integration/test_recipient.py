@@ -184,12 +184,14 @@ TEST_SUMMARY_TRANSACTION_RECIPIENT = {
         "awardee_or_recipient_uniqu": "000000001",
         "ultimate_parent_unique_ide": "000000001",
         "awardee_or_recipient_uei": "AAAAAAAAAAAA",
+        "ultimate_parent_uei": "AAAAAAAAAAAA",
     },
     "FY2016": {
         "awardee_or_recipient_legal": "CHILD RECIPIENT",
         "awardee_or_recipient_uniqu": "000000002",
         "ultimate_parent_unique_ide": "000000001",
         "awardee_or_recipient_uei": "BBBBBBBBBBBB",
+        "ultimate_parent_uei": "AAAAAAAAAAAA",
     },
     "FY2008": {
         "awardee_or_recipient_legal": "OTHER RECIPIENT",
@@ -652,7 +654,7 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
         "amount": 50,
         "state_province": "CHILD STATE",
     }
-    expected = [child2_object, child1_object]
+    expected = [child1_object, child2_object]
     resp = client.get(recipient_children_endpoint(parent_child1_duns, "all"))
     assert resp.status_code == status.HTTP_200_OK
     # testing for equality-only, order unnecessary
