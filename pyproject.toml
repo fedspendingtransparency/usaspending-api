@@ -1,3 +1,10 @@
+[build-system]
+# Using this .toml file in accordance with emerging support for PEP 517 and PEP 518 to get away from setup.py
+# See also: https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
+# See further comments on use of pyproject.toml and necessity of setup.py in setup.py
+requires = ["pip>=21.3.1", "setuptools>=60.5.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [tool.black]
 line-length = 120
 target_version = ['py37']
