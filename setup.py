@@ -19,8 +19,8 @@ import pathlib
 
 from setuptools import setup, find_namespace_packages, find_packages
 
-_SRC_ROOT_DIR = pathlib.Path(__file__).parent.resolve()
-_PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.resolve()
+# _SRC_ROOT_DIR = pathlib.Path(__file__).parent.resolve()
+# _PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.resolve()
 
 # dict of root (top-level) packages mapped to the the directory (relative to project root) they are found under
 # These are packages that are not under the same directory hirearchy, but are each parts of the overall core source code
@@ -71,18 +71,18 @@ _PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.resolve()
 #_found_packages = find_namespace_packages()
 
 # Requirements
-_install_requires = open(_PROJECT_ROOT_DIR / "requirements" / "requirements.txt").read().strip().split("\n")
-_dev_requires = (
-    open(_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").read().strip().split("\n")
-    if (_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").exists()
-    else []
-)
-_test_requires = (
-    open(_PROJECT_ROOT_DIR / "requirements" / "requirements-test.txt").read().strip().split("\n")
-    if (_PROJECT_ROOT_DIR / "requirements" / "requirements-test.txt").exists()
-    else []
-)
-_extras = {"dev": _dev_requires + _test_requires}
+# _install_requires = open(_PROJECT_ROOT_DIR / "requirements" / "requirements.txt").read().strip().split("\n")
+# _dev_requires = (
+#     open(_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").read().strip().split("\n")
+#     if (_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").exists()
+#     else []
+# )
+# _test_requires = (
+#     open(_PROJECT_ROOT_DIR / "requirements" / "requirements-test.txt").read().strip().split("\n")
+#     if (_PROJECT_ROOT_DIR / "requirements" / "requirements-test.txt").exists()
+#     else []
+# )
+# _extras = {"dev": _dev_requires + _test_requires}
 
 # setup(
 #     name="usaspending-api",
