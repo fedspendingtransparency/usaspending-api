@@ -1,43 +1,9 @@
 [build-system]
-# Using this .toml file in accordance with emerging support for PEP 517 and PEP 518 to get away from setup.py
+# Using this .toml file in accordance with emerging support for PEP 517 and PEP 518 to get away from setup_old.py
 # See also: https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
-# See further comments on use of pyproject.toml and necessity of setup.py in setup.py
+# See further comments on use of pyproject.toml and necessity of setup_old.py in setup_old.py
 requires = ["pip>=21.3.1", "setuptools>=60.5.0", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[project]
-name = "usaspending-api"
-version = "0.0.0"
-description = "This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act."
-readme = "README.md"
-requires-python = ">=3.7"
-license = {file = "LICENSE"}
-keywords = []
-authors = [
-]
-maintainers = [
-]
-classifiers = [
-  "Development Status :: 5 - Production/Stable",
-  "Programming Language :: Python",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3 :: Only",
-]
-
-dependencies = "requirements/requirements.txt"
-
-[project.optional-dependencies]
-test = "requirements/requirements-dev.txt"
-
-[project.urls]
-homepage = "https://www.usaspending.gov"
-documentation = "https://github.com/fedspendingtransparency/usaspending-api/wiki"
-repository = "https://github.com/fedspendingtransparency/usaspending-api"
-changelog = "https://github.com/fedspendingtransparency/usaspending-website/wiki#release-log"
-
-#[project.entry-points."spam.magical"]
-#tomatoes = "spam:main_tomatoes"
 
 [tool.black]
 line-length = 120

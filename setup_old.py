@@ -1,4 +1,4 @@
-"""setuptools based setup.py module to accommodate setuptools build system
+"""setuptools based setup_old.py module to accommodate setuptools build system
 
 See:
     Emerging pattern to follow:
@@ -107,13 +107,13 @@ from setuptools import setup, find_namespace_packages, find_packages
 #     ],
 # )
 
-if __name__ == "__main__":
-    print("Running setup.__main__ from setup.py to invoke function setuptools.setup(...)")
-    # NOTE: The below setup will be called when this is invoked from a pyproject.toml build backend.
-    #       But until all the packaging core metadata is moved over to the pyproject.toml file, it will remain
-    #       commented out
-    # UPDATE: Trying out pyproject.toml core metadata
-    setup()
+# if __name__ == "__main__":
+#     print("Running setup.__main__ from setup_old.py to invoke function setuptools.setup(...)")
+#     # NOTE: The below setup will be called when this is invoked from a pyproject.toml build backend.
+#     #       But until all the packaging core metadata is moved over to the pyproject.toml file, it will remain
+#     #       commented out
+#     # UPDATE: Trying out pyproject.toml core metadata
+#     setup()
 
 # TODO: Leads
 #  1.
