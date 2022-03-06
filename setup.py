@@ -97,7 +97,7 @@ setup(
     python_requires="==3.7.*",
     license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
     #package_dir=_CORE_PACKAGES,
-    packages=find_packages,
+    packages=find_packages(),
     install_requires=_install_requires,
     extras_require=_extras,
     classifiers=[
