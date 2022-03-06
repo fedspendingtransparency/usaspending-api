@@ -1,4 +1,4 @@
-"""setuptools based setup_old.py module to accommodate setuptools build system
+"""setuptools based setup.py module to accommodate setuptools build system
 
 See:
     Emerging pattern to follow:
@@ -19,8 +19,9 @@ import pathlib
 
 from setuptools import setup, find_namespace_packages, find_packages
 
-# _SRC_ROOT_DIR = pathlib.Path(__file__).parent.resolve()
-# _PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.resolve()
+_PROJECT_NAME = "usaspending-api"
+_SRC_ROOT_DIR = pathlib.Path(__file__).resolve() / _PROJECT_NAME.replace("-", "_")
+_PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.resolve()
 
 # dict of root (top-level) packages mapped to the the directory (relative to project root) they are found under
 # These are packages that are not under the same directory hirearchy, but are each parts of the overall core source code
@@ -71,48 +72,48 @@ from setuptools import setup, find_namespace_packages, find_packages
 #_found_packages = find_namespace_packages()
 
 # Requirements
-# _install_requires = open(_PROJECT_ROOT_DIR / "requirements" / "requirements.txt").read().strip().split("\n")
-# _dev_requires = (
-#     open(_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").read().strip().split("\n")
-#     if (_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").exists()
-#     else []
-# )
-# _test_requires = (
-#     open(_PROJECT_ROOT_DIR / "requirements" / "requirements-test.txt").read().strip().split("\n")
-#     if (_PROJECT_ROOT_DIR / "requirements" / "requirements-test.txt").exists()
-#     else []
-# )
-# _extras = {"dev": _dev_requires + _test_requires}
+_install_requires = open(_PROJECT_ROOT_DIR / "requirements" / "requirements.txt").read().strip().split("\n")
+_dev_requires = (
+    open(_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").read().strip().split("\n")
+    if (_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").exists()
+    else []
+)
+_test_requires = (
+    open(_PROJECT_ROOT_DIR / "requirements" / "requirements-test.txt").read().strip().split("\n")
+    if (_PROJECT_ROOT_DIR / "requirements" / "requirements-test.txt").exists()
+    else []
+)
+_extras = {"dev": _dev_requires + _test_requires}
 
-# setup(
-#     name="usaspending-api",
-#     version="0.0.0",
-#     description=(
-#         "This API is utilized by USAspending.gov to obtain all federal spending data which is open source "
-#         "and provided to the public as part of the DATA Act."
-#     ),
-#     long_description=(_PROJECT_ROOT_DIR / "README.md").read_text(encoding="utf-8"),
-#     long_description_content_type="text/markdown",
-#     #package_dir=_CORE_PACKAGES,
-#     #packages=_found_packages,
-#     python_requires="==3.8.10",
-#     install_requires=_install_requires,
-#     extras_require=_extras,
-#     classifiers=[
-#         "Development Status :: 5 - Production/Stable",
-#         "Programming Language :: Python",
-#         "Programming Language :: Python :: 3",
-#         "Programming Language :: Python :: 3.7",
-#         "Programming Language :: Python :: 3 :: Only",
-#     ],
-# )
+setup(
+    name=_PROJECT_NAME,
+    version="0.0.0",
+    description=(
+        "This API is utilized by USAspending.gov to obtain all federal spending data which is open source "
+        "and provided to the public as part of the DATA Act."
+    ),
+    long_description=(_PROJECT_ROOT_DIR / "README.md").read_text(encoding="utf-8"),
+    long_description_content_type="text/markdown",
+    python_requires="==3.7.*",
+    license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
+    #package_dir=_CORE_PACKAGES,
+    packages=find_packages,
+    install_requires=_install_requires,
+    extras_require=_extras,
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3 :: Only",
+    ],
+)
 
-# if __name__ == "__main__":
-#     print("Running setup.__main__ from setup_old.py to invoke function setuptools.setup(...)")
-#     # NOTE: The below setup will be called when this is invoked from a pyproject.toml build backend.
-#     #       But until all the packaging core metadata is moved over to the pyproject.toml file, it will remain
-#     #       commented out
-#     # UPDATE: Trying out pyproject.toml core metadata
+if __name__ == "__main__":
+    print("Running setup.__main__ from setup.py to invoke function setuptools.setup(...)")
+    # NOTE: The below setup() will be called when this is invoked from a pyproject.toml build backend.
+    #       But until all the packaging core metadata is moved over to the pyproject.toml file, it will remain
+    #       commented out
 #     setup()
 
 # TODO: Leads
