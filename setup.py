@@ -20,7 +20,7 @@ import pathlib
 from setuptools import setup, find_namespace_packages, find_packages
 
 _PROJECT_NAME = "usaspending-api"
-_SRC_ROOT_DIR = pathlib.Path(__file__).resolve() / _PROJECT_NAME.replace("-", "_")
+_SRC_ROOT_DIR = pathlib.Path(__file__).parent.resolve() / _PROJECT_NAME.replace("-", "_")
 _PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.resolve()
 
 # dict of root (top-level) packages mapped to the the directory (relative to project root) they are found under
@@ -72,7 +72,7 @@ _PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.resolve()
 #_found_packages = find_namespace_packages()
 
 # Requirements
-_install_requires = open(_PROJECT_ROOT_DIR / "requirements" / "requirements.txt").read().strip().split("\n")
+_install_requires = open(_PROJECT_ROOT_DIR / "requirements" / "requirements-app.txt").read().strip().split("\n")
 _dev_requires = (
     open(_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").read().strip().split("\n")
     if (_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").exists()
