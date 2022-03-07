@@ -101,7 +101,7 @@ SELECT
 FROM public.temporary_restock_recipient_lookup
 ON CONFLICT(recipient_hash) DO NOTHING;
 
-DO $$ BEGIN RAISE NOTICE 'Updating DUNS hashes to UEI hashes in recipient_lookup'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Deleting duplicate DUNS records that are superceded by records with UEI populated.'; END $$;
 
 DELETE FROM public.recipient_lookup WHERE recipient_hash IN (
     SELECT rl.recipient_hash

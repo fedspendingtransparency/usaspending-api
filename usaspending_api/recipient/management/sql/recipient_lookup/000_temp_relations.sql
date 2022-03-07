@@ -65,8 +65,8 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
   ORDER BY tn.action_date DESC
 );
 
-CREATE INDEX idx_temporary_restock_recipient_view ON public.temporary_transaction_recipients_view (awardee_or_recipient_uniqu, awardee_or_recipient_legal);
+CREATE INDEX idx_temporary_restock_recipient_view ON public.temporary_transaction_recipients_view (uei, awardee_or_recipient_uniqu, awardee_or_recipient_legal);
 
-CREATE INDEX idx_temporary_restock_parent_recipient_view ON public.temporary_transaction_recipients_view (ultimate_parent_unique_ide, ultimate_parent_legal_enti);
+CREATE INDEX idx_temporary_restock_parent_recipient_view ON public.temporary_transaction_recipients_view (ultimate_parent_uei, ultimate_parent_unique_ide, ultimate_parent_legal_enti);
 
 ANALYZE public.temporary_transaction_recipients_view;

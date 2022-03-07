@@ -21,7 +21,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   zip5
 )
 SELECT
-  DISTINCT ON (uei, awardee_or_recipient_uniqu, UPPER(legal_business_name))
+  DISTINCT ON (uei, awardee_or_recipient_uniqu)
   MD5(UPPER(
     CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
     ELSE CONCAT('duns-', awardee_or_recipient_uniqu) END
@@ -46,5 +46,5 @@ SELECT
   zip AS zip5
 FROM duns
 WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NOT NULL
-ORDER BY uei, awardee_or_recipient_uniqu, UPPER(legal_business_name), update_date DESC
+ORDER BY uei, awardee_or_recipient_uniqu, update_date DESC
 ON CONFLICT (recipient_hash) DO NOTHING;
