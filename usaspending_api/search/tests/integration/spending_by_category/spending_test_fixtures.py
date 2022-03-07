@@ -199,6 +199,7 @@ def awards_and_transactions(db):
         legal_entity_congressional=None,
         awardee_or_recipient_legal="RECIPIENT 1",
         awardee_or_recipient_uniqu=None,
+        uei=None,
     )
     mommy.make(
         "awards.TransactionFABS",
@@ -216,6 +217,7 @@ def awards_and_transactions(db):
         legal_entity_congressional="90",
         awardee_or_recipient_legal="RECIPIENT 2",
         awardee_or_recipient_uniqu="456789123",
+        uei="UEIAAABBBCCC",
     )
     mommy.make(
         "awards.TransactionFABS",
@@ -233,6 +235,7 @@ def awards_and_transactions(db):
         legal_entity_congressional="50",
         awardee_or_recipient_legal="RECIPIENT 3",
         awardee_or_recipient_uniqu="987654321",
+        uei="987654321AAA",
     )
 
     # Transaction FPDS
@@ -251,6 +254,7 @@ def awards_and_transactions(db):
         legal_entity_congressional="50",
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu="096354360",
+        ultimate_parent_uei="096354360AAA",
         product_or_service_code="1005",
         product_or_service_co_desc="PSC 1",
     )
@@ -269,6 +273,7 @@ def awards_and_transactions(db):
         legal_entity_congressional="50",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
+        ultimate_parent_uei="123456789AAA",
         product_or_service_code="M123",
         product_or_service_co_desc="PSC 2",
         naics="111110",
@@ -289,6 +294,7 @@ def awards_and_transactions(db):
         legal_entity_congressional="50",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
+        ultimate_parent_uei="123456789AAA",
         naics="222220",
         naics_description="NAICS 2",
     )
@@ -307,6 +313,7 @@ def awards_and_transactions(db):
         legal_entity_congressional="10",
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu=None,
+        ultimate_parent_uei=None,
     )
 
     # References State Data
@@ -406,21 +413,27 @@ def awards_and_transactions(db):
         recipient_unique_id=None,
     )
     mommy.make(
-        "recipient.RecipientProfile", recipient_name="RECIPIENT 2", recipient_level="R", recipient_unique_id="456789123"
+        "recipient.RecipientProfile",
+        recipient_name="RECIPIENT 2",
+        recipient_level="R",
+        recipient_unique_id="456789123",
+        uei="UEIAAABBBCCC",
     )
     mommy.make(
         "recipient.RecipientProfile",
         recipient_name="RECIPIENT 3",
         recipient_level="P",
-        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_hash="3523fd0b-c1f0-ddac-e217-7b7b25fad06f",
         recipient_unique_id="987654321",
+        uei="987654321AAA",
     )
     mommy.make(
         "recipient.RecipientProfile",
         recipient_name="RECIPIENT 3",
         recipient_level="C",
-        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_hash="3523fd0b-c1f0-ddac-e217-7b7b25fad06f",
         recipient_unique_id="987654321",
+        uei="987654321AAA",
     )
     mommy.make(
         "recipient.RecipientProfile",
@@ -428,6 +441,7 @@ def awards_and_transactions(db):
         recipient_level="R",
         recipient_hash="5bf6217b-4a70-da67-1351-af6ab2e0a4b3",
         recipient_unique_id="096354360",
+        uei="096354360AAA",
     )
     mommy.make(
         "recipient.RecipientProfile",
@@ -435,14 +449,16 @@ def awards_and_transactions(db):
         recipient_level="R",
         recipient_hash="25f9e794-323b-4538-85f5-181f1b624d0b",
         recipient_unique_id="123456789",
+        uei="123456789AAA",
     )
 
     # Recipient Lookup
     mommy.make(
         "recipient.RecipientLookup",
         legal_business_name="RECIPIENT 3",
-        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_hash="3523fd0b-c1f0-ddac-e217-7b7b25fad06f",
         duns="987654321",
+        uei="987654321AAA",
     )
 
     # PSC

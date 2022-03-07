@@ -12,6 +12,7 @@ WITH removed_recipients AS (
 DELETE FROM public.recipient_lookup rl WHERE rl.recipient_hash IN (SELECT recipient_hash FROM removed_recipients)
 RETURNING rl.recipient_hash;
 
+
 DO $$ BEGIN RAISE NOTICE 'Updating records in recipient_lookup'; END $$;
 UPDATE public.recipient_lookup rl SET
     address_line_1              = tem.address_line_1,
@@ -35,22 +36,22 @@ UPDATE public.recipient_lookup rl SET
   WHERE
     rl.recipient_hash = tem.recipient_hash
     AND (
-       rl.address_line_1              IS DISTINCT FROM tem.address_line_1
-    OR rl.address_line_2              IS DISTINCT FROM tem.address_line_2
-    OR rl.business_types_codes        IS DISTINCT FROM tem.business_types_codes
-    OR rl.city                        IS DISTINCT FROM tem.city
-    OR rl.congressional_district      IS DISTINCT FROM tem.congressional_district
-    OR rl.country_code                IS DISTINCT FROM tem.country_code
-    OR rl.duns                        IS DISTINCT FROM tem.duns
-    OR rl.uei                         IS DISTINCT FROM tem.uei
-    OR rl.legal_business_name         IS DISTINCT FROM tem.legal_business_name
-    OR rl.parent_duns                 IS DISTINCT FROM tem.parent_duns
-    OR rl.parent_legal_business_name  IS DISTINCT FROM tem.parent_legal_business_name
-    OR rl.recipient_hash              IS DISTINCT FROM tem.recipient_hash
-    OR rl.source                      IS DISTINCT FROM tem.source
-    OR rl.state                       IS DISTINCT FROM tem.state
-    OR rl.zip4                        IS DISTINCT FROM tem.zip4
-    OR rl.zip5                        IS DISTINCT FROM tem.zip5
+        rl.address_line_1                 IS DISTINCT FROM tem.address_line_1
+        OR rl.address_line_2              IS DISTINCT FROM tem.address_line_2
+        OR rl.business_types_codes        IS DISTINCT FROM tem.business_types_codes
+        OR rl.city                        IS DISTINCT FROM tem.city
+        OR rl.congressional_district      IS DISTINCT FROM tem.congressional_district
+        OR rl.country_code                IS DISTINCT FROM tem.country_code
+        OR rl.duns                        IS DISTINCT FROM tem.duns
+        OR rl.uei                         IS DISTINCT FROM tem.uei
+        OR rl.legal_business_name         IS DISTINCT FROM tem.legal_business_name
+        OR rl.parent_duns                 IS DISTINCT FROM tem.parent_duns
+        OR rl.parent_legal_business_name  IS DISTINCT FROM tem.parent_legal_business_name
+        OR rl.recipient_hash              IS DISTINCT FROM tem.recipient_hash
+        OR rl.source                      IS DISTINCT FROM tem.source
+        OR rl.state                       IS DISTINCT FROM tem.state
+        OR rl.zip4                        IS DISTINCT FROM tem.zip4
+        OR rl.zip5                        IS DISTINCT FROM tem.zip5
   );
 
 DO $$ BEGIN RAISE NOTICE 'Inserting new records into recipient_lookup'; END $$;
@@ -95,6 +96,15 @@ SELECT
   now()
 FROM public.temporary_restock_recipient_lookup
 ON CONFLICT(recipient_hash) DO NOTHING;
+
+DO $$ BEGIN RAISE NOTICE 'Updating DUNS hashes to UEI hashes in recipient_lookup'; END $$;
+
+DELETE FROM public.recipient_lookup WHERE recipient_hash IN (
+    SELECT rl.recipient_hash
+    FROM recipient_lookup rl
+        INNER JOIN public.temporary_restock_recipient_lookup tem
+            ON rl.recipient_hash = tem.duns_recipient_hash AND tem.uei IS NOT NULL AND tem.duns IS NOT NULL AND rl.uei IS NULL
+) RETURNING recipient_hash;
 
 DO $$ BEGIN RAISE NOTICE 'Populating alternate_names in recipient_lookup'; END $$;
 WITH alternate_names AS (

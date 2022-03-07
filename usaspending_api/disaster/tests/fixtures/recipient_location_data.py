@@ -66,6 +66,27 @@ def awards_and_transactions():
         submission_window_id="2022081",
     )
 
+    # Toptier Agency
+    ta1 = mommy.make("references.ToptierAgency", toptier_agency_id=7, toptier_code="007", name="Agency 007")
+
+    # Federal Account
+    fa1 = mommy.make(
+        "accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1", parent_toptier_agency=ta1
+    )
+
+    # Treasury Approriation Account
+    tas1 = mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        funding_toptier_agency=ta1,
+        budget_function_code=100,
+        budget_function_title="NAME 1",
+        budget_subfunction_code=1100,
+        budget_subfunction_title="NAME 1A",
+        federal_account=fa1,
+        account_title="TA 1",
+        tas_rendering_label="001-X-0000-000",
+    )
+
     # Financial Accounts by Awards
     mommy.make(
         "awards.FinancialAccountsByAwards",
@@ -73,6 +94,7 @@ def awards_and_transactions():
         award=award1,
         submission=sub1,
         disaster_emergency_fund=defc1,
+        treasury_account=tas1,
         gross_outlay_amount_by_award_cpe=1,
         transaction_obligated_amount=2,
     )
@@ -82,6 +104,7 @@ def awards_and_transactions():
         award=award2,
         submission=sub1,
         disaster_emergency_fund=defc1,
+        treasury_account=tas1,
         gross_outlay_amount_by_award_cpe=10,
         transaction_obligated_amount=20,
     )
@@ -91,6 +114,7 @@ def awards_and_transactions():
         award=award3,
         submission=sub2,
         disaster_emergency_fund=defc1,
+        treasury_account=tas1,
         gross_outlay_amount_by_award_cpe=100,
         transaction_obligated_amount=200,
     )
@@ -100,6 +124,7 @@ def awards_and_transactions():
         award=award4,
         submission=sub2,
         disaster_emergency_fund=defc1,
+        treasury_account=tas1,
         gross_outlay_amount_by_award_cpe=1000,
         transaction_obligated_amount=2000,
     )
@@ -109,6 +134,7 @@ def awards_and_transactions():
         award=award5,
         submission=sub3,
         disaster_emergency_fund=defc2,
+        treasury_account=tas1,
         gross_outlay_amount_by_award_cpe=10000,
         transaction_obligated_amount=20000,
     )
@@ -118,6 +144,7 @@ def awards_and_transactions():
         award=award6,
         submission=sub3,
         disaster_emergency_fund=defc2,
+        treasury_account=tas1,
         gross_outlay_amount_by_award_cpe=100000,
         transaction_obligated_amount=200000,
     )
@@ -127,6 +154,7 @@ def awards_and_transactions():
         award=award7,
         submission=sub3,
         disaster_emergency_fund=defc2,
+        treasury_account=tas1,
         gross_outlay_amount_by_award_cpe=1000000,
         transaction_obligated_amount=2000000,
     )
@@ -435,14 +463,14 @@ def awards_and_transactions():
         "recipient.RecipientProfile",
         recipient_name="RECIPIENT, 3",
         recipient_level="P",
-        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_hash="bf05f751-6841-efd6-8f1b-0144163eceae",
         recipient_unique_id="987654321",
     )
     mommy.make(
         "recipient.RecipientProfile",
         recipient_name="RECIPIENT, 3",
         recipient_level="C",
-        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_hash="bf05f751-6841-efd6-8f1b-0144163eceae",
         recipient_unique_id="987654321",
     )
     mommy.make(
@@ -456,7 +484,7 @@ def awards_and_transactions():
         "recipient.RecipientProfile",
         recipient_name="RECIPIENT, 3",
         recipient_level="R",
-        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_hash="bf05f751-6841-efd6-8f1b-0144163eceae",
         recipient_unique_id="987654321",
     )
 
@@ -464,7 +492,7 @@ def awards_and_transactions():
     mommy.make(
         "recipient.RecipientLookup",
         legal_business_name="RECIPIENT, 3",
-        recipient_hash="d2894d22-67fc-f9cb-4005-33fa6a29ef86",
+        recipient_hash="bf05f751-6841-efd6-8f1b-0144163eceae",
         duns="987654321",
     )
 

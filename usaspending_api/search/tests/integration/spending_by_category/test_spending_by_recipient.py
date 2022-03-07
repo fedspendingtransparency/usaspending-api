@@ -1,6 +1,5 @@
 import json
 import logging
-import uuid
 
 from model_mommy import mommy
 from elasticsearch_dsl import A
@@ -64,8 +63,8 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     """
 
     # Setup data for this test
-    recipient1 = uuid.uuid4()
-    recipient2 = uuid.uuid4()
+    recipient1 = "c870f759-d7bb-c074-784a-ab5867b1da3f"
+    recipient2 = "0aa0ab7e-efa0-e3f4-6f55-6b0ecaf636e6"
 
     # Recipient Lookup
     mommy.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
@@ -157,8 +156,8 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
 
     # Setup data for this test
 
-    recipient1 = uuid.uuid4()
-    recipient2 = uuid.uuid4()
+    recipient1 = "c870f759-d7bb-c074-784a-ab5867b1da3f"
+    recipient2 = "0aa0ab7e-efa0-e3f4-6f55-6b0ecaf636e6"
 
     # Recipient Lookup
     mommy.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
@@ -237,7 +236,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "results": [
             {
                 "amount": 5000000.0,
-                "code": "DUNS Number not provided",
+                "code": "Recipient not provided",
                 "name": "MULTIPLE RECIPIENTS",
                 "recipient_id": None,
             },
@@ -247,12 +246,12 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "amount": 500.0,
                 "code": "987654321",
                 "name": "RECIPIENT 3",
-                "recipient_id": "d2894d22-67fc-f9cb-4005-33fa6a29ef86-C",
+                "recipient_id": "3523fd0b-c1f0-ddac-e217-7b7b25fad06f-C",
             },
             {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
             {
                 "amount": 5.0,
-                "code": "DUNS Number not provided",
+                "code": "Recipient not provided",
                 "name": "RECIPIENT 1",
                 "recipient_id": "5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R",
             },
@@ -277,6 +276,53 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+
+def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient_duns",
+        content_type="application/json",
+        data=json.dumps({"filters": {"recipient_search_text": ["UEIAAABBBCCC"]}}),
+    )
+    expected_response = {
+        "category": "recipient_duns",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None}],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+
+def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient_duns",
+        content_type="application/json",
+        data=json.dumps({"filters": {"recipient_search_text": ["987654321"]}}),
+    )
+    expected_response = {
+        "category": "recipient_duns",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {
+                "amount": 500.0,
+                "code": "987654321",
+                "name": "RECIPIENT 3",
+                "recipient_id": "3523fd0b-c1f0-ddac-e217-7b7b25fad06f-C",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"

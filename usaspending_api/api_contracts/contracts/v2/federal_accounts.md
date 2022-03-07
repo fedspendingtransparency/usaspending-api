@@ -60,7 +60,7 @@ This endpoint returns a list of federal accounts, their number, name, managing a
 + `account_name` (required, string, nullable)
     Name of the federal account. `null` when the name is not provided.
 + `account_number` (required, string, nullable)
-    The number for the federal account. `null` when no DUNS is provided.
+    The number for the federal account. `null` when no account number is provided.
 + `account_id` (required, number)
     A unique identifier for the federal account
 + `managing_agency_acronym` (required, string)

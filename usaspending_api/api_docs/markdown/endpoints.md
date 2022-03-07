@@ -122,6 +122,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/idvs/count/federal_account/<AWARD_ID\>/](/api/v2/idvs/count/federal_account/CONT_IDV_NNK14MA74C_8000/)|GET| Returns the number of federal accounts associated with children and grandchild awards of an IDV. |
 |[/api/v2/idvs/funding/](/api/v2/idvs/funding/)|POST| Returns File C funding records associated with an IDV |
 |[/api/v2/idvs/funding_rollup/](/api/v2/idvs/funding_rollup/)|POST| Returns aggregated count of awarding agencies, federal accounts, and total transaction obligated amount for all contracts under an IDV |
+|[/api/v2/recipient/](/api/v2/recipient/)|POST| Returns a list of recipients in USAspending DB |
 |[/api/v2/recipient/children/<DUNS\>/](/api/v2/recipient/children/006928857/)|GET| Returns recipient details based on DUNS number |
 |[/api/v2/recipient/count/](/api/v2/recipient/count/)|POST| Returns the count of recipents for the given filters |
 |[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/)|GET| Returns a high-level overview of a specific recipient, given its id |
@@ -172,6 +173,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/search/spending_by_category/funding_subagency/](/api/v2/search/spending_by_category/funding_subagency/)|POST| Returns data that is grouped in preset units to support the Spending by Funding Subgency data visualizations on USAspending.gov's Advanced Search page |
 |[/api/v2/search/spending_by_category/naics/](/api/v2/search/spending_by_category/naics/)|POST| Returns data that is grouped in preset units to support the Spending by NAICS data visualizations on USAspending.gov's Advanced Search page |
 |[/api/v2/search/spending_by_category/psc/](/api/v2/search/spending_by_category/psc/)|POST| Returns data that is grouped in preset units to support the Spending by PSC data visualizations on USAspending.gov's Advanced Search page |
+|[/api/v2/search/spending_by_category/recipient](/api/v2/search/spending_by_category/recipient)|POST| Returns data that is grouped in preset units to support the Spending by Recipient data visualizations on USAspending.gov's Advanced Search page |
 |[/api/v2/search/spending_by_category/recipient_duns/](/api/v2/search/spending_by_category/recipient_duns/)|POST| Returns data that is grouped in preset units to support the Spending by Recipient DUNS data visualizations on USAspending.gov's Advanced Search page |
 |[/api/v2/search/spending_by_category/state_territory/](/api/v2/search/spending_by_category/state_territory/)|POST| Returns data that is grouped in preset units to support the Spending by State Territory data visualizations on USAspending.gov's Recipient Profile page |
 |[/api/v2/search/spending_by_geography/](/api/v2/search/spending_by_geography/)|POST| Returns Spending by state code, county code, or congressional district code |

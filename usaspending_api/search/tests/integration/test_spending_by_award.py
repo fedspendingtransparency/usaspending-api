@@ -64,7 +64,7 @@ def test_spending_by_award_subaward_success(client, spending_by_award_test_data)
         "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1003",
         "prime_award_internal_id": 3,
         "internal_id": "66666",
-        "prime_award_recipient_id": "28aae030-b4b4-4494-8a75-3356208469cf-R",
+        "prime_award_recipient_id": "41874914-2c27-813b-1505-df94f35b42dc-R",
         "recipient_id": None,
         "prime_award_generated_internal_id": "CONT_AWD_TESTING_3",
     }
@@ -79,7 +79,7 @@ def test_spending_by_award_subaward_success(client, spending_by_award_test_data)
         "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1002",
         "prime_award_internal_id": 2,
         "internal_id": "33333",
-        "prime_award_recipient_id": "180bddfc-67f0-42d6-8279-a014d1062d65-R",
+        "prime_award_recipient_id": "0c324830-6283-38d3-d52e-00a71847d92d-R",
         "recipient_id": None,
         "prime_award_generated_internal_id": "CONT_AWD_TESTING_2",
     }
@@ -604,12 +604,13 @@ def _test_correct_response_for_award_type_codes(client):
         ),
     )
     expected_result = [
+        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
         {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
         {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 3
+    assert len(resp.json().get("results")) == 4
     assert resp.json().get("results") == expected_result, "Award Type Codes filter does not match expected result"
 
 
@@ -662,9 +663,12 @@ def _test_correct_response_for_tas_components(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+    ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 1
+    assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "TAS Codes filter does not match expected result"
 
 
@@ -804,9 +808,10 @@ def _test_correct_response_for_award_amounts(client):
     expected_result = [
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
         {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
+        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 2
+    assert len(resp.json().get("results")) == 3
     assert resp.json().get("results") == expected_result, "Award Amounts filter does not match expected result"
 
 
@@ -1165,7 +1170,7 @@ def _test_correct_response_for_recipient_id(client):
             {
                 "filters": {
                     "award_type_codes": ["02", "03", "04", "05"],
-                    "recipient_id": "bb7d6b0b-f890-4cec-a8ae-f777c8f5c3a9",
+                    "recipient_id": "51c7c0ad-a793-de3f-72ba-be5c2895a9ca",
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -1191,7 +1196,7 @@ def _test_correct_response_for_def_codes(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "def_codes": ["L"],
+                    "def_codes": ["L", "Q"],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -1203,9 +1208,12 @@ def _test_correct_response_for_def_codes(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+    ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 1
+    assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
 
     resp = client.post(
@@ -1359,9 +1367,10 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
     expected_result = [
         {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
         {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
+        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 2
+    assert len(resp.json().get("results")) == 3
     assert resp.json().get("results") == expected_result, "Award Type Code filter does not match expected result"
 
 
