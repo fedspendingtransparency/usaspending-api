@@ -153,6 +153,8 @@ class RecipientLookup(models.Model):
         indexes = [
             PartialIndex(fields=["duns"], unique=False, where=PQ(duns__isnull=False)),
             PartialIndex(fields=["parent_duns"], unique=False, where=PQ(parent_duns__isnull=False)),
+            PartialIndex(fields=["uei"], unique=True, where=PQ(uei__isnull=False)),
+            PartialIndex(fields=["parent_uei"], unique=False, where=PQ(parent_uei__isnull=False)),
         ]
 
 

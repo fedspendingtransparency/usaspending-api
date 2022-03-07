@@ -8,7 +8,7 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   uei,
   source,
   parent_duns,
-  parent_legal_business_name
+  parent_uei
 )
 SELECT
   DISTINCT ON (parent_recipient_hash)
@@ -19,7 +19,7 @@ SELECT
   ultimate_parent_uei as uei,
   CONCAT(source, '-parent'),
   ultimate_parent_unique_ide AS parent_duns,
-  UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name
+  ultimate_parent_uei AS parent_uei
 FROM public.temporary_transaction_recipients_view
 WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NULL
 ORDER BY parent_recipient_hash, action_date DESC, is_fpds, transaction_unique_id

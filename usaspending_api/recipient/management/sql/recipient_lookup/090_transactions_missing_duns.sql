@@ -33,7 +33,7 @@ SELECT
   country_code,
   ultimate_parent_unique_ide,
   ultimate_parent_legal_enti,
-  ultimate_parent_uei AS uei,
+  ultimate_parent_uei AS parent_uei,
   state,
   zip4,
   zip5,
