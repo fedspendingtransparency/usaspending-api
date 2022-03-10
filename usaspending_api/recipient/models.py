@@ -84,6 +84,7 @@ class RecipientProfile(models.Model):
     recipient_hash = models.UUIDField(null=True, db_index=True)
     recipient_unique_id = models.TextField(null=True, db_index=True)
     uei = models.TextField(null=True, db_index=True)
+    parent_uei = models.TextField(null=True, db_index=True )
     recipient_name = models.TextField(null=True, db_index=True)
     recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
     award_types = ArrayField(base_field=models.TextField(), default=list, size=None)
