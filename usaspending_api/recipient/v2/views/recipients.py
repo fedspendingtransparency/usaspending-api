@@ -397,10 +397,9 @@ class RecipientOverView(APIView):
 @method_decorator(deprecated, name="get")
 class RecipientOverViewDuns(RecipientOverView):
     """
-    Deprecated: This endpoint returns a high-level overview of a specific recipient, given its id.
+    <em>Deprecated: Please see <a href="../recipient/recipient_id">this endpoint</a> instead.</em>
 
 
-    Please use the following endpoint instead: /api/v2/recipient/recipient_id
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md"
