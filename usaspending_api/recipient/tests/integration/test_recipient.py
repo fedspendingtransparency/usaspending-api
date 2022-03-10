@@ -115,13 +115,13 @@ TEST_RECIPIENT_LOOKUPS = {
     "cd6ac2ed-8d2d-2c2e-4934-710eb82100f3": {
         "recipient_hash": "cd6ac2ed-8d2d-2c2e-4934-710eb82100f3",
         "duns": None,
-        "uei": "",
+        "uei": None,
         "legal_business_name": "OTHER RECIPIENT",
     },
     "6dffe44a-554c-26b4-b7ef-44db50083732": {
         "recipient_hash": "6dffe44a-554c-26b4-b7ef-44db50083732",
         "duns": None,
-        "uei": "",
+        "uei": None,
         "legal_business_name": "MULTIPLE RECIPIENTS",
     },
 }
