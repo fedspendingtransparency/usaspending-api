@@ -127,7 +127,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/recipient/count/](/api/v2/recipient/count/)|POST| Returns the count of recipents for the given filters |
 |[/api/v2/recipient/duns/<HASH_VALUE\>/](/api/v2/recipient/duns/99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/)|GET| Returns a high-level overview of a specific recipient, given its id |
 |[/api/v2/recipient/duns/](/api/v2/recipient/duns/)|POST| Returns a list of recipients in USAspending DB |
-|[/api/v2/recipient/recipient_id/](/api/v2/recipient/recipient_id)|POST| Returns an individual recipient in USAspending DB |
+|[/api/v2/recipient/<RECIPIENT_ID\>/](/api/v2/recipient/recipient_id)|GET| Returns an individual recipient in USAspending DB |
 |[/api/v2/recipient/state/<FIPS\>/](/api/v2/recipient/state/51/)|GET| Returns basic information about the specified state |
 |[/api/v2/recipient/state/](/api/v2/recipient/state/)|GET| Returns basic information about the specified state |
 |[/api/v2/recipient/state/awards/<FIPS\>/](/api/v2/recipient/state/awards/51/)|GET| Returns award breakdown based on FIPS |
