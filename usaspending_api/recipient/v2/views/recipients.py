@@ -100,6 +100,7 @@ def extract_parents_from_hash(recipient_hash):
         parent = (
             RecipientLookup.objects.filter(recipient_hash=hash)
             .values("recipient_hash", "uei", "duns", "legal_business_name")
+            .order_by("-update_date")
             .first()
         )
         name, duns, uei, parent_id = None, None, None, None
