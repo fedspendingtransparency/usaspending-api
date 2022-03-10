@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Specific Recipient Duns [/api/v2/recipient/{recipient_id}/]
+# Specific Recipient Duns [/api/v2/recipient/{recipient_id}/{?year}]
 
 These endpoints are used to power USAspending.gov's recipient profile pages. This data can be used to visualize the government spending that pertains to a specific recipient.
 
