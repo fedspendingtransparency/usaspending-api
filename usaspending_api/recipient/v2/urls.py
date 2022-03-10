@@ -14,5 +14,4 @@ urlpatterns = [
     url(r"^state/awards/(?P<fips>[0-9]{,2})/$", StateAwardBreakdownViewSet.as_view()),
     url(r"^state/$", ListStates.as_view()),
     url(r"^(?P<recipient_id>.*)/$", RecipientOverView.as_view()),
-
 ]
