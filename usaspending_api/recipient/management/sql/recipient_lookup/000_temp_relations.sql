@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS public.temporary_restock_recipient_lookup;
 DROP MATERIALIZED VIEW IF EXISTS public.temporary_transaction_recipients_view;
 
 CREATE TABLE public.temporary_restock_recipient_lookup AS SELECT * FROM recipient_lookup limit 0;
-
+ALTER TABLE public.temporary_restock_recipient_lookup ADD COLUMN duns_recipient_hash uuid;
 CREATE UNIQUE INDEX recipient_lookup_new_recipient_hash ON public.temporary_restock_recipient_lookup(recipient_hash);
 
 CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
@@ -14,16 +14,28 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
     tn.is_fpds,
     MD5(UPPER(
       CASE
-        WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
         WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, fabs.uei))
+        WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
         ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) END
     ))::uuid AS recipient_hash,
     MD5(UPPER(
       CASE
-        WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide))
-        WHEN COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_unique_ide) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei))
+        WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
+        WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, fabs.uei))
+        ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) END
+    ))::uuid AS duns_recipient_hash,
+    MD5(UPPER(
+      CASE
+        WHEN COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei))
+        WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT  NULL THEN CONCAT('duns-', COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide))
         ELSE CONCAT('name-', COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti)) END
     ))::uuid AS parent_recipient_hash,
+    MD5(UPPER(
+      CASE
+        WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide))
+        WHEN COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei))
+        ELSE CONCAT('name-', COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti)) END
+    ))::uuid AS duns_parent_recipient_hash,
     COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS awardee_or_recipient_uniqu,
     COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) AS uei,
     COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) AS ultimate_parent_uei,
@@ -53,8 +65,8 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
   ORDER BY tn.action_date DESC
 );
 
-CREATE INDEX idx_temporary_restock_recipient_view ON public.temporary_transaction_recipients_view (awardee_or_recipient_uniqu, awardee_or_recipient_legal);
+CREATE INDEX idx_temporary_restock_recipient_view ON public.temporary_transaction_recipients_view (uei, awardee_or_recipient_uniqu, awardee_or_recipient_legal);
 
-CREATE INDEX idx_temporary_restock_parent_recipient_view ON public.temporary_transaction_recipients_view (ultimate_parent_unique_ide, ultimate_parent_legal_enti);
+CREATE INDEX idx_temporary_restock_parent_recipient_view ON public.temporary_transaction_recipients_view (ultimate_parent_uei, ultimate_parent_unique_ide, ultimate_parent_legal_enti);
 
 ANALYZE public.temporary_transaction_recipients_view;

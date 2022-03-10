@@ -1,9 +1,11 @@
 import json
-
 from decimal import Decimal
-from django.db.models import QuerySet, F, Case, When, Value, IntegerField
 from typing import List
 
+from django.db.models import QuerySet, F, Case, When, Value, IntegerField
+from django.utils.decorators import method_decorator
+
+from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
@@ -13,14 +15,13 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_cate
 )
 
 
-class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
+class RecipientViewSet(AbstractSpendingByCategoryViewSet):
     """
-    This route takes award filters and returns spending by Recipient DUNS.
+    This route takes award filters and returns spending by Recipient UEI.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient_duns.md"
-
-    category = Category(name="recipient_duns", agg_key="recipient_agg_key")
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient.md"
+    category = Category(name="recipient", agg_key="recipient_agg_key")
 
     @staticmethod
     def _get_recipient_id(row: list) -> str:
@@ -72,7 +73,7 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "recipient_id": recipient_info["hash_with_level"] or None,
                     "name": recipient_info["name"] or None,
-                    "code": recipient_info["unique_id"] or "DUNS Number not provided",
+                    "code": recipient_info["unique_id"] or "Recipient not provided",
                 }
             )
 
@@ -94,3 +95,15 @@ class RecipientDunsViewSet(AbstractSpendingByCategoryViewSet):
                 del row[key]
 
         return query_results
+
+
+@method_decorator(deprecated, name="post")
+class RecipientDunsViewSet(RecipientViewSet):
+    """
+    <em>Deprecated: Please see <a href="../recipient">this endpoint</a> instead.</em>
+
+    This route takes award filters and returns spending by Recipient DUNS.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient_duns.md"
+    category = Category(name="recipient_duns", agg_key="recipient_agg_key")

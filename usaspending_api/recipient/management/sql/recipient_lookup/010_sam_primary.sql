@@ -2,6 +2,7 @@ DO $$ BEGIN RAISE NOTICE '010 Adding Recipient records from SAM'; END $$;
 
 INSERT INTO public.temporary_restock_recipient_lookup (
   recipient_hash,
+  duns_recipient_hash,
   legal_business_name,
   duns,
   uei,
@@ -14,16 +15,19 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   country_code,
   parent_duns,
   parent_legal_business_name,
+  parent_uei,
   state,
   zip4,
   zip5
 )
 SELECT
-  DISTINCT ON (awardee_or_recipient_uniqu, legal_business_name)
+  DISTINCT ON (uei, awardee_or_recipient_uniqu)
   MD5(UPPER(
-    CASE WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
-    ELSE CONCAT('uei-', uei) END
+    CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
+    ELSE CONCAT('duns-', awardee_or_recipient_uniqu) END
   ))::uuid AS recipient_hash,
+  MD5(UPPER(CONCAT('duns-', awardee_or_recipient_uniqu)
+  ))::uuid AS duns_recipient_hash,
   UPPER(legal_business_name) AS legal_business_name,
   awardee_or_recipient_uniqu AS duns,
   uei as uei,
@@ -36,10 +40,11 @@ SELECT
   country_code,
   ultimate_parent_unique_ide,
   UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name,
+  ultimate_parent_uei as parent_uei,
   state,
   zip4,
   zip AS zip5
 FROM duns
-WHERE awardee_or_recipient_uniqu IS NOT NULL AND legal_business_name IS NOT NULL
-ORDER BY awardee_or_recipient_uniqu, legal_business_name, update_date DESC
+WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NOT NULL
+ORDER BY uei, awardee_or_recipient_uniqu, update_date DESC
 ON CONFLICT (recipient_hash) DO NOTHING;

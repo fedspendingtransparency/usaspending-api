@@ -13,9 +13,11 @@ INSERT INTO public.temporary_restock_recipient_lookup (
   country_code,
   parent_duns,
   parent_legal_business_name,
+  parent_uei,
   state,
   zip4,
-  zip5
+  zip5,
+  duns_recipient_hash
 )
 SELECT
   DISTINCT ON (recipient_hash)
@@ -31,10 +33,12 @@ SELECT
   country_code,
   ultimate_parent_unique_ide,
   ultimate_parent_legal_enti,
+  ultimate_parent_uei AS parent_uei,
   state,
   zip4,
-  zip5
+  zip5,
+  duns_recipient_hash
 FROM temporary_transaction_recipients_view
-WHERE awardee_or_recipient_uniqu IS NOT NULL AND awardee_or_recipient_legal IS NOT NULL
+WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND awardee_or_recipient_legal IS NOT NULL
 ORDER BY recipient_hash, action_date DESC, is_fpds, transaction_unique_id
 ON CONFLICT (recipient_hash) DO NOTHING;

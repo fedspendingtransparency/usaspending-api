@@ -68,9 +68,7 @@ def delete_stale_fpds(detached_award_procurement_ids):
         cursor.execute(f"delete from transaction_fpds where transaction_id in ({txn_id_str}) returning transaction_id")
         deleted_fpds = set(cursor.fetchall())
 
-        cursor.execute(
-            f"delete from transaction_search where transaction_id in ({txn_id_str}) returning transaction_id"
-        )
+        cursor.execute(f"delete from transaction_search where transaction_id in ({txn_id_str})")
 
         cursor.execute(f"delete from transaction_normalized where id in ({txn_id_str}) returning id")
         deleted_transactions = set(cursor.fetchall())
