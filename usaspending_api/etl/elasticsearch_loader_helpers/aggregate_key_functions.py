@@ -13,7 +13,7 @@ def award_recipient_agg_key(record: dict) -> str:
         return json.dumps(
             {
                 "name": record["recipient_name"],
-                "unique_id": record["recipient_unique_id"],
+                "duns": record["recipient_unique_id"],
                 "uei": record["recipient_uei"],
                 "hash": "",
                 "levels": "",
@@ -22,7 +22,7 @@ def award_recipient_agg_key(record: dict) -> str:
     return json.dumps(
         {
             "name": record["recipient_name"],
-            "unique_id": record["recipient_unique_id"],
+            "duns": record["recipient_unique_id"],
             "uei": record["recipient_uei"],
             "hash": str(record["recipient_hash"]),
             "levels": record["recipient_levels"],
@@ -36,7 +36,7 @@ def transaction_recipient_agg_key(record: dict) -> str:
         return json.dumps(
             {
                 "name": record["recipient_name"],
-                "unique_id": record["recipient_unique_id"],
+                "duns": record["recipient_unique_id"],
                 "uei": record["recipient_uei"],
                 "hash_with_level": "",
             }
@@ -44,7 +44,7 @@ def transaction_recipient_agg_key(record: dict) -> str:
     return json.dumps(
         {
             "name": record["recipient_name"],
-            "unique_id": record["recipient_unique_id"],
+            "duns": record["recipient_unique_id"],
             "uei": record["recipient_uei"],
             "hash_with_level": f"{record['recipient_hash']}-{_return_one_level(record['recipient_levels'])}",
         }

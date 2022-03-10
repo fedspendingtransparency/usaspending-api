@@ -135,7 +135,11 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
-        "recipient_affiliations": ["000000001", "000000002", "000000005"],
+        "recipient_affiliations": [
+            "a52a7544-829b-c925-e1ba-d04d3171c09a",
+            "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5",
+            "b97e951e-e28c-ffda-8eae-3a840170edc8",
+        ],
         "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 1 - lists itself as both parent and child
@@ -144,7 +148,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
-        "recipient_affiliations": ["000000001"],
+        "recipient_affiliations": ["a52a7544-829b-c925-e1ba-d04d3171c09a"],
         "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 2 - different from parent duns
@@ -153,7 +157,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_hash": "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5",
         "recipient_unique_id": "000000002",
         "recipient_name": "CHILD RECIPIENT",
-        "recipient_affiliations": ["000000001"],
+        "recipient_affiliations": ["a52a7544-829b-c925-e1ba-d04d3171c09a"],
         "uei": "BBBBBBBBBBBB",
     },
     # Other Recipient

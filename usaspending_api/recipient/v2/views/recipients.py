@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def validate_recipient_id(recipient_id):
-    """Validate [duns+name]-[recipient_type] hash
+    """Validate [uei/duns/name]-[recipient_type] hash
 
     Args:
         recipient_id: str of the hash+duns to look up
@@ -66,15 +66,15 @@ def extract_duns_uei_name_from_hash(recipient_hash):
     Returns:
         duns and name
     """
-    name_duns_qs = (
+    duns_uei_name_qs = (
         RecipientLookup.objects.filter(recipient_hash=recipient_hash)
         .values("duns", "uei", "legal_business_name")
         .first()
     )
-    if not name_duns_qs:
+    if not duns_uei_name_qs:
         return None, None, None
     else:
-        return name_duns_qs["duns"], name_duns_qs["uei"], name_duns_qs["legal_business_name"]
+        return duns_uei_name_qs["duns"], duns_uei_name_qs["uei"], duns_uei_name_qs["legal_business_name"]
 
 
 def extract_parents_from_hash(recipient_hash):
@@ -96,10 +96,10 @@ def extract_parents_from_hash(recipient_hash):
         .first()
     )
 
-    for duns in affiliations["recipient_affiliations"]:
+    for hash in affiliations["recipient_affiliations"]:
         parent = (
-            RecipientLookup.objects.filter(duns=duns)
-            .values("recipient_hash", "duns", "uei", "legal_business_name")
+            RecipientLookup.objects.filter(recipient_hash=hash)
+            .values("recipient_hash", "uei", "duns", "legal_business_name")
             .first()
         )
         name, duns, uei, parent_id = None, None, None, None
@@ -297,7 +297,7 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
             hash_with_level = recipient_info.get("hash_with_level") or None
             result = {
                 "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
-                "recipient_unique_id": recipient_info.get("unique_id"),
+                "recipient_unique_id": recipient_info.get("duns"),
                 "uei": recipient_info.get("uei"),
                 "recipient_name": recipient_info.get("name"),
             }
@@ -396,7 +396,7 @@ def extract_hash_from_duns_or_uei(duns_or_uei):
     if len(duns_or_uei) == 9:
         qs_hash = RecipientLookup.objects.filter(duns=duns_or_uei).values("recipient_hash").first()
     if len(duns_or_uei) == 12:
-        qs_hash = RecipientLookup.objects.filter(uei=duns_or_uei).values("recipient_hash").first()
+        qs_hash = RecipientLookup.objects.filter(uei=duns_or_uei.upper()).values("recipient_hash").first()
 
     return qs_hash["recipient_hash"] if qs_hash else None
 
@@ -440,15 +440,17 @@ class ChildRecipients(APIView):
             )
             if not child_response:
                 raise InvalidParameterException("Recipient is not listed as a parent: '{}'.".format(duns_or_uei))
-            child_recipient_duns = child_response[0]["recipient_affiliations"]
+            child_recipient_hashes = child_response[0]["recipient_affiliations"]
 
             # Determine which child recipients still need data (not in results from specific year)
-            found_duns = [result["duns"] for result in results]
-            missing_child_duns = [child_duns for child_duns in child_recipient_duns if child_duns not in found_duns]
+            found_hashes = [result["recipient_hash"] for result in results]
+            missing_child_hashes = [
+                child_hash for child_hash in child_recipient_hashes if child_hash not in found_hashes
+            ]
 
             # Gather their data points with Recipient Profile
             missing_child_qs = RecipientProfile.objects.filter(
-                recipient_unique_id__in=missing_child_duns, recipient_level="C"
+                recipient_hash__in=missing_child_hashes, recipient_level="C"
             ).values("recipient_hash", "recipient_name", "recipient_unique_id", "uei")
 
             for child_recipient in list(missing_child_qs):
