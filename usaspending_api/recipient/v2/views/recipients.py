@@ -397,7 +397,7 @@ class RecipientOverView(APIView):
 @method_decorator(deprecated, name="get")
 class RecipientOverViewDuns(RecipientOverView):
     """
-    <em>Deprecated: Please see <a href="../../99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/">this endpoint</a> instead.</em>
+    <em>Deprecated: Please see <a href="/api/v2/recipient/99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/">this endpoint</a> instead.</em>
 
 
     """
