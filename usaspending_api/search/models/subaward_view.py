@@ -37,9 +37,11 @@ class SubawardView(models.Model):
     funding_subtier_agency_abbreviation = models.TextField()
 
     recipient_unique_id = models.TextField()
+    recipient_uei = models.TextField()
     recipient_name = models.TextField()
     dba_name = models.TextField()
     parent_recipient_unique_id = models.TextField()
+    parent_recipient_uei = models.TextField()
     parent_recipient_name = models.TextField()
     business_type_code = models.TextField()
     business_type_description = models.TextField()
