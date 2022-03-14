@@ -2,9 +2,11 @@ import copy
 import logging
 
 from django.db.models import F, Q
+from django.utils.decorators import method_decorator
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -12,8 +14,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.utils import update_model_in_list
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.recipient.v2.lookups import AWARD_TYPES, SPECIAL_CASES
-from usaspending_api.common.api_versioning import deprecated
-from django.utils.decorators import method_decorator
 
 logger = logging.getLogger(__name__)
 
