@@ -238,7 +238,7 @@ WHERE
 --------------------------------------------------------------------------------
 -- Step 5, Populating child recipient list in parents
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 5: Populating children list in parent records'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 5: Populating child recipient list in parent records'; END $$;
 
 WITH parent_recipients AS (
   SELECT
