@@ -59,10 +59,18 @@ ACTIVITY_SQL = SQL(
             ca.type not like 'IDV%'
             {hide_edges_awarded_amount}
         left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
-        left outer join recipient_lookup rl on rl.duns = tf.awardee_or_recipient_uniqu
-        left outer join recipient_profile rp on
+        left outer join recipient_lookup rl on (
+            (rl.uei is not null and rl.uei = tf.awardee_or_recipient_uei)
+            OR (rl.duns is not null and rl.duns = tf.awardee_or_recipient_uniqu)
+
+        )
+        left outer join recipient_profile rp on (
             rp.recipient_hash = rl.recipient_hash and
-            rp.recipient_level = case when tf.ultimate_parent_unique_ide is null then 'R' else 'C' end
+            rp.recipient_level = case
+                when coalesce(tf.ultimate_parent_uei, tf.ultimate_parent_unique_ide) is null
+                then 'R' else 'C'
+            end
+        )
         left outer join agency a on a.id = ca.awarding_agency_id
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
     {hide_edges_end_date}

@@ -1,4 +1,5 @@
 import copy
+import json
 
 from sys import maxsize
 from django.conf import settings
@@ -33,13 +34,11 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     LOAN_SOURCE_LOOKUP,
 )
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
-from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
-from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
@@ -344,6 +343,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def construct_es_response_for_prime_awards(self, response) -> dict:
         results = []
+        should_return_display_award_id = "Award ID" in self.fields
+        should_return_recipient_id = "recipient_id" in self.fields
         for res in response:
             hit = res.to_dict()
             row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
@@ -394,14 +395,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("def_codes"):
                 if self.filters.get("def_codes"):
                     row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
-            row["generated_internal_id"] = hit["generated_unique_award_id"]
-            row["recipient_id"] = hit.get("recipient_unique_id")
-            row["parent_recipient_unique_id"] = hit.get("parent_recipient_unique_id")
 
-            if "Award ID" in self.fields:
+            row["generated_internal_id"] = hit["generated_unique_award_id"]
+
+            if should_return_display_award_id:
                 row["Award ID"] = hit["display_award_id"]
-            row = self.append_recipient_hash_level(row)
-            row.pop("parent_recipient_unique_id")
+
+            if should_return_recipient_id:
+                row["recipient_id"] = self.get_recipient_hash_with_level(hit)
+
             results.append(row)
 
         last_record_unique_id = None
@@ -436,36 +438,21 @@ class SpendingByAwardVisualizationViewSet(APIView):
             ],
         }
 
-    def append_recipient_hash_level(self, result) -> dict:
+    def get_recipient_hash_with_level(self, award_doc):
+        recipient_agg_key = json.loads(award_doc.get("recipient_agg_key"))
+        recipient_hash = recipient_agg_key.get("hash")
+        recipient_levels = recipient_agg_key.get("levels", [])
+        if recipient_hash is None or len(recipient_levels) == 0:
+            return None
 
-        if "recipient_id" not in self.fields:
-            result.pop("recipient_id")
-            return result
-        recipient_id = result.get("recipient_id")
-        parent_id = result.get("parent_recipient_unique_id")
-        if recipient_id:
-            special_cases = ", ".join([f"'{case}'" for case in SPECIAL_CASES])
-            sql = """(
-                    select
-                        rp.recipient_hash || '-' ||  rp.recipient_level as hash
-                    from
-                        recipient_profile rp
-                        inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
-                    where
-                        rl.duns = {recipient_id} and
-                        rp.recipient_level = case
-                            when {parent_recipient_unique_id} is null then 'R'
-                            else 'C'
-                        end and
-                    rp.recipient_name not in ({special_cases})
-            )""".format(
-                recipient_id=f"'{recipient_id}'",
-                parent_recipient_unique_id=f"'{parent_id}'" if parent_id else "null",
-                special_cases=special_cases,
-            )
-            row = execute_sql_to_ordered_dictionary(sql)
-            if len(row) > 0:
-                result["recipient_id"] = row[0].get("hash")
-            else:
-                result["recipient_id"] = None
-        return result
+        if "R" in recipient_levels:
+            recipient_level = "R"
+        elif "C" in recipient_levels:
+            recipient_level = "C"
+        elif "P" in recipient_levels:
+            recipient_level = "P"
+        else:
+            # This should never occur, but added for sake of IDE warnings about creating "recipient_level"
+            raise UnprocessableEntityException(f"Invalid recipient level found: {recipient_levels}")
+
+        return f"{recipient_hash}-{recipient_level}"

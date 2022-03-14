@@ -15,11 +15,11 @@ def awards_and_transactions(db):
     mommy.make("references.SubtierAgency", subtier_code="def", **subag)
     mommy.make("references.ToptierAgency", toptier_code="abc", **subag)
 
-    duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
-    parent_recipient_lookup = {"duns": "123", "recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc"}
-    recipient_lookup = {"duns": "456", "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367"}
-    parent_recipient_profile = {"recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367", "recipient_level": "C"}
+    duns = {"awardee_or_recipient_uniqu": "123", "uei": "ABC", "legal_business_name": "Sams Club"}
+    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
+    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
+    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
+    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
     mommy.make("references.Cfda", program_number=1234)
     mommy.make("recipient.DUNS", **duns)
     mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
@@ -388,11 +388,11 @@ expected_response_idv = {
         "office_agency_name": "funding_office",
     },
     "recipient": {
-        "recipient_hash": "f989e299-1f50-2600-f2f7-b6a45d11f367-C",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab-C",
         "recipient_name": "John's Pizza",
         "recipient_uei": "DEF",
         "recipient_unique_id": "456",
-        "parent_recipient_hash": "8ec6b128-58cf-3ee5-80bb-e749381dfcdc-P",
+        "parent_recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e-P",
         "parent_recipient_name": "Dave's Pizza LLC",
         "parent_recipient_uei": "ABC",
         "parent_recipient_unique_id": "123",

@@ -5,11 +5,20 @@ from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
-def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_unique_id, is_parent_recipient=False):
+def obtain_recipient_uri(
+    recipient_name,
+    recipient_uei,
+    parent_recipient_uei,
+    recipient_unique_id,
+    parent_recipient_unique_id,
+    is_parent_recipient=False,
+):
     """Return a valid string to be used for api/v2/recipient/duns/<recipient-hash>/ (or None)
 
     Keyword Arguments:
     recipient_name -- Legal Entity Name from the record
+    recipient_uei -- UEI from the record
+    parent_recipient_uei -- parent UEI from the record
     recipient_unique_id -- DUNS from the record
     parent_recipient_unique_id -- parent DUNS from the record
     is_parent_recipient -- boolean flag to force the recipient level to be "P" (default False)
@@ -19,19 +28,29 @@ def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_u
     Return example string: 11fcdf15-3490-cdad-3df4-3b410f3d9b20-C
 
     """
-    if (is_parent_recipient and not recipient_unique_id) or not (recipient_unique_id or recipient_name):
-        return None
+    if recipient_uei is None and recipient_unique_id is None:
+        # Parent recipient requires a unique identifier (UEI or DUNS)
+        if is_parent_recipient:
+            return None
+        # When all components of the Recipient Hash are NULL (UEI, DUNS, or Name)
+        elif recipient_name is None:
+            return None
 
-    if recipient_unique_id:
-        recipient_hash = fetch_recipient_hash_using_duns(recipient_unique_id)
+    if recipient_uei is not None:
+        recipient = RecipientProfile.objects.filter(uei=recipient_uei).values("recipient_hash").first()
+    elif recipient_unique_id is not None:
+        recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
     else:
-        recipient_hash = None
+        recipient = None
+    recipient_hash = recipient.get("recipient_hash") if recipient else None
 
     if recipient_hash is None:
-        recipient_hash = generate_missing_recipient_hash(recipient_unique_id, recipient_name)
+        recipient_hash = generate_missing_recipient_hash(recipient_uei, recipient_unique_id, recipient_name)
 
     recipient_level = obtain_recipient_level(
         {
+            "uei": recipient_uei,
+            "parent_uei": parent_recipient_uei,
             "duns": recipient_unique_id,
             "parent_duns": parent_recipient_unique_id,
             "is_parent_recipient": is_parent_recipient,
@@ -45,29 +64,27 @@ def obtain_recipient_uri(recipient_name, recipient_unique_id, parent_recipient_u
     return None
 
 
-def generate_missing_recipient_hash(recipient_unique_id, recipient_name):
+def generate_missing_recipient_hash(recipient_uei, recipient_unique_id, recipient_name):
     # SQL: MD5(UPPER(
     #   CASE
+    #     WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
     #     WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
     #     ELSE CONCAT('name-', awardee_or_recipient_legal) END
     # ))::uuid AS recipient_hash,
     import hashlib
     import uuid
 
-    if recipient_unique_id is None:
-        prefix = "name"
-        value = recipient_name
-    else:
+    if recipient_uei is not None:
+        prefix = "uei"
+        value = recipient_uei
+    elif recipient_unique_id is not None:
         prefix = "duns"
         value = recipient_unique_id
+    else:
+        prefix = "name"
+        value = recipient_name
 
     return str(uuid.UUID(hashlib.md5(f"{prefix}-{value}".upper().encode("utf-8")).hexdigest()))
-
-
-def fetch_recipient_hash_using_duns(recipient_unique_id):
-    recipient = RecipientLookup.objects.filter(duns=recipient_unique_id).values("recipient_hash").first()
-
-    return recipient["recipient_hash"] if recipient else None
 
 
 def obtain_recipient_level(recipient_record: dict) -> str:
@@ -86,11 +103,11 @@ def recipient_is_parent(recipient_record: dict) -> bool:
 
 
 def recipient_is_standalone(recipient_record: dict) -> bool:
-    return recipient_record["parent_duns"] is None
+    return recipient_record["parent_uei"] is None and recipient_record["parent_duns"] is None
 
 
 def recipient_is_child(recipient_record: dict) -> bool:
-    return recipient_record["parent_duns"] is not None
+    return recipient_record["parent_uei"] is not None or recipient_record["parent_duns"] is not None
 
 
 def combine_recipient_hash_and_level(recipient_hash, recipient_level):
