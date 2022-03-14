@@ -179,12 +179,12 @@ def annotate_prime_award_recipient_id(field_name, queryset):
                 rp.recipient_hash || '-' ||  rp.recipient_level
             from
                 broker_subaward bs
-                inner join recipient_lookup rl on rl.duns = bs.awardee_or_recipient_uniqu
+                inner join recipient_lookup rl on (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
                 inner join recipient_profile rp on rp.recipient_hash = rl.recipient_hash
             where
                 bs.id = {outer_table}.subaward_id and
                 rp.recipient_level = case
-                    when bs.ultimate_parent_unique_ide is null or bs.ultimate_parent_unique_ide = '' then 'R'
+                    when ((bs.ultimate_parent_uei is null or bs.ultimate_parent_uei = '') and (bs.ultimate_parent_unique_ide is null or bs.ultimate_parent_unique_ide = '')) then 'R'
                     else 'C'
                 end and
                 rp.recipient_name not in {special_cases}
