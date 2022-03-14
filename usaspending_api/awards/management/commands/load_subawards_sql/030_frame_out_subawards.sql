@@ -90,7 +90,7 @@ select
       else null
     end,                                                    -- fain
     sub_ultimate_parent_unique_ide,                         -- parent_recipient_unique_id
-    sub_ultimate_parent_uei,                                -- parent_recipient_uei
+    upper(sub_ultimate_parent_uei),                         -- parent_recipient_uei
     case
         when subaward_type = 'sub-contract' then award_id
         else null
