@@ -157,36 +157,6 @@ def _annotate_recipient_id(field_name, queryset, annotation_sql):
     return queryset.annotate(**{field_name: RecipientId()})
 
 
-def annotate_recipient_id(field_name, queryset):
-    return _annotate_recipient_id(
-        field_name,
-        queryset,
-        """(
-            select
-                rp.recipient_hash || '-' ||  rp.recipient_level
-            from
-                recipient_profile rp
-                inner join recipient_lookup rl on rl.recipient_hash = rp.recipient_hash
-            where
-                (
-                    (
-                        {outer_table}.recipient_unique_id is null
-                        and rl.duns is null
-                        and {outer_table}.recipient_name = rl.legal_business_name
-                    ) or (
-                        {outer_table}.recipient_unique_id is not null
-                        and rl.duns is not null
-                        and rl.duns = {outer_table}.recipient_unique_id
-                    )
-                )
-                and rp.recipient_level = case
-                    when {outer_table}.parent_recipient_unique_id is null then 'R'
-                    else 'C' end
-                and rp.recipient_name not in {special_cases}
-        )""",
-    )
-
-
 def annotate_prime_award_recipient_id(field_name, queryset):
     return _annotate_recipient_id(
         field_name,
