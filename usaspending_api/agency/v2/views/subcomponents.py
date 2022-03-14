@@ -125,13 +125,11 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             Q(submission__reporting_fiscal_year=self.fiscal_year),
             Q(submission__reporting_fiscal_period=latest[0]["max_fiscal_period"]),
         ]
-
-        topcode_exclusion_list =["1125","047","420","075"]
-
+        
         bureau_info_subquery = Subquery(
             BureauTitleLookup.objects.filter(
                 federal_account_code=OuterRef(f"{treasury_account_keyword}__federal_account__federal_account_code")
-            ).exclude(federal_account_code__in=topcode_exclusion_list)
+            ).exclude(federal_account_code__in=True).exclude(federal_account_code__isnull='')
             .annotate(
                 bureau_info=Case(
                     When(
