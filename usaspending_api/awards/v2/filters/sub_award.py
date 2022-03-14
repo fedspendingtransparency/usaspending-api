@@ -180,7 +180,11 @@ def subaward_filter(filters, for_downloads=False):
                 # recipient_name_ts_vector is a postgres TS_Vector
                 filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
                 if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
+                    print("DUNS")
                     filter_obj |= Q(recipient_unique_id=upper_recipient_string)
+                elif len(upper_recipient_string) == 12:
+                    print("UEI")
+                    filter_obj |= Q(recipient_uei=upper_recipient_string)
                 return filter_obj
 
             filter_obj = Q()

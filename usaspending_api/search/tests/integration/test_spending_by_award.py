@@ -1429,4 +1429,52 @@ def test_uei_keyword_filter(client, monkeypatch, spending_by_award_test_data, el
     expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
+    assert resp.json().get("results") == expected_result, "UEI filter does not match expected result"
+
+
+@pytest.mark.django_db
+def test_uei_recipient_filter_subaward(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2022-09-30"}],
+                    "award_type_codes": [
+                        "A",
+                        "B",
+                        "C",
+                        "D",
+                        "IDV_A",
+                        "IDV_B",
+                        "IDV_B_A",
+                        "IDV_B_B",
+                        "IDV_B_C",
+                        "IDV_C",
+                        "IDV_D",
+                        "IDV_E",
+                    ],
+                    "recipient_search_text": ["uei_10010001"],
+                },
+                "fields": ["Sub-Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Sub-Award ID",
+                "order": "desc",
+                "subawards": True,
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "UEI Recipient subaward filter does not match expected result"
