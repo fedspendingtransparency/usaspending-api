@@ -40,8 +40,10 @@
     "  funding_subtier_agency_abbreviation,",
     "",
     "  recipient_unique_id,",
+    "  recipient_uei,",
     "  dba_name,",
     "  parent_recipient_unique_id,",
+    "  parent_recipient_uei,",
     "  UPPER(COALESCE(recipient_lookup.recipient_name, sub.recipient_name)) AS recipient_name,",
     "  UPPER(COALESCE(parent_recipient_lookup.recipient_name, parent_recipient_name)) AS parent_recipient_name,",
     "  business_type_code,",
@@ -175,9 +177,17 @@
       "where": "recipient_unique_id IS NOT NULL",
       "columns": [{"name": "recipient_unique_id"}]
     }, {
+      "name": "recipient_uei",
+      "where": "recipient_uei IS NOT NULL",
+      "columns": [{"name": "recipient_uei"}]
+    }, {
       "name": "parent_recipient_unique_id",
       "where": "parent_recipient_unique_id IS NOT NULL",
       "columns": [{"name": "parent_recipient_unique_id"}]
+    }, {
+      "name": "parent_recipient_uei",
+      "where": "parent_recipient_uei IS NOT NULL",
+      "columns": [{"name": "parent_recipient_uei"}]
     }, {
       "name": "action_date",
       "columns": [{"name": "action_date", "order": "DESC NULLS LAST"}]

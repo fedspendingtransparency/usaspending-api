@@ -28,6 +28,7 @@ insert into temp_load_subawards_subaward (
     internal_id,
     fain,
     parent_recipient_unique_id,
+    parent_recipient_uei,
     piid,
     pop_congressional_code,
     pop_country_code,
@@ -41,6 +42,7 @@ insert into temp_load_subawards_subaward (
     recipient_location_zip5,
     recipient_name,
     recipient_unique_id,
+    recipient_uei,
     pop_city_name,
     pop_state_name,
     pop_street_address,
@@ -88,6 +90,7 @@ select
       else null
     end,                                                    -- fain
     sub_ultimate_parent_unique_ide,                         -- parent_recipient_unique_id
+    upper(sub_ultimate_parent_uei),                         -- parent_recipient_uei
     case
         when subaward_type = 'sub-contract' then award_id
         else null
@@ -104,6 +107,7 @@ select
     left(coalesce(sub_legal_entity_zip, ''), 5),            -- recipient_location_zip5
     upper(sub_awardee_or_recipient_legal),                  -- recipient_name
     upper(sub_awardee_or_recipient_uniqu),                  -- recipient_unique_id
+    upper(sub_awardee_or_recipient_uei),                    -- recipient_uei
     upper(sub_place_of_perform_city_name),                  -- pop_city_name
     upper(sub_place_of_perform_state_name),                 -- pop_state_name
     upper(sub_place_of_perform_street),                     -- pop_street_address
