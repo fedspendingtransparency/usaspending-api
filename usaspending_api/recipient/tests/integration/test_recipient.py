@@ -58,7 +58,7 @@ TEST_DUNS = {
     },
 }
 TEST_RECIPIENT_LOCATIONS = {
-    "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2": {
+    "a52a7544-829b-c925-e1ba-d04d3171c09a": {
         "address_line_1": "PARENT ADDRESS LINE 1",
         "address_line_2": "PARENT ADDRESS LINE 2",
         "city": "PARENT CITY",
@@ -68,7 +68,7 @@ TEST_RECIPIENT_LOCATIONS = {
         "zip5": "PARENT ZIP",
         "zip4": "PARENT ZIP4",
     },
-    "083ac6fa-3d08-8d35-79da-b658a84260df": {
+    "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5": {
         "address_line_1": "CHILD ADDRESS LINE 1",
         "address_line_2": "CHILD ADDRESS LINE 2",
         "city": "CHILD CITY",
@@ -100,24 +100,28 @@ TEST_RECIPIENT_LOCATIONS = {
     },
 }
 TEST_RECIPIENT_LOOKUPS = {
-    "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2": {
-        "recipient_hash": "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2",
+    "a52a7544-829b-c925-e1ba-d04d3171c09a": {
+        "recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
         "duns": "000000001",
+        "uei": "AAAAAAAAAAAA",
         "legal_business_name": "PARENT RECIPIENT",
     },
-    "083ac6fa-3d08-8d35-79da-b658a84260df": {
-        "recipient_hash": "083ac6fa-3d08-8d35-79da-b658a84260df",
+    "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5": {
+        "recipient_hash": "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5",
         "duns": "000000002",
+        "uei": "BBBBBBBBBBBB",
         "legal_business_name": "CHILD RECIPIENT",
     },
     "cd6ac2ed-8d2d-2c2e-4934-710eb82100f3": {
         "recipient_hash": "cd6ac2ed-8d2d-2c2e-4934-710eb82100f3",
         "duns": None,
+        "uei": None,
         "legal_business_name": "OTHER RECIPIENT",
     },
     "6dffe44a-554c-26b4-b7ef-44db50083732": {
         "recipient_hash": "6dffe44a-554c-26b4-b7ef-44db50083732",
         "duns": None,
+        "uei": None,
         "legal_business_name": "MULTIPLE RECIPIENTS",
     },
 }
@@ -126,30 +130,35 @@ for hash, recipient in TEST_RECIPIENT_LOOKUPS.items():
 
 TEST_RECIPIENT_PROFILES = {
     # Parent Recipient, including non-existent child duns
-    "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-P": {
+    "a52a7544-829b-c925-e1ba-d04d3171c09a-P": {
         "recipient_level": "P",
-        "recipient_hash": "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2",
+        "recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
-        "recipient_affiliations": ["000000001", "000000002", "000000005"],
+        "recipient_affiliations": [
+            "AAAAAAAAAAAA",
+            "BBBBBBBBBBBB",
+            "ZZZZZZZZZZZZ",
+        ],
         "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 1 - lists itself as both parent and child
-    "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-C": {
+    "a52a7544-829b-c925-e1ba-d04d3171c09a-C": {
         "recipient_level": "C",
-        "recipient_hash": "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2",
+        "recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
-        "recipient_affiliations": ["000000001"],
+        "recipient_affiliations": ["AAAAAAAAAAAA"],
         "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 2 - different from parent duns
-    "083ac6fa-3d08-8d35-79da-b658a84260df-C": {
+    "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5-C": {
         "recipient_level": "C",
-        "recipient_hash": "083ac6fa-3d08-8d35-79da-b658a84260df",
+        "recipient_hash": "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5",
         "recipient_unique_id": "000000002",
         "recipient_name": "CHILD RECIPIENT",
-        "recipient_affiliations": ["000000001"],
+        "recipient_affiliations": ["AAAAAAAAAAAA"],
+        "uei": "BBBBBBBBBBBB",
     },
     # Other Recipient
     "cd6ac2ed-8d2d-2c2e-4934-710eb82100f3-R": {
@@ -158,8 +167,10 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_unique_id": None,
         "recipient_name": "OTHER RECIPIENT",
         "recipient_affiliations": [],
+        "uei": "BBBBBBBBBBBB",
     },
 }
+
 TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS = {
     "latest": {"action_date": INSIDE_OF_LATEST, "federal_action_obligation": 100},
     "FY2016": {"action_date": datetime.datetime(2015, 10, 1), "federal_action_obligation": 50},
@@ -175,16 +186,21 @@ TEST_SUMMARY_TRANSACTION_RECIPIENT = {
         "awardee_or_recipient_legal": "PARENT RECIPIENT",
         "awardee_or_recipient_uniqu": "000000001",
         "ultimate_parent_unique_ide": "000000001",
+        "awardee_or_recipient_uei": "AAAAAAAAAAAA",
+        "ultimate_parent_uei": "AAAAAAAAAAAA",
     },
     "FY2016": {
         "awardee_or_recipient_legal": "CHILD RECIPIENT",
         "awardee_or_recipient_uniqu": "000000002",
         "ultimate_parent_unique_ide": "000000001",
+        "awardee_or_recipient_uei": "BBBBBBBBBBBB",
+        "ultimate_parent_uei": "AAAAAAAAAAAA",
     },
     "FY2008": {
         "awardee_or_recipient_legal": "OTHER RECIPIENT",
         "awardee_or_recipient_uniqu": None,
         "ultimate_parent_unique_ide": None,
+        "awardee_or_recipient_uei": None,
     },
 }
 
@@ -229,6 +245,8 @@ def create_transaction_test_data(transaction_recipient_list=None):
     ):
         base_transaction_fabs = {"transaction_id": count}
         base_transaction_fabs.update(transaction_fabs)
+        base_transaction_fabs["uei"] = base_transaction_fabs["awardee_or_recipient_uei"]
+        del base_transaction_fabs["awardee_or_recipient_uei"]
         mommy.make("awards.TransactionFABS", **base_transaction_fabs)
 
 
@@ -247,7 +265,7 @@ def create_recipient_lookup_test_data(*recipient_lookup_list):
 @pytest.mark.django_db
 def test_validate_recipient_id_success():
     """ Testing a run of a valid recipient id """
-    recipient_id = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-P"
+    recipient_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-P"
     mommy.make("recipient.RecipientProfile", **TEST_RECIPIENT_PROFILES[recipient_id])
 
     expected_hash = recipient_id[:-2]
@@ -263,7 +281,7 @@ def test_validate_recipient_id_success():
 @pytest.mark.django_db
 def test_validate_recipient_id_failures():
     """ Testing a run of invalid recipient ids """
-    recipient_id = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-P"
+    recipient_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-P"
     mommy.make("recipient.RecipientProfile", **TEST_RECIPIENT_PROFILES[recipient_id])
 
     def call_validate_recipient_id(recipient_id):
@@ -291,15 +309,17 @@ def test_validate_recipient_id_failures():
 
 
 @pytest.mark.django_db
-def test_extract_name_duns_from_hash():
+def test_extract_duns_uei_name_from_hash():
     """ Testing extracting name and duns from the recipient hash """
-    recipient_hash = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2"
+    recipient_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     mommy.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[recipient_hash])
 
-    expected_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]["legal_business_name"]
     expected_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]["duns"]
-    duns, name = recipients.extract_name_duns_from_hash(recipient_hash)
+    expected_uei = TEST_RECIPIENT_LOOKUPS[recipient_hash]["uei"]
+    expected_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]["legal_business_name"]
+    duns, uei, name = recipients.extract_duns_uei_name_from_hash(recipient_hash)
     assert duns == expected_duns
+    assert uei == expected_uei
     assert name == expected_name
 
 
@@ -307,17 +327,16 @@ def test_extract_name_duns_from_hash():
 def test_extract_parent_from_hash():
     """ Testing extracting parent duns/name from recipient hash"""
     # This one specifically has to be a child
-    recipient_id = "083ac6fa-3d08-8d35-79da-b658a84260df-C"
+    recipient_id = "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5-C"
     recipient_hash = TEST_RECIPIENT_PROFILES[recipient_id]["recipient_hash"]
-    parent_duns = TEST_RECIPIENT_PROFILES[recipient_id]["recipient_affiliations"][0]
     mommy.make("recipient.RecipientProfile", **TEST_RECIPIENT_PROFILES[recipient_id])
 
-    expected_parent_id = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-P"
+    expected_parent_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-P"
     parent_hash = expected_parent_id[:-2]
     mommy.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[parent_hash])
 
     expected_name = TEST_RECIPIENT_LOOKUPS[parent_hash]["legal_business_name"]
-    expected_duns = parent_duns
+    expected_duns = TEST_RECIPIENT_LOOKUPS[parent_hash]["duns"]
     parents = recipients.extract_parents_from_hash(recipient_hash)
     assert expected_duns == parents[0]["parent_duns"]
     assert expected_name == parents[0]["parent_name"]
@@ -330,13 +349,12 @@ def test_extract_parent_from_hash_failure():
     as there may be cases where the parent recipient is not found/listed
     """
     # This one specifically has to be a child
-    recipient_id = "083ac6fa-3d08-8d35-79da-b658a84260df-C"
+    recipient_id = "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5-C"
     recipient_hash = TEST_RECIPIENT_PROFILES[recipient_id]["recipient_hash"]
-    parent_duns = TEST_RECIPIENT_PROFILES[recipient_id]["recipient_affiliations"][0]
     mommy.make("recipient.RecipientProfile", **TEST_RECIPIENT_PROFILES[recipient_id])
 
     expected_name = None
-    expected_duns = parent_duns
+    expected_duns = None
     expected_parent_id = None
     parents = recipients.extract_parents_from_hash(recipient_hash)
     assert expected_duns == parents[0]["parent_duns"]
@@ -347,7 +365,7 @@ def test_extract_parent_from_hash_failure():
 @pytest.mark.django_db
 def test_extract_location_success():
     """ Testing extracting location data from recipient hash using the DUNS table """
-    recipient_hash = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2"
+    recipient_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     mommy.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[recipient_hash])
     country_code = TEST_RECIPIENT_LOCATIONS[recipient_hash]["country_code"]
     mommy.make("references.RefCountryCode", **TEST_REF_COUNTRY_CODE[country_code])
@@ -387,9 +405,9 @@ def test_cleanup_location():
 @pytest.mark.django_db
 def test_extract_business_categories(monkeypatch):
     """ Testing extracting business categories from the recipient name/duns """
-    recipient_hash = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2"
+    recipient_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]["legal_business_name"]
-    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]["duns"]
+    recipient_uei = TEST_RECIPIENT_LOOKUPS[recipient_hash]["uei"]
     business_categories = ["le", "business", "cat"]
 
     utm_objects = Mock()
@@ -400,10 +418,10 @@ def test_extract_business_categories(monkeypatch):
 
     # Mock DUNS
     # Should add 'category_business'
-    mommy.make("recipient.DUNS", **TEST_DUNS[recipient_duns])
+    mommy.make("recipient.DUNS", **TEST_DUNS[TEST_RECIPIENT_LOOKUPS[recipient_hash]["duns"]])
 
     expected_business_cat = business_categories + ["category_business"]
-    business_cat = recipients.extract_business_categories(recipient_name, recipient_duns, recipient_hash)
+    business_cat = recipients.extract_business_categories(recipient_name, recipient_uei, recipient_hash)
     # testing for equality-only, order unnecessary
     assert sorted(business_cat) == sorted(expected_business_cat)
 
@@ -412,9 +430,9 @@ def test_extract_business_categories(monkeypatch):
 def test_extract_business_categories_special():
     """ Testing extracting the business categories for a special case  """
     recipient_name = "MULTIPLE RECIPIENTS"
-    recipient_duns = None
+    recipient_uei = None
     recipient_hash = ""
-    business_categories = recipients.extract_business_categories(recipient_name, recipient_duns, recipient_hash)
+    business_categories = recipients.extract_business_categories(recipient_name, recipient_uei, recipient_hash)
     assert business_categories == []
 
 
@@ -422,13 +440,14 @@ def test_extract_business_categories_special():
 def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_index):
     """ Testing recipient totals with different year values """
     # Testing with specific child
-    recipient_id = "083ac6fa-3d08-8d35-79da-b658a84260df-C"
+    recipient_id = "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5-C"
     recipient_hash = recipient_id[:-2]
 
     # load all of the transactions
     transaction_recipient_data = {
         "awardee_or_recipient_legal": "CHILD RECIPIENT",
         "awardee_or_recipient_uniqu": "000000002",
+        "awardee_or_recipient_uei": "BBBBBBBBBBBB",
         "ultimate_parent_unique_ide": "000000001",
     }
     create_transaction_test_data([transaction_recipient_data] * len(TEST_SUMMARY_TRANSACTION_RECIPIENT))
@@ -470,7 +489,7 @@ def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_ind
 def test_obtain_recipient_totals_parent(monkeypatch, elasticsearch_transaction_index):
     """ Testing recipient totals with parent child relationships """
     # Testing with specific parent/child ids
-    parent_id = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-P"
+    parent_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-P"
 
     # load recipient profiles
     for recipient_id, recipient_profile in TEST_RECIPIENT_PROFILES.items():
@@ -501,7 +520,7 @@ def recipient_overview_endpoint(id, year="latest"):
 @pytest.mark.django_db
 def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index):
     """ Testing a simple example of the endpoint as a whole """
-    r_id = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-C"
+    r_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-C"
 
     # Mock Transactions
     create_transaction_test_data()
@@ -533,16 +552,16 @@ def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index
         "alternate_names": [],
         "duns": "000000001",
         "uei": "AAAAAAAAAAAA",
-        "recipient_id": "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-C",
+        "recipient_id": "a52a7544-829b-c925-e1ba-d04d3171c09a-C",
         "recipient_level": "C",
         "parent_name": "PARENT RECIPIENT",
         "parent_duns": "000000001",
-        "parent_id": "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-P",
+        "parent_id": "a52a7544-829b-c925-e1ba-d04d3171c09a-P",
         "parent_uei": "AAAAAAAAAAAA",
         "parents": [
             {
                 "parent_duns": "000000001",
-                "parent_id": "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-P",
+                "parent_id": "a52a7544-829b-c925-e1ba-d04d3171c09a-P",
                 "parent_name": "PARENT RECIPIENT",
                 "parent_uei": "AAAAAAAAAAAA",
             }
@@ -574,16 +593,25 @@ def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index
 
 
 @pytest.mark.django_db
-def test_extract_hash_name_from_duns():
+def test_extract_hash_from_duns_or_uei_via_duns():
     """ Testing extracting the hash/name from a DUNS """
     example_duns = "000000001"
-    expected_hash = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2"
-    expected_name = "PARENT RECIPIENT"
+    expected_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     mommy.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[expected_hash])
 
-    recipient_hash, recipient_name = recipients.extract_hash_name_from_duns(example_duns)
+    recipient_hash = recipients.extract_hash_from_duns_or_uei(example_duns)
     assert UUID(expected_hash) == recipient_hash
-    assert expected_name == recipient_name
+
+
+@pytest.mark.django_db
+def test_extract_hash_from_duns_or_uei_via_uei():
+    """ Testing extracting the hash/name from a DUNS """
+    example_uei = "AAAAAAAAAAAA"
+    expected_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
+    mommy.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[expected_hash])
+
+    recipient_hash = recipients.extract_hash_from_duns_or_uei(example_uei)
+    assert UUID(expected_hash) == recipient_hash
 
 
 def recipient_children_endpoint(duns, year="latest"):
@@ -596,9 +624,9 @@ def recipient_children_endpoint(duns, year="latest"):
 @pytest.mark.django_db
 def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_index):
     """ Testing successful child recipient calls """
-    child1_id = "88a7d62e-d9e6-a7c6-8a1e-2a52a59fb9f2-C"
+    child1_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-C"
     parent_child1_duns = "000000001"
-    child2_id = "083ac6fa-3d08-8d35-79da-b658a84260df-C"
+    child2_id = "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5-C"
     child2_duns = "000000002"
 
     # Mock Recipient Profiles
@@ -612,7 +640,7 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    # Ignoring nonexistent child duns - 000000005
+    # Ignoring nonexistent child hash - 00eadaa1-6e1f-22f2-419b-e5894374db96
     child1_object = {
         "recipient_id": child1_id,
         "name": "PARENT RECIPIENT",
@@ -625,11 +653,11 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
         "recipient_id": child2_id,
         "name": "CHILD RECIPIENT",
         "duns": child2_duns,
-        "uei": None,
+        "uei": "BBBBBBBBBBBB",
         "amount": 50,
         "state_province": "CHILD STATE",
     }
-    expected = [child2_object, child1_object]
+    expected = [child1_object, child2_object]
     resp = client.get(recipient_children_endpoint(parent_child1_duns, "all"))
     assert resp.status_code == status.HTTP_200_OK
     # testing for equality-only, order unnecessary
@@ -652,4 +680,4 @@ def test_child_recipient_failures(client):
     non_existent_duns = "000000003"
     resp = client.get(recipient_children_endpoint(non_existent_duns, "all"))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.data["detail"] == "DUNS not found: '{}'.".format(non_existent_duns)
+    assert resp.data["detail"] == "Recipient not found: '{}'.".format(non_existent_duns)
