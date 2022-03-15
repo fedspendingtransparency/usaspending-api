@@ -33,12 +33,12 @@ def transaction_recipient_agg_key(record: dict) -> str:
         {
             "name": record["recipient_name"],
             "unique_id": record["recipient_unique_id"],
-            "hash_with_level": f"{record['recipient_hash']}-{_return_one_level(record['recipient_levels'])}",
+            "hash_with_level": f"{record['recipient_hash']}-{return_one_level(record['recipient_levels'])}",
         }
     )
 
 
-def _return_one_level(levels: List[str]) -> Optional[str]:
+def return_one_level(levels: List[str]) -> Optional[str]:
     """Return the most-desirable recipient level"""
     for level in ("C", "R", "P"):  # Child, "Recipient," or Parent
         if level in levels:
