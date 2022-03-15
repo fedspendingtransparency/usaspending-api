@@ -293,7 +293,7 @@ def spending_by_award_test_data():
         award_id=1,
         subaward_number=11111,
         awardee_or_recipient_uniqu="duns_1001",
-        sub_awardee_or_recipient_uei="uei_10010001",
+        sub_awardee_or_recipient_uei="UEI_10010001",
     )
     mommy.make(
         "awards.BrokerSubaward",
@@ -301,7 +301,7 @@ def spending_by_award_test_data():
         award_id=2,
         subaward_number=22222,
         awardee_or_recipient_uniqu="duns_1002",
-        sub_awardee_or_recipient_uei="uei_10010002",
+        sub_awardee_or_recipient_uei="UEI_10010002",
     )
     mommy.make(
         "awards.BrokerSubaward",
@@ -309,7 +309,7 @@ def spending_by_award_test_data():
         award_id=2,
         subaward_number=33333,
         awardee_or_recipient_uniqu="duns_1002",
-        sub_awardee_or_recipient_uei="uei_10010002",
+        sub_awardee_or_recipient_uei="UEI_10010002",
     )
     mommy.make(
         "awards.BrokerSubaward",
@@ -317,7 +317,7 @@ def spending_by_award_test_data():
         award_id=3,
         subaward_number=44444,
         awardee_or_recipient_uniqu="duns_1003",
-        sub_awardee_or_recipient_uei="uei_10010003",
+        sub_awardee_or_recipient_uei="UEI_10010003",
     )
     mommy.make(
         "awards.BrokerSubaward",
@@ -325,7 +325,7 @@ def spending_by_award_test_data():
         award_id=3,
         subaward_number=66666,
         awardee_or_recipient_uniqu="duns_1003",
-        sub_awardee_or_recipient_uei="uei_10010003",
+        sub_awardee_or_recipient_uei="UEI_10010003",
     )
 
     mommy.make(
@@ -344,7 +344,7 @@ def spending_by_award_test_data():
         awarding_toptier_agency_name="awarding toptier 8001",
         awarding_subtier_agency_name="awarding subtier 8001",
         product_or_service_code="PSC2",
-        recipient_uei="uei_10010001",
+        recipient_uei="UEI_10010001",
     )
     mommy.make(
         "awards.Subaward",
@@ -361,7 +361,7 @@ def spending_by_award_test_data():
         piid="PIID2001",
         awarding_toptier_agency_name="awarding toptier 8002",
         awarding_subtier_agency_name="awarding subtier 8002",
-        recipient_uei="uei_10010001",
+        recipient_uei="UEI_10010001",
     )
     mommy.make(
         "awards.Subaward",
