@@ -1470,6 +1470,7 @@ def test_uei_recipient_filter_subaward(client, monkeypatch, spending_by_award_te
     )
     expected_result = [
         {
+            "internal_id": "11111",
             "prime_award_internal_id": 1,
             "Sub-Award ID": "11111",
             "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
