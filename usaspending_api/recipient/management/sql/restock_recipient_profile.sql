@@ -391,12 +391,12 @@ WHERE
 
 
 INSERT INTO public.recipient_profile (
-    recipient_level, recipient_hash, recipient_unique_id, uei,
+    recipient_level, recipient_hash, recipient_unique_id, uei, parent_uei,
     recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
     )
-  SELECT recipient_level, recipient_hash, recipient_unique_id, uei,
+  SELECT recipient_level, recipient_hash, recipient_unique_id, uei, parent_uei,
     recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
