@@ -97,9 +97,7 @@ def subaward_filter(filters, for_downloads=False):
             potential_ueis = list(filter((lambda x: len(x) == 12), value))
             potential_ueis = [uei.upper() for uei in potential_ueis]
             if len(potential_ueis) > 0:
-                filter_obj |= Q(recipient_uei__in=potential_ueis) | Q(
-                    parent_recipient_uei__in=potential_ueis
-                )
+                filter_obj |= Q(recipient_uei__in=potential_ueis) | Q(parent_recipient_uei__in=potential_ueis)
 
             queryset = queryset.filter(filter_obj)
 
