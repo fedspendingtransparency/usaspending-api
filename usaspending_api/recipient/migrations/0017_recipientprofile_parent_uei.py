@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='recipientprofile',
             name='parent_uei',
-            field=models.TextField(db_index=True, null=True),
+            field=models.TextField(null=True),
         ),
     ]

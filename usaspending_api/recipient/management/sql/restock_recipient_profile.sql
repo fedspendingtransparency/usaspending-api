@@ -65,6 +65,7 @@ CREATE TABLE public.temporary_restock_recipient_profile (
   recipient_hash UUID,
   recipient_unique_id TEXT,
   uei TEXT,
+  parent_uei TEXT,
   recipient_name TEXT,
   unused BOOLEAN DEFAULT true,
   recipient_affiliations TEXT[] DEFAULT '{}'::text[],
@@ -368,7 +369,8 @@ SET
     last_12_grants = temp_p.last_12_grants,
     last_12_direct_payments = temp_p.last_12_direct_payments,
     last_12_other = temp_p.last_12_other,
-    last_12_months_count = temp_p.last_12_months_count
+    last_12_months_count = temp_p.last_12_months_count,
+    parent_uei = temp_p.parent_uei
 FROM public.temporary_restock_recipient_profile temp_p
 WHERE
     rp.recipient_hash = temp_p.recipient_hash
@@ -386,6 +388,7 @@ WHERE
         OR rp.last_12_other IS DISTINCT FROM temp_p.last_12_other
         OR rp.last_12_months_count IS DISTINCT FROM temp_p.last_12_months_count
         OR rp.uei IS DISTINCT FROM temp_p.uei
+        OR rp.parent_uei IS DISTINCT FROM temp_p.parent_uei
     )
 ;
 
