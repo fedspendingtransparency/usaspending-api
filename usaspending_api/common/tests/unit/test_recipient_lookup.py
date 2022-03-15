@@ -51,17 +51,6 @@ def test_child_recipient_without_name_or_id(recipient_lookup):
 
 @pytest.mark.django_db
 def test_child_recipient_with_name_and_no_id(recipient_lookup):
-    # Test for DUNS
-    recipient_parameters = {
-        "recipient_name": "Child Recipient Test Without ID",
-        "recipient_uei": None,
-        "parent_recipient_uei": None,
-        "recipient_unique_id": None,
-        "parent_recipient_unique_id": "123",
-    }
-    expected_result = "b2c8fe8e-b520-c47f-31e3-3620a358ce48-C"
-    assert obtain_recipient_uri(**recipient_parameters) == expected_result
-
     # Test for UEI
     recipient_parameters = {
         "recipient_name": "Child Recipient Test Without ID",
@@ -76,17 +65,6 @@ def test_child_recipient_with_name_and_no_id(recipient_lookup):
 
 @pytest.mark.django_db
 def test_child_recipient_with_id_and_no_name(recipient_lookup):
-    # Test for DUNS
-    recipient_parameters = {
-        "recipient_name": None,
-        "recipient_uei": None,
-        "parent_recipient_uei": None,
-        "recipient_unique_id": "456",
-        "parent_recipient_unique_id": "123",
-    }
-    expected_result = "1c4e7c2a-efe3-1b7e-2190-6f4487f808ac-C"
-    assert obtain_recipient_uri(**recipient_parameters) == expected_result
-
     # Test for UEI
     recipient_parameters = {
         "recipient_name": None,
@@ -101,17 +79,6 @@ def test_child_recipient_with_id_and_no_name(recipient_lookup):
 
 @pytest.mark.django_db
 def test_child_recipient_with_name_and_id(recipient_lookup):
-    # Test for DUNS
-    recipient_parameters = {
-        "recipient_name": "Child Recipient Test",
-        "recipient_uei": None,
-        "parent_recipient_uei": None,
-        "recipient_unique_id": "456",
-        "parent_recipient_unique_id": "123",
-    }
-    expected_result = "1c4e7c2a-efe3-1b7e-2190-6f4487f808ac-C"
-    assert obtain_recipient_uri(**recipient_parameters) == expected_result
-
     # Test for UEI
     recipient_parameters = {
         "recipient_name": "Child Recipient Test",

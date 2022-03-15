@@ -1,3 +1,4 @@
+from django.db import connection
 from django.db.models import CharField, Expression
 from psycopg2.sql import Identifier, Literal, SQL
 from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
@@ -31,7 +32,9 @@ def obtain_recipient_uri(
     # Checks for two cases to return early:
     # - Parent recipient requires a unique identifier (UEI or DUNS)
     # - When all components of the Recipient Hash are NULL (UEI, DUNS, or Name)
-    if (recipient_uei is None and recipient_unique_id is None) and (is_parent_recipient or recipient_name is None):
+    if (is_parent_recipient and (recipient_uei is None and recipient_unique_id is None)) or (
+        recipient_name is None and recipient_uei is None and recipient_unique_id is None
+    ):
         return None
 
     if recipient_uei is not None:
@@ -63,15 +66,6 @@ def obtain_recipient_uri(
 
 
 def generate_missing_recipient_hash(recipient_uei, recipient_unique_id, recipient_name):
-    # SQL: MD5(UPPER(
-    #   CASE
-    #     WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
-    #     WHEN awardee_or_recipient_uniqu IS NOT NULL THEN CONCAT('duns-', awardee_or_recipient_uniqu)
-    #     ELSE CONCAT('name-', awardee_or_recipient_legal) END
-    # ))::uuid AS recipient_hash,
-    import hashlib
-    import uuid
-
     if recipient_uei is not None:
         prefix = "uei"
         value = recipient_uei
@@ -82,30 +76,22 @@ def generate_missing_recipient_hash(recipient_uei, recipient_unique_id, recipien
         prefix = "name"
         value = recipient_name
 
-    return str(uuid.UUID(hashlib.md5(f"{prefix}-{value}".upper().encode("utf-8")).hexdigest()))
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT MD5(UPPER(CONCAT(%s, '-', %s)))::uuid", [prefix, value])
+        row = cursor.fetchone()
+
+    return row[0] if row else None
 
 
 def obtain_recipient_level(recipient_record: dict) -> str:
     level = None
-    if recipient_is_parent(recipient_record):
+    if recipient_record["is_parent_recipient"]:
         level = "P"
-    elif recipient_is_standalone(recipient_record):
+    elif recipient_record["parent_uei"] is None:
         level = "R"
-    elif recipient_is_child(recipient_record):
+    elif recipient_record["parent_uei"] is not None:
         level = "C"
     return level
-
-
-def recipient_is_parent(recipient_record: dict) -> bool:
-    return recipient_record["is_parent_recipient"]
-
-
-def recipient_is_standalone(recipient_record: dict) -> bool:
-    return recipient_record["parent_uei"] is None and recipient_record["parent_duns"] is None
-
-
-def recipient_is_child(recipient_record: dict) -> bool:
-    return recipient_record["parent_uei"] is not None or recipient_record["parent_duns"] is not None
 
 
 def combine_recipient_hash_and_level(recipient_hash, recipient_level):

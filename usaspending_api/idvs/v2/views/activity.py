@@ -67,7 +67,7 @@ ACTIVITY_SQL = SQL(
         left outer join recipient_profile rp on (
             rp.recipient_hash = rl.recipient_hash and
             rp.recipient_level = case
-                when coalesce(tf.ultimate_parent_uei, tf.ultimate_parent_unique_ide) is null
+                when tf.ultimate_parent_uei is null
                 then 'R' else 'C'
             end
         )
