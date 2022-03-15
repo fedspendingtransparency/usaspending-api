@@ -125,7 +125,6 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             Q(submission__reporting_fiscal_year=self.fiscal_year),
             Q(submission__reporting_fiscal_period=latest[0]["max_fiscal_period"]),
         ]
-        
         bureau_info_subquery = Subquery(
             BureauTitleLookup.objects.filter(
                 federal_account_code=OuterRef(f"{treasury_account_keyword}__federal_account__federal_account_code")
