@@ -136,9 +136,9 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
         "recipient_affiliations": [
-            "a52a7544-829b-c925-e1ba-d04d3171c09a",
-            "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5",
-            "b97e951e-e28c-ffda-8eae-3a840170edc8",
+            "AAAAAAAAAAAA",
+            "BBBBBBBBBBBB",
+            "ZZZZZZZZZZZZ",
         ],
         "uei": "AAAAAAAAAAAA",
     },
@@ -148,7 +148,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
         "recipient_unique_id": "000000001",
         "recipient_name": "PARENT RECIPIENT",
-        "recipient_affiliations": ["a52a7544-829b-c925-e1ba-d04d3171c09a"],
+        "recipient_affiliations": ["AAAAAAAAAAAA"],
         "uei": "AAAAAAAAAAAA",
     },
     # Child Recipient 2 - different from parent duns
@@ -157,7 +157,7 @@ TEST_RECIPIENT_PROFILES = {
         "recipient_hash": "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5",
         "recipient_unique_id": "000000002",
         "recipient_name": "CHILD RECIPIENT",
-        "recipient_affiliations": ["a52a7544-829b-c925-e1ba-d04d3171c09a"],
+        "recipient_affiliations": ["AAAAAAAAAAAA"],
         "uei": "BBBBBBBBBBBB",
     },
     # Other Recipient
@@ -170,8 +170,7 @@ TEST_RECIPIENT_PROFILES = {
         "uei": "BBBBBBBBBBBB",
     },
 }
-# a52a7544-829b-c925-e1ba-d04d3171c09a -> a52a7544-829b-c925-e1ba-d04d3171c09a
-# acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5 -> acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5
+
 TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS = {
     "latest": {"action_date": INSIDE_OF_LATEST, "federal_action_obligation": 100},
     "FY2016": {"action_date": datetime.datetime(2015, 10, 1), "federal_action_obligation": 50},

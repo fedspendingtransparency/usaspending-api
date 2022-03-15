@@ -96,9 +96,9 @@ def extract_parents_from_hash(recipient_hash):
         .first()
     )
 
-    for hash in affiliations["recipient_affiliations"]:
+    for uei in affiliations["recipient_affiliations"]:
         parent = (
-            RecipientLookup.objects.filter(recipient_hash=hash)
+            RecipientLookup.objects.filter(uei=uei)
             .values("recipient_hash", "uei", "duns", "legal_business_name")
             .order_by("-update_date")
             .first()
@@ -441,17 +441,17 @@ class ChildRecipients(APIView):
             )
             if not child_response:
                 raise InvalidParameterException("Recipient is not listed as a parent: '{}'.".format(duns_or_uei))
-            child_recipient_hashes = child_response[0]["recipient_affiliations"]
+            child_ueis = child_response[0]["recipient_affiliations"]
 
             # Determine which child recipients still need data (not in results from specific year)
-            found_hashes = [result["recipient_hash"] for result in results]
-            missing_child_hashes = [
-                child_hash for child_hash in child_recipient_hashes if child_hash not in found_hashes
+            found_ueis = [result["uei"] for result in results]
+            missing_child_ueis = [
+                child_uei for child_uei in child_ueis if child_uei not in found_ueis
             ]
 
             # Gather their data points with Recipient Profile
             missing_child_qs = RecipientProfile.objects.filter(
-                recipient_hash__in=missing_child_hashes, recipient_level="C"
+                uei__in=missing_child_ueis, recipient_level="C"
             ).values("recipient_hash", "recipient_name", "recipient_unique_id", "uei")
 
             for child_recipient in list(missing_child_qs):
