@@ -59,6 +59,7 @@ CREATE TABLE public.temporary_restock_recipient_profile (
   recipient_hash UUID,
   recipient_unique_id TEXT,
   uei TEXT,
+  parent_uei TEXT,
   recipient_name TEXT,
   unused BOOLEAN DEFAULT true,
   recipient_affiliations TEXT[] DEFAULT '{}'::text[],
@@ -79,14 +80,16 @@ INSERT INTO public.temporary_restock_recipient_profile (
   recipient_hash,
   recipient_unique_id,
   recipient_name,
-  uei
+  uei,
+  parent_uei
 )
   SELECT
     'P' as recipient_level,
     recipient_hash,
     duns AS recipient_unique_id,
     legal_business_name AS recipient_name,
-    uei
+    uei,
+    parent_uei
   FROM
     public.recipient_lookup
 UNION ALL
@@ -95,7 +98,8 @@ UNION ALL
     recipient_hash,
     duns AS recipient_unique_id,
     legal_business_name AS recipient_name,
-    uei
+    uei,
+    parent_uei
   FROM
     public.recipient_lookup
 UNION ALL
@@ -104,7 +108,8 @@ UNION ALL
     recipient_hash,
     duns AS recipient_unique_id,
     legal_business_name AS recipient_name,
-    uei
+    uei,
+    parent_uei
   FROM
     public.recipient_lookup;
 
@@ -178,7 +183,7 @@ DO $$ BEGIN RAISE NOTICE 'Step 4: parent records obligation'; END $$;
 WITH grouped_by_parent AS (
   WITH grouped_by_parent_inner AS (
     SELECT
-      parent_recipient_unique_id,
+      parent_uei,
       CASE
         WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
         THEN 'other' ELSE award_category
@@ -194,11 +199,11 @@ WITH grouped_by_parent AS (
       public.temporary_recipients_from_transactions_view AS trft
     WHERE
       trft.action_date >= now() - INTERVAL '1 year' AND
-      parent_recipient_unique_id IS NOT NULL
-    GROUP BY parent_recipient_unique_id, award_category
+      parent_uei IS NOT NULL
+    GROUP BY parent_uei, award_category
   )
   SELECT
-    parent_recipient_unique_id AS duns,
+    parent_uei AS uei,
     array_agg(award_category) AS award_types,
     SUM(inner_contracts) AS last_12_contracts,
     SUM(inner_grants) AS last_12_grants,
@@ -209,7 +214,7 @@ WITH grouped_by_parent AS (
     SUM(inner_count) AS count
   FROM
     grouped_by_parent_inner AS gbpi
-  GROUP BY parent_recipient_unique_id
+  GROUP BY parent_uei
 )
 
 UPDATE public.temporary_restock_recipient_profile AS rpv
@@ -226,13 +231,13 @@ SET
 FROM
   grouped_by_parent AS gbp
 WHERE
-  rpv.recipient_unique_id = gbp.duns AND
+  rpv.uei = gbp.uei AND
   rpv.recipient_level = 'P';
 
 --------------------------------------------------------------------------------
 -- Step 5, Populating child recipient list in parents
 --------------------------------------------------------------------------------
-DO $$ BEGIN RAISE NOTICE 'Step 5: Populating children list in parent records'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Step 5: Populating child recipient list in parent records'; END $$;
 
 WITH parent_recipients AS (
   SELECT
@@ -311,12 +316,12 @@ DO $$ BEGIN RAISE NOTICE 'Step 8: Parent Recipient profiles older than 12 months
 
 WITH grouped_by_parent_old AS (
   SELECT
-    parent_recipient_unique_id
+    parent_uei
   FROM
     public.temporary_recipients_from_transactions_view AS trft
   WHERE
-    parent_recipient_unique_id IS NOT NULL
-  GROUP BY parent_recipient_unique_id
+    parent_uei IS NOT NULL
+  GROUP BY parent_uei
 )
 
 UPDATE public.temporary_restock_recipient_profile AS rpv
@@ -325,7 +330,7 @@ SET
 FROM
   grouped_by_parent_old AS gbp
 WHERE
-  rpv.recipient_unique_id = gbp.parent_recipient_unique_id AND
+  rpv.uei = gbp.parent_uei AND
   rpv.recipient_level = 'P' AND
   rpv.unused = true;
 
@@ -362,7 +367,8 @@ SET
     last_12_grants = temp_p.last_12_grants,
     last_12_direct_payments = temp_p.last_12_direct_payments,
     last_12_other = temp_p.last_12_other,
-    last_12_months_count = temp_p.last_12_months_count
+    last_12_months_count = temp_p.last_12_months_count,
+    parent_uei = temp_p.parent_uei
 FROM public.temporary_restock_recipient_profile temp_p
 WHERE
     rp.recipient_hash = temp_p.recipient_hash
@@ -380,17 +386,18 @@ WHERE
         OR rp.last_12_other IS DISTINCT FROM temp_p.last_12_other
         OR rp.last_12_months_count IS DISTINCT FROM temp_p.last_12_months_count
         OR rp.uei IS DISTINCT FROM temp_p.uei
+        OR rp.parent_uei IS DISTINCT FROM temp_p.parent_uei
     )
 ;
 
 
 INSERT INTO public.recipient_profile (
-    recipient_level, recipient_hash, recipient_unique_id, uei,
+    recipient_level, recipient_hash, recipient_unique_id, uei, parent_uei,
     recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
     )
-  SELECT recipient_level, recipient_hash, recipient_unique_id, uei,
+  SELECT recipient_level, recipient_hash, recipient_unique_id, uei, parent_uei,
     recipient_name, recipient_affiliations, award_types, last_12_months,
     last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
     last_12_months_count
