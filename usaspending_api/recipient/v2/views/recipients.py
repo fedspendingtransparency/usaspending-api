@@ -458,14 +458,12 @@ class ChildRecipients(APIView):
 
             # Determine which child recipients still need data (not in results from specific year)
             found_ueis = [result["uei"] for result in results]
-            missing_child_ueis = [
-                child_uei for child_uei in child_ueis if child_uei not in found_ueis
-            ]
+            missing_child_ueis = [child_uei for child_uei in child_ueis if child_uei not in found_ueis]
 
             # Gather their data points with Recipient Profile
-            missing_child_qs = RecipientProfile.objects.filter(
-                uei__in=missing_child_ueis, recipient_level="C"
-            ).values("recipient_hash", "recipient_name", "recipient_unique_id", "uei")
+            missing_child_qs = RecipientProfile.objects.filter(uei__in=missing_child_ueis, recipient_level="C").values(
+                "recipient_hash", "recipient_name", "recipient_unique_id", "uei"
+            )
 
             for child_recipient in list(missing_child_qs):
                 results.append(
