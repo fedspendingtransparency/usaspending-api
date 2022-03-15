@@ -270,7 +270,7 @@ WITH all_recipients AS (
   FROM
     public.temporary_recipients_from_transactions_view
   WHERE
-    uei  IS NOT NULL AND
+    uei IS NOT NULL AND
     parent_uei IS NOT NULL
   GROUP BY uei
 )
