@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from django.db.models import F
 from django.conf import settings
+from django.utils.decorators import method_decorator
 from elasticsearch_dsl import A
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -21,6 +22,7 @@ from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters,
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode
 from usaspending_api.search.models import TransactionSearch as TransactionSearchModel
+from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_transactions,
@@ -322,7 +324,7 @@ class RecipientOverView(APIView):
     This endpoint returns a high-level overview of a specific recipient, given its id.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_id.md"
 
     @cache_response()
     def get(self, request, recipient_id):
@@ -385,9 +387,20 @@ class RecipientOverView(APIView):
         return Response(result)
 
 
+@method_decorator(deprecated, name="get")
+class RecipientOverViewDuns(RecipientOverView):
+    """
+    <em>Deprecated: Please see <a href="/api/v2/recipient/99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/">this endpoint</a> instead.</em>
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md"
+
+    def __init__(self):
+        super().__init__()
+
+
 def extract_hash_from_duns_or_uei(duns_or_uei):
     """Extract the all the names and hashes associated with the DUNS or UEI provided
-
     Args:
         duns_or_uei: Either the duns or uei to find the equivalent hash
 
