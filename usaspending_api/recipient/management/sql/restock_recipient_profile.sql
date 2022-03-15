@@ -20,13 +20,8 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
     ))::uuid AS recipient_hash,
     COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
     COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
-    MD5(UPPER(
-      CASE
-        WHEN COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei))
-        WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide))
-        ELSE CONCAT('name-', COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti, '')) END
-    ))::uuid AS parent_recipient_hash,
     COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) AS uei,
+    COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) AS parent_uei,
     CASE
       WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
       WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
@@ -241,22 +236,22 @@ DO $$ BEGIN RAISE NOTICE 'Step 5: Populating children list in parent records'; E
 
 WITH parent_recipients AS (
   SELECT
-    parent_recipient_unique_id,
-    array_agg(DISTINCT recipient_hash) AS hash_list
+    parent_uei,
+    array_agg(DISTINCT uei) AS uei_list
   FROM
     public.temporary_recipients_from_transactions_view
   WHERE
-    parent_recipient_unique_id IS NOT NULL
+    parent_uei IS NOT NULL
   GROUP BY
-    parent_recipient_unique_id
+    parent_uei
 )
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
-  recipient_affiliations = pr.hash_list,
+  recipient_affiliations = pr.uei_list,
   unused = false
 
 FROM parent_recipients AS pr
-WHERE rpv.recipient_unique_id = pr.parent_recipient_unique_id and rpv.recipient_level = 'P';
+WHERE rpv.uei = pr.parent_uei and rpv.recipient_level = 'P';
 
 --------------------------------------------------------------------------------
 -- Step 6, Populate parent recipient list in children
@@ -265,22 +260,22 @@ DO $$ BEGIN RAISE NOTICE 'Step 6: Populating parent recipient list in child reco
 
 WITH all_recipients AS (
   SELECT
-    recipient_unique_id,
-    array_agg(DISTINCT parent_recipient_hash) AS parent_hash_list
+    uei,
+    array_agg(DISTINCT parent_uei) AS parent_uei_list
   FROM
     public.temporary_recipients_from_transactions_view
   WHERE
-    recipient_unique_id IS NOT NULL AND
-    parent_recipient_unique_id IS NOT NULL
-  GROUP BY recipient_unique_id
+    uei IS NOT NULL AND
+    parent_uei IS NOT NULL
+  GROUP BY uei
 )
 UPDATE public.temporary_restock_recipient_profile AS rpv
 SET
-  recipient_affiliations = ar.parent_hash_list,
+  recipient_affiliations = ar.parent_uei_list,
   unused = false
 FROM all_recipients AS ar
 WHERE
-  rpv.recipient_unique_id = ar.recipient_unique_id AND
+  rpv.uei = ar.uei AND
   rpv.recipient_level = 'C';
 
 
