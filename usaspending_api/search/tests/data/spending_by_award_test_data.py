@@ -361,7 +361,6 @@ def spending_by_award_test_data():
         piid="PIID2001",
         awarding_toptier_agency_name="awarding toptier 8002",
         awarding_subtier_agency_name="awarding subtier 8002",
-        recipient_uei="UEI_10010001",
     )
     mommy.make(
         "awards.Subaward",
