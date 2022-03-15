@@ -197,13 +197,13 @@ def extract_location(recipient_hash):
     return location
 
 
-def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
+def extract_business_categories(recipient_name, recipient_uei, recipient_hash):
     """Extract the business categories via the recipient hash
 
     Args:
         recipient_name: name of the recipient
-        recipient_duns: duns of the recipient
         recipient_hash: hash of name and duns
+        recipient_uei: uei of the recipient
 
     Returns:
         list of business categories
@@ -214,7 +214,7 @@ def extract_business_categories(recipient_name, recipient_duns, recipient_hash):
 
     # Go through DUNS first
     d_business_cat = (
-        DUNS.objects.filter(legal_business_name=recipient_name, awardee_or_recipient_uniqu=recipient_duns)
+        DUNS.objects.filter(legal_business_name=recipient_name, uei=recipient_uei)
         .order_by("-update_date")
         .values("business_types_codes", "entity_structure")
         .first()
@@ -332,7 +332,7 @@ class RecipientOverView(APIView):
         year = validate_year(get_request.get("year", "latest"))
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
         recipient_duns, recipient_uei, recipient_name = extract_duns_uei_name_from_hash(recipient_hash)
-        if not (recipient_name or recipient_duns):
+        if not (recipient_name or recipient_duns or recipient_uei):
             raise InvalidParameterException("Recipient Hash not found: '{}'.".format(recipient_hash))
 
         alternate_names = (
@@ -354,7 +354,7 @@ class RecipientOverView(APIView):
             ]
 
         location = extract_location(recipient_hash)
-        business_types = extract_business_categories(recipient_name, recipient_duns, recipient_hash)
+        business_types = extract_business_categories(recipient_name, recipient_uei, recipient_hash)
         results = obtain_recipient_totals(recipient_id, year=year)
         recipient_totals = results[0] if results else {}
 

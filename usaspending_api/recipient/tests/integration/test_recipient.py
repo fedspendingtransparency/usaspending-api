@@ -407,7 +407,7 @@ def test_extract_business_categories(monkeypatch):
     """ Testing extracting business categories from the recipient name/duns """
     recipient_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]["legal_business_name"]
-    recipient_duns = TEST_RECIPIENT_LOOKUPS[recipient_hash]["duns"]
+    recipient_uei = TEST_RECIPIENT_LOOKUPS[recipient_hash]["uei"]
     business_categories = ["le", "business", "cat"]
 
     utm_objects = Mock()
@@ -418,10 +418,10 @@ def test_extract_business_categories(monkeypatch):
 
     # Mock DUNS
     # Should add 'category_business'
-    mommy.make("recipient.DUNS", **TEST_DUNS[recipient_duns])
+    mommy.make("recipient.DUNS", **TEST_DUNS[TEST_RECIPIENT_LOOKUPS[recipient_hash]["duns"]])
 
     expected_business_cat = business_categories + ["category_business"]
-    business_cat = recipients.extract_business_categories(recipient_name, recipient_duns, recipient_hash)
+    business_cat = recipients.extract_business_categories(recipient_name, recipient_uei, recipient_hash)
     # testing for equality-only, order unnecessary
     assert sorted(business_cat) == sorted(expected_business_cat)
 
@@ -430,9 +430,9 @@ def test_extract_business_categories(monkeypatch):
 def test_extract_business_categories_special():
     """ Testing extracting the business categories for a special case  """
     recipient_name = "MULTIPLE RECIPIENTS"
-    recipient_duns = None
+    recipient_uei = None
     recipient_hash = ""
-    business_categories = recipients.extract_business_categories(recipient_name, recipient_duns, recipient_hash)
+    business_categories = recipients.extract_business_categories(recipient_name, recipient_uei, recipient_hash)
     assert business_categories == []
 
 
