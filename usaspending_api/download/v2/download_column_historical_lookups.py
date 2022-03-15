@@ -1296,12 +1296,12 @@ query_paths = {
                 ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_object_classes_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_program_activities_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_awardee_uei", "broker_subaward__awardee_or_recipient_uei"),
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
-                ("prime_awardee_uei", "award__latest_transaction__contract_data__awardee_or_recipient_uei"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
+                ("prime_awardee_parent_uei", "broker_subaward__ultimate_parent_uei"),
                 ("prime_awardee_parent_duns", "broker_subaward__ultimate_parent_unique_ide"),
-                ("prime_awardee_parent_uei", "award__latest_transaction__contract_data__ultimate_parent_uei"),
                 ("prime_awardee_parent_name", "broker_subaward__ultimate_parent_legal_enti"),
                 ("prime_awardee_country_code", "broker_subaward__legal_entity_country_code"),
                 ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
@@ -1354,9 +1354,11 @@ query_paths = {
                 ("subaward_action_date", "broker_subaward__sub_action_date"),
                 ("subaward_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("subawardee_duns", "broker_subaward__sub_awardee_or_recipient_uniqu"),
+                ("subawardee_uei", "broker_subaward__sub_awardee_or_recipient_uei"),
                 ("subawardee_name", "broker_subaward__sub_awardee_or_recipient_legal"),
                 ("subawardee_dba_name", "broker_subaward__sub_dba_name"),
                 ("subawardee_parent_duns", "broker_subaward__sub_ultimate_parent_unique_ide"),
+                ("subawardee_parent_uei", "broker_subaward__sub_ultimate_parent_uei"),
                 ("subawardee_parent_name", "broker_subaward__sub_ultimate_parent_legal_enti"),
                 ("subawardee_country_code", "broker_subaward__sub_legal_entity_country_code"),
                 ("subawardee_country_name", "broker_subaward__sub_legal_entity_country_name"),
@@ -1445,12 +1447,12 @@ query_paths = {
                 ("prime_award_federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_object_classes_funding_this_award", None),  # Annotation is used to create this column
                 ("prime_award_program_activities_funding_this_award", None),  # Annotation is used to create this column
+                ("prime_awardee_uei", "broker_subaward__awardee_or_recipient_uei"),
                 ("prime_awardee_duns", "broker_subaward__awardee_or_recipient_uniqu"),
-                ("prime_awardee_uei", "award__latest_transaction__assistance_data__uei"),
                 ("prime_awardee_name", "broker_subaward__awardee_or_recipient_legal"),
                 ("prime_awardee_dba_name", "broker_subaward__dba_name"),
+                ("prime_awardee_parent_uei", "broker_subaward__ultimate_parent_uei"),
                 ("prime_awardee_parent_duns", "broker_subaward__ultimate_parent_unique_ide"),
-                ("prime_awardee_parent_uei", "award__latest_transaction__assistance_data__ultimate_parent_uei"),
                 ("prime_awardee_parent_name", "broker_subaward__ultimate_parent_legal_enti"),
                 ("prime_awardee_country_code", "broker_subaward__legal_entity_country_code"),
                 ("prime_awardee_country_name", "broker_subaward__legal_entity_country_name"),
@@ -1493,9 +1495,11 @@ query_paths = {
                 ("subaward_amount", "broker_subaward__subaward_amount"),
                 ("subaward_action_date", "broker_subaward__sub_action_date"),
                 ("subaward_action_date_fiscal_year", None),  # Annotation is used to create this column
+                ("subawardee_uei", "broker_subaward__sub_awardee_or_recipient_uei"),
                 ("subawardee_duns", "broker_subaward__sub_awardee_or_recipient_uniqu"),
                 ("subawardee_name", "broker_subaward__sub_awardee_or_recipient_legal"),
                 ("subawardee_dba_name", "broker_subaward__sub_dba_name"),
+                ("subawardee_parent_uei", "broker_subaward__sub_ultimate_parent_uei"),
                 ("subawardee_parent_duns", "broker_subaward__sub_ultimate_parent_unique_ide"),
                 ("subawardee_parent_name", "broker_subaward__sub_ultimate_parent_legal_enti"),
                 ("subawardee_country_code", "broker_subaward__sub_legal_entity_country_code"),
