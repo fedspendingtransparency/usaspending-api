@@ -28,13 +28,11 @@ def obtain_recipient_uri(
     Return example string: 11fcdf15-3490-cdad-3df4-3b410f3d9b20-C
 
     """
-    if recipient_uei is None and recipient_unique_id is None:
-        # Parent recipient requires a unique identifier (UEI or DUNS)
-        if is_parent_recipient:
-            return None
-        # When all components of the Recipient Hash are NULL (UEI, DUNS, or Name)
-        elif recipient_name is None:
-            return None
+    # Checks for two cases to return early:
+    # - Parent recipient requires a unique identifier (UEI or DUNS)
+    # - When all components of the Recipient Hash are NULL (UEI, DUNS, or Name)
+    if (recipient_uei is None and recipient_unique_id is None) and (is_parent_recipient or recipient_name is None):
+        return None
 
     if recipient_uei is not None:
         recipient = RecipientProfile.objects.filter(uei=recipient_uei).values("recipient_hash").first()
