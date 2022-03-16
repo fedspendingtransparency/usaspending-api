@@ -155,7 +155,7 @@ def annotate_prime_award_recipient_id(field_name, queryset):
             where
                 bs.id = {outer_table}.subaward_id and
                 rp.recipient_level = case
-                    when ((bs.ultimate_parent_uei is null or bs.ultimate_parent_uei = '') and (bs.ultimate_parent_unique_ide is null or bs.ultimate_parent_unique_ide = '')) then 'R'
+                    when bs.ultimate_parent_uei is null or bs.ultimate_parent_uei = '' then 'R'
                     else 'C'
                 end and
                 rp.recipient_name not in {special_cases}
