@@ -32,7 +32,7 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
       ELSE NULL
     END AS award_category,
     CASE
-      WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT NULL THEN 'C'
+      WHEN COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) IS NOT NULL THEN 'C'
     ELSE 'R' END AS recipient_level,
     tn.action_date,
     COALESCE(CASE
