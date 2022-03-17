@@ -73,16 +73,16 @@ query_paths = {
                 ("foreign_funding_description", "latest_transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "latest_transaction__contract_data__sam_exception"),
                 ("sam_exception_description", "latest_transaction__contract_data__sam_exception_description"),
-                ("recipient_duns", "latest_transaction__contract_data__awardee_or_recipient_uniqu"),
                 ("recipient_uei", "latest_transaction__contract_data__awardee_or_recipient_uei"),
+                ("recipient_duns", "latest_transaction__contract_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "latest_transaction__contract_data__awardee_or_recipient_legal"),
                 (
                     "recipient_doing_business_as_name",
                     "latest_transaction__contract_data__vendor_doing_as_business_n",
                 ),
                 ("cage_code", "latest_transaction__contract_data__cage_code"),
-                ("recipient_parent_duns", "latest_transaction__contract_data__ultimate_parent_unique_ide"),
                 ("recipient_parent_uei", "latest_transaction__contract_data__ultimate_parent_uei"),
+                ("recipient_parent_duns", "latest_transaction__contract_data__ultimate_parent_unique_ide"),
                 ("recipient_parent_name", "latest_transaction__contract_data__ultimate_parent_legal_enti"),
                 ("recipient_country_code", "latest_transaction__contract_data__legal_entity_country_code"),
                 ("recipient_country_name", "latest_transaction__contract_data__legal_entity_country_name"),
@@ -640,11 +640,11 @@ query_paths = {
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("object_classes_funding_this_award", None),  # Annotation is used to create this column
                 ("program_activities_funding_this_award", None),  # Annotation is used to create this column
-                ("recipient_duns", "latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_uei", "latest_transaction__assistance_data__uei"),
+                ("recipient_duns", "latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
                 ("recipient_name", "latest_transaction__assistance_data__awardee_or_recipient_legal"),
-                ("recipient_parent_duns", "latest_transaction__assistance_data__ultimate_parent_unique_ide"),
                 ("recipient_parent_uei", "latest_transaction__assistance_data__ultimate_parent_uei"),
+                ("recipient_parent_duns", "latest_transaction__assistance_data__ultimate_parent_unique_ide"),
                 ("recipient_parent_name", "latest_transaction__assistance_data__ultimate_parent_legal_enti"),
                 ("recipient_country_code", "latest_transaction__assistance_data__legal_entity_country_code"),
                 ("recipient_country_name", "latest_transaction__assistance_data__legal_entity_country_name"),
