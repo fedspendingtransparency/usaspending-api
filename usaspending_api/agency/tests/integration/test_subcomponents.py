@@ -66,21 +66,18 @@ def test_invalid_agency(client, bureau_data):
     resp = client.get(url.format(toptier_code="999", filter="?fiscal_year=2018"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     
-@pytest.mark.django_db
+    
 @pytest.mark.django_db
 def test_exclusion_bureau_codes(client, bureau_data):
-    resp = client.get(url.format(toptier_code="00004", filter="?fiscal_year=2017"))
+    resp = client.get(url.format(toptier_code="001", filter="?fiscal_year=2017"))
     assert resp.status_code == status.HTTP_200_OK
 
     expected_results = [
         {
-            "name": "Agency 4",
+            "name": "Sub-Agency 1",
             "id": "",
             "total_obligations": "",
             "total_outlays": "",
             "total_budgetary_resources": ""
         }
-
     ]
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == expected_results
