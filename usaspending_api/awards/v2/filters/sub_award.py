@@ -85,11 +85,19 @@ def subaward_filter(filters, for_downloads=False):
             filter_obj = Q()
             for keyword in value:
                 filter_obj |= keyword_parse(keyword)
-            potential_duns = list(filter((lambda x: len(x) > 7 and len(x) < 10), value))
+
+            # Search for DUNS
+            potential_duns = list(filter((lambda x: len(x) == 9), value))
             if len(potential_duns) > 0:
                 filter_obj |= Q(recipient_unique_id__in=potential_duns) | Q(
                     parent_recipient_unique_id__in=potential_duns
                 )
+
+            # Search for UEI
+            potential_ueis = list(filter((lambda x: len(x) == 12), value))
+            potential_ueis = [uei.upper() for uei in potential_ueis]
+            if len(potential_ueis) > 0:
+                filter_obj |= Q(recipient_uei__in=potential_ueis) | Q(parent_recipient_uei__in=potential_ueis)
 
             queryset = queryset.filter(filter_obj)
 
@@ -181,6 +189,8 @@ def subaward_filter(filters, for_downloads=False):
                 filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
                 if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                     filter_obj |= Q(recipient_unique_id=upper_recipient_string)
+                elif len(upper_recipient_string) == 12:
+                    filter_obj |= Q(recipient_uei=upper_recipient_string)
                 return filter_obj
 
             filter_obj = Q()
