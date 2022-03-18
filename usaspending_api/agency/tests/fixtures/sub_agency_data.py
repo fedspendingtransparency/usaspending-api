@@ -28,7 +28,6 @@ def sub_agency_data_1():
     toptier_agency_1 = mommy.make("references.ToptierAgency", toptier_code="001", name="Agency 1")
     toptier_agency_2 = mommy.make("references.ToptierAgency", toptier_code="002", name="Agency 2")
     toptier_agency_3 = mommy.make("references.ToptierAgency", toptier_code="003", name="Agency 3")
-    toptier_agency4 = mommy.make("references.ToptierAgency", toptier_code="0004", name="Agency 4")
     subtier_agency_1 = mommy.make(
         "references.SubtierAgency",
         subtier_code="0001",
