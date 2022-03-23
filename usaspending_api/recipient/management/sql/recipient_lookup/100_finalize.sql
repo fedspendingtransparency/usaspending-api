@@ -26,6 +26,7 @@ UPDATE public.recipient_lookup rl SET
     legal_business_name         = tem.legal_business_name,
     parent_duns                 = tem.parent_duns,
     parent_legal_business_name  = tem.parent_legal_business_name,
+    parent_uei                  = tem.parent_uei,
     recipient_hash              = tem.recipient_hash,
     source                      = tem.source,
     state                       = tem.state,
@@ -47,6 +48,7 @@ UPDATE public.recipient_lookup rl SET
         OR rl.legal_business_name         IS DISTINCT FROM tem.legal_business_name
         OR rl.parent_duns                 IS DISTINCT FROM tem.parent_duns
         OR rl.parent_legal_business_name  IS DISTINCT FROM tem.parent_legal_business_name
+        OR rl.parent_uei                  IS DISTINCT FROM tem.parent_uei
         OR rl.recipient_hash              IS DISTINCT FROM tem.recipient_hash
         OR rl.source                      IS DISTINCT FROM tem.source
         OR rl.state                       IS DISTINCT FROM tem.state
@@ -72,6 +74,7 @@ INSERT INTO public.recipient_lookup (
   source,
   parent_duns,
   parent_legal_business_name,
+  parent_uei,
   alternate_names,
   update_date
 )
@@ -92,12 +95,13 @@ SELECT
   source,
   parent_duns,
   parent_legal_business_name,
+  parent_uei,
   '{}',
   now()
 FROM public.temporary_restock_recipient_lookup
 ON CONFLICT(recipient_hash) DO NOTHING;
 
-DO $$ BEGIN RAISE NOTICE 'Updating DUNS hashes to UEI hashes in recipient_lookup'; END $$;
+DO $$ BEGIN RAISE NOTICE 'Deleting duplicate DUNS records that are superceded by records with UEI populated.'; END $$;
 
 DELETE FROM public.recipient_lookup WHERE recipient_hash IN (
     SELECT rl.recipient_hash
