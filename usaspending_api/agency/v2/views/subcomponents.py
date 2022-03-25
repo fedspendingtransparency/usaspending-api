@@ -128,7 +128,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
         bureau_info_subquery = Subquery(
             BureauTitleLookup.objects.filter(
                 federal_account_code=OuterRef(f"{treasury_account_keyword}__federal_account__federal_account_code")
-            ).exclude(federal_account_code__isnull='')
+            ).exclude(federal_account_code__isnull=True)
             .annotate(
                 bureau_info=Case(
                     When(
