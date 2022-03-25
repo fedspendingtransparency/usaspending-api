@@ -182,6 +182,8 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                 "recipient_hash",
                 obtain_recipient_uri(
                     db_row_dict["_recipient_name"],
+                    db_row_dict["_recipient_uei"],
+                    db_row_dict["_parent_recipient_uei"],
                     db_row_dict["_recipient_unique_id"],
                     db_row_dict["_parent_recipient_unique_id"],
                 ),
@@ -193,6 +195,8 @@ def create_recipient_object(db_row_dict: dict) -> OrderedDict:
                 "parent_recipient_hash",
                 obtain_recipient_uri(
                     db_row_dict["_parent_recipient_name"],
+                    db_row_dict["_parent_recipient_uei"],
+                    None,  # parent_recipient_uei
                     db_row_dict["_parent_recipient_unique_id"],
                     None,  # parent_recipient_unique_id
                     True,  # is_parent_recipient
