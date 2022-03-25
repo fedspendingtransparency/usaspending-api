@@ -16,7 +16,8 @@ UPDATE public.summary_award_recipient AS sar SET
       ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) END
     )
   )::uuid,
-  parent_recipient_unique_id = COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide)
+  parent_recipient_unique_id = COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide),
+  parent_uei = COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei)
 FROM public.awards a
 LEFT OUTER JOIN public.transaction_fpds fpds ON (a.earliest_transaction_id = fpds.transaction_id)
 LEFT OUTER JOIN public.transaction_fabs fabs ON (a.earliest_transaction_id = fabs.transaction_id)
@@ -33,11 +34,12 @@ WHERE
         )
       )::uuid
     OR sar.parent_recipient_unique_id IS DISTINCT FROM COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide)
+    OR sar.parent_uei IS DISTINCT FROM COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei)
 );
 
 
 INSERT INTO public.summary_award_recipient
-  (award_id, action_date, recipient_hash, parent_recipient_unique_id)
+  (award_id, action_date, recipient_hash, parent_recipient_unique_id, parent_uei)
 SELECT
     a.id AS award_id,
     a.date_signed AS action_date,
@@ -48,7 +50,8 @@ SELECT
         ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) END
       )
     )::uuid AS recipient_hash,
-    COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id
+    COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
+    COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) AS parent_uei
 FROM public.awards a
 LEFT OUTER JOIN public.transaction_fpds fpds ON (a.earliest_transaction_id = fpds.transaction_id)
 LEFT OUTER JOIN public.transaction_fabs fabs ON (a.earliest_transaction_id = fabs.transaction_id)
