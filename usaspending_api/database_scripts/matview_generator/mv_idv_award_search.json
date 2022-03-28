@@ -28,6 +28,7 @@
     "  transaction_fpds.awardee_or_recipient_uniqu AS recipient_unique_id,",
     "  transaction_fpds.ultimate_parent_unique_ide AS parent_recipient_unique_id,",
     "  transaction_fpds.awardee_or_recipient_uei AS recipient_uei,",
+    "  transaction_fpds.ultimate_parent_uei AS parent_uei,",
     "  latest_transaction.business_categories,",
     "",
     "  latest_transaction.action_date,",

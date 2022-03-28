@@ -27,6 +27,7 @@ def transaction_data():
         legal_entity_zip5="abcde",
         piid="IND12PB00323",
         awardee_or_recipient_uei="testuei",
+        ultimate_parent_uei="test_parent_uei",
     )
     mommy.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
@@ -192,6 +193,27 @@ def test_uei(client, monkeypatch, transaction_data, elasticsearch_transaction_in
 
     request = {
         "filters": {"keyword": "testuei", "award_type_codes": ["A", "B", "C", "D"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) > 0
+
+
+@pytest.mark.django_db
+def test_parent_uei(client, monkeypatch, transaction_data, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID"]
+
+    request = {
+        "filters": {"keyword": "test_parent_uei", "award_type_codes": ["A", "B", "C", "D"]},
         "fields": fields,
         "page": 1,
         "limit": 5,

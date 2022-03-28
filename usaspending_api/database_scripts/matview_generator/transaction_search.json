@@ -97,6 +97,7 @@
     "  UPPER(PRL.legal_business_name) AS parent_recipient_name,",
     "  COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,",
     "  COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) AS recipient_uei,",
+    "  COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) AS parent_uei,",
     "",
     "  (SELECT a.id FROM agency a WHERE a.toptier_agency_id = TAA.toptier_agency_id AND a.toptier_flag = TRUE) as awarding_toptier_agency_id,",
     "  (SELECT a.id FROM agency a WHERE a.toptier_agency_id = TFA.toptier_agency_id AND a.toptier_flag = TRUE) as funding_toptier_agency_id,",
