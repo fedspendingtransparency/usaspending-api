@@ -74,10 +74,12 @@ def test_exclusion_bureau_codes(client, bureau_data):
 
     expected_results = [
         {
-            "name": "Sub-Agency 1",
+            "name": "",
             "id": "",
             "total_obligations": "",
             "total_outlays": "",
             "total_budgetary_resources": ""
         }
     ]
+    assert resp.json() == expected_results
+
