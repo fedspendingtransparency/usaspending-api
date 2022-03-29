@@ -120,6 +120,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             .annotate(max_fiscal_period=Max(F("reporting_fiscal_period")))
             .values("max_fiscal_period")
         )
+        
         filters = [
             Q(**{f"{treasury_account_keyword}__federal_account__parent_toptier_agency": self.toptier_agency}),
             Q(submission__reporting_fiscal_year=self.fiscal_year),
