@@ -203,7 +203,7 @@ def test_uei(client, monkeypatch, transaction_data, elasticsearch_transaction_in
     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data["results"]) > 0
+    assert len(resp.data["results"]) == 1
 
 
 @pytest.mark.django_db
@@ -224,4 +224,4 @@ def test_parent_uei(client, monkeypatch, transaction_data, elasticsearch_transac
     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data["results"]) > 0
+    assert len(resp.data["results"]) == 1
