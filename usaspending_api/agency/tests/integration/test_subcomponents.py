@@ -69,13 +69,13 @@ def test_invalid_agency(client, bureau_data):
     
 @pytest.mark.django_db
 def test_exclusion_bureau_codes(client, bureau_data):
-    resp = client.get(url.format(toptier_code="004", filter="?fiscal_year=2021"))
-    assert resp.status_code == status.HTTP_200_OK
+    resp = client.get(url.format(toptier_code="0004", filter="?fiscal_year=2021"))
+    assert resp.status_code == status.HTTP_400_OK
 
     expected_results = [
         {
             "name": "",
         }
     ]
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_400_OK
     assert resp.json()["results"] == expected_results
