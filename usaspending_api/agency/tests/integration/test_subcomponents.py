@@ -74,7 +74,7 @@ def test_exclusion_bureau_codes(client, bureau_data):
 
     expected_results = [
         {
-            "name": None,
+            "name": "",
 
         }
     ]
