@@ -57,25 +57,28 @@ def test_alternate_agency(client, bureau_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-
-@pytest.mark.django_db
-def test_invalid_agency(client, bureau_data):
-    resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
-
-    resp = client.get(url.format(toptier_code="999", filter="?fiscal_year=2018"))
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
-    
-    
 @pytest.mark.django_db
 def test_exclusion_bureau_codes(client, bureau_data):
-    resp = client.get(url.format(toptier_code="0004", filter="?fiscal_year=2021"))
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    # Setup all Data (no bureau)
+    mommy.make(
+        "references.BureauTitleLookup",
+        federal_account_code="",
+        bureau_title="",
+        bureau_slug="",
+    )
 
+    resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
+    assert len(resp.json()["results"]) == 0
+
+    # Setup bureau data
     expected_results = [
         {
             "name": "",
+            "id": "",
+            "total_obligations":    1,
+            "total_outlays": 1,
+            "total_budgetary_resources": 1,
         }
     ]
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    resp = client.get(url.format(toptier_code="004", filter="?fiscal_year=2021"))
     assert resp.json()["results"] == expected_results
