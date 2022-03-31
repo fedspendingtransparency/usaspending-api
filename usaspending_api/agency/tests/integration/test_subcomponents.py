@@ -78,9 +78,9 @@ def test_exclusion_bureau_codes(client, bureau_data):
         {
             "name": "",
             "id": "",
-            "total_obligations": null,
-            "total_outlays": null,
-            "total_budgetary_resources": null,
+            "total_obligations": None,
+            "total_outlays": None,
+            "total_budgetary_resources": None,
         }
     ]
     resp = client.get(url.format(toptier_code="004", filter="?fiscal_year=2021"))
