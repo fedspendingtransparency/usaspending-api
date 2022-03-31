@@ -70,7 +70,7 @@ def test_exclusion_bureau_codes(client, bureau_data):
     )
 
     resp = client.get(url.format(toptier_code="004", filter="?fiscal_year=2021"))
-    assert len(resp.json()["results"]) == 0
+    assert len(resp.json()) == 0
 
     # Setup bureau data
     expected_results = [
