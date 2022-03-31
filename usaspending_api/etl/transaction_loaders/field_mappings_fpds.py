@@ -225,7 +225,7 @@ transaction_fpds_nonboolean_columns = {
     "high_comp_officer5_amount": "officer_5_amount",
     "high_comp_officer5_full_na": "officer_5_name",
     "solicitation_date": "solicitation_date",
-    "entity_data_source": "entity_data_source"
+    "entity_data_source": "entity_data_source",
 }
 
 transaction_fpds_boolean_columns = {
