@@ -93,6 +93,7 @@ class TransactionSearch(models.Model):
     parent_recipient_name = models.TextField(null=True)
     parent_recipient_unique_id = models.TextField(null=True)
     recipient_uei = models.TextField(null=True)
+    parent_uei = models.TextField(null=True)
 
     awarding_toptier_agency_id = models.IntegerField(null=True)
     funding_toptier_agency_id = models.IntegerField(null=True)
