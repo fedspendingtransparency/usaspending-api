@@ -89,6 +89,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             .annotate(
                 total_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"),
             )
+            .exclude(bureau_info__isnull=True)
             .values("bureau_info", "total_budgetary_resources")
         )
         return results
@@ -107,6 +108,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                 total_obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
                 total_outlays=Sum("gross_outlay_amount_by_program_object_class_cpe"),
             )
+            .exclude(bureau_info__isnull=True)
             .values("bureau_info", "total_obligations", "total_outlays")
         )
         return results
