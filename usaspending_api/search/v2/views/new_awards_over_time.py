@@ -69,17 +69,17 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
         if self.filters["recipient_id"][-1] == "P":
             # there *should* only one record with that hash and recipient_level = 'P'
-            parent_duns_rows = RecipientProfile.objects.filter(
+            parent_uei_rows = RecipientProfile.objects.filter(
                 recipient_hash=recipient_hash, recipient_level="P"
-            ).values("recipient_unique_id")
-            if len(parent_duns_rows) != 1:
+            ).values("uei")
+            if len(parent_uei_rows) != 1:
                 raise InvalidParameterException("Provided recipient_id has no parent records")
-            parent_duns = parent_duns_rows[0]["recipient_unique_id"]
-            queryset = queryset.filter(parent_recipient_unique_id=parent_duns)
+            parent_uei = parent_uei_rows[0]["uei"]
+            queryset = queryset.filter(parent_uei=parent_uei)
         elif self.filters["recipient_id"][-1] == "R":
-            queryset = queryset.filter(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=True)
+            queryset = queryset.filter(recipient_hash=recipient_hash, parent_uei__isnull=True)
         else:
-            queryset = queryset.filter(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=False)
+            queryset = queryset.filter(recipient_hash=recipient_hash, parent_uei__isnull=False)
 
         values = ["fy"]
         if self.groupings[self.json_request["group"]] == "month":
