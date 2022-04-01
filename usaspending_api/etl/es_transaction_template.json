@@ -578,6 +578,14 @@
             "type": "keyword"
           }
         }
+      },
+      "parent_uei": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       }
     }
   }
