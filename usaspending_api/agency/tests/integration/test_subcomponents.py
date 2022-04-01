@@ -1,7 +1,6 @@
 import pytest
 
 from model_mommy import mommy
-
 from rest_framework import status
 
 from usaspending_api.agency.tests.integration.conftest import CURRENT_FISCAL_YEAR
