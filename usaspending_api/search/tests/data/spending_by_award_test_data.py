@@ -268,6 +268,7 @@ def spending_by_award_test_data():
         type_set_aside="type_set_aside_test",
         extent_competed="extent_competed_test",
         awardee_or_recipient_uei="testuei",
+        ultimate_parent_uei="test_parent_uei",
     )
     mommy.make(
         "awards.TransactionFPDS",
