@@ -62,6 +62,12 @@ def test_alternate_agency(client, bureau_data):
 
 
 @pytest.mark.django_db
+def test_invalid_agency(client, bureau_data):
+    resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
 def test_exclusion_bureau_codes(client):
     # Setup all Data (no bureau)
     ta1 = mommy.make("references.ToptierAgency", name="Agency 1", toptier_code="001")
