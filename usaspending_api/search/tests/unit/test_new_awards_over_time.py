@@ -45,7 +45,7 @@ def add_award_recipients(db):
             award_id=i,
             action_date=datetime(2009, 5, 30),
             recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
-            parent_recipient_unique_id=None,
+            parent_uei=None,
         )
     current_id += new_award_count
     new_award_count = 3
@@ -56,7 +56,7 @@ def add_award_recipients(db):
             award_id=i,
             action_date=datetime(2009, 5, 1),
             recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
-            parent_recipient_unique_id=None,
+            parent_uei=None,
         )
     current_id += new_award_count
     new_award_count = 1
@@ -67,7 +67,7 @@ def add_award_recipients(db):
             award_id=i,
             action_date=datetime(2009, 7, 2),
             recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
-            parent_recipient_unique_id=None,
+            parent_uei=None,
         )
     current_id += new_award_count
     new_award_count = 2
@@ -78,7 +78,7 @@ def add_award_recipients(db):
             award_id=i,
             action_date=datetime(2008, 1, 10),
             recipient_hash="21a1b0df-e7cd-349b-b948-60ed0ac1e6a0",
-            parent_recipient_unique_id=None,
+            parent_uei=None,
         )
     current_id += new_award_count
     new_award_count = 6
@@ -89,7 +89,7 @@ def add_award_recipients(db):
             award_id=i,
             action_date=datetime(2009, 7, 30),
             recipient_hash="4e418651-4b83-8722-ab4e-e68d80bfb3b3",
-            parent_recipient_unique_id=None,
+            parent_uei=None,
         )
 
 

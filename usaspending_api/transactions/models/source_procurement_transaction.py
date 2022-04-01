@@ -104,6 +104,7 @@ class SourceProcurementTransaction(models.Model):
     economically_disadvantaged = models.NullBooleanField(blank=True)
     educational_institution = models.NullBooleanField(blank=True)
     emerging_small_business = models.NullBooleanField(blank=True)
+    entity_data_source = models.TextField(blank=True, null=True)
     epa_designated_produc_desc = models.TextField(blank=True, null=True)
     epa_designated_product = models.TextField(blank=True, null=True)
     evaluated_preference = models.TextField(blank=True, null=True)
