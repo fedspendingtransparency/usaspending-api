@@ -61,11 +61,10 @@ def test_alternate_agency(client, bureau_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
+
 @pytest.mark.django_db
-def test_exclusion_bureau_codes(client, bureau_data):
-
-    CURRENT_FISCAL_YEAR=2020
-
+def test_exclusion_bureau_codes(client):
+    # Setup all Data (no bureau)
     ta1 = mommy.make("references.ToptierAgency", name="Agency 1", toptier_code="001")
     sa1 = mommy.make("references.SubtierAgency", name="Agency 1", subtier_code="0001")
     mommy.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
@@ -109,12 +108,12 @@ def test_exclusion_bureau_codes(client, bureau_data):
         total_budgetary_resources_amount_cpe=100,
     )
 
-    # Setup all Data (no bureau)
-
+    # Request will return no results because Federal Account has no Bureau Lookup
     resp = client.get(url.format(toptier_code="001", filter="?fiscal_year=2020"))
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json()["results"]) == 0
 
+    # Create Bureau Lookup for existing Federal Account
     mommy.make(
         "references.BureauTitleLookup",
         federal_account_code="001-0000",
@@ -122,7 +121,7 @@ def test_exclusion_bureau_codes(client, bureau_data):
         bureau_slug="new-bureau",
     )
 
-    # Setup bureau data
+    # Request will now return results because matching Bureau Lookup exists
     expected_results = [
         {
             "name": "New Bureau",

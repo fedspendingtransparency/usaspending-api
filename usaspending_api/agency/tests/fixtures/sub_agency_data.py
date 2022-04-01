@@ -22,13 +22,11 @@ def sub_agency_data_1():
     mommy.make("submissions.SubmissionAttributes", toptier_code="001", submission_window=dsws)
     mommy.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws)
     mommy.make("submissions.SubmissionAttributes", toptier_code="003", submission_window=dsws)
-    mommy.make("submissions.SubmissionAttributes", toptier_code="004", submission_window=dsws)
 
     # Toptier and Awarding Agency
     toptier_agency_1 = mommy.make("references.ToptierAgency", toptier_code="001", name="Agency 1")
     toptier_agency_2 = mommy.make("references.ToptierAgency", toptier_code="002", name="Agency 2")
     toptier_agency_3 = mommy.make("references.ToptierAgency", toptier_code="003", name="Agency 3")
-    toptier_agency_4 = mommy.make("references.ToptierAgency", toptier_code="0004", name="")
     subtier_agency_1 = mommy.make(
         "references.SubtierAgency",
         subtier_code="0001",
@@ -41,9 +39,6 @@ def sub_agency_data_1():
     subtier_agency_3 = mommy.make(
         "references.SubtierAgency", subtier_code="0003", name="Sub-Agency 3", abbreviation="A3"
     )
-    subtier_agency_4 = mommy.make(
-        "references.SubtierAgency", subtier_code="0004", name="", abbreviation=""
-    )
     awarding_agency_1 = mommy.make(
         "references.Agency", toptier_agency=toptier_agency_1, subtier_agency=subtier_agency_1, toptier_flag=True
     )
@@ -52,9 +47,6 @@ def sub_agency_data_1():
     )
     awarding_agency_3 = mommy.make(
         "references.Agency", toptier_agency=toptier_agency_3, subtier_agency=subtier_agency_3, toptier_flag=True
-    )
-    awarding_agency_4 = mommy.make(
-        "references.Agency", toptier_agency=toptier_agency_4, subtier_agency=subtier_agency_4, toptier_flag=True
     )
     mommy.make("references.Office", office_code="0001", office_name="Office 1")
     mommy.make("references.Office", office_code="0002", office_name="Office 2")
@@ -217,12 +209,3 @@ def sub_agency_data_1():
         awarding_office_name="Office 2",
         awarding_office_code="0002",
     )
-    mommy.make(
-        TransactionNormalized,
-        award=award_contract,
-        federal_action_obligation=110,
-        action_date="2021-04-01",
-        awarding_agency=awarding_agency_4,
-        funding_agency=awarding_agency_4,
-    )
-    
