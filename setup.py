@@ -55,25 +55,25 @@ if __name__ == "__main__":
     #       commented out
 #     setup()
 
-    # setup(
-    #     name=_PROJECT_NAME,
-    #     version="0.0.0",
-    #     description=(
-    #         "This API is utilized by USAspending.gov to obtain all federal spending data which is open source "
-    #         "and provided to the public as part of the DATA Act."
-    #     ),
-    #     long_description=(_PROJECT_ROOT_DIR / "README.md").read_text(encoding="utf-8"),
-    #     long_description_content_type="text/markdown",
-    #     python_requires="==3.7.*",
-    #     license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
-    #     packages=find_packages(),
-    #     install_requires=_INSTALL_REQUIRES,
-    #     extras_require=_EXTRAS,
-    #     classifiers=[
-    #         "Development Status :: 5 - Production/Stable",
-    #         "Programming Language :: Python",
-    #         "Programming Language :: Python :: 3",
-    #         "Programming Language :: Python :: 3.7",
-    #         "Programming Language :: Python :: 3 :: Only",
-    #     ],
-    # )
+    setup(
+        name=_PROJECT_NAME,
+        version="0.0.0",
+        description=(
+            "This API is utilized by USAspending.gov to obtain all federal spending data which is open source "
+            "and provided to the public as part of the DATA Act."
+        ),
+        long_description=(_PROJECT_ROOT_DIR / "README.md").read_text(encoding="utf-8"),
+        long_description_content_type="text/markdown",
+        python_requires="==3.7.*",
+        license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
+        packages=find_packages(),
+        install_requires=_INSTALL_REQUIRES,
+        extras_require=_EXTRAS,
+        classifiers=[
+            "Development Status :: 5 - Production/Stable",
+            "Programming Language :: Python",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3 :: Only",
+        ],
+    )
