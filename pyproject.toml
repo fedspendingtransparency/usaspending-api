@@ -1,4 +1,4 @@
-[build-system]
+#[build-system]
 # Using this .toml file in accordance with emerging support for PEP 517 and PEP 518 which aims to get away from setup.py
 # and allow static (text config file) declaration of package setup.
 #
