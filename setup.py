@@ -13,65 +13,24 @@ See:
         https://bskinn.github.io/My-How-Why-Pyproject-Src/
     Detailed overview of setuptools packaging:
         https://packaging.python.org/guides/distributing-packages-using-setuptools/
+
+Testing:
+    A local editabale install with dependent packages can be tested with a command like:
+    pip install --editable git+file://<LOCAL_PATH>@<BRANCH>#egg=usaspending-api --src .
+    - <LOCAL_PATH> replaced with e.g.: /Users/devmcdev/Development/myapps/thisrepo
+    - <BRANCH> replaced with whatever branch or tag name in the repo you want to pull code from
+
 """
-import itertools
 import pathlib
 
-from setuptools import setup, find_namespace_packages, find_packages
+from setuptools import setup, find_packages
 
 _PROJECT_NAME = "usaspending-api"
 _SRC_ROOT_DIR = pathlib.Path(__file__).parent.resolve() / _PROJECT_NAME.replace("-", "_")
 _PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.resolve()
 
-# dict of root (top-level) packages mapped to the the directory (relative to project root) they are found under
-# These are packages that are not under the same directory hirearchy, but are each parts of the overall core source code
-
-# DOES NOT WORK: Tries to find automation/app as a directory
-# _CORE_PACKAGES = {
-#     "config": "automation",
-#     "lakehouse_etl": "src",
-# }
-# _found_packages = list(
-#     set(itertools.chain(*[find_packages(where=parent_dir) for parent_dir in _CORE_PACKAGES.values()]))
-# )
-
-# THIS WORKS... but is verbose and unmaintainable to have to specify each package
-# _CORE_PACKAGES = {
-#     "config": "automation",
-#     "config.app": "automation",
-#     "lakehouse_etl": "src",
-#     "lakehouse_etl.app_config": "src",
-#     "lakehouse_etl.prototypes": "src",
-# }
-# _found_packages = list(
-#     set(itertools.chain(*[find_packages(where=parent_dir) for parent_dir in _CORE_PACKAGES.values()]))
-# )
-
-# THIS WORKS... but is verbose and unmaintainable to have to specify each package
-# _CORE_PACKAGES = {
-#     "config": "automation",
-#     "config.app": "automation",
-#     "lakehouse_etl": "src",
-#     "lakehouse_etl.app_config": "src",
-#     "lakehouse_etl.prototypes": "src",
-# }
-# _found_packages = list(
-#     set(itertools.chain(*[find_packages(where=parent_dir) for parent_dir in _CORE_PACKAGES.values()]))
-# )
-
-# _CORE_PACKAGES = {
-#     "lakehouse_etl": "apps",
-#     "lakehouse_etl.app_envs": "automation/config/apps",
-#     "lakehouse_etl.app_config": "apps",
-#     "lakehouse_etl.prototypes": "apps",
-# }
-# _found_packages = list(
-#     set(itertools.chain(*[find_packages(where=parent_dir) for parent_dir in set(_CORE_PACKAGES.values())]))
-# )
-# Alternative way to locate namespace packages
-#_found_packages = find_namespace_packages()
-
 # Requirements
+# Packages will be installed from these well-known files (if they exist) when installing this package
 _install_requires = open(_PROJECT_ROOT_DIR / "requirements" / "requirements-app.txt").read().strip().split("\n")
 _dev_requires = (
     open(_PROJECT_ROOT_DIR / "requirements" / "requirements-dev.txt").read().strip().split("\n")
@@ -96,7 +55,6 @@ setup(
     long_description_content_type="text/markdown",
     python_requires="==3.7.*",
     license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
-    #package_dir=_CORE_PACKAGES,
     packages=find_packages(),
     install_requires=_install_requires,
     extras_require=_extras,
@@ -115,7 +73,3 @@ if __name__ == "__main__":
     #       But until all the packaging core metadata is moved over to the pyproject.toml file, it will remain
     #       commented out
 #     setup()
-
-# TODO: Leads
-#  1.
-#  2. https://github.com/pypa/pip/issues/7265

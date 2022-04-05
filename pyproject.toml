@@ -1,9 +1,22 @@
 [build-system]
-# Using this .toml file in accordance with emerging support for PEP 517 and PEP 518 to get away from setup_old.py
+# Using this .toml file in accordance with emerging support for PEP 517 and PEP 518 which aims to get away from setup.py
+# and allow static (text config file) declaration of package setup.
+#
 # See also: https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
-# See further comments on use of pyproject.toml and necessity of setup_old.py in setup_old.py
-requires = ["pip>=21.3.1", "setuptools>=60.5.0", "wheel"]
-build-backend = "setuptools.build_meta"
+#
+# See further comments on use of pyproject.toml and necessity of setup.py in the setup.py module
+#
+# NOTE: PEP 621 (https://www.python.org/dev/peps/pep-0621/#example) does not seem to have support from
+# the setuptools backend yet. setuptools opted for putting static build config in setup.cfg instead of adding support
+# for parsing and processing pyproject.toml
+#
+# However their setup.cfg spec/support doesn't support declarative syntax for and parsing of an install_requires
+# section, which would mean duplicating all the declared project required libraries inline rather than referring to a
+# requirements.txt file
+#
+# So: As it stands, this is here
+#requires = ["pip>=21.3.1", "setuptools>=60.5.0", "wheel"]
+#build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 120
