@@ -30,7 +30,7 @@ _TEST_REQUIRES = (
 _EXTRAS = {k: v for k, v in {"dev": _DEV_REQUIRES, "test": _TEST_REQUIRES}.items() if v}
 
 if __name__ == "__main__":
-    # The given parameters in this call to setuptools.setup backfill any build-system core metadata
+    # The given parameters in this call to setuptools.setup backfill any project core metadata
     # that could not be declared statically in pyproject.toml, and so were declared as being provided
     # dynamically (by the setuptools build-system backend here) in the "dynamic" field of pyproject.toml
     setup(
