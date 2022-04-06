@@ -57,8 +57,11 @@ class DUNS(models.Model):
     ultimate_parent_uei = models.TextField(null=True, blank=True)
 
     indexes = [
-        PartialIndex(fields=["awardee_or_recipient_uniqu"], unique=True, where=PQ(awardee_or_recipient_uniqu__isnull=False)),
+        PartialIndex(
+            fields=["awardee_or_recipient_uniqu"], unique=True, where=PQ(awardee_or_recipient_uniqu__isnull=False)
+        ),
     ]
+
     class Meta:
         db_table = "duns"
 
