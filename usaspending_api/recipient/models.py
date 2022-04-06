@@ -60,6 +60,7 @@ class DUNS(models.Model):
         PartialIndex(
             fields=["awardee_or_recipient_uniqu"], unique=True, where=PQ(awardee_or_recipient_uniqu__isnull=False)
         ),
+        PartialIndex(fields=["uei"], unique=True, where=PQ(uei__isnull=False)),
     ]
 
     class Meta:
