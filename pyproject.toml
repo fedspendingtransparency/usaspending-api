@@ -48,7 +48,7 @@ classifiers = [
 #rest = ["docutils>=0.3", "pack ==1.1, ==1.3"]
 # From: https://packaging.python.org/en/latest/specifications/declaring-project-metadata/#dynamic
 # "Specifies which fields listed by this PEP were intentionally unspecified so another tool can/will provide such metadata dynamically."
-dynamic = ["version", "dependencies", "optional-dependencies"]
+dynamic = ["version", "dependencies", "project.optional-dependencies"]
 
 [tool.setuptools.packages.find]
 where = ["usaspending_api"]  # list of folders that contain the packages (["."] by default)
