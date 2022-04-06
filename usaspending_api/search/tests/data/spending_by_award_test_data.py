@@ -268,6 +268,7 @@ def spending_by_award_test_data():
         type_set_aside="type_set_aside_test",
         extent_competed="extent_competed_test",
         awardee_or_recipient_uei="testuei",
+        ultimate_parent_uei="test_parent_uei",
     )
     mommy.make(
         "awards.TransactionFPDS",
@@ -287,11 +288,46 @@ def spending_by_award_test_data():
 
     mommy.make("awards.TransactionFABS", transaction_id=7, cfda_number="10.331", awardee_or_recipient_uniqu="duns_1001")
 
-    mommy.make("awards.BrokerSubaward", id=1, award_id=1, subaward_number=11111, awardee_or_recipient_uniqu="duns_1001")
-    mommy.make("awards.BrokerSubaward", id=2, award_id=2, subaward_number=22222, awardee_or_recipient_uniqu="duns_1002")
-    mommy.make("awards.BrokerSubaward", id=3, award_id=2, subaward_number=33333, awardee_or_recipient_uniqu="duns_1002")
-    mommy.make("awards.BrokerSubaward", id=4, award_id=3, subaward_number=44444, awardee_or_recipient_uniqu="duns_1003")
-    mommy.make("awards.BrokerSubaward", id=6, award_id=3, subaward_number=66666, awardee_or_recipient_uniqu="duns_1003")
+    mommy.make(
+        "awards.BrokerSubaward",
+        id=1,
+        award_id=1,
+        subaward_number=11111,
+        awardee_or_recipient_uniqu="duns_1001",
+        sub_awardee_or_recipient_uei="UEI_10010001",
+    )
+    mommy.make(
+        "awards.BrokerSubaward",
+        id=2,
+        award_id=2,
+        subaward_number=22222,
+        awardee_or_recipient_uniqu="duns_1002",
+        sub_awardee_or_recipient_uei="UEI_10010002",
+    )
+    mommy.make(
+        "awards.BrokerSubaward",
+        id=3,
+        award_id=2,
+        subaward_number=33333,
+        awardee_or_recipient_uniqu="duns_1002",
+        sub_awardee_or_recipient_uei="UEI_10010002",
+    )
+    mommy.make(
+        "awards.BrokerSubaward",
+        id=4,
+        award_id=3,
+        subaward_number=44444,
+        awardee_or_recipient_uniqu="duns_1003",
+        sub_awardee_or_recipient_uei="UEI_10010003",
+    )
+    mommy.make(
+        "awards.BrokerSubaward",
+        id=6,
+        award_id=3,
+        subaward_number=66666,
+        awardee_or_recipient_uniqu="duns_1003",
+        sub_awardee_or_recipient_uei="UEI_10010003",
+    )
 
     mommy.make(
         "awards.Subaward",
@@ -309,6 +345,7 @@ def spending_by_award_test_data():
         awarding_toptier_agency_name="awarding toptier 8001",
         awarding_subtier_agency_name="awarding subtier 8001",
         product_or_service_code="PSC2",
+        recipient_uei="UEI_10010001",
     )
     mommy.make(
         "awards.Subaward",

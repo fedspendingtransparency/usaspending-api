@@ -25,6 +25,7 @@ SELECT
   "recipient_levels",
   "parent_recipient_unique_id",
   "recipient_uei",
+  "parent_uei",
   "business_categories",
 
   "action_date",

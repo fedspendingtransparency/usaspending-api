@@ -89,6 +89,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             .annotate(
                 total_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"),
             )
+            .exclude(bureau_info__isnull=True)
             .values("bureau_info", "total_budgetary_resources")
         )
         return results
@@ -107,6 +108,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                 total_obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
                 total_outlays=Sum("gross_outlay_amount_by_program_object_class_cpe"),
             )
+            .exclude(bureau_info__isnull=True)
             .values("bureau_info", "total_obligations", "total_outlays")
         )
         return results
@@ -125,11 +127,11 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             Q(submission__reporting_fiscal_year=self.fiscal_year),
             Q(submission__reporting_fiscal_period=latest[0]["max_fiscal_period"]),
         ]
-
         bureau_info_subquery = Subquery(
             BureauTitleLookup.objects.filter(
                 federal_account_code=OuterRef(f"{treasury_account_keyword}__federal_account__federal_account_code")
             )
+            .exclude(federal_account_code__isnull=True)
             .annotate(
                 bureau_info=Case(
                     When(

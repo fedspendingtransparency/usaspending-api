@@ -38,7 +38,7 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
             results.append(
                 {
                     "id": recipient_hash_list,
-                    "code": info["unique_id"] or "DUNS Number not provided",
+                    "code": info["duns"] or "DUNS Number not provided",
                     "description": info["name"] or None,
                     "award_count": int(bucket.get("doc_count", 0)),
                     **{

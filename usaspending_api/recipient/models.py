@@ -84,6 +84,7 @@ class RecipientProfile(models.Model):
     recipient_hash = models.UUIDField(null=True, db_index=True)
     recipient_unique_id = models.TextField(null=True, db_index=True)
     uei = models.TextField(null=True, db_index=True)
+    parent_uei = models.TextField(null=True)
     recipient_name = models.TextField(null=True, db_index=True)
     recipient_affiliations = ArrayField(base_field=models.TextField(), default=list, size=None)
     award_types = ArrayField(base_field=models.TextField(), default=list, size=None)
@@ -132,6 +133,7 @@ class RecipientLookup(models.Model):
     legal_business_name = models.TextField(null=True, db_index=True)
     duns = models.TextField(null=True)
     uei = models.TextField(null=True)
+    parent_uei = models.TextField(null=True)
     parent_duns = models.TextField(null=True)
     parent_legal_business_name = models.TextField(null=True)
     address_line_1 = models.TextField(null=True)
@@ -152,6 +154,8 @@ class RecipientLookup(models.Model):
         indexes = [
             PartialIndex(fields=["duns"], unique=False, where=PQ(duns__isnull=False)),
             PartialIndex(fields=["parent_duns"], unique=False, where=PQ(parent_duns__isnull=False)),
+            PartialIndex(fields=["uei"], unique=True, where=PQ(uei__isnull=False)),
+            PartialIndex(fields=["parent_uei"], unique=False, where=PQ(parent_uei__isnull=False)),
         ]
 
 
@@ -159,7 +163,7 @@ class SummaryAwardRecipient(models.Model):
     award_id = models.BigIntegerField(primary_key=True)
     action_date = models.DateField(blank=True, db_index=True)
     recipient_hash = models.UUIDField(null=True, db_index=True)
-    parent_recipient_unique_id = models.TextField(null=True, db_index=True)
+    parent_uei = models.TextField(null=True, db_index=True)
 
     class Meta:
         managed = True
