@@ -42,7 +42,6 @@ classifiers = [
 #    'importlib-metadata; python_version<"3.8"',
 #]
 #dependencies = {file = "requirements/requirements-app.txt"}
-
 #[project.optional-dependencies]
 #dev = {file = "requirements/requirements-dev.txt"}
 #pdf = ["ReportLab>=1.2", "RXP"]
@@ -50,6 +49,9 @@ classifiers = [
 # From: https://packaging.python.org/en/latest/specifications/declaring-project-metadata/#dynamic
 # "Specifies which fields listed by this PEP were intentionally unspecified so another tool can/will provide such metadata dynamically."
 dynamic = ["version", "dependencies", "optional-dependencies"]
+
+[tool.setuptools.packages.find]
+where = ["usaspending_api"]  # list of folders that contain the packages (["."] by default)
 
 [tool.black]
 line-length = 120
