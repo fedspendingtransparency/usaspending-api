@@ -49,31 +49,36 @@ _TEST_REQUIRES = (
 _EXTRAS = {"dev": _DEV_REQUIRES + _TEST_REQUIRES}
 
 if __name__ == "__main__":
-    print("Running setup.__main__ from setup.py to invoke function setuptools.setup(...)")
-    # NOTE: The below setup() will be called when this is invoked from a pyproject.toml build backend.
-    #       But until all the packaging core metadata is moved over to the pyproject.toml file, it will remain
-    #       commented out
+    print("????====???? No setup(...) call to run in this setup.py")
+
+    # print("Running setup.__main__ from setup.py to invoke function setuptools.setup(...)")
+
+    # NOTE: The below call to the setuptools.setup function with an empty arguments list is a crutch
+    # for an editable install, which still requires the build-system backend (setuptools here) to interrogate
+    # as setup.py file to make work, rather than the build-system backend config being 100% statically declared in
+    # pyproject.toml
 #     setup()
 
-    setup(
-        name=_PROJECT_NAME,
-        version="0.0.0",
-        description=(
-            "This API is utilized by USAspending.gov to obtain all federal spending data which is open source "
-            "and provided to the public as part of the DATA Act."
-        ),
-        long_description=(_PROJECT_ROOT_DIR / "README.md").read_text(encoding="utf-8"),
-        long_description_content_type="text/markdown",
-        python_requires="==3.7.*",
-        license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
-        packages=find_packages(),
-        install_requires=_INSTALL_REQUIRES,
-        extras_require=_EXTRAS,
-        classifiers=[
-            "Development Status :: 5 - Production/Stable",
-            "Programming Language :: Python",
-            "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3 :: Only",
-        ],
-    )
+    # Invoke the below call to setuptools.setup with ALL the build-system core metadata given by arguments in the call
+    # setup(
+    #     name=_PROJECT_NAME,
+    #     version="0.0.0",
+    #     description=(
+    #         "This API is utilized by USAspending.gov to obtain all federal spending data which is open source "
+    #         "and provided to the public as part of the DATA Act."
+    #     ),
+    #     long_description=(_PROJECT_ROOT_DIR / "README.md").read_text(encoding="utf-8"),
+    #     long_description_content_type="text/markdown",
+    #     python_requires="==3.7.*",
+    #     license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
+    #     packages=find_packages(),
+    #     install_requires=_INSTALL_REQUIRES,
+    #     extras_require=_EXTRAS,
+    #     classifiers=[
+    #         "Development Status :: 5 - Production/Stable",
+    #         "Programming Language :: Python",
+    #         "Programming Language :: Python :: 3",
+    #         "Programming Language :: Python :: 3.7",
+    #         "Programming Language :: Python :: 3 :: Only",
+    #     ],
+    # )
