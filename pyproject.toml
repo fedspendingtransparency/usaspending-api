@@ -41,10 +41,10 @@ classifiers = [
 #    "requests",
 #    'importlib-metadata; python_version<"3.8"',
 #]
-dependencies = {file = "requirements/requirements-app.txt"}
+#dependencies = {file = "requirements/requirements-app.txt"}
 
-[project.optional-dependencies]
-dev = {file = "requirements/requirements-dev.txt"}
+#[project.optional-dependencies]
+#dev = {file = "requirements/requirements-dev.txt"}
 #pdf = ["ReportLab>=1.2", "RXP"]
 #rest = ["docutils>=0.3", "pack ==1.1, ==1.3"]
 
