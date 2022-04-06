@@ -36,7 +36,7 @@ class DUNS(models.Model):
     Model representing DUNS data (imported from the broker)
     """
 
-    awardee_or_recipient_uniqu = models.TextField(primary_key=True)
+    awardee_or_recipient_uniqu = models.TextField(null=True, blank=True)
     legal_business_name = models.TextField(null=True, blank=True)
     dba_name = models.TextField(null=True, blank=True)
     ultimate_parent_unique_ide = models.TextField(null=True, blank=True)
@@ -51,13 +51,19 @@ class DUNS(models.Model):
     congressional_district = models.TextField(null=True, blank=True)
     business_types_codes = ArrayField(base_field=models.TextField(), default=list, size=None, null=True)
     entity_structure = models.TextField(null=True, blank=True)
-    broker_duns_id = models.TextField()
+    broker_duns_id = models.TextField(primary_key=True)
     update_date = models.DateField()
     uei = models.TextField(null=True, blank=True)
     ultimate_parent_uei = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = "duns"
+        indexes = [
+            PartialIndex(
+                fields=["awardee_or_recipient_uniqu"], unique=True, where=PQ(awardee_or_recipient_uniqu__isnull=False)
+            ),
+            PartialIndex(fields=["uei"], unique=True, where=PQ(uei__isnull=False)),
+        ]
 
 
 class HistoricParentDUNS(models.Model):
@@ -65,7 +71,7 @@ class HistoricParentDUNS(models.Model):
     Model representing DUNS data (imported from the broker)
     """
 
-    awardee_or_recipient_uniqu = models.TextField()
+    awardee_or_recipient_uniqu = models.TextField(null=True)
     legal_business_name = models.TextField(null=True, blank=True)
     ultimate_parent_unique_ide = models.TextField(null=True, blank=True)
     ultimate_parent_legal_enti = models.TextField(null=True, blank=True)
