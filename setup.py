@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # for an editable install, which still requires the build-system backend (setuptools here) to interrogate
     # as setup.py file to make work, rather than the build-system backend config being 100% statically declared in
     # pyproject.toml
-#     setup()
+    setup()
 
     # Invoke the below call to setuptools.setup with ALL the build-system core metadata given by arguments in the call
     # setup(
