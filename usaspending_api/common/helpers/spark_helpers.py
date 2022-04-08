@@ -169,7 +169,7 @@ def get_jvm_logger(spark: SparkSession, logger_name=None):
         try:
             calling_function_name = inspect.stack()[1][3]
             logger_name = calling_function_name
-        except:
+        except Exception:
             logger_name = "pyspark_job"
     logger = spark._jvm.org.apache.log4j.LogManager.getLogger(logger_name)
     return logger
@@ -183,16 +183,16 @@ def log_java_exception(logger, exc, err_msg=""):
     else:
         try:
             logger.error(err_msg, exc)
-        except:
+        except Exception:
             logger.error(f"{err_msg}\n{str(exc)}")
 
 
 def configure_s3_credentials(
-    conf: SparkConf,
-    access_key: str = None,
-    secret_key: str = None,
-    profile: str = None,
-    temporary_creds: bool = False,
+        conf: SparkConf,
+        access_key: str = None,
+        secret_key: str = None,
+        profile: str = None,
+        temporary_creds: bool = False,
 ):
     """Set Spark config values allowing authentication to S3 for bucket data
 

@@ -48,8 +48,8 @@ class LocalAppConfig(DefaultAppConfig):
     POSTGRES_USER = _USASPENDING_USER
     POSTGRES_PASSWORD: SecretStr = _USASPENDING_PASSWORD
 
-    ## Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
-    ## Docker will use the Postgres created by Compose.
+    # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
+    # Docker will use the Postgres created by Compose.
     POSTGRES_HOST = "localhost"
     POSTGRES_PORT = "5432"
 
