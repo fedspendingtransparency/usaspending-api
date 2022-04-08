@@ -55,7 +55,6 @@ IS_LOCAL = True
 # False: leave the message in the local file-backed queue to be picked up and processed by the bulk-download container
 RUN_LOCAL_DOWNLOAD_IN_PROCESS = os.environ.get("RUN_LOCAL_DOWNLOAD_IN_PROCESS", "").lower() not in ["false", "0", "no"]
 
-# ==== [AWS] ====
 # AWS Region for USAspending Infrastructure
 USASPENDING_AWS_REGION = ""
 if not USASPENDING_AWS_REGION:

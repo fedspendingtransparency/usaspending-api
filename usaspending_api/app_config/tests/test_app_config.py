@@ -5,7 +5,7 @@ import pytest
 from pprint import pprint
 from usaspending_api.app_config import APP_CONFIG, _load_app_config
 from usaspending_api.app_config.default import DefaultAppConfig
-from usaspending_api.app_config.lcl import LocalAppConfig
+from usaspending_api.app_config.local import LocalAppConfig
 
 
 def test_app_config_values():

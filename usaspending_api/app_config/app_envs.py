@@ -1,4 +1,4 @@
-from usaspending_api.app_config.lcl import LocalAppConfig
+from usaspending_api.app_config.local import LocalAppConfig
 
 # Environment Variable name which holds the app env code indicating the app environment to configure/deploy/run
 APP_ENV_VAR = "APP_ENV"

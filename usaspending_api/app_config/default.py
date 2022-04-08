@@ -3,9 +3,9 @@
 # - Config setting constants declared here should cover ALL expected config settings for a "production" run of this app
 # - Non-Prod app env settings may include additional settings not defined here, to accommodate their different needs
 # - Set config setting constants to non-placeholder values here that are acceptable defaults for any app environment
-# - Set config setting constants to ENV_SPECIFIC_OVERRIDE where there is expected to be a config value replaced
+# - Set config setting constants to _ENV_SPECIFIC_OVERRIDE where there is expected to be a config value replaced
 #   in every app environment config
-# - Values can be overridden if the same variable is defined in an env-specific config_<env>.py file
+# - Values can be overridden if the same variable is defined in an env-specific <env>.py file
 # - Values will be overridden by ENVIRONMENT variables declared in a user's .env file if present at ../.env
 # - See https://pydantic-docs.helpmanual.io/usage/settings/#field-value-priority for precedence of overrides
 ########################################################################################################################
