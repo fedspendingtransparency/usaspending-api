@@ -225,9 +225,8 @@ services:
     environment:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
-      PYTHONPATH: "/project/.venv/lakehouse-etl/lib/python3.8/site-packages:\
-        /project/apps:\
-        /project/automation/config/apps"
+      PYTHONPATH: "/project/.venv/usaspending-api/lib/python3.7/site-packages:\
+        /project"
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
     # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
     # and interpolated before accessed as the entrypoint.

@@ -22,8 +22,8 @@ endif
 #### Variables used in this Makefile.
 #### Uppercased are environment vars, or make-specific vars. All others should be lower-snake-case
 APP_ENV ?= lcl  # default APP_ENV to lcl if not set
-python_version := 3.8.10
-venv_name := lakehouse-etl
+python_version := 3.7.3
+venv_name := usaspending-api
 docker_compose_file := ./docker-compose.yaml
 dockerfile_for_spark := ./docker/spark/Dockerfile
 # Root directories under which python (namespace) packages start, for all python code in this project
