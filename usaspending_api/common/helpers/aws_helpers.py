@@ -17,7 +17,7 @@ def get_aws_credentials(
     access_key: str = None,
     secret_key: str = None,
     profile: str = None,
-) -> "botocore.credential.Credential": # noqa, quoting to defer boto3+botocore import until totally needed
+) -> "botocore.credential.Credential":  # noqa, quoting to defer boto3+botocore import until totally needed
     """Use boto3.Session(...) to derive credentials from any of given values or other credential providers that boto3
     uses
 

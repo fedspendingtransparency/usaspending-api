@@ -188,11 +188,11 @@ def log_java_exception(logger, exc, err_msg=""):
 
 
 def configure_s3_credentials(
-        conf: SparkConf,
-        access_key: str = None,
-        secret_key: str = None,
-        profile: str = None,
-        temporary_creds: bool = False,
+    conf: SparkConf,
+    access_key: str = None,
+    secret_key: str = None,
+    profile: str = None,
+    temporary_creds: bool = False,
 ):
     """Set Spark config values allowing authentication to S3 for bucket data
 
