@@ -156,3 +156,113 @@ services:
         - ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
       ports:
         - 5601:5601
+
+  spark-master:
+    # build context path needs to be relative to project root, from where docker-compose will be run
+    build: ./docker/spark
+    container_name: spark-master
+    environment:
+      SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
+      SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
+      SPARK_MASTER_WEBUI_PORT: ${SPARK_MASTER_WEBUI_PORT:-4040}
+    command: >
+      /bin/sh -c "
+        $${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.master.Master \
+        --port $${SPARK_MASTER_PORT} \
+        --webui-port $${SPARK_MASTER_WEBUI_PORT}"
+    ports:
+      - ${SPARK_MASTER_PORT:-7077}:7077
+      - ${SPARK_MASTER_WEBUI_PORT:-4040}:4040
+    volumes:
+      - type: bind
+        source: .
+        target: /project
+        read_only: false
+
+  spark-worker:
+    # build context path needs to be relative to project root, from where docker-compose will be run
+    build: ./docker/spark
+    container_name: spark-worker
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
+      SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
+      SPARK_WORKER_WEBUI_PORT: ${SPARK_WORKER_WEBUI_PORT:-4041}
+    command: /bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.worker.Worker --webui-port $${SPARK_WORKER_WEBUI_PORT} spark://$${SPARK_MASTER_HOST}:$${SPARK_MASTER_PORT}"
+    ports:
+      - ${SPARK_WORKER_WEBUI_PORT:-4041}:4041
+    volumes:
+      - type: bind
+        source: .
+        target: /project
+        read_only: false
+
+  spark-history-server:
+    # build context path needs to be relative to project root, from where docker-compose will be run
+    build: ./docker/spark
+    container_name: spark-history-server
+    environment:
+      SPARK_HISTORY_SERVER_PORT: ${SPARK_HISTORY_SERVER_PORT:-18080}
+    command: /bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.history.HistoryServer"
+    ports:
+      - ${SPARK_HISTORY_SERVER_PORT:-18080}:18080
+    volumes:
+      - type: bind
+        source: .
+        target: /project
+        read_only: false
+
+  spark-submit:
+    # build context path needs to be relative to project root, from where docker-compose will be run
+    build: ./docker/spark
+    container_name: spark-submit
+    depends_on:
+      - spark-master
+      - spark-worker
+      - spark-history-server
+      - minio
+    environment:
+      SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
+      SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
+      PYTHONPATH: "/project/.venv/lakehouse-etl/lib/python3.8/site-packages:\
+        /project/apps:\
+        /project/automation/config/apps"
+    # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
+    # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
+    # and interpolated before accessed as the entrypoint.
+    # While this service has values for these interpolated vars in the environment: element, those are not used here,
+    # but merely passed into the container. KEEP the two references to these vars and their defaults consistent!
+    # To see what it will be, you can run docker-compose config (i.e. make docker-compose-config in this project's Makefile)
+    entrypoint: ./bin/spark-submit --master spark://${SPARK_MASTER_HOST:-spark-master}:${SPARK_MASTER_PORT:-7077}
+    command: --help
+    volumes:
+      - type: bind
+        source: .
+        target: /project
+        read_only: false
+      # Mount the JAR dependencies local repo on host into container to take advantage of caching/reuse
+      # i.e., to download the dependencies only once and reuse on subsequent docker-compose run calls
+      - type: bind
+        source: ${HOME}/.ivy2
+        target: /root/.ivy2
+        read_only: false
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    volumes:
+      - type: bind
+        source: ${MINIO_DATA_DIR:-../data/s3}
+        target: /data
+    ports:
+      - ${MINIO_PORT:-9000}:9000
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
+    command: server /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-9000}/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
