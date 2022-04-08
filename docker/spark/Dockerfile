@@ -4,7 +4,7 @@ FROM centos:7
 ARG PYTHON_VERSION=3.8.10
 ARG HADOOP_VERSION=3.2.1
 ARG SPARK_VERSION=3.1.2
-ARG PROJECT_LOG_DIR=/project/logs
+ARG PROJECT_LOG_DIR=/logs
 
 RUN yum -y update && yum clean all
 RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel
@@ -48,9 +48,9 @@ RUN echo "Installed Spark" && echo "$(${SPARK_HOME}/bin/pyspark --version)"
 # NOTE: The specified eventlog dir and its path does not exist. It is assumed that a host dir will be bind-mounted at /project
 #       so that all containers that do the same can share the events.
 RUN cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defaults.conf \
-    && sed -i "s|^# spark.eventLog.dir.*$|spark.eventLog.dir                 file://$PROJECT_LOG_DIR/spark-events|g" $SPARK_HOME/conf/spark-defaults.conf \
+    && sed -i "s|^# spark.eventLog.dir.*$|spark.eventLog.dir                 file:///project/$PROJECT_LOG_DIR/spark-events|g" $SPARK_HOME/conf/spark-defaults.conf \
     && sed -i '/spark.eventLog.enabled/s/^# //g' $SPARK_HOME/conf/spark-defaults.conf \
-    && echo "spark.history.fs.logDirectory      file://$PROJECT_LOG_DIR/spark-events" >> $SPARK_HOME/conf/spark-defaults.conf
+    && echo "spark.history.fs.logDirectory      file:///project/$PROJECT_LOG_DIR/spark-events" >> $SPARK_HOME/conf/spark-defaults.conf
 
 # Allow for entrypoints and commands to infer that they are running relative to this directory
 WORKDIR ${SPARK_HOME}

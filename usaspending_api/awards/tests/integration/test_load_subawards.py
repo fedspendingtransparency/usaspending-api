@@ -8,8 +8,8 @@ from pathlib import Path
 from psycopg2.extensions import AsIs
 from usaspending_api.awards.management.commands.load_subawards import Command
 from usaspending_api.awards.models import BrokerSubaward, Subaward
-from usaspending_api.common.etl import ETLMixin
-from usaspending_api.common.etl import stage_table
+from usaspending_api.common.etl.postgres.mixins import ETLMixin
+from usaspending_api.common.etl.postgres.operations import stage_table
 from usaspending_api.common.helpers.sql_helpers import get_connection
 
 

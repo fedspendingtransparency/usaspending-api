@@ -131,7 +131,7 @@ clean-all: confirm-clean-all
 # Run an arbitrary docker-compose command by passing in the args in the "args" variable
 # NOTE: The .env file is used to provide environment variable values that replace varialbes in the compose file
 #       Because the .env file does not live in the same place as the compose file, we have to tell compose explicitly
-#       where it is with "--project_directory". Since this is called from teh root Makefile, using ./ points to the dir
+#       where it is with "--project_directory". Since this is called from the root Makefile, using ./ points to the dir
 #       of that Makefile
 .PHONY: docker-compose
 docker-compose:
@@ -166,11 +166,8 @@ docker-compose-down:
 	docker-compose --project-directory ./ --file ${docker_compose_file} down
 
 # Run docker build to build a base container image for spark, hadoop, and python installed
-# The - < syntax uses NO build context, and reads in the specified file as the Dockerfile
 # NOTE: [See NOTE in above docker-compose rule about .env file]
 .PHONY: docker-build-spark
 docker-build-spark:
-	echo "docker build --tag spark-base ${args} $$(dirname ${dockerfile_for_spark})"
-	docker build --tag spark-base  ${args} $$(dirname ${dockerfile_for_spark})
-#	echo "docker build --tag spark-base ${args} - < ${dockerfile_for_spark}"
-#	docker build --tag spark-base ${args} - < ${dockerfile_for_spark}
+	echo "docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} $$(dirname ${dockerfile_for_spark})"
+	docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} $$(dirname ${dockerfile_for_spark})

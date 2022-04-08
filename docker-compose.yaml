@@ -159,7 +159,10 @@ services:
 
   spark-master:
     # build context path needs to be relative to project root, from where docker-compose will be run
-    build: ./docker/spark
+    build:
+      context: ./docker/spark
+      args:
+        PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-master
     environment:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
@@ -181,7 +184,10 @@ services:
 
   spark-worker:
     # build context path needs to be relative to project root, from where docker-compose will be run
-    build: ./docker/spark
+    build:
+      context: ./docker/spark
+      args:
+        PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-worker
     depends_on:
       - spark-master
@@ -200,7 +206,10 @@ services:
 
   spark-history-server:
     # build context path needs to be relative to project root, from where docker-compose will be run
-    build: ./docker/spark
+    build:
+      context: ./docker/spark
+      args:
+        PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-history-server
     environment:
       SPARK_HISTORY_SERVER_PORT: ${SPARK_HISTORY_SERVER_PORT:-18080}
@@ -215,7 +224,10 @@ services:
 
   spark-submit:
     # build context path needs to be relative to project root, from where docker-compose will be run
-    build: ./docker/spark
+    build:
+      context: ./docker/spark
+      args:
+        PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-submit
     depends_on:
       - spark-master

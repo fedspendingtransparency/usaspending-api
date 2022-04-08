@@ -1,16 +1,14 @@
 import inspect
 import sys
-from urllib.parse import urlparse
 
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
-from py4j.protocol import Py4JJavaError, Py4JError
+from py4j.protocol import Py4JJavaError
 from pydantic import PostgresDsn, AnyHttpUrl
 from pyspark.conf import SparkConf
 from pyspark.sql.types import DecimalType
 from pyspark.sql.types import StringType
 from pyspark.sql import DataFrame, SparkSession
 
-from usaspending_api import settings
 from usaspending_api.app_config import APP_CONFIG
 
 
@@ -110,15 +108,6 @@ def get_es_config():
             index_config["es.mapping.routing"] = routing  # for index routing key
             index_config["es.mapping.id"] = doc_id        # for _id field of indexed documents
     """
-    # es_url = settings.ES_HOSTNAME
-    # if not es_url.startswith("http"):
-    #     es_url = "http://" + es_url
-    # url_parts = urlparse(es_url)
-    # ssl = url_parts.scheme == "https"
-    # host = url_parts.hostname
-    # port = url_parts.port if url_parts.port else "443" if ssl else "80"
-    # user = url_parts.username if url_parts.username else ""
-    # password = url_parts.password if url_parts.password else ""
     es_host = APP_CONFIG.ELASTICSEARCH_HOST  # type: AnyHttpUrl
     ssl = es_host.scheme == "https"
     host = es_host.host

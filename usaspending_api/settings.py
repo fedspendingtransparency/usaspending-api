@@ -10,23 +10,10 @@ import ddtrace
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
-from dotenv import load_dotenv
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
-
-# Load .env File (if exists) to add/override environment variables
-#   Precendence (higher-ranked (lower number) takes precedence over lower ranked)
-#   1. .env file defined variables
-#   2. Command-line variables, e.g.: MY_ENV_VAR=myval python3 manage.py dosomething
-#   3. Process-injected variables (e.g. starting a process in Ansible and giving env var values)
-#   4. Shell-exported variables
-#   5. User or system variables (e.g. created as part of login or profile)
-# NOTE: Use of dotenv is a stop-gap solution until DEV-2564 is taken up in earnest
-#       For now, settings vars wanting to be backed by env vars in this module would need to follow:
-#           THE_SETTING = os.environ.get("THE_SETTING_ENV_VAR", fallback_value_if_not_set_in_dotenv_file_or_env)
-load_dotenv(REPO_DIR, override=True)
 
 # Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
