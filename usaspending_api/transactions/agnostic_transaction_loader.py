@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Tuple
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, operations
+from usaspending_api.common.etl import ETLDBLinkTable, ETLTable
+from usaspending_api.common.etl.postgres import operations
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer

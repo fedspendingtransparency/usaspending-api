@@ -6,7 +6,8 @@ from django.core.management.base import BaseCommand
 from django.db import connection, transaction
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from usaspending_api.common.etl import ETLTable, ETLTemporaryTable, operations
+from usaspending_api.common.etl import ETLTable, ETLTemporaryTable
+from usaspending_api.common.etl.postgres import operations
 from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri

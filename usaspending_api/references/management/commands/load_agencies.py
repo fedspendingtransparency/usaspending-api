@@ -8,7 +8,8 @@ from pathlib import Path
 from psycopg2.extras import execute_values
 from psycopg2.sql import SQL
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-from usaspending_api.common.etl import ETLQueryFile, ETLTable, mixins
+from usaspending_api.common.etl import ETLQueryFile, ETLTable
+from usaspending_api.common.etl.postgres import mixins
 from usaspending_api.common.helpers.sql_helpers import get_connection, execute_sql
 from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer

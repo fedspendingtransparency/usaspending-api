@@ -8,10 +8,8 @@ from usaspending_api.common.etl import (
     ETLTable,
     ETLTemporaryTable,
     ETLQueryFile,
-    introspection,
-    operations,
-    primatives,
 )
+from usaspending_api.common.etl.postgres import introspection, operations, primatives
 from usaspending_api.common.helpers.sql_helpers import (
     convert_composable_query_to_string as cc,
     get_connection,
@@ -60,7 +58,7 @@ def test_primitives():
 
     assert cc(primatives.make_change_detector_conditional([], "a", "b")) == ""
     assert (
-        cc(primatives.make_change_detector_conditional(["test"], "a", "b")) == '"a"."test" is distinct from "b"."test"'
+            cc(primatives.make_change_detector_conditional(["test"], "a", "b")) == '"a"."test" is distinct from "b"."test"'
     )
     assert (
         cc(primatives.make_change_detector_conditional(["test", "tube"], "a", "b"))
@@ -103,7 +101,7 @@ def test_primitives():
     table = SQL("{}").format(Identifier("my_table"))
     assert cc(primatives.make_join_to_table_conditional([], "t", table)) == ""
     assert (
-        cc(primatives.make_join_to_table_conditional(single_key_column, "t", table)) == '"t"."test" = "my_table"."test"'
+            cc(primatives.make_join_to_table_conditional(single_key_column, "t", table)) == '"t"."test" = "my_table"."test"'
     )
     assert (
         cc(primatives.make_join_to_table_conditional(double_key_column, "t", table))

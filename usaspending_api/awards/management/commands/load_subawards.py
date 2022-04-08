@@ -4,7 +4,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from pathlib import Path
-from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable, operations, mixins
+from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable
+from usaspending_api.common.etl.postgres import mixins, operations
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.etl.operations.subaward.update_city_county import update_subaward_city_county
 

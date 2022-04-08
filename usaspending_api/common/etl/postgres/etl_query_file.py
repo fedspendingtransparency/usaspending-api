@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-from usaspending_api.common.etl import ETLQuery
+from usaspending_api.common.etl.postgres import ETLQuery
 
 
 class ETLQueryFile(ETLQuery):
