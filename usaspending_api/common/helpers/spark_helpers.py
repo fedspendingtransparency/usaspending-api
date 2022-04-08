@@ -4,14 +4,14 @@ from urllib.parse import urlparse
 
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from py4j.protocol import Py4JJavaError, Py4JError
-#from pydantic import PostgresDsn, AnyHttpUrl
+from pydantic import PostgresDsn, AnyHttpUrl
 from pyspark.conf import SparkConf
 from pyspark.sql.types import DecimalType
 from pyspark.sql.types import StringType
 from pyspark.sql import DataFrame, SparkSession
 
 from usaspending_api import settings
-#from lakehouse_etl.app_config import APP_CONFIG
+from usaspending_api.app_config import APP_CONFIG
 
 
 def configure_spark_session(app_name="Spark App", **options) -> SparkSession:
@@ -110,15 +110,21 @@ def get_es_config():
             index_config["es.mapping.routing"] = routing  # for index routing key
             index_config["es.mapping.id"] = doc_id        # for _id field of indexed documents
     """
-    es_url = settings.ES_HOSTNAME
-    if not es_url.startswith("http"):
-        es_url = "http://" + es_url
-    url_parts = urlparse(es_url)
-    ssl = url_parts.scheme == "https"
-    host = url_parts.hostname
-    port = url_parts.port if url_parts.port else "443" if ssl else "80"
-    user = url_parts.username if url_parts.username else ""
-    password = url_parts.password if url_parts.password else ""
+    # es_url = settings.ES_HOSTNAME
+    # if not es_url.startswith("http"):
+    #     es_url = "http://" + es_url
+    # url_parts = urlparse(es_url)
+    # ssl = url_parts.scheme == "https"
+    # host = url_parts.hostname
+    # port = url_parts.port if url_parts.port else "443" if ssl else "80"
+    # user = url_parts.username if url_parts.username else ""
+    # password = url_parts.password if url_parts.password else ""
+    es_host = APP_CONFIG.ELASTICSEARCH_HOST  # type: AnyHttpUrl
+    ssl = es_host.scheme == "https"
+    host = es_host.host
+    port = es_host.port if es_host.port else "443" if ssl else "80"
+    user = es_host.user if es_host.user else ""
+    password = es_host.password if es_host.password else ""
 
     # More values at:
     # - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html
@@ -229,7 +235,7 @@ def configure_s3_credentials(
         )
         conf.set("spark.hadoop.fs.s3a.session.token", aws_creds.token)
         conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint", APP_CONFIG.AWS_STS_ENDPOINT)
-        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", settings.USASPENDING_AWS_REGION)
+        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", APP_CONFIG.AWS_REGION)
 
 
 def log_hadoop_config(spark: SparkSession, config_key_contains=""):

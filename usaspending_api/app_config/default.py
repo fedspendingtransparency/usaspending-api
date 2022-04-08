@@ -148,7 +148,7 @@ class DefaultAppConfig(BaseSettings):
     AWS_S3_BUCKET = _ENV_SPECIFIC_OVERRIDE
     AWS_S3_OUTPUT_PATH = "output"  # path within AWS_S3_BUCKET where output data will accumulate
     # Must declare as property, so that the overriding impl that uses a property will still override this
-    AWS_S3_ENDPOINT = property(lambda self: "s3.us-gov-west-1.amazonaws.com")
+    AWS_S3_ENDPOINT: str = property(lambda self: "s3.us-gov-west-1.amazonaws.com")
     AWS_STS_ENDPOINT = "sts.us-gov-west-1.amazonaws.com"
 
     class Config:
