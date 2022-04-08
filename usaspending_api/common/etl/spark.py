@@ -39,8 +39,10 @@ def extract_db_data_frame(
         )
     else:
         partitions = int(count / (partition_rows + 1))
-        logger.info(f"Derived {partitions} partitions from {count} distinct non-numeric (text) "
-                    f"values in column: {partitioning_col}.")
+        logger.info(
+            f"Derived {partitions} partitions from {count} distinct non-numeric (text) "
+            f"values in column: {partitioning_col}."
+        )
 
         # SQL usable in Postgres to get a distinct 32-bit int from an md5 hash of text
         pg_int_from_hash = f"('x'||substr(md5({partitioning_col}),1,8))::bit(32)::int"

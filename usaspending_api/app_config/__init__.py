@@ -36,18 +36,22 @@ def _parse_config_arg() -> dict:
                     k, v = kv_pair.split("=", 2)
                     config_dict[k] = v
             except ValueError:
-                raise argparse.ArgumentError(self, f"Could not parse argument value \"{values[0]}\" as a "
-                                                   f"space-delimited list of KEY=VALUE pairs.")
+                raise argparse.ArgumentError(
+                    self,
+                    f'Could not parse argument value "{values[0]}" as a ' f"space-delimited list of KEY=VALUE pairs.",
+                )
             setattr(args, self.dest, config_dict)
 
-    parser.add_argument("--config",
-                          nargs=1,
-                          action=_KeyValueArgParser,
-                          metavar="KEY=VALUE [KEY=VALUE ...]",
-                          help="Provide new or overriding app config values in a space-delimited list of KEY=VALUE "
-                               "format following the --config arg. Values with spaces should be quoted. Multi-value "
-                               "or complex config entries should be passed as a JSON string surrounded with "
-                               "single-quotes")
+    parser.add_argument(
+        "--config",
+        nargs=1,
+        action=_KeyValueArgParser,
+        metavar="KEY=VALUE [KEY=VALUE ...]",
+        help="Provide new or overriding app config values in a space-delimited list of KEY=VALUE "
+        "format following the --config arg. Values with spaces should be quoted. Multi-value "
+        "or complex config entries should be passed as a JSON string surrounded with "
+        "single-quotes",
+    )
 
     config_arg = None
     if len(sys.argv) > 1:

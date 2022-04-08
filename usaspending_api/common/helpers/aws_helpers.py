@@ -14,9 +14,9 @@ def is_aws():
 
 
 def get_aws_credentials(
-        access_key: str = None,
-        secret_key: str = None,
-        profile: str = None,
+    access_key: str = None,
+    secret_key: str = None,
+    profile: str = None,
 ) -> "botocore.credential.Credential":
     """Use boto3.Session(...) to derive credentials from any of given values or other credential providers that boto3
     uses
@@ -28,6 +28,7 @@ def get_aws_credentials(
     # Some configurations may run in a remote Spark cluster, and this reduces dependency on 3rd-party python
     # libraries, unless needed
     import boto3
+
     aws_creds = boto3.Session(
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_key,

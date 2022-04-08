@@ -37,6 +37,7 @@ class LocalAppConfig(DefaultAppConfig):
             - Should point to a path where data can be persistend beyond docker restarts,
               outside of the git source repository
     """
+
     # ==== [Global] ====
     APP_ENV: ClassVar[str] = "lcl"
     # Common credentials to share across services for convenience / ease on remembering

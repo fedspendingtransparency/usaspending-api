@@ -74,8 +74,8 @@ def configure_spark_session(app_name="Spark App", **options) -> SparkSession:
         f"\n\tES = {'https' if (es_config['es.net.ssl'] and es_config['es.net.ssl'].lower() != 'false') else 'http'}://"
         f"{es_auth}{es_config['es.nodes']}:{es_config['es.port']}"
         f"\n\tS3 = {conf.get('spark.hadoop.fs.s3a.endpoint')} with "
-        f"spark.hadoop.fs.s3a.access.key=\'{conf.get('spark.hadoop.fs.s3a.access.key')}\' and "
-        f"spark.hadoop.fs.s3a.secret.key=\'{'********' if conf.get('spark.hadoop.fs.s3a.secret.key') else ''}\'"
+        f"spark.hadoop.fs.s3a.access.key='{conf.get('spark.hadoop.fs.s3a.access.key')}' and "
+        f"spark.hadoop.fs.s3a.secret.key='{'********' if conf.get('spark.hadoop.fs.s3a.secret.key') else ''}'"
     )
     log_hadoop_config(spark, config_key_contains="s3a")  # debug
     return spark
@@ -97,16 +97,16 @@ def get_jdbc_url():
 
 def get_es_config():
     """
-        Get a base template of Elasticsearch configuration settings tailored to the specific environment setup being
-        used
+    Get a base template of Elasticsearch configuration settings tailored to the specific environment setup being
+    used
 
-        NOTE that this is the base or template config. index-specific values should be overwritten in a copy of this
-        config; e.g.
-            base_config = get_es_config()
-            index_config = base_config.copy()
-            index_config["es.resource.write"] = name      # for index name
-            index_config["es.mapping.routing"] = routing  # for index routing key
-            index_config["es.mapping.id"] = doc_id        # for _id field of indexed documents
+    NOTE that this is the base or template config. index-specific values should be overwritten in a copy of this
+    config; e.g.
+        base_config = get_es_config()
+        index_config = base_config.copy()
+        index_config["es.resource.write"] = name      # for index name
+        index_config["es.mapping.routing"] = routing  # for index routing key
+        index_config["es.mapping.id"] = doc_id        # for _id field of indexed documents
     """
     es_host = APP_CONFIG.ELASTICSEARCH_HOST  # type: AnyHttpUrl
     ssl = es_host.scheme == "https"
@@ -188,7 +188,11 @@ def log_java_exception(logger, exc, err_msg=""):
 
 
 def configure_s3_credentials(
-    conf: SparkConf, access_key: str = None, secret_key: str = None, profile: str = None, temporary_creds: bool = False,
+    conf: SparkConf,
+    access_key: str = None,
+    secret_key: str = None,
+    profile: str = None,
+    temporary_creds: bool = False,
 ):
     """Set Spark config values allowing authentication to S3 for bucket data
 

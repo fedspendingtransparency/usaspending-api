@@ -42,6 +42,7 @@ class DefaultAppConfig(BaseSettings):
         ES_PORT: Port on which to connect to the USAspending Elasticsearch cluster, if different than 80 or 443
                  Defaults to empty string ("")
     """
+
     def __new__(cls, *args, **kwargs):
         if cls is DefaultAppConfig:
             raise NotImplementedError(
@@ -66,8 +67,8 @@ class DefaultAppConfig(BaseSettings):
     def _get_postgres_dsn(self) -> PostgresDsn:
         """A derived property that assembles the full DSN URL to the Postgres DB.
 
-            If ``POSTGRES_URL`` is provided, it will be used. Otherwise this URL is assembled from the other
-            ``POSTGRES_*`` config vars
+        If ``POSTGRES_URL`` is provided, it will be used. Otherwise this URL is assembled from the other
+        ``POSTGRES_*`` config vars
         """
         path = None
         if self.POSTGRES_DB:

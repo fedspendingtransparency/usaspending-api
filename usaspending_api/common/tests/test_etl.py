@@ -58,7 +58,7 @@ def test_primitives():
 
     assert cc(primatives.make_change_detector_conditional([], "a", "b")) == ""
     assert (
-            cc(primatives.make_change_detector_conditional(["test"], "a", "b")) == '"a"."test" is distinct from "b"."test"'
+        cc(primatives.make_change_detector_conditional(["test"], "a", "b")) == '"a"."test" is distinct from "b"."test"'
     )
     assert (
         cc(primatives.make_change_detector_conditional(["test", "tube"], "a", "b"))
@@ -101,7 +101,7 @@ def test_primitives():
     table = SQL("{}").format(Identifier("my_table"))
     assert cc(primatives.make_join_to_table_conditional([], "t", table)) == ""
     assert (
-            cc(primatives.make_join_to_table_conditional(single_key_column, "t", table)) == '"t"."test" = "my_table"."test"'
+        cc(primatives.make_join_to_table_conditional(single_key_column, "t", table)) == '"t"."test" = "my_table"."test"'
     )
     assert (
         cc(primatives.make_join_to_table_conditional(double_key_column, "t", table))
