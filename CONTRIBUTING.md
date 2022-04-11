@@ -6,9 +6,9 @@ Everything in this Github repository is a work-in-progress following the agile m
 # Submitting Changes
 
 ## Making a Branch
-If you have write access to the Github repository, create a git branch from where you want to base your work - Typically, this will be `dev`
+If you have write access to the Github repository, create a git branch from where you want to base your work - Typically, this will be `qat`
 
-Otherwise, clone the repo and base your changes from the `dev` branch of your repo and submit a PR into the `dev` branch of this repo.
+Otherwise, clone the repo and base your changes from the `qat` branch of your repo and submit a PR into the `qat` branch of this repo.
 
 Try to follow these naming conventions so branches will be organized in a list, easily distinguished, and easily traced to the work involved.
 
