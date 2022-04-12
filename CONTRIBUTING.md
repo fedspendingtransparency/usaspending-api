@@ -19,13 +19,13 @@ In general, follow the form `<prefix>/[dev|gh]-###-short-description`
 * `###` is the associated Jira ticket or Github issue number (or the primary ID if multiple tickets or issues apply).
 * `short-description` a few words to concisely summarize what it is.
 
-Prefix|Change Type|Examples
-------|-----------|--------
-`ftr/`|_New_ stuff. New feature development, or new framework, utility, etc.|`ftr/dev-123-short-description`
-`mod/`|Updates, refactoring, improvements, or modifications to an _existing_ feature/framework/code. <br/>_(If this is happening as part of new feature development, use `ftr/` instead.)_|`mod/dev-456-short-description`
-`bug/`|Bug fixes that are not being hotfixed|`bug/gh-21-the-problem`
-`fix/`|Hotfixes patching the current production code|`fix/dev-888-bug-description`
-`doc/`|In app repos when only text files needs to change, usually markdown documentation|`doc/dev-555-what-the-doc-is`
+| Prefix |Change Type|Examples|
+|--------|-----------|--------|
+| `ftr/` |_New_ stuff. New feature development, or new framework, utility, etc.|`ftr/dev-123-short-description`|
+| `mod/` |Updates, refactoring, improvements, or modifications to an _existing_ feature/framework/code. <br/>_(If this is happening as part of new feature development, use `ftr/` instead.)_|`mod/dev-456-short-description`|
+| `bug/` |Bug fixes that are not being hotfixed|`bug/gh-21-the-problem`|
+| `fix/` |Hotfixes patching the current production code|`fix/dev-888-bug-description`|
+| `doc/` |In app repos when only text files needs to change, usually markdown documentation|`doc/dev-555-what-the-doc-is`|
 
 
 ## Code Style
