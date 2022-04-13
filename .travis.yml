@@ -73,6 +73,7 @@ before_script:
   - ./cc-test-reporter before-build
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
+  - psql -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
   - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
   - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
