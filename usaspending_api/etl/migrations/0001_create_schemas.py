@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("awards", "0092_transactionfpds_entity_data_source"),
-        ("recipient", "0018_auto_20220325_1625"),
+        ("recipient", "0020_auto_20220406_1352"),
         ("search", "0007_transactionsearch_parent_uei"),
         ("transactions", "0008_sourceprocurementtransaction_entity_data_source")
     ]
