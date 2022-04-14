@@ -62,7 +62,7 @@ class Migration(migrations.Migration):
         # -----
         migrations.RunSQL(
             sql="ALTER TABLE IF EXISTS public.subaward_view SET SCHEMA rpt;",
-            reverse_sql="ALTER TABLE rpt.subaward_view SET SCHEMA public;"
+            reverse_sql="ALTER TABLE IF EXISTS rpt.subaward_view SET SCHEMA public;"
         ),
         migrations.RunSQL(
             sql="ALTER TABLE public.recipient_lookup SET SCHEMA rpt;",
