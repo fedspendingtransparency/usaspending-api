@@ -3,6 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Recipients [/api/v2/agency/{toptier_code}/recipients/{?fiscal_year}]
 
+Deprecated: This endpoint will be removed in the near future.
 Returns a list of data points of an agencies recipients for a given fiscal year
 
 ## GET
