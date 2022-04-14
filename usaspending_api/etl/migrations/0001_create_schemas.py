@@ -40,6 +40,10 @@ class Migration(migrations.Migration):
             sql="ALTER TABLE public.broker_subaward SET SCHEMA raw;",
             reverse_sql="ALTER TABLE raw.broker_subaward SET SCHEMA public;"
         ),
+        migrations.RunSQL(
+            sql="ALTER TABLE public.duns SET SCHEMA raw;",
+            reverse_sql="ALTER TABLE raw.duns SET SCHEMA public;"
+        ),
 
         # -----
         # Move Silver tables into the "int" schema
@@ -59,5 +63,13 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql="ALTER TABLE IF EXISTS public.subaward_view SET SCHEMA rpt;",
             reverse_sql="ALTER TABLE rpt.subaward_view SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE public.recipient_lookup SET SCHEMA rpt;",
+            reverse_sql="ALTER TABLE rpt.recipient_lookup SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE public.recipient_profile SET SCHEMA rpt;",
+            reverse_sql="ALTER TABLE rpt.recipient_profile SET SCHEMA public;"
         ),
     ]
