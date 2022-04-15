@@ -123,6 +123,36 @@ class Migration(migrations.Migration):
             reverse_sql="ALTER TABLE IF EXISTS temp.transaction_search_9 SET SCHEMA public;"
         ),
 
+        # AwardSearch Materialized Views
+        migrations.RunSQL(
+            sql="ALTER TABLE IF EXISTS public.mv_contract_award_search SET SCHEMA temp;",
+            reverse_sql="ALTER TABLE IF EXISTS temp.mv_contract_award_search SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE IF EXISTS public.mv_idv_award_search SET SCHEMA temp;",
+            reverse_sql="ALTER TABLE IF EXISTS temp.mv_idv_award_search SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE IF EXISTS public.mv_loan_award_search SET SCHEMA temp;",
+            reverse_sql="ALTER TABLE IF EXISTS temp.mv_loan_award_search SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE IF EXISTS public.mv_grant_award_search SET SCHEMA temp;",
+            reverse_sql="ALTER TABLE IF EXISTS temp.mv_grant_award_search SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE IF EXISTS public.mv_directpayment_award_search SET SCHEMA temp;",
+            reverse_sql="ALTER TABLE IF EXISTS temp.mv_directpayment_award_search SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE IF EXISTS public.mv_other_award_search SET SCHEMA temp;",
+            reverse_sql="ALTER TABLE IF EXISTS temp.mv_other_award_search SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE IF EXISTS public.mv_pre2008_award_search SET SCHEMA temp;",
+            reverse_sql="ALTER TABLE IF EXISTS temp.mv_pre2008_award_search SET SCHEMA public;"
+        ),
+
         # -----
         # Move Gold tables into the "rpt" schema
         # -----
@@ -141,5 +171,17 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql="ALTER TABLE public.transaction_search SET SCHEMA rpt;",
             reverse_sql="ALTER TABLE rpt.transaction_search SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE public.awards SET SCHEMA rpt;",
+            reverse_sql="ALTER TABLE rpt.awards SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE public.parent_award SET SCHEMA rpt;",
+            reverse_sql="ALTER TABLE rpt.parent_award SET SCHEMA public;"
+        ),
+        migrations.RunSQL(
+            sql="ALTER TABLE IF EXISTS public.vw_award_search SET SCHEMA rpt;",
+            reverse_sql="ALTER TABLE IF EXISTS rpt.vw_award_search SET SCHEMA public;"
         ),
     ]
