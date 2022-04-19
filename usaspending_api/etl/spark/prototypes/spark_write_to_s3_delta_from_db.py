@@ -4,7 +4,7 @@
         (1) Review config values in usaspending_api/app_config/local.py and override any as needed in
             a .env file
         (2) Deploy minio in docker container (see README.md)
-        (3) Make sure the bucket given by the value of config setting APP_CONFIG.AWS_S3_BUCKET exists
+        (3) Make sure the bucket given by the value of config setting CONFIG.AWS_S3_BUCKET exists
             - e.g. create via UI at http://localhost:9000
             - or use MinIO client CLI: mc mb local/data
         (4) Run with these dependent packages:
@@ -32,7 +32,7 @@
 """
 import os
 
-from usaspending_api.app_config import APP_CONFIG
+from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from usaspending_api.common.helpers.spark_helpers import get_jvm_logger
 from pyspark.sql import SparkSession
@@ -68,7 +68,7 @@ def main():
 
     db_name = "default"
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    path = f"s3a://{APP_CONFIG.AWS_S3_BUCKET}/{APP_CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
+    path = f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
 
     log = get_jvm_logger(spark, __name__)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {db_name}.{table_name} at path {path}")

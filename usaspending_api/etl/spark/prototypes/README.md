@@ -61,10 +61,10 @@ make tests
     6. Runs Spark History Server, with a web UI port on `18080`
     7. Runs the spark-submit command's help in a container, and dies off.
 
-There are other `make docker-compose*` rules that can be used. Look in the included `./automation/orchestration/Makefile`. With many of these rules, you can provide `args="..."` at the end to append additional `docker-compose` options to the underlying call.
+There are other `make docker-compose*` rules that can be used. Look in the included `Makefile`. With many of these rules, you can provide `args="..."` at the end to append additional `docker-compose` options to the underlying call.
     
 ### 4. Run Scripts
-See run instructions in the module-level docstring of a script, e.g. `apps/lakehouse_etl/prototypes/spark_write_to_s3_delta.py`
+See run instructions in the module-level docstring of a script, e.g. `./prototypes/spark_write_to_s3_delta.py`
 
 _:warning: Keep mindful of relative hostname resolution when running things in docker. e.g. Spark executing in a docker worker, and trying to connect to the MinIO container URL will need to use the _`container_name`_ or _hostname_ of that container, not `localhost`._
 

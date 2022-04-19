@@ -4,7 +4,7 @@
         (1) Review config values in usaspending_api/app_config/local.py and override any as needed in
             a .env file
         (2) Deploy minio in docker container (see README.md)
-        (3) Make sure the bucket given by the value of config setting APP_CONFIG.AWS_S3_BUCKET exists
+        (3) Make sure the bucket given by the value of config setting CONFIG.AWS_S3_BUCKET exists
             - e.g. create via UI at http://localhost:9000
             - or use MinIO client CLI: mc mb local/data
         (4) Run with spark-submit container as "Driver" (preferred):
@@ -20,7 +20,7 @@
 import uuid
 import random
 
-from usaspending_api.app_config import APP_CONFIG
+from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from pyspark.sql import SparkSession, Row
 
@@ -40,7 +40,7 @@ def main():
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
     df.write.option("header", True).csv(
-        f"s3a://{APP_CONFIG.AWS_S3_BUCKET}/{APP_CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3/"
+        f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3/"
     )
 
     spark.stop()

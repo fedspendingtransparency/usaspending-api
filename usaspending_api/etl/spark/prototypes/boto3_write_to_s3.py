@@ -1,10 +1,10 @@
 """Write a CSV file to an S3 Bucket using Boto3 lib
 
     Running Locally:
-        (1) Review config values in usaspending_api/app_config/local.py and override any as needed in
+        (1) Review config values in usaspending_api/CONFIG/local.py and override any as needed in
             a .env file
         (2) Deploy minio in docker container (see README.md)
-        (3) Make sure the bucket given by the value of config setting APP_CONFIG.AWS_S3_BUCKET exists
+        (3) Make sure the bucket given by the value of config setting CONFIG.AWS_S3_BUCKET exists
             - e.g. create via UI at http://localhost:9000
             - or use MinIO client CLI: mc mb local/data
         (4) Run:
@@ -17,7 +17,7 @@ import csv
 
 from botocore.exceptions import ClientError
 from io import StringIO, BytesIO
-from usaspending_api.app_config import APP_CONFIG
+from usaspending_api.config import CONFIG
 
 
 def main():
@@ -40,16 +40,16 @@ def main():
 
     s3_client = boto3.client(
         "s3",
-        endpoint_url=f"http://{APP_CONFIG.AWS_S3_ENDPOINT}",
-        aws_access_key_id=APP_CONFIG.AWS_ACCESS_KEY.get_secret_value(),
-        aws_secret_access_key=APP_CONFIG.AWS_SECRET_KEY.get_secret_value(),
+        endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
+        aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+        aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
     )
 
     try:
         response = s3_client.upload_fileobj(
             file_bytes,
-            APP_CONFIG.AWS_S3_BUCKET,
-            f"{APP_CONFIG.AWS_S3_OUTPUT_PATH}/boto3_write_to_s3/boto3_write_to_s3.csv",
+            CONFIG.AWS_S3_BUCKET,
+            f"{CONFIG.AWS_S3_OUTPUT_PATH}/boto3_write_to_s3/boto3_write_to_s3.csv",
         )
     except ClientError as e:
         print(f"ERROR writing file with boto3\n{e}")
