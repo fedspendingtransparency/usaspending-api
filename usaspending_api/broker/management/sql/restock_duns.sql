@@ -46,7 +46,7 @@ CREATE TABLE public.temporary_restock_duns AS (
         duns.uei,
         duns.ultimate_parent_uei
       FROM
-        duns
+        sam_recipient
       ORDER BY
         duns.awardee_or_recipient_uniqu,
         duns.activation_date DESC NULLS LAST)') AS broker_duns

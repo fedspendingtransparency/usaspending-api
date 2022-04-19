@@ -15,7 +15,7 @@ logger = logging.getLogger("script")
 class Command(BaseCommand):
     def gather_new_duns(self, db_cursor, update_date, latest_broker_duns_id):
         new_duns_query = (
-            "SELECT * FROM duns "
+            "SELECT * FROM sam_recipient "
             "WHERE updated_at > '" + str(update_date) + "' AND "
             "duns_id > " + str(latest_broker_duns_id)
         )
@@ -24,7 +24,7 @@ class Command(BaseCommand):
         new_duns = dictfetchall(db_cursor)
 
         update_duns_query = (
-            "SELECT * FROM duns "
+            "SELECT * FROM sam_recipient "
             "WHERE updated_at > '" + str(update_date) + "' AND "
             "duns_id <= " + str(latest_broker_duns_id)
         )
