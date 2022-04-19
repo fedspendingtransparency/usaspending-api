@@ -9,18 +9,18 @@ from pyspark.sql.types import DecimalType
 from pyspark.sql.types import StringType
 from pyspark.sql import DataFrame, SparkSession
 
-from usaspending_api.app_config import APP_CONFIG
+from usaspending_api.config import CONFIG
 
 
 def configure_spark_session(app_name="Spark App", **options) -> SparkSession:
     conf = SparkConf()
 
-    conf.set("spark.scheduler.mode", APP_CONFIG.SPARK_SCHEDULER_MODE)
+    conf.set("spark.scheduler.mode", CONFIG.SPARK_SCHEDULER_MODE)
     # Don't try to re-run the whole job if there's an error
     # Assume that random errors are rare, and jobs have long runtimes, so fail fast, fix and retry manually.
     conf.set("spark.yarn.maxAppAttempts", "1")
-    conf.set("spark.hadoop.fs.s3a.endpoint", APP_CONFIG.AWS_S3_ENDPOINT)
-    if not APP_CONFIG.USE_AWS:
+    conf.set("spark.hadoop.fs.s3a.endpoint", CONFIG.AWS_S3_ENDPOINT)
+    if not CONFIG.USE_AWS:
         # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy
         conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         # "Enable S3 path style access ie disabling the default virtual hosting behaviour.
@@ -38,9 +38,9 @@ def configure_spark_session(app_name="Spark App", **options) -> SparkSession:
     # the shell when executing this program, and set temporary_creds=True.
     configure_s3_credentials(
         conf,
-        APP_CONFIG.AWS_ACCESS_KEY.get_secret_value(),
-        APP_CONFIG.AWS_SECRET_KEY.get_secret_value(),
-        APP_CONFIG.AWS_PROFILE,
+        CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+        CONFIG.AWS_SECRET_KEY.get_secret_value(),
+        CONFIG.AWS_PROFILE,
         temporary_creds=False,
     )
 
@@ -82,11 +82,11 @@ def configure_spark_session(app_name="Spark App", **options) -> SparkSession:
 
 
 def get_jdbc_connection_properties() -> dict:
-    return {"driver": "org.postgresql.Driver", "fetchsize": str(APP_CONFIG.PARTITION_SIZE)}
+    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.PARTITION_SIZE)}
 
 
 def get_jdbc_url():
-    pg_dsn = APP_CONFIG.POSTGRES_DSN  # type: PostgresDsn
+    pg_dsn = CONFIG.POSTGRES_DSN  # type: PostgresDsn
     if pg_dsn.user is None or pg_dsn.password is None:
         raise ValueError("postgres_dsn config val must provide username and password")
     # JDBC URLs only support postgresql://
@@ -108,7 +108,7 @@ def get_es_config():
         index_config["es.mapping.routing"] = routing  # for index routing key
         index_config["es.mapping.id"] = doc_id        # for _id field of indexed documents
     """
-    es_host = APP_CONFIG.ELASTICSEARCH_HOST  # type: AnyHttpUrl
+    es_host = CONFIG.ELASTICSEARCH_HOST  # type: AnyHttpUrl
     ssl = es_host.scheme == "https"
     host = es_host.host
     port = es_host.port if es_host.port else "443" if ssl else "80"
@@ -130,8 +130,8 @@ def get_es_config():
         "es.net.http.auth.pass": password,  # default (not set) Set if running on a local cluster that has auth
         "es.net.ssl": str(ssl).lower(),  # default false
         "es.net.ssl.cert.allow.self.signed": "true",  # default false
-        "es.batch.size.entries": str(APP_CONFIG.ES_BATCH_ENTRIES),  # default 1000
-        "es.batch.size.bytes": str(APP_CONFIG.ES_MAX_BATCH_BYTES),  # default 1024*1024 (1mb)
+        "es.batch.size.entries": str(CONFIG.ES_BATCH_ENTRIES),  # default 1000
+        "es.batch.size.bytes": str(CONFIG.ES_MAX_BATCH_BYTES),  # default 1024*1024 (1mb)
         "es.batch.write.refresh": "false",  # default true, to refresh after configured batch size completes
     }
 
@@ -227,8 +227,8 @@ def configure_s3_credentials(
             "spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider"
         )
         conf.set("spark.hadoop.fs.s3a.session.token", aws_creds.token)
-        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint", APP_CONFIG.AWS_STS_ENDPOINT)
-        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", APP_CONFIG.AWS_REGION)
+        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint", CONFIG.AWS_STS_ENDPOINT)
+        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", CONFIG.AWS_REGION)
 
 
 def log_hadoop_config(spark: SparkSession, config_key_contains=""):

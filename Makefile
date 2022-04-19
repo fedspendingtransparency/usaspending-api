@@ -21,7 +21,7 @@ endif
 #### VARS ##############################################################################################################
 #### Variables used in this Makefile.
 #### Uppercased are environment vars, or make-specific vars. All others should be lower-snake-case
-APP_ENV ?= lcl  # default APP_ENV to lcl if not set
+ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
 python_version := 3.7.3
 venv_name := usaspending-api
 docker_compose_file := ./docker-compose.yaml
@@ -102,10 +102,10 @@ check-dependencies:
 spark = spark = SparkSession.builder.getOrCreate(); \
 print('Hadoop ' + spark.sparkContext._gateway.jvm.org.apache.hadoop.util.VersionInfo.getVersion());"
 
-# Print the value of APP_ENV environment variable
-.PHONY: app-env
-app-env:
-	@echo ${APP_ENV}
+# Print the value of ENV_CODE environment variable
+.PHONY: env-code
+env-code:
+	@echo ${ENV_CODE}
 
 .PHONY: tests
 tests:
@@ -129,7 +129,7 @@ clean-all: confirm-clean-all
 	if command -v deactivate &> /dev/null; then deactivate; fi;
 
 # Run an arbitrary docker-compose command by passing in the args in the "args" variable
-# NOTE: The .env file is used to provide environment variable values that replace varialbes in the compose file
+# NOTE: The .env file is used to provide environment variable values that replace variables in the compose file
 #       Because the .env file does not live in the same place as the compose file, we have to tell compose explicitly
 #       where it is with "--project_directory". Since this is called from the root Makefile, using ./ points to the dir
 #       of that Makefile

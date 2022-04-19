@@ -1,19 +1,18 @@
+import argparse
 import os
 import sys
-import argparse
-
 from functools import lru_cache
 from typing import Type
 
-from usaspending_api.app_config.app_envs import APP_ENV_VAR, APP_ENVS
-from usaspending_api.app_config.default import DefaultAppConfig
+from usaspending_api.config.envs import ENV_CODE_VAR, ENVS
+from usaspending_api.config.default import DefaultConfig
 
 __all__ = [
-    "APP_CONFIG",
+    "CONFIG",
 ]
 
-# If no APP_ENV environment variable is set, fallback to using settings from the APP_ENV with this code
-_FALLBACK_APP_ENV_CODE = "lcl"
+# If no ENV_CODE environment variable is set, fallback to using settings from the ENV_CODE with this code
+_FALLBACK_ENV_CODE = "lcl"
 _CLI_CONFIG_ARG = "config"
 
 
@@ -47,10 +46,10 @@ def _parse_config_arg() -> dict:
         nargs=1,
         action=_KeyValueArgParser,
         metavar="KEY=VALUE [KEY=VALUE ...]",
-        help="Provide new or overriding app config values in a space-delimited list of KEY=VALUE "
-        "format following the --config arg. Values with spaces should be quoted. Multi-value "
-        "or complex config entries should be passed as a JSON string surrounded with "
-        "single-quotes",
+        help="Provide new or overriding config var values in a space-delimited list of KEY=VALUE "
+             "format following the --config arg. Values with spaces should be quoted. Multi-value "
+             "or complex config entries should be passed as a JSON string surrounded with "
+             "single-quotes",
     )
 
     config_arg = None
@@ -62,21 +61,19 @@ def _parse_config_arg() -> dict:
 
 
 @lru_cache()
-def _load_app_config(app_env_code=None) -> Type[DefaultAppConfig]:
-    """Compile application-environment-specific configuration inputs into a final collection of application
-    configuration settings.
-    """
-    if not app_env_code:
-        app_env_code = os.environ.get(APP_ENV_VAR, _FALLBACK_APP_ENV_CODE)
-    app_env = next((app_env for app_env in APP_ENVS if app_env["code"] == app_env_code), None)
-    if not app_env:
+def _load_config(env_code=None) -> Type[DefaultConfig]:
+    """Compile runtime-environment-specific configuration inputs into a final collection configuration values."""
+    if not env_code:
+        env_code = os.environ.get(ENV_CODE_VAR, _FALLBACK_ENV_CODE)
+    runtime_env = next((env for env in ENVS if env["code"] == env_code), None)
+    if not runtime_env:
         raise KeyError(
-            f"App environment with code={app_env_code} not found in supported APP_ENVS. "
-            f"Check that you are supplying the correct app env specifier in the {APP_ENV_VAR} "
+            f"Runtime environment with code={env_code} not found in supported runtime ENVS dict. "
+            f"Check that you are supplying the correct runtime env specifier in the {ENV_CODE_VAR} "
             f"environment variable when running this program"
         )
     cli_config_overrides = _parse_config_arg()
-    return app_env["constructor"](**cli_config_overrides) if cli_config_overrides else app_env["constructor"]()
+    return runtime_env["constructor"](**cli_config_overrides) if cli_config_overrides else runtime_env["constructor"]()
 
 
-APP_CONFIG: Type[DefaultAppConfig] = _load_app_config()
+CONFIG: Type[DefaultConfig] = _load_config()

@@ -1,18 +1,18 @@
-from usaspending_api.app_config.local import LocalAppConfig
+from usaspending_api.config.local import LocalConfig
 
-# Environment Variable name which holds the app env code indicating the app environment to configure/deploy/run
-APP_ENV_VAR = "APP_ENV"
+# Environment Variable name which holds the runtime env code indicating the runtime environment to configure/deploy/run
+ENV_CODE_VAR = "ENV_CODE"
 
-# Capture manifest of all supported application environments
-# env_type allows for multiple instantiations of different types of environments (e.g. stg01, stg02, or blue-green
-# prod environments)
-APP_ENVS = [
+# Capture manifest of all supported runtime environments
+# env_type allows for multiple instantiations of different types of runtime environments
+# (e.g. stg01, stg02, or blue-green prod environments)
+ENVS = [
     {
         "env_type": "local",
-        "code": LocalAppConfig.APP_ENV,
+        "code": LocalConfig.ENV_CODE,
         "long_name": "local",
         "description": "Local Development Environment",
-        "constructor": LocalAppConfig,
+        "constructor": LocalConfig,
     },
     # {
     #     "env_type": "development",
