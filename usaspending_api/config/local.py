@@ -1,28 +1,29 @@
 ########################################################################################################################
-# LOCAL application configuration
-# - Inherits all defaults from DefaultAppSettings in config_default.py
-# - Overrides any default config settings alocal app env specific values
-# - Users may override default local env vars by putting values in a git-ignored .env file alongside docker-compose.yml
-# - Set config setting constants to DefaultAppSettings.USER_SPECIFIC_OVERRIDE where there is expected to a
-#   user-provided config valuebe a config value for a setting (e.g. in the ../.env file)
+# LOCAL runtime env configuration
+# - Inherits all defaults from DefaultConfig in default.py
+# - Overrides any default config variables with local runtime env specific values
+# - Users may override local config vars values declared here by putting values in a git-ignored .env file alongside
+#   docker-compose.yml
+# - Set config variables to DefaultConfig.USER_SPECIFIC_OVERRIDE where there is expected to be a
+#   user-provided a config value for a variable (e.g. in the ../.env file)
 ########################################################################################################################
-from usaspending_api.app_config.default import DefaultAppConfig
 from typing import ClassVar
 
-# Placeholder sentinel value indicating a config setting that is expected to be overridden from an app env to
-# accommodate a setting value that is specific to an individual developer's local environment setup.
-# If this value emerges, it has not yet been set in the user's config (e.g. .env file) and and must be.
 from pydantic.types import SecretStr
 
-# Placeholder sentinel value indicating a config setting that is expected to be user-provided (e.g. in the ../.env file)
+from usaspending_api.config.default import DefaultConfig
+
+# Placeholder sentinel value indicating a config var that is expected to be overridden from a runtime env to
+# accommodate a var value that is specific to an individual developer's local environment setup.
+# If this value emerges, it has not yet been set in the user's config (e.g. .env file) and and must be.
 _USER_SPECIFIC_OVERRIDE = "?USER_SPECIFIC_OVERRIDE?"
 
 
-class LocalAppConfig(DefaultAppConfig):
-    """App config for a local environment, which inherits and overrides from _DefaultAppSettings
+class LocalConfig(DefaultConfig):
+    """Config for a local runtime environment, which inherits and overrides from DefaultConfig
 
     See Also:
-        Attributes inherited from or overridden from ``DefaultAppSettings``
+        Attributes inherited from or overridden from ``DefaultConfig``
 
     Attributes:
         POSTGRES_CLUSTER_DIR: Where docker persists postgres DB data
@@ -39,7 +40,7 @@ class LocalAppConfig(DefaultAppConfig):
     """
 
     # ==== [Global] ====
-    APP_ENV: ClassVar[str] = "lcl"
+    ENV_CODE: ClassVar[str] = "lcl"
     # Common credentials to share across services for convenience / ease on remembering
     _USASPENDING_USER = "usaspending"
     _USASPENDING_PASSWORD: SecretStr = "usaspender"

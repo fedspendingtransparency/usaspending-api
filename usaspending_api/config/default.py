@@ -1,16 +1,17 @@
 ########################################################################################################################
-# DEFAULT application configuration
-# - Config setting constants declared here should cover ALL expected config settings for a "production" run of this app
-# - Non-Prod app env settings may include additional settings not defined here, to accommodate their different needs
-# - Set config setting constants to non-placeholder values here that are acceptable defaults for any app environment
-# - Set config setting constants to _ENV_SPECIFIC_OVERRIDE where there is expected to be a config value replaced
-#   in every app environment config
-# - Values can be overridden if the same variable is defined in an env-specific <env>.py file
+# DEFAULT runtime configuration
+# - Config variables declared here should cover ALL expected config variables for a "production" run
+# - Non-Prod runtime env config may include additional config not defined here, to accommodate their different needs
+# - Set config var to non-placeholder values here that are acceptable defaults for any runtime environment
+# - Set config var to _ENV_SPECIFIC_OVERRIDE where there is expected to be a replacement config value
+#   in every runtime environment config
+# - Values can be overridden if the same config variable is defined in a runtime-env-specific <env>.py file
 # - Values will be overridden by ENVIRONMENT variables declared in a user's .env file if present at ../.env
 # - See https://pydantic-docs.helpmanual.io/usage/settings/#field-value-priority for precedence of overrides
 ########################################################################################################################
 import pathlib
 from typing import ClassVar
+
 from pydantic import (
     AnyHttpUrl,
     BaseSettings,
@@ -21,13 +22,13 @@ from pydantic import (
 _SRC_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.resolve()
 _PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.parent.parent.resolve()
 
-# Placeholder sentinel value indicating a config setting that is expected to be overridden in an app env-specific
-# config settings. If this value emerges, it has not yet been set in hte app env config and must be.
+# Placeholder sentinel value indicating a config var that is expected to be overridden in a runtime-env-specific
+# config declaration. If this value emerges, it has not yet been set in the runtime env config and must be.
 _ENV_SPECIFIC_OVERRIDE = "?ENV_SPECIFIC_OVERRIDE?"
 
 
-class DefaultAppConfig(BaseSettings):
-    """Top-level application config that defines all configuration settings, and their default, overridable values
+class DefaultConfig(BaseSettings):
+    """Top-level config that defines all configuration variables, and their default, overridable values
 
     Attributes:
         POSTGRES_URL: (optional) Full URL to Postgres DB  that can be used to override the URL-by-parts
@@ -44,16 +45,16 @@ class DefaultAppConfig(BaseSettings):
     """
 
     def __new__(cls, *args, **kwargs):
-        if cls is DefaultAppConfig:
+        if cls is DefaultConfig:
             raise NotImplementedError(
-                "DefaultAppSettings is just the base config and should not be instantiated. "
-                "Instantiate a subclass of this for a specific app env."
+                "DefaultConfig is just the base config and should not be instantiated. "
+                "Instantiate a subclass of this for a specific runtime environment."
             )
         return BaseSettings.__new__(cls)
 
     # ==== [Global] ====
-    APP_ENV: ClassVar[str] = _ENV_SPECIFIC_OVERRIDE
-    APP_NAME = "USAspending API"
+    ENV_CODE: ClassVar[str] = _ENV_SPECIFIC_OVERRIDE
+    COMPONENT_NAME = "USAspending API"
 
     # ==== [Postgres] ====
     POSTGRES_URL: str = None
@@ -116,16 +117,16 @@ class DefaultAppConfig(BaseSettings):
     # Reducing to 10,000 DB rows per bulk indexing operation
     PARTITION_SIZE = 10000
 
-    # Spark is connecting JDBC to Elasticsearch here and these settings calibrate the throughput from one to the other,
+    # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
     # `partition_rows` above is how many data items come out of the JDBC side, and are handled by one Executor
     # process's task on a Spark cluster node.
-    # But ES batch settings below throttle how that Executor breaks the received data into batches going out to the
+    # But ES batch config below throttle how that Executor breaks the received data into batches going out to the
     # ES cluster.
     # So, given rows of 10,000, and max batch entries of 4000, the executor will still process all 10,000 rows before
     # quitting its task, it may just make 2 or 3 HTTP requests to ES to do it.
 
-    # Assuming >=4GB RAM per vCPU of the data nodes in the ES cluster, use below settings for calibrating the max
+    # Assuming >=4GB RAM per vCPU of the data nodes in the ES cluster, use below config for calibrating the max
     # batch size of JSON docs for each bulk indexing HTTP request to the ES cluster
     # Indexing should get distributed among the cluster
     # Mileage may vary - try out different batch sizes
