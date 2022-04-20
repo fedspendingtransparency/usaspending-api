@@ -11,22 +11,22 @@
             SPARK_LOCAL_IP=127.0.0.1 spark-submit \
                 usaspending_api/etl/spark/prototypes/spark_version_check.py
 """
-import sys
 import os
+import sys
 
 from pyspark.sql import SparkSession
+from usaspending_api.config import CONFIG
 
 print("==== [ENVIRONMENT] ====")
 [print(f"{k}={v}") for k, v in os.environ.items()]
 print("==== [SYS.PATH] ====")
 [print(i) for i in sys.path]
 
-
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session  # noqa
 
 
 def main():
-    spark = configure_spark_session()  # type: SparkSession
+    spark = configure_spark_session(app_name=CONFIG.COMPONENT_NAME)  # type: SparkSession
     versions = f"""
     @       Python Version: {sys.version}
     @       Spark Version: {spark.version}
