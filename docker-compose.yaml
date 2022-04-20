@@ -160,7 +160,8 @@ services:
   spark-master:
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
-      context: ./docker/spark
+      context: .
+      dockerfile: Dockerfile.spark
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-master
@@ -185,7 +186,8 @@ services:
   spark-worker:
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
-      context: ./docker/spark
+      context: .
+      dockerfile: Dockerfile.spark
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-worker
@@ -207,7 +209,8 @@ services:
   spark-history-server:
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
-      context: ./docker/spark
+      context: .
+      dockerfile: Dockerfile.spark
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-history-server
@@ -225,7 +228,8 @@ services:
   spark-submit:
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
-      context: ./docker/spark
+      context: .
+      dockerfile: Dockerfile.spark
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-submit
@@ -237,8 +241,9 @@ services:
     environment:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
-      PYTHONPATH: "/project/.venv/usaspending-api/lib/python3.7/site-packages:\
-        /project"
+      #PYTHONPATH: "/project/.venv/usaspending-api/lib/python3.7/site-packages:\
+      #  /project"
+      PYTHONPATH: "/project"
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
     # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
     # and interpolated before accessed as the entrypoint.

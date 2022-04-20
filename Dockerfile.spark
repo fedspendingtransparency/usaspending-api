@@ -52,5 +52,12 @@ RUN cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defa
     && sed -i '/spark.eventLog.enabled/s/^# //g' $SPARK_HOME/conf/spark-defaults.conf \
     && echo "spark.history.fs.logDirectory      file:///project/$PROJECT_LOG_DIR/spark-events" >> $SPARK_HOME/conf/spark-defaults.conf
 
+# Bake project dependencies into any spark-base -based container that will run Project python code (and require these dependencies)
+# NOTE: We must exclude any dependencies on the host machine installed in a virtual environment (assumed to be stored under ./.venv)
+WORKDIR /project
+COPY requirements/ /project/requirements
+RUN rm -rf /project/.venv
+RUN python3 -m pip install -r requirements/requirements.txt
+
 # Allow for entrypoints and commands to infer that they are running relative to this directory
 WORKDIR ${SPARK_HOME}
