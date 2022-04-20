@@ -17,7 +17,7 @@ class Command(BaseCommand):
         new_duns_query = (
             "SELECT * FROM sam_recipient "
             "WHERE updated_at > '" + str(update_date) + "' AND "
-            "duns_id > " + str(latest_broker_duns_id)
+            "sam_recipient_id > " + str(latest_broker_duns_id)
         )
         logger.info("Gathering duns created since last update")
         db_cursor.execute(new_duns_query)
@@ -26,7 +26,7 @@ class Command(BaseCommand):
         update_duns_query = (
             "SELECT * FROM sam_recipient "
             "WHERE updated_at > '" + str(update_date) + "' AND "
-            "duns_id <= " + str(latest_broker_duns_id)
+            "sam_recipient_id <= " + str(latest_broker_duns_id)
         )
         logger.info("Gathering duns updated since last update")
         db_cursor.execute(update_duns_query)
@@ -46,7 +46,7 @@ class Command(BaseCommand):
                     "legal_business_name": "legal_business_name",
                     "ultimate_parent_unique_ide": "ultimate_parent_unique_ide",
                     "ultimate_parent_legal_enti": "ultimate_parent_legal_enti",
-                    "broker_duns_id": "duns_id",
+                    "broker_duns_id": "sam_recipient_id",
                 },
                 value_map={"update_date": update_date},
                 as_dict=False,
@@ -58,7 +58,7 @@ class Command(BaseCommand):
     def update_duns(self, update_duns, update_date):
         logger.info("Updating {} duns records".format(len(update_duns)))
         for row in update_duns:
-            equivalent_duns = DUNS.objects.filter(broker_duns_id=row["duns_id"])[0]
+            equivalent_duns = DUNS.objects.filter(broker_duns_id=row["sam_recipient_id"])[0]
             load_data_into_model(
                 equivalent_duns,
                 row,
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                     "legal_business_name": "legal_business_name",
                     "ultimate_parent_unique_ide": "ultimate_parent_unique_ide",
                     "ultimate_parent_legal_enti": "ultimate_parent_legal_enti",
-                    "broker_duns_id": "duns_id",
+                    "broker_duns_id": "sam_recipient_id",
                 },
                 value_map={"update_date": update_date},
                 as_dict=False,

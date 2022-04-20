@@ -7,7 +7,7 @@ CREATE TABLE public.temporary_restock_duns AS (
     broker_duns.legal_business_name AS legal_business_name,
     broker_duns.ultimate_parent_unique_ide AS ultimate_parent_unique_ide,
     broker_duns.ultimate_parent_legal_enti AS ultimate_parent_legal_enti,
-    broker_duns.duns_id AS broker_duns_id,
+    broker_duns.sam_recipient_id AS broker_duns_id,
     broker_duns.record_date AS update_date,
     broker_duns.address_line_1 AS address_line_1,
     broker_duns.address_line_2 AS address_line_2,
@@ -41,7 +41,7 @@ CREATE TABLE public.temporary_restock_duns AS (
         duns.congressional_district,
         COALESCE(duns.business_types_codes, ''{}''::text[]) AS business_types_codes,
         duns.entity_structure,
-        duns.duns_id,
+        duns.sam_recipient_id,
         COALESCE(duns.activation_date, duns.deactivation_date) as record_date,
         duns.uei,
         duns.ultimate_parent_uei
@@ -66,7 +66,7 @@ CREATE TABLE public.temporary_restock_duns AS (
             congressional_district text,
             business_types_codes text[],
             entity_structure text,
-            duns_id text,
+            sam_recipient_id text,
             record_date date,
             uei text,
             ultimate_parent_uei text
