@@ -15,7 +15,7 @@
              - For Spark 3.1.x, EMR uses hadoop-aws:3.2.1 and aws-java-sdk:1.12.31
             )
             (4.1) Run with spark-submit container as "Driver" (preferred):
-            make docker-compose-run args="--rm -e MINIO_HOST=minio -e APP_NAME='Write CSV to S3' spark-submit \
+            make docker-compose-run args="--rm -e MINIO_HOST=minio -e COMPONENT_NAME='Write CSV to S3' spark-submit \
                 --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.0.0,org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31, \
                 /project/usaspending_api/etl/spark/prototypes/spark_write_to_s3_delta.py"
             (4.2) Run with desktop dev env as "Driver":
@@ -41,7 +41,7 @@ def main():
         "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
         "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
     }
-    spark = configure_spark_session(**extra_conf)  # type: SparkSession
+    spark = configure_spark_session(app_name=CONFIG.COMPONENT_NAME, **extra_conf)  # type: SparkSession
 
     data = [
         {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},

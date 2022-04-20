@@ -8,7 +8,7 @@
             - e.g. create via UI at http://localhost:9000
             - or use MinIO client CLI: mc mb local/data
         (4) Run with spark-submit container as "Driver" (preferred):
-            make docker-compose-run args="--rm -e MINIO_HOST=minio -e APP_NAME='Write CSV to S3' spark-submit \
+            make docker-compose-run args="--rm -e MINIO_HOST=minio -e COMPONENT_NAME='Write CSV to S3' spark-submit \
                 --packages org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31 \
                 /project/usaspending_api/etl/spark/prototypes/spark_write_to_s3_csv.py"
             Run with desktop dev env as "Driver":
@@ -26,7 +26,7 @@ from pyspark.sql import SparkSession, Row
 
 
 def main():
-    spark = configure_spark_session()  # type: SparkSession
+    spark = configure_spark_session(app_name=CONFIG.COMPONENT_NAME)  # type: SparkSession
 
     data = [
         {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},

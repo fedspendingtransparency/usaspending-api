@@ -18,9 +18,9 @@
             export JDBC_URL='...your DB JDBC URL in JDBC format!...'
             # example: export JDBC_URL='jdbc:postgresql://usaspending-db:5432/data_store_api?user=usaspending&password=usaspender'
             make docker-compose-up args='-d usaspending-db'
-            make docker-compose-run args='--rm -e MINIO_HOST=minio -e JDBC_URL -e TABLE_NAME=awards -e APP_NAME='Write DB DF to S3 Delta Table' spark-submit \
+            make docker-compose-run args="--rm -e MINIO_HOST=minio -e JDBC_URL -e TABLE_NAME=awards -e COMPONENT_NAME='Write DB DF to S3 Delta Table' spark-submit \
                 --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.0.0,org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31, \
-                /project/usaspending_api/etl/spark/prototypes/spark_write_to_s3_delta_from_db.py'
+                /project/usaspending_api/etl/spark/prototypes/spark_write_to_s3_delta_from_db.py"
             (4.2) Run with desktop dev env as "Driver":
             export JDBC_URL='...your DB JDBC URL in JDBC format!...'
             # example: export JDBC_URL='jdbc:postgresql://localhost:5432/data_store_api?user=usaspending&password=usaspender'
@@ -52,7 +52,7 @@ def main():
         "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
         "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
     }
-    spark = configure_spark_session(**extra_conf)  # type: SparkSession
+    spark = configure_spark_session(app_name=CONFIG.COMPONENT_NAME, **extra_conf)  # type: SparkSession
 
     jdbc_url = os.environ.get(JDBC_URL_KEY)
     if not jdbc_url:

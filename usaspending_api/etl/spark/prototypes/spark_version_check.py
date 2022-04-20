@@ -4,7 +4,12 @@
         (1) Review config values in usaspending_api/app_config/local.py and override any as needed in
             a .env file
         (2) Run:
-            python3 usaspending_api/etl/spark/prototypes/boto3_write_to_s3.py
+            Run with spark-submit container as "Driver" (preferred):
+            make docker-compose-run args="--rm -e COMPONENT_NAME='Spark Version Check' spark-submit \
+                /project/usaspending_api/etl/spark/prototypes/spark_version_check.py"
+            Run with desktop dev env as "Driver":
+            SPARK_LOCAL_IP=127.0.0.1 spark-submit \
+                usaspending_api/etl/spark/prototypes/spark_version_check.py
 """
 import sys
 import os
