@@ -27,7 +27,7 @@ venv_name := usaspending-api
 docker_compose_file := ./docker-compose.yaml
 dockerfile_for_spark := ./docker/spark/Dockerfile
 # Root directories under which python (namespace) packages start, for all python code in this project
-src_root_paths = "usaspending_api"
+src_root_paths = "."
 
 #### RULES #############################################################################################################
 #### Rules defining file targets that need to be made, or PHONY targets, which don't actually produce a file
@@ -74,7 +74,7 @@ printvars:
 		echo "virtual env at .venv/${venv_name} activated (temporarily)"; \
 		src_roots=(${src_root_paths}); \
 		for src_root in "$${src_roots[@]}"; do \
-			pip install -e "$${src_root}[dev]"; \
+			pip --no-cache-dir install --editable "$${src_root}[dev]"; \
 		done; \
 	)
 
