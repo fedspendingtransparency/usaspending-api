@@ -74,9 +74,13 @@ printvars:
 		echo "virtual env at .venv/${venv_name} activated (temporarily)"; \
 		src_roots=(${src_root_paths}); \
 		for src_root in "$${src_roots[@]}"; do \
-			pip --no-cache-dir install --editable "$${src_root}[dev]"; \
+			pip install --editable "$${src_root}[dev]"; \
 		done; \
 	)
+
+# Ensure user has a ~/.ivy2 dir, which will be bound to in a docker container volume to save on dependency downloads
+.ivy2:
+	@mkdir -p ~/.ivy2
 
 # Spit out the command to run to activate the virtual env, since you can't do it within a make shell process
 # Use this like: source $(make activate)
@@ -86,7 +90,7 @@ activate:
 
 # Setup python, virtual environment, and pip dependencies, then check version info
 .PHONY: local-dev-setup
-local-dev-setup: .python-version .venv check-dependencies
+local-dev-setup: .python-version .venv check-dependencies .ivy2
 
 # Prints out the versions of dependencies in use
 .PHONY: check-dependencies
@@ -171,3 +175,22 @@ docker-compose-down:
 docker-build-spark:
 	echo "docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} $$(dirname ${dockerfile_for_spark})"
 	docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} $$(dirname ${dockerfile_for_spark})
+
+# Ensure ALL services in the docker-compose.yaml file have an image built for them according to their build: key
+# NOTE: This creates a compose-specific image and image name. While building and tagging the spark-base image can be done,
+#       docker-compose will _NOT USE_ that image at runtime. It may use cached layers of that image when doing its build,
+#       but it will create a _differently named_ image: the image name is always going to be <project>_<service>,
+#       where project defaults to the directory name you're in. Therefore you MUST always run this command (or the manual version of it)
+#       anytime you want services run with Docker Compose to accommodate recent changes in the image (e.g. python package dependency changes)
+# NOTE: [See NOTE in above docker-compose rule about .env file]
+.PHONY: docker-compose-build
+docker-compose-build:
+	echo "docker-compose build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
+	docker-compose build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+
+# See: docker-compose-build rule. This builds just the subset of spark services.
+# NOTE: [See NOTE in above docker-compose rule about .env file]
+.PHONY: docker-compose-build-spark
+docker-compose-build-spark:
+	echo "docker-compose build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} $$(docker-compose ps --services | grep '^spark' | tr '\n' ' ') ${args}"
+	docker-compose build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} $$(docker-compose ps --services | grep '^spark' | tr '\n' ' ') ${args}
