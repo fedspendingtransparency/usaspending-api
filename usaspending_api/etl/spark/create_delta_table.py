@@ -3,7 +3,7 @@ import sys
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_jvm_logger
-from usaspending_api.transactions.models.spark.source_assistance_transaction import (
+from usaspending_api.transactions.delta_models.source_assistance_transaction import (
     source_assististance_transaction_sql_string,
 )
 from pyspark.sql import SparkSession
@@ -35,7 +35,7 @@ def main():
 
     # Resolve Parameters
     DESTINATION_SCHEMA = os.environ.get("DESTINATION_SCHEMA", "bronze")
-    DESTINATION_TABLE = os.environ.get("DESTINATION_TABLE")
+    DESTINATION_TABLE = os.environ.get("DESTINATION_TABLE", "source_assistance_transaction")
 
     # Setup DB Schema
     if DESTINATION_SCHEMA:

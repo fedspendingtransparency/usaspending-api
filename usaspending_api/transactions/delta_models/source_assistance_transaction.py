@@ -103,5 +103,5 @@ source_assististance_transaction_sql_string = r"""
         indirect_federal_sharing numeric(23,2)
     )
     USING DELTA
-    LOCATION '{DESTINATION_BUCKET}/{DESTINATION_PATH}/{DESTINATION_TABLE}'
+    LOCATION 's3a://{AWS_S3_BUCKET}/{AWS_S3_OUTPUT_PATH}/{DESTINATION_TABLE}'
     """
