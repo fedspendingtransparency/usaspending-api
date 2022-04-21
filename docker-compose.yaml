@@ -10,8 +10,8 @@ volumes:
 services:
 
   usaspending-db:
-    container_name: usaspending-db
     image: postgres:10.13-alpine
+    container_name: usaspending-db
     volumes:
       - type: volume
         source: local_pg_data
@@ -24,7 +24,9 @@ services:
       POSTGRES_DB: data_store_api
 
   usaspending-manage:
+    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
+    container_name: usaspending-manage
     volumes:
      - .:/dockermount
     depends_on:
@@ -37,7 +39,9 @@ services:
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
 
   usaspending-test:
+    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
+    container_name: usaspending-test
     volumes:
      - .:/dockermount
      # Required to interact with host's docker daemon from within this running container,
@@ -55,7 +59,9 @@ services:
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 
   usaspending-ci:
+    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
+    container_name: usaspending-ci
     volumes:
      - .:/dockermount
      # Required to interact with host's docker daemon from within this running container,
@@ -86,7 +92,9 @@ services:
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 
   usaspending-api:
+    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
+    container_name: usaspending-api
     volumes:
       - .:/dockermount
     ports:
@@ -106,8 +114,9 @@ services:
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
 
   usaspending-bulk-download:
-    container_name: usaspending-bulk-download
+    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
+    container_name: usaspending-bulk-download
     restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
     volumes:
     - .:/dockermount
@@ -118,8 +127,8 @@ services:
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-es:
-      container_name: usaspending-es
       image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+      container_name: usaspending-es
       environment:
         - node.name=usaspending-es
         - discovery.seed_hosts=usaspending-es
@@ -149,8 +158,8 @@ services:
         - 9200:9200
 
   usaspending-kibana-es:
-      container_name: usaspending-kibana-es
       image: docker.elastic.co/kibana/kibana-oss:7.1.1
+      container_name: usaspending-kibana-es
       # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
       environment:
         - ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
@@ -158,6 +167,7 @@ services:
         - 5601:5601
 
   spark-master:
+    image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
       context: .
@@ -184,6 +194,7 @@ services:
         read_only: false
 
   spark-worker:
+    image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
       context: .
@@ -207,6 +218,7 @@ services:
         read_only: false
 
   spark-history-server:
+    image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
       context: .
@@ -226,6 +238,7 @@ services:
         read_only: false
 
   spark-submit:
+    image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
       context: .

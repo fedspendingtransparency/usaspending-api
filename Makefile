@@ -25,7 +25,7 @@ ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
 python_version := 3.7.3
 venv_name := usaspending-api
 docker_compose_file := ./docker-compose.yaml
-dockerfile_for_spark := ./docker/spark/Dockerfile
+dockerfile_for_spark := ./Dockerfile.spark
 # Root directories under which python (namespace) packages start, for all python code in this project
 src_root_paths = "."
 
@@ -173,12 +173,15 @@ docker-compose-down:
 # NOTE: [See NOTE in above docker-compose rule about .env file]
 .PHONY: docker-build-spark
 docker-build-spark:
-	echo "docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} $$(dirname ${dockerfile_for_spark})"
-	docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} $$(dirname ${dockerfile_for_spark})
+	echo "docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})"
+	docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})
 
 # Ensure ALL services in the docker-compose.yaml file have an image built for them according to their build: key
-# NOTE: This creates a compose-specific image and image name. While building and tagging the spark-base image can be done,
-#       docker-compose will _NOT USE_ that image at runtime. It may use cached layers of that image when doing its build,
+# NOTE: This *may* creates a compose-specific image name IF an image: YAML key does not specificy the image name to be used as
+#       a tag when compose has to build the image.
+#       If no image key is specified, then be aware that:
+#       While building and tagging the spark-base image can be done, docker-compose will _NOT USE_ that image at runtime,
+#       but look for an image with its custom tag. It may use cached layers of that image when doing its build,
 #       but it will create a _differently named_ image: the image name is always going to be <project>_<service>,
 #       where project defaults to the directory name you're in. Therefore you MUST always run this command (or the manual version of it)
 #       anytime you want services run with Docker Compose to accommodate recent changes in the image (e.g. python package dependency changes)
