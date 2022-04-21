@@ -47,9 +47,9 @@ def _parse_config_arg() -> dict:
         action=_KeyValueArgParser,
         metavar="KEY=VALUE [KEY=VALUE ...]",
         help="Provide new or overriding config var values in a space-delimited list of KEY=VALUE "
-             "format following the --config arg. Values with spaces should be quoted. Multi-value "
-             "or complex config entries should be passed as a JSON string surrounded with "
-             "single-quotes",
+        "format following the --config arg. Values with spaces should be quoted. Multi-value "
+        "or complex config entries should be passed as a JSON string surrounded with "
+        "single-quotes",
     )
 
     config_arg = None
