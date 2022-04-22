@@ -1,4 +1,5 @@
 import inspect
+import logging
 import sys
 
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
@@ -12,7 +13,11 @@ from pyspark.sql import DataFrame, SparkSession
 from usaspending_api.config import CONFIG
 
 
-def configure_spark_session(app_name="Spark App", **options) -> SparkSession:
+def configure_spark_session(
+    app_name="Spark App",
+    log_level: int = None,  # one of logging.ERROR, logging.WARN, logging.WARNING, logging.INFO, logging.DEBUG
+    **options,
+) -> SparkSession:
     conf = SparkConf()
 
     conf.set("spark.scheduler.mode", CONFIG.SPARK_SCHEDULER_MODE)
@@ -54,6 +59,17 @@ def configure_spark_session(app_name="Spark App", **options) -> SparkSession:
     # spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", AWS_ACCESS_KEY)
 
     spark = SparkSession.builder.appName(app_name).config(conf=conf).getOrCreate()
+
+    # Override log level, if provided
+    # While this is a bit late (missing out on any logging at SparkSession instantiation time),
+    # could not find a way (aside from injecting a ${SPARK_HOME}/conf/log4.properties file) to have it pick up
+    # the desired log level at Spark startup time
+    if log_level:
+        logging._checkLevel(log_level)  # throws error if not recognized
+        log_level_name = logging.getLevelName(log_level)
+        if log_level_name == "WARNING":
+            log_level_name = "WARN"  # tranlate to short-form used by log4j
+        spark.sparkContext.setLogLevel(log_level_name)
 
     logger = get_jvm_logger(spark)
     logger.info("PySpark Job started!")
@@ -229,6 +245,16 @@ def configure_s3_credentials(
         conf.set("spark.hadoop.fs.s3a.session.token", aws_creds.token)
         conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint", CONFIG.AWS_STS_ENDPOINT)
         conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", CONFIG.AWS_REGION)
+
+
+def log_spark_config(spark: SparkSession, config_key_contains=""):
+    """Log at log4j INFO the values of the SparkConf object in the current SparkSession"""
+    logger = get_jvm_logger(spark)
+    [
+        logger.info(f"{item[0]}={item[1]}")
+        for item in spark.sparkContext.getConf().getAll()
+        if config_key_contains in item[0]
+    ]
 
 
 def log_hadoop_config(spark: SparkSession, config_key_contains=""):
