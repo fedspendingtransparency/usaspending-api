@@ -2,12 +2,16 @@
 spark components (docker-compose container services) are up and running and integratable.
 """
 import logging
+import os
 import sys
 import uuid
 import random
 from pytest import fixture
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session, log_hadoop_config, log_spark_config, \
-    get_jvm_logger
+from unittest.mock import patch
+from usaspending_api.common.helpers.spark_helpers import (
+    configure_spark_session,
+    get_jvm_logger,
+)
 from config import CONFIG
 from pyspark import SparkContext
 from pyspark.sql import SparkSession, Row
@@ -21,10 +25,16 @@ def spark_stopper():
     """
     if SparkContext._active_spark_context:  # Singleton instance populated if there's an active SparkContext
         raise Exception("Test needs to create a new SparkSession+SparkContext, but a SparkContext exists.")
-    yield
+
+    # Add SPARK_TEST to avoid the Spark UI starting during tests
+    with patch.dict(os.environ, {"SPARK_TESTING": "true"}):
+        yield
     if SparkContext._active_spark_context:
-        sc = SparkContext.getOrCreate()
-        sc.stop()
+        try:
+            SparkContext.getOrCreate().stop()
+        except Exception:
+            # Swallow errors if not able to stop (e.g. may have already been stopped)
+            pass
 
 
 def test_spark_app_run_local_master(request, spark_stopper):
@@ -38,10 +48,7 @@ def test_spark_app_run_local_master(request, spark_stopper):
     """
     extra_conf = {}
     spark = configure_spark_session(
-        app_name=request.node.name,
-        log_level=logging.INFO,
-        log_spark_config_vals=True,
-        **extra_conf
+        app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=True, **extra_conf
     )  # type: SparkSession
 
     logger = get_jvm_logger(spark)
@@ -66,10 +73,7 @@ def test_spark_app_run_remote_master(request, spark_stopper):
         "spark.master": "spark://localhost:7077",
     }
     spark = configure_spark_session(
-        app_name=request.node.name,
-        log_level=logging.INFO,
-        log_spark_config_vals=True,
-        **extra_conf
+        app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=True, **extra_conf
     )  # type: SparkSession
 
     logger = get_jvm_logger(spark)
@@ -86,12 +90,16 @@ def test_spark_app_run_remote_master(request, spark_stopper):
 #  conf with the JAR libs it needs to pull into its java classpath. Currently exploring SparkConf values: https://spark.apache.org/docs/latest/submitting-applications.html
 # TODO: Investigate setting the PYSPARK_SUBMIT_ARGS env var, which is basically everything (including --packages)
 #  provided to spark-submit
-# TODO: Look into setting the SPARK_TEST (or something similar to that name) env var which it looks at when creating
-#  the java gateway in order to NOT bother setting up the Spark UI
+@patch.dict(
+    os.environ,
+    {
+        "PYSPARK_SUBMIT_ARGS": "--packages org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31 pyspark-shell"
+    },
+)
 def test_spark_write_csv_app_run(request, spark_stopper):
     """More involved integration test that requires MinIO to be up as an s3 alternative."""
     extra_conf = {
-        "spark.jars.packages": "org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31",
+        # "spark.jars.packages": "org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31",
     }
     spark = configure_spark_session(app_name=request.node.name, **extra_conf)  # type: SparkSession
 
@@ -106,6 +114,4 @@ def test_spark_write_csv_app_run(request, spark_stopper):
     ]
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
-    df.write.option("header", True).csv(
-        f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3/"
-    )
+    df.write.option("header", True).csv(f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3/")

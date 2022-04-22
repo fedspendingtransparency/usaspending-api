@@ -2,6 +2,7 @@ import inspect
 import logging
 import sys
 
+from pyspark.find_spark_home import _find_spark_home
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from py4j.protocol import Py4JJavaError
 from pydantic import PostgresDsn, AnyHttpUrl
@@ -77,6 +78,7 @@ def configure_spark_session(
     logger.info("PySpark Job started!")
     logger.info(
         f"""
+@       Found SPARK_HOME: {_find_spark_home()}
 @       Python Version: {sys.version}
 @       Spark Version: {spark.version}
 @       Hadoop Version: {spark.sparkContext._gateway.jvm.org.apache.hadoop.util.VersionInfo.getVersion()}
