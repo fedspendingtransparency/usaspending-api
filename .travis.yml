@@ -39,6 +39,7 @@ env:
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
   - GRANTS_API_KEY=${GRANTS_API_KEY}
+  - PROJECT_LOG_DIR=./usaspending_api/logs
 
 before_install:
   # Re-install elasticsearch at the right version
