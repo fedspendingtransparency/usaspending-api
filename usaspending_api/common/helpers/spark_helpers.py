@@ -16,6 +16,8 @@ from usaspending_api.config import CONFIG
 def configure_spark_session(
     app_name="Spark App",
     log_level: int = None,  # one of logging.ERROR, logging.WARN, logging.WARNING, logging.INFO, logging.DEBUG
+    log_spark_config_vals: bool = False,
+    log_hadoop_config_vals: bool = False,
     **options,
 ) -> SparkSession:
     conf = SparkConf()
@@ -93,7 +95,11 @@ def configure_spark_session(
         f"spark.hadoop.fs.s3a.access.key='{conf.get('spark.hadoop.fs.s3a.access.key')}' and "
         f"spark.hadoop.fs.s3a.secret.key='{'********' if conf.get('spark.hadoop.fs.s3a.secret.key') else ''}'"
     )
-    log_hadoop_config(spark, config_key_contains="s3a")  # debug
+
+    if log_spark_config_vals:
+        log_spark_config(spark)
+    if log_hadoop_config_vals:
+        log_hadoop_config(spark)
     return spark
 
 
