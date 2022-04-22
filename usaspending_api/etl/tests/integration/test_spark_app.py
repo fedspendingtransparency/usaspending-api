@@ -4,6 +4,7 @@ spark components (docker-compose container services) are up and running and inte
 import sys
 from common.helpers.spark_helpers import configure_spark_session
 from config import CONFIG
+from pyspark.sql import SparkSession
 
 
 def test_spark_app_run():

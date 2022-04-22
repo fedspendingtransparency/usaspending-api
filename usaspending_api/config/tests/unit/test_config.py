@@ -42,7 +42,7 @@ def test_override_with_dotenv_file(tmpdir):
     dotenv_file = tmp_config_dir.join(".env")
     dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
     dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
-    dotenv_path = filename = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val
 
@@ -70,7 +70,7 @@ def test_override_dotenv_file_with_env_var(tmpdir):
     dotenv_file = tmp_config_dir.join(".env")
     dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
     dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
-    dotenv_path = filename = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val
 
@@ -119,12 +119,12 @@ def test_override_multiple_with_command_line_args():
 def test_precedence_order(tmpdir):
     """Confirm all overrides happen in the expected order
 
-        1. Default value set in DefaultConfig
-        2. Is overridden by same config vars in subclass (e.g. LocalConfig(DefaultConfig))
-        3. Is overridden by .env file values
-        4. Is overridden by env var values
-        5. Is overridden by constructor keyword args OR by command-line --config args
-           - NOTE: since the --config args get used as constructor kwargs, CANNOT do both
+    1. Default value set in DefaultConfig
+    2. Is overridden by same config vars in subclass (e.g. LocalConfig(DefaultConfig))
+    3. Is overridden by .env file values
+    4. Is overridden by env var values
+    5. Is overridden by constructor keyword args OR by command-line --config args
+       - NOTE: since the --config args get used as constructor kwargs, CANNOT do both
 
     """
     # Verify default if nothing overriding
@@ -136,7 +136,7 @@ def test_precedence_order(tmpdir):
     dotenv_file = tmp_config_dir.join(".env")
     dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
     dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
-    dotenv_path = filename = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val
 
