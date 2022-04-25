@@ -12,7 +12,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_jvm_logger,
 )
-from config import CONFIG
+from usaspending_api.config import CONFIG
 from pyspark import SparkContext
 from pyspark.sql import SparkSession, Row
 
