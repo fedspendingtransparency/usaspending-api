@@ -1,24 +1,61 @@
-import os
 import sys
 
 from django.core.management.base import BaseCommand
 
+from usaspending_api.awards.delta_models.broker_subaward import broker_subaward_sql_string
+from usaspending_api.awards.delta_models.financial_accounts_by_awards import financial_accounts_by_awards_sql_string
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_jvm_logger
+from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_sql_string
 from usaspending_api.transactions.delta_models.source_assistance_transaction import (
     source_assististance_transaction_sql_string,
+)
+from usaspending_api.transactions.delta_models.source_procurement_transaction import (
+    source_procurement_transaction_sql_string,
 )
 from pyspark.sql import SparkSession
 
 SQL_MAPPING = {
+    "broker_subaward": {
+        "schema_sql_string": broker_subaward_sql_string,
+        "broker_table": "",
+        "external_load_date_key": "",
+        "partition_column": "",
+        "merge_column": "",
+        "last_update_column": "",
+    },
+    "financial_accounts_by_awards": {
+        "schema_sql_string": financial_accounts_by_awards_sql_string,
+        "broker_table": "",
+        "external_load_date_key": "",
+        "partition_column": "",
+        "merge_column": "",
+        "last_update_column": "",
+    },
+    "sam_recipient": {
+        "schema_sql_string": sam_recipient_sql_string,
+        "broker_table": "",
+        "external_load_date_key": "",
+        "partition_column": "",
+        "merge_column": "",
+        "last_update_column": "",
+    },
     "source_assistance_transaction": {
         "schema_sql_string": source_assististance_transaction_sql_string,
         "broker_table": "published_award_financial_assistance",
         "external_load_date_key": "source_assistance_transaction",
         "partition_column": "published_award_financial_assistance_id",
         "merge_column": "published_award_financial_assistance_id",
-        "last_update_column": "updated_at"
-    }
+        "last_update_column": "updated_at",
+    },
+    "source_procurement_transaction": {
+        "schema_sql_string": source_procurement_transaction_sql_string,
+        "broker_table": "",
+        "external_load_date_key": "",
+        "partition_column": "",
+        "merge_column": "",
+        "last_update_column": "",
+    },
 }
 DESTINATION_SCHEMA = "bronze"
 
