@@ -12,7 +12,7 @@ from usaspending_api.common.etl.spark import (
     merge_delta_table,
 )
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_jdbc_url, get_jvm_logger
-from usaspending_api.etl.spark.create_delta_table import SQL_MAPPING
+from usaspending_api.etl.management.commands.create_delta_table import SQL_MAPPING
 
 from pyspark.sql import SparkSession
 
