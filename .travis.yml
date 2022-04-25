@@ -80,8 +80,10 @@ before_script:
   # Ensure spark-base image is built for all spark services' containers to use, and bring them up
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
-  - make docker-compose-build-spark
-  - make docker-compose-up args="-d $(docker-compose ps --services | grep '^spark' | tr '\n' ' ')"
+  - #make docker-compose-build-spark
+  - #make docker-compose-up args="-d $(docker-compose ps --services | grep '^spark' | tr '\n' ' ')"
+  - docker-compose --project-directory ./ --file ./docker-compose.yaml build --build-arg PROJECT_LOG_DIR=./usaspending_api/logs $(docker-compose --project-directory ./ --file ./docker-compose.yaml ps --services | grep '^spark' | tr '\n' ' ')
+  - docker-compose --project-directory ./ --file ./docker-compose.yaml up -d $(docker-compose --project-directory ./ --file ./docker-compose.yaml ps --services | grep '^spark' | tr '\n' ' ')
   # Build image from which to call Broker scripts
   - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}
   - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
