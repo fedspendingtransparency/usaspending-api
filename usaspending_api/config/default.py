@@ -141,6 +141,8 @@ class DefaultConfig(BaseSettings):
     # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: 300*20 = 6000 doc batches
     ES_BATCH_ENTRIES = 4000
 
+    BRONZE_SCHEMA = "bronze"
+
     # ==== [AWS] ====
     USE_AWS = True
     AWS_REGION = "us-gov-west-1"

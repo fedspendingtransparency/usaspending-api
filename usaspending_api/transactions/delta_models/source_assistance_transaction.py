@@ -1,5 +1,5 @@
 source_assististance_transaction_sql_string = r"""
-    CREATE OR REPLACE TABLE {DESTINATION_SCHEMA}.{DESTINATION_TABLE} (
+    CREATE OR REPLACE TABLE {DESTINATION_TABLE} (
         transaction_id LONG NOT NULL,
         published_award_financial_assistance_id INTEGER,
         action_date STRING,
