@@ -188,12 +188,12 @@ docker-build-spark:
 # NOTE: [See NOTE in above docker-compose rule about .env file]
 .PHONY: docker-compose-build
 docker-compose-build:
-	echo "docker-compose build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
-	docker-compose build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+	echo "docker-compose --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
+	docker-compose --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
 # See: docker-compose-build rule. This builds just the subset of spark services.
 # NOTE: [See NOTE in above docker-compose rule about .env file]
 .PHONY: docker-compose-build-spark
 docker-compose-build-spark:
-	echo "docker-compose build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} $$(docker-compose ps --services | grep '^spark' | tr '\n' ' ') ${args}"
-	docker-compose build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} $$(docker-compose ps --services | grep '^spark' | tr '\n' ' ') ${args}
+	echo "docker-compose --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} $$(docker-compose --project-directory ./ --file ${docker_compose_file} ps --services | grep '^spark' | tr '\n' ' ') ${args}"
+	docker-compose --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} $$(docker-compose --project-directory ./ --file ${docker_compose_file} ps --services | grep '^spark' | tr '\n' ' ') ${args}
