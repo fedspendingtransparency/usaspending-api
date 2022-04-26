@@ -80,11 +80,11 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             # and the original postgres version of the code also searched by parent_uei instead of the parent hash
             filters.pop("recipient_id")
             filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
-            filter_query.must.append(Q("match", parent_uei=parent_uei))
+            filter_query.must.insert(0, Q("match", parent_uei=parent_uei))
         else:
             filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
         # This has to be hard coded in since QueryWithFilters automatically uses "action_date" for awards
-        filter_query.must[0].should[0].should[0] = Q(
+        filter_query.must[1].should[0].should[0] = Q(
             "range", **{"date_signed": {"gte": filters["time_period"][0]["start_date"]}}
         )
         search = AwardSearch().filter(filter_query)
@@ -94,6 +94,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             time_period_field = "quarter"
         elif self.group == "fiscal_year":
             time_period_field = "year"
+
         group_by_time = A("date_histogram", field="date_signed", interval=time_period_field, offset="+274d")
         search.aggs.bucket("time_period", group_by_time).metric("award_count", create_count_aggregation("award_id"))
         search.update_from_dict({"size": 0})
