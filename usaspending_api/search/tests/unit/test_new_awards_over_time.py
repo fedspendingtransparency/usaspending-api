@@ -7,6 +7,7 @@ from model_mommy import mommy
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.views.new_awards_over_time import NewAwardsOverTimeVisualizationViewSet
 
 
@@ -93,7 +94,9 @@ def add_award_recipients(db):
         )
 
 
-def test_new_awards_month(client, add_award_recipients):
+def test_new_awards_month(client, monkeypatch, add_award_recipients, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
     test_payload = {
         "group": "month",
         "filters": {
@@ -158,7 +161,8 @@ def test_new_awards_month(client, add_award_recipients):
     assert expected_response == resp.data
 
 
-def test_new_awards_quarter(client, add_award_recipients):
+def test_new_awards_quarter(client, monkeypatch, add_award_recipients, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     test_payload = {
         "group": "quarter",
         "filters": {
@@ -224,7 +228,8 @@ def test_new_awards_quarter(client, add_award_recipients):
     assert expected_response == resp.data
 
 
-def test_new_awards_fiscal_year(client, add_award_recipients):
+def test_new_awards_fiscal_year(client, monkeypatch, add_award_recipients, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     test_payload = {
         "group": "fiscal_year",
         "filters": {
@@ -263,7 +268,8 @@ def test_new_awards_fiscal_year(client, add_award_recipients):
     assert expected_response == resp.data
 
 
-def test_new_awards_failures(client, add_award_recipients):
+def test_new_awards_failures(client, monkeypatch, add_award_recipients, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     test_payload = {
         "group": "quarter",
         "filters": {

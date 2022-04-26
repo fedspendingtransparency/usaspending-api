@@ -1,21 +1,26 @@
 import copy
+from datetime import datetime
+
 import logging
 
 from django.conf import settings
-from django.db.models import Count
+from elasticsearch_dsl import Q, A
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.fiscal_year_helpers import bolster_missing_time_periods
+from usaspending_api.common.helpers.fiscal_year_helpers import (
+    generate_fiscal_year,
+    generate_fiscal_month,
+    generate_fiscal_quarter,
+)
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.recipient.models import RecipientProfile, SummaryAwardRecipient
-from usaspending_api.settings import API_MAX_DATE, API_SEARCH_MIN_DATE
-from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter, FiscalYear
+from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger(__name__)
 
@@ -58,15 +63,10 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         models.extend(advanced_search_filters)
         return TinyShield(models).block(json_payload)
 
-    def database_data_layer(self):
+    def query_elasticsearch(self):
+        filters = self.filters
+        filters["time_period"][0]["date_type"] = "date_signed"
         recipient_hash = self.filters["recipient_id"][:-2]
-        time_ranges = []
-        for t in self.filters["time_period"]:
-            t["date_type"] = "action_date"
-            time_ranges.append(t)
-        queryset = SummaryAwardRecipient.objects.filter()
-        queryset &= combine_date_range_queryset(time_ranges, SummaryAwardRecipient, API_SEARCH_MIN_DATE, API_MAX_DATE)
-
         if self.filters["recipient_id"][-1] == "P":
             # there *should* only one record with that hash and recipient_level = 'P'
             parent_uei_rows = RecipientProfile.objects.filter(
@@ -75,46 +75,61 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             if len(parent_uei_rows) != 1:
                 raise InvalidParameterException("Provided recipient_id has no parent records")
             parent_uei = parent_uei_rows[0]["uei"]
-            queryset = queryset.filter(parent_uei=parent_uei)
-        elif self.filters["recipient_id"][-1] == "R":
-            queryset = queryset.filter(recipient_hash=recipient_hash, parent_uei__isnull=True)
+            # This is for two reasons - we don't store the `parent_recipient_hash` for awards,
+            # and the original postgres version of the code also searched by parent_uei instead of the parent hash
+            filters.pop("recipient_id")
+            filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+            filter_query.must.append(Q("match", parent_uei=parent_uei))
         else:
-            queryset = queryset.filter(recipient_hash=recipient_hash, parent_uei__isnull=False)
+            filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+        # This has to be hard coded in since QueryWithFilters automatically uses "action_date" for awards
+        filter_query.must[0].should[0].should[0] = Q("range", **{"date_signed": {"gte": filters["time_period"][0]["start_date"]}})
+        search = AwardSearch().filter(filter_query)
+        if self.group == "month":
+            time_period_field = "month"
+        elif self.group == "quarter":
+            time_period_field = "quarter"
+        elif self.group == "fiscal_year":
+            time_period_field = "year"
+        group_by_time = A("date_histogram", field="date_signed", interval=time_period_field, offset="+274d")
+        search.aggs.bucket("time_period", group_by_time)
+        search.update_from_dict({"size": 0})
+        response = search.handle_execute()
+        return response
 
-        values = ["fy"]
-        if self.groupings[self.json_request["group"]] == "month":
-            queryset = queryset.annotate(month=FiscalMonth("action_date"), fy=FiscalYear("action_date"))
-            values.append("month")
-
-        elif self.groupings[self.json_request["group"]] == "quarter":
-            queryset = queryset.annotate(quarter=FiscalQuarter("action_date"), fy=FiscalYear("action_date"))
-            values.append("quarter")
-
-        elif self.groupings[self.json_request["group"]] == "fiscal_year":
-            queryset = queryset.annotate(fy=FiscalYear("action_date"))
-
-        queryset = queryset.values(*values).annotate(count=Count("award_id"))
-        return queryset, values
+    def format_results(self, es_results):
+        results = []
+        if self.group == "month":
+            date_function = generate_fiscal_month
+        elif self.group == "quarter":
+            date_function = generate_fiscal_quarter
+        for x in es_results.aggs.to_dict().get("time_period", {}).get("buckets", []):
+            date = datetime.strptime(x.get("key_as_string"), "%Y-%m-%d")
+            if self.group != "fiscal_year":
+                time_period = {self.group: date_function(date), "fiscal_year": generate_fiscal_year(date)}
+            else:
+                time_period = {"fiscal_year": generate_fiscal_year(date)}
+            results.append(
+                {
+                    "new_award_count_in_period": x.get("doc_count", 0),
+                    "time_period": time_period,
+                }
+            )
+        return results
 
     @cache_response()
     def post(self, request):
         self.original_filters = request.data.get("filters")
         self.json_request = self.validate_api_request(request.data)
         self.filters = self.json_request.get("filters", None)
-
+        self.group = self.groupings[self.json_request["group"]]
         if self.filters is None:
             raise InvalidParameterException("Missing request parameters: filters")
 
-        queryset, values = self.database_data_layer()
-
-        results = bolster_missing_time_periods(
-            filter_time_periods=self.filters["time_period"],
-            queryset=queryset,
-            date_range_type=values[-1],
-            columns={"new_award_count_in_period": "count"},
-        )
+        es_results = self.query_elasticsearch()
+        results = self.format_results(es_results)
         response = {
-            "group": self.groupings[self.json_request["group"]],
+            "group": self.group,
             "results": results,
             "messages": get_generic_filters_message(self.original_filters.keys(), {"time_period", "recipient_id"}),
         }
