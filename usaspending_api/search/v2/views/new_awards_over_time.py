@@ -67,7 +67,6 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
     def query_elasticsearch(self):
         filters = self.filters
-        filters["time_period"][0]["date_type"] = "date_signed"
         recipient_hash = self.filters["recipient_id"][:-2]
         if self.filters["recipient_id"][-1] == "P":
             # there *should* only one record with that hash and recipient_level = 'P'
@@ -85,9 +84,10 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         else:
             filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
         # This has to be hard coded in since QueryWithFilters automatically uses "action_date" for awards
-        filter_query.must[1].should[0].should[0] = Q(
-            "range", **{"date_signed": {"gte": filters["time_period"][0]["start_date"]}}
-        )
+        for i in range(len(self.filters["time_period"])):
+            filter_query.must[1].should[i].should[0] = Q(
+                "range", **{"date_signed": {"gte": filters["time_period"][i]["start_date"]}}
+            )
         search = AwardSearch().filter(filter_query)
         if self.group == "month":
             time_period_field = "month"
@@ -104,7 +104,8 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
     def complete_missing_periods(self, results):
         required_years = range(
-            generate_fiscal_year(datetime.strptime(self.filters["time_period"][0]["start_date"], "%Y-%m-%d")), current_fiscal_year()
+            generate_fiscal_year(datetime.strptime(self.start_date, "%Y-%m-%d")),
+            generate_fiscal_year(datetime.strptime(self.end_date, "%Y-%m-%d")) + 1,
         )
         years = [x["time_period"]["fiscal_year"] for x in results]
         if self.group == "fiscal_year":
@@ -147,7 +148,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         for x in es_results.aggs.to_dict().get("time_period", {}).get("buckets", []):
             date = datetime.strptime(x.get("key_as_string"), "%Y-%m-%d")
             if self.group != "fiscal_year":
-                time_period = {self.group: date_function(date), "fiscal_year": generate_fiscal_year(date)}
+                time_period = {"fiscal_year": generate_fiscal_year(date), self.group: date_function(date)}
             else:
                 time_period = {"fiscal_year": generate_fiscal_year(date)}
             results.append(
@@ -165,6 +166,8 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         self.json_request = self.validate_api_request(request.data)
         self.filters = self.json_request.get("filters", None)
         self.group = self.groupings[self.json_request["group"]]
+        self.start_date = sorted(self.filters["time_period"], key=lambda x: x["start_date"])[0]["start_date"]
+        self.end_date = sorted(self.filters["time_period"], key=lambda x: x["end_date"], reverse=True)[0]["end_date"]
         if self.filters is None:
             raise InvalidParameterException("Missing request parameters: filters")
 
