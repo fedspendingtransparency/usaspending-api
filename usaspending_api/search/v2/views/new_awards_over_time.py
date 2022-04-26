@@ -16,6 +16,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
     generate_fiscal_year,
     generate_fiscal_month,
     generate_fiscal_quarter,
+    current_fiscal_year,
 )
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -101,6 +102,40 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         response = search.handle_execute()
         return response
 
+    def complete_missing_periods(self, results):
+        required_years = range(2008, current_fiscal_year())
+        years = [x["time_period"]["fiscal_year"] for x in results]
+        if self.group == "fiscal_year":
+            for x in set(required_years) - set(years):
+                results.append(
+                    {
+                        "new_award_count_in_period": 0,
+                        "time_period": {"fiscal_year": x},
+                    }
+                )
+        else:
+            if self.group == "month":
+                time_range = range(1, 13)
+            elif self.group == "quarter":
+                time_range = range(1, 5)
+            years_pairs = [(x["time_period"][self.group], x["time_period"]["fiscal_year"]) for x in results]
+            required_year_pairs = []
+            for x in required_years:
+                for y in time_range:
+                    required_year_pairs.append((y, x))
+            for x in set(required_year_pairs) - set(years_pairs):
+                results.append(
+                    {
+                        "new_award_count_in_period": 0,
+                        "time_period": {
+                            self.group: x[0],
+                            "fiscal_year": x[1],
+                        },
+                    }
+                )
+        results = sorted(results, key=lambda x: (x["time_period"]["fiscal_year"], x["time_period"][self.group]))
+        return results
+
     def format_results(self, es_results):
         results = []
         if self.group == "month":
@@ -119,6 +154,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                     "time_period": time_period,
                 }
             )
+        results = self.complete_missing_periods(results)
         return results
 
     @cache_response()
