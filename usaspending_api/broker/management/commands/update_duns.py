@@ -92,4 +92,4 @@ class Command(BaseCommand):
         self.add_duns(new_duns, new_update_date)
         self.update_duns(update_duns, new_update_date)
 
-        logger.info("Finished updating DUNS in %s seconds" % str(datetime.now() - total_start))
+        logger.info("Finished updating DUNS in %s seconds." % str(datetime.now() - total_start))
