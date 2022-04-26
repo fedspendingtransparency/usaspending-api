@@ -228,7 +228,7 @@ class _RecipientId(_Filter):
         elif filter_value.endswith("C"):
             return ES_Q("match", recipient_hash=recipient_hash) & ~ES_Q("match", parent_uei__keyword="NULL")
         else:
-            return ES_Q("match", recipient_hash=recipient_hash) & ES_Q("match", parent_uei__keyword="NULL")
+            return ES_Q("match", recipient_hash=recipient_hash) & ~ES_Q("exists", field="parent_uei")
 
 
 class _RecipientScope(_Filter):
