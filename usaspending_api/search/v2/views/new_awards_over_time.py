@@ -83,7 +83,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         else:
             filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
         # This has to be hard coded in since QueryWithFilters automatically uses "action_date" for awards
-        filter_query.must[0].should[0].should[0] = Q("range", **{"date_signed": {"gte": filters["time_period"][0]["start_date"]}})
+        filter_query.must[0].should[0].should[0] = Q(
+            "range", **{"date_signed": {"gte": filters["time_period"][0]["start_date"]}}
+        )
         search = AwardSearch().filter(filter_query)
         if self.group == "month":
             time_period_field = "month"
