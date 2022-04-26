@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import (
@@ -94,7 +95,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         elif self.group == "fiscal_year":
             time_period_field = "year"
         group_by_time = A("date_histogram", field="date_signed", interval=time_period_field, offset="+274d")
-        search.aggs.bucket("time_period", group_by_time)
+        search.aggs.bucket("time_period", group_by_time).metric("award_count", create_count_aggregation("award_id"))
         search.update_from_dict({"size": 0})
         response = search.handle_execute()
         return response
@@ -113,7 +114,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                 time_period = {"fiscal_year": generate_fiscal_year(date)}
             results.append(
                 {
-                    "new_award_count_in_period": x.get("doc_count", 0),
+                    "new_award_count_in_period": x.get("award_count", {}).get("value", 0),
                     "time_period": time_period,
                 }
             )
