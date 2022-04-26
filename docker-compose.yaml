@@ -285,11 +285,12 @@ services:
         source: ${MINIO_DATA_DIR:-../data/s3}
         target: /data
     ports:
-      - ${MINIO_PORT:-9000}:9001
+      - ${MINIO_PORT:-9000}:9000
+      - ${MINIO_CONSOLE_PORT:-9001}:9001
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
-    command: server --console-address ":${MINIO_PORT}" /data 
+    command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-9000}/minio/health/live"]
       interval: 30s

@@ -17,27 +17,89 @@ from pyspark import SparkContext
 from pyspark.sql import SparkSession, Row
 
 
+# List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
+# executor class paths
+SPARK_SESSION_JARS = [
+    "com.amazonaws:aws-java-sdk:1.12.31",
+    "org.apache.hadoop:hadoop-aws:3.2.1",  # required dependency of aws-java-sdk
+    "org.postgresql:postgresql:42.2.23",
+    "io.delta:delta-core_2.12:1.0.0",
+]
+
+# TODO: Opting to use the other session-scoped fixture instead. Using this, can't seem to OVERRIDE the packages, or
+# allow it to re-recognize the packages, and re-instatiate the JavaGateway. So the first test that runs,
+# whatever pakcages are specified (or not specified) become the only set used.
+# This could be because when the JavaGateway is launched, it instantiates a spark-submit process (directing it to an
+# empty pyspark-shell), and it's possibly that the spark-submit process is never re-launched even after calling stop()
+# on the SparkContext.
+# - something to try is to manually create a NEW JavaGateway with .launch_gateway(), and then provide that as the
+# value of gateway= param in creating the NEW SparkContext and see if it picks that up instead.
+# - that or seeing how to aggressively kill the spark-submit process at the time of SparkContext.stop(),
+# so a new process with new sparkconf/python_submit_args is instaniated with the new SparkContext
 @fixture
 def spark_stopper():
     """Throw an error if coming into a test using this fixture which needs to create a
     NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
     AND, proactively cleanup any SparkContext created by this test after it completes
     """
-    if SparkContext._active_spark_context:  # Singleton instance populated if there's an active SparkContext
-        raise Exception("Test needs to create a new SparkSession+SparkContext, but a SparkContext exists.")
+    with SparkContext._lock:
+        # Check the Singleton instance populated if there's an active SparkContext
+        if SparkContext._active_spark_context is not None:
+            raise Exception("Test needs to create a new SparkSession+SparkContext, but a SparkContext exists.")
 
     # Add SPARK_TEST to avoid the Spark UI starting during tests
     with patch.dict(os.environ, {"SPARK_TESTING": "true"}):
         yield
-    if SparkContext._active_spark_context:
-        try:
-            SparkContext.getOrCreate().stop()
-        except Exception:
-            # Swallow errors if not able to stop (e.g. may have already been stopped)
-            pass
+
+    with SparkContext._lock:
+        # Check the Singleton instance populated if there's an active SparkContext
+        if SparkContext._active_spark_context is not None:
+            try:
+                SparkContext.getOrCreate().stop()
+            except Exception:
+                # Swallow errors if not able to stop (e.g. may have already been stopped)
+                pass
 
 
-def test_spark_app_run_local_master(request, spark_stopper):
+@fixture(scope="session")
+def spark() -> SparkSession:
+    """Throw an error if coming into a test using this fixture which needs to create a
+    NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
+    AND, proactively cleanup any SparkContext created by this test after it completes
+    """
+    with SparkContext._lock:
+        # Check the Singleton instance populated if there's an active SparkContext
+        if SparkContext._active_spark_context is not None:
+            raise Exception(
+                "Error: Test session cannot create a SparkSession because one already exists at the time this "
+                "test-session-scoped fixture is being evaluated."
+            )
+
+    extra_conf = {
+        "spark.master": "spark://localhost:7077",
+        "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
+        "spark.jars.packages": ",".join(SPARK_SESSION_JARS)
+    }
+    spark = configure_spark_session(
+        log_level=logging.INFO, log_spark_config_vals=True, **extra_conf
+    )  # type: SparkSession
+
+    # Add SPARK_TEST to avoid the Spark UI starting during tests
+    # with patch.dict(os.environ, {"SPARK_TESTING": "true"}):
+    yield spark
+
+    with SparkContext._lock:
+        # Check the Singleton instance populated if there's an active SparkContext
+        if SparkContext._active_spark_context is not None:
+            try:
+                SparkContext.getOrCreate().stop()
+            except Exception:
+                # Swallow errors if not able to stop (e.g. may have already been stopped)
+                pass
+
+
+#def test_spark_app_run_local_master(request, spark_stopper):
+def test_spark_app_run_local_master(spark: SparkSession, request):
     """Execute a simple spark app and verify it logged expected output.
     Effectively if it runs without failing, it worked.
 
@@ -46,10 +108,12 @@ def test_spark_app_run_local_master(request, spark_stopper):
     discovered in the PYTHONPATH, and treat the client machine as the spark driver.
     And furthermore, the default config for spark.master property if not set is local[*]
     """
-    extra_conf = {}
-    spark = configure_spark_session(
-        app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=True, **extra_conf
-    )  # type: SparkSession
+    # extra_conf = {}
+    # spark = configure_spark_session(
+    #     app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=False, **extra_conf
+    # )  # type: SparkSession
+
+    spark = spark.builder.appName(request.node.name).getOrCreate()
 
     logger = get_jvm_logger(spark)
 
@@ -61,7 +125,8 @@ def test_spark_app_run_local_master(request, spark_stopper):
     logger.info(versions)
 
 
-def test_spark_app_run_remote_master(request, spark_stopper):
+#def test_spark_app_run_remote_master(request, spark_stopper):
+def test_spark_app_run_remote_master(spark: SparkSession, request):
     """Execute a simple spark app and verify it logged expected output.
     Effectively if it runs without failing, it worked.
 
@@ -69,12 +134,14 @@ def test_spark_app_run_remote_master(request, spark_stopper):
     present in the CI integration test env, because it will leverage the pyspark PyPI dependent package that is
     discovered in the PYTHONPATH, and treat the client machine as the spark driver.
     """
-    extra_conf = {
-        "spark.master": "spark://localhost:7077",
-    }
-    spark = configure_spark_session(
-        app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=True, **extra_conf
-    )  # type: SparkSession
+    # extra_conf = {
+    #     "spark.master": "spark://localhost:7077",
+    # }
+    # spark = configure_spark_session(
+    #     app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=False, **extra_conf
+    # )  # type: SparkSession
+
+    spark = spark.builder.appName(request.node.name).getOrCreate()
 
     logger = get_jvm_logger(spark)
 
@@ -90,18 +157,25 @@ def test_spark_app_run_remote_master(request, spark_stopper):
 #  conf with the JAR libs it needs to pull into its java classpath. Currently exploring SparkConf values: https://spark.apache.org/docs/latest/submitting-applications.html
 # TODO: Investigate setting the PYSPARK_SUBMIT_ARGS env var, which is basically everything (including --packages)
 #  provided to spark-submit
-@patch.dict(
-    os.environ,
-    {
-        "PYSPARK_SUBMIT_ARGS": "--packages org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31 pyspark-shell"
-    },
-)
-def test_spark_write_csv_app_run(request, spark_stopper):
+# @patch.dict(
+#     os.environ,
+#     {
+#         "PYSPARK_SUBMIT_ARGS": "--packages org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31 pyspark-shell"
+#     },
+# )
+#def test_spark_write_csv_app_run(request, spark_stopper):
+def test_spark_write_csv_app_run(spark: SparkSession, request):
     """More involved integration test that requires MinIO to be up as an s3 alternative."""
-    extra_conf = {
-        # "spark.jars.packages": "org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31",
-    }
-    spark = configure_spark_session(app_name=request.node.name, **extra_conf)  # type: SparkSession
+    # extra_conf = {
+    #     "spark.jars.packages": "org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31",
+    # }
+    # spark = configure_spark_session(
+    #     app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=False, **extra_conf
+    # )  # type: SparkSession
+
+    # TODO: Setting conf properties like this seems to be too late to have it effective in some log output
+    spark = spark.builder.appName(request.node.name).getOrCreate()
+    spark.sparkContext.setLogLevel("INFO")
 
     data = [
         {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},

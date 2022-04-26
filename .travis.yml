@@ -96,6 +96,7 @@ script:
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   #- pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
   #- pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
+  - docker-compose ps
   # TODO: Reset this back to the full test suite after passing
   - pytest 'usaspending_api/etl/tests/integration/test_spark_app.py' --no-cov -vvv --capture=no --log-cli-level=INFO
 
