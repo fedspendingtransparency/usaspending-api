@@ -7,7 +7,7 @@ CREATE TABLE public.temporary_restock_duns AS (
     broker_duns.legal_business_name AS legal_business_name,
     broker_duns.ultimate_parent_unique_ide AS ultimate_parent_unique_ide,
     broker_duns.ultimate_parent_legal_enti AS ultimate_parent_legal_enti,
-    broker_duns.duns_id AS broker_duns_id,
+    broker_duns.sam_recipient_id AS broker_duns_id,
     broker_duns.record_date AS update_date,
     broker_duns.address_line_1 AS address_line_1,
     broker_duns.address_line_2 AS address_line_2,
@@ -25,31 +25,31 @@ CREATE TABLE public.temporary_restock_duns AS (
   FROM
     dblink ('broker_server', '(
       SELECT
-        DISTINCT ON (duns.awardee_or_recipient_uniqu)
-        duns.awardee_or_recipient_uniqu,
-        duns.legal_business_name,
-        duns.dba_name,
-        duns.ultimate_parent_unique_ide,
-        duns.ultimate_parent_legal_enti,
-        duns.address_line_1,
-        duns.address_line_2,
-        duns.city,
-        duns.state,
-        duns.zip,
-        duns.zip4,
-        duns.country_code,
-        duns.congressional_district,
-        COALESCE(duns.business_types_codes, ''{}''::text[]) AS business_types_codes,
-        duns.entity_structure,
-        duns.duns_id,
-        COALESCE(duns.activation_date, duns.deactivation_date) as record_date,
-        duns.uei,
-        duns.ultimate_parent_uei
+        DISTINCT ON (sam_recipient.awardee_or_recipient_uniqu)
+        sam_recipient.awardee_or_recipient_uniqu,
+        sam_recipient.legal_business_name,
+        sam_recipient.dba_name,
+        sam_recipient.ultimate_parent_unique_ide,
+        sam_recipient.ultimate_parent_legal_enti,
+        sam_recipient.address_line_1,
+        sam_recipient.address_line_2,
+        sam_recipient.city,
+        sam_recipient.state,
+        sam_recipient.zip,
+        sam_recipient.zip4,
+        sam_recipient.country_code,
+        sam_recipient.congressional_district,
+        COALESCE(sam_recipient.business_types_codes, ''{}''::text[]) AS business_types_codes,
+        sam_recipient.entity_structure,
+        sam_recipient.sam_recipient_id,
+        COALESCE(sam_recipient.activation_date, sam_recipient.deactivation_date) as record_date,
+        sam_recipient.uei,
+        sam_recipient.ultimate_parent_uei
       FROM
-        duns
+        sam_recipient
       ORDER BY
-        duns.awardee_or_recipient_uniqu,
-        duns.activation_date DESC NULLS LAST)') AS broker_duns
+        sam_recipient.awardee_or_recipient_uniqu,
+        sam_recipient.activation_date DESC NULLS LAST)') AS broker_duns
           (
             awardee_or_recipient_uniqu text,
             legal_business_name text,
@@ -66,7 +66,7 @@ CREATE TABLE public.temporary_restock_duns AS (
             congressional_district text,
             business_types_codes text[],
             entity_structure text,
-            duns_id text,
+            sam_recipient_id text,
             record_date date,
             uei text,
             ultimate_parent_uei text
