@@ -103,7 +103,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         return response
 
     def complete_missing_periods(self, results):
-        required_years = range(2008, current_fiscal_year())
+        required_years = range(
+            generate_fiscal_year(self.filters["time_period"][0]["start_date"]), current_fiscal_year()
+        )
         years = [x["time_period"]["fiscal_year"] for x in results]
         if self.group == "fiscal_year":
             for x in set(required_years) - set(years):
