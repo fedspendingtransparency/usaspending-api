@@ -69,7 +69,12 @@ def add_award_recipients(db):
     )
     for i in range(current_id, current_id + new_award_count):
         mommy.make(
-            "awards.Award", id=i, date_signed=datetime(2009, 5, 30), latest_transaction_id=i, earliest_transaction_id=i
+            "awards.Award",
+            id=i,
+            date_signed=datetime(2009, 5, 30),
+            latest_transaction_id=i,
+            earliest_transaction_id=i,
+            type="A",
         )
         mommy.make(
             "awards.TransactionNormalized",

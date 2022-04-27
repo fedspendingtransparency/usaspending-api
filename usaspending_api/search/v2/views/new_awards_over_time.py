@@ -16,7 +16,6 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
     generate_fiscal_year,
     generate_fiscal_month,
     generate_fiscal_quarter,
-    current_fiscal_year,
 )
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -107,13 +106,13 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             generate_fiscal_year(datetime.strptime(self.start_date, "%Y-%m-%d")),
             generate_fiscal_year(datetime.strptime(self.end_date, "%Y-%m-%d")) + 1,
         )
-        years = [x["time_period"]["fiscal_year"] for x in results]
+        years = [int(x["time_period"]["fiscal_year"]) for x in results]
         if self.group == "fiscal_year":
             for x in set(required_years) - set(years):
                 results.append(
                     {
                         "new_award_count_in_period": 0,
-                        "time_period": {"fiscal_year": x},
+                        "time_period": {"fiscal_year": f"{x}"},
                     }
                 )
         else:
@@ -121,7 +120,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                 time_range = range(1, 13)
             elif self.group == "quarter":
                 time_range = range(1, 5)
-            years_pairs = [(x["time_period"][self.group], x["time_period"]["fiscal_year"]) for x in results]
+            years_pairs = [(int(x["time_period"][self.group]), int(x["time_period"]["fiscal_year"])) for x in results]
             required_year_pairs = []
             for x in required_years:
                 for y in time_range:
@@ -131,12 +130,14 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                     {
                         "new_award_count_in_period": 0,
                         "time_period": {
-                            self.group: x[0],
-                            "fiscal_year": x[1],
+                            self.group: f"{x[0]}",
+                            "fiscal_year": f"{x[1]}",
                         },
                     }
                 )
-        results = sorted(results, key=lambda x: (x["time_period"]["fiscal_year"], x["time_period"][self.group]))
+        results = sorted(
+            results, key=lambda x: (int(x["time_period"]["fiscal_year"]), int(x["time_period"][self.group]))
+        )
         return results
 
     def format_results(self, es_results):
@@ -148,9 +149,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         for x in es_results.aggs.to_dict().get("time_period", {}).get("buckets", []):
             date = datetime.strptime(x.get("key_as_string"), "%Y-%m-%d")
             if self.group != "fiscal_year":
-                time_period = {"fiscal_year": generate_fiscal_year(date), self.group: date_function(date)}
+                time_period = {"fiscal_year": f"{generate_fiscal_year(date)}", self.group: f"{date_function(date)}"}
             else:
-                time_period = {"fiscal_year": generate_fiscal_year(date)}
+                time_period = {"fiscal_year": f"{generate_fiscal_year(date)}"}
             results.append(
                 {
                     "new_award_count_in_period": x.get("award_count", {}).get("value", 0),
