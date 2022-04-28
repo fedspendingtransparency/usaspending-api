@@ -297,7 +297,7 @@ services:
     environment:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
-      _PYSPARK_DRIVER_CONN_INFO_PATH: /project/usaspending_api/logs/pyspark_gateway_conn_info.log
+      _PYSPARK_DRIVER_CONN_INFO_PATH:  /project/usaspending_api/logs/pyspark_gateway_conn_info.log
       COMPONENT_NAME: ${COMPONENT_NAME:-'Spark Unit Test Session'}
       PYTHONPATH: "/project"
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
@@ -306,8 +306,8 @@ services:
     # While this service has values for these interpolated vars in the environment: element, those are not used here,
     # but merely passed into the container. KEEP the two references to these vars and their defaults consistent!
     # To see what it will be, you can run docker-compose config (i.e. make docker-compose-config in this project's Makefile)
-    entrypoint: ./bin/spark-submit --master --name ${COMPONENT_NAME} spark://${SPARK_MASTER_HOST:-spark-master}:${SPARK_MASTER_PORT:-7077}
-    command: pyspark-shell
+    command: ./bin/spark-submit --master spark://${SPARK_MASTER_HOST:-spark-master}:${SPARK_MASTER_PORT:-7077} --name ${COMPONENT_NAME:-'PySpark App'} pyspark-shell
+    #command: pyspark-shell
     volumes:
       - type: bind
         source: .
