@@ -1,5 +1,14 @@
 """Module to verify that spark-based integration tests can run in our CI environment, with all required
 spark components (docker-compose container services) are up and running and integratable.
+
+TODO: HERE
+1. see if spark.driver.host needs to be set to host.docker.internal to get back to the driver from executors
+   - https://spark.apache.org/docs/latest/configuration.html#networking
+2. master may need to be referred to from host: host.docker.internal so both the driver and executors can refer to it
+3. MINIO_HOST needed to be set to host.docker.internal so both the driver and executors can refer to it
+4. Maybe all of this is moot if we can run our containers in a minikube kubernetes cluster manager mode as per: https://spark.apache.org/docs/latest/running-on-kubernetes.html
+   - would allow driver to be submitted from a pod on the cluster and run with deployMode=cluster
+   - seems to pick this up (and not standalone) by way of the master URL being prefixed with k8s://
 """
 import boto3
 import logging
@@ -47,12 +56,12 @@ _SCALA_VERSION = "2.12"
 _HADOOP_VERSION = "3.2.0"
 _SPARK_VERSION = "3.1.2"
 _DELTA_VERSION = "1.0.0"
-#_AWS_JAVA_SDK_VERSION = "1.11.901"
+# _AWS_JAVA_SDK_VERSION = "1.11.901"
 
 # List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
 # executor class paths
 SPARK_SESSION_JARS = [
-    #"com.amazonaws:aws-java-sdk:1.12.31",
+    # "com.amazonaws:aws-java-sdk:1.12.31",
     # hadoop-aws is an add-on to hadoop with Classes that allow hadoop to interface with an S3A (AWS S3) FileSystem
     # NOTE That in order to work, the version number should be the same as the Hadoop version used by your Spark runtime
     f"org.apache.hadoop:hadoop-aws:{_HADOOP_VERSION}",
@@ -62,10 +71,8 @@ SPARK_SESSION_JARS = [
 
 
 @fixture(scope="session")
-def minio_data_bucket():
+def minio_test_data_bucket():
     """Create a bucket named data so the tests can use it"""
-    #s3 = boto3.resource("s3")
-
     s3_client = boto3.client(
         "s3",
         endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
@@ -74,14 +81,21 @@ def minio_data_bucket():
     )
 
     from botocore.errorfactory import ClientError
+
     try:
         s3_client.create_bucket(Bucket=CONFIG.AWS_S3_BUCKET)
-        #s3.create_bucket(Bucket="data")
-    except ClientError:
-        # Simplest way to ensure the bucket is created is to swallow the exception saying it already exists
-        pass
+    except ClientError as e:
+        if "BucketAlreadyOwnedByYou" in str(e):
+            # Simplest way to ensure the bucket is created is to swallow the exception saying it already exists
+            logging.warning("Test Bucket not created, already exists.")
+            pass
+        else:
+            raise e
 
-    logging.info(f"Bucket '{CONFIG.AWS_S3_BUCKET}' created at S3 endpoint '{CONFIG.AWS_S3_ENDPOINT}'. Current Buckets:")
+    logging.info(
+        f"Test Bucket '{CONFIG.AWS_S3_BUCKET}' created (or found to exist) at S3 endpoint "
+        f"'{CONFIG.AWS_S3_ENDPOINT}'. Current Buckets:"
+    )
     [logging.info(f"  {b['Name']}") for b in s3_client.list_buckets()["Buckets"]]
 
     yield
@@ -126,12 +140,18 @@ def spark() -> SparkSession:
         )
 
     extra_conf = {
-        #"spark.master": "spark://localhost:7077",
+        # "spark.master": "spark://localhost:7077",
+        # Client deploy mode is the default, but being explicit.
+        # Means the driver node is the place where the SparkSession is instantiated (and/or where spark-submit
+        # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
+        # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
+        "spark.submit.deployMode": "client",
+        "spark.driver.host": "host.docker.internal",
+        "spark.master": "spark://host.docker.internal:7077",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
-        "spark.jars.packages": ",".join(SPARK_SESSION_JARS)
+        "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
     }
     spark = configure_spark_session(
-        master="spark://localhost:7077",
         app_name="Unit Test Session",
         log_level=logging.INFO,
         log_spark_config_vals=True,
@@ -158,9 +178,9 @@ def spark_gateway() -> SparkSession:
         )
 
     extra_conf = {
-        #"spark.master": "spark://spark-master:7077",
+        # "spark.master": "spark://spark-master:7077",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
-        "spark.jars.packages": ",".join(SPARK_SESSION_JARS)
+        "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
     }
 
     java_gateway = attach_java_gateway(*read_java_gateway_connection_info(CONFIG._PYSPARK_DRIVER_CONN_INFO_PATH))
@@ -180,7 +200,7 @@ def spark_gateway() -> SparkSession:
     stop_spark_context()
 
 
-#def test_spark_app_run_local_master(request, spark_stopper):
+# def test_spark_app_run_local_master(request, spark_stopper):
 def test_spark_app_run_local_master(spark: SparkSession, request):
     """Execute a simple spark app and verify it logged expected output.
     Effectively if it runs without failing, it worked.
@@ -195,8 +215,6 @@ def test_spark_app_run_local_master(spark: SparkSession, request):
     #     app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=False, **extra_conf
     # )  # type: SparkSession
 
-    spark = spark.builder.appName(request.node.name).getOrCreate()
-
     logger = get_jvm_logger(spark)
 
     versions = f"""
@@ -207,7 +225,7 @@ def test_spark_app_run_local_master(spark: SparkSession, request):
     logger.info(versions)
 
 
-#def test_spark_app_run_remote_master(request, spark_stopper):
+# def test_spark_app_run_remote_master(request, spark_stopper):
 def test_spark_app_run_remote_master(spark: SparkSession, request):
     """Execute a simple spark app and verify it logged expected output.
     Effectively if it runs without failing, it worked.
@@ -222,9 +240,6 @@ def test_spark_app_run_remote_master(spark: SparkSession, request):
     # spark = configure_spark_session(
     #     app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=False, **extra_conf
     # )  # type: SparkSession
-
-    spark = spark.builder.appName(request.node.name).getOrCreate()
-
     logger = get_jvm_logger(spark)
 
     versions = f"""
@@ -245,8 +260,8 @@ def test_spark_app_run_remote_master(spark: SparkSession, request):
 #         "PYSPARK_SUBMIT_ARGS": "--packages org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31 pyspark-shell"
 #     },
 # )
-#def test_spark_write_csv_app_run(request, spark_stopper):
-def test_spark_write_csv_app_run(spark: SparkSession, minio_data_bucket, request):
+# def test_spark_write_csv_app_run(request, spark_stopper):
+def test_spark_write_csv_app_run(spark: SparkSession, minio_test_data_bucket, request):
     """More involved integration test that requires MinIO to be up as an s3 alternative."""
     # extra_conf = {
     #     "spark.jars.packages": "org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31",
@@ -255,9 +270,10 @@ def test_spark_write_csv_app_run(spark: SparkSession, minio_data_bucket, request
     #     app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=False, **extra_conf
     # )  # type: SparkSession
 
-    # TODO: Setting conf properties like this seems to be too late to have it effective in some log output
+    # spark = configure_spark_session(
+    #     app_name=request.node.name, log_level=logging.INFO, log_spark_config_vals=False, **extra_conf
+    # )  # type: SparkSession
     spark = spark.builder.appName(request.node.name).getOrCreate()
-    spark.sparkContext.setLogLevel("INFO")
 
     data = [
         {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
@@ -271,4 +287,4 @@ def test_spark_write_csv_app_run(spark: SparkSession, minio_data_bucket, request
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    df.write.option("header", True).csv(f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3")
+    df.write.option("header", True).csv(f"s3a://{CONFIG.AWS_S3_BUCKET}"f"/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3")
