@@ -146,7 +146,7 @@ def spark() -> SparkSession:
         # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
         # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
         "spark.submit.deployMode": "client",
-        "spark.driver.host": "host.docker.internal",
+        #"spark.driver.host": "host.docker.internal",
         "spark.master": "spark://localhost:7077",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
         "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
