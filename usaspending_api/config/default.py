@@ -19,8 +19,9 @@ from pydantic import (
     SecretStr,
 )
 
-_SRC_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.resolve()
-_PROJECT_ROOT_DIR = _SRC_ROOT_DIR.parent.parent.parent.resolve()
+_PROJECT_NAME = "usaspending-api"
+_PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.resolve()
+_SRC_ROOT_DIR = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
 
 # Placeholder sentinel value indicating a config var that is expected to be overridden in a runtime-env-specific
 # config declaration. If this value emerges, it has not yet been set in the runtime env config and must be.
@@ -55,6 +56,7 @@ class DefaultConfig(BaseSettings):
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = _ENV_SPECIFIC_OVERRIDE
     COMPONENT_NAME = "USAspending API"
+    PROJECT_LOG_DIR = str(_SRC_ROOT_DIR / "logs")
 
     # ==== [Postgres] ====
     POSTGRES_URL: str = None

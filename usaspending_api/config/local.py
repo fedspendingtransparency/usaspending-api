@@ -74,6 +74,10 @@ class LocalConfig(DefaultConfig):
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
     MINIO_DATA_DIR = _USER_SPECIFIC_OVERRIDE
 
+    # ==== [Spark] ====
+    # Used for attaching to a spark-submit process to create a java_gateway for PySpark during unit test sessions
+    _PYSPARK_DRIVER_CONN_INFO_PATH: str = property(lambda self: self.PROJECT_LOG_DIR + "/pyspark_gateway_conn_info.log")
+
     # ==== [AWS] ====
     # In local dev env, default to NOT using AWS.
     # - For S3, MinIO will be used, and the AWS Endpoints defaulted below  will be used by MinIO to connect to "S3"

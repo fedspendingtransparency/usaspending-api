@@ -276,9 +276,55 @@ services:
         source: ${HOME}/.ivy2
         target: /root/.ivy2
         read_only: false
+#    ports:
+#      - "1-65535:1-65535"
+
+  pyspark-gateway:
+    image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
+    # build context path needs to be relative to project root, from where docker-compose will be run
+    build:
+      context: .
+      dockerfile: Dockerfile.spark
+      args:
+        PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
+    container_name: pyspark-gateway
+    depends_on:
+      - spark-master
+      - spark-worker
+      - spark-history-server
+      - minio
+    #network_mode: host
+    environment:
+      SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
+      SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
+      _PYSPARK_DRIVER_CONN_INFO_PATH: /project/usaspending_api/logs/pyspark_gateway_conn_info.log
+      COMPONENT_NAME: ${COMPONENT_NAME:-'Spark Unit Test Session'}
+      PYTHONPATH: "/project"
+    # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
+    # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
+    # and interpolated before accessed as the entrypoint.
+    # While this service has values for these interpolated vars in the environment: element, those are not used here,
+    # but merely passed into the container. KEEP the two references to these vars and their defaults consistent!
+    # To see what it will be, you can run docker-compose config (i.e. make docker-compose-config in this project's Makefile)
+    entrypoint: ./bin/spark-submit --master --name ${COMPONENT_NAME} spark://${SPARK_MASTER_HOST:-spark-master}:${SPARK_MASTER_PORT:-7077}
+    command: pyspark-shell
+    volumes:
+      - type: bind
+        source: .
+        target: /project
+        read_only: false
+      # Mount the JAR dependencies local repo on host into container to take advantage of caching/reuse
+      # i.e., to download the dependencies only once and reuse on subsequent docker-compose run calls
+      - type: bind
+        source: ${HOME}/.ivy2
+        target: /root/.ivy2
+        read_only: false
+#    ports:
+#      - "1-65535:1-65535"
 
   minio:
-    image: minio/minio:RELEASE.2022-04-12T06-55-35Z
+    #image: minio/minio:RELEASE.2022-04-12T06-55-35Z
+    image: minio/minio:RELEASE.2020-11-06T23-17-07Z
     container_name: minio
     volumes:
       - type: bind
@@ -290,7 +336,8 @@ services:
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
-    command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
+    #command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
+    command: server /data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-9000}/minio/health/live"]
       interval: 30s

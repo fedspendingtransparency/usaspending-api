@@ -1,26 +1,109 @@
 import inspect
 import logging
+import os
 import sys
 
-from pyspark.find_spark_home import _find_spark_home
-from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
+from py4j.java_gateway import JavaGateway
 from py4j.protocol import Py4JJavaError
 from pydantic import PostgresDsn, AnyHttpUrl
 from pyspark.conf import SparkConf
+from pyspark.context import SparkContext
+from pyspark.find_spark_home import _find_spark_home
+from pyspark.java_gateway import launch_gateway
+from pyspark.serializers import read_int, UTF8Deserializer
+from pyspark.sql import DataFrame
+from pyspark.sql import SparkSession
+from pyspark.sql.conf import RuntimeConfig
 from pyspark.sql.types import DecimalType
 from pyspark.sql.types import StringType
-from pyspark.sql import DataFrame, SparkSession
-
+from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
 
 
+def is_spark_context_stopped() -> bool:
+    is_stopped = True
+    with SparkContext._lock:
+        # Check the Singleton instance populated if there's an active SparkContext
+        if SparkContext._active_spark_context is not None:
+            sc = SparkContext._active_spark_context
+            is_stopped = not (sc._jvm and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped())
+    return is_stopped
+
+
+def stop_spark_context() -> bool:
+    stopped_without_error = True
+    with SparkContext._lock:
+        # Check the Singleton instance populated if there's an active SparkContext
+        if SparkContext._active_spark_context is not None:
+            sc = SparkContext._active_spark_context
+            if sc._jvm and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped():
+                try:
+                    sc.stop()
+                except Exception:
+                    # Swallow errors if not able to stop (e.g. may have already been stopped)
+                    stopped_without_error = False
+    return stopped_without_error
+
+
 def configure_spark_session(
-    app_name="Spark App",
-    log_level: int = None,  # one of logging.ERROR, logging.WARN, logging.WARNING, logging.INFO, logging.DEBUG
-    log_spark_config_vals: bool = False,
-    log_hadoop_config_vals: bool = False,
-    **options,
+        java_gateway: JavaGateway = None,
+        spark_context: SparkContext = None,
+        master=None,
+        app_name="Spark App",
+        log_level: int = None,
+        log_spark_config_vals: bool = False,
+        log_hadoop_config_vals: bool = False,
+        **options,
 ) -> SparkSession:
+    """Get a SparkSession object with some of the default/boiler-plate config needed for THIS project pre-set
+
+    Providing no arguments will work, and give a plain-vanilla SparkSession wrapping a plain vanilla SparkContext
+    with all the default spark configurations set (or set with any file-based configs that have been established in
+    the runtime environment (e.g. $SPARK_HOME/spark-defaults.conf)
+
+    Use arguments in varying combinations to override or provide pre-configured components of the SparkSession.
+    Lastly, provide a dictionary or exploded dict (like: **my_options) of name-value pairs of spark properties with
+    specific values.
+
+    Args:
+        java_gateway (JavaGateway): Provide your own JavaGateway, which is typically a network interface to a running
+            spark-submit process, through which PySpark jobs can be submitted to a JVM-based Spark runtime.
+            NOTE: Only JavaGateway and not ClientServer (which would be used for support of PYSPARK_PIN_THREAD) is
+            supported at this time.
+
+        spark_context (SparkContext): Provide your own pre-built or fetched-from-elsewhere SparkContext object that
+            the built SparkSession will wrap. The given SparkContext must be active (not stopped). Since an active
+            SparkContext will have its own active underlying JVM gateway, you cannot provide this AND a java_gateway.
+
+        master (str): URL in the form of spark://host:port where the master node of the Spark cluster can be found.
+            If not provided here, or via a conf property spark.master, the default value of local[*] will remain.
+
+        app_name (str): The name given to the app running in this SparkSession. This is not a modifiable property,
+            and can only be set if creating a brand new SparkContext and SparkSession.
+
+        log_level (str): Set the log level. Only set AFTER construction of the SparkContext, unfortunately.
+            Values are one of: logging.ERROR, logging.WARN, logging.WARNING, logging.INFO, logging.DEBUG
+
+        log_spark_config_vals (bool): If True, log at INFO the current spark config property values
+
+        log_hadoop_config_vals (bool): If True, log at INFO the current hadoop config property values
+
+        options (kwargs): dict or named-arguments (unlikely due to dots in properties) of key-value pairs representing
+            additional spark config values to set as the SparkContext and SparkSession are created.
+            NOTE: If a value is provided, and a SparkContext is also provided, the value must be a modifiable
+            property, otherwise an error will be thrown.
+    """
+    if spark_context and (
+            not spark_context._jvm or spark_context._jvm.SparkSession.getDefaultSession().get().sparkContext(
+
+    ).isStopped()
+    ):
+        raise ValueError("The provided spark_context arg is a stopped SparkContext. It must be active.")
+    if spark_context and java_gateway:
+        raise Exception(
+            "Cannot provide BOTH spark_context and java_gateway args. The active spark_context supplies its own gateway"
+        )
+
     conf = SparkConf()
 
     conf.set("spark.scheduler.mode", CONFIG.SPARK_SCHEDULER_MODE)
@@ -60,8 +143,37 @@ def configure_spark_session(
     # not prefixed with "spark.hadoop.", e.g.:
     # spark.sparkContext._jsc.hadoopConfiguration().set("key", value), e.g.
     # spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", AWS_ACCESS_KEY)
+    # EXPLORE THE ABOVE WITH CAUTION. It may not stick, and if it does, it's generally dangerous to modify a
+    #     JavaSparkContext (_jsc) since all SparkSessions share that single context and its config
 
-    spark = SparkSession.builder.appName(app_name).config(conf=conf).getOrCreate()
+    # Build the SparkSession based on args provided
+    builder = SparkSession.builder
+    if spark_context:
+        builder = builder._sparkContext(spark_context)
+    if java_gateway:
+        SparkContext._ensure_initialized(gateway=java_gateway, conf=conf)
+        sc_with_gateway = SparkContext.getOrCreate(conf=conf)
+        builder = builder._sparkContext(spark_context)
+    if master:
+        builder = builder.master(master)
+    if app_name:
+        builder = builder.appName(app_name)
+    spark = builder.config(conf=conf).getOrCreate()
+
+    # Now that the SparkSession was created, check whether certain provided config values were ignored if given a
+    # pre-existing SparkContext, and error-out if so
+    if spark_context:
+        built_conf = spark.conf  # type: RuntimeConfig
+        provided_conf_keys = [item[0] for item in conf.getAll()]
+        non_modifiable_conf = [k for k in provided_conf_keys if not built_conf.isModifiable(k)]
+        if non_modifiable_conf:
+            raise ValueError(
+                "An active SparkContext was given along with NEW spark config values. The following "
+                "spark config values were not set because they are not modifiable on the active "
+                "SparkContext"
+            )
+
+    # spark = SparkSession.builder.appName(app_name).config(conf=conf).getOrCreate()
 
     # Override log level, if provided
     # While this is a bit late (missing out on any logging at SparkSession instantiation time),
@@ -103,6 +215,37 @@ def configure_spark_session(
     if log_hadoop_config_vals:
         log_hadoop_config(spark)
     return spark
+
+
+def read_java_gateway_connection_info(gateway_conn_info_path):
+    """Read the port and auth token from a file holding connection info to a running spark-submit process
+
+    Args:
+        gateway_conn_info_path (path-like): File path of a file that the spun-up spark-submit process would have
+            written its port and secret info to. In order to do so this file path would have needed to be provided in an
+            environment variable named _PYSPARK_DRIVER_CONN_INFO_PATH in the environment where the spark-submit
+            process was started. It will read that, and dump out its connection info to that file upon starting.
+    """
+    with open(gateway_conn_info_path, "rb") as conn_info:
+        gateway_port = read_int(conn_info)
+        gateway_secret = UTF8Deserializer().loads(conn_info)
+    return gateway_port, gateway_secret
+
+
+def attach_java_gateway(gateway_port, gateway_auth_token) -> JavaGateway:
+    """Create a new JavaGateway that latches onto the port of a running spark-submit process
+
+    Args:
+        gateway_port (int): Port on which the spark-submit process will allow the gateway to attach
+        gateway_auth_token: Shared secret that must be provided to attach to the spark-submit process
+
+    Returns: The instantiated JavaGateway, which acts as a network interface for PySpark to submit spark jobs through
+        to the JVM-based Spark runtime
+    """
+    os.environ["PYSPARK_GATEWAY_PORT"] = str(gateway_port)
+    os.environ["PYSPARK_GATEWAY_SECRET"] = gateway_auth_token
+    gateway = launch_gateway()
+    return gateway
 
 
 def get_jdbc_connection_properties() -> dict:
@@ -212,11 +355,11 @@ def log_java_exception(logger, exc, err_msg=""):
 
 
 def configure_s3_credentials(
-    conf: SparkConf,
-    access_key: str = None,
-    secret_key: str = None,
-    profile: str = None,
-    temporary_creds: bool = False,
+        conf: SparkConf,
+        access_key: str = None,
+        secret_key: str = None,
+        profile: str = None,
+        temporary_creds: bool = False,
 ):
     """Set Spark config values allowing authentication to S3 for bucket data
 

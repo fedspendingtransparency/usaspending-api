@@ -11,20 +11,54 @@ from unittest.mock import patch
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_jvm_logger,
+    is_spark_context_stopped,
+    stop_spark_context,
+    attach_java_gateway,
+    read_java_gateway_connection_info,
 )
 from usaspending_api.config import CONFIG
 from pyspark import SparkContext
 from pyspark.sql import SparkSession, Row
+from pyspark.serializers import read_int, write_with_length, UTF8Deserializer
+from py4j.java_gateway import java_import, JavaGateway, JavaObject, GatewayParameters
+import os
+import uuid
+import random
+from pyspark.java_gateway import launch_gateway
+from pyspark.context import SparkContext
+from pyspark.sql import SparkSession, Row
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session
+from usaspending_api.config import CONFIG
 
+# How to determine a working dependency set:
+# 1. What platform are you using? local dev with pip-installed PySpark? EMR 6.x or 5.x? Databricks Runtime?
+# 2. From there determine what versions of Spark + Hadoop are supported on that platform. If going cross-platform,
+#    try to pick a combo that's supporpted on both
+# 3. Is there a hadoop-aws version matching the platform's Hadoop version used? Because we need to have Spark writing
+#    to S3, we are beholden to the AWS-provided JARs that implement the S3AFileSystem, which are part of the
+#    hadoop-aws JAR.
+# 4. Going from the platform-hadoop version, find the same version of hadoop-aws up in
+#    https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-aws/
+#    and look to see what version its dependent JARs are at that your code requires are runtime. If seeing errors or are
+#    uncertain of compatibility, see what working version-sets are aligned to an Amazon EMR release here:
+#    https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html
+_SCALA_VERSION = "2.12"
+_HADOOP_VERSION = "3.2.0"
+_SPARK_VERSION = "3.1.2"
+_DELTA_VERSION = "1.0.0"
+#_AWS_JAVA_SDK_VERSION = "1.11.901"
 
 # List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
 # executor class paths
 SPARK_SESSION_JARS = [
-    "com.amazonaws:aws-java-sdk:1.12.31",
-    "org.apache.hadoop:hadoop-aws:3.2.1",  # required dependency of aws-java-sdk
+    #"com.amazonaws:aws-java-sdk:1.12.31",
+    # hadoop-aws is an add-on to hadoop with Classes that allow hadoop to interface with an S3A (AWS S3) FileSystem
+    # NOTE That in order to work, the version number should be the same as the Hadoop version used by your Spark runtime
+    f"org.apache.hadoop:hadoop-aws:{_HADOOP_VERSION}",
     "org.postgresql:postgresql:42.2.23",
-    "io.delta:delta-core_2.12:1.0.0",
+    f"io.delta:delta-core_{_SCALA_VERSION}:{_DELTA_VERSION}",
 ]
+
 
 # TODO: Opting to use the other session-scoped fixture instead. Using this, can't seem to OVERRIDE the packages, or
 # allow it to re-recognize the packages, and re-instatiate the JavaGateway. So the first test that runs,
@@ -35,30 +69,21 @@ SPARK_SESSION_JARS = [
 # - something to try is to manually create a NEW JavaGateway with .launch_gateway(), and then provide that as the
 # value of gateway= param in creating the NEW SparkContext and see if it picks that up instead.
 # - that or seeing how to aggressively kill the spark-submit process at the time of SparkContext.stop(),
-# so a new process with new sparkconf/python_submit_args is instaniated with the new SparkContext
+# so a new process with new sparkconf/python_submit_args is instantiated with the new SparkContext
 @fixture
 def spark_stopper():
     """Throw an error if coming into a test using this fixture which needs to create a
     NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
     AND, proactively cleanup any SparkContext created by this test after it completes
     """
-    with SparkContext._lock:
-        # Check the Singleton instance populated if there's an active SparkContext
-        if SparkContext._active_spark_context is not None:
-            raise Exception("Test needs to create a new SparkSession+SparkContext, but a SparkContext exists.")
+    if not is_spark_context_stopped():
+        raise Exception("Test needs to create a new SparkSession+SparkContext, but a SparkContext exists.")
 
     # Add SPARK_TEST to avoid the Spark UI starting during tests
     with patch.dict(os.environ, {"SPARK_TESTING": "true"}):
         yield
 
-    with SparkContext._lock:
-        # Check the Singleton instance populated if there's an active SparkContext
-        if SparkContext._active_spark_context is not None:
-            try:
-                SparkContext.getOrCreate().stop()
-            except Exception:
-                # Swallow errors if not able to stop (e.g. may have already been stopped)
-                pass
+    stop_spark_context()
 
 
 @fixture(scope="session")
@@ -67,35 +92,65 @@ def spark() -> SparkSession:
     NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
     AND, proactively cleanup any SparkContext created by this test after it completes
     """
-    with SparkContext._lock:
-        # Check the Singleton instance populated if there's an active SparkContext
-        if SparkContext._active_spark_context is not None:
-            raise Exception(
-                "Error: Test session cannot create a SparkSession because one already exists at the time this "
-                "test-session-scoped fixture is being evaluated."
-            )
+    if not is_spark_context_stopped():
+        raise Exception(
+            "Error: Test session cannot create a SparkSession because one already exists at the time this "
+            "test-session-scoped fixture is being evaluated."
+        )
 
     extra_conf = {
-        "spark.master": "spark://localhost:7077",
+        #"spark.master": "spark://localhost:7077",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
         "spark.jars.packages": ",".join(SPARK_SESSION_JARS)
     }
     spark = configure_spark_session(
-        log_level=logging.INFO, log_spark_config_vals=True, **extra_conf
+        master="spark://localhost:7077",
+        app_name="Unit Test Session",
+        log_level=logging.INFO,
+        log_spark_config_vals=True,
+        **extra_conf,
     )  # type: SparkSession
 
     # Add SPARK_TEST to avoid the Spark UI starting during tests
     # with patch.dict(os.environ, {"SPARK_TESTING": "true"}):
     yield spark
 
-    with SparkContext._lock:
-        # Check the Singleton instance populated if there's an active SparkContext
-        if SparkContext._active_spark_context is not None:
-            try:
-                SparkContext.getOrCreate().stop()
-            except Exception:
-                # Swallow errors if not able to stop (e.g. may have already been stopped)
-                pass
+    stop_spark_context()
+
+
+@fixture(scope="session")
+def spark_gateway() -> SparkSession:
+    """Throw an error if coming into a test using this fixture which needs to create a
+    NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
+    AND, proactively cleanup any SparkContext created by this test after it completes
+    """
+    if not is_spark_context_stopped():
+        raise Exception(
+            "Error: Test session cannot create a SparkSession because one already exists at the time this "
+            "test-session-scoped fixture is being evaluated."
+        )
+
+    extra_conf = {
+        #"spark.master": "spark://spark-master:7077",
+        "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
+        "spark.jars.packages": ",".join(SPARK_SESSION_JARS)
+    }
+
+    java_gateway = attach_java_gateway(*read_java_gateway_connection_info(CONFIG._PYSPARK_DRIVER_CONN_INFO_PATH))
+    spark = configure_spark_session(
+        java_gateway=java_gateway,
+        master="spark://spark-master:7077",
+        app_name="Unit Test Session",
+        log_level=logging.INFO,
+        log_spark_config_vals=True,
+        **extra_conf,
+    )  # type: SparkSession
+
+    # Add SPARK_TEST to avoid the Spark UI starting during tests
+    # with patch.dict(os.environ, {"SPARK_TESTING": "true"}):
+    yield spark
+
+    stop_spark_context()
 
 
 #def test_spark_app_run_local_master(request, spark_stopper):
@@ -188,4 +243,5 @@ def test_spark_write_csv_app_run(spark: SparkSession, request):
     ]
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
-    df.write.option("header", True).csv(f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3/")
+    # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
+    df.write.option("header", True).csv(f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3")
