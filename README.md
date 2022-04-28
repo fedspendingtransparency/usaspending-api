@@ -34,7 +34,7 @@ Ensure the following dependencies are installed and working prior to continuing:
 ### Cloning the Repository
 Now, navigate to the base file directory where you will store the USAspending repositories
 
-    $ mkdir -p usaspending && cd usaspending
+    $ mkdir usaspending && cd usaspending
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
 
@@ -84,12 +84,18 @@ For further instructions on how to download, use, and setup the database using a
 ### Elasticsearch Setup
 Some of the API endpoints reach into Elasticsearch for data.
 
+#### Stand-up Elasticsearch container
 - `docker-compose up usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
 
 - The cluster should be reachable via at http://localhost:9200 ("You Know, for Search").
 
 - Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
+#### Generate Elasticsearch indexes
+The following will generate two base indexes, one for awards and one for transactions:
+    
+    python3 manage.py elasticsearch_indexer --create-new-index --index-name 01-26-2022-awards --load-type award
+    python3 manage.py elasticsearch_indexer --create-new-index --index-name 01-26-2022-transactions --load-type transaction
 ## Running the API
 `docker-compose up usaspending-api`
 
