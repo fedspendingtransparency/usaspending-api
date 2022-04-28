@@ -80,6 +80,10 @@ def minio_data_bucket():
     except ClientError:
         # Simplest way to ensure the bucket is created is to swallow the exception saying it already exists
         pass
+
+    logging.info(f"Bucket '{CONFIG.AWS_S3_BUCKET}' created at S3 endpoint '{CONFIG.AWS_S3_ENDPOINT}'. Current Buckets:")
+    [logging.info(f"  {b['Name']}") for b in s3_client.list_buckets()["Buckets"]]
+
     yield
 
 

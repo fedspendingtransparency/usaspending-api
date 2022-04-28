@@ -40,6 +40,7 @@ env:
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
   - GRANTS_API_KEY=${GRANTS_API_KEY}
   - MINIO_DATA_DIR=${TRAVIS_BUILD_DIR}/../data/usaspending-s3
+  - MINIO_PORT=9009  # 9000 possibly has a port conflict
 
 before_install:
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
