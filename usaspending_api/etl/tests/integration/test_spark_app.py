@@ -1,6 +1,7 @@
 """Module to verify that spark-based integration tests can run in our CI environment, with all required
 spark components (docker-compose container services) are up and running and integratable.
 """
+import boto3
 import logging
 import os
 import sys
@@ -58,6 +59,28 @@ SPARK_SESSION_JARS = [
     "org.postgresql:postgresql:42.2.23",
     f"io.delta:delta-core_{_SCALA_VERSION}:{_DELTA_VERSION}",
 ]
+
+
+@fixture(scope="session")
+def minio_data_bucket():
+    """Create a bucket named data so the tests can use it"""
+    #s3 = boto3.resource("s3")
+
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
+        aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+        aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+    )
+
+    from botocore.errorfactory import ClientError
+    try:
+        s3_client.create_bucket(Bucket=CONFIG.AWS_S3_BUCKET)
+        #s3.create_bucket(Bucket="data")
+    except ClientError:
+        # Simplest way to ensure the bucket is created is to swallow the exception saying it already exists
+        pass
+    yield
 
 
 # TODO: Opting to use the other session-scoped fixture instead. Using this, can't seem to OVERRIDE the packages, or
@@ -219,7 +242,7 @@ def test_spark_app_run_remote_master(spark: SparkSession, request):
 #     },
 # )
 #def test_spark_write_csv_app_run(request, spark_stopper):
-def test_spark_write_csv_app_run(spark: SparkSession, request):
+def test_spark_write_csv_app_run(spark: SparkSession, minio_data_bucket, request):
     """More involved integration test that requires MinIO to be up as an s3 alternative."""
     # extra_conf = {
     #     "spark.jars.packages": "org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31",
