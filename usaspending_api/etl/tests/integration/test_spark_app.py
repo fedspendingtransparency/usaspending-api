@@ -147,7 +147,7 @@ def spark() -> SparkSession:
         # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
         "spark.submit.deployMode": "client",
         "spark.driver.host": "host.docker.internal",
-        "spark.master": "spark://host.docker.internal:7077",
+        "spark.master": "spark://localhost:7077",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
         "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
     }
