@@ -3,7 +3,12 @@ import logging
 import os
 import sys
 
-from py4j.java_gateway import JavaGateway
+from py4j.java_gateway import (
+    JavaGateway,
+    GatewayParameters,
+    java_import,
+    DEFAULT_ADDRESS as PYSPARK_GATEWAY_DEFAULT_ADDRESS,
+)
 from py4j.protocol import Py4JJavaError
 from pydantic import PostgresDsn, AnyHttpUrl
 from pyspark.conf import SparkConf
@@ -232,7 +237,11 @@ def read_java_gateway_connection_info(gateway_conn_info_path):
     return gateway_port, gateway_secret
 
 
-def attach_java_gateway(gateway_port, gateway_auth_token) -> JavaGateway:
+def attach_java_gateway(
+        gateway_port,
+        gateway_auth_token,
+        #gateway_address=PYSPARK_GATEWAY_DEFAULT_ADDRESS
+) -> JavaGateway:
     """Create a new JavaGateway that latches onto the port of a running spark-submit process
 
     Args:
@@ -242,9 +251,40 @@ def attach_java_gateway(gateway_port, gateway_auth_token) -> JavaGateway:
     Returns: The instantiated JavaGateway, which acts as a network interface for PySpark to submit spark jobs through
         to the JVM-based Spark runtime
     """
+    #os.environ["PYSPARK_GATEWAY_ADDRESS"] = gateway_address
     os.environ["PYSPARK_GATEWAY_PORT"] = str(gateway_port)
     os.environ["PYSPARK_GATEWAY_SECRET"] = gateway_auth_token
+
     gateway = launch_gateway()
+
+    # ALTERNATIVE IMPL BELOW, THAT WOULD ALLOW SETTING THE IP ADDRESS WHERE THE JAVA GATEWAY CAN BE FOUND
+    #     - HOWEVER APPEARS TO NOT WORK FROM OUTSIDE-IN OF A CONTAINER, PROBABLY DUE TO IT NOT BEING ABLE TO CALLBACK
+    #       TO THE PYTHON PROCESS SINCE IT IS HARD-CODED TO LOOK AT LOCALHOST
+    # gateway = JavaGateway(
+    #     gateway_parameters=GatewayParameters(
+    #         address=gateway_address,
+    #         port=gateway_port,
+    #         auth_token=gateway_auth_token,
+    #         auto_convert=True))
+    #
+    # gateway.proc = None  # no self-started process, latching on to externally started gateway process
+    #
+    # # CAUTION: These imports were copied from pyspark/java_gateway.py -> launch_gateway(). They should be checked for
+    # #          change if an error occurs
+    #
+    # # Import the classes used by PySpark
+    # java_import(gateway.jvm, "org.apache.spark.SparkConf")
+    # java_import(gateway.jvm, "org.apache.spark.api.java.*")
+    # java_import(gateway.jvm, "org.apache.spark.api.python.*")
+    # java_import(gateway.jvm, "org.apache.spark.ml.python.*")
+    # java_import(gateway.jvm, "org.apache.spark.mllib.api.python.*")
+    # java_import(gateway.jvm, "org.apache.spark.resource.*")
+    # # TODO(davies): move into sql
+    # java_import(gateway.jvm, "org.apache.spark.sql.*")
+    # java_import(gateway.jvm, "org.apache.spark.sql.api.python.*")
+    # java_import(gateway.jvm, "org.apache.spark.sql.hive.*")
+    # java_import(gateway.jvm, "scala.Tuple2")
+
     return gateway
 
 

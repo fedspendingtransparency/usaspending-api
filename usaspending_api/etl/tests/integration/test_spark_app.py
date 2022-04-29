@@ -72,7 +72,13 @@ SPARK_SESSION_JARS = [
 
 @fixture(scope="session")
 def minio_test_data_bucket():
-    """Create a bucket named data so the tests can use it"""
+    """Create a bucket named data so the tests can use it
+
+    NOTE: Using hard-coded localhost here rather than the CONFIG.MINIO_HOST or AWS_S3_ENDPOINT because
+        1. The assumption is that test are not running in docker but no a host
+        2. Code under test will be running in docker, and must connect to the endpoint as-seen by docker
+    """
+    logging.warning(f"Attempting to create test bucket at: http://{CONFIG.AWS_S3_ENDPOINT}")
     s3_client = boto3.client(
         "s3",
         endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
@@ -99,6 +105,14 @@ def minio_test_data_bucket():
     [logging.info(f"  {b['Name']}") for b in s3_client.list_buckets()["Buckets"]]
 
     yield
+
+
+@fixture
+def minio_from_docker():
+    """Fixture that makes MINIO_HOST be the name as-seen from docker (minio) when code-running-in-docker will be
+    accessing MinIO as S3"""
+    with patch.dict(os.environ, {"MINIO_HOST": "minio"}):
+        yield
 
 
 # TODO: Opting to use the other session-scoped fixture instead. Using this, can't seem to OVERRIDE the packages, or
@@ -261,7 +275,7 @@ def test_spark_app_run_remote_master(spark: SparkSession, request):
 #     },
 # )
 # def test_spark_write_csv_app_run(request, spark_stopper):
-def test_spark_write_csv_app_run(spark: SparkSession, minio_test_data_bucket, request):
+def test_spark_write_csv_app_run(spark: SparkSession, minio_test_data_bucket, minio_from_docker, request):
     """More involved integration test that requires MinIO to be up as an s3 alternative."""
     # extra_conf = {
     #     "spark.jars.packages": "org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31",

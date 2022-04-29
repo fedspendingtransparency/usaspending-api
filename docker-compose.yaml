@@ -192,6 +192,8 @@ services:
         source: .
         target: /project
         read_only: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   spark-worker:
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
@@ -216,6 +218,8 @@ services:
         source: .
         target: /project
         read_only: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   spark-history-server:
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
@@ -236,6 +240,8 @@ services:
         source: .
         target: /project
         read_only: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   spark-submit:
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
@@ -278,6 +284,8 @@ services:
         read_only: false
 #    ports:
 #      - "1-65535:1-65535"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   pyspark-gateway:
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
