@@ -20,8 +20,8 @@ addons:
   # If your build requires custom hostnames, you can specify a single host or a list of them in your .travis.yml.
   # Travis CI will automatically configure the hostnames in /etc/hosts and resolve them to 127.0.0.1.
   hosts:
-    #- host.docker.internal  # if hitting this from outside a container, still resolve to local host
-    - minio  # so that calls to "s3" (minio) can be resolved from the Travis host or from containers running in it
+    - host.docker.internal  # if hitting this from outside a container, still resolve to local host
+    #- minio  # so that calls to "s3" (minio) can be resolved from the Travis host or from containers running in it
 
 env:
   global:
@@ -46,7 +46,7 @@ env:
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
   - GRANTS_API_KEY=${GRANTS_API_KEY}
   - MINIO_DATA_DIR=${TRAVIS_BUILD_DIR}/../data/usaspending-s3
-  - MINIO_HOST=minio
+  - MINIO_HOST=host.docker.internal
 
 before_install:
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
