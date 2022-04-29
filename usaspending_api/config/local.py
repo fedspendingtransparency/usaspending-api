@@ -67,7 +67,8 @@ class LocalConfig(DefaultConfig):
     ES_CLUSTER_DIR = _USER_SPECIFIC_OVERRIDE
 
     # ==== [MinIO] ====
-    MINIO_HOST = "localhost"
+    MINIO_HOST = "host.docker.internal"
+    # MINIO_HOST = "localhost"
     MINIO_PORT = "9000"
     MINIO_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
     MINIO_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env

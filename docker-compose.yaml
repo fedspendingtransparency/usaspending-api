@@ -301,7 +301,6 @@ services:
       - spark-worker
       - spark-history-server
       - minio
-    #network_mode: host
     environment:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
