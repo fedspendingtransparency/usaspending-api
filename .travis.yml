@@ -16,13 +16,6 @@ addons:
     packages:
     - postgresql-10
     - postgresql-client-10
-  # TODO: REMOVE hosts:
-  # From: https://docs.travis-ci.com/user/hosts/
-  # If your build requires custom hostnames, you can specify a single host or a list of them in your .travis.yml.
-  # Travis CI will automatically configure the hostnames in /etc/hosts and resolve them to 127.0.0.1.
-#  hosts:
-#    - host.docker.internal  # if hitting this from outside a container, still resolve to local host
-    #- minio  # so that calls to "s3" (minio) can be resolved from the Travis host or from containers running in it
 
 env:
   global:
@@ -89,10 +82,10 @@ before_script:
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
   # TODO: REMOVE STANDING UP SPARK DOCKER SERVICES, EXCEPT FOR MINIO (s3 profile)
-  #- make docker-compose-up-s3 args="-d"
+  - make docker-compose-up-s3 args="-d"
   #- make docker-compose-build-spark
   #- make docker-compose-up args="-d $(docker-compose ps --services | grep '^spark' | tr '\n' ' ')"
-  - docker-compose --profile s3 --project-directory ./ --file ./docker-compose.yml up -d
+  #- docker-compose --profile s3 --project-directory ./ --file ./docker-compose.yml up -d
 #  - docker-compose --project-directory ./ --file ./docker-compose.yaml build --build-arg PROJECT_LOG_DIR=./usaspending_api/logs $(docker-compose --project-directory ./ --file ./docker-compose.yaml ps --services | grep '^spark' | tr '\n' ' ')
 #  - docker-compose --project-directory ./ --file ./docker-compose.yaml up -d $(docker-compose --project-directory ./ --file ./docker-compose.yaml ps --services | grep '^spark' | tr '\n' ' ')
   # Build image from which to call Broker scripts

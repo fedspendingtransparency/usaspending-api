@@ -24,8 +24,8 @@ endif
 ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
 python_version := 3.7.3
 venv_name := usaspending-api
-docker_compose_file := ./docker-compose.yml
-dockerfile_for_spark := ./Dockerfile.spark
+docker_compose_file := docker-compose.yml
+dockerfile_for_spark := Dockerfile.spark
 # Root directories under which python (namespace) packages start, for all python code in this project
 src_root_paths = "."
 
@@ -139,7 +139,7 @@ clean-all: confirm-clean-all
 #       of that Makefile
 .PHONY: docker-compose
 docker-compose:
-	docker-compose ${profiles} --project-directory ./ --file ${docker_compose_file} ${args}
+	docker-compose ${profiles} --project-directory . --file ${docker_compose_file} ${args}
 
 # Show config and vars expanded, which will be used in docker-compose
 # NOTE: The .env file is used to provide environment variable values that replace varialbes in the compose file
@@ -148,39 +148,40 @@ docker-compose:
 #       of that Makefile
 .PHONY: docker-compose-config
 docker-compose-config:
-	docker-compose --project-directory ./ --file ${docker_compose_file} config ${args}
+	docker-compose --project-directory . --file ${docker_compose_file} config ${args}
 
 # Deploy containerized version of this app on the local machine using docker-compose
 # To 'up' a single docker-compose service, pass it in the args var, e.g.: make deploy-docker args=my-service
 # NOTE: [See NOTE in docker-compose rule about .env file]
 .PHONY: docker-compose-up-usaspending
 docker-compose-up-usaspending:
-	docker-compose --profile usaspending --project-directory ./ --file ${docker_compose_file} up ${args}
+	docker-compose --profile usaspending --project-directory . --file ${docker_compose_file} up ${args}
 
 # Deploy minio container on the local machine using docker-compose, which acts as a look-alike AWS S3 service
 # NOTE: [See NOTE in docker-compose rule about .env file]
 .PHONY: docker-compose-up-s3
 docker-compose-up-s3:
-	docker-compose --profile s3 --project-directory ./ --file ${docker_compose_file} up ${args}
+	echo "docker-compose --profile s3 --project-directory . --file ${docker_compose_file} up ${args}"
+	docker-compose --profile s3 --project-directory . --file ${docker_compose_file} up ${args}
 
 # Deploy containerized version of spark cluster infrastructure on the local machine using docker-compose
 # To 'up' a single docker-compose service, pass it in the args var, e.g.: make deploy-docker args=my-service
 # NOTE: [See NOTE in docker-compose rule about .env file]
 .PHONY: docker-compose-up-spark
 docker-compose-up-spark:
-	docker-compose --profile spark --project-directory ./ --file ${docker_compose_file} up ${args}
+	docker-compose --profile spark --project-directory . --file ${docker_compose_file} up ${args}
 
 # Use docker-compose run <args> to run one or more Docker Compose services with options
 # NOTE: [See NOTE in docker-compose rule about .env file]
 .PHONY: docker-compose-run
 docker-compose-run:
-	docker-compose --project-directory ./ --file ${docker_compose_file} run ${args}
+	docker-compose --project-directory . --file ${docker_compose_file} run ${args}
 
 # Run docker-compose down to bring down services listed in the compose file
 # NOTE: [See NOTE in docker-compose rule about .env file]
 .PHONY: docker-compose-down
 docker-compose-down:
-	docker-compose --project-directory ./ --file ${docker_compose_file} down ${args}
+	docker-compose --project-directory . --file ${docker_compose_file} down ${args}
 
 # Run docker build to build a base container image for spark, hadoop, and python installed
 # NOTE: [See NOTE in above docker-compose rule about .env file]
@@ -201,12 +202,12 @@ docker-build-spark:
 # NOTE: [See NOTE in above docker-compose rule about .env file]
 .PHONY: docker-compose-build
 docker-compose-build:
-	echo "docker-compose --profile usaspending --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
-	docker-compose --profile usaspending --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+	echo "docker-compose --profile usaspending --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
+	docker-compose --profile usaspending --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
 # See: docker-compose-build rule. This builds just the subset of spark services.
 # NOTE: [See NOTE in above docker-compose rule about .env file]
 .PHONY: docker-compose-build-spark
 docker-compose-build-spark:
-	echo "docker-compose --profile spark --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
-	docker-compose --profile spark --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+	echo "docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
+	docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
