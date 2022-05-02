@@ -1,42 +1,26 @@
 """Module to verify that spark-based integration tests can run in our CI environment, with all required
 spark components (docker-compose container services) are up and running and integratable.
 """
-import boto3
 import logging
-import os
+import random
 import sys
 import uuid
-import random
+from datetime import date
 
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+import boto3
+from model_mommy import mommy
+from pyspark.sql import SparkSession, Row
 from pytest import fixture
-from unittest.mock import patch
+from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from usaspending_api.common.helpers.spark_helpers import (
-    configure_spark_session,
     get_jvm_logger,
     is_spark_context_stopped,
     stop_spark_context,
-    attach_java_gateway,
-    read_java_gateway_connection_info,
     get_jdbc_url_from_pg_uri,
 )
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
-from pyspark import SparkContext
-from pyspark.sql import SparkSession, Row
-from pyspark.serializers import read_int, write_with_length, UTF8Deserializer
-from py4j.java_gateway import java_import, JavaGateway, JavaObject, GatewayParameters
-from datetime import date
-from model_mommy import mommy
-import os
-import uuid
-import random
-from pyspark.java_gateway import launch_gateway
-from pyspark.context import SparkContext
-from pyspark.sql import SparkSession, Row
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session
-from usaspending_api.config import CONFIG
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
-
 
 # How to determine a working dependency set:
 # 1. What platform are you using? local dev with pip-installed PySpark? EMR 6.x or 5.x? Databricks Runtime?
@@ -178,7 +162,7 @@ def test_spark_write_csv_app_run(spark: SparkSession, minio_test_data_bucket):
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    df.write.option("header", True).csv(f"s3a://{CONFIG.AWS_S3_BUCKET}"f"/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3")
+    df.write.option("header", True).csv(f"s3a://{CONFIG.AWS_S3_BUCKET}" f"/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3")
 
 
 @fixture()

@@ -6,9 +6,6 @@ from urllib.parse import urlparse, parse_qs
 
 from py4j.java_gateway import (
     JavaGateway,
-    GatewayParameters,
-    java_import,
-    DEFAULT_ADDRESS as PYSPARK_GATEWAY_DEFAULT_ADDRESS,
 )
 from py4j.protocol import Py4JJavaError
 from pydantic import PostgresDsn, AnyHttpUrl
@@ -52,14 +49,14 @@ def stop_spark_context() -> bool:
 
 
 def configure_spark_session(
-        java_gateway: JavaGateway = None,
-        spark_context: SparkContext = None,
-        master=None,
-        app_name="Spark App",
-        log_level: int = None,
-        log_spark_config_vals: bool = False,
-        log_hadoop_config_vals: bool = False,
-        **options,
+    java_gateway: JavaGateway = None,
+    spark_context: SparkContext = None,
+    master=None,
+    app_name="Spark App",
+    log_level: int = None,
+    log_spark_config_vals: bool = False,
+    log_hadoop_config_vals: bool = False,
+    **options,
 ) -> SparkSession:
     """Get a SparkSession object with some of the default/boiler-plate config needed for THIS project pre-set
 
@@ -100,9 +97,7 @@ def configure_spark_session(
             property, otherwise an error will be thrown.
     """
     if spark_context and (
-            not spark_context._jvm or spark_context._jvm.SparkSession.getDefaultSession().get().sparkContext(
-
-    ).isStopped()
+        not spark_context._jvm or spark_context._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
     ):
         raise ValueError("The provided spark_context arg is a stopped SparkContext. It must be active.")
     if spark_context and java_gateway:
@@ -159,7 +154,7 @@ def configure_spark_session(
     if java_gateway:
         SparkContext._ensure_initialized(gateway=java_gateway, conf=conf)
         sc_with_gateway = SparkContext.getOrCreate(conf=conf)
-        builder = builder._sparkContext(spark_context)
+        builder = builder._sparkContext(sc_with_gateway)
     if master:
         builder = builder.master(master)
     if app_name:
@@ -239,9 +234,9 @@ def read_java_gateway_connection_info(gateway_conn_info_path):
 
 
 def attach_java_gateway(
-        gateway_port,
-        gateway_auth_token,
-        #gateway_address=PYSPARK_GATEWAY_DEFAULT_ADDRESS
+    gateway_port,
+    gateway_auth_token,
+    # gateway_address=PYSPARK_GATEWAY_DEFAULT_ADDRESS
 ) -> JavaGateway:
     """Create a new JavaGateway that latches onto the port of a running spark-submit process
 
@@ -252,7 +247,7 @@ def attach_java_gateway(
     Returns: The instantiated JavaGateway, which acts as a network interface for PySpark to submit spark jobs through
         to the JVM-based Spark runtime
     """
-    #os.environ["PYSPARK_GATEWAY_ADDRESS"] = gateway_address
+    # os.environ["PYSPARK_GATEWAY_ADDRESS"] = gateway_address
     os.environ["PYSPARK_GATEWAY_PORT"] = str(gateway_port)
     os.environ["PYSPARK_GATEWAY_SECRET"] = gateway_auth_token
 
@@ -308,11 +303,7 @@ def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
     """Converts the passed-in Postgres DB connection URI to a JDBC-compliant Postgres DB connection string"""
     url_parts = urlparse(pg_uri)
     user = (
-        url_parts.username
-        if url_parts.username
-        else parse_qs(url_parts.query)["user"][0]
-        if url_parts.query
-        else None
+        url_parts.username if url_parts.username else parse_qs(url_parts.query)["user"][0] if url_parts.query else None
     )
     password = (
         url_parts.password
@@ -324,8 +315,7 @@ def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
     if user is None or password is None:
         raise ValueError("pg_uri provided must have username and password with host or in query string")
     # JDBC URLs only support postgresql://
-    pg_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password=" \
-             f"{password}"
+    pg_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password=" f"{password}"
 
     return f"jdbc:{pg_uri}"
 
@@ -423,11 +413,11 @@ def log_java_exception(logger, exc, err_msg=""):
 
 
 def configure_s3_credentials(
-        conf: SparkConf,
-        access_key: str = None,
-        secret_key: str = None,
-        profile: str = None,
-        temporary_creds: bool = False,
+    conf: SparkConf,
+    access_key: str = None,
+    secret_key: str = None,
+    profile: str = None,
+    temporary_creds: bool = False,
 ):
     """Set Spark config values allowing authentication to S3 for bucket data
 
