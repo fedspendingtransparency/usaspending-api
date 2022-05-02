@@ -10,7 +10,7 @@ from datetime import date
 import boto3
 from model_mommy import mommy
 from pyspark.sql import SparkSession, Row
-from pytest import fixture
+from pytest import fixture, mark
 from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from usaspending_api.common.helpers.spark_helpers import (
@@ -215,6 +215,7 @@ def _transaction_and_award_test_data(db):
     assert TransactionFPDS.objects.all().count() == 1
 
 
+@mark.django_db(transaction=True)  # must commit Django data for Spark to be able to read it
 def test_spark_write_to_s3_delta_from_db(
     _transaction_and_award_test_data,
     spark: SparkSession,
