@@ -46,29 +46,31 @@ before_install:
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
   # Re-install elasticsearch at the right version
-  - sudo systemctl stop elasticsearch
-  - sudo dpkg --remove elasticsearch
-  - sudo dpkg --purge elasticsearch
-  - sudo rm -rf /var/lib/elasticsearch
-  - travis_retry curl -s -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.1.1-amd64.deb
-  - sudo dpkg --install elasticsearch-7.1.1-amd64.deb
-  - sudo sed -i.old 's/-Xms1g/-Xms512m/' /etc/elasticsearch/jvm.options
-  - echo -e '-XX:+DisableExplicitGC\n-Djdk.io.permissionsUseCanonicalPath=true\n-Dlog4j.skipJansi=true\n-server\n' | sudo tee -a /etc/elasticsearch/jvm.options
-  - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
-  - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
-  - sudo systemctl start elasticsearch
-  - sudo journalctl -u elasticsearch -b
-  # Add dredd for API contract testing
-  - travis_retry npm install --global dredd@13.1.2
+  # TODO: RE-ENABLE ES and DREDD
+#  - sudo systemctl stop elasticsearch
+#  - sudo dpkg --remove elasticsearch
+#  - sudo dpkg --purge elasticsearch
+#  - sudo rm -rf /var/lib/elasticsearch
+#  - travis_retry curl -s -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.1.1-amd64.deb
+#  - sudo dpkg --install elasticsearch-7.1.1-amd64.deb
+#  - sudo sed -i.old 's/-Xms1g/-Xms512m/' /etc/elasticsearch/jvm.options
+#  - echo -e '-XX:+DisableExplicitGC\n-Djdk.io.permissionsUseCanonicalPath=true\n-Dlog4j.skipJansi=true\n-server\n' | sudo tee -a /etc/elasticsearch/jvm.options
+#  - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
+#  - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
+#  - sudo systemctl start elasticsearch
+#  - sudo journalctl -u elasticsearch -b
+#  # Add dredd for API contract testing
+#  - travis_retry npm install --global dredd@13.1.2
 
 install:
   # setuptools is pinned to version 60.8.2 due to an error occurring with built-in version
-  - travis_retry pip install setuptools==60.8.2
-  - travis_retry pip install -r requirements/requirements.txt
-  - travis_retry pip install coveralls
-  # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
-  - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
-  - travis_retry git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
+  # TODO: RE-ENABLE pip and broker
+#  - travis_retry pip install setuptools==60.8.2
+#  - travis_retry pip install -r requirements/requirements.txt
+#  - travis_retry pip install coveralls
+#  # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
+#  - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
+#  - travis_retry git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
   # Get dependencies to report code coverage to code climate
@@ -82,7 +84,8 @@ before_script:
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
   # TODO: REMOVE STANDING UP SPARK DOCKER SERVICES, EXCEPT FOR MINIO (s3 profile)
-  - make docker-compose-up-s3 args="-d"
+  - make say-hello
+  #- make docker-compose-up-s3 args="-d"
   #- make docker-compose-build-spark
   #- make docker-compose-up args="-d $(docker-compose ps --services | grep '^spark' | tr '\n' ' ')"
   #- docker-compose --profile s3 --project-directory ./ --file ./docker-compose.yml up -d

@@ -211,3 +211,9 @@ docker-compose-build:
 docker-compose-build-spark:
 	echo "docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
 	docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+
+.PHONY: say-hello
+say-hello:
+	echo "SAYING HELLO FROM MAKE!"
+	date
+	echo "that's the date (UP)"
