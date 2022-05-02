@@ -54,6 +54,7 @@ SPARK_SESSION_JARS = [
 
 DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
+
 @fixture(scope="session")
 def minio_test_data_bucket():
     """Create a bucket named data so the tests can use it"""
@@ -136,6 +137,7 @@ def delta_lake_unittest_schema(spark: SparkSession):
     and cleanup any objects created in the schema after the test run."""
 
     # Force default usage of the unittest schema in this SparkSession
+    spark.sql(f"CREATE SCHEMA IF NOT EXISTS {DELTA_LAKE_UNITTEST_SCHEMA_NAME}")
     spark.sql(f"USE {DELTA_LAKE_UNITTEST_SCHEMA_NAME}")
 
     # Yield the name of the db that test delta lake tables and records should be put in.
