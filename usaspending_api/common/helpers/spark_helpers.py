@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 import sys
+from urllib.parse import urlparse, parse_qs
 
 from py4j.java_gateway import (
     JavaGateway,
@@ -293,11 +294,38 @@ def get_jdbc_connection_properties() -> dict:
 
 
 def get_jdbc_url():
+    """Getting a JDBC-compliant Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     pg_dsn = CONFIG.POSTGRES_DSN  # type: PostgresDsn
     if pg_dsn.user is None or pg_dsn.password is None:
         raise ValueError("postgres_dsn config val must provide username and password")
     # JDBC URLs only support postgresql://
     pg_uri = f"postgresql://{pg_dsn.host}:{pg_dsn.port}{pg_dsn.path}?user={pg_dsn.user}&password={pg_dsn.password}"
+
+    return f"jdbc:{pg_uri}"
+
+
+def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
+    """Converts the passed-in Postgres DB connection URI to a JDBC-compliant Postgres DB connection string"""
+    url_parts = urlparse(pg_uri)
+    user = (
+        url_parts.username
+        if url_parts.username
+        else parse_qs(url_parts.query)["user"][0]
+        if url_parts.query
+        else None
+    )
+    password = (
+        url_parts.password
+        if url_parts.password
+        else parse_qs(url_parts.query)["password"][0]
+        if url_parts.query
+        else None
+    )
+    if user is None or password is None:
+        raise ValueError("pg_uri provided must have username and password with host or in query string")
+    # JDBC URLs only support postgresql://
+    pg_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password=" \
+             f"{password}"
 
     return f"jdbc:{pg_uri}"
 

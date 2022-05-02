@@ -24,7 +24,7 @@ endif
 ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
 python_version := 3.7.3
 venv_name := usaspending-api
-docker_compose_file := ./docker-compose.yaml
+docker_compose_file := ./docker-compose.yml
 dockerfile_for_spark := ./Dockerfile.spark
 # Root directories under which python (namespace) packages start, for all python code in this project
 src_root_paths = "."
@@ -132,14 +132,14 @@ clean-all: confirm-clean-all
 	@git clean -xfd --exclude='\.env'
 	if command -v deactivate &> /dev/null; then deactivate; fi;
 
-# Run an arbitrary docker-compose command by passing in the args in the "args" variable
+# Run an arbitrary docker-compose command by passing in the Docker Compose profiles in the "profiles" variable, and args in the "args" variable
 # NOTE: The .env file is used to provide environment variable values that replace variables in the compose file
 #       Because the .env file does not live in the same place as the compose file, we have to tell compose explicitly
 #       where it is with "--project_directory". Since this is called from the root Makefile, using ./ points to the dir
 #       of that Makefile
 .PHONY: docker-compose
 docker-compose:
-	docker-compose --project-directory ./ --file ${docker_compose_file} ${args}
+	docker-compose ${profiles} --project-directory ./ --file ${docker_compose_file} ${args}
 
 # Show config and vars expanded, which will be used in docker-compose
 # NOTE: The .env file is used to provide environment variable values that replace varialbes in the compose file
@@ -148,14 +148,27 @@ docker-compose:
 #       of that Makefile
 .PHONY: docker-compose-config
 docker-compose-config:
-	docker-compose --project-directory ./ --file ${docker_compose_file} config
+	docker-compose --project-directory ./ --file ${docker_compose_file} config ${args}
 
 # Deploy containerized version of this app on the local machine using docker-compose
 # To 'up' a single docker-compose service, pass it in the args var, e.g.: make deploy-docker args=my-service
 # NOTE: [See NOTE in docker-compose rule about .env file]
-.PHONY: docker-compose-up
-docker-compose-up:
-	docker-compose --project-directory ./ --file ${docker_compose_file} up ${args}
+.PHONY: docker-compose-up-usaspending
+docker-compose-up-usaspending:
+	docker-compose --profile usaspending --project-directory ./ --file ${docker_compose_file} up ${args}
+
+# Deploy minio container on the local machine using docker-compose, which acts as a look-alike AWS S3 service
+# NOTE: [See NOTE in docker-compose rule about .env file]
+.PHONY: docker-compose-up-s3
+docker-compose-up-s3:
+	docker-compose --profile s3 --project-directory ./ --file ${docker_compose_file} up ${args}
+
+# Deploy containerized version of spark cluster infrastructure on the local machine using docker-compose
+# To 'up' a single docker-compose service, pass it in the args var, e.g.: make deploy-docker args=my-service
+# NOTE: [See NOTE in docker-compose rule about .env file]
+.PHONY: docker-compose-up-spark
+docker-compose-up-spark:
+	docker-compose --profile spark --project-directory ./ --file ${docker_compose_file} up ${args}
 
 # Use docker-compose run <args> to run one or more Docker Compose services with options
 # NOTE: [See NOTE in docker-compose rule about .env file]
@@ -167,7 +180,7 @@ docker-compose-run:
 # NOTE: [See NOTE in docker-compose rule about .env file]
 .PHONY: docker-compose-down
 docker-compose-down:
-	docker-compose --project-directory ./ --file ${docker_compose_file} down
+	docker-compose --project-directory ./ --file ${docker_compose_file} down ${args}
 
 # Run docker build to build a base container image for spark, hadoop, and python installed
 # NOTE: [See NOTE in above docker-compose rule about .env file]
@@ -177,7 +190,7 @@ docker-build-spark:
 	docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})
 
 # Ensure ALL services in the docker-compose.yaml file have an image built for them according to their build: key
-# NOTE: This *may* creates a compose-specific image name IF an image: YAML key does not specificy the image name to be used as
+# NOTE: This *may* creates a compose-specific image name IF an image: YAML key does not specify the image name to be used as
 #       a tag when compose has to build the image.
 #       If no image key is specified, then be aware that:
 #       While building and tagging the spark-base image can be done, docker-compose will _NOT USE_ that image at runtime,
@@ -188,12 +201,12 @@ docker-build-spark:
 # NOTE: [See NOTE in above docker-compose rule about .env file]
 .PHONY: docker-compose-build
 docker-compose-build:
-	echo "docker-compose --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
-	docker-compose --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+	echo "docker-compose --profile usaspending --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
+	docker-compose --profile usaspending --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
 # See: docker-compose-build rule. This builds just the subset of spark services.
 # NOTE: [See NOTE in above docker-compose rule about .env file]
 .PHONY: docker-compose-build-spark
 docker-compose-build-spark:
-	echo "docker-compose --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} $$(docker-compose --project-directory ./ --file ${docker_compose_file} ps --services | grep '^spark' | tr '\n' ' ') ${args}"
-	docker-compose --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} $$(docker-compose --project-directory ./ --file ${docker_compose_file} ps --services | grep '^spark' | tr '\n' ' ') ${args}
+	echo "docker-compose --profile spark --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
+	docker-compose --profile spark --project-directory ./ --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}

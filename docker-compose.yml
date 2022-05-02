@@ -1,3 +1,4 @@
+# See usages of this compose file and its commands in the README.md file
 version: '3.7'
 
 volumes:
@@ -6,10 +7,14 @@ volumes:
   local_es_data:
     driver: local
 
-# See run instructions in accompanying Dockerfile
 services:
 
   usaspending-db:
+    profiles:
+      - usaspending  # must pass --profile usaspending to docker-compose for this to come up, or run a service with one of these other profiles
+      - manage
+      - test
+      - ci
     image: postgres:10.13-alpine
     container_name: usaspending-db
     volumes:
@@ -24,6 +29,8 @@ services:
       POSTGRES_DB: data_store_api
 
   usaspending-manage:
+    profiles:
+      - manage  # must pass --profile manage to docker-compose for this to come up, or use docker-compose run
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-manage
@@ -31,7 +38,8 @@ services:
      - .:/dockermount
     depends_on:
       - usaspending-db
-    command: python3 -u manage.py shell
+    # For an interactive shell, override this command with: docker-compose run --rm usaspending-manage python3 -u manage.py shell
+    command: python3 -u manage.py help
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
@@ -39,6 +47,8 @@ services:
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
 
   usaspending-test:
+    profiles:
+      - test  # must pass --profile test to docker-compose for this to come up, or use docker-compose run
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-test
@@ -59,6 +69,8 @@ services:
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 
   usaspending-ci:
+    profiles:
+      - ci  # must pass --profile ci to docker-compose for this to come up, or use docker-compose run
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-ci
@@ -92,6 +104,8 @@ services:
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 
   usaspending-api:
+    profiles:
+      - usaspending  # must pass --profile usaspending to docker-compose for this to come up
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-api
@@ -114,6 +128,8 @@ services:
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
 
   usaspending-bulk-download:
+    profiles:
+      - usaspending  # must pass --profile usaspending to docker-compose for this to come up
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-bulk-download
@@ -127,46 +143,79 @@ services:
       DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
 
   usaspending-es:
-      image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
-      container_name: usaspending-es
-      environment:
-        - node.name=usaspending-es
-        - discovery.seed_hosts=usaspending-es
-        - cluster.initial_master_nodes=usaspending-es
-        - cluster.name=usaspending
-        - network.host=0.0.0.0
-        - bootstrap.memory_lock=true
-        - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
-      # Inject plugin install, then resume with orignial entrypoint command
-      command: >
-        /bin/sh -c "
-          if [ ! -d /usr/share/elasticsearch/plugins/mapper-murmur3 ]; then
-            # Certificate problem workaround when on VPN - wget without checking cert, then install from local filesystem
-            wget --no-check-certificate https://artifacts.elastic.co/downloads/elasticsearch-plugins/mapper-murmur3/mapper-murmur3-7.1.1.zip
-            ./bin/elasticsearch-plugin install file:///usr/share/elasticsearch/mapper-murmur3-7.1.1.zip
-          fi
-          /usr/local/bin/docker-entrypoint.sh"
-      ulimits:
-        memlock:
-          soft: -1
-          hard: -1
-      volumes:
-      - type: volume
-        source: local_es_data
-        target: /usr/share/elasticsearch/data
-      ports:
-        - 9200:9200
+    profiles:
+      - usaspending  # must pass --profile usaspending to docker-compose for this to come up
+      - test
+      - ci
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    container_name: usaspending-es
+    environment:
+      - node.name=usaspending-es
+      - discovery.seed_hosts=usaspending-es
+      - cluster.initial_master_nodes=usaspending-es
+      - cluster.name=usaspending
+      - network.host=0.0.0.0
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
+    # Inject plugin install, then resume with orignial entrypoint command
+    command: >
+      /bin/sh -c "
+        if [ ! -d /usr/share/elasticsearch/plugins/mapper-murmur3 ]; then
+          # Certificate problem workaround when on VPN - wget without checking cert, then install from local filesystem
+          wget --no-check-certificate https://artifacts.elastic.co/downloads/elasticsearch-plugins/mapper-murmur3/mapper-murmur3-7.1.1.zip
+          ./bin/elasticsearch-plugin install file:///usr/share/elasticsearch/mapper-murmur3-7.1.1.zip
+        fi
+        /usr/local/bin/docker-entrypoint.sh"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+    - type: volume
+      source: local_es_data
+      target: /usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
 
   usaspending-kibana-es:
-      image: docker.elastic.co/kibana/kibana-oss:7.1.1
-      container_name: usaspending-kibana-es
-      # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
-      environment:
-        - ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
-      ports:
-        - 5601:5601
+    profiles:
+      - usaspending  # must pass --profile usaspending to docker-compose for this to come up
+    image: docker.elastic.co/kibana/kibana-oss:7.1.1
+    container_name: usaspending-kibana-es
+    # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
+    environment:
+      - ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
+    ports:
+      - 5601:5601
+
+  minio:
+    profiles:  # must pass one of these with --profile to docker-compose
+      - s3
+      - spark
+    #image: minio/minio:RELEASE.2022-04-12T06-55-35Z
+    image: minio/minio:RELEASE.2020-11-06T23-17-07Z
+    container_name: minio
+    volumes:
+      - type: bind
+        source: ${MINIO_DATA_DIR:-../data/s3}
+        target: /data
+    ports:
+      - ${MINIO_PORT:-9000}:9000
+      - ${MINIO_CONSOLE_PORT:-9001}:9001
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
+    #command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
+    command: server /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-9000}/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
 
   spark-master:
+    profiles:
+      - spark  # must pass --profile spark to docker-compose for this to come up
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -192,10 +241,10 @@ services:
         source: .
         target: /project
         read_only: false
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   spark-worker:
+    profiles:
+      - spark  # must pass --profile spark to docker-compose for this to come up
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -218,10 +267,10 @@ services:
         source: .
         target: /project
         read_only: false
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   spark-history-server:
+    profiles:
+      - spark  # must pass --profile spark to docker-compose for this to come up
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -240,10 +289,10 @@ services:
         source: .
         target: /project
         read_only: false
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   spark-submit:
+    profiles:
+      - spark  # must pass --profile spark to docker-compose for this to come up
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -260,8 +309,6 @@ services:
     environment:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
-      #PYTHONPATH: "/project/.venv/usaspending-api/lib/python3.7/site-packages:\
-      #  /project"
       PYTHONPATH: "/project"
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
     # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
@@ -282,71 +329,3 @@ services:
         source: ${HOME}/.ivy2
         target: /root/.ivy2
         read_only: false
-#    ports:
-#      - "1-65535:1-65535"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-  pyspark-gateway:
-    image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    # build context path needs to be relative to project root, from where docker-compose will be run
-    build:
-      context: .
-      dockerfile: Dockerfile.spark
-      args:
-        PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
-    container_name: pyspark-gateway
-    depends_on:
-      - spark-master
-      - spark-worker
-      - spark-history-server
-      - minio
-    environment:
-      SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
-      SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
-      _PYSPARK_DRIVER_CONN_INFO_PATH:  /project/usaspending_api/logs/pyspark_gateway_conn_info.log
-      COMPONENT_NAME: ${COMPONENT_NAME:-'Spark Unit Test Session'}
-      PYTHONPATH: "/project"
-    # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
-    # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
-    # and interpolated before accessed as the entrypoint.
-    # While this service has values for these interpolated vars in the environment: element, those are not used here,
-    # but merely passed into the container. KEEP the two references to these vars and their defaults consistent!
-    # To see what it will be, you can run docker-compose config (i.e. make docker-compose-config in this project's Makefile)
-    command: ./bin/spark-submit --master spark://${SPARK_MASTER_HOST:-spark-master}:${SPARK_MASTER_PORT:-7077} --name ${COMPONENT_NAME:-'PySpark App'} pyspark-shell
-    #command: pyspark-shell
-    volumes:
-      - type: bind
-        source: .
-        target: /project
-        read_only: false
-      # Mount the JAR dependencies local repo on host into container to take advantage of caching/reuse
-      # i.e., to download the dependencies only once and reuse on subsequent docker-compose run calls
-      - type: bind
-        source: ${HOME}/.ivy2
-        target: /root/.ivy2
-        read_only: false
-#    ports:
-#      - "1-65535:1-65535"
-
-  minio:
-    #image: minio/minio:RELEASE.2022-04-12T06-55-35Z
-    image: minio/minio:RELEASE.2020-11-06T23-17-07Z
-    container_name: minio
-    volumes:
-      - type: bind
-        source: ${MINIO_DATA_DIR:-../data/s3}
-        target: /data
-    ports:
-      - ${MINIO_PORT:-9000}:9000
-      - ${MINIO_CONSOLE_PORT:-9001}:9001
-    environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
-    #command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
-    command: server /data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-9000}/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3

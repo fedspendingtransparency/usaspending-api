@@ -67,8 +67,8 @@ class LocalConfig(DefaultConfig):
     ES_CLUSTER_DIR = _USER_SPECIFIC_OVERRIDE
 
     # ==== [MinIO] ====
-    MINIO_HOST = "host.docker.internal"
-    # MINIO_HOST = "localhost"
+    # MINIO_HOST = "host.docker.internal"
+    MINIO_HOST = "localhost"
     MINIO_PORT = "9000"
     MINIO_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
     MINIO_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env
@@ -77,6 +77,9 @@ class LocalConfig(DefaultConfig):
 
     # ==== [Spark] ====
     # Used for attaching to a spark-submit process to create a java_gateway for PySpark during unit test sessions
+    # TODO: GET RID OF property(...) FIELDS! See note in comments in the tests/unit/test_config.py possibly look at
+    #  pre/post load validator(...) or root_validator(...) functions as an alternative to composing other fields,
+    #  or research more
     _PYSPARK_DRIVER_CONN_INFO_PATH: str = property(lambda self: self.PROJECT_LOG_DIR + "/pyspark_gateway_conn_info.log")
 
     # ==== [AWS] ====
@@ -96,5 +99,8 @@ class LocalConfig(DefaultConfig):
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
     # A python property that calls a get-accessor function (or lambda) acts as a closure to provide this late-evaluation
+    # TODO: GET RID OF property(...) FIELDS! See note in comments in the tests/unit/test_config.py possibly look at
+    #  pre/post load validator(...) or root_validator(...) functions as an alternative to composing other fields,
+    #  or research more
     AWS_S3_ENDPOINT = property(lambda self: self.MINIO_HOST + ":" + self.MINIO_PORT)
     AWS_STS_ENDPOINT = ""
