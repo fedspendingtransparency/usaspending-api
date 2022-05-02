@@ -64,13 +64,12 @@ before_install:
 
 install:
   # setuptools is pinned to version 60.8.2 due to an error occurring with built-in version
-  # TODO: RE-ENABLE pip and broker
-#  - travis_retry pip install setuptools==60.8.2
-#  - travis_retry pip install -r requirements/requirements.txt
-#  - travis_retry pip install coveralls
-#  # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
-#  - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
-#  - travis_retry git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
+  - travis_retry pip install setuptools==60.8.2
+  - travis_retry pip install -r requirements/requirements.txt
+  - travis_retry pip install coveralls
+  # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
+  - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
+  - travis_retry git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
 
 before_script:
   # Get dependencies to report code coverage to code climate
@@ -84,8 +83,7 @@ before_script:
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
   # TODO: REMOVE STANDING UP SPARK DOCKER SERVICES, EXCEPT FOR MINIO (s3 profile)
-  - make 'say-hello'
-  #- make docker-compose-up-s3 args="-d"
+  - make docker-compose-up-s3 args="-d"
   #- make docker-compose-build-spark
   #- make docker-compose-up args="-d $(docker-compose ps --services | grep '^spark' | tr '\n' ' ')"
   #- docker-compose --profile s3 --project-directory ./ --file ./docker-compose.yml up -d
