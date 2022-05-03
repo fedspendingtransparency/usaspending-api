@@ -1,4 +1,4 @@
-from django.db.models import F, Sum, OuterRef, Max, Q
+from django.db.models import DecimalField, F, Max, OuterRef, Q, Sum
 from django.db.models.functions import Coalesce
 from django.utils.text import slugify
 from rest_framework.response import Response
@@ -121,9 +121,19 @@ class ToptierAgenciesViewSet(APIView):
                 "submission__reporting_fiscal_quarter",
             )
             .annotate(
-                budget_authority_amount=Coalesce(Sum("total_budgetary_resources_amount_cpe"), 0),
-                obligated_amount=Coalesce(Sum("obligations_incurred_total_by_tas_cpe"), 0),
-                outlay_amount=Coalesce(Sum("gross_outlay_amount_by_tas_cpe"), 0),
+                budget_authority_amount=Coalesce(
+                    Sum("total_budgetary_resources_amount_cpe"),
+                    0,
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                ),
+                obligated_amount=Coalesce(
+                    Sum("obligations_incurred_total_by_tas_cpe"),
+                    0,
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                ),
+                outlay_amount=Coalesce(
+                    Sum("gross_outlay_amount_by_tas_cpe"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                ),
             )
         )
         aab_sums_by_toptier = {

@@ -1,4 +1,4 @@
-from django.db.models import Q, Sum, OuterRef, Subquery, F, Value, Case, When, Max
+from django.db.models import Case, F, Max, OuterRef, Q, Subquery, Sum, TextField, Value, When
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
@@ -151,6 +151,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                         then=ConcatAll(Value("Defense-wide"), Value(";"), Value("defense-wide")),
                     ),
                     default=ConcatAll(F("bureau_title"), Value(";"), F("bureau_slug")),
+                    output_field=TextField(),
                 )
             )
             .values("bureau_info")

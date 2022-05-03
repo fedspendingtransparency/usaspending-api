@@ -1,4 +1,4 @@
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 
@@ -115,7 +115,7 @@ class TransactionSearch(models.Model):
     treasury_account_identifiers = ArrayField(models.IntegerField(), null=True)
     tas_paths = ArrayField(models.TextField(), null=True)
     tas_components = ArrayField(models.TextField(), null=True)
-    federal_accounts = JSONField(null=True)
+    federal_accounts = models.JSONField(null=True)
     disaster_emergency_fund_codes = ArrayField(models.TextField(), null=True)
 
     class Meta:

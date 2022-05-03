@@ -44,13 +44,8 @@ class AgencyCountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             filters.extend(
                 [Q(treasury_account__funding_toptier_agency=OuterRef("pk")), self.is_non_zero_total_spending]
             )
-            count = (
-                ToptierAgency.objects.annotate(
-                    include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).values("pk"))
-                )
-                .filter(include=True)
-                .values("pk")
-                .count()
-            )
+            count = ToptierAgency.objects.filter(
+                Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))
+            ).count()
 
         return Response({"count": count})

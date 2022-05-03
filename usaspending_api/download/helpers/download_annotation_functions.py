@@ -1,7 +1,6 @@
 import datetime
 from typing import List, Optional
 
-from django.contrib.postgres.aggregates import StringAgg
 from django.db.models.functions import Cast, Coalesce
 from django.db.models import (
     Case,
@@ -18,7 +17,7 @@ from django.db.models import (
     Value,
     When,
 )
-from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear
+from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, TransactionFABS
 from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_latest_closed_periods,
@@ -72,7 +71,7 @@ def _disaster_emergency_fund_codes(
             )
         )
         .values("award_id")
-        .annotate(total=StringAgg("value", ";", distinct=True))
+        .annotate(total=StringAggWithDefault("value", ";", distinct=True))
         .values("total"),
         output_field=TextField(),
     )
@@ -92,12 +91,22 @@ def _covid_outlay_subquery(def_codes: Optional[List[str]] = None, award_id_col: 
         FinancialAccountsByAwards.objects.filter(*filters)
         .values("award_id")
         .annotate(
-            sum=Coalesce(Sum("gross_outlay_amount_by_award_cpe"), 0)
-            + Coalesce(Sum("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"), 0)
-            + Coalesce(Sum("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"), 0)
+            sum=Coalesce(
+                Sum("gross_outlay_amount_by_award_cpe"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+            )
+            + Coalesce(
+                Sum("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"),
+                0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
+            )
+            + Coalesce(
+                Sum("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
+                0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
+            )
         )
         .values("sum"),
-        output_field=DecimalField(),
+        output_field=DecimalField(max_digits=23, decimal_places=2),
     )
 
 
@@ -118,7 +127,7 @@ def _covid_obligation_subquery(
         .values("award_id")
         .annotate(sum=Sum("transaction_obligated_amount"))
         .values("sum"),
-        output_field=DecimalField(),
+        output_field=DecimalField(max_digits=23, decimal_places=2),
     )
 
 
@@ -129,14 +138,18 @@ def transaction_search_annotations(filters: dict):
         "treasury_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
+            .annotate(value=StringAggWithDefault("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
+            .annotate(
+                value=StringAggWithDefault(
+                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                )
+            )
             .values("value"),
             output_field=TextField(),
         ),
@@ -147,19 +160,22 @@ def transaction_search_annotations(filters: dict):
             When(
                 transaction__action_date__gte=datetime.date(2020, 4, 1),
                 then=_disaster_emergency_fund_codes(def_codes=def_codes),
-            )
+            ),
+            output_field=TextField(),
         ),
         "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 transaction__action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_outlay_subquery(def_codes=def_codes),
             ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 transaction__action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_obligation_subquery(def_codes=def_codes),
             ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
@@ -172,7 +188,7 @@ def transaction_search_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -191,7 +207,7 @@ def transaction_search_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -206,14 +222,18 @@ def transaction_annotations(filters: dict):
         "treasury_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
+            .annotate(value=StringAggWithDefault("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
+            .annotate(
+                value=StringAggWithDefault(
+                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                )
+            )
             .values("value"),
             output_field=TextField(),
         ),
@@ -224,19 +244,22 @@ def transaction_annotations(filters: dict):
             When(
                 action_date__gte=datetime.date(2020, 4, 1),
                 then=_disaster_emergency_fund_codes(def_codes=def_codes),
-            )
+            ),
+            output_field=TextField(),
         ),
         "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_outlay_subquery(def_codes=def_codes),
             ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_obligation_subquery(def_codes=def_codes),
             ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
@@ -249,7 +272,7 @@ def transaction_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -268,7 +291,7 @@ def transaction_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -283,14 +306,18 @@ def award_annotations(filters: dict):
         "treasury_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
+            .annotate(value=StringAggWithDefault("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
+            .annotate(
+                value=StringAggWithDefault(
+                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                )
+            )
             .values("value"),
             output_field=TextField(),
         ),
@@ -316,7 +343,7 @@ def award_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -335,7 +362,7 @@ def award_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -349,7 +376,7 @@ def award_annotations(filters: dict):
                 ),
             )
             .values("transaction__award_id")
-            .annotate(total=StringAgg("value", "; ", distinct=True, ordering="value"))
+            .annotate(total=StringAggWithDefault("value", "; ", distinct=True, ordering="value"))
             .values("total"),
             output_field=TextField(),
         ),
@@ -363,14 +390,18 @@ def idv_order_annotations(filters: dict):
         "treasury_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
+            .annotate(value=StringAggWithDefault("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
+            .annotate(
+                value=StringAggWithDefault(
+                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                )
+            )
             .values("value"),
             output_field=TextField(),
         ),
@@ -391,7 +422,7 @@ def idv_order_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -410,7 +441,7 @@ def idv_order_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -424,14 +455,18 @@ def idv_transaction_annotations(filters: dict):
         "treasury_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__tas_rendering_label", ";", distinct=True))
+            .annotate(value=StringAggWithDefault("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
-            .annotate(value=StringAgg("treasury_account__federal_account__federal_account_code", ";", distinct=True))
+            .annotate(
+                value=StringAggWithDefault(
+                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                )
+            )
             .values("value"),
             output_field=TextField(),
         ),
@@ -442,19 +477,22 @@ def idv_transaction_annotations(filters: dict):
             When(
                 action_date__gte="2020-04-01",
                 then=_disaster_emergency_fund_codes(),
-            )
+            ),
+            output_field=TextField(),
         ),
         "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte="2020-04-01",
                 then=_covid_outlay_subquery(),
             ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte="2020-04-01",
                 then=_covid_obligation_subquery(),
             ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
@@ -467,7 +505,7 @@ def idv_transaction_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -486,7 +524,7 @@ def idv_transaction_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -504,14 +542,16 @@ def subaward_annotations(filters: dict):
         ),
         "prime_award_treasury_accounts_funding_this_award": Subquery(
             Award.objects.filter(id=OuterRef("award_id"))
-            .annotate(value=StringAgg("financial_set__treasury_account__tas_rendering_label", ";", distinct=True))
+            .annotate(
+                value=StringAggWithDefault("financial_set__treasury_account__tas_rendering_label", ";", distinct=True)
+            )
             .values("value"),
             output_field=TextField(),
         ),
         "prime_award_federal_accounts_funding_this_award": Subquery(
             Award.objects.filter(id=OuterRef("award_id"))
             .annotate(
-                value=StringAgg(
+                value=StringAggWithDefault(
                     "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
                 )
             )
@@ -532,7 +572,7 @@ def subaward_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -551,7 +591,7 @@ def subaward_annotations(filters: dict):
                 )
             )
             .values("award_id")
-            .annotate(total=StringAgg("value", ";", distinct=True))
+            .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
         ),
@@ -559,19 +599,22 @@ def subaward_annotations(filters: dict):
             When(
                 broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_disaster_emergency_fund_codes(def_codes=def_codes),
-            )
+            ),
+            output_field=TextField(),
         ),
         "prime_award_outlayed_amount_funded_by_COVID-19_supplementals": Case(
             When(
                 broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_outlay_subquery(def_codes=def_codes),
             ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "prime_award_obligated_amount_funded_by_COVID-19_supplementals": Case(
             When(
                 broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_obligation_subquery(def_codes=def_codes),
             ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("award__latest_transaction__action_date"),
         "prime_award_cfda_numbers_and_titles": Subquery(
@@ -583,7 +626,7 @@ def subaward_annotations(filters: dict):
                 )
             )
             .values("transaction__award_id")
-            .annotate(total=StringAgg("value", "; ", distinct=True, ordering="value"))
+            .annotate(total=StringAggWithDefault("value", "; ", distinct=True, ordering="value"))
             .values("total"),
             output_field=TextField(),
         ),

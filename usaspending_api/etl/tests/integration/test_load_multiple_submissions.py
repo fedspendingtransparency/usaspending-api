@@ -358,10 +358,24 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
         # Now that we have everything loaded, let's make sure our data make sense.
         with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
-            cursor.execute("select * from submission_attributes where submission_id = 1")
+            fields = [
+                "submission_id",
+                "certified_date",
+                "toptier_code",
+                "reporting_period_start",
+                "reporting_period_end",
+                "reporting_fiscal_year",
+                "reporting_fiscal_quarter",
+                "reporting_fiscal_period",
+                "quarter_format_flag",
+                "reporting_agency_name",
+                "is_final_balances_for_fy",
+                "published_date",
+                "submission_window_id",
+                "history::JSON",
+            ]
+            cursor.execute(f"select {', '.join(fields)} from submission_attributes where submission_id = 1")
             d = dict(ordered_dictionary_fetcher(cursor)[0])
-            del d["create_date"]
-            del d["update_date"]
             assert d == {
                 "submission_id": 1,
                 "certified_date": datetime(2000, 2, 1, 0, 0, tzinfo=timezone.utc),

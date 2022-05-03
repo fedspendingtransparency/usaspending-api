@@ -1,6 +1,8 @@
 from datetime import date
+
+from django.contrib.postgres.aggregates import StringAgg
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, Case, CharField, Func, IntegerField, Subquery, Value, When
+from django.db.models import Aggregate, Case, CharField, Func, IntegerField, Subquery, TextField, Value, When
 from django.db.models.functions import Concat, LPad, Cast
 
 from usaspending_api.search.models import (
@@ -85,6 +87,7 @@ class ConcatAll(Func):
     """
 
     function = "CONCAT"
+    output_field = TextField()
 
 
 class AvoidSubqueryInGroupBy(Subquery):
@@ -97,6 +100,28 @@ class AvoidSubqueryInGroupBy(Subquery):
 
     def get_group_by_cols(self):
         return []
+
+
+class StringAggWithDefault(StringAgg):
+    """
+    In Django 3.2 a change was made that now requires the output_field defined in Aggregations for mixed types.
+    From the release notes:
+        Value() expression now automatically resolves its output_field to the appropriate Field subclass based
+        on the type of its provided value for bool, bytes, float, int, str, datetime.date, datetime.datetime,
+        datetime.time, datetime.timedelta, decimal.Decimal, and uuid.UUID instances. As a consequence, resolving
+        an output_field for database functions and combined expressions may now crash with mixed types when
+        using Value(). You will need to explicitly set the output_field in such cases.
+    In most cases we can simply add the output_field to aggregations to resolve this, however, for
+    django.contrib.postgres.aggregates.StringAgg this is not an option and there is no output_field set.
+    This was fixed in Django's development branch, but has not been released to any version yet:
+        https://github.com/django/django/pull/14898/files#diff-7a96646614a5df088584a163e17143464f836555ec84808a2f24b587b86284dbR93
+
+    As a result, this method sets the output_field as a workaround until either Django 3.2 is patched with the linked
+    change, or we upgrade to a version which has the change.
+    TODO: Remove this function and revert usages back to normal StringAgg when the above change is available
+    """
+
+    output_field = TextField()
 
 
 def get_fyp_notation(relation_name=None):
@@ -136,6 +161,7 @@ def get_fyp_or_q_notation(relation_name=None):
     return Case(
         When(**{f"{prefix}quarter_format_flag": True}, then=get_fyq_notation(relation_name)),
         default=get_fyp_notation(relation_name),
+        output_field=TextField(),
     )
 
 

@@ -122,12 +122,14 @@ def get_last_closed_periods_per_year():
                 Case(
                     When(quarter_format_flag=True, then=F("reporting_fiscal_quarter")),
                     default=Cast(Value(None), IntegerField()),
+                    output_field=IntegerField(),
                 )
             ),
             annotated_fiscal_period=Max(
                 Case(
                     When(quarter_format_flag=False, then=F("reporting_fiscal_period")),
                     default=Cast(Value(None), IntegerField()),
+                    output_field=IntegerField(),
                 )
             ),
         )

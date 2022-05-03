@@ -98,7 +98,7 @@ SELECT
   "tas_paths",
   "tas_components",
   "disaster_emergency_fund_codes",
-  "covid_spending_by_defc",
+  "covid_spending_by_defc"::JSON,
   "total_covid_outlay",
   "total_covid_obligation"
 
