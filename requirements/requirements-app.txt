@@ -7,14 +7,14 @@ dataclasses-json==0.5.*
 ddtrace==0.46.0
 dj-database-url==0.5.0
 django-cors-headers==3.11.*
-django-debug-toolbar==3.2.*
+django-debug-toolbar==3.4.*
 django-extensions==3.1.*
 django-spaghetti-and-meatballs==0.4.0
 Django==3.2.*
 django_cte==1.2.*
 djangorestframework==3.13.*
 docutils==0.15.2
-drf-api-tracking==1.7.8
+drf-api-tracking==1.8.*
 drf-extensions==0.7.*
 elasticsearch-dsl==7.1.0
 elasticsearch==7.1.0
@@ -25,7 +25,7 @@ Markdown<3.0
 marshmallow==3.14.1
 numpy==1.19.*
 openpyxl==2.4.7
-pandas==1.1.*
+pandas==1.3.*
 pip==20.*
 psutil==5.6.*
 psycopg2-binary==2.8.*

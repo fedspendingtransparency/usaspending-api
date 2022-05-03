@@ -3,9 +3,9 @@ For more information on this file: https://docs.djangoproject.com/en/3.2/topics/
 For the full list of settings and their values: https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import ddtrace
 import dj_database_url
 import os
-import ddtrace
 
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
@@ -26,6 +26,9 @@ DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECOND
 DOWNLOAD_DB_TIMEOUT_IN_HOURS = 4
 CONNECTION_MAX_SECONDS = 10
 
+# Default type for when a Primary Key is not specified
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
 # Value is set per environment using formula: ( TOTAL_MEMORY * 0.25 ) / MAX_CONNECTIONS;
 # MAX_CONNECTIONS in this case refers to those serving downloads
 DOWNLOAD_DB_WORK_MEM_IN_MB = os.environ.get("DOWNLOAD_DB_WORK_MEM_IN_MB", 128)
@@ -38,7 +41,7 @@ API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_random_string()
+SECRET_KEY = get_random_string(length=12)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Defaults to False, unless DJANGO_DEBUG env var is set to a truthy value
