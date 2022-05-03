@@ -174,8 +174,6 @@ def configure_spark_session(
                 "SparkContext"
             )
 
-    # spark = SparkSession.builder.appName(app_name).config(conf=conf).getOrCreate()
-
     # Override log level, if provided
     # While this is a bit late (missing out on any logging at SparkSession instantiation time),
     # could not find a way (aside from injecting a ${SPARK_HOME}/conf/log4.properties file) to have it pick up
@@ -218,7 +216,7 @@ def configure_spark_session(
     return spark
 
 
-def read_java_gateway_connection_info(gateway_conn_info_path):
+def read_java_gateway_connection_info(gateway_conn_info_path):  # pragma: no cover -- useful development util
     """Read the port and auth token from a file holding connection info to a running spark-submit process
 
     Args:
@@ -237,7 +235,7 @@ def attach_java_gateway(
     gateway_port,
     gateway_auth_token,
     # gateway_address=PYSPARK_GATEWAY_DEFAULT_ADDRESS
-) -> JavaGateway:
+) -> JavaGateway:  # pragma: no cover -- useful development util
     """Create a new JavaGateway that latches onto the port of a running spark-submit process
 
     Args:
@@ -320,7 +318,8 @@ def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
     return f"jdbc:{pg_uri}"
 
 
-def get_es_config():
+def get_es_config():  # pragma: no cover -- will be used eventually
+
     """
     Get a base template of Elasticsearch configuration settings tailored to the specific environment setup being
     used

@@ -13,7 +13,7 @@ def extract_db_data_frame(
     table: str,
     partitioning_col: str,
     is_numeric_partitioning_col: bool = True,
-) -> DataFrame:
+) -> DataFrame:  # pragma: no cover -- will be used and tested eventually
     logger = get_jvm_logger(spark)
 
     # Get the bounds of the data we are extracting, so we can let spark partition it
@@ -63,7 +63,7 @@ def extract_db_data_frame(
 
 def load_es_index(
     spark: SparkSession, source_df: DataFrame, base_config: dict, index_name: str, routing: str, doc_id: str
-) -> None:
+) -> None:  # pragma: no cover -- will be used and tested eventually
     index_config = base_config.copy()
     index_config["es.resource.write"] = index_name
     index_config["es.mapping.routing"] = routing
