@@ -4,6 +4,8 @@ from unittest.mock import patch
 import os
 import pytest
 from pprint import pprint
+from pydantic import root_validator, validator
+from pydantic.fields import ModelField
 
 from usaspending_api.config import ENV_CODE_VAR
 from usaspending_api.config import CONFIG, _load_config
@@ -174,6 +176,64 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_G = property(lambda self: "UNITTEST_CFG_G")
     UNITTEST_CFG_H = property(lambda self: os.environ.get("UNITTEST_CFG_H", "UNITTEST_CFG_H"))
 
+    UNITTEST_CFG_I = "UNITTEST_CFG_I"
+    UNITTEST_CFG_J = "UNITTEST_CFG_J"
+    # See if these are stuck with defaults (eagerly evaluated) or late-bind to the values if the values are replaced
+    # by env vars
+    UNITTEST_CFG_K = UNITTEST_CFG_I + ":" + UNITTEST_CFG_J
+    UNITTEST_CFG_L = lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I + ":" + _UnitTestBaseConfig.UNITTEST_CFG_J
+
+    # Start trying to use validators (aka pre/post processors)
+    UNITTEST_CFG_M = "UNITTEST_CFG_M"
+    UNITTEST_CFG_N = "UNITTEST_CFG_N"
+    # See if these are now replaced with the values of the result of the validator that references this field
+    UNITTEST_CFG_O = UNITTEST_CFG_M + ":" + UNITTEST_CFG_N
+
+    @validator("UNITTEST_CFG_O")
+    def _UNITTEST_CFG_O(cls, v, values):
+        return values["UNITTEST_CFG_M"] + ":" + values["UNITTEST_CFG_N"]
+
+    UNITTEST_CFG_P = "UNITTEST_CFG_P"
+    UNITTEST_CFG_Q = "UNITTEST_CFG_Q"
+    UNITTEST_CFG_R = UNITTEST_CFG_P + ":" + UNITTEST_CFG_Q
+
+    @validator("UNITTEST_CFG_R")
+    def _UNITTEST_CFG_R(cls, v, values):
+        return values["UNITTEST_CFG_P"] + ":" + values["UNITTEST_CFG_Q"]
+
+    UNITTEST_CFG_S = "UNITTEST_CFG_S"
+    UNITTEST_CFG_T = "UNITTEST_CFG_T"
+    UNITTEST_CFG_U: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below
+
+    @validator("UNITTEST_CFG_U")
+    def _UNITTEST_CFG_U(cls, v, values, field: ModelField):
+        assigned_or_sourced_val = v
+        default_val = field.default
+        if assigned_or_sourced_val and assigned_or_sourced_val != default_val:
+            # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
+            # So honor it and don't use the default below
+            return assigned_or_sourced_val
+        else:
+            # Otherwise let this validator provide a default, lazily composed of other fields' values
+            return values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
+
+    UNITTEST_CFG_V = "UNITTEST_CFG_V"
+    UNITTEST_CFG_W = "UNITTEST_CFG_W"
+    UNITTEST_CFG_X: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below
+
+    @validator("UNITTEST_CFG_X")
+    def _UNITTEST_CFG_X(cls, v, values, field: ModelField):
+        assigned_or_sourced_val = v
+        default_val = field.default
+        if assigned_or_sourced_val and assigned_or_sourced_val != default_val:
+            # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
+            # So honor it and don't use the default below
+            return assigned_or_sourced_val
+        else:
+            # Otherwise let this validator be the field's default factory
+            # Lazily compose other fields' values
+            return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
+
 
 class _UnitTestSubConfig(_UnitTestBaseConfig):
     ENV_CODE = "uts"
@@ -195,6 +255,9 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
     SUB_UNITTEST_3 = "SUB_UNITTEST_3"
     SUB_UNITTEST_4 = "SUB_UNITTEST_4"
     SUB_UNITTEST_5 = property(lambda self: self.SUB_UNITTEST_3 + ":" + self.SUB_UNITTEST_4)
+
+    # See if this will override the validator's factory default
+    UNITTEST_CFG_X = "SUB_UNITTEST_X"
 
 
 _UNITTEST_ENVS_DICTS = [
@@ -263,6 +326,9 @@ def test_new_runtime_env_overrides_config():
         assert cfg.UNITTEST_CFG_G == "SUB_UNITTEST_CFG_G"
         # 7. Simple composition of values in the same class works
         assert cfg.SUB_UNITTEST_5 == "SUB_UNITTEST_3:SUB_UNITTEST_4"
+        # 8. Subclass-declared override will not only override parent class default, but any value provided by a
+        #    validator in the parent class
+        assert cfg.UNITTEST_CFG_X == "SUB_UNITTEST_CFG_X"
 
 
 @mock.patch(
@@ -281,6 +347,12 @@ def test_new_runtime_env_overrides_config_with_env_vars_in_play():
             "UNITTEST_CFG_F": "ENVVAR_UNITTEST_CFG_F",
             "UNITTEST_CFG_G": "ENVVAR_UNITTEST_CFG_G",
             "UNITTEST_CFG_H": "ENVVAR_UNITTEST_CFG_H",
+            "UNITTEST_CFG_I": "ENVVAR_UNITTEST_CFG_I",
+            "UNITTEST_CFG_M": "ENVVAR_UNITTEST_CFG_M",
+            "UNITTEST_CFG_P": "ENVVAR_UNITTEST_CFG_P",
+            "UNITTEST_CFG_R": "ENVVAR_UNITTEST_CFG_R",
+            "UNITTEST_CFG_S": "ENVVAR_UNITTEST_CFG_S",
+            "UNITTEST_CFG_U": "ENVVAR_UNITTEST_CFG_U",
         },
     ):
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -288,7 +360,7 @@ def test_new_runtime_env_overrides_config_with_env_vars_in_play():
 
         # 1. Env var is overrides field in base, and inherited by child even if not declared/overridden in child
         assert cfg.COMPONENT_NAME == _ENV_VAL
-        # 5. If field is declared as a property, AND the field's name is overridden by an ENVVAR, it
+        # 2. If field is declared as a property, AND the field's name is overridden by an ENVVAR, it
         # WILL NOT be overridden by the env var value. It sticks to its value.
         # WHY?? Well ...
         # In short, property fields are not supported by and ignored by (aka made invisible) pydantic
@@ -306,6 +378,32 @@ def test_new_runtime_env_overrides_config_with_env_vars_in_play():
         # environment variables.
         assert cfg.UNITTEST_CFG_G == "UNITTEST_CFG_G"
         assert cfg.UNITTEST_CFG_H == "ENVVAR_UNITTEST_CFG_H"
+
+        assert "UNITTEST_CFG_A" in cfg.__fields__.keys()
+        # These two are excluded / ignored, because they are properties (or functions or lambdas)
+        assert "UNITTEST_CFG_G" not in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_H" not in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_L" not in cfg.__fields__.keys()
+
+        # 3. If a var that is composed in the default value of another var gets replaced by an env var, it happens
+        # too "late" and the composing var hangs on to the default value rather than the replaced env var value
+        #    - Property fields could solve this by late-binding the values by way of a lambda (like a closure),
+        #    but if it's a property, or a lambda function, it's ignored from pydantic
+        assert cfg.UNITTEST_CFG_K == "UNITTEST_CFG_I:UNITTEST_CFG_J"
+
+        # 4. If validators are used as pre/post-processors, late-binding can be achieved
+        assert "UNITTEST_CFG_O" in cfg.__fields__.keys()
+        assert cfg.UNITTEST_CFG_O == "ENVVAR_UNITTEST_CFG_M:UNITTEST_CFG_N"
+
+        # 5. If validators are used as pre/post-processors, late-binding can be achieved, AND that late-bound
+        # (validated) value will take precedence over an overriding env var for the validated field
+        assert "UNITTEST_CFG_R" in cfg.__fields__.keys()
+        assert cfg.UNITTEST_CFG_R == "ENVVAR_UNITTEST_CFG_P:UNITTEST_CFG_Q"
+
+        # 6. Reverse the above, to allow an assigned or (env) sourced value of a field to take precedence over the
+        # late-bound result of a validator, by adding evaluation logic to the validator function
+        assert "UNITTEST_CFG_U" in cfg.__fields__.keys()
+        assert cfg.UNITTEST_CFG_U == "ENVVAR_UNITTEST_CFG_U"
 
 
 @mock.patch(
