@@ -16,6 +16,8 @@ Ensure the following dependencies are installed and working prior to continuing:
 - `bash` or another Unix Shell equivalent
     - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 - [`git`](https://git-scm.com/downloads)
+- [`make`](https://www.gnu.org/software/make/) for running common build/test/run targets in `Makefile`
+    - _TIP: Review handy short-hand `make` targets in `Makefile` after getting familiar with the below setup_
 
 #### If not using Docker:
 > Using Docker is recommended since it provides a clean environment. Setting up your own local environment requires some technical abilities and experience with modern software tools.
@@ -170,7 +172,7 @@ Your prompt should then look as below to show you are _in_ the virtual environme
 #### Environment Variables
 
 ##### `.envrc` File
-_[Direnv](https://direnv.net/) is a shell extension that automatically runs shell commands in a `.envrc` file (commonly env var `export` commands) when entering or exiting a folder with that file_
+_[direnv](https://direnv.net/) is a shell extension that automatically runs shell commands in a `.envrc` file (commonly env var `export` commands) when entering or exiting a folder with that file_
 
 Create a `.envrc` file in the repo root, which will be ignored by git. Change credentials and ports as-needed for your local dev environment.
 
