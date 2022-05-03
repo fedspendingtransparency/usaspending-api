@@ -80,7 +80,7 @@ _To just get essential reference data, you can run:_
 
 - `docker-compose run --rm usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
-_To download a full produciton snapshot of the database or a subset of the database and loading it into PostgreSQL, use the `pg_restore` tool as described here: [USAspending Database Download](https://files.usaspending.gov/database_download/)_
+_To download a full production snapshot of the database or a subset of the database and loading it into PostgreSQL, use the `pg_restore` tool as described here: [USAspending Database Download](https://files.usaspending.gov/database_download/)_
 
 - Recreate matviews with the command documented in the previous section if this is done
 
@@ -101,6 +101,14 @@ $ docker-compose --profile usaspending up usaspending-es`
 
 - Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
+##### Generate Elasticsearch Indexes
+The following will generate two base indexes, one for transactions and one for awards:
+ 
+```shell
+$ docker-compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name 01-26-2022-transactions --load-type transaction
+$ docker-compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name 01-26-2022-awards --load-type award
+```  
+
 ## Running the API
 ```shell
 docker-compose --profile usaspending up usaspending-api
@@ -115,7 +123,7 @@ Note: if the code was run outside of Docker then compiled Python files will pote
 
     find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
 
-### Using the API
+#### Using the API
 
 In your local development environment, available API endpoints may be found at `http://localhost:8000/docs/endpoints`
 
@@ -160,6 +168,10 @@ Your prompt should then look as below to show you are _in_ the virtual environme
     (usaspending-api) $ pip install -r requirements/requirements.txt
 
 #### Environment Variables
+
+##### `.envrc` File
+_[Direnv](https://direnv.net/) is a shell extension that automatically runs shell commands in a `.envrc` file (commonly env var `export` commands) when entering or exiting a folder with that file_
+
 Create a `.envrc` file in the repo root, which will be ignored by git. Change credentials and ports as-needed for your local dev environment.
 
 ```bash
@@ -173,6 +185,11 @@ If `direnv` does not pick this up after saving the file, type
     $ direnv allow
 
 _Alternatively, you could skip using `direnv` and just export these variables in your shell environment._
+
+##### `.env` File
+Declaring `NAME=VALUE` variables in a git-ignored `.env` file is a common way to manage environment variables in a declarative file. Certain tools, like `docker-compose`, will read and honor these variables.
+
+If you copied `.env.template` to `.env`, then review any variables you want to change to be consistent with your local runtime environment.
 
 ### Including Broker Integration Tests
 Some automated integration tests run against a [Broker](https://github.com/fedspendingtransparency/data-act-broker-backend) database. If certain dependencies to run such integration tests are not satisfied, those tests will bail out and be marked as _Skipped_.
