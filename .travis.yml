@@ -39,6 +39,7 @@ env:
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
   - GRANTS_API_KEY=${GRANTS_API_KEY}
+  - MINIO_DATA_DIR=${HOME}/Development/data/usaspending/docker/usaspending-s3  # needs to be same place docker-compose will look for it (based on .env file)
   - MINIO_HOST=localhost
 
 before_install:
