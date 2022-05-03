@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 
@@ -189,33 +189,33 @@ recipient_agency_list = [
 
 @pytest.fixture
 def recipient_agency_data():
-    toptier_agency_1 = mommy.make("references.ToptierAgency", toptier_code="015", name="Agency 1", abbreviation="A1")
+    toptier_agency_1 = baker.make("references.ToptierAgency", toptier_code="015", name="Agency 1", abbreviation="A1")
 
-    toptier_agency_2 = mommy.make("references.ToptierAgency", toptier_code="019", name="Agency 2", abbreviation="A2")
+    toptier_agency_2 = baker.make("references.ToptierAgency", toptier_code="019", name="Agency 2", abbreviation="A2")
 
-    mommy.make("references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True, user_selectable=True)
-    mommy.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True, user_selectable=True)
+    baker.make("references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True, user_selectable=True)
+    baker.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True, user_selectable=True)
 
-    dabs1 = mommy.make(
+    dabs1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2020,
         submission_fiscal_month=12,
         submission_fiscal_quarter=4,
         submission_reveal_date="1999-01-01",
     )
-    dabs2 = mommy.make(
+    dabs2 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2021,
         submission_fiscal_month=12,
         submission_fiscal_quarter=4,
         submission_reveal_date="1999-01-01",
     )
-    mommy.make("submissions.SubmissionAttributes", toptier_code=toptier_agency_1.toptier_code, submission_window=dabs1)
-    mommy.make("submissions.SubmissionAttributes", toptier_code=toptier_agency_1.toptier_code, submission_window=dabs2)
-    mommy.make("submissions.SubmissionAttributes", toptier_code=toptier_agency_2.toptier_code, submission_window=dabs1)
+    baker.make("submissions.SubmissionAttributes", toptier_code=toptier_agency_1.toptier_code, submission_window=dabs1)
+    baker.make("submissions.SubmissionAttributes", toptier_code=toptier_agency_1.toptier_code, submission_window=dabs2)
+    baker.make("submissions.SubmissionAttributes", toptier_code=toptier_agency_2.toptier_code, submission_window=dabs1)
 
     for recipient_lookup in recipient_agency_list:
-        mommy.make("recipient.RecipientAgency", **recipient_lookup)
+        baker.make("recipient.RecipientAgency", **recipient_lookup)
 
 
 @pytest.mark.django_db

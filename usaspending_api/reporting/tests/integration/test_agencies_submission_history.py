@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -11,7 +11,7 @@ url = "/api/v2/reporting/agencies/{agency}/{fy}/{period}/submission_history/"
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
-    dsws1 = mommy.make(
+    dsws1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2021,
         submission_fiscal_month=4,
@@ -20,7 +20,7 @@ def setup_test_data(db):
         submission_reveal_date="2020-02-01",
         period_start_date="2020-01-01",
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         reporting_fiscal_year=2019,
@@ -33,7 +33,7 @@ def setup_test_data(db):
         ),
         submission_window=dsws1,
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         reporting_fiscal_year=2019,
@@ -47,7 +47,7 @@ def setup_test_data(db):
         ),
         submission_window=dsws1,
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=3,
         reporting_fiscal_year=2019,
@@ -60,7 +60,7 @@ def setup_test_data(db):
         ),
         submission_window=dsws1,
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=10,
         reporting_fiscal_year=2020,

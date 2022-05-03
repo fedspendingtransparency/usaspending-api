@@ -3,7 +3,7 @@ import pytest
 
 from datetime import date
 from django.core.management import call_command
-from model_mommy import mommy
+from model_bakery import baker
 from pathlib import Path
 from psycopg2.extensions import AsIs
 from usaspending_api.awards.management.commands.load_subawards import Command
@@ -157,13 +157,13 @@ def test_some_data_correction_conditions(cursor_fixture):
     # Add some garbage so we can check that everything resets after a load.
     BrokerSubaward.objects.filter(id=MIN_ID).delete()
 
-    mommy.make("awards.BrokerSubaward", id=MAX_ID + 1)
-    mommy.make("awards.BrokerSubaward", id=MAX_ID + 2)
-    mommy.make("awards.BrokerSubaward", id=MAX_ID + 3)
+    baker.make("awards.BrokerSubaward", id=MAX_ID + 1)
+    baker.make("awards.BrokerSubaward", id=MAX_ID + 2)
+    baker.make("awards.BrokerSubaward", id=MAX_ID + 3)
 
-    mommy.make("awards.Subaward", id=MAX_ID + 7)
-    mommy.make("awards.Subaward", id=MAX_ID + 8)
-    mommy.make("awards.Subaward", id=MAX_ID + 9)
+    baker.make("awards.Subaward", id=MAX_ID + 7)
+    baker.make("awards.Subaward", id=MAX_ID + 8)
+    baker.make("awards.Subaward", id=MAX_ID + 9)
 
     broker_subaward = BrokerSubaward.objects.get(id=3613892)
     broker_subaward.sub_recovery_model_q1 = True

@@ -5,8 +5,8 @@ from operator import itemgetter
 from unittest.mock import Mock
 
 import pytest
-from model_mommy.recipe import Recipe
-from model_mommy import mommy
+from model_bakery.recipe import Recipe
+from model_bakery import baker
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.models import TransactionNormalized
@@ -52,9 +52,9 @@ def aggregate_models():
 
 @pytest.fixture
 def aggregate_models_with_nulls():
-    mommy.make("awards.TransactionFPDS", transaction__federal_action_obligation=10, naics="ABCD", _quantity=3)
-    mommy.make("awards.TransactionFPDS", transaction__federal_action_obligation=None, naics="WXYZ")
-    mommy.make("awards.TransactionFABS", transaction__federal_action_obligation=10, cfda_number="10.001")
+    baker.make("awards.TransactionFPDS", transaction__federal_action_obligation=10, naics="ABCD", _quantity=3)
+    baker.make("awards.TransactionFPDS", transaction__federal_action_obligation=None, naics="WXYZ")
+    baker.make("awards.TransactionFABS", transaction__federal_action_obligation=10, cfda_number="10.001")
 
 
 @pytest.mark.django_db

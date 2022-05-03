@@ -5,7 +5,7 @@ from collections import OrderedDict, namedtuple
 from django.contrib.auth.models import User  # A table that should always exist.  Doesn't really matter what it is.
 from django.test import TestCase
 
-from model_mommy import mommy
+from model_bakery import baker
 from psycopg2.sql import SQL
 
 from usaspending_api.common.helpers.sql_helpers import (
@@ -56,9 +56,9 @@ class CursorExecuteTestCase(TestCase):
         Set up some awards and transactions that we can query.
         """
         for _id in range(1, AWARD_COUNT + 1):
-            mommy.make("awards.TransactionNormalized", id=_id, award_id=_id)
-            mommy.make("awards.TransactionFPDS", transaction_id=_id)
-            mommy.make("awards.Award", id=_id, latest_transaction_id=_id)
+            baker.make("awards.TransactionNormalized", id=_id, award_id=_id)
+            baker.make("awards.TransactionFPDS", transaction_id=_id)
+            baker.make("awards.Award", id=_id, latest_transaction_id=_id)
 
     @staticmethod
     def test_build_composable_order_by():

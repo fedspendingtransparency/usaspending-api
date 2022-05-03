@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from datetime import datetime
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
@@ -84,7 +84,7 @@ def multiple_awards_with_sibling_tas(db):
 
 def award(db, id):
     # most values are just defined in order to match on all the default filters; we aren't testing those here
-    award = mommy.make(
+    award = baker.make(
         "awards.Award",
         id=id,
         generated_unique_award_id=f"AWARD_{id}",
@@ -96,15 +96,15 @@ def award(db, id):
         fain="xyz",
         uri="abcxyx",
     )
-    mommy.make("awards.TransactionNormalized", id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
+    baker.make("awards.TransactionNormalized", id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
 
 
 def agency(db, agency_id, toptier_code):
-    mommy.make("references.ToptierAgency", toptier_agency_id=agency_id, toptier_code=toptier_code)
+    baker.make("references.ToptierAgency", toptier_agency_id=agency_id, toptier_code=toptier_code)
 
 
 def tas(db, award_id, fa_id, index):
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=index,
         allocation_transfer_agency_id=TAS_DICTIONARIES[index].get("ata"),
@@ -125,11 +125,11 @@ def tas(db, award_id, fa_id, index):
         ),
         federal_account_id=fa_id,
     )
-    mommy.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
+    baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
 
 
 def tas_with_fa(db, award_id, agency, index):
-    mommy.make(
+    baker.make(
         "accounts.FederalAccount",
         id=index,
         parent_toptier_agency_id=int(agency),

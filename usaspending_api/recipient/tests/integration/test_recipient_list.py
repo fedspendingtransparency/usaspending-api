@@ -6,7 +6,7 @@ import pytest
 
 # Third-party app imports
 from rest_framework import status
-from model_mommy import mommy
+from model_bakery import baker
 
 # Imports from your apps
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
@@ -26,7 +26,7 @@ def list_recipients_endpoint():
 @pytest.mark.django_db
 def test_one_recipient():
     """Verify error on bad autocomplete request for budget function."""
-    mommy.make(
+    baker.make(
         RecipientProfile,
         recipient_level="A",
         recipient_hash="00077a9a-5a70-8919-fd19-330762af6b84",
@@ -43,7 +43,7 @@ def test_one_recipient():
 @pytest.mark.django_db
 def test_ignore_special_case():
     """Verify error on bad autocomplete request for budget function."""
-    mommy.make(
+    baker.make(
         RecipientProfile,
         recipient_level="R",
         recipient_hash="00077a9a-5a70-8919-fd19-330762af6b85",
@@ -60,7 +60,7 @@ def test_ignore_special_case():
 @pytest.mark.django_db
 def test_filters_with_two_recipients():
     """Verify error on bad autocomplete request for budget function."""
-    mommy.make(
+    baker.make(
         RecipientProfile,
         recipient_level="A",
         recipient_hash="00077a9a-5a70-8919-fd19-330762af6b84",
@@ -68,7 +68,7 @@ def test_filters_with_two_recipients():
         recipient_name="WILSON AND ASSOC",
         last_12_months=-29470313.00,
     )
-    mommy.make(
+    baker.make(
         RecipientProfile,
         recipient_level="B",
         recipient_hash="c8f79139-38b2-3063-b039-d48172abc710",
@@ -110,7 +110,7 @@ def test_state_metadata_with_no_results(client):
 @pytest.mark.django_db
 def test_award_type_filter():
     """Verify error on bad autocomplete request for budget function."""
-    mommy.make(
+    baker.make(
         RecipientProfile,
         recipient_level="A",
         recipient_hash="00077a9a-5a70-8919-fd19-330762af6b84",
@@ -124,7 +124,7 @@ def test_award_type_filter():
         last_12_direct_payments=800.00,
         award_types=["contract", "grant", "direct payment", "other"],
     )
-    mommy.make(
+    baker.make(
         RecipientProfile,
         recipient_level="B",
         recipient_hash="c8f79139-38b2-3063-b039-d48172abc710",
@@ -138,7 +138,7 @@ def test_award_type_filter():
         last_12_direct_payments=300.00,
         award_types=["contract", "grant", "direct payment", "other"],
     )
-    mommy.make(
+    baker.make(
         RecipientProfile,
         recipient_level="C",
         recipient_hash="5770e860-0f7b-69f1-182f-4d6966ebaa62",

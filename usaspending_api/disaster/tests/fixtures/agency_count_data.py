@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -14,7 +14,7 @@ def faba_with_toptier_agencies(award_count_sub_schedule, award_count_submission,
 
     toptier_agency(2)
     award2 = award_with_toptier_agency(2)
-    award3 = mommy.make("awards.Award", type="A", funding_agency=Agency.objects.first(), total_loan_value=0)
+    award3 = baker.make("awards.Award", type="A", funding_agency=Agency.objects.first(), total_loan_value=0)
 
     faba_for_award(award1, 8, 0)
     faba_for_award(award2, 0, 7)
@@ -42,7 +42,7 @@ def faba_with_toptier_agencies_that_cancel_out_in_outlay(award_count_sub_schedul
 
 
 def faba_for_award(award, toa, outlay):
-    return mommy.make(
+    return baker.make(
         "awards.FinancialAccountsByAwards",
         award=award,
         parent_award_id="basic award",
@@ -54,10 +54,10 @@ def faba_for_award(award, toa, outlay):
 
 
 def toptier_agency(id):
-    return mommy.make("references.ToptierAgency", pk=id)
+    return baker.make("references.ToptierAgency", pk=id)
 
 
 def award_with_toptier_agency(id):
-    agency = mommy.make("references.Agency", toptier_agency_id=id)
+    agency = baker.make("references.Agency", toptier_agency_id=id)
 
-    return mommy.make("awards.Award", type="A", funding_agency=agency, total_loan_value=0)
+    return baker.make("awards.Award", type="A", funding_agency=agency, total_loan_value=0)

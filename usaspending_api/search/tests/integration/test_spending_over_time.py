@@ -2,7 +2,7 @@ import json
 import pytest
 
 from rest_framework import status
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -36,7 +36,7 @@ def spending_over_time_test_data():
         is_fpds = i % 2 == 0
 
         # Transaction Normalized
-        mommy.make(
+        baker.make(
             "awards.TransactionNormalized",
             id=transaction_id,
             action_date=action_date,
@@ -51,7 +51,7 @@ def spending_over_time_test_data():
         )
 
         # Award
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=award_id,
             fain=f"fain_{transaction_id}" if not is_fpds else None,
@@ -63,14 +63,14 @@ def spending_over_time_test_data():
         )
 
         # Federal, Treasury, and Financial Accounts
-        mommy.make(
+        baker.make(
             "accounts.FederalAccount",
             id=federal_account_id,
             parent_toptier_agency_id=toptier_awarding_agency_id,
             account_title=f"federal_account_title_{transaction_id}",
             federal_account_code=f"federal_account_code_{transaction_id}",
         )
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             agency_id=f"taa_aid_{transaction_id}",
             allocation_transfer_agency_id=f"taa_ata_{transaction_id}",
@@ -82,23 +82,23 @@ def spending_over_time_test_data():
             sub_account_code=f"taa_sub_{transaction_id}",
             treasury_account_identifier=treasury_account_id,
         )
-        mommy.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=treasury_account_id)
+        baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=treasury_account_id)
 
         # Awarding Agency
-        mommy.make(
+        baker.make(
             "references.Agency",
             id=awarding_agency_id,
             subtier_agency_id=subtier_awarding_agency_id,
             toptier_agency_id=toptier_awarding_agency_id,
         )
-        mommy.make(
+        baker.make(
             "references.ToptierAgency",
             abbreviation=f"toptier_awarding_agency_abbreviation_{transaction_id}",
             name=f"toptier_awarding_agency_agency_name_{transaction_id}",
             toptier_agency_id=toptier_awarding_agency_id,
             toptier_code=f"toptier_awarding_agency_code_{transaction_id}",
         )
-        mommy.make(
+        baker.make(
             "references.SubtierAgency",
             abbreviation=f"subtier_awarding_agency_abbreviation_{transaction_id}",
             name=f"subtier_awarding_agency_agency_name_{transaction_id}",
@@ -107,20 +107,20 @@ def spending_over_time_test_data():
         )
 
         # Funding Agency
-        mommy.make(
+        baker.make(
             "references.Agency",
             id=funding_agency_id,
             subtier_agency_id=subtier_funding_agency_id,
             toptier_agency_id=toptier_funding_agency_id,
         )
-        mommy.make(
+        baker.make(
             "references.ToptierAgency",
             abbreviation=f"toptier_funding_agency_abbreviation_{transaction_id}",
             name=f"toptier_funding_agency_agency_name_{transaction_id}",
             toptier_agency_id=toptier_funding_agency_id,
             toptier_code=f"toptier_funding_agency_code_{transaction_id}",
         )
-        mommy.make(
+        baker.make(
             "references.SubtierAgency",
             abbreviation=f"subtier_funding_agency_abbreviation_{transaction_id}",
             name=f"subtier_funding_agency_agency_name_{transaction_id}",
@@ -129,11 +129,11 @@ def spending_over_time_test_data():
         )
 
         # Ref Country Code
-        mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+        baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
         # FPDS / FABS
         if is_fpds:
-            mommy.make(
+            baker.make(
                 "awards.TransactionFPDS",
                 awardee_or_recipient_legal=f"recipient_name_{transaction_id}",
                 awardee_or_recipient_uniqu=f"{transaction_id:09d}",
@@ -161,14 +161,14 @@ def spending_over_time_test_data():
                 type_of_contract_pricing=f"type_of_contract_pricing_{transaction_id}",
                 type_set_aside=f"type_set_aside_{transaction_id}",
             )
-            mommy.make(
+            baker.make(
                 "references.NAICS",
                 code=f"naics_code_{transaction_id}",
                 description=f"naics_description_{transaction_id}",
             )
-            mommy.make("references.PSC", code=f"ps{transaction_id}", description=f"psc_description_{transaction_id}")
+            baker.make("references.PSC", code=f"ps{transaction_id}", description=f"psc_description_{transaction_id}")
         else:
-            mommy.make(
+            baker.make(
                 "awards.TransactionFABS",
                 awardee_or_recipient_legal=f"recipient_name_{transaction_id}",
                 awardee_or_recipient_uniqu=f"{transaction_id:09d}",
@@ -961,20 +961,20 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
 
 @pytest.mark.django_db
 def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
-    defc1 = mommy.make(
+    defc1 = baker.make(
         "references.DisasterEmergencyFundCode",
         code="L",
         public_law="PUBLIC LAW FOR CODE L",
         title="TITLE FOR CODE L",
         group_name="covid_19",
     )
-    mommy.make("accounts.FederalAccount", id=99)
-    mommy.make("accounts.TreasuryAppropriationAccount", federal_account_id=99, treasury_account_identifier=99)
-    mommy.make(
+    baker.make("accounts.FederalAccount", id=99)
+    baker.make("accounts.TreasuryAppropriationAccount", federal_account_id=99, treasury_account_identifier=99)
+    baker.make(
         "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
     )
-    mommy.make("awards.Award", id=99, total_obligation=20, piid="0001")
-    mommy.make(
+    baker.make("awards.Award", id=99, total_obligation=20, piid="0001")
+    baker.make(
         "awards.TransactionNormalized",
         id=99,
         action_date="2020-04-02",
@@ -983,8 +983,8 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         is_fpds=True,
         type="A",
     )
-    mommy.make("awards.TransactionFPDS", transaction_id=99, piid="0001")
-    mommy.make(
+    baker.make("awards.TransactionFPDS", transaction_id=99, piid="0001")
+    baker.make(
         "awards.TransactionNormalized",
         id=100,
         action_date="2020-01-01",
@@ -993,7 +993,7 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         is_fpds=True,
         type="A",
     )
-    mommy.make("awards.TransactionFPDS", transaction_id=100)
+    baker.make("awards.TransactionFPDS", transaction_id=100)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     resp = client.post(
         "/api/v2/search/spending_over_time",

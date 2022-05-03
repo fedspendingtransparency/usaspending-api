@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 
 from rest_framework import status
 
@@ -364,7 +364,7 @@ def test_outlay_calculation(client, disaster_account_data, elasticsearch_account
     defc_l = DisasterEmergencyFundCode.objects.get(code="L")
     tas = TreasuryAppropriationAccount.objects.get(account_title="TA 2")
     sub = SubmissionAttributes.objects.get(toptier_code="008", reporting_fiscal_year=2022, reporting_fiscal_period=8)
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         treasury_account=tas,
         submission=sub,

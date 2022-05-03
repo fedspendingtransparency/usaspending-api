@@ -1,7 +1,7 @@
 import pytest
 from decimal import Decimal
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
@@ -11,7 +11,7 @@ URL = "/api/v2/reporting/agencies/{code}/differences/{filter}"
 
 @pytest.fixture
 def differences_data():
-    dabs1 = mommy.make(
+    dabs1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2020,
         submission_fiscal_month=6,
@@ -20,17 +20,17 @@ def differences_data():
         submission_reveal_date="2020-04-01",
         period_start_date="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         toptier_code="001",
         quarter_format_flag=False,
         submission_window=dabs1,
     )
-    ta1 = mommy.make("references.ToptierAgency", toptier_code="001")
-    mommy.make("references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True)
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount")
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
-    mommy.make(
+    ta1 = baker.make("references.ToptierAgency", toptier_code="001")
+    baker.make("references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True)
+    tas1 = baker.make("accounts.TreasuryAppropriationAccount")
+    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
+    baker.make(
         "reporting.ReportingAgencyTas",
         toptier_code=ta1.toptier_code,
         fiscal_year=2020,
@@ -40,7 +40,7 @@ def differences_data():
         object_class_pa_obligated_amount=120,
         diff_approp_ocpa_obligated_amounts=3.4,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyTas",
         toptier_code=ta1.toptier_code,
         fiscal_year=2020,
@@ -50,7 +50,7 @@ def differences_data():
         object_class_pa_obligated_amount=1000,
         diff_approp_ocpa_obligated_amounts=-500,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyTas",
         toptier_code=ta1.toptier_code,
         fiscal_year=2020,

@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -8,7 +8,7 @@ url = "/api/v2/reporting/agencies/{toptier_code}/{fiscal_year}/{fiscal_period}/u
 
 @pytest.fixture
 def setup_test_data(db):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2020,
         submission_fiscal_month=8,
@@ -16,7 +16,7 @@ def setup_test_data(db):
         submission_reveal_date="2020-06-01",
         period_start_date="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="043",
         fiscal_year=2020,

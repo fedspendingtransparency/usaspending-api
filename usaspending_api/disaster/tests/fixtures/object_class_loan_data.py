@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -14,7 +14,7 @@ def basic_object_class_faba_with_loan_value(award_count_sub_schedule, award_coun
 
     basic_object_class = major_object_class_with_children("001", [1])
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award=award,
         parent_award_id="basic award",
@@ -25,7 +25,7 @@ def basic_object_class_faba_with_loan_value(award_count_sub_schedule, award_coun
         transaction_obligated_amount=1,
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award=award_loan,
         parent_award_id="basic loan",
@@ -46,7 +46,7 @@ def basic_object_class_multiple_faba_with_loan_value_with_single_object_class(
 
     object_class1 = major_object_class_with_children("001", [1])
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award=award1,
         parent_award_id="basic award",
@@ -57,7 +57,7 @@ def basic_object_class_multiple_faba_with_loan_value_with_single_object_class(
         transaction_obligated_amount=1,
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award=award2,
         parent_award_id="basic award 2",
@@ -79,7 +79,7 @@ def basic_object_class_multiple_faba_with_loan_value_with_two_object_classes(
     object_class1 = major_object_class_with_children("001", [1])
     object_class2 = major_object_class_with_children("002", [2])
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award=award1,
         parent_award_id="basic award",
@@ -90,7 +90,7 @@ def basic_object_class_multiple_faba_with_loan_value_with_two_object_classes(
         transaction_obligated_amount=1,
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award=award2,
         parent_award_id="basic award",
@@ -103,8 +103,8 @@ def basic_object_class_multiple_faba_with_loan_value_with_two_object_classes(
 
 
 def _normal_award():
-    return mommy.make("awards.Award", type="A", total_loan_value=0)
+    return baker.make("awards.Award", type="A", total_loan_value=0)
 
 
 def _loan_award():
-    return mommy.make("awards.Award", type="07", total_loan_value=5)
+    return baker.make("awards.Award", type="07", total_loan_value=5)

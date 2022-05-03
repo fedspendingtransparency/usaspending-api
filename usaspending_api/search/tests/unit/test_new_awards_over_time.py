@@ -2,7 +2,7 @@ import json
 import pytest
 
 from datetime import datetime
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
@@ -39,8 +39,8 @@ def add_award_recipients(db):
     current_id = 1
     new_award_count = 12
     for i in range(current_id, current_id + new_award_count):
-        mommy.make("awards.Award", id=i)
-        mommy.make(
+        baker.make("awards.Award", id=i)
+        baker.make(
             "recipient.SummaryAwardRecipient",
             award_id=i,
             action_date=datetime(2009, 5, 30),
@@ -50,8 +50,8 @@ def add_award_recipients(db):
     current_id += new_award_count
     new_award_count = 3
     for i in range(current_id, current_id + new_award_count):
-        mommy.make("awards.Award", id=i)
-        mommy.make(
+        baker.make("awards.Award", id=i)
+        baker.make(
             "recipient.SummaryAwardRecipient",
             award_id=i,
             action_date=datetime(2009, 5, 1),
@@ -61,8 +61,8 @@ def add_award_recipients(db):
     current_id += new_award_count
     new_award_count = 1
     for i in range(current_id, current_id + new_award_count):
-        mommy.make("awards.Award", id=i)
-        mommy.make(
+        baker.make("awards.Award", id=i)
+        baker.make(
             "recipient.SummaryAwardRecipient",
             award_id=i,
             action_date=datetime(2009, 7, 2),
@@ -72,8 +72,8 @@ def add_award_recipients(db):
     current_id += new_award_count
     new_award_count = 2
     for i in range(current_id, current_id + new_award_count):
-        mommy.make("awards.Award", id=i)
-        mommy.make(
+        baker.make("awards.Award", id=i)
+        baker.make(
             "recipient.SummaryAwardRecipient",
             award_id=i,
             action_date=datetime(2008, 1, 10),
@@ -83,8 +83,8 @@ def add_award_recipients(db):
     current_id += new_award_count
     new_award_count = 6
     for i in range(current_id, current_id + new_award_count):
-        mommy.make("awards.Award", id=i)
-        mommy.make(
+        baker.make("awards.Award", id=i)
+        baker.make(
             "recipient.SummaryAwardRecipient",
             award_id=i,
             action_date=datetime(2009, 7, 30),
