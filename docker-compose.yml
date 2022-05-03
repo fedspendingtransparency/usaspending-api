@@ -204,8 +204,7 @@ services:
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
-    #command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
-    command: server /data
+    command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-9000}/minio/health/live"]
       interval: 30s
