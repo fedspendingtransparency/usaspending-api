@@ -17,9 +17,9 @@ UPDATE public.summary_award_recipient AS sar SET
     )
   )::uuid,
   parent_uei = COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei)
-FROM public.awards a
-LEFT OUTER JOIN public.transaction_fpds fpds ON (a.earliest_transaction_id = fpds.transaction_id)
-LEFT OUTER JOIN public.transaction_fabs fabs ON (a.earliest_transaction_id = fabs.transaction_id)
+FROM rpt.awards a
+LEFT OUTER JOIN int.transaction_fpds fpds ON (a.earliest_transaction_id = fpds.transaction_id)
+LEFT OUTER JOIN int.transaction_fabs fabs ON (a.earliest_transaction_id = fabs.transaction_id)
 WHERE
   sar.award_id = a.id
   AND (
@@ -49,8 +49,8 @@ SELECT
       )
     )::uuid AS recipient_hash,
     COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) AS parent_uei
-FROM public.awards a
-LEFT OUTER JOIN public.transaction_fpds fpds ON (a.earliest_transaction_id = fpds.transaction_id)
-LEFT OUTER JOIN public.transaction_fabs fabs ON (a.earliest_transaction_id = fabs.transaction_id)
+FROM rpt.awards a
+LEFT OUTER JOIN int.transaction_fpds fpds ON (a.earliest_transaction_id = fpds.transaction_id)
+LEFT OUTER JOIN int.transaction_fabs fabs ON (a.earliest_transaction_id = fabs.transaction_id)
 WHERE a.date_signed >= '2007-10-01'
 ON CONFLICT(award_id) DO NOTHING;

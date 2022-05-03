@@ -1,7 +1,7 @@
 -- Create temp table to reload into the duns table without dropping the destination table
-DROP TABLE IF EXISTS public.temporary_restock_duns;
+DROP TABLE IF EXISTS raw.temporary_restock_duns;
 
-CREATE TABLE public.temporary_restock_duns AS (
+CREATE TABLE raw.temporary_restock_duns AS (
   SELECT
     broker_duns.awardee_or_recipient_uniqu AS awardee_or_recipient_uniqu,
     broker_duns.legal_business_name AS legal_business_name,
@@ -74,8 +74,8 @@ CREATE TABLE public.temporary_restock_duns AS (
 );
 
 BEGIN;
-DELETE FROM public.duns;
-INSERT INTO public.duns SELECT * FROM public.temporary_restock_duns;
-DROP TABLE public.temporary_restock_duns;
+DELETE FROM raw.duns;
+INSERT INTO raw.duns SELECT * FROM raw.temporary_restock_duns;
+DROP TABLE raw.temporary_restock_duns;
 COMMIT;
-VACUUM ANALYZE public.duns;
+VACUUM ANALYZE raw.duns;

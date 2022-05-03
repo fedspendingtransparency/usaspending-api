@@ -1,4 +1,5 @@
 {
+  "schema_name": "temp",
   "final_name": "mv_pre2008_award_search",
   "refresh": true,
   "matview_sql": [
