@@ -46,21 +46,20 @@ before_install:
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
   # Re-install elasticsearch at the right version
-  # TODO: RE-ENABLE ES and DREDD
-#  - sudo systemctl stop elasticsearch
-#  - sudo dpkg --remove elasticsearch
-#  - sudo dpkg --purge elasticsearch
-#  - sudo rm -rf /var/lib/elasticsearch
-#  - travis_retry curl -s -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.1.1-amd64.deb
-#  - sudo dpkg --install elasticsearch-7.1.1-amd64.deb
-#  - sudo sed -i.old 's/-Xms1g/-Xms512m/' /etc/elasticsearch/jvm.options
-#  - echo -e '-XX:+DisableExplicitGC\n-Djdk.io.permissionsUseCanonicalPath=true\n-Dlog4j.skipJansi=true\n-server\n' | sudo tee -a /etc/elasticsearch/jvm.options
-#  - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
-#  - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
-#  - sudo systemctl start elasticsearch
-#  - sudo journalctl -u elasticsearch -b
-#  # Add dredd for API contract testing
-#  - travis_retry npm install --global dredd@13.1.2
+  - sudo systemctl stop elasticsearch
+  - sudo dpkg --remove elasticsearch
+  - sudo dpkg --purge elasticsearch
+  - sudo rm -rf /var/lib/elasticsearch
+  - travis_retry curl -s -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.1.1-amd64.deb
+  - sudo dpkg --install elasticsearch-7.1.1-amd64.deb
+  - sudo sed -i.old 's/-Xms1g/-Xms512m/' /etc/elasticsearch/jvm.options
+  - echo -e '-XX:+DisableExplicitGC\n-Djdk.io.permissionsUseCanonicalPath=true\n-Dlog4j.skipJansi=true\n-server\n' | sudo tee -a /etc/elasticsearch/jvm.options
+  - sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install mapper-murmur3
+  - sudo chown -R elasticsearch:elasticsearch /etc/default/elasticsearch
+  - sudo systemctl start elasticsearch
+  - sudo journalctl -u elasticsearch -b
+  # Add dredd for API contract testing
+  - travis_retry npm install --global dredd@13.1.2
 
 install:
   # setuptools is pinned to version 60.8.2 due to an error occurring with built-in version
@@ -79,19 +78,12 @@ before_script:
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
-  # Ensure spark-base image is built for all spark services' containers to use, and bring them up
+  # Ensure MinIO can run as our s3 substitute
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
-  # TODO: REMOVE STANDING UP SPARK DOCKER SERVICES, EXCEPT FOR MINIO (s3 profile)
   - make docker-compose-up-s3 args="-d"
-  #- make docker-compose-build-spark
-  #- make docker-compose-up args="-d $(docker-compose ps --services | grep '^spark' | tr '\n' ' ')"
-  #- docker-compose --profile s3 --project-directory ./ --file ./docker-compose.yml up -d
-#  - docker-compose --project-directory ./ --file ./docker-compose.yaml build --build-arg PROJECT_LOG_DIR=./usaspending_api/logs $(docker-compose --project-directory ./ --file ./docker-compose.yaml ps --services | grep '^spark' | tr '\n' ' ')
-#  - docker-compose --project-directory ./ --file ./docker-compose.yaml up -d $(docker-compose --project-directory ./ --file ./docker-compose.yaml ps --services | grep '^spark' | tr '\n' ' ')
   # Build image from which to call Broker scripts
-  # TODO: RE-ENABLE BROKER BUILD
-  #- docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}
+  - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}
   - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
 
 script:
@@ -100,12 +92,8 @@ script:
   - black --check --diff .
   - python manage.py check_for_endpoint_documentation
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
-  # TODO: PUT REGULAR TESTS BACK
-  #- pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
-  #- pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
-  - docker-compose ps
-  # TODO: Reset this back to the full test suite after passing
-  - pytest 'usaspending_api/etl/tests/integration/test_spark_app.py' --no-cov -vvv --capture=no --log-cli-level=INFO
+  - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
+  - pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
