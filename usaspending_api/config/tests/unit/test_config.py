@@ -5,7 +5,7 @@ import os
 import pytest
 from pprint import pprint
 
-from config import ENV_CODE_VAR
+from usaspending_api.config import ENV_CODE_VAR
 from usaspending_api.config import CONFIG, _load_config
 from usaspending_api.config.default import DefaultConfig
 from usaspending_api.config.local import LocalConfig
