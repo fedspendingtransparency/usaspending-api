@@ -182,7 +182,7 @@ class AgnosticTransactionLoader:
 
     def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
         """Loop through the batches of IDs and load using the ETL tables"""
-        destination = ETLTable(dest_tablename)
+        destination = ETLTable(dest_tablename, schema_name="raw")
         source = ETLDBLinkTable(source_tablename, settings.DATA_BROKER_DBLINK_NAME, destination.data_types)
         transactions_remaining_count = self.total_ids_to_process
 

@@ -15,6 +15,7 @@ from usaspending_api.search.models.transaction_search import TransactionSearch
 
 logger = logging.getLogger("script")
 
+TABLE_SCHEMA_NAME = "rpt"
 TABLE_NAME = "transaction_search"
 
 
@@ -107,12 +108,14 @@ class Command(BaseCommand):
             constraint_name_temp = constraint_name + "_temp"
 
             create_temp_constraints.append(
-                f"ALTER TABLE public.{TABLE_NAME}_temp ADD CONSTRAINT {constraint_name_temp} {row[1]};"
+                f"ALTER TABLE {TABLE_SCHEMA_NAME}.{TABLE_NAME}_temp ADD CONSTRAINT {constraint_name_temp} {row[1]};"
             )
             rename_constraints_temp.append(
-                f"ALTER TABLE public.{TABLE_NAME} RENAME CONSTRAINT {constraint_name_temp} TO {constraint_name};"
+                f"ALTER TABLE {TABLE_SCHEMA_NAME}.{TABLE_NAME} RENAME CONSTRAINT {constraint_name_temp} TO {constraint_name};"
             )
-            delete_contraints_old.append(f"ALTER TABLE public.{TABLE_NAME}_old DROP CONSTRAINT {constraint_name};")
+            delete_contraints_old.append(
+                f"ALTER TABLE {TABLE_SCHEMA_NAME}.{TABLE_NAME}_old DROP CONSTRAINT {constraint_name};"
+            )
 
             self.constraint_names.append(constraint_name)
 
@@ -137,7 +140,7 @@ class Command(BaseCommand):
             if index_name not in self.constraint_names:
                 create_temp_index_sql = row[1].replace(index_name, index_name_temp)
                 create_temp_index_sql = create_temp_index_sql.replace(
-                    f"public.{TABLE_NAME}", f"public.{TABLE_NAME}_temp"
+                    f"{TABLE_SCHEMA_NAME}.{TABLE_NAME}", f"{TABLE_SCHEMA_NAME}.{TABLE_NAME}_temp"
                 )
                 create_temp_indexes.append(create_temp_index_sql)
 
