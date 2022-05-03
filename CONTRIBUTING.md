@@ -6,9 +6,9 @@ Everything in this Github repository is a work-in-progress following the agile m
 # Submitting Changes
 
 ## Making a Branch
-If you have write access to the Github repository, create a git branch from where you want to base your work - Typically, this will be `dev`
+If you have write access to the Github repository, create a git branch from where you want to base your work - Typically, this will be `qat`
 
-Otherwise, clone the repo and base your changes from the `dev` branch of your repo and submit a PR into the `dev` branch of this repo.
+Otherwise, clone the repo and base your changes from the `qat` branch of your repo and submit a PR into the `qat` branch of this repo.
 
 Try to follow these naming conventions so branches will be organized in a list, easily distinguished, and easily traced to the work involved.
 
@@ -19,13 +19,13 @@ In general, follow the form `<prefix>/[dev|gh]-###-short-description`
 * `###` is the associated Jira ticket or Github issue number (or the primary ID if multiple tickets or issues apply).
 * `short-description` a few words to concisely summarize what it is.
 
-Prefix|Change Type|Examples
-------|-----------|--------
-`ftr/`|_New_ stuff. New feature development, or new framework, utility, etc.|`ftr/dev-123-short-description`
-`mod/`|Updates, refactoring, improvements, or modifications to an _existing_ feature/framework/code. <br/>_(If this is happening as part of new feature development, use `ftr/` instead.)_|`mod/dev-456-short-description`
-`bug/`|Bug fixes that are not being hotfixed|`bug/gh-21-the-problem`
-`fix/`|Hotfixes patching the current production code|`fix/dev-888-bug-description`
-`doc/`|In app repos when only text files needs to change, usually markdown documentation|`doc/dev-555-what-the-doc-is`
+| Prefix |Change Type|Examples|
+|--------|-----------|--------|
+| `ftr/` |_New_ stuff. New feature development, or new framework, utility, etc.|`ftr/dev-123-short-description`|
+| `mod/` |Updates, refactoring, improvements, or modifications to an _existing_ feature/framework/code. <br/>_(If this is happening as part of new feature development, use `ftr/` instead.)_|`mod/dev-456-short-description`|
+| `bug/` |Bug fixes that are not being hotfixed|`bug/gh-21-the-problem`|
+| `fix/` |Hotfixes patching the current production code|`fix/dev-888-bug-description`|
+| `doc/` |In app repos when only text files needs to change, usually markdown documentation|`doc/dev-555-what-the-doc-is`|
 
 
 ## Code Style
