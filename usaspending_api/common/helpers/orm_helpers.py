@@ -2,7 +2,7 @@ from datetime import date
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, Case, CharField, Func, IntegerField, Subquery, TextField, Value, When
+from django.db.models import Aggregate, Case, CharField, Func, IntegerField, TextField, Value, When
 from django.db.models.functions import Concat, LPad, Cast
 
 from usaspending_api.search.models import (
@@ -88,18 +88,6 @@ class ConcatAll(Func):
 
     function = "CONCAT"
     output_field = TextField()
-
-
-class AvoidSubqueryInGroupBy(Subquery):
-    """
-    Django currently adds Subqueries to the Group By clause by default when an Aggregation or Annotation is
-    used. This is not always needed and for those queries where it is not needed it can hurt performance.
-    The ability to avoid this was implemented in Django 3.2:
-    https://github.com/django/django/commit/fb3f034f1c63160c0ff13c609acd01c18be12f80
-    """
-
-    def get_group_by_cols(self):
-        return []
 
 
 class StringAggWithDefault(StringAgg):

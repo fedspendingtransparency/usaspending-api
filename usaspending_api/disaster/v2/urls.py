@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 
 from usaspending_api.disaster.v2.views.agency.count import AgencyCountViewSet
 from usaspending_api.disaster.v2.views.agency.loans import route_agency_loans_backend
@@ -21,24 +21,24 @@ from usaspending_api.disaster.v2.views.recipient.spending import RecipientSpendi
 from usaspending_api.disaster.v2.views.spending_by_geography import SpendingByGeographyViewSet
 
 urlpatterns = [
-    url(r"^agency/count/$", AgencyCountViewSet.as_view()),
-    url(r"^agency/loans/$", route_agency_loans_backend()),
-    url(r"^agency/spending/$", route_agency_spending_backend()),
-    url(r"^award/amount/$", AmountViewSet.as_view(count_only=False)),
-    url(r"^award/count/$", AmountViewSet.as_view(count_only=True)),
-    url(r"^cfda/count/$", CfdaCountViewSet.as_view()),
-    url(r"^cfda/loans/$", CfdaLoansViewSet.as_view()),
-    url(r"^cfda/spending/$", CfdaSpendingViewSet.as_view()),
-    url(r"^def_code/count/$", DefCodeCountViewSet.as_view()),
-    url(r"^federal_account/count/$", FederalAccountCountViewSet.as_view()),
-    url(r"^federal_account/loans/$", LoansViewSet.as_view()),
-    url(r"^federal_account/spending/$", SpendingViewSet.as_view()),
-    url(r"^object_class/count/$", ObjectClassCountViewSet.as_view()),
-    url(r"^object_class/loans/$", ObjectClassLoansViewSet.as_view()),
-    url(r"^object_class/spending/$", ObjectClassSpendingViewSet.as_view()),
-    url(r"^overview/$", OverviewViewSet.as_view()),
-    url(r"^recipient/count/$", RecipientCountViewSet.as_view()),
-    url(r"^recipient/loans/$", RecipientLoansViewSet.as_view()),
-    url(r"^recipient/spending/$", RecipientSpendingViewSet.as_view()),
-    url(r"^spending_by_geography/$", SpendingByGeographyViewSet.as_view()),
+    re_path(r"^agency/count/$", AgencyCountViewSet.as_view()),
+    re_path(r"^agency/loans/$", route_agency_loans_backend()),
+    re_path(r"^agency/spending/$", route_agency_spending_backend()),
+    re_path(r"^award/amount/$", AmountViewSet.as_view(count_only=False)),
+    re_path(r"^award/count/$", AmountViewSet.as_view(count_only=True)),
+    re_path(r"^cfda/count/$", CfdaCountViewSet.as_view()),
+    re_path(r"^cfda/loans/$", CfdaLoansViewSet.as_view()),
+    re_path(r"^cfda/spending/$", CfdaSpendingViewSet.as_view()),
+    re_path(r"^def_code/count/$", DefCodeCountViewSet.as_view()),
+    re_path(r"^federal_account/count/$", FederalAccountCountViewSet.as_view()),
+    re_path(r"^federal_account/loans/$", LoansViewSet.as_view()),
+    re_path(r"^federal_account/spending/$", SpendingViewSet.as_view()),
+    re_path(r"^object_class/count/$", ObjectClassCountViewSet.as_view()),
+    re_path(r"^object_class/loans/$", ObjectClassLoansViewSet.as_view()),
+    re_path(r"^object_class/spending/$", ObjectClassSpendingViewSet.as_view()),
+    re_path(r"^overview/$", OverviewViewSet.as_view()),
+    re_path(r"^recipient/count/$", RecipientCountViewSet.as_view()),
+    re_path(r"^recipient/loans/$", RecipientLoansViewSet.as_view()),
+    re_path(r"^recipient/spending/$", RecipientSpendingViewSet.as_view()),
+    re_path(r"^spending_by_geography/$", SpendingByGeographyViewSet.as_view()),
 ]

@@ -123,7 +123,12 @@ def generate_matviews(materialized_views_as_traditional_views=False):
             sql = matview_sql_lookup["sql_file"].read_text()
             if materialized_views_as_traditional_views:
                 sql = convert_matview_to_view(sql)
-                sql += f" CREATE RULE {name}_delete_rule AS ON DELETE TO {name} DO INSTEAD NOTHING;"
+                # Put in place to help resolve issues where records are deleted from TransactionSearch;
+                # it is converted to be a View for tests, but is normally a Table which allows DELETEs
+                sql += (
+                    f" DROP RULE IF EXISTS {name}_delete_rule ON {name};"
+                    f" CREATE RULE {name}_delete_rule AS ON DELETE TO {name} DO INSTEAD NOTHING;"
+                )
             cursor.execute(sql)
         for view_sql_file in OVERLAY_VIEWS:
             cursor.execute(view_sql_file.read_text())
