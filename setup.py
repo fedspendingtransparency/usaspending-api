@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # that could not be declared statically in pyproject.toml, and so were declared as being provided
     # dynamically (by the setuptools build-system backend here) in the "dynamic" field of pyproject.toml
     setup(
-        packages=['usaspending-api'],
+        packages=['usaspending_api'],
         install_requires=_INSTALL_REQUIRES,
         extras_require=_EXTRAS,
     )
