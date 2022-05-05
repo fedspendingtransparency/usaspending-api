@@ -5,8 +5,8 @@ from functools import lru_cache
 from typing import Type, Union
 
 from usaspending_api.config.envs import ENV_CODE_VAR, ENVS
-from usaspending_api.config.default import DefaultConfig
-from usaspending_api.config.local import LocalConfig
+from usaspending_api.config.envs.default import DefaultConfig
+from usaspending_api.config.envs.local import LocalConfig
 
 __all__ = [
     "CONFIG",

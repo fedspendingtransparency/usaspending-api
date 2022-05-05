@@ -4,13 +4,14 @@ from unittest.mock import patch
 import os
 import pytest
 from pprint import pprint
-from pydantic import root_validator, validator
+from pydantic import validator
 from pydantic.fields import ModelField
 
-from usaspending_api.config import ENV_CODE_VAR
 from usaspending_api.config import CONFIG, _load_config
-from usaspending_api.config.default import DefaultConfig
-from usaspending_api.config.local import LocalConfig
+from usaspending_api.config.envs import ENV_CODE_VAR
+from usaspending_api.config.utils import ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE
+from usaspending_api.config.envs.default import DefaultConfig
+from usaspending_api.config.envs.local import LocalConfig
 from unittest import mock
 
 _ENV_VAL = "component_name_set_in_env"
@@ -184,54 +185,75 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_L = lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I + ":" + _UnitTestBaseConfig.UNITTEST_CFG_J
 
     # Start trying to use validators (aka pre/post processors)
-    UNITTEST_CFG_M = "UNITTEST_CFG_M"
-    UNITTEST_CFG_N = "UNITTEST_CFG_N"
+    UNITTEST_CFG_M: str = "UNITTEST_CFG_M"
+    UNITTEST_CFG_N: str = "UNITTEST_CFG_N"
     # See if these are now replaced with the values of the result of the validator that references this field
-    UNITTEST_CFG_O = UNITTEST_CFG_M + ":" + UNITTEST_CFG_N
+    UNITTEST_CFG_O: str = UNITTEST_CFG_M + ":" + UNITTEST_CFG_N
 
     @validator("UNITTEST_CFG_O")
     def _UNITTEST_CFG_O(cls, v, values):
         return values["UNITTEST_CFG_M"] + ":" + values["UNITTEST_CFG_N"]
 
-    UNITTEST_CFG_P = "UNITTEST_CFG_P"
-    UNITTEST_CFG_Q = "UNITTEST_CFG_Q"
-    UNITTEST_CFG_R = UNITTEST_CFG_P + ":" + UNITTEST_CFG_Q
+    UNITTEST_CFG_P: str = "UNITTEST_CFG_P"
+    UNITTEST_CFG_Q: str = "UNITTEST_CFG_Q"
+    UNITTEST_CFG_R: str = UNITTEST_CFG_P + ":" + UNITTEST_CFG_Q
 
     @validator("UNITTEST_CFG_R")
     def _UNITTEST_CFG_R(cls, v, values):
         return values["UNITTEST_CFG_P"] + ":" + values["UNITTEST_CFG_Q"]
 
-    UNITTEST_CFG_S = "UNITTEST_CFG_S"
-    UNITTEST_CFG_T = "UNITTEST_CFG_T"
-    UNITTEST_CFG_U: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below
+    UNITTEST_CFG_S: str = "UNITTEST_CFG_S"
+    UNITTEST_CFG_T: str = "UNITTEST_CFG_T"
+    UNITTEST_CFG_U: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
 
     @validator("UNITTEST_CFG_U")
     def _UNITTEST_CFG_U(cls, v, values, field: ModelField):
         assigned_or_sourced_val = v
         default_val = field.default
-        if assigned_or_sourced_val and assigned_or_sourced_val != default_val:
-            # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
-            # So honor it and don't use the default below
-            return assigned_or_sourced_val
-        else:
-            # Otherwise let this validator provide a default, lazily composed of other fields' values
-            return values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
-
-    UNITTEST_CFG_V = "UNITTEST_CFG_V"
-    UNITTEST_CFG_W = "UNITTEST_CFG_W"
-    UNITTEST_CFG_X: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below
-
-    @validator("UNITTEST_CFG_X")
-    def _UNITTEST_CFG_X(cls, v, values, field: ModelField):
-        assigned_or_sourced_val = v
-        default_val = field.default
-        if assigned_or_sourced_val and assigned_or_sourced_val != default_val:
+        if default_val is not None:
+            raise ValueError(
+                "This type of default-factory based validator requires that the field be set to None by "
+                "default. This is so that when a value is sourced or assigned elsewhere for this, "
+                "it will stick,."
+            )
+        if assigned_or_sourced_val and assigned_or_sourced_val not in [ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE]:
             # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
             # So honor it and don't use the default below
             return assigned_or_sourced_val
         else:
             # Otherwise let this validator be the field's default factory
             # Lazily compose other fields' values
+            # NOTE: pydantic orders annotated (even fields annotated with their typing Type, like field_name: str)
+            #       BEFORE non-annotated fields. And the values dict ONLY has field values for fields it has seen,
+            #       seeing them IN ORDER. So for this composition of other fields to work, the other fields MUST ALSO
+            #       be type-annotated
+            return values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
+
+    UNITTEST_CFG_V: str = "UNITTEST_CFG_V"
+    UNITTEST_CFG_W: str = "UNITTEST_CFG_W"
+    UNITTEST_CFG_X: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
+
+    @validator("UNITTEST_CFG_X")
+    def _UNITTEST_CFG_X(cls, v, values, field: ModelField):
+        assigned_or_sourced_val = v
+        default_val = field.default
+        if default_val is not None:
+            raise ValueError(
+                "This type of default-factory based validator requires that the field be set to None by "
+                "default. This is so that when a value is sourced or assigned elsewhere for this, "
+                "it will stick,."
+            )
+        if assigned_or_sourced_val and assigned_or_sourced_val not in [ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE]:
+            # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
+            # So honor it and don't use the default below
+            return assigned_or_sourced_val
+        else:
+            # Otherwise let this validator be the field's default factory
+            # Lazily compose other fields' values
+            # NOTE: pydantic orders annotated (even fields annotated with their typing Type, like field_name: str)
+            #       BEFORE non-annotated fields. And the values dict ONLY has field values for fields it has seen,
+            #       seeing them IN ORDER. So for this composition of other fields to work, the other fields MUST ALSO
+            #       be type-annotated
             return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
 
 
@@ -257,7 +279,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
     SUB_UNITTEST_5 = property(lambda self: self.SUB_UNITTEST_3 + ":" + self.SUB_UNITTEST_4)
 
     # See if this will override the validator's factory default
-    UNITTEST_CFG_X = "SUB_UNITTEST_X"
+    UNITTEST_CFG_X = "SUB_UNITTEST_CFG_X"
 
 
 _UNITTEST_ENVS_DICTS = [

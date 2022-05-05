@@ -9,14 +9,10 @@
 ########################################################################################################################
 from typing import ClassVar
 
+from usaspending_api.config.utils import USER_SPECIFIC_OVERRIDE
 from pydantic.types import SecretStr
 
-from usaspending_api.config.default import DefaultConfig
-
-# Placeholder sentinel value indicating a config var that is expected to be overridden from a runtime env to
-# accommodate a var value that is specific to an individual developer's local environment setup.
-# If this value emerges, it has not yet been set in the user's config (e.g. .env file) and and must be.
-_USER_SPECIFIC_OVERRIDE = "?USER_SPECIFIC_OVERRIDE?"
+from usaspending_api.config.envs.default import DefaultConfig
 
 
 class LocalConfig(DefaultConfig):
@@ -55,7 +51,7 @@ class LocalConfig(DefaultConfig):
     POSTGRES_PORT = "5432"
 
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
-    POSTGRES_CLUSTER_DIR = _USER_SPECIFIC_OVERRIDE
+    POSTGRES_CLUSTER_DIR = USER_SPECIFIC_OVERRIDE
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
@@ -64,7 +60,7 @@ class LocalConfig(DefaultConfig):
     ES_PORT = "9200"
 
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
-    ES_CLUSTER_DIR = _USER_SPECIFIC_OVERRIDE
+    ES_CLUSTER_DIR = USER_SPECIFIC_OVERRIDE
 
     # ==== [MinIO] ====
     # MINIO_HOST = "host.docker.internal"
@@ -73,7 +69,7 @@ class LocalConfig(DefaultConfig):
     MINIO_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
     MINIO_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
-    MINIO_DATA_DIR = _USER_SPECIFIC_OVERRIDE
+    MINIO_DATA_DIR = USER_SPECIFIC_OVERRIDE
 
     # ==== [Spark] ====
     # Used for attaching to a spark-submit process to create a java_gateway for PySpark during unit test sessions
