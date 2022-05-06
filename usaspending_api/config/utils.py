@@ -80,26 +80,12 @@ def eval_default_factory(
             "precedence as the new value."
         )
 
-    # if (
-    #     is_override
-    #     # A non-placeholder default_value was provided somewhere (instantiated class, or parent class)
-    #     and default_value is not None
-    #     and default_value not in CONFIG_VAR_PLACEHOLDERS
-    #     and config_var.name not in declared_config_fields  # not a field (re)declared on the instantiated class
-    # ):
-    #     raise TypeError(
-    #         "You may be 'overriding' a parent class config var in a subclass by way of a validator, "
-    #         "without re-delcaring that config var in the subclass. If so, redeclare it above its validator in the "
-    #         "subclass as:\n\t"
-    #         "CONFIG_VAR = FACTORY_PROVIDED_VALUE"
-    #     )
-
     if assigned_or_sourced_value and assigned_or_sourced_value not in CONFIG_VAR_PLACEHOLDERS:
         # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
         # So honor it and don't use the default below
         return assigned_or_sourced_value
 
-    if is_override and default_value not in CONFIG_VAR_PLACEHOLDERS:
+    if is_override and default_value and default_value not in CONFIG_VAR_PLACEHOLDERS:
         return default_value  # the value set on the overriding subclass is next in line for precedence
 
     # Otherwise let this validator be the field's default factory
