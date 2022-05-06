@@ -209,7 +209,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     @validator("UNITTEST_CFG_U")
     def _UNITTEST_CFG_U(cls, v, values, field: ModelField):
         def factory_func():
-            return lambda: values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
+            return values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
 
         return eval_default_factory(cls, v, values, field, factory_func)
 
@@ -374,23 +374,25 @@ def test_new_runtime_env_overrides_config():
         assert cfg.UNITTEST_CFG_G == "SUB_UNITTEST_CFG_G"
         # 7. Simple composition of values in the same class works
         assert cfg.SUB_UNITTEST_5 == "SUB_UNITTEST_3:SUB_UNITTEST_4"
-        # 8. Subclass-declared override will not only override parent class default, but any value provided by a
+        # 8. subclass with no overriding field or overriding validator will still get the parent class validator's value
+        assert cfg.UNITTEST_CFG_U == "UNITTEST_CFG_S" + ":" + "UNITTEST_CFG_T"
+        # 9. Subclass-declared override will not only override parent class default, but any value provided by a
         #    validator in the parent class
         assert cfg.UNITTEST_CFG_X == "SUB_UNITTEST_CFG_X"
-        # 9. Subclasses adding their own validator to a field in a parent class, USING THE SAME NAME as the validator
+        # 10. Subclasses adding their own validator to a field in a parent class, USING THE SAME NAME as the validator
         # function in the parent class, will yield the subclass's validator value (overriding the parent validator)
         assert cfg.UNITTEST_CFG_Y == "SUB_UNITTEST_CFG_Y"
-        # 10. Subclasses adding their own validator to a field in a parent class, USING A DIFFERENT NAME for the
+        # 11. Subclasses adding their own validator to a field in a parent class, USING A DIFFERENT NAME for the
         # validator than the validator function in the parent class, will end up taking the parent validator's
         # value as the "assigned" (i.e. assigned/overridden elsewhere) value
         assert cfg.UNITTEST_CFG_Z == "UNITTEST_CFG_V:UNITTEST_CFG_W"
-        # 11. Subclass validators DO NOT take precedence and override parent class default IF the field is not
+        # 12. Subclass validators DO NOT take precedence and override parent class default IF the field is not
         # re-declared on subclass
         # NOTE: Could not find a way to avoid this in the eval_default_factory function, because pydantic hijacks the
         # name of the field and replaces it with the validator name. So can't detect if the field exists on BOTH
         # subclass and parent class to determine if its being redeclared or not.
         assert cfg.UNITTEST_CFG_AC == "UNITTEST_CFG_AC"
-        # 12. Subclass validators DO take precedence and override parent class default IF the field IS RE-DECLARED on
+        # 13. Subclass validators DO take precedence and override parent class default IF the field IS RE-DECLARED on
         # subclass
         assert cfg.UNITTEST_CFG_AD == "UNITTEST_CFG_AA:UNITTEST_CFG_AB"
 
