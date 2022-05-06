@@ -1,40 +1,63 @@
-*.pyc
-*.swp
-*.env
-.env
-.cache
-.coverage
-.DS_Store
+# OS Files
+\.DS_Store
 
 # IDEs
+\.idea
 **/.idea/
-.vscode
+\.vscode
 
 # Temporary and generated files
 bulk_downloads/*
 chunked_matviews/*
 csv_downloads/*
 log/*
+logs/*
+usaspending_api/logs/*
 matviews/*
 tmp/*
-usaspending_api/logs/*
+
+data/output/
 
 # pyenv ignores
-.python-version
+\.python-version
 pyvenv.cfg
 
+# pytest
+\.pytest_cache
+\.coverage
+coverage.xml
+
+# pip files
+*\.egg-info/
+pip-selfcheck.json
+
 # for a project-local (rather than home-dir based) virtual environment directory
-.venv/
+\.venv/
+
+# .env files for env vars
+\.env
+\.env.*
+!\.env.template
+*.env
 
 # direnv ignores
-.direnv/
-.envrc
+\.direnv/
+\.envrc
 
 # profiling output
 prof/
 
-.pgdump
-.ipynb
-.lprof
-.pytest_cache/*
-pip-selfcheck.json
+# Other
+\.pgdump
+\.ipynb
+\.lprof
+libs/*
+__pycache__
+*.pyc
+*.swp
+\.cache
+
+# Global overrides -- KEEP AT THE BOTTOM (must be below their ignores)
+# Also, entire directories can't be ignored (like: ignore_this_dir/)
+# Has to be just directory contents (like: ignore_this_dir/*)
+!**/.gitkeep

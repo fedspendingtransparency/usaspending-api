@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from pathlib import Path
-from usaspending_api.common.etl import mixins
+from usaspending_api.common.etl.postgres import mixins
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 
 

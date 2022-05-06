@@ -1,6 +1,10 @@
 from django.db import connection
-from usaspending_api.common.etl import ETLQuery, ETLTable
-from usaspending_api.common.etl.operations import delete_obsolete_rows, insert_missing_rows, update_changed_rows
+from usaspending_api.common.etl.postgres import ETLQuery, ETLTable
+from usaspending_api.common.etl.postgres.operations import (
+    delete_obsolete_rows,
+    insert_missing_rows,
+    update_changed_rows,
+)
 
 
 # This is basically the desired final state of the federal_account table.  We can diff this against the
