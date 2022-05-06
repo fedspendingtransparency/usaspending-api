@@ -234,7 +234,6 @@ def read_java_gateway_connection_info(gateway_conn_info_path):  # pragma: no cov
 def attach_java_gateway(
     gateway_port,
     gateway_auth_token,
-    # gateway_address=PYSPARK_GATEWAY_DEFAULT_ADDRESS
 ) -> JavaGateway:  # pragma: no cover -- useful development util
     """Create a new JavaGateway that latches onto the port of a running spark-submit process
 
@@ -245,7 +244,6 @@ def attach_java_gateway(
     Returns: The instantiated JavaGateway, which acts as a network interface for PySpark to submit spark jobs through
         to the JVM-based Spark runtime
     """
-    # os.environ["PYSPARK_GATEWAY_ADDRESS"] = gateway_address
     os.environ["PYSPARK_GATEWAY_PORT"] = str(gateway_port)
     os.environ["PYSPARK_GATEWAY_SECRET"] = gateway_auth_token
 

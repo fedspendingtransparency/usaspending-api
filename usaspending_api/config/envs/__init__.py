@@ -1,4 +1,9 @@
-from usaspending_api.config.local import LocalConfig
+from usaspending_api.config.envs.local import LocalConfig
+
+__all__ = [
+    "ENV_CODE_VAR",
+    "ENVS",
+]
 
 # Environment Variable name which holds the runtime env code indicating the runtime environment to configure/deploy/run
 ENV_CODE_VAR = "ENV_CODE"
