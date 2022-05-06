@@ -9,10 +9,11 @@
 ########################################################################################################################
 from typing import ClassVar
 
-from usaspending_api.config.utils import USER_SPECIFIC_OVERRIDE
+from pydantic import validator
+from pydantic.fields import ModelField
 from pydantic.types import SecretStr
-
 from usaspending_api.config.envs.default import DefaultConfig
+from usaspending_api.config.utils import USER_SPECIFIC_OVERRIDE, FACTORY_PROVIDED_VALUE, eval_default_factory
 
 
 class LocalConfig(DefaultConfig):
@@ -22,12 +23,6 @@ class LocalConfig(DefaultConfig):
         Attributes inherited from or overridden from ``DefaultConfig``
 
     Attributes:
-        POSTGRES_CLUSTER_DIR: Where docker persists postgres DB data
-            - Should point to a path where data can be persistend beyond docker restarts,
-              outside of the git source repository
-        ES_CLUSTER_DIR: Where docker persists Elasticsearch shard data
-            - Should point to a path where data can be persistend beyond docker restarts,
-              outside of the git source repository
         MINIO_ACCESS_KEY: Access key for accessing S3 object data stored locally via MinIO
         MINIO_SECRET_KEY: Secret key for accessing S3 object data stored locally via MinIO
         MINIO_DATA_DIR: Where docker persists "object data" for S3 objects stored locally
@@ -38,45 +33,31 @@ class LocalConfig(DefaultConfig):
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = "lcl"
     # Common credentials to share across services for convenience / ease on remembering
-    _USASPENDING_USER = "usaspending"
+    _USASPENDING_USER: str = "usaspending"
     _USASPENDING_PASSWORD: SecretStr = "usaspender"
 
     # ==== [Postgres] ====
-    POSTGRES_USER = _USASPENDING_USER
+    POSTGRES_USER: str = _USASPENDING_USER
     POSTGRES_PASSWORD: SecretStr = _USASPENDING_PASSWORD
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
-    POSTGRES_HOST = "localhost"
-    POSTGRES_PORT = "5432"
-
-    # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
-    POSTGRES_CLUSTER_DIR = USER_SPECIFIC_OVERRIDE
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: str = "5432"
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
-    ES_SCHEME = "http"
-    ES_HOST = "localhost"
-    ES_PORT = "9200"
-
-    # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
-    ES_CLUSTER_DIR = USER_SPECIFIC_OVERRIDE
+    ES_SCHEME: str = "http"
+    ES_HOST: str = "localhost"
+    ES_PORT: str = "9200"
 
     # ==== [MinIO] ====
-    # MINIO_HOST = "host.docker.internal"
     MINIO_HOST = "localhost"
-    MINIO_PORT = "9000"
+    MINIO_PORT: str = "9000"
     MINIO_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
     MINIO_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
     MINIO_DATA_DIR = USER_SPECIFIC_OVERRIDE
-
-    # ==== [Spark] ====
-    # Used for attaching to a spark-submit process to create a java_gateway for PySpark during unit test sessions
-    # TODO: GET RID OF property(...) FIELDS! See note in comments in the tests/unit/test_config.py possibly look at
-    #  pre/post load validator(...) or root_validator(...) functions as an alternative to composing other fields,
-    #  or research more
-    _PYSPARK_DRIVER_CONN_INFO_PATH: str = property(lambda self: self.PROJECT_LOG_DIR + "/pyspark_gateway_conn_info.log")
 
     # ==== [AWS] ====
     # In local dev env, default to NOT using AWS.
@@ -94,9 +75,13 @@ class LocalConfig(DefaultConfig):
     AWS_S3_BUCKET = "data"
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
-    # A python property that calls a get-accessor function (or lambda) acts as a closure to provide this late-evaluation
-    # TODO: GET RID OF property(...) FIELDS! See note in comments in the tests/unit/test_config.py possibly look at
-    #  pre/post load validator(...) or root_validator(...) functions as an alternative to composing other fields,
-    #  or research more
-    AWS_S3_ENDPOINT = property(lambda self: self.MINIO_HOST + ":" + self.MINIO_PORT)
+    AWS_S3_ENDPOINT = FACTORY_PROVIDED_VALUE  # See below validator-based factory
+
+    @validator("AWS_S3_ENDPOINT")
+    def _AWS_S3_ENDPOINT_factory(cls, v, values, field: ModelField):
+        def factory_func():
+            return values["MINIO_HOST"] + ":" + values["MINIO_PORT"]
+
+        return eval_default_factory(cls, v, values, field, factory_func)
+
     AWS_STS_ENDPOINT = ""

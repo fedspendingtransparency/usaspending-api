@@ -9,7 +9,7 @@ from pydantic.fields import ModelField
 
 from usaspending_api.config import CONFIG, _load_config
 from usaspending_api.config.envs import ENV_CODE_VAR
-from usaspending_api.config.utils import ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE
+from usaspending_api.config.utils import eval_default_factory, FACTORY_PROVIDED_VALUE
 from usaspending_api.config.envs.default import DefaultConfig
 from usaspending_api.config.envs.local import LocalConfig
 from unittest import mock
@@ -182,7 +182,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     # See if these are stuck with defaults (eagerly evaluated) or late-bind to the values if the values are replaced
     # by env vars
     UNITTEST_CFG_K = UNITTEST_CFG_I + ":" + UNITTEST_CFG_J
-    UNITTEST_CFG_L = lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I + ":" + _UnitTestBaseConfig.UNITTEST_CFG_J
+    UNITTEST_CFG_L = lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I + ":" + _UnitTestBaseConfig.UNITTEST_CFG_J  # noqa
 
     # Start trying to use validators (aka pre/post processors)
     UNITTEST_CFG_M: str = "UNITTEST_CFG_M"
@@ -208,26 +208,10 @@ class _UnitTestBaseConfig(DefaultConfig):
 
     @validator("UNITTEST_CFG_U")
     def _UNITTEST_CFG_U(cls, v, values, field: ModelField):
-        assigned_or_sourced_val = v
-        default_val = field.default
-        if default_val is not None:
-            raise ValueError(
-                "This type of default-factory based validator requires that the field be set to None by "
-                "default. This is so that when a value is sourced or assigned elsewhere for this, "
-                "it will stick,."
-            )
-        if assigned_or_sourced_val and assigned_or_sourced_val not in [ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE]:
-            # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
-            # So honor it and don't use the default below
-            return assigned_or_sourced_val
-        else:
-            # Otherwise let this validator be the field's default factory
-            # Lazily compose other fields' values
-            # NOTE: pydantic orders annotated (even fields annotated with their typing Type, like field_name: str)
-            #       BEFORE non-annotated fields. And the values dict ONLY has field values for fields it has seen,
-            #       seeing them IN ORDER. So for this composition of other fields to work, the other fields MUST ALSO
-            #       be type-annotated
-            return values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
+        def factory_func():
+            return lambda: values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
+
+        return eval_default_factory(cls, v, values, field, factory_func)
 
     UNITTEST_CFG_V: str = "UNITTEST_CFG_V"
     UNITTEST_CFG_W: str = "UNITTEST_CFG_W"
@@ -235,26 +219,35 @@ class _UnitTestBaseConfig(DefaultConfig):
 
     @validator("UNITTEST_CFG_X")
     def _UNITTEST_CFG_X(cls, v, values, field: ModelField):
-        assigned_or_sourced_val = v
-        default_val = field.default
-        if default_val is not None:
-            raise ValueError(
-                "This type of default-factory based validator requires that the field be set to None by "
-                "default. This is so that when a value is sourced or assigned elsewhere for this, "
-                "it will stick,."
-            )
-        if assigned_or_sourced_val and assigned_or_sourced_val not in [ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE]:
-            # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
-            # So honor it and don't use the default below
-            return assigned_or_sourced_val
-        else:
-            # Otherwise let this validator be the field's default factory
-            # Lazily compose other fields' values
-            # NOTE: pydantic orders annotated (even fields annotated with their typing Type, like field_name: str)
-            #       BEFORE non-annotated fields. And the values dict ONLY has field values for fields it has seen,
-            #       seeing them IN ORDER. So for this composition of other fields to work, the other fields MUST ALSO
-            #       be type-annotated
+        def factory_func():
             return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
+
+        return eval_default_factory(cls, v, values, field, factory_func)
+
+    # Value derived from validator (aka pre/post-processor) func below or overridden by env or subclass
+    UNITTEST_CFG_Y: str = FACTORY_PROVIDED_VALUE
+
+    @validator("UNITTEST_CFG_Y")
+    def _UNITTEST_CFG_Y(cls, v, values, field: ModelField):
+        def factory_func():
+            return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
+
+        return eval_default_factory(cls, v, values, field, factory_func)
+
+    # Value derived from validator (aka pre/post-processor) func below or overridden by env or subclass
+    UNITTEST_CFG_Z: str = FACTORY_PROVIDED_VALUE
+
+    UNITTEST_CFG_AA: str = "UNITTEST_CFG_AA"
+    UNITTEST_CFG_AB: str = "UNITTEST_CFG_AB"
+    UNITTEST_CFG_AC: str = "UNITTEST_CFG_AC"
+    UNITTEST_CFG_AD: str = "UNITTEST_CFG_AD"
+
+    @validator("UNITTEST_CFG_Z")
+    def _UNITTEST_CFG_Z(cls, v, values, field: ModelField):
+        def factory_func():
+            return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
+
+        return eval_default_factory(cls, v, values, field, factory_func)
 
 
 class _UnitTestSubConfig(_UnitTestBaseConfig):
@@ -280,6 +273,39 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
 
     # See if this will override the validator's factory default
     UNITTEST_CFG_X = "SUB_UNITTEST_CFG_X"
+
+    # See if this will override the parent class's validator and take precedence over it
+    @validator("UNITTEST_CFG_Y")
+    def _UNITTEST_CFG_Y(cls, v, values, field: ModelField):
+        def factory_func():
+            return "SUB_UNITTEST_CFG_Y"
+
+        return eval_default_factory(cls, v, values, field, factory_func)
+
+    # See if this will override the parent class's validator, even when a different name is used (spoiler: no it won't)
+    @validator("UNITTEST_CFG_Z")
+    def _SUB_UNITTEST_CFG_Z(cls, v, values, field: ModelField):
+        def factory_func():
+            return "SUB_UNITTEST_CFG_Z"
+
+        return eval_default_factory(cls, v, values, field, factory_func)
+
+    # See if this will override parent field default value, even if field it is validating is not redeclared on subclass
+    @validator("UNITTEST_CFG_AC")
+    def _UNITTEST_CFG_AC(cls, v, values, field: ModelField):
+        def factory_func():
+            return values["UNITTEST_CFG_AA"] + ":" + values["UNITTEST_CFG_AB"]
+
+        return eval_default_factory(cls, v, values, field, factory_func)
+
+    UNITTEST_CFG_AD: str = FACTORY_PROVIDED_VALUE
+
+    @validator("UNITTEST_CFG_AD")
+    def _UNITTEST_CFG_AD(cls, v, values, field: ModelField):
+        def factory_func():
+            return values["UNITTEST_CFG_AA"] + ":" + values["UNITTEST_CFG_AB"]
+
+        return eval_default_factory(cls, v, values, field, factory_func)
 
 
 _UNITTEST_ENVS_DICTS = [
@@ -351,6 +377,22 @@ def test_new_runtime_env_overrides_config():
         # 8. Subclass-declared override will not only override parent class default, but any value provided by a
         #    validator in the parent class
         assert cfg.UNITTEST_CFG_X == "SUB_UNITTEST_CFG_X"
+        # 9. Subclasses adding their own validator to a field in a parent class, USING THE SAME NAME as the validator
+        # function in the parent class, will yield the subclass's validator value (overriding the parent validator)
+        assert cfg.UNITTEST_CFG_Y == "SUB_UNITTEST_CFG_Y"
+        # 10. Subclasses adding their own validator to a field in a parent class, USING A DIFFERENT NAME for the
+        # validator than the validator function in the parent class, will end up taking the parent validator's
+        # value as the "assigned" (i.e. assigned/overridden elsewhere) value
+        assert cfg.UNITTEST_CFG_Z == "UNITTEST_CFG_V:UNITTEST_CFG_W"
+        # 11. Subclass validators DO NOT take precedence and override parent class default IF the field is not
+        # re-declared on subclass
+        # NOTE: Could not find a way to avoid this in the eval_default_factory function, because pydantic hijacks the
+        # name of the field and replaces it with the validator name. So can't detect if the field exists on BOTH
+        # subclass and parent class to determine if its being redeclared or not.
+        assert cfg.UNITTEST_CFG_AC == "UNITTEST_CFG_AC"
+        # 12. Subclass validators DO take precedence and override parent class default IF the field IS RE-DECLARED on
+        # subclass
+        assert cfg.UNITTEST_CFG_AD == "UNITTEST_CFG_AA:UNITTEST_CFG_AB"
 
 
 @mock.patch(
@@ -417,13 +459,15 @@ def test_new_runtime_env_overrides_config_with_env_vars_in_play():
         assert "UNITTEST_CFG_O" in cfg.__fields__.keys()
         assert cfg.UNITTEST_CFG_O == "ENVVAR_UNITTEST_CFG_M:UNITTEST_CFG_N"
 
-        # 5. If validators are used as pre/post-processors, late-binding can be achieved, AND that late-bound
-        # (validated) value will take precedence over an overriding env var for the validated field
+        # 5. By default in pydantic, if validators are used as pre/post-processors, late-binding can be achieved,
+        # AND that late-bound (validated) value will take precedence over an overriding env var for the validated field
         assert "UNITTEST_CFG_R" in cfg.__fields__.keys()
         assert cfg.UNITTEST_CFG_R == "ENVVAR_UNITTEST_CFG_P:UNITTEST_CFG_Q"
 
-        # 6. Reverse the above, to allow an assigned or (env) sourced value of a field to take precedence over the
-        # late-bound result of a validator, by adding evaluation logic to the validator function
+        # 6. Circumvent the above default behavior of pydantic, to allow an assigned or (env)
+        # sourced value of a field to take precedence over the
+        # late-bound result of a validator, by having the validator delegate to our
+        # usaspending_api.config.utils.eval_default_factory function
         assert "UNITTEST_CFG_U" in cfg.__fields__.keys()
         assert cfg.UNITTEST_CFG_U == "ENVVAR_UNITTEST_CFG_U"
 
