@@ -2,10 +2,11 @@ import argparse
 import os
 import sys
 from functools import lru_cache
-from typing import Type
+from typing import Type, Union
 
 from usaspending_api.config.envs import ENV_CODE_VAR, ENVS
-from usaspending_api.config.default import DefaultConfig
+from usaspending_api.config.envs.default import DefaultConfig
+from usaspending_api.config.envs.local import LocalConfig
 
 __all__ = [
     "CONFIG",
@@ -76,4 +77,4 @@ def _load_config(env_code=None) -> Type[DefaultConfig]:
     return runtime_env["constructor"](**cli_config_overrides) if cli_config_overrides else runtime_env["constructor"]()
 
 
-CONFIG: Type[DefaultConfig] = _load_config()
+CONFIG: Type[Union[DefaultConfig, LocalConfig]] = _load_config()

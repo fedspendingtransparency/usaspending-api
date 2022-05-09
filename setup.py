@@ -33,7 +33,12 @@ if __name__ == "__main__":
     # The given parameters in this call to setuptools.setup backfill any project core metadata
     # that could not be declared statically in pyproject.toml, and so were declared as being provided
     # dynamically (by the setuptools build-system backend here) in the "dynamic" field of pyproject.toml
+    # NOTE: Some values like version and packages are being re-declared redundantly here as well as in pyproject.toml,
+    # as some package manager environments were not able to make sense of pyproject.toml
     setup(
+        name=_PROJECT_NAME,
+        version="0.0.0",
+        packages=[_PROJECT_NAME.replace("-", "_")],
         install_requires=_INSTALL_REQUIRES,
         extras_require=_EXTRAS,
     )

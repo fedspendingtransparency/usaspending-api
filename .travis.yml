@@ -35,12 +35,16 @@ env:
   - BROKER_DB_NAME=data_broker
   - DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
   - BROKER_REPO_URL=https://github.com/fedspendingtransparency/data-act-broker-backend.git
-  - BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "development"; fi;)
+  - BROKER_REPO_BRANCH=$(if [ "${TRAVIS_EVENT_TYPE}" = "pull_request" ] && [ ! -z "`git ls-remote --heads ${BROKER_REPO_URL} ${TRAVIS_BRANCH}`" ]; then echo "${TRAVIS_BRANCH}"; else echo "qat"; fi;)
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
   - GRANTS_API_KEY=${GRANTS_API_KEY}
+  - MINIO_DATA_DIR=${HOME}/Development/data/usaspending/docker/usaspending-s3  # needs to be same place docker-compose will look for it (based on .env file)
+  - MINIO_HOST=localhost
 
 before_install:
+  # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
+  - cp .env.template .env
   # Re-install elasticsearch at the right version
   - sudo systemctl stop elasticsearch
   - sudo dpkg --remove elasticsearch
@@ -74,7 +78,12 @@ before_script:
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
-  - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
+  # Ensure MinIO can run as our s3 substitute
+  - mkdir -p "${MINIO_DATA_DIR}"
+  - mkdir -p "${HOME}/.ivy2"
+  - make docker-compose-up-s3 args="-d"
+  # Build image from which to call Broker scripts
+  - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}
   - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
 
 script:

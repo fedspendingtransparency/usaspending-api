@@ -234,7 +234,7 @@ def load_delta_table(
 
 def load_es_index(
     spark: SparkSession, source_df: DataFrame, base_config: dict, index_name: str, routing: str, doc_id: str
-) -> None:
+) -> None:  # pragma: no cover -- will be used and tested eventually
     index_config = base_config.copy()
     index_config["es.resource.write"] = index_name
     index_config["es.mapping.routing"] = routing

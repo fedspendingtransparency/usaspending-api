@@ -11,10 +11,13 @@ _This API is utilized by USAspending.gov to obtain all federal spending data whi
 Ensure the following dependencies are installed and working prior to continuing:
 
 ### Requirements
-- [`Docker`](https://docs.docker.com/install/) which will handle the other application dependencies.
-- `Bash` or another Unix Shell equivalent
+- [`docker`](https://docs.docker.com/install/) which will handle the other application dependencies.
+- [`docker-compose`](https://docs.docker.com/compose/)
+- `bash` or another Unix Shell equivalent
     - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
-- [`Git`](https://git-scm.com/downloads)
+- [`git`](https://git-scm.com/downloads)
+- [`make`](https://www.gnu.org/software/make/) for running common build/test/run targets in `Makefile`
+    - _TIP: Review handy short-hand `make` targets in `Makefile` after getting familiar with the below setup_
 
 #### If not using Docker:
 > Using Docker is recommended since it provides a clean environment. Setting up your own local environment requires some technical abilities and experience with modern software tools.
@@ -29,8 +32,6 @@ Ensure the following dependencies are installed and working prior to continuing:
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
   - See [Required Python Libraries](#required-python-libraries) for an example using `pyenv`
 
-
-
 ### Cloning the Repository
 Now, navigate to the base file directory where you will store the USAspending repositories
 
@@ -38,60 +39,83 @@ Now, navigate to the base file directory where you will store the USAspending re
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
 
+### Create Your `.env` File
+Copy the template `.env` file with comment local runtime environment variables defined. Change as needed for your environment. _This file is git-ignored and will not be committed by git if changed._
+
+```shell
+$ cp .env.template .env
+```
+    
+### Build `usaspending-backend` Docker Image
+_This image is used as the basis for running application components and running containerized setup services._
+
+```shell
+$ docker-compose --profile usaspending build
+```
+
+_:bangbang: Re-run this command if any python package dependencies change (in `requirements/requirements-app.txt`), since they are baked into the docker image at build-time._
+
 ### Database Setup
-There are three documented options for setting up a local database in order to run the API:
+A postgres database is required to run the app. You can run it in a `postgres` docker container (preferred), or run a PostgreSQL server on your local machine. In either case, it will be empty until data is loaded.
 
-1. **Local Empty DB**. Use your own local postgres database for the API to use.
-2. **Containerized Empty DB**. Create an empty directory on your localhost where all the database files will persist and use the docker-compose file to bring up a containerized postgres database.
-3. **Local Populated DB**. Download either the _whole_ database or a database subset from the USAspending website.
+- :warning: If running your own PostgreSQL server be sure to:
+    1. Have a DB named `data_store_api`
+    2. A superuser role (user), e.g. `ALTER ROLE <<role/user you created>> WITH SUPERUSER;`
+    3. Cross-check your `.env` or `.envrc` files if used to be sure it references your DBs user, password, host, and port where needed
 
-#### Option 1: Using a Locally Hosted Postgres Database
-Create a Local postgres database called 'data_store_api' and either create a new username and password for the database or use all the defaults. For help, consult:
-- [Postgres Setup Help](https://medium.com/coding-blocks/creating-user-database-and-adding-access-on-postgresql-8bfcd2f4a91e)
+##### Start the Postgres DB Container
+_If not using your own local install..._
 
-Make sure to grant whatever user you created for the data_store api database superuser permissions or some scripts will not work:
+```shell
+$ docker-compose --profile usaspending up usaspending-db
+```
+... will create and run a Postgres database.
 
-    postgres=# ALTER ROLE <<role/user you created>> WITH SUPERUSER;
+##### Bring DB Schema Up-to-Date
 
-#### Option 2: Using the Docker Compose Postgres Database
-See below for basic setup instructions. For help with Docker Compose:
-- [Docker Compose](https://docs.docker.com/compose/)
+- `docker-compose run --rm usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
 
+- `docker-compose run --rm usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
 
-##### Database Setup and Initialization with Docker Compose
+##### Seeding and Loading Database Data
+_To just get essential reference data, you can run:_
 
-:warning: _**None of these commands will rebuild the Docker images to bake in new code, config, or dependencies!** Use `docker-compose build` if you make changes to the code or config and want to rebuild the image before running containers with `up` steps._
+- `docker-compose run --rm usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
-- **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
+_To download a full production snapshot of the database or a subset of the database and loading it into PostgreSQL, use the `pg_restore` tool as described here: [USAspending Database Download](https://files.usaspending.gov/database_download/)_
 
-    - `docker-compose up usaspending-db` will create and run a Postgres database.
+- Recreate matviews with the command documented in the previous section if this is done
 
-    - `docker-compose run --rm usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
+_**Executing individual data-loaders** to load in data is also possible, but requires more familiarity with those ad-hoc scripts and commands, and also requires an external data source (DATA Broker DB, or external file, etc.) from which to load the data._
 
-    - `docker-compose run --rm usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
-
-    - `docker-compose run --rm usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
-
-##### Manual Database Setup
-- `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.
-
-#### Option 3: Downloading the database or a subset of the database and loading it into PostgreSQL
-
-For further instructions on how to download, use, and setup the database using a subset of our data please go to:
-
-[USAspending Database Download](https://files.usaspending.gov/database_download/)
+- For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
+- For details on how our data loaders modify incoming data, see [data_reformatting.md](data_reformatting.md).
 
 ### Elasticsearch Setup
 Some of the API endpoints reach into Elasticsearch for data.
 
-- `docker-compose up usaspending-es` will create and start a single-node Elasticsearch cluster, using the `ES_CLUSTER_DIR` specified in the `.env` configuration file. We recommend using a folder outside of the usaspending-api project directory so it does not get copied to other containers.
+```shell
+$ docker-compose --profile usaspending up usaspending-es`
+```
+... will create and start a single-node Elasticsearch cluster as a docker container with data persisted to a docker volume.
 
 - The cluster should be reachable via at http://localhost:9200 ("You Know, for Search").
 
 - Optionally, to see log output, use `docker-compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
+##### Generate Elasticsearch Indexes
+The following will generate two base indexes, one for transactions and one for awards:
+ 
+```shell
+$ docker-compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name 01-26-2022-transactions --load-type transaction
+$ docker-compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name 01-26-2022-awards --load-type award
+```  
+
 ## Running the API
-`docker-compose up usaspending-api`
+```shell
+docker-compose --profile usaspending up usaspending-api
+```
+... will bring up the Django app for the RESTful API
 
 - You can update environment variables in `settings.py` (buckets, elasticsearch, local paths) and they will be mounted and used when you run this.
 
@@ -101,19 +125,11 @@ Note: if the code was run outside of Docker then compiled Python files will pote
 
     find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
 
-### Using the API
+#### Using the API
 
 In your local development environment, available API endpoints may be found at `http://localhost:8000/docs/endpoints`
 
 Deployed production API endpoints and docs are found by following links here: `https://api.usaspending.gov`
-
-## Loading Data
-
-_Note: it is possible to run ad-hoc commands out of a Docker container once you get the hang of it, see the comments in the Dockerfile._
-
-For details on loading reference data, DATA Act Broker submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
-
-For details on how our data loaders modify incoming data, see [data_reformatting.md](data_reformatting.md).
 
 ## Running Tests
 
@@ -154,6 +170,10 @@ Your prompt should then look as below to show you are _in_ the virtual environme
     (usaspending-api) $ pip install -r requirements/requirements.txt
 
 #### Environment Variables
+
+##### `.envrc` File
+_[direnv](https://direnv.net/) is a shell extension that automatically runs shell commands in a `.envrc` file (commonly env var `export` commands) when entering or exiting a folder with that file_
+
 Create a `.envrc` file in the repo root, which will be ignored by git. Change credentials and ports as-needed for your local dev environment.
 
 ```bash
@@ -167,6 +187,11 @@ If `direnv` does not pick this up after saving the file, type
     $ direnv allow
 
 _Alternatively, you could skip using `direnv` and just export these variables in your shell environment._
+
+##### `.env` File
+Declaring `NAME=VALUE` variables in a git-ignored `.env` file is a common way to manage environment variables in a declarative file. Certain tools, like `docker-compose`, will read and honor these variables.
+
+If you copied `.env.template` to `.env`, then review any variables you want to change to be consistent with your local runtime environment.
 
 ### Including Broker Integration Tests
 Some automated integration tests run against a [Broker](https://github.com/fedspendingtransparency/data-act-broker-backend) database. If certain dependencies to run such integration tests are not satisfied, those tests will bail out and be marked as _Skipped_.
@@ -184,7 +209,7 @@ To satisfy these dependencies and include execution of these tests, do the follo
 1. Ensure you have the `DATA_BROKER_DATABASE_URL` environment variable set, and it points to what will be a live PostgreSQL server (no database required) at the time tests are run.
     1. _WARNING: If this is set at all, then ALL above dependencies must be met or ALL tests will fail (Django will try this connection on ALL tests' run)_
     1. This DB could be one you always have running in a local Postgres instance, or one you spin up in a Docker container just before tests are run
-1. If invoking `pytest` within a docker container (e.g. using the `usaspending-test` container), you _must_ mount the host's docker socket. This is declared already in the `docker-compose.yaml` file services, but would be done manually with: `-v /var/run/docker.sock:/var/run/docker.sock`
+1. If invoking `pytest` within a docker container (e.g. using the `usaspending-test` container), you _must_ mount the host's docker socket. This is declared already in the `docker-compose.yml` file services, but would be done manually with: `-v /var/run/docker.sock:/var/run/docker.sock`
 
 _NOTE: Broker source code should be re-fetched and image rebuilt to ensure latest integration is tested_
 
@@ -194,7 +219,7 @@ Re-running the test suite using `pytest -rs` with these dependencies satisfied s
 
 _From within a container_
 
-(NOTE: `DATA_BROKER_DATABASE_URL` is set in the `docker-compose.yaml` file (and could pick up `.env` values, if set)
+(NOTE: `DATA_BROKER_DATABASE_URL` is set in the `docker-compose.yml` file (and could pick up `.env` values, if set)
 ```bash
 (usaspending-api) $ docker-compose run --rm usaspending-test pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration
 ```

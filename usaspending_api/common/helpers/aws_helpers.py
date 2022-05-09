@@ -29,6 +29,9 @@ def get_aws_credentials(
     # libraries, unless needed
     import boto3
 
+    if profile == "":
+        profile = None
+
     aws_creds = boto3.Session(
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_key,

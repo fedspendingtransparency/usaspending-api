@@ -1,3 +1,4 @@
+from django.utils.decorators import method_decorator
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
@@ -5,8 +6,10 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.recipient.models import RecipientAgency
+from usaspending_api.common.api_versioning import deprecated
 
 
+@method_decorator(deprecated, name="get")
 class RecipientList(AgencyBase):
     """
     Obtain the count of recipients for a specific agency in a single
