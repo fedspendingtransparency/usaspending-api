@@ -12,7 +12,7 @@ from usaspending_api.common.etl.spark import (
     merge_delta_table,
 )
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_jdbc_url, get_jvm_logger
-from usaspending_api.etl.management.commands.create_delta_table import SQL_MAPPING
+from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
 from pyspark.sql import SparkSession
 
@@ -31,7 +31,7 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument("--destination-table", type=str, required=True, help="", choices=list(SQL_MAPPING.keys()))
+        parser.add_argument("--destination-table", type=str, required=True, help="", choices=list(TABLE_SPEC.keys()))
 
         parser.add_argument(
             "--full-reload",
@@ -48,6 +48,7 @@ class Command(BaseCommand):
             # See comment below about old date and time values cannot parsed without these
             "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+            "spark.sql.warehouse.dir": "/project/warehouse_dir",
         }
         spark = configure_spark_session(**extra_conf)  # type: SparkSession
 
@@ -62,14 +63,15 @@ class Command(BaseCommand):
         """
         )
 
-        spark.sql("use bronze")
+        spark.sql(f"create database if not exists bronze;")
+        spark.sql("use bronze;")
 
         # Resolve Parameters
         destination_table = options["destination_table"]
         full_reload = options["full_reload"]
-        table_spec = SQL_MAPPING[destination_table]
+        table_spec = TABLE_SPEC[destination_table]
 
-        source_table = table_spec["broker_table"]
+        source_table = table_spec["source_table"]
         external_load_date_key = table_spec["external_load_date_key"]
         partition_column = table_spec["partition_column"]
         merge_column = table_spec["merge_column"]
