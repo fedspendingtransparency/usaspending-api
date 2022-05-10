@@ -54,28 +54,22 @@ class Command(BaseCommand):
 
         # Setup Logger
         logger = get_jvm_logger(spark)
-        logger.info("PySpark Job started!")
-        logger.info(
-            f"""
-        @       Python Version: {sys.version}
-        @       Spark Version: {spark.version}
-        @       Hadoop Version: {spark.sparkContext._gateway.jvm.org.apache.hadoop.util.VersionInfo.getVersion()}
-        """
-        )
-
-        spark.sql(f"create database if not exists bronze;")
-        spark.sql("use bronze;")
 
         # Resolve Parameters
         destination_table = options["destination_table"]
         full_reload = options["full_reload"]
-        table_spec = TABLE_SPEC[destination_table]
 
+        table_spec = TABLE_SPEC[destination_table]
+        destination_database = table_spec["destination_database"]
         source_table = table_spec["source_table"]
         external_load_date_key = table_spec["external_load_date_key"]
         partition_column = table_spec["partition_column"]
         merge_column = table_spec["merge_column"]
         last_update_column = table_spec["last_update_column"]
+
+        # Set the database that will be interacted with for all Delta Lake table Spark-based activity
+        logger.info(f"Using Spark Database: {destination_database}")
+        spark.sql(f"use {destination_database};")
 
         jdbc_url = os.environ.get(JDBC_URL_KEY)
 
@@ -114,6 +108,7 @@ class Command(BaseCommand):
         if not full_reload:
             load_delta_table(spark, source_assistance_transaction_df, f"{destination_table}", True)
             execute_sql_simple(f"DROP VIEW {source_entity}")
+            # TODO - update external load date
         else:
             merge_delta_table(
                 spark,

@@ -21,6 +21,7 @@ TABLE_SPEC = {
         "schema_sql_string": broker_subaward_sql_string,
         "source_table": "subaward",
         "source_database": "",
+        "destination_database": "raw",
         "external_load_date_key": "broker_subaward_delta",
         "partition_column": "id",
         "partition_column_type": "",
@@ -32,6 +33,7 @@ TABLE_SPEC = {
         "schema_sql_string": financial_accounts_by_awards_sql_string,
         "source_table": "financial_accounts_by_awards",
         "source_database": "",
+        "destination_database": "raw",
         "external_load_date_key": "financial_accounts_by_awards_delta",
         "partition_column": "reporting_period_end",
         "partition_column_type": "",
@@ -43,6 +45,7 @@ TABLE_SPEC = {
         "schema_sql_string": sam_recipient_sql_string,
         "source_table": "sam_recipient",
         "source_database": "",
+        "destination_database": "raw",
         "external_load_date_key": None,
         "partition_column": "sam_recipient_id",
         "partition_column_type": "",
@@ -54,6 +57,7 @@ TABLE_SPEC = {
         "schema_sql_string": source_assististance_transaction_sql_string,
         "source_table": "published_award_financial_assistance",
         "source_database": "",
+        "destination_database": "raw",
         "external_load_date_key": "source_assistance_transaction_delta",
         "partition_column": "published_award_financial_assistance_id",
         "partition_column_type": "",
@@ -65,6 +69,7 @@ TABLE_SPEC = {
         "schema_sql_string": source_procurement_transaction_sql_string,
         "source_table": "detached_award_procurement",
         "source_database": "",
+        "destination_database": "raw",
         "external_load_date_key": "source_procurement_transaction_delta",
         "partition_column": "detatched_award_procurement_id",
         "partition_column_type": "",
@@ -73,11 +78,6 @@ TABLE_SPEC = {
         "force_full_reload": False
     },
 }
-
-# TODO - Read this from Config
-# TODO - Rename to more formal names (RAW/INTERMEDIATE/REPORTING)
-DESTINATION_SCHEMA = "bronze"
-
 
 class Command(BaseCommand):
 
@@ -102,25 +102,16 @@ class Command(BaseCommand):
 
         # Setup Logger
         logger = get_jvm_logger(spark)
-        logger.info("PySpark Job started!")
-        logger.info(
-            f"""
-        @       Python Version: {sys.version}
-        @       Spark Version: {spark.version}
-        @       Hadoop Version: {spark.sparkContext._gateway.jvm.org.apache.hadoop.util.VersionInfo.getVersion()}
-        """
-        )
-
+        
         # Resolve Parameters
-        bronze_schema = CONFIG.BRONZE_SCHEMA
         destination_table = options["destination_table"]
+        table_spec = TABLE_SPEC[destination_table]
+        destination_database = table_spec["destination_database"]
 
-        # Setup DB Schema
-        if bronze_schema:
-            # Set the database that will be interacted with for all Delta Lake table Spark-based activity
-            logger.info(f"Using Spark Database: {bronze_schema}")
-            spark.sql(f"create database if not exists {bronze_schema};")
-            spark.sql(f"use {bronze_schema};")
+        # Set the database that will be interacted with for all Delta Lake table Spark-based activity
+        logger.info(f"Using Spark Database: {destination_database}")
+        spark.sql(f"create database if not exists {destination_database};")
+        spark.sql(f"use {destination_database};")
 
         # Define Schema Using CREATE TABLE AS command
         spark.sql(
@@ -130,7 +121,5 @@ class Command(BaseCommand):
                 AWS_S3_OUTPUT_PATH=CONFIG.AWS_S3_OUTPUT_PATH,
             )
         )
-
-        # TODO - Write out updated external load date
 
         spark.stop()
