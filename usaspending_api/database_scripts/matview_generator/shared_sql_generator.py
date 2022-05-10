@@ -15,7 +15,7 @@ TEMPLATE = {
     "refresh_matview": "REFRESH MATERIALIZED VIEW {}{} WITH DATA;",
     "empty_matview": "REFRESH MATERIALIZED VIEW {} WITH NO DATA;",
     "analyze": "ANALYZE VERBOSE {};",
-    "vacuum": "VACUUM ANALYZE VERBOSE {};",
+    "vacuum": "VACUUM VERBOSE ANALYZE {};",
     "create_index": "CREATE {}INDEX {} ON {} USING {}({}){}{};",
     "create_stats": "CREATE STATISTICS {} ON {} FROM {};",
     "rename_index": "ALTER INDEX {}{} RENAME TO {};",

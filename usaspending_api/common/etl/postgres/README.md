@@ -38,7 +38,7 @@ the number of rows updated.
 Taken from actual code, this snippet will synchronize a local `broker_subaward` table
 with the contents of a remote, dblinked `subaward` table.
 ```
-from usaspending_api.common.etl import ETLTable, operations
+from usaspending_api.common.etl.postgres import ETLTable, operations
 
 
 # Establish some ETL tables.

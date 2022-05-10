@@ -3,7 +3,8 @@
 
 from psycopg2.sql import SQL, Identifier
 from typing import List
-from usaspending_api.common.etl import ETLObjectBase, ETLWritableObjectBase, ETLTemporaryTable, primatives
+from usaspending_api.common.etl.postgres import ETLObjectBase, ETLWritableObjectBase, ETLTemporaryTable
+from usaspending_api.common.etl.postgres import primatives
 from usaspending_api.common.helpers import sql_helpers
 
 

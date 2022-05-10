@@ -53,7 +53,7 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     grandchildren = execute_sql_to_ordered_dictionary(
         grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column)
     )
-    covid_defcs = DisasterEmergencyFundCode.objects.filter(group_name="covid_19").values_list("code", flat=True)
+    defcs = DisasterEmergencyFundCode.objects.all().values_list("code", flat=True)
 
     child_award_ids = []
     grandchild_award_ids = []
@@ -74,7 +74,7 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     child_total_outlay = 0
     child_total_obligations = 0
     for row in child_results:
-        if row["disaster_emergency_fund_code"] in covid_defcs:
+        if row["disaster_emergency_fund_code"] in defcs:
             child_total_outlay += row["total_outlay"]
             child_total_obligations += row["obligated_amount"]
         child_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
@@ -86,7 +86,7 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     grandchild_total_outlay = 0
     grandchild_total_obligations = 0
     for row in grandchild_results:
-        if row["disaster_emergency_fund_code"] in covid_defcs:
+        if row["disaster_emergency_fund_code"] in defcs:
             grandchild_total_outlay += row["total_outlay"]
             grandchild_total_obligations += row["obligated_amount"]
         grandchild_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
