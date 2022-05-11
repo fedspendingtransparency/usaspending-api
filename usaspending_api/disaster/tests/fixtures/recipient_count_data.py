@@ -18,7 +18,11 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
         "awards.TransactionNormalized", award_id=100, action_date="2022-05-01", is_fpds=True
     )
     mommy.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="fpds")
-    _normal_faba(mommy.make("awards.Award", id=100, latest_transaction=transaction_normalized, type="A"))
+    mommy.make("recipient.RecipientLookup", recipient_hash="9427d7e5-3e8f-d0c0-3c58-2adc322ce489", duns="fpds")
+    mommy.make(
+        "recipient.RecipientProfile", recipient_hash="9427d7e5-3e8f-d0c0-3c58-2adc322ce489", recipient_unique_id="fpds"
+    )
+    _normal_faba(mommy.make("awards.Award", id=100, latest_transaction=transaction_normalized, type="A", is_fpds=True))
 
 
 @pytest.fixture

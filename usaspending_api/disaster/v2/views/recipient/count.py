@@ -27,5 +27,4 @@ class RecipientCountViewSet(FabaOutlayMixin, AwardTypeMixin, DisasterBase):
         search.aggs.bucket("recipient_count", create_count_aggregation("recipient_agg_key"))
         results = search.handle_execute()
         recipients = results.to_dict().get("aggregations", {}).get("recipient_count", {}).get("value", 0)
-
         return Response({"count": recipients})
