@@ -64,13 +64,20 @@ See below for basic setup instructions. For help with Docker Compose:
 
 - **If you run a local database**, set `POSTGRES_HOST` in `.env` to `host.docker.internal`. `POSTGRES_PORT` should be changed if it isn't 5432.
 
-    - `docker-compose up usaspending-db` will create and run a Postgres database.
+    - Review the `POSTGRES_CLIENT_VERSION` and `POSTGRES_DB_VERSION` in `.env` to verify the version of PostgreSQL db and PostgreSQL client to use.
+
+    - `docker-compose up -d usaspending-db` will create and run a Postgres database.
 
     - `docker-compose run --rm usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
 
     - `docker-compose run --rm usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
     - `docker-compose run --rm usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
+
+    - The `docker-compose-files` directory can be used to add files, such as and ad-hoc sql files or pg_dumps, to be used against the database. For example, if the database subset is downloaded and unzipped into the directory `./docker-compose-files/pruned_data_store_api_dump` from the [USAspending Database Download](https://files.usaspending.gov/database_download/) page, the following can be run to populate the database: 
+       -  `docker exec usaspending-db /bin/bash -c "pg_restore -O -U usaspending -h 127.0.0.1 -d data_store_api -j 6 --verbose --exit-on-error /docker-compose-files/pruned_data_store_api_dump/`
+
+    - The PostgreSQL data volume will persist unless a `docker-compose down -v` or a `docker volume rm usaspending-api_local_pg_data` is run, with the former deleting any volume created by `docker-compose` and the latter deleting only the PostgreSQL volume.
 
 ##### Manual Database Setup
 - `docker-compose.yaml` contains the shell commands necessary to set up the database manually, if you prefer to have a more custom environment.

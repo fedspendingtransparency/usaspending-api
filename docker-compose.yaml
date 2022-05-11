@@ -8,20 +8,21 @@ volumes:
 
 # See run instructions in accompanying Dockerfile
 services:
-
   usaspending-db:
     container_name: usaspending-db
-    image: postgres:10.13-alpine
+    image: postgres:${POSTGRES_DB_VERSION}-alpine
     volumes:
       - type: volume
         source: local_pg_data
         target: /var/lib/postgresql/data
+      - ./docker-compose-files:/docker-compose-files
     ports:
       - ${POSTGRES_PORT}:5432
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: data_store_api
+    restart: always
 
   usaspending-manage:
     build: .
@@ -86,7 +87,10 @@ services:
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 
   usaspending-api:
-    build: .
+    build:
+      context: .
+      args:
+        postgres_version: ${POSTGRES_CLIENT_VERSION}
     volumes:
       - .:/dockermount
     ports:
@@ -94,6 +98,8 @@ services:
     depends_on:
       - usaspending-db
       - usaspending-es
+    links:
+      - usaspending-db:usaspending-db
     restart: on-failure:3 # 3 max attempt, and then it will stop restarting
     # Must wait on postgres db to be up (~9s)
     command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"

@@ -12,16 +12,27 @@
 
 FROM centos:7
 
+ARG postgres_version=10
+
 WORKDIR /dockermount
 
 RUN yum -y update && yum clean all
 # sqlite-devel added as prerequisite for coverage python lib, used by pytest-cov plugin
-RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel sqlite-devel
+RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel sqlite-devel wget
 RUN yum -y groupinstall "Development Tools"
 
-##### Install PostgreSQL 10 client (psql)
-RUN yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-RUN yum -y install postgresql10
+##### Install PostgreSQL Repo -- SSL
+RUN yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm || true
+
+##### Install PostgreSQL Repo -- no SSL
+RUN if [[ ! -f /etc/yum.repos.d/pgdg-redhat-all.repo ]]; then \
+    wget --no-check-certificate https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    rpm -Uvh pgdg-redhat-repo-latest.noarch.rpm && \
+    rm pgdg-redhat-repo-latest.noarch.rpm && \
+    yum-config-manager --save --setopt=pg*.sslverify=false && \
+    yum -y update; \
+    fi
+RUN yum -y install postgresql${postgres_version}
 
 ##### Building python 3.7
 WORKDIR /usr/src

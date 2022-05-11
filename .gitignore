@@ -38,3 +38,6 @@ prof/
 .lprof
 .pytest_cache/*
 pip-selfcheck.json
+
+# docker compose
+docker-compose-files/*
