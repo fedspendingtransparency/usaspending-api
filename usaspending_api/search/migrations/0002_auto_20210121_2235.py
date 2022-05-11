@@ -17,8 +17,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TransactionSearch',
             fields=[
-                ('transaction', models.OneToOneField(on_delete=django.db.models.deletion.DO_NOTHING, primary_key=True, serialize=False, to='awards.TransactionNormalized')),
-                ('award', models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='awards.Award')),
+                ('transaction', models.BigIntegerField(primary_key=True, serialize=False, db_column="transaction_id")),
+                ('award', models.BigIntegerField(null=True, db_column="award_id")),
                 ('modification_number', models.TextField(null=True)),
                 ('detached_award_proc_unique', models.TextField(null=True)),
                 ('afa_generated_unique', models.TextField(null=True)),
@@ -112,6 +112,41 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'transaction_search',
             },
+        ),
+        # Trick Django into believing this is a one-to-one field for purposes of using the ORM,
+        # but avoid the headache that comes with foreign keys
+        migrations.RunSQL(
+            sql="",
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='transactionsearch',
+                    name='transaction',
+                    field=models.OneToOneField(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        primary_key=True,
+                        serialize=False,
+                        to='awards.TransactionNormalized',
+                    ),
+                )
+            ]
+        ),
+        # Trick Django into believing this is a foreign key for purposes of using the ORM,
+        # but avoid the headache that comes with foreign keys
+        migrations.RunSQL(
+            sql="",
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='transactionsearch',
+                    name='award',
+                    field=models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to='awards.Award',
+                    )
+                )
+            ]
         ),
         migrations.DeleteModel(
             name='UniversalTransactionView',
