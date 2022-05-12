@@ -79,11 +79,11 @@ def get_incremental_load_start_datetime():
 def _get_ids(sql, ids, afa_ids, start_datetime, end_datetime):
     params = []
     if ids and afa_ids:
-        sql += " and (published_award_financial_assistance_id in %s or afa_generated_unique in %s)"
+        sql += " and (published_fabs_id in %s or afa_generated_unique in %s)"
         params.append(tuple(ids))
         params.append(tuple(afa_ids))
     elif ids:
-        sql += " and published_award_financial_assistance_id in %s"
+        sql += " and published_fabs_id in %s"
         params.append(tuple(ids))
     elif afa_ids:
         sql += " and afa_generated_unique in %s"
@@ -101,7 +101,7 @@ def _get_ids(sql, ids, afa_ids, start_datetime, end_datetime):
 
 def get_fabs_transaction_ids(ids, afa_ids, start_datetime, end_datetime):
     sql = """
-        select  published_award_financial_assistance_id
+        select  published_fabs_id
         from    source_assistance_transaction
         where   is_active is true
     """
@@ -138,8 +138,8 @@ class Command(BaseCommand):
             metavar="ID",
             nargs="+",
             type=int,
-            help="A list of Broker transaction IDs (published_award_financial_assistance_id) to "
-            "reload. IDs provided here will be combined with any --afa-id-file and --afa-ids "
+            help="A list of Broker transaction IDs (published_fabs_id) to reload. IDs "
+            "provided here will be combined with any --afa-id-file and --afa-ids "
             "IDs provided. Nonexistent IDs will be ignored.",
         )
 

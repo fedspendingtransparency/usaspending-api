@@ -9,7 +9,7 @@ class SourceAssistanceTransaction(models.Model):
 
     Model contains a 100% duplicate copy of *active*
     award modifications (aka transactions) stored in
-    published_award_financial_assistance from a Broker database.
+    published_fabs from a Broker database.
 
     NO DATA MANIPULATION SHOULD BE PERFORMED BY DATA ETL
 
@@ -133,4 +133,4 @@ class SourceAssistanceTransaction(models.Model):
 
     @property
     def broker_source_table(self):
-        return "published_award_financial_assistance"
+        return "published_fabs"

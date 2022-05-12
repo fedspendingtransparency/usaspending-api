@@ -3174,7 +3174,7 @@
       "ussgl480100_undelivered_or_fyb": "4500"
     }
   ],
-  "SELECT * FROM published_award_financial_assistance WHERE true AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) >= %s AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) <= %s AND awarding_agency_code = %s": [
+  "SELECT * FROM published_fabs WHERE true AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) >= %s AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) <= %s AND awarding_agency_code = %s": [
     {
       "legal_entity_zip_last4": "1",
       "legal_entity_foreign_posta": null,
