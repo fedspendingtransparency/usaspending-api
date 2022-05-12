@@ -100,7 +100,8 @@ class Command(BaseCommand):
             "spark.sql.warehouse.dir": "/project/warehouse_dir"
         }
         spark = get_active_spark_context()
-        spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
+        if not spark:
+            spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
         logger = get_jvm_logger(spark)
