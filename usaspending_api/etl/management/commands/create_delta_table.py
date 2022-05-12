@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from usaspending_api.awards.delta_models.broker_subaward import broker_subaward_sql_string
 from usaspending_api.awards.delta_models.financial_accounts_by_awards import financial_accounts_by_awards_sql_string
 from usaspending_api.config import CONFIG
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_jvm_logger
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_jvm_logger, get_active_spark_context
 from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_sql_string
 from usaspending_api.transactions.delta_models.source_assistance_transaction import (
     source_assististance_transaction_sql_string,
@@ -99,7 +99,8 @@ class Command(BaseCommand):
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
             "spark.sql.warehouse.dir": "/project/warehouse_dir"
         }
-        spark = configure_spark_session(**extra_conf)  # type: SparkSession
+        spark = get_active_spark_context
+        spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
         logger = get_jvm_logger(spark)
