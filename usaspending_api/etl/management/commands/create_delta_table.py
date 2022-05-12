@@ -51,7 +51,7 @@ TABLE_SPEC = {
         "partition_column_type": "",
         "merge_column": None,
         "last_update_column": None,
-        "force_full_reload": True 
+        "force_full_reload": True
     },
     "source_assistance_transaction": {
         "schema_sql_string": source_assististance_transaction_sql_string,
@@ -79,6 +79,7 @@ TABLE_SPEC = {
     },
 }
 
+
 class Command(BaseCommand):
 
     help = """
@@ -102,7 +103,7 @@ class Command(BaseCommand):
 
         # Setup Logger
         logger = get_jvm_logger(spark)
-        
+
         # Resolve Parameters
         destination_table = options["destination_table"]
         table_spec = TABLE_SPEC[destination_table]
