@@ -99,7 +99,7 @@ class Command(BaseCommand):
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
             "spark.sql.warehouse.dir": "/project/warehouse_dir"
         }
-        spark = get_active_spark_context
+        spark = get_active_spark_context()
         spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
