@@ -164,6 +164,7 @@ class RecipientLookup(models.Model):
             PartialIndex(fields=["parent_uei"], unique=False, where=PQ(parent_uei__isnull=False)),
         ]
 
+
 class RecipientAgency(models.Model):
     id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False)
     fiscal_year = models.IntegerField(db_index=True)
