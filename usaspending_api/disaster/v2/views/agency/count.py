@@ -21,7 +21,7 @@ class AgencyCountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         search = AwardSearch().filter(filter_query)
         search.update_from_dict({"size": 0})
-        search.aggs.bucket("agency_count", create_count_aggregation("funding_toptier_agency_code.keyword"))
+        search.aggs.bucket("agency_count", create_count_aggregation("funding_toptier_agency_agg_key"))
         results = search.handle_execute()
         agencies = results.to_dict().get("aggregations", {}).get("agency_count", {}).get("value", 0)
         return Response({"count": agencies})

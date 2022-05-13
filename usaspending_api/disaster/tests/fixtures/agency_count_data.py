@@ -59,5 +59,9 @@ def toptier_agency(id):
 
 def award_with_toptier_agency(id):
     agency = mommy.make("references.Agency", toptier_agency_id=id)
-
-    return mommy.make("awards.Award", type="A", funding_agency=agency, total_loan_value=0)
+    a1 = mommy.make("awards.Award", type="A", funding_agency=agency, total_loan_value=0)
+    mommy.make(
+        "awards.TransactionNormalized", id=10, award=a1, action_date="2020-04-01", is_fpds=True, funding_agency=agency
+    )
+    mommy.make("awards.TransactionFPDS", transaction_id=10)
+    return a1
