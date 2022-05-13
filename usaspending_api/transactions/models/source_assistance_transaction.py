@@ -16,9 +16,7 @@ class SourceAssistanceTransaction(models.Model):
     Put non-null fields on the top, all other fields sort alphabetically
     """
 
-    published_fabs_id = models.IntegerField(
-        primary_key=True, help_text="surrogate primary key defined in Broker"
-    )
+    published_fabs_id = models.IntegerField(primary_key=True, help_text="surrogate primary key defined in Broker")
     afa_generated_unique = models.TextField(unique=True, help_text="natural key defined in Broker")
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)

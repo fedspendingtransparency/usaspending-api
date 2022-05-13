@@ -16,9 +16,7 @@ def delete_stale_fabs(ids_to_delete):
     if not ids_to_delete:
         return []
 
-    transactions = TransactionNormalized.objects.filter(
-        assistance_data__published_fabs_id__in=ids_to_delete
-    )
+    transactions = TransactionNormalized.objects.filter(assistance_data__published_fabs_id__in=ids_to_delete)
     update_and_delete_award_ids = list(set(transactions.values_list("award_id", flat=True)))
     delete_transaction_ids = [delete_result[0] for delete_result in transactions.values_list("id")]
     delete_transaction_str_ids = ",".join([str(deleted_result) for deleted_result in delete_transaction_ids])
