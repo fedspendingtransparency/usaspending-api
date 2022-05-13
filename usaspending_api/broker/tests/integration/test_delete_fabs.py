@@ -21,7 +21,7 @@ def test_delete_fabs_success():
     mommy.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
     mommy.make(TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2")
     mommy.make(TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2")
-    mommy.make(TransactionFABS, transaction_id=2, published_fabs_assistance_id=302, unique_award_key="TEST_AWARD_2")
+    mommy.make(TransactionFABS, transaction_id=2, published_fabs_id=302, unique_award_key="TEST_AWARD_2")
     mommy.make(TransactionFABS, transaction_id=3, published_fabs_id=303, unique_award_key="TEST_AWARD_2")
 
     # Award/Transaction untouched at all as control
