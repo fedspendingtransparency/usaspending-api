@@ -74,10 +74,11 @@ def eval_default_factory(
 
     if not is_override and default_value is not None and default_value not in CONFIG_VAR_PLACEHOLDERS:
         raise ValueError(
-            "This field, which is tied to a default-factory-based validator, must have its default value set to None,"
-            "or to one of the CONFIG_VAR_PLACEHOLDERS. This is so that when a value is sourced or assigned "
-            "elsewhere for this field, it can easily be identified as a non-default value, and will take "
-            "precedence as the new value."
+            f"The \"{config_var.name}\" field, which is tied to a default-factory-based validator, must have its "
+            f"default value set to None, "
+            f"or to one of the CONFIG_VAR_PLACEHOLDERS. This is so that when a value is sourced or assigned "
+            f"elsewhere for this field, it can easily be identified as a non-default value, and will take "
+            f"precedence as the new value."
         )
 
     if assigned_or_sourced_value and assigned_or_sourced_value not in CONFIG_VAR_PLACEHOLDERS:
@@ -97,3 +98,39 @@ def eval_default_factory(
     #       value for the field in question, AND the field in question is annotated, the other fields must be
     #       [type] annotated as well for their values to be accessible, or an error will raise.
     return factory_func()
+
+
+def eval_default_factory_from_root_validator(
+    config_class: TBaseSettings,
+    configured_vars: Dict[str, Any],
+    config_var_name: str,
+    factory_func: Callable,
+):
+    """Wrapper to allow for the same eval logic when coming from a pydantic root_validator,
+    which provides a different set of args.
+
+    See Also: eval_default_factory
+    """
+    # Get any parent config class validators
+    overridable_config_base_classes = [
+        bc for bc in config_class.__bases__ if issubclass(bc, BaseSettings) and "__fields__" in dir(bc)
+    ]
+    base_class_validated_fields = {k for bc in overridable_config_base_classes for k in bc.__validators__.keys()}
+    is_validated_in_base_class = config_var_name in base_class_validated_fields
+
+    if is_validated_in_base_class:
+        raise ValueError(
+            f"root_validators cannot override validators. The \"{config_var_name}\" field, which is tied to a "
+            f"default-factory-based root_validator, is not supported for root_validator in a subclass because its "
+            f"value is produced from a parent class validator. Whether the assigned value comes from the "
+            f"environment or from the parent validator cannot be distinguished. Consider making the parent validator "
+            f"into a root_validator and override that."
+        )
+
+    assigned_or_sourced_value = configured_vars[config_var_name]
+    config_var = config_class.__fields__[config_var_name]
+    produced_value = eval_default_factory(
+        config_class, assigned_or_sourced_value, configured_vars, config_var, factory_func
+    )
+    configured_vars[config_var_name] = produced_value
+    return configured_vars
