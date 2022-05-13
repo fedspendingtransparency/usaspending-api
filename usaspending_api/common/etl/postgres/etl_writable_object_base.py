@@ -1,8 +1,8 @@
 from abc import abstractmethod, ABCMeta
 from django.utils.functional import cached_property
 from typing import List, Optional
-from usaspending_api.common.etl.etl_object_base import ETLObjectBase
-from usaspending_api.common.etl.primatives import ColumnOverrides, DataTypes, KeyColumns
+from usaspending_api.common.etl.postgres.etl_object_base import ETLObjectBase
+from usaspending_api.common.etl.postgres.primatives import ColumnOverrides, DataTypes, KeyColumns
 
 
 class ETLWritableObjectBase(ETLObjectBase, metaclass=ABCMeta):

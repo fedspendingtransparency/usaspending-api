@@ -617,9 +617,9 @@ def fetch_account_details_award(award_id: int) -> dict:
     obligation_by_code = []
     total_outlay = 0
     total_obligations = 0
-    covid_defcs = DisasterEmergencyFundCode.objects.filter(group_name="covid_19").values_list("code", flat=True)
+    defcs = DisasterEmergencyFundCode.objects.all().values_list("code", flat=True)
     for row in results:
-        if row["disaster_emergency_fund_code"] in covid_defcs:
+        if row["disaster_emergency_fund_code"] in defcs:
             total_outlay += row["total_outlay"]
             total_obligations += row["obligated_amount"]
         outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})

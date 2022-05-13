@@ -7,8 +7,9 @@ from django.db import transaction
 from psycopg2.extras import execute_values
 from psycopg2.sql import SQL
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-from usaspending_api.common.etl import ETLTable, mixins, ETLTemporaryTable
-from usaspending_api.common.etl.operations import insert_missing_rows, update_changed_rows
+from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable
+from usaspending_api.common.etl.postgres import mixins
+from usaspending_api.common.etl.postgres.operations import insert_missing_rows, update_changed_rows
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
