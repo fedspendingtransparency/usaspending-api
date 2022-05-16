@@ -12,7 +12,7 @@ from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPE
 
 from pyspark.sql import SparkSession
 
-JDBC_URL_KEY = "JDBC_URL"
+JDBC_URL_KEY = "DATABASE_URL"
 
 PARTITION_ROWS = 10000 * 16
 # Abort processing the data if it would yield more than this many partitions to process as individual tasks
