@@ -1,7 +1,11 @@
 from django.core.management.base import BaseCommand
 
 from usaspending_api.config import CONFIG
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_jvm_logger, get_active_spark_session
+from usaspending_api.common.helpers.spark_helpers import (
+    configure_spark_session,
+    get_jvm_logger,
+    get_active_spark_session,
+)
 from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_sql_string
 
 from pyspark.sql import SparkSession

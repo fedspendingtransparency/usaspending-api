@@ -7,7 +7,13 @@ from usaspending_api.common.etl.spark import (
     get_partition_bounds_sql,
     load_delta_table,
 )
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_jdbc_url, get_jvm_logger, get_active_spark_session
+from usaspending_api.common.helpers.spark_helpers import (
+    configure_spark_session,
+    get_active_spark_session,
+    get_jdbc_url,
+    get_jdbc_url_from_pg_uri,
+    get_jvm_logger,
+)
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
 from pyspark.sql import SparkSession
@@ -60,6 +66,7 @@ class Command(BaseCommand):
 
         # Resolve JDBC URL for Source Database
         jdbc_url = os.environ.get(JDBC_URL_KEY)
+        jdbc_url = get_jdbc_url_from_pg_uri(jdbc_url)
         if not jdbc_url:
             raise RuntimeError(f"Looking for JDBC URL passed to env var '{JDBC_URL_KEY}', but not set.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
