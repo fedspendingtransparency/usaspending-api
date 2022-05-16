@@ -27,7 +27,7 @@ def get_active_spark_context() -> SparkContext:
     """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
     if is_spark_context_stopped():
         return None
-    return SparkContext._active_spark_context._jvm.SparkSession.getDefaultSession().get().sparkContext()
+    return SparkSession.getActiveSession()
 
 
 def is_spark_context_stopped() -> bool:
