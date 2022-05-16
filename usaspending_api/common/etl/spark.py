@@ -61,6 +61,7 @@ def extract_db_data_frame(
 
         logger.info(f"{partitions} partitions to extract at approximately {partition_rows} rows each.")
 
+        logger.info(f"url: {jdbc_url}")
         logger.info(f"Table: {table}")
         logger.info(f"Column: {partitioning_col}")
         logger.info(f"lowerbound: {min_val}")
