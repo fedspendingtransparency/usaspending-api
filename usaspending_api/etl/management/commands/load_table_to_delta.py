@@ -76,7 +76,7 @@ class Command(BaseCommand):
         df = extract_db_data_frame(
             spark,
             JDBC_CONN_PROPS,
-            get_jdbc_url(),
+            jdbc_url,
             PARTITION_ROWS,
             get_partition_bounds_sql(
                 # TODO Correct this to point to source table info
