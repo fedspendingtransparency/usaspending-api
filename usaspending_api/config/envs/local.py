@@ -72,7 +72,8 @@ class LocalConfig(DefaultConfig):
     AWS_SECRET_KEY: SecretStr = MINIO_SECRET_KEY
     AWS_PROFILE: str = None
     AWS_REGION = ""
-    AWS_S3_BUCKET = "dti-da-usaspending-spark-qat"
+    AWS_S3_BUCKET = "data"
+    # AWS_S3_BUCKET = "dti-da-usaspending-spark-qat"
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
     AWS_S3_ENDPOINT = FACTORY_PROVIDED_VALUE  # See below validator-based factory

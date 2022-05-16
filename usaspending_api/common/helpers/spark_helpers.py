@@ -27,6 +27,13 @@ def get_active_spark_context() -> SparkContext:
     """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
     if is_spark_context_stopped():
         return None
+    return SparkContext._active_spark_context
+
+
+def get_active_spark_session() -> SparkContext:
+    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+    if is_spark_context_stopped():
+        return None
     return SparkSession.getActiveSession()
 
 
@@ -127,9 +134,9 @@ def configure_spark_session(
         conf.set("spark.hadoop.fs.s3a.path.style.access", "true")
         # Set Committer config compliant with MinIO
         #   - (see: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/committers.html)
-        conf.set("spark.hadoop.fs.s3a.committer.name", "directory")
-        conf.set("spark.hadoop.fs.s3a.committer.staging.conflict-mode", "replace")
-        conf.set("spark.hadoop.fs.s3a.committer.staging.tmp.path", "/tmp/staging")
+        # conf.set("spark.hadoop.fs.s3a.committer.name", "directory")
+        # conf.set("spark.hadoop.fs.s3a.committer.staging.conflict-mode", "replace")
+        # conf.set("spark.hadoop.fs.s3a.committer.staging.tmp.path", "/tmp/staging")
 
     # Set AWS credentials in the Spark config
     # Hint: If connecting to AWS resources when executing program from a local env, and you usually authenticate with
