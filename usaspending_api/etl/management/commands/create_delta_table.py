@@ -16,7 +16,7 @@ TABLE_SPEC = {
         "source_table": "duns",
         "source_database": "",
         "destination_database": "raw",
-        "partition_column": "sam_recipient_id",
+        "partition_column": "broker_duns_id",
         "partition_column_type": "",
     },
 }
