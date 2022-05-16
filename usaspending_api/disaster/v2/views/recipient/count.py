@@ -1,3 +1,4 @@
+from elasticsearch_dsl import Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -22,9 +23,32 @@ class RecipientCountViewSet(FabaOutlayMixin, AwardTypeMixin, DisasterBase):
     @cache_response()
     def post(self, request: Request) -> Response:
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
-        search = AwardSearch().filter(filter_query)
+        special_recipients = [
+            "MULTIPLE RECIPIENTS",
+            "REDACTED DUE TO PII",
+            "MULTIPLE FOREIGN RECIPIENTS",
+            "PRIVATE INDIVIDUAL",
+            "PRIVATE INDIVIDUAL",
+            "INDIVIDUAL RECIPIENT",
+            "MISCELLANEOUS FOREIGN AWARDEES",
+        ]
+        shoulds = []
+        for x in special_recipients:
+            shoulds.append(Q("match", recipient_name=x))
+        should_query = Q("bool", should=shoulds, minimum_should_match=1)
+        must_not = Q("bool", must_not=should_query)
+
+        search = AwardSearch().filter(filter_query & must_not)
         search.update_from_dict({"size": 0})
         search.aggs.bucket("recipient_count", create_count_aggregation("recipient_agg_key"))
         results = search.handle_execute()
         recipients = results.to_dict().get("aggregations", {}).get("recipient_count", {}).get("value", 0)
-        return Response({"count": recipients})
+
+        must = Q("bool", must=should_query)
+        search2 = AwardSearch().filter(filter_query & must)
+        search2.update_from_dict({"size": 0})
+        search2.aggs.bucket("recipient_count", create_count_aggregation("recipient_name.keyword"))
+        results2 = search2.handle_execute()
+        special_recipients = results2.to_dict().get("aggregations", {}).get("recipient_count", {}).get("value", 0)
+
+        return Response({"count": recipients + special_recipients})
