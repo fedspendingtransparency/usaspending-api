@@ -55,14 +55,16 @@ class Command(BaseCommand):
         spark.sql(f"create database if not exists {destination_database};")
         spark.sql(f"use {destination_database};")
 
+        spark.sql(f"DROP TABLE IF EXISTS {destination_table}")
+
         # Define Schema Using CREATE TABLE AS command
-        sql = TABLE_SPEC[destination_table]["schema_sql_string"].format(
+        spark.sql(
+            TABLE_SPEC[destination_table]["schema_sql_string"].format(
                 DESTINATION_TABLE=destination_table,
                 DESTINATION_DATABASE=table_spec["destination_database"],
                 AWS_S3_BUCKET=CONFIG.AWS_S3_BUCKET,
                 AWS_S3_OUTPUT_PATH=CONFIG.AWS_S3_OUTPUT_PATH,
+            )
         )
-        print(sql)
-        spark.sql(sql)
 
         spark.stop()
