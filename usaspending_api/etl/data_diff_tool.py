@@ -1,7 +1,4 @@
 from gresearch.spark.diff import *
-import pandas as pd
-import numpy as np
-
 
 def data_diff_function(df1, df2):
     #assumes dataframes as a delta table
