@@ -39,8 +39,12 @@ env:
   - BROKER_REPO_FOLDER=${TRAVIS_BUILD_DIR}/../data-act-broker-backend
   - BROKER_DOCKER_IMAGE=dataact-broker-backend
   - GRANTS_API_KEY=${GRANTS_API_KEY}
+  - MINIO_DATA_DIR=${HOME}/Development/data/usaspending/docker/usaspending-s3  # needs to be same place docker-compose will look for it (based on .env file)
+  - MINIO_HOST=localhost
 
 before_install:
+  # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
+  - cp .env.template .env
   # Re-install elasticsearch at the right version
   - sudo systemctl stop elasticsearch
   - sudo dpkg --remove elasticsearch
@@ -75,7 +79,12 @@ before_script:
   - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - psql -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
   - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
-  - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}  # Build image from which to call Broker scripts
+  # Ensure MinIO can run as our s3 substitute
+  - mkdir -p "${MINIO_DATA_DIR}"
+  - mkdir -p "${HOME}/.ivy2"
+  - make docker-compose-up-s3 args="-d"
+  # Build image from which to call Broker scripts
+  - docker build -t ${BROKER_DOCKER_IMAGE} ${BROKER_REPO_FOLDER}
   - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
 
 script:
