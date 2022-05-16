@@ -155,14 +155,43 @@ def fabs_award_with_unclosed_submission(defc_codes, award_count_sub_schedule):
 
 
 def _normal_faba(award):
+
+    ta1 = mommy.make(
+        "references.ToptierAgency",
+        name="Agency 001",
+        toptier_code="001",
+    )
+    mommy.make("references.Agency", toptier_agency=ta1, toptier_flag=True)
+    defc_m = mommy.make(
+        "references.DisasterEmergencyFundCode",
+        code="M",
+        public_law="PUBLIC LAW FOR CODE M",
+        title="TITLE FOR CODE M",
+        group_name="covid_19",
+    )
+    fa1 = mommy.make(
+        "accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1", parent_toptier_agency=ta1
+    )
+    tas1 = mommy.make(
+        "accounts.TreasuryAppropriationAccount",
+        budget_function_code=100,
+        budget_function_title="NAME 1",
+        budget_subfunction_code=1100,
+        budget_subfunction_title="NAME 1A",
+        account_title="TA 1",
+        tas_rendering_label="001-X-0000-000",
+        federal_account=fa1,
+        funding_toptier_agency=ta1,
+    )
     return mommy.make(
         "awards.FinancialAccountsByAwards",
         award=award,
+        treasury_account=tas1,
         piid="piid 1",
         parent_award_id="same parent award",
         fain="fain 1",
         uri="uri 1",
-        disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
+        disaster_emergency_fund=defc_m,
         submission=SubmissionAttributes.objects.all().first(),
         gross_outlay_amount_by_award_cpe=8,
     )
