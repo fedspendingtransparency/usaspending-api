@@ -13,7 +13,7 @@ from pyspark.sql import SparkSession
 TABLE_SPEC = {
     "sam_recipient": {
         "schema_sql_string": sam_recipient_sql_string,
-        "source_table": "sam_recipient",
+        "source_table": "duns",
         "source_database": "",
         "destination_database": "raw",
         "partition_column": "sam_recipient_id",
