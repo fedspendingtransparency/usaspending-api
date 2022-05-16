@@ -66,7 +66,6 @@ def _load_config(env_code=None) -> Type[DefaultConfig]:
     """Compile runtime-environment-specific configuration inputs into a final collection configuration values."""
     if not env_code:
         env_code = os.environ.get(ENV_CODE_VAR, _FALLBACK_ENV_CODE)
-        print(f"env_code: {env_code}")
     runtime_env = next((env for env in ENVS if env["code"] == env_code), None)
     if not runtime_env:
         raise KeyError(
