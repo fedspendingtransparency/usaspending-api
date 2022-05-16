@@ -136,7 +136,6 @@ def test_two_same_special_case_recipients(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = _default_post(client, helpers)
-    print(resp.data)
     assert resp.data["count"] == 1
 
 
