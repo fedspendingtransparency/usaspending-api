@@ -74,7 +74,7 @@ def eval_default_factory(
 
     if not is_override and default_value is not None and default_value not in CONFIG_VAR_PLACEHOLDERS:
         raise ValueError(
-            f"The \"{config_var.name}\" field, which is tied to a default-factory-based validator, must have its "
+            f'The "{config_var.name}" field, which is tied to a default-factory-based validator, must have its '
             f"default value set to None, "
             f"or to one of the CONFIG_VAR_PLACEHOLDERS. This is so that when a value is sourced or assigned "
             f"elsewhere for this field, it can easily be identified as a non-default value, and will take "
@@ -120,7 +120,7 @@ def eval_default_factory_from_root_validator(
 
     if is_validated_in_base_class:
         raise ValueError(
-            f"root_validators cannot override validators. The \"{config_var_name}\" field, which is tied to a "
+            f'root_validators cannot override validators. The "{config_var_name}" field, which is tied to a '
             f"default-factory-based root_validator, is not supported for root_validator in a subclass because its "
             f"value is produced from a parent class validator. Whether the assigned value comes from the "
             f"environment or from the parent validator cannot be distinguished. Consider making the parent validator "

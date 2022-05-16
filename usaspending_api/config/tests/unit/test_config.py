@@ -10,8 +10,11 @@ from pydantic.error_wrappers import ValidationError
 
 from usaspending_api.config import CONFIG, _load_config
 from usaspending_api.config.envs import ENV_CODE_VAR
-from usaspending_api.config.utils import eval_default_factory, FACTORY_PROVIDED_VALUE, \
-    eval_default_factory_from_root_validator
+from usaspending_api.config.utils import (
+    eval_default_factory,
+    FACTORY_PROVIDED_VALUE,
+    eval_default_factory_from_root_validator,
+)
 from usaspending_api.config.envs.default import DefaultConfig
 from usaspending_api.config.envs.local import LocalConfig
 from unittest import mock
@@ -386,7 +389,6 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
     UNITTEST_CFG_AK: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AL: str = FACTORY_PROVIDED_VALUE
 
-
     # Use root_validator for UNITTEST_CFG_AK on parent, and overriding root_validator for same field on child
     @root_validator
     def _UNITTEST_CFG_AI(cls, values):
@@ -592,7 +594,7 @@ def test_new_runtime_env_overrides_config_errors_subclass_only_validated_fields(
     ):
         with pytest.raises(KeyError) as exc_info:
             _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
-            cfg = _load_config()
+            _load_config()
 
         assert "SUB_UNITTEST_6" in str(exc_info.value)
 
@@ -615,7 +617,7 @@ def test_new_runtime_env_overrides_config_errors_subclass_only_validated_fields_
     ):
         with pytest.raises(KeyError) as exc_info:
             _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
-            cfg = _load_config()
+            _load_config()
 
         assert "SUB_UNITTEST_6" in str(exc_info.value)
 
@@ -629,14 +631,14 @@ def test_new_runtime_env_overrides_config_errors_root_validator_overriding_valid
     the child class
     """
     with mock.patch.dict(
-            os.environ,
-            {
-                ENV_CODE_VAR: _UnitTestSubConfigFailFindingSubclassFieldsInValidator3.ENV_CODE,
-            },
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestSubConfigFailFindingSubclassFieldsInValidator3.ENV_CODE,
+        },
     ):
         with pytest.raises(ValidationError) as exc_info:
             _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
-            cfg = _load_config()
+            _load_config()
 
         assert "root_validators cannot override validators" in str(exc_info.value)
 

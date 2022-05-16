@@ -12,8 +12,11 @@ from typing import ClassVar
 from pydantic import root_validator
 from pydantic.types import SecretStr
 from usaspending_api.config.envs.default import DefaultConfig
-from usaspending_api.config.utils import USER_SPECIFIC_OVERRIDE, FACTORY_PROVIDED_VALUE, eval_default_factory, \
-    eval_default_factory_from_root_validator
+from usaspending_api.config.utils import (
+    USER_SPECIFIC_OVERRIDE,
+    FACTORY_PROVIDED_VALUE,
+    eval_default_factory_from_root_validator,
+)
 
 
 class LocalConfig(DefaultConfig):
