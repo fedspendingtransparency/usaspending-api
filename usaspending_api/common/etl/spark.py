@@ -61,6 +61,12 @@ def extract_db_data_frame(
 
         logger.info(f"{partitions} partitions to extract at approximately {partition_rows} rows each.")
 
+        logger.info(f"Table: {table}")
+        logger.info(f"Column: {partitioning_col}")
+        logger.info(f"lowerbound: {min_val}")
+        logger.info(f"upperbound: {max_val}")
+        logger.info(f"numPartitions: {partitions}")
+
         data_df = spark.read.options(customSchema=custom_schema,).jdbc(
             url=jdbc_url,
             table=table,
