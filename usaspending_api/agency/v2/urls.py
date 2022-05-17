@@ -13,7 +13,6 @@ from usaspending_api.agency.v2.views.object_class_list import ObjectClassList
 from usaspending_api.agency.v2.views.obligations_by_award_category import ObligationsByAwardCategory
 from usaspending_api.agency.v2.views.program_activity_count import ProgramActivityCount
 from usaspending_api.agency.v2.views.program_activity_list import ProgramActivityList
-from usaspending_api.agency.v2.views.recipients import RecipientList
 from usaspending_api.agency.v2.views.sub_agency import SubAgencyList
 from usaspending_api.agency.v2.views.sub_agency_count import SubAgencyCount
 from usaspending_api.agency.v2.views.subcomponents import SubcomponentList
@@ -36,7 +35,6 @@ urlpatterns = [
                 path("obligations_by_award_category/", ObligationsByAwardCategory.as_view()),
                 path("program_activity/", ProgramActivityList.as_view()),
                 path("program_activity/count/", ProgramActivityCount.as_view()),
-                path("recipients/", RecipientList.as_view()),
                 path("sub_agency/", SubAgencyList.as_view()),
                 path("sub_agency/count/", SubAgencyCount.as_view()),
                 path("sub_components/", SubcomponentList.as_view()),
