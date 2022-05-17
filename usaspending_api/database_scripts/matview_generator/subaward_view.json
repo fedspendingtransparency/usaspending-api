@@ -1,4 +1,5 @@
 {
+  "schema_name": "rpt",
   "final_name": "subaward_view",
   "refresh": true,
   "matview_sql": [
