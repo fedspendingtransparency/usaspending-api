@@ -51,6 +51,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--destination-table", type=str, required=True, help="", choices=list(TABLE_SPEC.keys()))
+        parser.add_argument("--config", type=str, help="Allow overriding CONFIG var via CLI")
 
     def handle(self, *args, **options):
         extra_conf = {

@@ -8,6 +8,7 @@ import uuid
 from datetime import date
 
 import boto3
+from django.core.management import call_command
 from model_mommy import mommy
 from pyspark.sql import SparkSession, Row
 from pytest import fixture, mark
@@ -356,3 +357,16 @@ def test_spark_write_to_s3_delta_from_db(
     assert spark.sql("select count(*) from transaction_normalized").collect()[0][0] == 2
     assert spark.sql("select count(*) from transaction_fabs").collect()[0][0] == 1
     assert spark.sql("select count(*) from transaction_fpds").collect()[0][0] == 1
+
+# ====
+# TODO: MOVE THESE INTO ./test_create_delta_table.py once all the fixtures in this module are moved to ../conftest.py
+# ====
+
+
+def test_create_sam_recipient_delta_table(spark, s3_unittest_data_bucket):
+    call_command(
+        "create_delta_table",
+        "--destination-table=sam_recipient",
+        "--config",
+        f"AWS_S3_BUCKET={s3_unittest_data_bucket}"  # TODO: This doesn't seem to work as designed.
+    )
