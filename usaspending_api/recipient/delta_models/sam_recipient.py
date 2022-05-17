@@ -4,7 +4,7 @@ CREATE OR REPLACE TABLE {DESTINATION_TABLE} (
   legal_business_name STRING,
   ultimate_parent_unique_ide STRING,
   ultimate_parent_legal_enti STRING,
-  broker_duns_id STRING NOT NULL,
+  broker_duns_id INTEGER NOT NULL,
   update_date DATE NOT NULL,
   address_line_1 STRING,
   address_line_2 STRING,
