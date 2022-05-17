@@ -59,6 +59,7 @@ class Command(BaseCommand):
         source_table = table_spec["source_table"]
         partition_column = table_spec["partition_column"]
         partition_column_type = table_spec["partition_column_type"]
+        custom_schema = table_spec["custom_schema"]
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
@@ -96,7 +97,8 @@ class Command(BaseCommand):
             source_table,
             partition_column,
             is_numeric_partitioning_col=is_numeric_partitioning_col,
-            is_date_partitioning_col=is_date_partitioning_col
+            is_date_partitioning_col=is_date_partitioning_col,
+            custom_schema=custom_schema
         )
 
         # Write to S3
