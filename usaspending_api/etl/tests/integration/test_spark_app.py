@@ -56,9 +56,14 @@ DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
 
 @fixture(scope="session")
-def minio_test_data_bucket():
-    """Create a bucket named data so the tests can use it"""
-    logging.warning(f"Attempting to create test bucket at: http://{CONFIG.AWS_S3_ENDPOINT}")
+def s3_unittest_data_bucket_setup_and_teardown():
+    """Create a test bucket named data so the tests can use it"""
+    unittest_data_bucket = "unittest-data-{}".format(str(uuid.uuid4()))
+
+    logging.warning(
+        f"Attempting to create unit test data bucket {unittest_data_bucket } "
+        f"at: http://{CONFIG.AWS_S3_ENDPOINT} using CONFIG.AWS_ACCESS_KEY and CONFIG.AWS_SECRET_KEY"
+    )
     s3_client = boto3.client(
         "s3",
         endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
@@ -69,22 +74,53 @@ def minio_test_data_bucket():
     from botocore.errorfactory import ClientError
 
     try:
-        s3_client.create_bucket(Bucket=CONFIG.AWS_S3_BUCKET)
+        s3_client.create_bucket(Bucket=unittest_data_bucket)
     except ClientError as e:
         if "BucketAlreadyOwnedByYou" in str(e):
             # Simplest way to ensure the bucket is created is to swallow the exception saying it already exists
-            logging.warning("Test Bucket not created, already exists.")
+            logging.warning("Unit Test Data Bucket not created; already exists.")
             pass
         else:
             raise e
 
     logging.info(
-        f"Test Bucket '{CONFIG.AWS_S3_BUCKET}' created (or found to exist) at S3 endpoint "
-        f"'{CONFIG.AWS_S3_ENDPOINT}'. Current Buckets:"
+        f"Unit Test Data Bucket '{unittest_data_bucket}' created (or found to exist) at S3 endpoint "
+        f"'{unittest_data_bucket}'. Current Buckets:"
     )
     [logging.info(f"  {b['Name']}") for b in s3_client.list_buckets()["Buckets"]]
 
-    yield
+    yield unittest_data_bucket
+
+    # Cleanup by removing all objects in the bucket by key, and then the bucket itsefl after the test session
+    response = s3_client.list_objects_v2(Bucket=unittest_data_bucket)
+    if "Contents" in response:
+        for object in response["Contents"]:
+            s3_client.delete_object(Bucket=unittest_data_bucket, Key=object["Key"])
+    s3_client.delete_bucket(Bucket=unittest_data_bucket)
+
+
+@fixture
+def s3_unittest_data_bucket(s3_unittest_data_bucket_setup_and_teardown):
+    """Use the S3 unit test data bucket created for the test session, and cleanup any contents created in it after
+    each test
+    """
+    unittest_data_bucket = s3_unittest_data_bucket_setup_and_teardown
+    yield unittest_data_bucket
+
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
+        aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+        aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+    )
+
+    # Cleanup any contents added to the bucket for this test
+    response = s3_client.list_objects_v2(Bucket=unittest_data_bucket)
+    if "Contents" in response:
+        for object in response["Contents"]:
+            s3_client.delete_object(Bucket=unittest_data_bucket, Key=object["Key"])
+    # NOTE: Leave the bucket itself there for other tests in this session. It will get cleaned up at the end of the
+    # test session by the dependent fixture
 
 
 @fixture(scope="session")
@@ -166,7 +202,7 @@ def test_spark_app_run_local_master(spark: SparkSession):
     logger.info(versions)
 
 
-def test_spark_write_csv_app_run(spark: SparkSession, minio_test_data_bucket):
+def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
     """More involved integration test that requires MinIO to be up as an s3 alternative."""
     data = [
         {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
@@ -180,7 +216,19 @@ def test_spark_write_csv_app_run(spark: SparkSession, minio_test_data_bucket):
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    df.write.option("header", True).csv(f"s3a://{CONFIG.AWS_S3_BUCKET}" f"/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3")
+    df.write.option("header", True).csv(f"s3a://{s3_unittest_data_bucket}" f"/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3")
+
+    # Verify there are *.csv part files in the chosen bucket
+    s3_client = boto3.client(
+        "s3",
+        endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
+        aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+        aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+    )
+    response = s3_client.list_objects_v2(Bucket=s3_unittest_data_bucket)
+    assert "Contents" in response  # the Bucket has contents
+    bucket_objects = [c["Key"] for c in response["Contents"]]
+    assert any([obj.endswith(".csv") for obj in bucket_objects])
 
 
 @fixture()
@@ -220,7 +268,7 @@ def test_spark_write_to_s3_delta_from_db(
     _transaction_and_award_test_data,
     spark: SparkSession,
     delta_lake_unittest_schema,
-    minio_test_data_bucket,
+    s3_unittest_data_bucket,
     request,
 ):
     """Test that we can read from Postgres DB and write to new delta tables,
@@ -239,7 +287,7 @@ def test_spark_write_to_s3_delta_from_db(
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    path = f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
+    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
@@ -257,7 +305,7 @@ def test_spark_write_to_s3_delta_from_db(
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    path = f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
+    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
@@ -275,7 +323,7 @@ def test_spark_write_to_s3_delta_from_db(
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    path = f"s3a://{CONFIG.AWS_S3_BUCKET}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
+    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
