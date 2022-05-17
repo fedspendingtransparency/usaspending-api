@@ -163,4 +163,3 @@ class RecipientLookup(models.Model):
             PartialIndex(fields=["uei"], unique=True, where=PQ(uei__isnull=False)),
             PartialIndex(fields=["parent_uei"], unique=False, where=PQ(parent_uei__isnull=False)),
         ]
-
