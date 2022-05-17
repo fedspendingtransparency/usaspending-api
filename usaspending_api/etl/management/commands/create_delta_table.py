@@ -7,6 +7,8 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
 )
 from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_sql_string
+from usaspending_api.transactions.delta_models.transaction_fabs import transaction_fabs_sql_string
+from usaspending_api.transactions.delta_models.transaction_fpds import transaction_fpds_sql_string
 
 from pyspark.sql import SparkSession
 
@@ -18,6 +20,22 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "update_date",
         "partition_column_type": "date",
+    },
+    "transaction_fabs": {
+        "schema_sql_string": transaction_fabs_sql_string,
+        "source_table": "transaction_fabs",
+        "source_database": "",
+        "destination_database": "raw",
+        "partition_column": "published_award_financial_assistance_id",
+        "partition_column_type": "integer",
+    },
+    "transaction_fpds": {
+        "schema_sql_string": transaction_fpds_sql_string,
+        "source_table": "transaction_fpds",
+        "source_database": "",
+        "destination_database": "raw",
+        "partition_column": "detached_award_procurement_id",
+        "partition_column_type": "integer",
     },
 }
 
