@@ -20,7 +20,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "broker_duns_id",
         "partition_column_type": "numeric",
-        "schema_override": "broker_duns_id INT, business_types_codes ARRAY<STRING>"
+        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>"
     },
     "recipient_lookup": {
         "schema_sql_string": recipient_lookup_sql_string,
@@ -29,7 +29,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "schema_override": ""
+        "custom_schema": ""
     },
     "recipient_profile": {
         "schema_sql_string": recipient_profile_sql_string,
@@ -38,7 +38,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "schema_override": ""
+        "custom_schema": ""
     },
 }
 
