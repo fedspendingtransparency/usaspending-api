@@ -8,6 +8,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_sql_string
 from usaspending_api.recipient.delta_models.recipient_lookup import recipient_lookup_sql_string 
+from usaspending_api.recipient.delta_models.recipient_profile import recipient_profile_sql_string 
 
 from pyspark.sql import SparkSession
 
@@ -17,8 +18,9 @@ TABLE_SPEC = {
         "source_table": "duns",
         "source_database": "",
         "destination_database": "raw",
-        "partition_column": "update_date",
-        "partition_column_type": "date",
+        "partition_column": "broker_duns_id",
+        "partition_column_type": "numeric",
+        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>"
     },
     "recipient_lookup": {
         "schema_sql_string": recipient_lookup_sql_string,
@@ -27,6 +29,16 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "custom_schema": ""
+    },
+    "recipient_profile": {
+        "schema_sql_string": recipient_profile_sql_string,
+        "source_table": "recipient_profile",
+        "source_database": "",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "custom_schema": ""
     },
 }
 
@@ -80,4 +92,5 @@ class Command(BaseCommand):
             )
         )
 
-        spark.stop()
+        # TODO - Determine how to only run this when not in a notebook
+        # spark.stop()
