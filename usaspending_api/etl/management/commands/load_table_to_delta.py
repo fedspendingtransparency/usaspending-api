@@ -10,7 +10,6 @@ from usaspending_api.common.etl.spark import (
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
-    get_jdbc_url,
     get_jdbc_url_from_pg_uri,
     get_jvm_logger,
 )
@@ -59,6 +58,7 @@ class Command(BaseCommand):
         destination_database = table_spec["destination_database"]
         source_table = table_spec["source_table"]
         partition_column = table_spec["partition_column"]
+        partition_column_type = table_spec["partition_column_type"]
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
@@ -72,6 +72,15 @@ class Command(BaseCommand):
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
+        if partition_column_type == "numeric":
+            is_numeric_partitioning_col = True
+            is_date_partitioning_col = False
+        elif partition_column_type == "date":
+            is_numeric_partitioning_col = False
+            is_date_partitioning_col = True
+        else:
+            raise ValueError("partition_column_type should be either 'numeric' or 'date'")
+
         # Read from table or view
         df = extract_db_data_frame(
             spark,
@@ -79,11 +88,12 @@ class Command(BaseCommand):
             jdbc_url,
             PARTITION_ROWS,
             get_partition_bounds_sql(
-                # TODO Correct this to point to source table info
                 source_table,
                 partition_column,
                 partition_column,
                 is_partitioning_col_unique=False,
+                is_numeric_partitioning_col=is_numeric_partitioning_col,
+                is_date_partitioning_col=is_date_partitioning_col
             ),
             source_table,
             partition_column,
