@@ -14,6 +14,14 @@ from usaspending_api.recipient.delta_models.recipient_lookup import recipient_lo
 from pyspark.sql import SparkSession
 
 TABLE_SPEC = {
+    "recipient_lookup": {
+        "schema_sql_string": recipient_lookup_sql_string,
+        "source_table": "recipient_lookup",
+        "source_database": "",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+    },
     "sam_recipient": {
         "schema_sql_string": sam_recipient_sql_string,
         "source_table": "duns",
@@ -37,15 +45,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "detached_award_procurement_id",
         "partition_column_type": "numeric",
-    },
-    "recipient_lookup": {
-        "schema_sql_string": recipient_lookup_sql_string,
-        "source_table": "recipient_lookup",
-        "source_database": "",
-        "destination_database": "raw",
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-    },
+    }
 }
 
 
