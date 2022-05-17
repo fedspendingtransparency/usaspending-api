@@ -34,11 +34,12 @@ class RecipientCountViewSet(FabaOutlayMixin, AwardTypeMixin, DisasterBase):
         ]
         shoulds = []
         for x in special_recipients:
-            shoulds.append(Q("match", recipient_name=x))
+            shoulds.append(Q("match", **{"recipient_name.keyword": x}))
         should_query = Q("bool", should=shoulds, minimum_should_match=1)
-        search = AwardSearch().filter(filter_query).exclude("terms", recipient_name=special_recipients)
+        must_not = Q("bool", must_not=should_query)
+        search = AwardSearch().filter(filter_query & must_not)
         search.update_from_dict({"size": 0})
-        search.aggs.bucket("recipient_count", create_count_aggregation("recipient_agg_key"))
+        search.aggs.bucket("recipient_count", create_count_aggregation("recipient_agg_key.hash"))
         results = search.handle_execute()
         recipients = results.to_dict().get("aggregations", {}).get("recipient_count", {}).get("value", 0)
 
