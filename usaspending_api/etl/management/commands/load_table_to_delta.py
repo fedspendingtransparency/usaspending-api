@@ -92,11 +92,11 @@ class Command(BaseCommand):
                 partition_column,
                 partition_column,
                 is_partitioning_col_unique=False,
-                is_numeric_partitioning_col=is_numeric_partitioning_col,
-                is_date_partitioning_col=is_date_partitioning_col
             ),
             source_table,
             partition_column,
+            is_numeric_partitioning_col=is_numeric_partitioning_col,
+            is_date_partitioning_col=is_date_partitioning_col
         )
 
         # Write to S3
