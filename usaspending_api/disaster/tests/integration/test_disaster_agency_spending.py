@@ -107,7 +107,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
             "code": "007",
             "description": "Agency 007",
             "children": [],
-            "award_count": 2,
+            "award_count": 3,
             "obligation": 222.0,
             "outlay": 0.0,
             "total_budgetary_resources": None,
