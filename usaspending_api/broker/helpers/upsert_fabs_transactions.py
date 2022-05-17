@@ -27,7 +27,7 @@ def fetch_fabs_data_generator(dap_uid_list):
     db_cursor = connection.cursor()
     db_query = """
         SELECT * FROM source_assistance_transaction
-        WHERE published_award_financial_assistance_id IN %s;
+        WHERE published_fabs_id IN %s;
     """
 
     total_uid_count = len(dap_uid_list)

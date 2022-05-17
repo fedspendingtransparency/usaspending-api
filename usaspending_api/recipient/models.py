@@ -163,27 +163,3 @@ class RecipientLookup(models.Model):
             PartialIndex(fields=["uei"], unique=True, where=PQ(uei__isnull=False)),
             PartialIndex(fields=["parent_uei"], unique=False, where=PQ(parent_uei__isnull=False)),
         ]
-
-
-class SummaryAwardRecipient(models.Model):
-    award_id = models.BigIntegerField(primary_key=True)
-    action_date = models.DateField(blank=True, db_index=True)
-    recipient_hash = models.UUIDField(null=True, db_index=True)
-    parent_uei = models.TextField(null=True, db_index=True)
-
-    class Meta:
-        managed = True
-        db_table = "summary_award_recipient"
-
-
-class RecipientAgency(models.Model):
-    id = models.BigAutoField(auto_created=True, primary_key=True, serialize=False)
-    fiscal_year = models.IntegerField(db_index=True)
-    toptier_code = models.TextField(db_index=True)
-    recipient_hash = models.UUIDField(db_index=True)
-    recipient_name = models.TextField(null=True)
-    recipient_amount = models.DecimalField(max_digits=23, decimal_places=2)
-
-    class Meta:
-        managed = True
-        db_table = "recipient_agency"

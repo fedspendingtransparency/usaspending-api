@@ -40,7 +40,7 @@ class Command(BaseCommand):
         unique = "detached_award_proc_unique"
         if table_type == "fabs":
             broker_where = "is_active IS TRUE AND " + broker_where
-            table = "published_award_financial_assistance"
+            table = "published_fabs"
             unique = "afa_generated_unique"
 
         if sub_tiers and len(sub_tiers) == 1:
