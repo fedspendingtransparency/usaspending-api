@@ -103,5 +103,5 @@ transaction_fabs_sql_string = r"""
         indirect_federal_sharing NUMERIC
     );
     USING DELTA
-    LOCATION 's3a://{AWS_S3_BUCKET}/{AWS_S3_OUTPUT_PATH}/{DESTINATION_TABLE}'
+    LOCATION 's3a://{AWS_S3_BUCKET}/{AWS_S3_OUTPUT_PATH}/{DESTINATION_DATABASE}/{DESTINATION_TABLE}'
     """
