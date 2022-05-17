@@ -126,17 +126,34 @@ def configure_spark_session(
     # Assume that random errors are rare, and jobs have long runtimes, so fail fast, fix and retry manually.
     conf.set("spark.yarn.maxAppAttempts", "1")
     conf.set("spark.hadoop.fs.s3a.endpoint", CONFIG.AWS_S3_ENDPOINT)
+
     if not CONFIG.USE_AWS:
         # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy
         conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         # "Enable S3 path style access ie disabling the default virtual hosting behaviour.
         # Useful for S3A-compliant storage providers as it removes the need to set up DNS for virtual hosting."
         conf.set("spark.hadoop.fs.s3a.path.style.access", "true")
-        # Set Committer config compliant with MinIO
-        #   - (see: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/committers.html)
-        # conf.set("spark.hadoop.fs.s3a.committer.name", "directory")
-        # conf.set("spark.hadoop.fs.s3a.committer.staging.conflict-mode", "replace")
-        # conf.set("spark.hadoop.fs.s3a.committer.staging.tmp.path", "/tmp/staging")
+
+        # Documenting for Awareness:
+        # Originally it was thought that the S3AFileSystem "Committer" needed config changes to be compliant when
+        # hitting MinIO locally instead of AWS S3 service. However, those changs were proven unnecessary.
+        # - There is however an intermitten issue which we cannot quite identify the root cause (perhaps changing
+        #   back to defaults will keep it from happening again). See: https://github.com/minio/minio/issues/10744
+        #   - The error comes back as "FileAlreadyExists" ... or just: "<file/folder> already exists"
+        #   - It is either some cache purging of Docker or MinIO or both over time that fixes it
+        #   - Or some fiddling with these committer settings
+        # - For Committer Details: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/committers.html
+        # - Findings:
+        #   - If USE_AWS = True, and you point it at an AWS bucket...
+        #     - s3a.path.style.access=true works, by itself as well as with no committer specified (falls back to
+        #      FileOutputCommitter) and any combo of conflict-mode and tmp.path
+        #     - However if committer.name="directory" (it uses the StagingOutputCommitter) AND conflict-mode=replace,
+        #       it will replace the whole directory at the last file write, which is the _SUCCESS file, and that's why
+        #       that's the only file you see
+        # - The below settings are the DEFAULT when not set, but documenting here FYI
+        # conf.set("spark.hadoop.fs.s3a.committer.name", "file")
+        # conf.set("spark.hadoop.fs.s3a.committer.staging.conflict-mode", "fail")
+        # conf.set("spark.hadoop.fs.s3a.committer.staging.tmp.path", "tmp/staging")
 
     # Set AWS credentials in the Spark config
     # Hint: If connecting to AWS resources when executing program from a local env, and you usually authenticate with
