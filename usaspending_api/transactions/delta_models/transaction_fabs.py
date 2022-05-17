@@ -1,7 +1,7 @@
 transaction_fabs_sql_string = r"""
     CREATE OR REPLACE TABLE {DESTINATION_TABLE} (
         transaction_id LONG NOT NULL,
-        published_award_financial_assistance_id INTEGER,
+        published_fabs_id INTEGER,
         action_date STRING,
         action_type STRING,
         assistance_type STRING,

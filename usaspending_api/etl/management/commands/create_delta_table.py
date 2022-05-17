@@ -26,7 +26,7 @@ TABLE_SPEC = {
         "source_table": "transaction_fabs",
         "source_database": "",
         "destination_database": "raw",
-        "partition_column": "published_award_financial_assistance_id",
+        "partition_column": "published_fabs_id",
         "partition_column_type": "numeric",
     },
     "transaction_fpds": {
