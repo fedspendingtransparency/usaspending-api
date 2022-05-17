@@ -27,7 +27,7 @@ TABLE_SPEC = {
         "source_database": "",
         "destination_database": "raw",
         "partition_column": "published_award_financial_assistance_id",
-        "partition_column_type": "integer",
+        "partition_column_type": "numeric",
     },
     "transaction_fpds": {
         "schema_sql_string": transaction_fpds_sql_string,
@@ -35,7 +35,7 @@ TABLE_SPEC = {
         "source_database": "",
         "destination_database": "raw",
         "partition_column": "detached_award_procurement_id",
-        "partition_column_type": "integer",
+        "partition_column_type": "numeric",
     },
 }
 
