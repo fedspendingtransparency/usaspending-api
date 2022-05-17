@@ -133,7 +133,7 @@ class TransactionFABSSerializer(LimitableSerializer):
             "place_of_performance_congr",
             "place_of_performance_forei",
             "place_of_performance_zip4a",
-            "published_award_financial_assistance_id",
+            "published_fabs_id",
             "record_type",
             "record_type_description",
             "refresh_from_db",

@@ -9,7 +9,7 @@ logger = logging.getLogger("script")
 FABS_PARENT_DUNS_SQL_MATCH = """
     WITH joined_historical_fabs AS (
         SELECT
-            hfabs.published_award_financial_assistance_id AS "fabs_id",
+            hfabs.published_fabs_id AS "fabs_id",
             hpd.ultimate_parent_unique_ide AS "parent_duns",
             hpd.ultimate_parent_legal_enti AS "parent_name"
         FROM transaction_fabs hfabs
@@ -27,7 +27,7 @@ FABS_PARENT_DUNS_SQL_MATCH = """
        ultimate_parent_legal_enti = joined_historical_fabs.parent_name
     FROM joined_historical_fabs
     WHERE
-       joined_historical_fabs.fabs_id = fabs.published_award_financial_assistance_id
+       joined_historical_fabs.fabs_id = fabs.published_fabs_id
 """
 
 CREATE_TEMP_MIN_YEARS_MATVIEW = """
@@ -45,7 +45,7 @@ CREATE_TEMP_MIN_YEARS_MATVIEW = """
 FABS_PARENT_DUNS_SQL_EARLIEST = """
     WITH joined_historical_fabs AS (
         SELECT
-            hfabs.published_award_financial_assistance_id AS "fabs_id",
+            hfabs.published_fabs_id AS "fabs_id",
             hpd.ultimate_parent_unique_ide AS "parent_duns",
             hpd.ultimate_parent_legal_enti AS "parent_name"
         FROM transaction_fabs hfabs
@@ -66,7 +66,7 @@ FABS_PARENT_DUNS_SQL_EARLIEST = """
        ultimate_parent_legal_enti = joined_historical_fabs.parent_name
     FROM joined_historical_fabs
     WHERE
-       joined_historical_fabs.fabs_id = fabs.published_award_financial_assistance_id;
+       joined_historical_fabs.fabs_id = fabs.published_fabs_id;
 """
 
 DROP_TEMP_MIN_YEARS_MATVIEW = """
