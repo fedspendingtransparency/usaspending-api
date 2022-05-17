@@ -45,7 +45,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "detached_award_procurement_id",
         "partition_column_type": "numeric",
-    }
+    },
 }
 
 
