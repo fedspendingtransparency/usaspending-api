@@ -164,6 +164,7 @@ class DefaultConfig(BaseSettings):
     AWS_PROFILE: str = ENV_SPECIFIC_OVERRIDE
     AWS_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
     AWS_S3_OUTPUT_PATH: str = "data/delta"  # path within AWS_S3_BUCKET where output data will accumulate
+    AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
     AWS_STS_ENDPOINT: str = "sts.us-gov-west-1.amazonaws.com"
 
     class Config:

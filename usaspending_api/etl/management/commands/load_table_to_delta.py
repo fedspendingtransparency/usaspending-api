@@ -100,6 +100,6 @@ class Command(BaseCommand):
         )
 
         # Write to S3
-        load_delta_table(spark, df, f"{destination_table}", True)
+        load_delta_table(spark, df, destination_table, True)
 
         spark.stop()
