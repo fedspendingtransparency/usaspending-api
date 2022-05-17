@@ -61,7 +61,8 @@ def extract_db_data_frame(
 
         logger.info(f"{partitions} partitions to extract at approximately {partition_rows} rows each.")
 
-        data_df = spark.read.options(customSchema=custom_schema,).jdbc(
+        # TODO - Reimplement custom_schema option - customSchema=custom_schema,
+        data_df = spark.read.options().jdbc(
             url=jdbc_url,
             table=table,
             column=partitioning_col,
