@@ -107,7 +107,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
             "code": "007",
             "description": "Agency 007",
             "children": [],
-            "award_count": 3,
+            "award_count": 2,
             "obligation": 222.0,
             "outlay": 0.0,
             "total_budgetary_resources": None,
@@ -130,6 +130,24 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
         client, url, award_type_codes=["A", "07", "02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
+        {
+            "id": 4,
+            "code": "009",
+            "description": "Agency 009",
+            "award_count": 1,
+            "obligation": 1000.0,
+            "outlay": 1000.0,
+            "children": [
+                {
+                    "id": 4,
+                    "code": "3008",
+                    "description": "Subtier 3008",
+                    "award_count": 1,
+                    "obligation": 1000.0,
+                    "outlay": 1000.0,
+                }
+            ],
+        },
         {
             "id": 2,
             "code": "008",
