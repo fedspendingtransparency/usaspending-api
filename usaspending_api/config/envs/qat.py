@@ -33,4 +33,4 @@ class QATConfig(DefaultConfig):
     #   .env file)
     AWS_PROFILE: str = None
     AWS_REGION = ""
-    AWS_S3_BUCKET = "dti-da-usaspending-spark-qat"
+    SPARK_S3_BUCKET = "dti-da-usaspending-spark-qat"

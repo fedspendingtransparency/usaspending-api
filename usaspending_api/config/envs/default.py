@@ -130,7 +130,8 @@ class DefaultConfig(BaseSettings):
     # However ES does not appear to be able too handle that when several Executors make that request in parallel
     # Good tips from ES: https:#www.elastic.co/guide/en/elasticsearch/reference/6.2/tune-for-indexing-speed.html
     # Reducing to 10,000 DB rows per bulk indexing operation
-    PARTITION_SIZE: int = 10000
+    SPARK_PARTITION_ROWS: int = 10000
+    SPARK_MAX_PARTITIONS: int = 100000
 
     # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
@@ -162,8 +163,8 @@ class DefaultConfig(BaseSettings):
     AWS_ACCESS_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     AWS_PROFILE: str = ENV_SPECIFIC_OVERRIDE
-    AWS_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
-    AWS_S3_OUTPUT_PATH: str = "data/delta"  # path within AWS_S3_BUCKET where output data will accumulate
+    SPARK_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
+    DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where output data will accumulate
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
     AWS_STS_ENDPOINT: str = "sts.us-gov-west-1.amazonaws.com"
 
