@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from pyspark.sql import SparkSession
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
@@ -12,13 +13,11 @@ from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_s
 from usaspending_api.transactions.delta_models.transaction_fabs import transaction_fabs_sql_string
 from usaspending_api.transactions.delta_models.transaction_fpds import transaction_fpds_sql_string
 
-from pyspark.sql import SparkSession
 
 TABLE_SPEC = {
     "recipient_lookup": {
         "schema_sql_string": recipient_lookup_sql_string,
         "source_table": "recipient_lookup",
-        "source_database": "",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
@@ -27,7 +26,6 @@ TABLE_SPEC = {
     "recipient_profile": {
         "schema_sql_string": recipient_profile_sql_string,
         "source_table": "recipient_profile",
-        "source_database": "",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
@@ -36,7 +34,6 @@ TABLE_SPEC = {
     "sam_recipient": {
         "schema_sql_string": sam_recipient_sql_string,
         "source_table": "duns",
-        "source_database": "",
         "destination_database": "raw",
         "partition_column": "broker_duns_id",
         "partition_column_type": "numeric",
@@ -45,7 +42,6 @@ TABLE_SPEC = {
     "transaction_fabs": {
         "schema_sql_string": transaction_fabs_sql_string,
         "source_table": "transaction_fabs",
-        "source_database": "",
         "destination_database": "raw",
         "partition_column": "published_fabs_id",
         "partition_column_type": "numeric",
@@ -54,7 +50,6 @@ TABLE_SPEC = {
     "transaction_fpds": {
         "schema_sql_string": transaction_fpds_sql_string,
         "source_table": "transaction_fpds",
-        "source_database": "",
         "destination_database": "raw",
         "partition_column": "detached_award_procurement_id",
         "partition_column_type": "numeric",
@@ -70,7 +65,16 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument("--destination-table", type=str, required=True, help="", choices=list(TABLE_SPEC.keys()))
+        parser.add_argument(
+            "--destination-table",
+            type=str,
+            required=True,
+            help="The destination Delta Table to write the data",
+            choices=list(TABLE_SPEC.keys()),
+        )
+        parser.add_argument(
+            "--spark-s3-bucket", type=str, required=False, help="The destination bucket in S3 to write the data"
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -91,6 +95,9 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         destination_table = options["destination_table"]
+        spark_s3_bucket = options["spark_s3_bucket"]
+        if not spark_s3_bucket:
+            spark_s3_bucket = CONFIG.SPARK_S3_BUCKET
 
         table_spec = TABLE_SPEC[destination_table]
         destination_database = table_spec["destination_database"]
@@ -107,8 +114,8 @@ class Command(BaseCommand):
             TABLE_SPEC[destination_table]["schema_sql_string"].format(
                 DESTINATION_TABLE=destination_table,
                 DESTINATION_DATABASE=table_spec["destination_database"],
-                AWS_S3_BUCKET=CONFIG.AWS_S3_BUCKET,
-                AWS_S3_OUTPUT_PATH=CONFIG.AWS_S3_OUTPUT_PATH,
+                SPARK_S3_BUCKET=spark_s3_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
             )
         )
 

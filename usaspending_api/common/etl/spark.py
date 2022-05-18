@@ -1,11 +1,11 @@
 from pyspark.sql.functions import to_date
 from pyspark.sql.types import StructType
-
 from pyspark.sql import DataFrame, SparkSession
 
+from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import get_jvm_logger
 
-MAX_PARTITIONS = 100000
+MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 
 
 def extract_db_data_frame(

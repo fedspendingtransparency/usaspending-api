@@ -312,7 +312,7 @@ def attach_java_gateway(
 
 
 def get_jdbc_connection_properties() -> dict:
-    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.PARTITION_SIZE)}
+    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
 
 
 def get_jdbc_url():

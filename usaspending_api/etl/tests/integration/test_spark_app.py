@@ -216,7 +216,7 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    df.write.option("header", True).csv(f"s3a://{s3_unittest_data_bucket}" f"/{CONFIG.AWS_S3_OUTPUT_PATH}/write_to_s3")
+    df.write.option("header", True).csv(f"s3a://{s3_unittest_data_bucket}" f"/{CONFIG.DELTA_LAKE_S3_PATH}/write_to_s3")
 
     # Verify there are *.csv part files in the chosen bucket
     s3_client = boto3.client(
@@ -273,7 +273,7 @@ def test_spark_write_to_s3_delta_from_db(
 ):
     """Test that we can read from Postgres DB and write to new delta tables,
     and the tables are created and data gets there"""
-    jdbc_conn_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.PARTITION_SIZE)}
+    jdbc_conn_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
 
     pg_uri = get_database_dsn_string()
     jdbc_url = get_jdbc_url_from_pg_uri(pg_uri)
@@ -287,7 +287,7 @@ def test_spark_write_to_s3_delta_from_db(
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
+    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
@@ -305,7 +305,7 @@ def test_spark_write_to_s3_delta_from_db(
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
+    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
@@ -323,7 +323,7 @@ def test_spark_write_to_s3_delta_from_db(
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.AWS_S3_OUTPUT_PATH}/{table_name}"
+    path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
