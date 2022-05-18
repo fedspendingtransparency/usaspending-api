@@ -62,7 +62,7 @@ def s3_unittest_data_bucket_setup_and_teardown():
 
     logging.warning(
         f"Attempting to create unit test data bucket {unittest_data_bucket } "
-        f"at: http://{CONFIG.AWS_S3_ENDPOINT} using CONFIG.AWS_ACCESS_KEY and CONFIG.AWS_SECRET_KEY"
+        f"at: http://{CONFIG.SPARK_S3_BUCKET} using CONFIG.AWS_ACCESS_KEY and CONFIG.AWS_SECRET_KEY"
     )
     s3_client = boto3.client(
         "s3",
