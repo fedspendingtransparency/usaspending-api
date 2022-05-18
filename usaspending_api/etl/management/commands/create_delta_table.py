@@ -73,7 +73,11 @@ class Command(BaseCommand):
             choices=list(TABLE_SPEC.keys()),
         )
         parser.add_argument(
-            "--spark-s3-bucket", type=str, required=False, help="The destination bucket in S3 to write the data"
+            "--spark-s3-bucket",
+            type=str,
+            required=True,
+            default=CONFIG.SPARK_S3_BUCKET,
+            help="The destination bucket in S3 to write the data",
         )
 
     def handle(self, *args, **options):
@@ -96,8 +100,6 @@ class Command(BaseCommand):
         # Resolve Parameters
         destination_table = options["destination_table"]
         spark_s3_bucket = options["spark_s3_bucket"]
-        if not spark_s3_bucket:
-            spark_s3_bucket = CONFIG.SPARK_S3_BUCKET
 
         table_spec = TABLE_SPEC[destination_table]
         destination_database = table_spec["destination_database"]
