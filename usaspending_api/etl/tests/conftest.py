@@ -11,6 +11,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     stop_spark_context,
 )
 from usaspending_api.config import CONFIG
+
 __all__ = ["submissions"]
 
 

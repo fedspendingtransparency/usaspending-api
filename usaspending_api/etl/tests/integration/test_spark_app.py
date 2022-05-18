@@ -10,7 +10,6 @@ import uuid
 from datetime import date
 
 import boto3
-from django.core.management import call_command
 from model_mommy import mommy
 from pyspark.sql import SparkSession, Row
 from pytest import fixture, mark
