@@ -370,3 +370,10 @@ def test_create_sam_recipient_delta_table(spark, s3_unittest_data_bucket):
         "--config",
         f"AWS_S3_BUCKET={s3_unittest_data_bucket}"  # TODO: This doesn't seem to work as designed.
     )
+
+def test_cmd_config():
+    call_command(
+        "run_my_cmd_with_config",
+        "--config",
+        f"AWS_S3_BUCKET=foobar PARTITION_SIZE=1234",  # TODO: This doesn't seem to work as designed.
+    )
