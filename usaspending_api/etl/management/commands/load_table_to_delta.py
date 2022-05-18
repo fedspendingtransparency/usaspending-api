@@ -19,7 +19,6 @@ from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPE
 
 
 JDBC_URL_KEY = "DATABASE_URL"
-
 SPARK_PARTITION_ROWS = CONFIG.SPARK_PARTITION_ROWS
 # Abort processing the data if it would yield more than this many partitions to process as individual tasks
 JDBC_CONN_PROPS = {"driver": "org.postgresql.Driver", "fetchsize": str(SPARK_PARTITION_ROWS)}
@@ -32,7 +31,13 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument("--destination-table", type=str, required=True, help="The destination Delta Table to write the data", choices=list(TABLE_SPEC.keys()))
+        parser.add_argument(
+            "--destination-table",
+            type=str,
+            required=True,
+            help="The destination Delta Table to write the data",
+            choices=list(TABLE_SPEC.keys()),
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
