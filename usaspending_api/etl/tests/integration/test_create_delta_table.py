@@ -9,6 +9,5 @@ def test_create_sam_recipient_delta_table(spark, s3_unittest_data_bucket):
     call_command(
         "create_delta_table",
         "--destination-table=sam_recipient",
-        "--config",
-        f"AWS_S3_BUCKET={s3_unittest_data_bucket}"  # TODO: This doesn't seem to work as designed.
+        f"--spark-s3-bucket={s3_unittest_data_bucket}"
     )

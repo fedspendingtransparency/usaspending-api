@@ -162,7 +162,8 @@ class DefaultConfig(BaseSettings):
     AWS_REGION: str = "us-gov-west-1"
     AWS_ACCESS_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
-    AWS_PROFILE: str = ENV_SPECIFIC_OVERRIDE
+    # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
+    AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
     SPARK_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
     DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where output data will accumulate
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
