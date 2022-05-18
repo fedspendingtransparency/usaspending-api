@@ -98,7 +98,7 @@ class Command(BaseCommand):
             partition_column,
             is_numeric_partitioning_col=is_numeric_partitioning_col,
             is_date_partitioning_col=is_date_partitioning_col,
-            custom_schema=custom_schema
+            custom_schema=custom_schema,
         )
 
         # Write to S3
