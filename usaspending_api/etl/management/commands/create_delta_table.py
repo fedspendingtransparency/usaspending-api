@@ -6,22 +6,15 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
+from usaspending_api.recipient.delta_models.recipient_lookup import recipient_lookup_sql_string
+from usaspending_api.recipient.delta_models.recipient_profile import recipient_profile_sql_string
 from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_sql_string
-from usaspending_api.recipient.delta_models.recipient_lookup import recipient_lookup_sql_string 
-from usaspending_api.recipient.delta_models.recipient_profile import recipient_profile_sql_string 
+from usaspending_api.transactions.delta_models.transaction_fabs import transaction_fabs_sql_string
+from usaspending_api.transactions.delta_models.transaction_fpds import transaction_fpds_sql_string
 
 from pyspark.sql import SparkSession
 
 TABLE_SPEC = {
-    "sam_recipient": {
-        "schema_sql_string": sam_recipient_sql_string,
-        "source_table": "duns",
-        "source_database": "",
-        "destination_database": "raw",
-        "partition_column": "broker_duns_id",
-        "partition_column_type": "numeric",
-        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>"
-    },
     "recipient_lookup": {
         "schema_sql_string": recipient_lookup_sql_string,
         "source_table": "recipient_lookup",
@@ -29,7 +22,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "custom_schema": ""
+        "custom_schema": "",
     },
     "recipient_profile": {
         "schema_sql_string": recipient_profile_sql_string,
@@ -38,7 +31,34 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "custom_schema": ""
+        "custom_schema": "",
+    },
+    "sam_recipient": {
+        "schema_sql_string": sam_recipient_sql_string,
+        "source_table": "duns",
+        "source_database": "",
+        "destination_database": "raw",
+        "partition_column": "broker_duns_id",
+        "partition_column_type": "numeric",
+        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
+    },
+    "transaction_fabs": {
+        "schema_sql_string": transaction_fabs_sql_string,
+        "source_table": "transaction_fabs",
+        "source_database": "",
+        "destination_database": "raw",
+        "partition_column": "published_fabs_id",
+        "partition_column_type": "numeric",
+        "custom_schema": "",
+    },
+    "transaction_fpds": {
+        "schema_sql_string": transaction_fpds_sql_string,
+        "source_table": "transaction_fpds",
+        "source_database": "",
+        "destination_database": "raw",
+        "partition_column": "detached_award_procurement_id",
+        "partition_column_type": "numeric",
+        "custom_schema": "",
     },
 }
 
