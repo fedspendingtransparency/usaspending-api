@@ -75,7 +75,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--spark-s3-bucket",
             type=str,
-            required=True,
+            required=False,
             default=CONFIG.SPARK_S3_BUCKET,
             help="The destination bucket in S3 to write the data",
         )
