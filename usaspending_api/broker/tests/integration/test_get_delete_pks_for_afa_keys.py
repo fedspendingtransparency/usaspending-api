@@ -14,13 +14,13 @@ class TestThingWithMultipleDatabases(TestCase):
         connection = connections["data_broker"]
         with connection.cursor() as cursor:
 
-            cursor.execute("select count(*) from published_award_financial_assistance")
+            cursor.execute("select count(*) from published_fabs")
             assert cursor.fetchone()[0] == 0, "Another test somewhere is leaking data"
 
             cursor.execute(
                 """
-                insert into published_award_financial_assistance (
-                    published_award_financial_assistance_id, afa_generated_unique, is_active
+                insert into published_fabs (
+                    published_fabs_id, afa_generated_unique, is_active
                 ) (values
                     (1, 'abc', false),
                     (2, 'aBc', false),
