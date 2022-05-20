@@ -3174,7 +3174,7 @@
       "ussgl480100_undelivered_or_fyb": "4500"
     }
   ],
-  "SELECT * FROM published_award_financial_assistance WHERE true AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) >= %s AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) <= %s AND awarding_agency_code = %s": [
+  "SELECT * FROM published_fabs WHERE true AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) >= %s AND (action_date IS NOT NULL) AND CAST(action_date AS DATE) <= %s AND awarding_agency_code = %s": [
     {
       "legal_entity_zip_last4": "1",
       "legal_entity_foreign_posta": null,
@@ -3213,7 +3213,7 @@
       "business_types": null,
       "awarding_sub_tier_agency_c": "3100",
       "legal_entity_address_line3": null,
-      "detached_award_financial_assistance_id": 2261,
+      "published_fabs_id": 2261,
       "legal_entity_zip5": "79968",
       "awardee_or_recipient_uniqu": "132051285",
       "awarding_agency_code": "031",
@@ -3265,7 +3265,7 @@
       "business_types": null,
       "awarding_sub_tier_agency_c": "3100",
       "legal_entity_address_line3": null,
-      "detached_award_financial_assistance_id": 2260,
+      "published_fabs_id": 2260,
       "legal_entity_zip5": "31030",
       "awardee_or_recipient_uniqu": "73459083",
       "awarding_agency_code": "031",
@@ -3317,7 +3317,7 @@
       "business_types": null,
       "awarding_sub_tier_agency_c": "3100",
       "legal_entity_address_line3": null,
-      "detached_award_financial_assistance_id": 2259,
+      "published_fabs_id": 2259,
       "legal_entity_zip5": "78712",
       "awardee_or_recipient_uniqu": "170230239",
       "awarding_agency_code": "031",
@@ -3369,7 +3369,7 @@
       "business_types": null,
       "awarding_sub_tier_agency_c": "3100",
       "legal_entity_address_line3": null,
-      "detached_award_financial_assistance_id": 2038,
+      "published_fabs_id": 2038,
       "legal_entity_zip5": "79968",
       "awardee_or_recipient_uniqu": "132051285",
       "awarding_agency_code": "031",
@@ -3421,7 +3421,7 @@
       "business_types": null,
       "awarding_sub_tier_agency_c": "3100",
       "legal_entity_address_line3": null,
-      "detached_award_financial_assistance_id": 2037,
+      "published_fabs_id": 2037,
       "legal_entity_zip5": "31030",
       "awardee_or_recipient_uniqu": "73459083",
       "awarding_agency_code": "031",
@@ -3473,7 +3473,7 @@
       "business_types": null,
       "awarding_sub_tier_agency_c": "3100",
       "legal_entity_address_line3": null,
-      "detached_award_financial_assistance_id": 2036,
+      "published_fabs_id": 2036,
       "legal_entity_zip5": "78712",
       "awardee_or_recipient_uniqu": "170230239",
       "awarding_agency_code": "031",

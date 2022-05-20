@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 
-from usaspending_api.common.etl import mixins
+from usaspending_api.common.etl.postgres import mixins
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models import GTASSF133Balances
 

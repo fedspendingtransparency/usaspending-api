@@ -9,7 +9,6 @@ defc_sql = """
         financial_accounts_by_awards faba
     INNER JOIN disaster_emergency_fund_code defc
         ON defc.code = faba.disaster_emergency_fund_code
-        AND defc.group_name = 'covid_19'
     INNER JOIN submission_attributes sa
         ON faba.submission_id = sa.submission_id
         AND sa.reporting_period_start >= '2020-04-01'

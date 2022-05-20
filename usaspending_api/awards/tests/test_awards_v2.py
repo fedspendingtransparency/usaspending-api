@@ -1116,7 +1116,7 @@ def test_zip4_switch(client, awards_and_transactions):
 
 
 def test_file_c_data(client, awards_and_transactions):
-    defc = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    defc = baker.make("references.DisasterEmergencyFundCode", code="L")
     baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2019,
@@ -1268,7 +1268,7 @@ def test_file_c_data(client, awards_and_transactions):
 
 
 def test_outlay_calculations(client, awards_and_transactions):
-    defc = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    defc = baker.make("references.DisasterEmergencyFundCode", code="L")
     baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2019,

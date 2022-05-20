@@ -16,7 +16,7 @@ logger = logging.getLogger("script")
 class Command(AgnosticDeletes, BaseCommand):
     help = "Delete assistance transactions in an USAspending database"
     destination_table_name = SourceAssistanceTransaction().table_name
-    shared_pk = "published_award_financial_assistance_id"
+    shared_pk = "published_fabs_id"
 
     def fetch_deleted_transactions(self) -> Optional[dict]:
         if self.ids is not None:
@@ -29,11 +29,11 @@ class Command(AgnosticDeletes, BaseCommand):
         date_time = self.datetime
 
         sql = """
-        select  published_award_financial_assistance_id
-        from    published_award_financial_assistance
+        select  published_fabs_id
+        from    published_fabs
         where   afa_generated_unique in (
                     select  afa_generated_unique
-                    from    published_award_financial_assistance
+                    from    published_fabs
                     where   updated_at >= %s and
                             upper(correction_delete_indicatr) = 'D'
                 ) and
@@ -56,8 +56,8 @@ class Command(AgnosticDeletes, BaseCommand):
         """FABS needs to store IDs for downline ETL, run that here"""
         sql = """
             SELECT afa_generated_unique
-            FROM   published_award_financial_assistance
-            WHERE  published_award_financial_assistance_id IN {ids}
+            FROM   published_fabs
+            WHERE  published_fabs_id IN {ids}
         """
         records = []
 

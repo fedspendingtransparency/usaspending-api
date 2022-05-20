@@ -4,7 +4,6 @@ from usaspending_api.awards.models.financial_accounts_by_awards import (
     AbstractFinancialAccountsByAwards,
     FinancialAccountsByAwards,
 )
-from usaspending_api.awards.models.mv_covid_financial_account import CovidFinancialAccountMatview
 from usaspending_api.awards.models.parent_award import ParentAward
 from usaspending_api.awards.models.subaward import Subaward
 from usaspending_api.awards.models.transaction_delta import TransactionDelta
@@ -16,7 +15,6 @@ __all__ = [
     "AbstractFinancialAccountsByAwards",
     "Award",
     "BrokerSubaward",
-    "CovidFinancialAccountMatview",
     "FinancialAccountsByAwards",
     "ParentAward",
     "Subaward",

@@ -4,7 +4,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from pathlib import Path
-from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, ETLTemporaryTable, operations, mixins
+from usaspending_api.common.etl.postgres import ETLDBLinkTable, ETLTable, ETLTemporaryTable
+from usaspending_api.common.etl.postgres import mixins, operations
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.etl.operations.subaward.update_city_county import update_subaward_city_county
 
@@ -48,8 +49,8 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _perform_load(self):
         """ Grab the Broker subaward table and use it to update ours. """
 
-        broker_subaward = ETLTable("broker_subaward")
-        subaward = ETLTable("subaward")
+        broker_subaward = ETLTable("broker_subaward", schema_name="raw")
+        subaward = ETLTable("subaward", schema_name="int")
 
         remote_subaward = ETLDBLinkTable("subaward", settings.DATA_BROKER_DBLINK_NAME, broker_subaward.data_types)
 

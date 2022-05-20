@@ -207,7 +207,6 @@ class _RecipientSearchText(_Filter):
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 recipient_duns_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
-
             if len(upper_recipient_string) == 12:
                 recipient_uei_query = ES_Q("match", recipient_uei=upper_recipient_string)
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_uei_query]))
@@ -227,13 +226,9 @@ class _RecipientId(_Filter):
         if filter_value.endswith("P"):
             return ES_Q("match", parent_recipient_hash=recipient_hash)
         elif filter_value.endswith("C"):
-            return ES_Q("match", recipient_hash=recipient_hash) & ~ES_Q(
-                "match", parent_recipient_unique_id__keyword="NULL"
-            )
+            return ES_Q("match", recipient_hash=recipient_hash) & ~ES_Q("match", parent_uei__keyword="NULL")
         else:
-            return ES_Q("match", recipient_hash=recipient_hash) & ES_Q(
-                "match", parent_recipient_unique_id__keyword="NULL"
-            )
+            return ES_Q("match", recipient_hash=recipient_hash) & ~ES_Q("exists", field="parent_uei")
 
 
 class _RecipientScope(_Filter):

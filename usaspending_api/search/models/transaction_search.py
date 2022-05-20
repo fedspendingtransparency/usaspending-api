@@ -10,6 +10,8 @@ class TransactionSearch(models.Model):
     may or may not be nullable, but those constraints are not enforced in this table.
     """
 
+    # "transaction" and "award" are actually models.BigIntegerField(), but left as OneToOneField and ForeignKey
+    # to allow for querying in the Django ORM
     transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
     award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True)
     modification_number = models.TextField(null=True)
