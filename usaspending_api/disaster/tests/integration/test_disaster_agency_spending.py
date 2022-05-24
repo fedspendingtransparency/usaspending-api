@@ -131,6 +131,24 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
+            "id": 4,
+            "code": "009",
+            "description": "Agency 009",
+            "award_count": 1,
+            "obligation": 1000.0,
+            "outlay": 1000.0,
+            "children": [
+                {
+                    "id": 4,
+                    "code": "3008",
+                    "description": "Subtier 3008",
+                    "award_count": 1,
+                    "obligation": 1000.0,
+                    "outlay": 1000.0,
+                }
+            ],
+        },
+        {
             "id": 2,
             "code": "008",
             "description": "Agency 008",
@@ -209,6 +227,24 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
         client, url, award_type_codes=["02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
+        {
+            "id": 4,
+            "code": "009",
+            "description": "Agency 009",
+            "award_count": 1,
+            "obligation": 1000.0,
+            "outlay": 1000.0,
+            "children": [
+                {
+                    "id": 4,
+                    "code": "3008",
+                    "description": "Subtier 3008",
+                    "award_count": 1,
+                    "obligation": 1000.0,
+                    "outlay": 1000.0,
+                }
+            ],
+        },
         {
             "id": 2,
             "code": "008",

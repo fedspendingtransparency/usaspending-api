@@ -5,16 +5,16 @@ BEGIN;
 WITH removed_recipients AS (
   SELECT
     rl.recipient_hash
-    FROM public.recipient_lookup rl
+    FROM rpt.recipient_lookup rl
     LEFT JOIN public.temporary_restock_recipient_lookup tem ON rl.recipient_hash = tem.recipient_hash
     WHERE tem.recipient_hash IS NULL
 )
-DELETE FROM public.recipient_lookup rl WHERE rl.recipient_hash IN (SELECT recipient_hash FROM removed_recipients)
+DELETE FROM rpt.recipient_lookup rl WHERE rl.recipient_hash IN (SELECT recipient_hash FROM removed_recipients)
 RETURNING rl.recipient_hash;
 
 
 DO $$ BEGIN RAISE NOTICE 'Updating records in recipient_lookup'; END $$;
-UPDATE public.recipient_lookup rl SET
+UPDATE rpt.recipient_lookup rl SET
     address_line_1              = tem.address_line_1,
     address_line_2              = tem.address_line_2,
     business_types_codes        = tem.business_types_codes,
@@ -57,7 +57,7 @@ UPDATE public.recipient_lookup rl SET
   );
 
 DO $$ BEGIN RAISE NOTICE 'Inserting new records into recipient_lookup'; END $$;
-INSERT INTO public.recipient_lookup (
+INSERT INTO rpt.recipient_lookup (
   recipient_hash,
   legal_business_name,
   duns,
@@ -103,7 +103,7 @@ ON CONFLICT(recipient_hash) DO NOTHING;
 
 DO $$ BEGIN RAISE NOTICE 'Deleting duplicate DUNS records that are superceded by records with UEI populated.'; END $$;
 
-DELETE FROM public.recipient_lookup WHERE recipient_hash IN (
+DELETE FROM rpt.recipient_lookup WHERE recipient_hash IN (
     SELECT rl.recipient_hash
     FROM recipient_lookup rl
         INNER JOIN public.temporary_restock_recipient_lookup tem
@@ -138,7 +138,7 @@ WITH alternate_names AS (
   FROM alt_names an
   FULL OUTER JOIN alt_parent_names apn ON an.recipient_hash = apn.recipient_hash
 )
-UPDATE public.recipient_lookup rl SET
+UPDATE rpt.recipient_lookup rl SET
   alternate_names = array_remove(an.all_names, rl.legal_business_name)
 FROM alternate_names an
 WHERE

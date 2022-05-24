@@ -1,9 +1,9 @@
 from psycopg2.sql import Composed, Identifier, SQL, Literal
 from typing import List
-from usaspending_api.common.etl import primatives
-from usaspending_api.common.etl.etl_object_base import ETLObjectBase
-from usaspending_api.common.etl.introspection import get_columns
-from usaspending_api.common.etl.primatives import DataTypes
+from usaspending_api.common.etl.postgres import primatives
+from usaspending_api.common.etl.postgres.etl_object_base import ETLObjectBase
+from usaspending_api.common.etl.postgres.introspection import get_columns
+from usaspending_api.common.etl.postgres.primatives import DataTypes
 
 
 class ETLDBLinkTable(ETLObjectBase):

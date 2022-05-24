@@ -3,15 +3,13 @@ import pytest
 from collections import OrderedDict
 from pathlib import Path
 from psycopg2.sql import Identifier, Literal, SQL
-from usaspending_api.common.etl import (
+from usaspending_api.common.etl.postgres import (
     ETLDBLinkTable,
     ETLTable,
     ETLTemporaryTable,
     ETLQueryFile,
-    introspection,
-    operations,
-    primatives,
 )
+from usaspending_api.common.etl.postgres import introspection, operations, primatives
 from usaspending_api.common.helpers.sql_helpers import (
     convert_composable_query_to_string as cc,
     get_connection,

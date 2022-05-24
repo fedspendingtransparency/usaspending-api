@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Tuple
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.common.etl import ETLDBLinkTable, ETLTable, operations
+from usaspending_api.common.etl.postgres import ETLDBLinkTable, ETLTable
+from usaspending_api.common.etl.postgres import operations
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
@@ -182,7 +183,7 @@ class AgnosticTransactionLoader:
 
     def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
         """Loop through the batches of IDs and load using the ETL tables"""
-        destination = ETLTable(dest_tablename)
+        destination = ETLTable(dest_tablename, schema_name="raw")
         source = ETLDBLinkTable(source_tablename, settings.DATA_BROKER_DBLINK_NAME, destination.data_types)
         transactions_remaining_count = self.total_ids_to_process
 
