@@ -79,6 +79,8 @@ class LocalConfig(DefaultConfig):
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
     AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory
+    # Set to True to have the tests store the Spark data in your filesystem (and not MinIO)
+    USE_FILESYSTEM_FOR_SPARK_DATA = True
 
     @root_validator
     def _AWS_S3_ENDPOINT_factory(cls, values):

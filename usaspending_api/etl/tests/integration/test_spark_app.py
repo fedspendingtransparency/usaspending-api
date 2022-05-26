@@ -5,6 +5,9 @@ import logging
 import random
 import sys
 import uuid
+import tempfile
+import shutil
+import os
 from datetime import date
 
 import boto3
@@ -53,6 +56,20 @@ SPARK_SESSION_JARS = [
 ]
 
 DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
+
+
+@fixture(scope="session")
+def spark_data_output_folder():
+    """Create a test directory to be used for the spark tests """
+    prefix = "unittest-tmpdir-"
+    tmp_dir_path = tempfile.mkdtemp(prefix=prefix)
+    logging.info(f"Unit Test Directory '{tmp_dir_path}' created.")
+
+    yield tmp_dir_path
+
+    # Cleanup by removing all objects in the temp directory
+    shutil.rmtree(tmp_dir_path)
+    logging.info(f"Unit Test Directory '{tmp_dir_path}' removed.")
 
 
 @fixture(scope="session")
@@ -202,7 +219,7 @@ def test_spark_app_run_local_master(spark: SparkSession):
     logger.info(versions)
 
 
-def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
+def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket, spark_data_output_folder):
     """More involved integration test that requires MinIO to be up as an s3 alternative."""
     data = [
         {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
@@ -216,19 +233,27 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    df.write.option("header", True).csv(f"s3a://{s3_unittest_data_bucket}" f"/{CONFIG.DELTA_LAKE_S3_PATH}/write_to_s3")
+    csv_path = f"s3a://{s3_unittest_data_bucket}" f"/{CONFIG.DELTA_LAKE_S3_PATH}/write_to_s3"
+    if CONFIG.USE_FILESYSTEM_FOR_SPARK_DATA:
+        csv_path = f"file://{spark_data_output_folder}/write_to_s3"
+    df.write.option("header", True).csv(csv_path)
 
     # Verify there are *.csv part files in the chosen bucket
-    s3_client = boto3.client(
-        "s3",
-        endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
-        aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
-        aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
-    )
-    response = s3_client.list_objects_v2(Bucket=s3_unittest_data_bucket)
-    assert "Contents" in response  # the Bucket has contents
-    bucket_objects = [c["Key"] for c in response["Contents"]]
-    assert any([obj.endswith(".csv") for obj in bucket_objects])
+    if not CONFIG.USE_FILESYSTEM_FOR_SPARK_DATA:
+        s3_client = boto3.client(
+            "s3",
+            endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
+            aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+            aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+        )
+        response = s3_client.list_objects_v2(Bucket=s3_unittest_data_bucket)
+        assert "Contents" in response  # the Bucket has contents
+        bucket_objects = [c["Key"] for c in response["Contents"]]
+        assert any([obj.endswith(".csv") for obj in bucket_objects])
+    else:
+        bucket_objects = os.listdir(f"{spark_data_output_folder}/write_to_s3")
+        assert len(bucket_objects) > 0
+        assert any([obj.endswith(".csv") for obj in bucket_objects])
 
 
 @fixture()
@@ -269,6 +294,7 @@ def test_spark_write_to_s3_delta_from_db(
     spark: SparkSession,
     delta_lake_unittest_schema,
     s3_unittest_data_bucket,
+    spark_data_output_folder,
     request,
 ):
     """Test that we can read from Postgres DB and write to new delta tables,
@@ -288,6 +314,8 @@ def test_spark_write_to_s3_delta_from_db(
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
+    if CONFIG.USE_FILESYSTEM_FOR_SPARK_DATA:
+        path = f"file://{spark_data_output_folder}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
@@ -306,6 +334,8 @@ def test_spark_write_to_s3_delta_from_db(
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
+    if CONFIG.USE_FILESYSTEM_FOR_SPARK_DATA:
+        path = f"file://{spark_data_output_folder}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
@@ -324,6 +354,8 @@ def test_spark_write_to_s3_delta_from_db(
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
+    if CONFIG.USE_FILESYSTEM_FOR_SPARK_DATA:
+        path = f"file://{spark_data_output_folder}/{table_name}"
 
     log = get_jvm_logger(spark, request.node.name)
     log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
