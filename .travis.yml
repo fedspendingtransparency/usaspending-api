@@ -41,6 +41,7 @@ env:
   - GRANTS_API_KEY=${GRANTS_API_KEY}
   - MINIO_DATA_DIR=${HOME}/Development/data/usaspending/docker/usaspending-s3  # needs to be same place docker-compose will look for it (based on .env file)
   - MINIO_HOST=localhost
+  - USE_FILESYSTEM_FOR_SPARK_DATA=false
 
 before_install:
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
