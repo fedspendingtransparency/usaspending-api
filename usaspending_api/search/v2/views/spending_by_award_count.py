@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from elasticsearch_dsl import Q
 
-from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
@@ -57,10 +56,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         self.original_filters = request.data.get("filters")
         json_request = TinyShield(models).block(request.data)
         subawards = json_request["subawards"]
-        filters = add_date_range_comparison_types(
-            json_request.get("filters", None), subawards, gte_date_type="action_date", lte_date_type="date_signed"
-        )
-
+        filters = json_request.get("filters", {})
+        if not subawards and filters.get("time_period") is not None:
+            for time_period in filters["time_period"]:
+                time_period["gte_date_type"] = time_period.get("date_type", "action_date")
+                time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
 
