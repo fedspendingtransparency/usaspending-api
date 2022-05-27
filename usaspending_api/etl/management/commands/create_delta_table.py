@@ -7,11 +7,12 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
-from usaspending_api.recipient.delta_models.recipient_lookup import recipient_lookup_sql_string
-from usaspending_api.recipient.delta_models.recipient_profile import recipient_profile_sql_string
-from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_sql_string
-from usaspending_api.transactions.delta_models.transaction_fabs import transaction_fabs_sql_string
-from usaspending_api.transactions.delta_models.transaction_fpds import transaction_fpds_sql_string
+from usaspending_api.recipient.delta_models import (
+    recipient_lookup_sql_string,
+    recipient_profile_sql_string,
+    sam_recipient_sql_string,
+)
+from usaspending_api.transactions.delta_models import transaction_fabs_sql_string, transaction_fpds_sql_string
 
 
 TABLE_SPEC = {
@@ -61,7 +62,7 @@ TABLE_SPEC = {
 class Command(BaseCommand):
 
     help = """
-
+    This command creates an empty Delta Table based on the provided --destination-table argument.
     """
 
     def add_arguments(self, parser):
@@ -91,7 +92,9 @@ class Command(BaseCommand):
         }
 
         spark = get_active_spark_session()
+        spark_created_by_command = False
         if not spark:
+            spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
@@ -121,5 +124,5 @@ class Command(BaseCommand):
             )
         )
 
-        # TODO - Determine how to only run this when not in a notebook
-        # spark.stop()
+        if spark_created_by_command:
+            spark.stop()
