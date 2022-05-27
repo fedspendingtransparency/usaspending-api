@@ -13,6 +13,7 @@ from usaspending_api.search.models.transaction_search import TransactionSearch
 
 logger = logging.getLogger("script")
 
+TABLE_SCHEMA_NAME = "rpt"
 TABLE_NAME = "transaction_search"
 
 
@@ -104,7 +105,7 @@ class Command(BaseCommand):
             if index_name not in self.constraint_names:
                 create_temp_index_sql = row[1].replace(index_name, index_name_temp)
                 create_temp_index_sql = create_temp_index_sql.replace(
-                    f"public.{TABLE_NAME}", f"public.{TABLE_NAME}_temp"
+                    f"{TABLE_SCHEMA_NAME}.{TABLE_NAME}", f"{TABLE_SCHEMA_NAME}.{TABLE_NAME}_temp"
                 )
                 create_temp_indexes.append(create_temp_index_sql)
 
