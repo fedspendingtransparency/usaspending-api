@@ -250,7 +250,6 @@ def load_es_index(
     spark.sparkContext._jvm.org.elasticsearch.spark.sql.EsSparkSQL.saveToEs(jvm_data_df, jvm_es_config_map)
 
 
-# TODO - Implement Merge
 def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str):
     source_df.create_or_replace_temporary_view("temp_table")
 

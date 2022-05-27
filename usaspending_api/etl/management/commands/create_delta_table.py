@@ -7,11 +7,12 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
-from usaspending_api.recipient.delta_models.recipient_lookup import recipient_lookup_sql_string
-from usaspending_api.recipient.delta_models.recipient_profile import recipient_profile_sql_string
-from usaspending_api.recipient.delta_models.sam_recipient import sam_recipient_sql_string
-from usaspending_api.transactions.delta_models.transaction_fabs import transaction_fabs_sql_string
-from usaspending_api.transactions.delta_models.transaction_fpds import transaction_fpds_sql_string
+from usaspending_api.recipient.delta_models import (
+    recipient_lookup_sql_string,
+    recipient_profile_sql_string,
+    sam_recipient_sql_string
+)
+from usaspending_api.transactions.delta_models import transaction_fabs_sql_string, transaction_fpds_sql_string
 
 
 TABLE_SPEC = {
@@ -122,4 +123,4 @@ class Command(BaseCommand):
         )
 
         # TODO - Determine how to only run this when not in a notebook
-        # spark.stop()
+        spark.stop()
