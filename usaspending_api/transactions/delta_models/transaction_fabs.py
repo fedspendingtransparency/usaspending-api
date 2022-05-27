@@ -101,7 +101,7 @@ transaction_fabs_sql_string = r"""
         funding_opportunity_goals STRING,
         funding_opportunity_number STRING,
         indirect_federal_sharing NUMERIC
-    );
+    )
     USING DELTA
     LOCATION 's3a://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/{DESTINATION_DATABASE}/{DESTINATION_TABLE}'
     """
