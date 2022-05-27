@@ -161,23 +161,12 @@ docker-compose-up-spark: ## Deploy containerized version of spark cluster infras
 .PHONY: docker-compose-run
 docker-compose-run: ## Use docker-compose run <args> to run one or more Docker Compose services with options
 	# NOTE: [See NOTE in docker-compose rule about .env file]
-	docker-compose --project-directory . --file ${docker_compose_file} run ${args}
-
-.PHONY: docker-compose-run-spark
-docker-compose-run-spark: ## Use docker-compose run <args> to run one or more Docker Compose services with options with the spark profile
-	# NOTE: [See NOTE in docker-compose rule about .env file]
-	docker-compose --profile spark --project-directory . --file ${docker_compose_file} run ${args}
+	docker-compose ${profiles} --project-directory . --file ${docker_compose_file} run ${args}
 
 .PHONY: docker-compose-down
 docker-compose-down: ## Run docker-compose down to bring down services listed in the compose file
 	# NOTE: [See NOTE in docker-compose rule about .env file]
 	docker-compose --project-directory . --file ${docker_compose_file} down ${args}
-
-.PHONY: docker-build-spark
-docker-build-spark: ## Run docker build to build a base container image for spark, hadoop, and python installed
-	# NOTE: [See NOTE in above docker-compose rule about .env file]
-	echo "docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})"
-	docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})
 
 .PHONY: docker-compose-build
 docker-compose-build: ## Ensure ALL services in the docker-compose.yaml file have an image built for them according to their build: key
