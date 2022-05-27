@@ -163,6 +163,11 @@ docker-compose-run: ## Use docker-compose run <args> to run one or more Docker C
 	# NOTE: [See NOTE in docker-compose rule about .env file]
 	docker-compose --project-directory . --file ${docker_compose_file} run ${args}
 
+.PHONY: docker-compose-run-spark
+docker-compose-run-spark: ## Use docker-compose run <args> to run one or more Docker Compose services with options with the spark profile
+	# NOTE: [See NOTE in docker-compose rule about .env file]
+	docker-compose --profile spark --project-directory . --file ${docker_compose_file} run ${args}
+
 .PHONY: docker-compose-down
 docker-compose-down: ## Run docker-compose down to bring down services listed in the compose file
 	# NOTE: [See NOTE in docker-compose rule about .env file]
