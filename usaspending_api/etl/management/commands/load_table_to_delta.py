@@ -52,7 +52,9 @@ class Command(BaseCommand):
         }
 
         spark = get_active_spark_session()
+        spark_created_by_command = False
         if not spark:
+            spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
@@ -110,5 +112,5 @@ class Command(BaseCommand):
 
         # Write to S3
         load_delta_table(spark, df, destination_table, True)
-
-        spark.stop()
+        if spark_created_by_command:
+            spark.stop()
