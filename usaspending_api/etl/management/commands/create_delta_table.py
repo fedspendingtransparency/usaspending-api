@@ -62,7 +62,7 @@ TABLE_SPEC = {
 class Command(BaseCommand):
 
     help = """
-
+    This command creates an empty Delta Table based on the provided --destination-table argument.
     """
 
     def add_arguments(self, parser):

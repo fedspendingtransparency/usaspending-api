@@ -27,7 +27,9 @@ JDBC_CONN_PROPS = {"driver": "org.postgresql.Driver", "fetchsize": str(SPARK_PAR
 class Command(BaseCommand):
 
     help = """
-
+    This command reads data from a Postgres database table and inserts it into a corresponding Delta
+    Table. As of now, it only supports a full reload of a table. All existing data will be delted
+    before new data is written.
     """
 
     def add_arguments(self, parser):
