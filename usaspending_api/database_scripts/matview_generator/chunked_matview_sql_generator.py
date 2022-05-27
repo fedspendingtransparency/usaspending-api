@@ -30,7 +30,8 @@ POSTGRES INDEX FORMAT
 
 EXAMPLE SQL DESCRIPTION JSON FILE:
 
-{   "final_name": "example_matview",
+{   "schema_name": "public",
+    "final_name": "example_matview",
     "matview_sql": [
     "SELECT",
     "  action_date,",
@@ -101,10 +102,11 @@ def create_all_sql_strings(sql_json):
     final_sql_strings = []
 
     matview_name = sql_json["final_name"]
+    matview_schema = sql_json.get("chunked_schema_name", "public")
 
     final_sql_strings.extend(make_matview_drops(matview_name))
     final_sql_strings.append("")
-    final_sql_strings.extend(make_matview_create(matview_name, sql_json["matview_sql"]))
+    final_sql_strings.extend(make_matview_create(f"{matview_schema}.{matview_name}", sql_json["matview_sql"]))
 
     final_sql_strings.append("")
     final_sql_strings.extend(make_modification_sql(matview_name, GLOBAL_ARGS.quiet))
@@ -131,11 +133,12 @@ def make_matview_empty(matview_name, chunk_count):
 
 
 def create_componentized_files(sql_json):
+    table_schema = sql_json.get("schema_name", "public")
     matview_name = sql_json["final_name"]
     matview_temp_name = matview_name + "_temp"
     filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
 
-    create_table = make_temp_table_create(matview_name, matview_temp_name)
+    create_table = make_temp_table_create(f"{table_schema}.{matview_name}", f"{table_schema}.{matview_temp_name}")
     write_sql_file(create_table, filename_base + "__create")
 
     sql_strings = make_rename_sql(matview_name)
@@ -159,6 +162,7 @@ def create_componentized_files(sql_json):
 
 def create_chunked_componentized_files(sql_json):
     table_name = sql_json["final_name"]
+    matview_schema_name = sql_json.get("chunked_schema_name", "public")
     filename_base = os.path.join(DEST_FOLDER, COMPONENT_DIR, sql_json["final_name"])
 
     sql_strings = make_matview_drops(table_name)
@@ -167,7 +171,7 @@ def create_chunked_componentized_files(sql_json):
     sql_strings = make_matview_refresh(table_name, "")
     write_sql_file(sql_strings, filename_base + "__refresh")
 
-    sql_strings = make_matview_create(table_name, sql_json["matview_sql"])
+    sql_strings = make_matview_create(f"{matview_schema_name}.{table_name}", sql_json["matview_sql"])
     write_sql_file(sql_strings, filename_base + "__matview")
 
 
