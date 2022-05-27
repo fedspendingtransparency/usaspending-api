@@ -168,6 +168,12 @@ docker-compose-down: ## Run docker-compose down to bring down services listed in
 	# NOTE: [See NOTE in docker-compose rule about .env file]
 	docker-compose --project-directory . --file ${docker_compose_file} down ${args}
 
+.PHONY: docker-build-spark
+docker-build-spark: ## Run docker build to build a base container image for spark, hadoop, and python installed
+	# NOTE: [See NOTE in above docker-compose rule about .env file]
+	echo "docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})"
+	docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})
+
 .PHONY: docker-compose-build
 docker-compose-build: ## Ensure ALL services in the docker-compose.yaml file have an image built for them according to their build: key
 	# NOTE: This *may* creates a compose-specific image name IF an image: YAML key does not specify the image name to be used as
