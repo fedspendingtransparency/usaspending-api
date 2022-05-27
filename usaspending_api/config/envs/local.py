@@ -56,7 +56,9 @@ class LocalConfig(DefaultConfig):
 
     # ==== [MinIO] ====
     MINIO_HOST: str = "localhost"
-    MINIO_PORT: str = "9000"
+    # Changing MinIO ports from defaults. Known to have port conflicts with proxies on developer laptops
+    MINIO_PORT: str = "10001"
+    MINIO_CONSOLE_PORT: str = "10002"
     MINIO_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
     MINIO_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
