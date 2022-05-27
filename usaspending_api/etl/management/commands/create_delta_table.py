@@ -12,7 +12,11 @@ from usaspending_api.recipient.delta_models import (
     recipient_profile_sql_string,
     sam_recipient_sql_string,
 )
-from usaspending_api.transactions.delta_models import transaction_fabs_sql_string, transaction_fpds_sql_string
+from usaspending_api.transactions.delta_models import (
+    transaction_fabs_sql_string,
+    transaction_fpds_sql_string,
+    transaction_search_sql_string,
+)
 
 
 TABLE_SPEC = {
@@ -55,6 +59,14 @@ TABLE_SPEC = {
         "partition_column": "detached_award_procurement_id",
         "partition_column_type": "numeric",
         "custom_schema": "",
+    },
+    "transaction_search": {
+        "schema_sql_string": transaction_search_sql_string,
+        "source_table": None,  # Placeholder for now
+        "destination_database": "rpt",
+        "partition_column": None,  # Placeholder for now
+        "partition_column_type": None,  # Placeholder for now
+        "custom_schema": None,  # Placeholder for now
     },
 }
 
