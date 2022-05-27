@@ -10,7 +10,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.recipient.delta_models import (
     recipient_lookup_sql_string,
     recipient_profile_sql_string,
-    sam_recipient_sql_string
+    sam_recipient_sql_string,
 )
 from usaspending_api.transactions.delta_models import transaction_fabs_sql_string, transaction_fpds_sql_string
 
@@ -123,4 +123,4 @@ class Command(BaseCommand):
         )
 
         # TODO - Determine how to only run this when not in a notebook
-        spark.stop()
+        # spark.stop()
