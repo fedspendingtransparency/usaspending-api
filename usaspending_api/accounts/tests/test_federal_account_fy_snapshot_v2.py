@@ -1,25 +1,25 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from usaspending_api.accounts.models import FederalAccount
 
 
 @pytest.fixture
 def financial_spending_data(db):
-    latest_subm = mommy.make(
+    latest_subm = baker.make(
         "submissions.SubmissionAttributes", reporting_fiscal_year=2017, is_final_balances_for_fy=True
     )
-    not_latest_subm = mommy.make(
+    not_latest_subm = baker.make(
         "submissions.SubmissionAttributes", reporting_fiscal_year=2017, is_final_balances_for_fy=False
     )
-    last_year_subm = mommy.make(
+    last_year_subm = baker.make(
         "submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=True
     )
-    federal_account = mommy.make(FederalAccount, id=1)
+    federal_account = baker.make(FederalAccount, id=1)
 
     # create Object classes
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier__federal_account=federal_account,
         final_of_fy=True,
@@ -35,14 +35,14 @@ def financial_spending_data(db):
     )
 
     # these AAB records should not show up in the endpoint, they are too old
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier__federal_account=federal_account,
         final_of_fy=False,
         submission=not_latest_subm,
         gross_outlay_amount_by_tas_cpe=999,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier__federal_account=federal_account,
         final_of_fy=True,

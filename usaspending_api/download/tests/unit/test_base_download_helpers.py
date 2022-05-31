@@ -3,7 +3,7 @@ import pytest
 
 
 from datetime import datetime, timezone
-from model_mommy import mommy
+from model_bakery import baker
 from unittest.mock import patch
 
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
@@ -17,7 +17,7 @@ JSON_REQUEST = {"dummy_key": "dummy_value"}
 @pytest.fixture
 def common_test_data(db):
     for js in JOB_STATUS:
-        mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
+        baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
     download_jobs = [
         {
@@ -38,9 +38,9 @@ def common_test_data(db):
     for job in download_jobs:
         with patch("django.utils.timezone.now") as mock_now:
             mock_now.return_value = job["update_date"]
-            mommy.make("download.DownloadJob", **job)
+            baker.make("download.DownloadJob", **job)
 
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date=datetime(2021, 1, 1, 12, 0, 0, 0, timezone.utc),
     )
@@ -67,7 +67,7 @@ def test_elasticsearch_download_cached(common_test_data):
         },
     ]
     for load_date in external_load_dates:
-        mommy.make("broker.ExternalDataLoadDate", **load_date)
+        baker.make("broker.ExternalDataLoadDate", **load_date)
 
     es_transaction_request = {**JSON_REQUEST, "download_types": ["elasticsearch_transactions", "sub_awards"]}
     es_award_request = {**JSON_REQUEST, "download_types": ["elasticsearch_awards", "sub_awards"]}
@@ -105,7 +105,7 @@ def test_elasticsearch_download_cached(common_test_data):
     for job in download_jobs:
         with patch("django.utils.timezone.now") as mock_now:
             mock_now.return_value = job["update_date"]
-            mommy.make("download.DownloadJob", **job)
+            baker.make("download.DownloadJob", **job)
 
     result = BaseDownloadViewSet._get_cached_download(
         json.dumps(es_transaction_request), es_transaction_request["download_types"]
@@ -137,7 +137,7 @@ def test_elasticsearch_cached_download_not_found(common_test_data):
         },
     ]
     for load_date in external_load_dates:
-        mommy.make("broker.ExternalDataLoadDate", **load_date)
+        baker.make("broker.ExternalDataLoadDate", **load_date)
 
     result = BaseDownloadViewSet._get_cached_download(
         json.dumps(JSON_REQUEST), ["elasticsearch_transactions", "sub_awards"]
@@ -168,7 +168,7 @@ def test_non_elasticsearch_download_cached(common_test_data):
         },
     ]
     for load_date in external_load_dates:
-        mommy.make("broker.ExternalDataLoadDate", **load_date)
+        baker.make("broker.ExternalDataLoadDate", **load_date)
 
     download_jobs = [
         {
@@ -203,14 +203,14 @@ def test_non_elasticsearch_download_cached(common_test_data):
     for job in download_jobs:
         with patch("django.utils.timezone.now") as mock_now:
             mock_now.return_value = job["update_date"]
-            mommy.make("download.DownloadJob", **job)
+            baker.make("download.DownloadJob", **job)
 
     # Grab latest valid download
     result = BaseDownloadViewSet._get_cached_download(json.dumps(JSON_REQUEST))
     assert result == {"download_job_id": 21, "file_name": "21_download_job.zip"}
 
     # FABS date updated; download no longer cached
-    mommy.make(
+    baker.make(
         "broker.ExternalDataLoadDate",
         external_data_type__external_data_type_id=EXTERNAL_DATA_TYPE_DICT["fabs"],
         last_load_date=datetime(2021, 1, 18, 12, 0, 0, 0, timezone.utc),
@@ -228,13 +228,13 @@ def test_non_elasticsearch_download_cached(common_test_data):
             "update_date": datetime(2021, 1, 18, 13, 0, 0, 0, timezone.utc),
         }
         mock_now.return_value = job["update_date"]
-        mommy.make("download.DownloadJob", **job)
+        baker.make("download.DownloadJob", **job)
 
     result = BaseDownloadViewSet._get_cached_download(json.dumps(JSON_REQUEST))
     assert result == {"download_job_id": 30, "file_name": "30_download_job.zip"}
 
     # New submission_reveal_date is set in DABSSubmissionWindowSchedule; clears the cache
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date=datetime(2021, 1, 19, 6, 0, 0, 0, timezone.utc),
     )
@@ -252,7 +252,7 @@ def test_non_elasticsearch_download_cached(common_test_data):
             "update_date": datetime(2021, 1, 19, 6, 15, 0, 0, timezone.utc),
         }
         mock_now.return_value = job["update_date"]
-        mommy.make("download.DownloadJob", **job)
+        baker.make("download.DownloadJob", **job)
 
     result = BaseDownloadViewSet._get_cached_download(json.dumps(JSON_REQUEST))
     assert result == {"download_job_id": 31, "file_name": "31_download_job.zip"}
@@ -279,7 +279,7 @@ def test_non_elasticsearch_cached_download_not_found(common_test_data):
         },
     ]
     for load_date in external_load_dates:
-        mommy.make("broker.ExternalDataLoadDate", **load_date)
+        baker.make("broker.ExternalDataLoadDate", **load_date)
 
     result = BaseDownloadViewSet._get_cached_download(json.dumps(JSON_REQUEST))
     assert result is None

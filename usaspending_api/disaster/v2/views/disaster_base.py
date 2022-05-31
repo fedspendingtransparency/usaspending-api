@@ -1,7 +1,7 @@
 import json
 
 from datetime import date
-from django.db.models import Max, Q, F, Value, Case, When, Sum, Count
+from django.db.models import Case, Count, DecimalField, F, Max, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.http import HttpRequest
 from django.utils.functional import cached_property
@@ -266,8 +266,19 @@ class DisasterBase(APIView):
             base_values.queryset()
             .values("grouping_key")
             .annotate(
-                obligation=Coalesce(Sum("transaction_obligated_amount"), 0),
-                outlay=Coalesce(Sum(Case(When(q, then=F("gross_outlay_amount_by_award_cpe")), default=Value(0))), 0),
+                obligation=Coalesce(
+                    Sum("transaction_obligated_amount"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                ),
+                outlay=Coalesce(
+                    Sum(
+                        Case(
+                            When(q, then=F("gross_outlay_amount_by_award_cpe")),
+                            default=Value(0),
+                            output_field=DecimalField(max_digits=23, decimal_places=2),
+                        )
+                    ),
+                    0,
+                ),
             )
             .values("grouping_key", "obligation", "outlay"),
             "aggregate_faba",
@@ -280,7 +291,12 @@ class DisasterBase(APIView):
         aggregate_awards = With(
             distinct_awards.queryset()
             .values("grouping_key")
-            .annotate(award_count=Count("award_id"), face_value_of_loan=Coalesce(Sum("total_loan_value"), 0))
+            .annotate(
+                award_count=Count("award_id"),
+                face_value_of_loan=Coalesce(
+                    Sum("total_loan_value"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                ),
+            )
             .values("grouping_key", "award_count", "face_value_of_loan"),
             "aggregate_awards",
         )
@@ -332,20 +348,36 @@ class FabaOutlayMixin:
                     When(
                         self.final_period_submission_query_filters,
                         then=(
-                            Coalesce(F("gross_outlay_amount_by_award_cpe"), 0)
-                            + Coalesce(F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"), 0)
-                            + Coalesce(F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"), 0)
+                            Coalesce(
+                                F("gross_outlay_amount_by_award_cpe"),
+                                0,
+                                output_field=DecimalField(max_digits=23, decimal_places=2),
+                            )
+                            + Coalesce(
+                                F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"),
+                                0,
+                                output_field=DecimalField(max_digits=23, decimal_places=2),
+                            )
+                            + Coalesce(
+                                F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
+                                0,
+                                output_field=DecimalField(max_digits=23, decimal_places=2),
+                            )
                         ),
                     ),
                     default=Value(0),
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
                 )
             ),
             0,
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         )
 
     @property
     def obligated_field_annotation(self):
-        return Coalesce(Sum("transaction_obligated_amount"), 0)
+        return Coalesce(
+            Sum("transaction_obligated_amount"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+        )
 
 
 class SpendingMixin:

@@ -1,7 +1,7 @@
 from django.test import TestCase
 from rest_framework import status
 from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data
-from model_mommy import mommy
+from model_bakery import baker
 
 
 class IDVFundingTestCase(TestCase):
@@ -91,7 +91,7 @@ class IDVFundingTestCase(TestCase):
         assert len(response2.data["results"]) == response.data["count"]
 
     def test_special_characters(self):
-        mommy.make("awards.Award", id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
+        baker.make("awards.Award", id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
         response = self.client.get("/api/v2/idvs/count/federal_account/CONT_IDV_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
         assert response.status_code == status.HTTP_200_OK
 

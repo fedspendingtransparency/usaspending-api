@@ -1,7 +1,7 @@
 import datetime
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
 
@@ -10,10 +10,10 @@ from usaspending_api.etl.award_helpers import update_awards, update_procurement_
 def test_award_update_from_latest_transaction():
     """Test awards fields that should be updated with most recent transaction info."""
 
-    agency1 = mommy.make("references.Agency")
-    agency2 = mommy.make("references.Agency")
+    agency1 = baker.make("references.Agency")
+    agency2 = baker.make("references.Agency")
 
-    award = mommy.make(
+    award = baker.make(
         "awards.Award",
         awarding_agency=agency1,
         period_of_performance_current_end_date=datetime.date(2016, 1, 1),
@@ -22,7 +22,7 @@ def test_award_update_from_latest_transaction():
     )
 
     # adding transaction with same info should not change award values
-    transaction = mommy.make(
+    transaction = baker.make(
         "awards.TransactionNormalized",
         award=award,
         awarding_agency=award.awarding_agency,
@@ -42,7 +42,7 @@ def test_award_update_from_latest_transaction():
 
     # adding an older transaction with different info updates award's total obligation amt and the description
     # (which is sourced from the earliest txn), but other info remains unchanged
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=award,
         awarding_agency=agency2,
@@ -60,7 +60,7 @@ def test_award_update_from_latest_transaction():
 
     # adding an newer transaction with different info updates award's total obligation amt and also overrides
     # other values
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=999,
         award=award,
@@ -84,8 +84,8 @@ def test_award_update_from_latest_transaction():
 def test_award_update_from_earliest_transaction():
     """Test awards fields that should be updated with most earliest transaction info."""
 
-    award = mommy.make("awards.Award", generated_unique_award_id="AWD_ALPHA")
-    mommy.make(
+    award = baker.make("awards.Award", generated_unique_award_id="AWD_ALPHA")
+    baker.make(
         "awards.TransactionNormalized",
         award=award,
         # since this is the award's first transaction,
@@ -96,7 +96,7 @@ def test_award_update_from_earliest_transaction():
     )
 
     # adding later transaction should not change award values
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=award,
         action_date=datetime.date(2017, 1, 1),
@@ -109,7 +109,7 @@ def test_award_update_from_earliest_transaction():
     assert award.date_signed == datetime.date(2016, 1, 1)
 
     # adding earlier transaction should update award values
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=award,
         action_date=datetime.date(2010, 1, 1),
@@ -126,8 +126,8 @@ def test_award_update_from_earliest_transaction():
 def test_award_update_obligated_amt():
     """Test that the award obligated amt updates as child transactions change."""
 
-    award = mommy.make("awards.Award", total_obligation=1000, generated_unique_award_id="BIG_AGENCY_AWD_1")
-    mommy.make(
+    award = baker.make("awards.Award", total_obligation=1000, generated_unique_award_id="BIG_AGENCY_AWD_1")
+    baker.make(
         "awards.TransactionNormalized",
         award=award,
         federal_action_obligation=1000,
@@ -144,11 +144,11 @@ def test_award_update_obligated_amt():
 @pytest.mark.django_db
 def test_award_update_with_list():
     """Test optional parameter to update specific awards with txn data."""
-    awards = [mommy.make("awards.Award", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(10)]
+    awards = [baker.make("awards.Award", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(10)]
     test_award = awards[3]
 
     # test a single award update
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=test_award,
         federal_action_obligation=1000,
@@ -165,14 +165,14 @@ def test_award_update_with_list():
     assert awards[0].total_obligation == 0
 
     # test updating several awards
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=awards[0],
         federal_action_obligation=2000,
         _quantity=2,
         unique_award_key=awards[0].generated_unique_award_id,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=awards[1],
         federal_action_obligation=-1000,
@@ -197,17 +197,17 @@ def test_award_update_from_contract_transaction():
 
     # for contract type transactions, the base_and_all_options_value and base_exercised_options_val fields
     # should update the corresponding field on the award table
-    award = mommy.make("awards.Award", generated_unique_award_id="EXAMPLE_AWARD_1")
-    txn = mommy.make("awards.TransactionNormalized", award=award, unique_award_key="EXAMPLE_AWARD_1")
-    txn2 = mommy.make("awards.TransactionNormalized", award=award, unique_award_key="EXAMPLE_AWARD_1")
-    mommy.make(
+    award = baker.make("awards.Award", generated_unique_award_id="EXAMPLE_AWARD_1")
+    txn = baker.make("awards.TransactionNormalized", award=award, unique_award_key="EXAMPLE_AWARD_1")
+    txn2 = baker.make("awards.TransactionNormalized", award=award, unique_award_key="EXAMPLE_AWARD_1")
+    baker.make(
         "awards.TransactionFPDS",
         transaction=txn,
         base_and_all_options_value=1000,
         base_exercised_options_val=100,
         unique_award_key="EXAMPLE_AWARD_1",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction=txn2,
         base_and_all_options_value=1001,
@@ -225,11 +225,11 @@ def test_award_update_from_contract_transaction():
 @pytest.mark.django_db
 def test_award_update_contract_txn_with_list():
     """Test optional parameter to update specific awards from txn contract."""
-    awards = [mommy.make("awards.Award", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(5)]
-    txn = mommy.make(
+    awards = [baker.make("awards.Award", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(5)]
+    txn = baker.make(
         "awards.TransactionNormalized", award=awards[0], unique_award_key=awards[0].generated_unique_award_id
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS", transaction=txn, base_and_all_options_value=1000, base_exercised_options_val=100
     )
     # single award is updated
@@ -239,20 +239,20 @@ def test_award_update_contract_txn_with_list():
     assert awards[0].base_and_all_options_value == 1000
 
     # update multiple awards
-    txn1 = mommy.make(
+    txn1 = baker.make(
         "awards.TransactionNormalized", award=awards[1], unique_award_key=awards[1].generated_unique_award_id
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction=txn1,
         base_and_all_options_value=4000,
         base_exercised_options_val=400,
         unique_award_key=awards[1].generated_unique_award_id,
     )
-    txn2 = mommy.make(
+    txn2 = baker.make(
         "awards.TransactionNormalized", award=awards[2], unique_award_key=awards[2].generated_unique_award_id
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction=txn2,
         base_and_all_options_value=5000,
@@ -274,14 +274,14 @@ def test_award_update_contract_txn_with_list():
 def test_award_update_contract_executive_comp():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = mommy.make("awards.Award", generated_unique_award_id="AWARD_CONT_IDV")
-    txn = mommy.make(
+    award = baker.make("awards.Award", generated_unique_award_id="AWARD_CONT_IDV")
+    txn = baker.make(
         "awards.TransactionNormalized", award=award, action_date="2011-10-01", unique_award_key="AWARD_CONT_IDV"
     )
-    txn2 = mommy.make(
+    txn2 = baker.make(
         "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="AWARD_CONT_IDV"
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction=txn,
         officer_1_name="Professor Plum",
@@ -296,7 +296,7 @@ def test_award_update_contract_executive_comp():
         officer_5_amount=5,
         unique_award_key="AWARD_CONT_IDV",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction=txn2,
         officer_1_name="Jack Mustard",
@@ -320,10 +320,10 @@ def test_award_update_contract_executive_comp():
 
     # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
 
-    txn3 = mommy.make(
+    txn3 = baker.make(
         "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="AWARD_CONT_IDV"
     )
-    mommy.make("awards.TransactionFPDS", transaction=txn3, unique_award_key="AWARD_CONT_IDV")
+    baker.make("awards.TransactionFPDS", transaction=txn3, unique_award_key="AWARD_CONT_IDV")
 
     update_procurement_awards()
     award.refresh_from_db()
@@ -336,12 +336,12 @@ def test_award_update_contract_executive_comp():
 def test_award_update_assistance_executive_comp():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = mommy.make("awards.Award", generated_unique_award_id="ASST_ONE")
-    txn = mommy.make("awards.TransactionNormalized", award=award, action_date="2011-10-01", unique_award_key="ASST_ONE")
-    txn2 = mommy.make(
+    award = baker.make("awards.Award", generated_unique_award_id="ASST_ONE")
+    txn = baker.make("awards.TransactionNormalized", award=award, action_date="2011-10-01", unique_award_key="ASST_ONE")
+    txn2 = baker.make(
         "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="ASST_ONE"
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction=txn,
         officer_1_name="Professor Plum",
@@ -356,7 +356,7 @@ def test_award_update_assistance_executive_comp():
         officer_5_amount=5,
         unique_award_key="ASST_ONE",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction=txn2,
         officer_1_name="Jack Mustard",
@@ -380,10 +380,10 @@ def test_award_update_assistance_executive_comp():
 
     # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
 
-    txn3 = mommy.make(
+    txn3 = baker.make(
         "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="ASST_ONE"
     )
-    mommy.make("awards.TransactionFABS", transaction=txn3, unique_award_key="ASST_ONE")
+    baker.make("awards.TransactionFABS", transaction=txn3, unique_award_key="ASST_ONE")
 
     update_assistance_awards()
     award.refresh_from_db()
@@ -396,8 +396,8 @@ def test_award_update_assistance_executive_comp():
 def test_award_update_transaction_fk():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = mommy.make("awards.Award", generated_unique_award_id="FAKE_award_YELLOW_12")
-    txn1 = mommy.make(
+    award = baker.make("awards.Award", generated_unique_award_id="FAKE_award_YELLOW_12")
+    txn1 = baker.make(
         "awards.TransactionNormalized",
         award=award,
         action_date="2011-10-01",
@@ -405,19 +405,19 @@ def test_award_update_transaction_fk():
         modification_number="P0001",
         unique_award_key="FAKE_award_YELLOW_12",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="FAKE_award_YELLOW_12"
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="FAKE_award_YELLOW_12"
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized", award=award, action_date="2014-10-01", unique_award_key="FAKE_award_YELLOW_12"
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized", award=award, action_date="2015-10-01", unique_award_key="FAKE_award_YELLOW_12"
     )
-    txn6 = mommy.make(
+    txn6 = baker.make(
         "awards.TransactionNormalized",
         award=award,
         action_date="2016-10-01",
@@ -439,7 +439,7 @@ def test_award_update_transaction_fk():
         award.period_of_performance_current_end_date.strftime("%Y-%m-%d") == txn6.period_of_performance_current_end_date
     )
 
-    txn0 = mommy.make(
+    txn0 = baker.make(
         "awards.TransactionNormalized",
         award=award,
         action_date=txn1.action_date,
@@ -448,7 +448,7 @@ def test_award_update_transaction_fk():
         unique_award_key="FAKE_award_YELLOW_12",
     )
 
-    txn10 = mommy.make(
+    txn10 = baker.make(
         "awards.TransactionNormalized",
         award=award,
         action_date=txn6.action_date,

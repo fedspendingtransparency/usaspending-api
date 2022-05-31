@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.db import connections
 from django.db.models import Q
 from django.test import TestCase
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
@@ -24,7 +24,7 @@ class TestWithMultipleDatabases(TestCase):
 
         reset_object_class_cache()
 
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=-99999,
             allocation_transfer_agency_id="999",
@@ -36,10 +36,10 @@ class TestWithMultipleDatabases(TestCase):
             sub_account_code="0000",
             tas_rendering_label="1004-1002-1003-1007-1008",
         )
-        mommy.make(
+        baker.make(
             "references.ObjectClass", id=0, major_object_class="00", object_class="00.0", direct_reimbursable=None
         )
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id="2000060",
             submission_fiscal_year=0,
@@ -92,22 +92,22 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with FAIN and URI
         """
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-999,
             uri="RANDOM_LOAD_SUB_URI_999",
             fain="RANDOM_LOAD_SUB_FAIN_999",
             latest_transaction_id=-999,
         )
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-1999,
             uri="RANDOM_LOAD_SUB_URI_1999",
             fain="RANDOM_LOAD_SUB_FAIN_1999",
             latest_transaction_id=-1999,
         )
-        mommy.make("awards.TransactionNormalized", id=-999)
-        mommy.make("awards.TransactionNormalized", id=-1999)
+        baker.make("awards.TransactionNormalized", id=-999)
+        baker.make("awards.TransactionNormalized", id=-1999)
 
         call_command("load_submission", "-9999")
 
@@ -126,8 +126,8 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a URI
         """
-        mommy.make("awards.Award", id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
-        mommy.make("awards.TransactionNormalized", id=-997)
+        baker.make("awards.Award", id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
+        baker.make("awards.TransactionNormalized", id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -144,8 +144,8 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a FAIN
         """
-        mommy.make("awards.Award", id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
-        mommy.make("awards.TransactionNormalized", id=-997)
+        baker.make("awards.Award", id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
+        baker.make("awards.TransactionNormalized", id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -162,14 +162,14 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a piid and parent piid
         """
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-997,
             piid="RANDOM_LOAD_SUB_PIID",
             parent_award_piid="RANDOM_LOAD_SUB_PARENT_PIID",
             latest_transaction_id=-997,
         )
-        mommy.make("awards.TransactionNormalized", id=-997)
+        baker.make("awards.TransactionNormalized", id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -186,10 +186,10 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a piid and no parent piid
         """
-        mommy.make(
+        baker.make(
             "awards.Award", id=-998, piid="RANDOM_LOAD_SUB_PIID", parent_award_piid=None, latest_transaction_id=-998
         )
-        mommy.make("awards.TransactionNormalized", id=-998)
+        baker.make("awards.TransactionNormalized", id=-998)
 
         call_command("load_submission", "-9999")
 
@@ -206,14 +206,14 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data
         """
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-1001,
             piid="RANDOM_LOAD_SUB_PIID",
             parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
             latest_transaction_id=-1234,
         )
-        mommy.make("awards.TransactionNormalized", id=-1234)
+        baker.make("awards.TransactionNormalized", id=-1234)
 
         call_command("load_submission", "-9999")
 
@@ -230,14 +230,14 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data
         """
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-999,
             piid="RANDOM_LOAD_SUB_PIID_DNE",
             parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
             latest_transaction_id=-999,
         )
-        mommy.make("awards.TransactionNormalized", id=-999, award_id=-999)
+        baker.make("awards.TransactionNormalized", id=-999, award_id=-999)
 
         call_command("load_submission", "-9999")
 

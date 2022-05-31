@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Union
 
 from django.conf import settings
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Exists, OuterRef
 from elasticsearch_dsl import A
 
 from usaspending_api.awards.models import Award, TransactionNormalized
@@ -138,11 +138,10 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         base_queryset = Award.objects.all()
         cls._populate_download_lookups(filters, download_job)
-        lookup_table_name = DownloadJobLookup._meta.db_table
-        queryset = base_queryset.extra(
-            where=[
-                f'EXISTS(SELECT 1 FROM {lookup_table_name} WHERE download_job_id = {download_job.download_job_id} AND lookup_id = "awards"."id")'
-            ]
+        queryset = base_queryset.filter(
+            Exists(
+                DownloadJobLookup.objects.filter(lookup_id=OuterRef("id"), download_job_id=download_job.download_job_id)
+            )
         )
 
         return queryset
@@ -157,11 +156,10 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         base_queryset = TransactionNormalized.objects.all()
         cls._populate_download_lookups(filters, download_job)
-        lookup_table_name = DownloadJobLookup._meta.db_table
-        queryset = base_queryset.extra(
-            where=[
-                f'EXISTS(SELECT 1 FROM {lookup_table_name} WHERE download_job_id = {download_job.download_job_id} AND lookup_id = "transaction_normalized"."id")'
-            ]
+        queryset = base_queryset.filter(
+            Exists(
+                DownloadJobLookup.objects.filter(lookup_id=OuterRef("id"), download_job_id=download_job.download_job_id)
+            )
         )
 
         return queryset

@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from decimal import Decimal
 
@@ -8,10 +8,10 @@ from usaspending_api.common.helpers.generic_helper import get_account_data_time_
 
 @pytest.fixture
 def create_gtas_data():
-    mommy.make("references.GTASSF133Balances", id=1, fiscal_year=2020, fiscal_period=2, total_budgetary_resources_cpe=1)
-    mommy.make("references.GTASSF133Balances", id=2, fiscal_year=2020, fiscal_period=2, total_budgetary_resources_cpe=2)
-    mommy.make("references.GTASSF133Balances", id=3, fiscal_year=2020, fiscal_period=3, total_budgetary_resources_cpe=4)
-    mommy.make("references.GTASSF133Balances", id=4, fiscal_year=2019, fiscal_period=2, total_budgetary_resources_cpe=8)
+    baker.make("references.GTASSF133Balances", id=1, fiscal_year=2020, fiscal_period=2, total_budgetary_resources_cpe=1)
+    baker.make("references.GTASSF133Balances", id=2, fiscal_year=2020, fiscal_period=2, total_budgetary_resources_cpe=2)
+    baker.make("references.GTASSF133Balances", id=3, fiscal_year=2020, fiscal_period=3, total_budgetary_resources_cpe=4)
+    baker.make("references.GTASSF133Balances", id=4, fiscal_year=2019, fiscal_period=2, total_budgetary_resources_cpe=8)
 
 
 @pytest.mark.django_db

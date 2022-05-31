@@ -1,37 +1,37 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
 @pytest.fixture
 def financial_spending_data(db):
     # federal Account
-    federal_account_1 = mommy.make("accounts.FederalAccount", id=1)
+    federal_account_1 = baker.make("accounts.FederalAccount", id=1)
 
     # create Object classes
-    object_class_1 = mommy.make(
+    object_class_1 = baker.make(
         "references.ObjectClass",
         major_object_class="10",
         major_object_class_name="mocName1",
         object_class="111",
         object_class_name="ocName1",
     )
-    object_class_2 = mommy.make(
+    object_class_2 = baker.make(
         "references.ObjectClass",
         major_object_class="20",
         major_object_class_name="mocName2",
         object_class="222",
         object_class_name="ocName2",
     )
-    object_class_4 = mommy.make(
+    object_class_4 = baker.make(
         "references.ObjectClass",
         major_object_class="20",
         major_object_class_name="mocName2",
         object_class="444",
         object_class_name="ocName4",
     )
-    mommy.make(
+    baker.make(
         "references.ObjectClass",
         major_object_class="30",
         major_object_class_name="mocName3",
@@ -40,21 +40,21 @@ def financial_spending_data(db):
     )
 
     # create TAS
-    tas = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=federal_account_1)
-    mommy.make("accounts.TreasuryAppropriationAccount", federal_account=federal_account_1)
+    tas = baker.make("accounts.TreasuryAppropriationAccount", federal_account=federal_account_1)
+    baker.make("accounts.TreasuryAppropriationAccount", federal_account=federal_account_1)
 
     # CREATE Financial account by program activity object class
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=tas,
         object_class=object_class_1,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=tas,
         object_class=object_class_2,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=tas,
         object_class=object_class_4,

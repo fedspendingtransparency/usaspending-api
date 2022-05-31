@@ -1,7 +1,7 @@
 from typing import List
 
 from django_cte import With
-from django.db.models import Q, Sum, Case, When, Value, F, Count
+from django.db.models import Case, Count, F, DecimalField, Q, Sum, When, Value
 from django.db.models.functions import Coalesce
 
 
@@ -15,9 +15,15 @@ from usaspending_api.search.models import AwardSearchView
 
 def _disaster_recipient_aggregations() -> dict:
     return {
-        "award_obligations": Coalesce(Sum("total_obligation_by_award"), 0),
-        "award_outlays": Coalesce(Sum("total_outlay_by_award"), 0),
-        "face_value_of_loans": Coalesce(Sum("total_loan_value"), 0),
+        "award_obligations": Coalesce(
+            Sum("total_obligation_by_award"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+        ),
+        "award_outlays": Coalesce(
+            Sum("total_outlay_by_award"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+        ),
+        "face_value_of_loans": Coalesce(
+            Sum("total_loan_value"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+        ),
         "number_of_awards": Count("award_id", distinct=True),
     }
 
@@ -42,20 +48,36 @@ def disaster_filter_function(filters: dict, download_type: str, values: List[str
     faba_filters = [filter_by_defc_closed_periods(), Q(disaster_emergency_fund__code__in=def_codes)]
 
     dollar_annotations = {
-        "inner_obligation": Coalesce(Sum("transaction_obligated_amount"), 0),
+        "inner_obligation": Coalesce(
+            Sum("transaction_obligated_amount"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+        ),
         "inner_outlay": Coalesce(
             Sum(
                 Case(
                     When(
                         filter_by_latest_closed_periods(),
-                        then=Coalesce(F("gross_outlay_amount_by_award_cpe"), 0)
-                        + Coalesce(F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"), 0)
-                        + Coalesce(F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"), 0),
+                        then=Coalesce(
+                            F("gross_outlay_amount_by_award_cpe"),
+                            0,
+                            output_field=DecimalField(max_digits=23, decimal_places=2),
+                        )
+                        + Coalesce(
+                            F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"),
+                            0,
+                            output_field=DecimalField(max_digits=23, decimal_places=2),
+                        )
+                        + Coalesce(
+                            F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
+                            0,
+                            output_field=DecimalField(max_digits=23, decimal_places=2),
+                        ),
                     ),
                     default=Value(0),
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
                 )
             ),
             0,
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
     }
 

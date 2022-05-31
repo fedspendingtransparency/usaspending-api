@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 
 from rest_framework import status
 
@@ -142,8 +142,8 @@ def test_object_class_query(client, elasticsearch_account_index, basic_faba_with
 @pytest.mark.django_db
 def test_outlay_calculations(client, elasticsearch_account_index, basic_faba_with_object_class, monkeypatch, helpers):
     oc = major_object_class_with_children("001", [1])
-    mommy.make("references.DisasterEmergencyFundCode", code="L", group_name=COVID_19_GROUP_NAME),
-    mommy.make(
+    baker.make("references.DisasterEmergencyFundCode", code="L", group_name=COVID_19_GROUP_NAME),
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="L").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -191,8 +191,8 @@ def test_filter_out_negated_values(
     client, elasticsearch_account_index, basic_faba_with_object_class, monkeypatch, helpers
 ):
     oc = major_object_class_with_children("001", [1])
-    mommy.make("references.DisasterEmergencyFundCode", code="L", group_name=COVID_19_GROUP_NAME),
-    mommy.make(
+    baker.make("references.DisasterEmergencyFundCode", code="L", group_name=COVID_19_GROUP_NAME),
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="L").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -207,7 +207,7 @@ def test_filter_out_negated_values(
         uri=None,
         distinct_award_key="123||",
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="L").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -240,8 +240,8 @@ def test_nonzero_obligation_prevents_filter_out_negated_values(
     client, elasticsearch_account_index, basic_faba_with_object_class, monkeypatch, helpers
 ):
     oc = major_object_class_with_children("001", [1])
-    mommy.make("references.DisasterEmergencyFundCode", code="L", group_name=COVID_19_GROUP_NAME),
-    mommy.make(
+    baker.make("references.DisasterEmergencyFundCode", code="L", group_name=COVID_19_GROUP_NAME),
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="L").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -256,7 +256,7 @@ def test_nonzero_obligation_prevents_filter_out_negated_values(
         uri=None,
         distinct_award_key="123||",
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="L").first(),
         submission=SubmissionAttributes.objects.all().first(),

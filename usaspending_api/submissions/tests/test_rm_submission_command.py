@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from django.core.management import call_command
 from django.db.models import Q
 
@@ -17,31 +17,31 @@ SUBMISSION_MODELS = [
 
 @pytest.fixture
 def submission_data():
-    submission_123 = mommy.make("submissions.SubmissionAttributes", submission_id=123)
-    submission_456 = mommy.make("submissions.SubmissionAttributes", submission_id=456)
+    submission_123 = baker.make("submissions.SubmissionAttributes", submission_id=123)
+    submission_456 = baker.make("submissions.SubmissionAttributes", submission_id=456)
 
-    mommy.make("accounts.AppropriationAccountBalances", submission=submission_123, _quantity=10)
-    mommy.make("awards.FinancialAccountsByAwards", submission=submission_123, _quantity=10)
+    baker.make("accounts.AppropriationAccountBalances", submission=submission_123, _quantity=10)
+    baker.make("awards.FinancialAccountsByAwards", submission=submission_123, _quantity=10)
 
     # Making child transaction items creates the parent by default
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction__award__piid="ABC123",
         transaction__award__parent_award__piid="DEF455",
         place_of_performance_city="city1",
         _quantity=10,
     )
-    mommy.make("awards.TransactionFPDS", place_of_perform_city_name="city2", _quantity=10)
-    mommy.make(
+    baker.make("awards.TransactionFPDS", place_of_perform_city_name="city2", _quantity=10)
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123, _quantity=10
     )
-    mommy.make("accounts.AppropriationAccountBalances", submission=submission_456, _quantity=10)
-    mommy.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
+    baker.make("accounts.AppropriationAccountBalances", submission=submission_456, _quantity=10)
+    baker.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
 
     # Making child transaction items creates the parent by default
-    mommy.make("awards.TransactionFPDS", place_of_perform_city_name="city2", _quantity=10)
-    mommy.make("awards.TransactionFABS", place_of_performance_city="city3", _quantity=10)
-    mommy.make(
+    baker.make("awards.TransactionFPDS", place_of_perform_city_name="city2", _quantity=10)
+    baker.make("awards.TransactionFABS", place_of_performance_city="city3", _quantity=10)
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_456, _quantity=10
     )
 

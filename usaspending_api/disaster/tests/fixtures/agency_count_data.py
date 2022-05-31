@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -14,7 +14,7 @@ def faba_with_toptier_agencies(award_count_sub_schedule, award_count_submission,
 
     toptier_agency(2)
     award2 = award_with_toptier_agency(2)
-    award3 = mommy.make("awards.Award", type="A", funding_agency=Agency.objects.first(), total_loan_value=0)
+    award3 = baker.make("awards.Award", type="A", funding_agency=Agency.objects.first(), total_loan_value=0)
 
     faba_for_award(award1, 8, 0)
     faba_for_award(award2, 0, 7)
@@ -42,20 +42,20 @@ def faba_with_toptier_agencies_that_cancel_out_in_outlay(award_count_sub_schedul
 
 
 def faba_for_award(award, toa, outlay):
-    defc_m = mommy.make(
+    defc_m = baker.make(
         "references.DisasterEmergencyFundCode",
         code="M",
         public_law="PUBLIC LAW FOR CODE M",
         title="TITLE FOR CODE M",
         group_name="covid_19",
     )
-    fa1 = mommy.make(
+    fa1 = baker.make(
         "accounts.FederalAccount",
         federal_account_code="001-0000",
         account_title="FA 1",
         parent_toptier_agency=ToptierAgency.objects.get(pk=award.funding_agency.toptier_agency_id),
     )
-    tas1 = mommy.make(
+    tas1 = baker.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=ToptierAgency.objects.get(pk=award.funding_agency.toptier_agency_id),
         budget_function_code=100,
@@ -66,7 +66,7 @@ def faba_for_award(award, toa, outlay):
         account_title="TA 1",
         tas_rendering_label="001-X-0000-000",
     )
-    return mommy.make(
+    return baker.make(
         "awards.FinancialAccountsByAwards",
         award=award,
         treasury_account=tas1,
@@ -81,7 +81,7 @@ def faba_for_award(award, toa, outlay):
 
 
 def toptier_agency(id):
-    return mommy.make(
+    return baker.make(
         "references.ToptierAgency",
         pk=id,
         name=f"Agency {id}",
@@ -90,11 +90,11 @@ def toptier_agency(id):
 
 
 def award_with_toptier_agency(id):
-    agency = mommy.make("references.Agency", toptier_agency_id=id, toptier_flag=True)
-    a1 = mommy.make("awards.Award", type="A", funding_agency=agency, total_loan_value=0, latest_transaction_id=id)
-    mommy.make(
+    agency = baker.make("references.Agency", toptier_agency_id=id, toptier_flag=True)
+    a1 = baker.make("awards.Award", type="A", funding_agency=agency, total_loan_value=0, latest_transaction_id=id)
+    baker.make(
         "awards.TransactionNormalized", id=id, award=a1, action_date="2020-04-01", is_fpds=True, funding_agency=agency
     )
-    mommy.make("awards.TransactionFPDS", transaction_id=id)
+    baker.make("awards.TransactionFPDS", transaction_id=id)
 
     return a1
