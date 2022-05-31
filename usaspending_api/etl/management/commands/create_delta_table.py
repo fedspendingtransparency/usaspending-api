@@ -34,7 +34,7 @@ TABLE_SPEC = {
     },
     "sam_recipient": {
         "schema_sql_string": sam_recipient_sql_string,
-        "source_table": "duns",
+        "source_table": "raw.duns",
         "destination_database": "raw",
         "partition_column": "broker_duns_id",
         "partition_column_type": "numeric",
