@@ -19,6 +19,7 @@ from usaspending_api.transactions.delta_models import (
     transaction_normalized_sql_string,
     transaction_search_sql_string,
 )
+from usaspending_api.search.delta_models.award_search import award_search_sql_string
 
 
 TABLE_SPEC = {
@@ -86,6 +87,14 @@ TABLE_SPEC = {
         "partition_column_type": None,  # Placeholder for now
         "custom_schema": None,  # Placeholder for now
     },
+    "award_search": {
+        "schema_sql_string": award_search_sql_string,
+        "source_table": "",
+        "destination_database": "rpt",
+        "partition_column": "award_id",
+        "partition_column_type": "numeric",
+        "custom_schema": "",
+    }
 }
 
 
