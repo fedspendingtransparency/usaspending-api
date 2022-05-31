@@ -22,6 +22,7 @@ from unittest import mock
 
 _ENV_VAL = "component_name_set_in_env"
 
+
 class _UnitTestBaseConfig(DefaultConfig):
     ENV_CODE = "utb"
     UNITTEST_CFG_A = "UNITTEST_CFG_A"
@@ -337,13 +338,22 @@ _UNITTEST_ENVS_DICTS = [
     },
 ]
 
+
 def test_config_values():
-    pprint(CONFIG.dict())
+    """Test that config values are picked up. Also convenient for eyeballing the parsed config vals when
+    pytest is configurd with flags to output printed statements"""
+    config_values: dict = CONFIG.dict()
+    assert len(config_values) > 0
+    pprint(config_values)
+    pg_dsn = CONFIG.POSTGRES_DSN
     print(CONFIG.POSTGRES_DSN)
+    assert pg_dsn is not None
+    assert len(str(pg_dsn)) > 0
     print(str(CONFIG.POSTGRES_DSN))
 
 
 def test_config_loading():
+    """Test the _load_config runs without error"""
     with mock.patch.dict(os.environ, {ENV_CODE_VAR: LocalConfig.ENV_CODE}):
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         cfg = _load_config()
@@ -356,6 +366,7 @@ def test_cannot_instantiate_default_settings():
 
 
 def test_can_instantiate_non_default_settings():
+    """Test an overriding config subclass to DefaultConfig can be instantiated without error"""
     LocalConfig()
 
 
@@ -369,6 +380,7 @@ def test_dotenv_file_template_found(tmpdir):
     """Verifying that the way the paths to locate the .env file are valid, by way of using them to locate the
     .env.template file which will always be alongside it"""
     from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR
+
     proj_root_dir = Path(_PROJECT_ROOT_DIR)
     env_file_template = Path(_PROJECT_ROOT_DIR / ".env.template")
     assert env_file_template.is_file()
@@ -419,10 +431,7 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
         with open(dotenv_file, "w"):
-            dotenv_file.write(
-                f"COMPONENT_NAME={dotenv_val}\n"
-                f"UNITTEST_CFG_A={dotenv_val_a}"
-            )
+            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\n" f"UNITTEST_CFG_A={dotenv_val_a}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -455,9 +464,7 @@ def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
         with open(dotenv_file, "w"):
-            dotenv_file.write(
-                f"SUB_UNITTEST_3={dotenv_sub_3}"
-            )
+            dotenv_file.write(f"SUB_UNITTEST_3={dotenv_sub_3}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -490,9 +497,7 @@ def test_override_with_dotenv_file_for_validated_var(tmpdir):
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
         with open(dotenv_file, "w"):
-            dotenv_file.write(
-                f"{var_name}={dotenv_val}"
-            )
+            dotenv_file.write(f"{var_name}={dotenv_val}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -525,9 +530,7 @@ def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
         with open(dotenv_file, "w"):
-            dotenv_file.write(
-                f"{var_name}={dotenv_val}"
-            )
+            dotenv_file.write(f"{var_name}={dotenv_val}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -561,9 +564,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_validated_var(tmpdir)
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
         with open(dotenv_file, "w"):
-            dotenv_file.write(
-                f"{var_name}={dotenv_val}"
-            )
+            dotenv_file.write(f"{var_name}={dotenv_val}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -597,9 +598,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_root_validated_var(tm
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
         with open(dotenv_file, "w"):
-            dotenv_file.write(
-                f"{var_name}={dotenv_val}"
-            )
+            dotenv_file.write(f"{var_name}={dotenv_val}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
