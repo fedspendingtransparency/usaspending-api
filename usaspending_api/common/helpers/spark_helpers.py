@@ -23,6 +23,20 @@ from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentia
 from usaspending_api.config import CONFIG
 
 
+def get_active_spark_context() -> SparkContext:
+    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+    if is_spark_context_stopped():
+        return None
+    return SparkContext._active_spark_context
+
+
+def get_active_spark_session() -> SparkContext:
+    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+    if is_spark_context_stopped():
+        return None
+    return SparkSession.getActiveSession()
+
+
 def is_spark_context_stopped() -> bool:
     is_stopped = True
     with SparkContext._lock:
@@ -298,7 +312,7 @@ def attach_java_gateway(
 
 
 def get_jdbc_connection_properties() -> dict:
-    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.PARTITION_SIZE)}
+    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
 
 
 def get_jdbc_url():

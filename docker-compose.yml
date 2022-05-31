@@ -199,14 +199,14 @@ services:
         source: ${MINIO_DATA_DIR:-../data/s3}
         target: /data
     ports:
-      - ${MINIO_PORT:-9000}:9000
-      - ${MINIO_CONSOLE_PORT:-9001}:9001
+      - ${MINIO_PORT:-10001}:10001
+      - ${MINIO_CONSOLE_PORT:-10002}:10002
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
-    command: server --address ":${MINIO_PORT:-9000}" --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
+    command: server --address ":10001" --console-address ":10002" /data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-9000}/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-10001}/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
