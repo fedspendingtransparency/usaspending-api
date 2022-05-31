@@ -193,14 +193,3 @@ docker-compose-build-spark: ## See: docker-compose-build rule. This builds just 
 	# NOTE: [See NOTE in above docker-compose rule about .env file]=
 	echo "docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
 	docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
-
-.PHONY: create-delta-table
-create-delta-table:
-	docker-compose --profile=spark --project-directory . --file ${docker_compose_file} run \
-		-e MINIO_HOST=minio \
-		-e MINIO_PORT=9000 \
-		-e APP_NAME='Write CSV to S3' \
-		-e DJANGO_SETTINGS_MODULE='usaspending_api.settings' \
-		-e DATABASE_URL=${DATABASE_URL} \
-		spark-submit --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.0.0,org.apache.hadoop:hadoop-aws:3.2.1,com.amazonaws:aws-java-sdk:1.12.31, \
-		/project/manage.py create_delta_table --destination-table ${dest_table}
