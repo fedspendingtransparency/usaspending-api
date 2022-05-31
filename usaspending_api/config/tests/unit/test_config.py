@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import os
 import pytest
+from pathlib import Path
 from pprint import pprint
 from pydantic import validator, root_validator
 from pydantic.fields import ModelField
@@ -20,163 +21,6 @@ from usaspending_api.config.envs.local import LocalConfig
 from unittest import mock
 
 _ENV_VAL = "component_name_set_in_env"
-
-
-def test_config_values():
-    pprint(CONFIG.dict())
-    print(CONFIG.POSTGRES_DSN)
-    print(str(CONFIG.POSTGRES_DSN))
-
-
-def test_config_loading():
-    with mock.patch.dict(os.environ, {ENV_CODE_VAR: LocalConfig.ENV_CODE}):
-        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
-        cfg = _load_config()
-        pprint(cfg.dict())
-
-
-def test_cannot_instantiate_default_settings():
-    with pytest.raises(NotImplementedError):
-        DefaultConfig()
-
-
-def test_can_instantiate_non_default_settings():
-    LocalConfig()
-
-
-def test_env_code_for_non_default_env():
-    # Unit tests should fall back to the local runtime env, with "lcl" code
-    assert CONFIG.ENV_CODE == "lcl"
-    assert CONFIG.ENV_CODE == LocalConfig.ENV_CODE
-
-
-def test_override_with_dotenv_file(tmpdir):
-    """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
-    rather than the other way around."""
-    cfg = LocalConfig()
-    assert cfg.COMPONENT_NAME == "USAspending API"
-    tmp_config_dir = tmpdir.mkdir("config_dir")
-    dotenv_file = tmp_config_dir.join(".env")
-    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
-    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
-    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
-    cfg = LocalConfig(_env_file=dotenv_path)
-    assert cfg.COMPONENT_NAME == dotenv_val
-
-
-def test_override_with_env_var(tmpdir):
-    """Ensure that when env vars exist, they override the default config value"""
-    # Verify default if nothing overriding
-    cfg = LocalConfig()
-    assert cfg.COMPONENT_NAME == "USAspending API"
-    # Confirm that an env var value will override the default value
-    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
-        cfg = LocalConfig()
-        assert cfg.COMPONENT_NAME == _ENV_VAL
-
-
-def test_override_dotenv_file_with_env_var(tmpdir):
-    """Ensure that when .env files are used, AND the same value is declared as an environment var, the env var takes
-    precedence over the value in .env"""
-    # Verify default if nothing overriding
-    cfg = LocalConfig()
-    assert cfg.COMPONENT_NAME == "USAspending API"
-
-    # Now the .env file takes precedence
-    tmp_config_dir = tmpdir.mkdir("config_dir")
-    dotenv_file = tmp_config_dir.join(".env")
-    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
-    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
-    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
-    cfg = LocalConfig(_env_file=dotenv_path)
-    assert cfg.COMPONENT_NAME == dotenv_val
-
-    # Now the env var takes ultimate precedence
-    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
-        cfg = LocalConfig()
-        assert cfg.COMPONENT_NAME == _ENV_VAL
-
-
-def test_override_with_constructor_kwargs():
-    cfg = LocalConfig()
-    assert cfg.COMPONENT_NAME == "USAspending API"
-    cfg = LocalConfig(COMPONENT_NAME="Unit Test for USAspending API")
-    assert cfg.COMPONENT_NAME == "Unit Test for USAspending API"
-
-
-def test_override_with_command_line_args():
-    assert CONFIG.COMPONENT_NAME == "USAspending API"
-    test_args = ["dummy_program", "--config", "COMPONENT_NAME=test_override_with_command_line_args"]
-    with patch.object(sys, "argv", test_args):
-        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
-        app_cfg_copy = _load_config()
-        assert app_cfg_copy.COMPONENT_NAME == "test_override_with_command_line_args"
-    # Ensure the official CONFIG is unchanged
-    assert CONFIG.COMPONENT_NAME == "USAspending API"
-
-
-def test_override_multiple_with_command_line_args():
-    assert CONFIG.COMPONENT_NAME == "USAspending API"
-    original_postgres_port = CONFIG.POSTGRES_PORT
-    test_args = [
-        "dummy_program",
-        "--config",
-        "COMPONENT_NAME=test_override_multiple_with_command_line_args " "POSTGRES_PORT=123456789",
-    ]
-    with patch.object(sys, "argv", test_args):
-        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
-        app_cfg_copy = _load_config()
-        assert app_cfg_copy.COMPONENT_NAME == "test_override_multiple_with_command_line_args"
-        assert app_cfg_copy.POSTGRES_PORT == "123456789"
-    # Ensure the official CONFIG is unchanged
-    assert CONFIG.COMPONENT_NAME == "USAspending API"
-    assert CONFIG.POSTGRES_PORT == original_postgres_port
-
-
-def test_precedence_order(tmpdir):
-    """Confirm all overrides happen in the expected order
-
-    1. Default value set in DefaultConfig
-    2. Is overridden by same config vars in subclass (e.g. LocalConfig(DefaultConfig))
-    3. Is overridden by .env file values
-    4. Is overridden by env var values
-    5. Is overridden by constructor keyword args OR by command-line --config args
-       - NOTE: since the --config args get used as constructor kwargs, CANNOT do both
-
-    """
-    # Verify default if nothing overriding
-    cfg = LocalConfig()
-    assert cfg.COMPONENT_NAME == "USAspending API"
-
-    # Now the .env file takes precedence
-    tmp_config_dir = tmpdir.mkdir("config_dir")
-    dotenv_file = tmp_config_dir.join(".env")
-    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
-    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
-    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
-    cfg = LocalConfig(_env_file=dotenv_path)
-    assert cfg.COMPONENT_NAME == dotenv_val
-
-    # Now the env var, when present, takes precedence
-    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
-        cfg = LocalConfig()
-        assert cfg.COMPONENT_NAME == _ENV_VAL
-
-    # Now the keyword arg takes precedence
-    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
-        kwarg_val = "component_name_set_as_a_kwarg"
-        cfg = LocalConfig(COMPONENT_NAME=kwarg_val)
-        assert cfg.COMPONENT_NAME == kwarg_val
-
-    # Or if overriding via CLI, Now the CLI arg takes precedence
-    cli_val = "test_override_with_command_line_args"
-    test_args = ["dummy_program", "--config", f"COMPONENT_NAME={cli_val}"]
-    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
-        with patch.object(sys, "argv", test_args):
-            _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
-            app_cfg_copy = _load_config()
-            assert app_cfg_copy.COMPONENT_NAME == cli_val
-
 
 class _UnitTestBaseConfig(DefaultConfig):
     ENV_CODE = "utb"
@@ -492,6 +336,389 @@ _UNITTEST_ENVS_DICTS = [
         "constructor": _UnitTestSubConfigFailFindingSubclassFieldsInValidator3,
     },
 ]
+
+def test_config_values():
+    pprint(CONFIG.dict())
+    print(CONFIG.POSTGRES_DSN)
+    print(str(CONFIG.POSTGRES_DSN))
+
+
+def test_config_loading():
+    with mock.patch.dict(os.environ, {ENV_CODE_VAR: LocalConfig.ENV_CODE}):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _load_config()
+        pprint(cfg.dict())
+
+
+def test_cannot_instantiate_default_settings():
+    with pytest.raises(NotImplementedError):
+        DefaultConfig()
+
+
+def test_can_instantiate_non_default_settings():
+    LocalConfig()
+
+
+def test_env_code_for_non_default_env():
+    # Unit tests should fall back to the local runtime env, with "lcl" code
+    assert CONFIG.ENV_CODE == "lcl"
+    assert CONFIG.ENV_CODE == LocalConfig.ENV_CODE
+
+
+def test_dotenv_file_template_found(tmpdir):
+    """Verifying that the way the paths to locate the .env file are valid, by way of using them to locate the
+    .env.template file which will always be alongside it"""
+    from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR
+    proj_root_dir = Path(_PROJECT_ROOT_DIR)
+    env_file_template = Path(_PROJECT_ROOT_DIR / ".env.template")
+    assert env_file_template.is_file()
+
+    cfg = LocalConfig()
+    env_file_path = cfg.Config.env_file
+    assert env_file_path is not None
+    assert env_file_path != ""
+    assert str(proj_root_dir) in env_file_path
+
+
+def test_override_with_dotenv_file(tmpdir):
+    """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
+    rather than the other way around."""
+    cfg = LocalConfig()
+    assert cfg.COMPONENT_NAME == "USAspending API"
+    tmp_config_dir = tmpdir.mkdir("config_dir")
+    dotenv_file = tmp_config_dir.join(".env")
+    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
+    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
+    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+    cfg = LocalConfig(_env_file=dotenv_path)
+    assert cfg.COMPONENT_NAME == dotenv_val
+
+
+@mock.patch(
+    "usaspending_api.config.ENVS",  # Recall, it needs to be patched where imported, not where it lives
+    _UNITTEST_ENVS_DICTS,
+)
+def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
+    """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
+    rather than the other way around... EVEN when that value was overrided in a subclass"""
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestSubConfig.ENV_CODE,
+        },
+    ):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _load_config()
+
+        # 1. override even if originally defined at the grandparent config level
+        assert cfg.COMPONENT_NAME == "Unit Test SubConfig Component"
+
+        dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
+        dotenv_val_a = "dotenv_UNITTEST_CFG_A"
+
+        tmp_config_dir = tmpdir.mkdir("config_dir")
+        dotenv_file = tmp_config_dir.join(".env")
+        with open(dotenv_file, "w"):
+            dotenv_file.write(
+                f"COMPONENT_NAME={dotenv_val}\n"
+                f"UNITTEST_CFG_A={dotenv_val_a}"
+            )
+        dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _UnitTestSubConfig(_env_file=dotenv_path)
+        assert cfg.COMPONENT_NAME == dotenv_val
+        assert cfg.UNITTEST_CFG_A == dotenv_val_a
+
+
+@mock.patch(
+    "usaspending_api.config.ENVS",  # Recall, it needs to be patched where imported, not where it lives
+    _UNITTEST_ENVS_DICTS,
+)
+def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
+    """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
+    rather than the other way around... EVEN when that value only exists in a subclass"""
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestSubConfig.ENV_CODE,
+        },
+    ):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _load_config()
+
+        # 1. override even if originally defined at the grandparent config level
+        assert cfg.COMPONENT_NAME == "Unit Test SubConfig Component"
+
+        dotenv_sub_3 = "dotenv_SUB_UNITTEST_3"
+
+        tmp_config_dir = tmpdir.mkdir("config_dir")
+        dotenv_file = tmp_config_dir.join(".env")
+        with open(dotenv_file, "w"):
+            dotenv_file.write(
+                f"SUB_UNITTEST_3={dotenv_sub_3}"
+            )
+        dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _UnitTestSubConfig(_env_file=dotenv_path)
+        assert cfg.SUB_UNITTEST_3 == dotenv_sub_3
+
+
+@mock.patch(
+    "usaspending_api.config.ENVS",  # Recall, it needs to be patched where imported, not where it lives
+    _UNITTEST_ENVS_DICTS,
+)
+def test_override_with_dotenv_file_for_validated_var(tmpdir):
+    """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
+    rather than the other way around... EVEN when that value is provided by a validator factory function"""
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestBaseConfig.ENV_CODE,
+        },
+    ):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _load_config()
+
+        # 1. override even if originally defined at the grandparent config level
+        assert cfg.COMPONENT_NAME == "USAspending API"
+
+        var_name = "UNITTEST_CFG_U"
+        dotenv_val = f"dotenv_{var_name}"
+
+        tmp_config_dir = tmpdir.mkdir("config_dir")
+        dotenv_file = tmp_config_dir.join(".env")
+        with open(dotenv_file, "w"):
+            dotenv_file.write(
+                f"{var_name}={dotenv_val}"
+            )
+        dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _UnitTestBaseConfig(_env_file=dotenv_path)
+        assert cfg.UNITTEST_CFG_U == dotenv_val
+
+
+@mock.patch(
+    "usaspending_api.config.ENVS",  # Recall, it needs to be patched where imported, not where it lives
+    _UNITTEST_ENVS_DICTS,
+)
+def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
+    """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
+    rather than the other way around... EVEN when that value is provided by a root_validator factory function"""
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestBaseConfig.ENV_CODE,
+        },
+    ):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _load_config()
+
+        # 1. override even if originally defined at the grandparent config level
+        assert cfg.COMPONENT_NAME == "USAspending API"
+
+        var_name = "UNITTEST_CFG_AJ"
+        dotenv_val = f"dotenv_{var_name}"
+
+        tmp_config_dir = tmpdir.mkdir("config_dir")
+        dotenv_file = tmp_config_dir.join(".env")
+        with open(dotenv_file, "w"):
+            dotenv_file.write(
+                f"{var_name}={dotenv_val}"
+            )
+        dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _UnitTestBaseConfig(_env_file=dotenv_path)
+        assert cfg.UNITTEST_CFG_AJ == dotenv_val
+
+
+@mock.patch(
+    "usaspending_api.config.ENVS",  # Recall, it needs to be patched where imported, not where it lives
+    _UNITTEST_ENVS_DICTS,
+)
+def test_override_with_dotenv_file_for_subclass_overriding_validated_var(tmpdir):
+    """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
+    rather than the other way around... EVEN when that value is provided by a subclass validator factory function that
+    overrides its parent class validator factory function"""
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestSubConfig.ENV_CODE,
+        },
+    ):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _load_config()
+
+        # 1. override even if originally defined at the grandparent config level
+        assert cfg.COMPONENT_NAME == "Unit Test SubConfig Component"
+
+        var_name = "UNITTEST_CFG_Y"
+        dotenv_val = f"dotenv_{var_name}"
+
+        tmp_config_dir = tmpdir.mkdir("config_dir")
+        dotenv_file = tmp_config_dir.join(".env")
+        with open(dotenv_file, "w"):
+            dotenv_file.write(
+                f"{var_name}={dotenv_val}"
+            )
+        dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _UnitTestSubConfig(_env_file=dotenv_path)
+        assert cfg.UNITTEST_CFG_Y == dotenv_val
+
+
+@mock.patch(
+    "usaspending_api.config.ENVS",  # Recall, it needs to be patched where imported, not where it lives
+    _UNITTEST_ENVS_DICTS,
+)
+def test_override_with_dotenv_file_for_subclass_overriding_root_validated_var(tmpdir):
+    """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
+    rather than the other way around... EVEN when that value is provided by a subclass root_validator factory function
+    that overrides its parent class root_validator factory function"""
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestSubConfig.ENV_CODE,
+        },
+    ):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _load_config()
+
+        # 1. override even if originally defined at the grandparent config level
+        assert cfg.COMPONENT_NAME == "Unit Test SubConfig Component"
+
+        var_name = "UNITTEST_CFG_AK"
+        dotenv_val = f"dotenv_{var_name}"
+
+        tmp_config_dir = tmpdir.mkdir("config_dir")
+        dotenv_file = tmp_config_dir.join(".env")
+        with open(dotenv_file, "w"):
+            dotenv_file.write(
+                f"{var_name}={dotenv_val}"
+            )
+        dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        cfg = _UnitTestSubConfig(_env_file=dotenv_path)
+        assert cfg.UNITTEST_CFG_AK == dotenv_val
+
+
+def test_override_with_env_var(tmpdir):
+    """Ensure that when env vars exist, they override the default config value"""
+    # Verify default if nothing overriding
+    cfg = LocalConfig()
+    assert cfg.COMPONENT_NAME == "USAspending API"
+    # Confirm that an env var value will override the default value
+    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
+        cfg = LocalConfig()
+        assert cfg.COMPONENT_NAME == _ENV_VAL
+
+
+def test_override_dotenv_file_with_env_var(tmpdir):
+    """Ensure that when .env files are used, AND the same value is declared as an environment var, the env var takes
+    precedence over the value in .env"""
+    # Verify default if nothing overriding
+    cfg = LocalConfig()
+    assert cfg.COMPONENT_NAME == "USAspending API"
+
+    # Now the .env file takes precedence
+    tmp_config_dir = tmpdir.mkdir("config_dir")
+    dotenv_file = tmp_config_dir.join(".env")
+    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
+    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
+    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+    cfg = LocalConfig(_env_file=dotenv_path)
+    assert cfg.COMPONENT_NAME == dotenv_val
+
+    # Now the env var takes ultimate precedence
+    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
+        cfg = LocalConfig()
+        assert cfg.COMPONENT_NAME == _ENV_VAL
+
+
+def test_override_with_constructor_kwargs():
+    cfg = LocalConfig()
+    assert cfg.COMPONENT_NAME == "USAspending API"
+    cfg = LocalConfig(COMPONENT_NAME="Unit Test for USAspending API")
+    assert cfg.COMPONENT_NAME == "Unit Test for USAspending API"
+
+
+def test_override_with_command_line_args():
+    assert CONFIG.COMPONENT_NAME == "USAspending API"
+    test_args = ["dummy_program", "--config", "COMPONENT_NAME=test_override_with_command_line_args"]
+    with patch.object(sys, "argv", test_args):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        app_cfg_copy = _load_config()
+        assert app_cfg_copy.COMPONENT_NAME == "test_override_with_command_line_args"
+    # Ensure the official CONFIG is unchanged
+    assert CONFIG.COMPONENT_NAME == "USAspending API"
+
+
+def test_override_multiple_with_command_line_args():
+    assert CONFIG.COMPONENT_NAME == "USAspending API"
+    original_postgres_port = CONFIG.POSTGRES_PORT
+    test_args = [
+        "dummy_program",
+        "--config",
+        "COMPONENT_NAME=test_override_multiple_with_command_line_args " "POSTGRES_PORT=123456789",
+    ]
+    with patch.object(sys, "argv", test_args):
+        _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+        app_cfg_copy = _load_config()
+        assert app_cfg_copy.COMPONENT_NAME == "test_override_multiple_with_command_line_args"
+        assert app_cfg_copy.POSTGRES_PORT == "123456789"
+    # Ensure the official CONFIG is unchanged
+    assert CONFIG.COMPONENT_NAME == "USAspending API"
+    assert CONFIG.POSTGRES_PORT == original_postgres_port
+
+
+def test_precedence_order(tmpdir):
+    """Confirm all overrides happen in the expected order
+
+    1. Default value set in DefaultConfig
+    2. Is overridden by same config vars in subclass (e.g. LocalConfig(DefaultConfig))
+    3. Is overridden by .env file values
+    4. Is overridden by env var values
+    5. Is overridden by constructor keyword args OR by command-line --config args
+       - NOTE: since the --config args get used as constructor kwargs, CANNOT do both
+
+    """
+    # Verify default if nothing overriding
+    cfg = LocalConfig()
+    assert cfg.COMPONENT_NAME == "USAspending API"
+
+    # Now the .env file takes precedence
+    tmp_config_dir = tmpdir.mkdir("config_dir")
+    dotenv_file = tmp_config_dir.join(".env")
+    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
+    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
+    dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
+    cfg = LocalConfig(_env_file=dotenv_path)
+    assert cfg.COMPONENT_NAME == dotenv_val
+
+    # Now the env var, when present, takes precedence
+    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
+        cfg = LocalConfig()
+        assert cfg.COMPONENT_NAME == _ENV_VAL
+
+    # Now the keyword arg takes precedence
+    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
+        kwarg_val = "component_name_set_as_a_kwarg"
+        cfg = LocalConfig(COMPONENT_NAME=kwarg_val)
+        assert cfg.COMPONENT_NAME == kwarg_val
+
+    # Or if overriding via CLI, Now the CLI arg takes precedence
+    cli_val = "test_override_with_command_line_args"
+    test_args = ["dummy_program", "--config", f"COMPONENT_NAME={cli_val}"]
+    with mock.patch.dict(os.environ, {"COMPONENT_NAME": _ENV_VAL}):
+        with patch.object(sys, "argv", test_args):
+            _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
+            app_cfg_copy = _load_config()
+            assert app_cfg_copy.COMPONENT_NAME == cli_val
 
 
 @mock.patch(
