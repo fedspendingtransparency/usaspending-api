@@ -130,7 +130,7 @@ class Command(BaseCommand):
         self.start_datetime = options.get("start_datetime")
         self.report_queue_status_only = options.get("report_queue_status_only")
         self.file_c_chunk_size = options.get("file_c_chunk_size")
-        self.processor_id = f"{now()}/{get_random_string()}"
+        self.processor_id = f"{now()}/{get_random_string(length=12)}"
 
         logger.info(f'processor_id = "{self.processor_id}"')
 

@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from time import perf_counter
 from rest_framework import status
 
@@ -12,7 +12,7 @@ ENDPOINT = "/api/v2/search/spending_by_transaction/"
 
 @pytest.fixture
 def transaction_data():
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=1,
         award_id=1,
@@ -21,7 +21,7 @@ def transaction_data():
         type="A",
         description="test",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
         legal_entity_zip5="abcde",
@@ -29,7 +29,7 @@ def transaction_data():
         awardee_or_recipient_uei="testuei",
         ultimate_parent_uei="test_parent_uei",
     )
-    mommy.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
+    baker.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
 
 @pytest.mark.django_db

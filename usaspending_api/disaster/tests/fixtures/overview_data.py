@@ -2,7 +2,7 @@ import pytest
 
 from datetime import date
 from decimal import Decimal
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.disaster.v2.views.disaster_base import COVID_19_GROUP_NAME
 
@@ -110,11 +110,11 @@ OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS = calculate_values(OTHER_BUDGET_AUTHORI
 @pytest.fixture
 def defc_codes():
     return [
-        mommy.make("references.DisasterEmergencyFundCode", code="A", group_name=NOT_COVID_NAME),
-        mommy.make("references.DisasterEmergencyFundCode", code="M", group_name=COVID_19_GROUP_NAME),
-        mommy.make("references.DisasterEmergencyFundCode", code="N", group_name=COVID_19_GROUP_NAME),
-        mommy.make("references.DisasterEmergencyFundCode", code="O", group_name=COVID_19_GROUP_NAME),
-        mommy.make("references.DisasterEmergencyFundCode", code="V", group_name=COVID_19_GROUP_NAME),
+        baker.make("references.DisasterEmergencyFundCode", code="A", group_name=NOT_COVID_NAME),
+        baker.make("references.DisasterEmergencyFundCode", code="M", group_name=COVID_19_GROUP_NAME),
+        baker.make("references.DisasterEmergencyFundCode", code="N", group_name=COVID_19_GROUP_NAME),
+        baker.make("references.DisasterEmergencyFundCode", code="O", group_name=COVID_19_GROUP_NAME),
+        baker.make("references.DisasterEmergencyFundCode", code="V", group_name=COVID_19_GROUP_NAME),
     ]
 
 
@@ -131,7 +131,7 @@ def partially_completed_year():
 
 @pytest.fixture
 def late_gtas(defc_codes):
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
@@ -143,7 +143,7 @@ def late_gtas(defc_codes):
 @pytest.fixture
 def quarterly_gtas(defc_codes):
     _partial_quarterly_schedule_for_year(EARLY_YEAR)
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
@@ -154,7 +154,7 @@ def quarterly_gtas(defc_codes):
 
 @pytest.fixture
 def early_gtas(defc_codes):
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
@@ -165,7 +165,7 @@ def early_gtas(defc_codes):
 
 @pytest.fixture
 def unobligated_balance_gtas(defc_codes):
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=LATE_MONTH,
@@ -176,7 +176,7 @@ def unobligated_balance_gtas(defc_codes):
 
 @pytest.fixture
 def other_budget_authority_gtas(defc_codes):
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         fiscal_year=EARLY_YEAR,
         fiscal_period=EARLY_MONTH,
@@ -201,7 +201,7 @@ def year_2_gtas_non_covid(defc_codes):
 
 
 def _year_2_gtas(code):
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         fiscal_year=LATE_YEAR,
         fiscal_period=EARLY_MONTH,
@@ -212,11 +212,11 @@ def _year_2_gtas(code):
 
 @pytest.fixture
 def basic_faba(defc_codes):
-    submission = mommy.make(
+    submission = baker.make(
         "submissions.SubmissionAttributes", reporting_fiscal_year=EARLY_YEAR, reporting_fiscal_period=EARLY_MONTH
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.all().first(),
         transaction_obligated_amount=0.0 - 0.3,
@@ -257,7 +257,7 @@ def multi_period_faba_with_future(defc_codes):
 
 
 def _year_1_faba(value, code):
-    submission = mommy.make(
+    submission = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=EARLY_YEAR,
         reporting_fiscal_period=LATE_MONTH,
@@ -266,7 +266,7 @@ def _year_1_faba(value, code):
         reporting_period_start=date(EARLY_YEAR, LATE_MONTH, 1),
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code=code).first(),
         transaction_obligated_amount=value,
@@ -278,7 +278,7 @@ def _year_1_faba(value, code):
 
 
 def _year_2_faba_with_value(value):
-    submission = mommy.make(
+    submission = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=LATE_YEAR,
         reporting_fiscal_period=EARLY_MONTH,
@@ -287,7 +287,7 @@ def _year_2_faba_with_value(value):
         reporting_period_start=date(LATE_YEAR, EARLY_MONTH, 1),
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
         transaction_obligated_amount=value,
@@ -299,7 +299,7 @@ def _year_2_faba_with_value(value):
 
 
 def _year_2_late_faba_with_value(value):
-    submission = mommy.make(
+    submission = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=LATE_YEAR,
         reporting_fiscal_period=LATE_MONTH,
@@ -308,7 +308,7 @@ def _year_2_late_faba_with_value(value):
         reporting_period_start=date(LATE_YEAR, LATE_MONTH, 1),
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
         transaction_obligated_amount=value,
@@ -320,7 +320,7 @@ def _year_2_late_faba_with_value(value):
 
 
 def _year_3_faba_with_value(value):
-    submission = mommy.make(
+    submission = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=LATE_YEAR + 1,
         reporting_fiscal_period=EARLY_MONTH,
@@ -329,7 +329,7 @@ def _year_3_faba_with_value(value):
         reporting_period_start=date(LATE_YEAR + 1, EARLY_MONTH, 1),
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(group_name=COVID_19_GROUP_NAME).first(),
         transaction_obligated_amount=value,
@@ -350,7 +350,7 @@ def _fy_2022_schedule():
 
 def _full_schedule_for_year(year):
     for month in range(1, LATE_MONTH + 1):
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             is_quarter=False,
             submission_fiscal_year=year,
@@ -362,7 +362,7 @@ def _full_schedule_for_year(year):
 
 def _partial_quarterly_schedule_for_year(year):
     for quarter in range(1, 4):
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             is_quarter=True,
             submission_fiscal_year=year,
@@ -374,7 +374,7 @@ def _partial_quarterly_schedule_for_year(year):
 
 def _incomplete_schedule_for_year(year):
     for month in range(1, EARLY_MONTH + 1):
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             is_quarter=False,
             submission_fiscal_year=year,

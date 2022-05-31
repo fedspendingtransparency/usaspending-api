@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.awards.models import TransactionNormalized
@@ -14,7 +14,7 @@ url = "/api/v2/agency/{toptier_code}/obligations_by_award_category/{filter}"
 def transaction_search_1():
 
     # Submission
-    dsws = mommy.make(
+    dsws = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2021-04-09",
         submission_fiscal_year=2021,
@@ -24,32 +24,32 @@ def transaction_search_1():
         period_start_date="2021-03-01",
         period_end_date="2021-04-01",
     )
-    mommy.make("submissions.SubmissionAttributes", toptier_code="001", submission_window=dsws)
-    mommy.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws)
+    baker.make("submissions.SubmissionAttributes", toptier_code="001", submission_window=dsws)
+    baker.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws)
 
     # Toptier and Awarding Agency
-    toptier_agency_1 = mommy.make(
+    toptier_agency_1 = baker.make(
         "references.ToptierAgency",
         toptier_code="001",
     )
 
-    toptier_agency_2 = mommy.make(
+    toptier_agency_2 = baker.make(
         "references.ToptierAgency",
         toptier_code="002",
     )
 
-    awarding_agency_1 = mommy.make("references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True)
-    awarding_agency_2 = mommy.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True)
+    awarding_agency_1 = baker.make("references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True)
+    awarding_agency_2 = baker.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True)
 
     # Awards
-    award_contract = mommy.make("awards.Award", category="contract")
-    award_idv = mommy.make("awards.Award", category="idv")
-    award_grant = mommy.make("awards.Award", category="grant")
-    award_loan = mommy.make("awards.Award", category="loans")
-    award_dp = mommy.make("awards.Award", category="direct payment")
-    award_bc = mommy.make("awards.Award", category="bad_cat")
+    award_contract = baker.make("awards.Award", category="contract")
+    award_idv = baker.make("awards.Award", category="idv")
+    award_grant = baker.make("awards.Award", category="grant")
+    award_loan = baker.make("awards.Award", category="loans")
+    award_dp = baker.make("awards.Award", category="direct payment")
+    award_bc = baker.make("awards.Award", category="bad_cat")
 
-    mommy.make(
+    baker.make(
         TransactionNormalized,
         award=award_contract,
         federal_action_obligation=101,
@@ -57,7 +57,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
     )
 
-    mommy.make(
+    baker.make(
         TransactionNormalized,
         award=award_idv,
         federal_action_obligation=102,
@@ -65,7 +65,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
     )
 
-    mommy.make(
+    baker.make(
         TransactionNormalized,
         award=award_grant,
         federal_action_obligation=103,
@@ -73,7 +73,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
     )
 
-    mommy.make(
+    baker.make(
         TransactionNormalized,
         award=award_loan,
         federal_action_obligation=104,
@@ -81,7 +81,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
     )
 
-    mommy.make(
+    baker.make(
         TransactionNormalized,
         award=award_dp,
         federal_action_obligation=105,
@@ -89,7 +89,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
     )
 
-    mommy.make(
+    baker.make(
         TransactionNormalized,
         award=award_bc,
         federal_action_obligation=106,
@@ -98,7 +98,7 @@ def transaction_search_1():
     )
 
     # Alternate Year
-    mommy.make(
+    baker.make(
         TransactionNormalized,
         award=award_idv,
         federal_action_obligation=300,
@@ -107,7 +107,7 @@ def transaction_search_1():
     )
 
     # Alternate Agency
-    mommy.make(
+    baker.make(
         TransactionNormalized,
         award=award_idv,
         federal_action_obligation=400,

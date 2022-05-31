@@ -1,7 +1,7 @@
 import pytest
 
 from django.conf import settings
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.helpers.date_helper import fy
@@ -13,7 +13,7 @@ URL = "/api/v2/agency/{code}/{filter}"
 
 @pytest.fixture
 def agency_data(helpers):
-    ta1 = mommy.make(
+    ta1 = baker.make(
         "references.ToptierAgency",
         toptier_code="001",
         abbreviation="ABBR",
@@ -24,12 +24,12 @@ def agency_data(helpers):
         justification="BECAUSE",
         icon_filename="HAI.jpg",
     )
-    ta2 = mommy.make("references.ToptierAgency", toptier_code="002")
-    sa1 = mommy.make("references.SubtierAgency", subtier_code="ST1")
-    sa2 = mommy.make("references.SubtierAgency", subtier_code="ST2")
-    a1 = mommy.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
-    mommy.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
-    dabs = mommy.make(
+    ta2 = baker.make("references.ToptierAgency", toptier_code="002")
+    sa1 = baker.make("references.SubtierAgency", subtier_code="ST1")
+    sa2 = baker.make("references.SubtierAgency", subtier_code="ST2")
+    a1 = baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
+    baker.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
+    dabs = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2020-10-09",
         submission_fiscal_year=2020,
@@ -39,23 +39,23 @@ def agency_data(helpers):
         period_start_date="2020-09-01",
         period_end_date="2020-10-01",
     )
-    sub1 = mommy.make(
+    sub1 = baker.make(
         "submissions.SubmissionAttributes",
         toptier_code=ta1.toptier_code,
         submission_window_id=dabs.id,
         reporting_fiscal_year=helpers.get_mocked_current_fiscal_year(),
     )
-    mommy.make("submissions.SubmissionAttributes", toptier_code=ta2.toptier_code, submission_window_id=dabs.id)
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta1)
-    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta2)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub1)
-    mommy.make("awards.TransactionNormalized", awarding_agency=a1, fiscal_year=helpers.get_mocked_current_fiscal_year())
+    baker.make("submissions.SubmissionAttributes", toptier_code=ta2.toptier_code, submission_window_id=dabs.id)
+    tas1 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta1)
+    tas2 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta2)
+    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
+    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub1)
+    baker.make("awards.TransactionNormalized", awarding_agency=a1, fiscal_year=helpers.get_mocked_current_fiscal_year())
 
-    defc = mommy.make(
+    defc = baker.make(
         "references.DisasterEmergencyFundCode", code="L", group_name="covid_19", public_law="LAW", title="title"
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
         treasury_account=tas1,

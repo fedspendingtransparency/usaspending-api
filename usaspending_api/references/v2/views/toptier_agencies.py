@@ -1,4 +1,4 @@
-from django.db.models import F, Sum, OuterRef, Max, Q
+from django.db.models import DecimalField, F, Max, OuterRef, Q, Sum, Subquery
 from django.db.models.functions import Coalesce
 from django.utils.text import slugify
 from rest_framework.response import Response
@@ -8,7 +8,6 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import sort_with_null_last
-from usaspending_api.common.helpers.orm_helpers import AvoidSubqueryInGroupBy
 from usaspending_api.references.models import Agency, GTASSF133Balances
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
@@ -52,12 +51,13 @@ class ToptierAgenciesViewSet(APIView):
             )
 
         # Subquery does not generate a Group By for the Queryset so "trigger_group_by" is added;
-        # Additionally "AvoidSubqueryInGroupBy" helps performance by keeping it from the Group By
         tbr_by_year_and_period = (
             GTASSF133Balances.objects.values("fiscal_year", "fiscal_period")
             .annotate(
                 trigger_group_by=Max("fiscal_period"),
-                total_budgetary_resources=AvoidSubqueryInGroupBy(
+            )
+            .annotate(
+                total_budgetary_resources=Subquery(
                     GTASSF133Balances.objects.filter(
                         fiscal_year=OuterRef("fiscal_year"), fiscal_period=OuterRef("fiscal_period")
                     )
@@ -121,9 +121,19 @@ class ToptierAgenciesViewSet(APIView):
                 "submission__reporting_fiscal_quarter",
             )
             .annotate(
-                budget_authority_amount=Coalesce(Sum("total_budgetary_resources_amount_cpe"), 0),
-                obligated_amount=Coalesce(Sum("obligations_incurred_total_by_tas_cpe"), 0),
-                outlay_amount=Coalesce(Sum("gross_outlay_amount_by_tas_cpe"), 0),
+                budget_authority_amount=Coalesce(
+                    Sum("total_budgetary_resources_amount_cpe"),
+                    0,
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                ),
+                obligated_amount=Coalesce(
+                    Sum("obligations_incurred_total_by_tas_cpe"),
+                    0,
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                ),
+                outlay_amount=Coalesce(
+                    Sum("gross_outlay_amount_by_tas_cpe"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                ),
             )
         )
         aab_sums_by_toptier = {

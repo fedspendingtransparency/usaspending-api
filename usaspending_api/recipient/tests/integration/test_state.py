@@ -6,7 +6,7 @@ import decimal
 
 # Third-party app imports
 from rest_framework import status
-from model_mommy import mommy
+from model_bakery import baker
 import pytest
 
 # Imports from your apps
@@ -90,35 +90,35 @@ def sort_states_response(response_list):
 
 @pytest.fixture
 def state_data(db):
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         assistance_data__place_of_perfor_state_code="TS",
         assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=100000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         assistance_data__place_of_perfor_state_code="TS",
         assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=100000,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         assistance_data__place_of_perfor_state_code="TD",
         assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         assistance_data__place_of_perfor_state_code="TT",
         assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
-    mommy.make(
+    baker.make(
         "recipient.StateData",
         id="01-{}".format(CURRENT_FISCAL_YEAR - 2),
         fips="01",
@@ -131,7 +131,7 @@ def state_data(db):
         median_household_income=50000,
         mhi_source="Census 2010 MHI",
     )
-    mommy.make(
+    baker.make(
         "recipient.StateData",
         id="01-{}".format(CURRENT_FISCAL_YEAR),
         fips="01",
@@ -144,7 +144,7 @@ def state_data(db):
         median_household_income=None,
         mhi_source="Census 2010 MHI",
     )
-    mommy.make(
+    baker.make(
         "recipient.StateData",
         id="02-{}".format(CURRENT_FISCAL_YEAR - 2),
         fips="02",
@@ -157,7 +157,7 @@ def state_data(db):
         median_household_income=20000,
         mhi_source="Census 2010 MHI",
     )
-    mommy.make(
+    baker.make(
         "recipient.StateData",
         id="03-{}".format(CURRENT_FISCAL_YEAR - 2),
         fips="03",
@@ -176,11 +176,11 @@ def state_data(db):
 def state_view_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"01": {"code": "AB"}})
 
-    award_old = mommy.make("awards.Award", type="A")
+    award_old = baker.make("awards.Award", type="A")
 
-    award_cur = mommy.make("awards.Award", type="B")
+    award_cur = baker.make("awards.Award", type="B")
 
-    trans_old = mommy.make(
+    trans_old = baker.make(
         "awards.TransactionNormalized",
         award=award_old,
         type="A",
@@ -191,7 +191,7 @@ def state_view_data(db, monkeypatch):
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
     )
 
-    trans_cur = mommy.make(
+    trans_cur = baker.make(
         "awards.TransactionNormalized",
         award=award_cur,
         type="B",
@@ -202,19 +202,19 @@ def state_view_data(db, monkeypatch):
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
 
-    mommy.make("awards.TransactionFPDS", transaction=trans_old)
-    mommy.make("awards.TransactionFPDS", transaction=trans_cur)
+    baker.make("awards.TransactionFPDS", transaction=trans_old)
+    baker.make("awards.TransactionFPDS", transaction=trans_cur)
 
 
 @pytest.fixture
 def state_view_loan_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"01": {"code": "AB"}})
 
-    award_old = mommy.make("awards.Award", type="07")
-    award_old2 = mommy.make("awards.Award", type="08")
-    award_cur = mommy.make("awards.Award", type="07")
+    award_old = baker.make("awards.Award", type="07")
+    award_old2 = baker.make("awards.Award", type="08")
+    award_cur = baker.make("awards.Award", type="07")
 
-    trans_old = mommy.make(
+    trans_old = baker.make(
         "awards.TransactionNormalized",
         award=award_old,
         type="07",
@@ -226,7 +226,7 @@ def state_view_loan_data(db, monkeypatch):
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
     )
 
-    trans_old2 = mommy.make(
+    trans_old2 = baker.make(
         "awards.TransactionNormalized",
         award=award_old2,
         type="08",
@@ -238,7 +238,7 @@ def state_view_loan_data(db, monkeypatch):
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
     )
 
-    trans_cur = mommy.make(
+    trans_cur = baker.make(
         "awards.TransactionNormalized",
         award=award_cur,
         type="A",
@@ -250,9 +250,9 @@ def state_view_loan_data(db, monkeypatch):
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
 
-    mommy.make("awards.TransactionFPDS", transaction=trans_old)
-    mommy.make("awards.TransactionFPDS", transaction=trans_old2)
-    mommy.make("awards.TransactionFPDS", transaction=trans_cur)
+    baker.make("awards.TransactionFPDS", transaction=trans_old)
+    baker.make("awards.TransactionFPDS", transaction=trans_old2)
+    baker.make("awards.TransactionFPDS", transaction=trans_cur)
 
 
 @pytest.fixture()

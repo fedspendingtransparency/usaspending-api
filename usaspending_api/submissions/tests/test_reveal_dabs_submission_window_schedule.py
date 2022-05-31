@@ -1,7 +1,7 @@
 import pytest
 
 from datetime import datetime, timezone
-from model_mommy import mommy
+from model_bakery import baker
 from django.core.management import call_command
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
@@ -13,7 +13,7 @@ PAST_DATE = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 @pytest.mark.django_db
 def test_not_ready_to_reveal(client):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=1,
         submission_due_date=FUTURE_DATE,
@@ -30,7 +30,7 @@ def test_not_ready_to_reveal(client):
 
 @pytest.mark.django_db
 def test_ready_to_reveal(client):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=1,
         submission_reveal_date=FUTURE_DATE,
@@ -45,7 +45,7 @@ def test_ready_to_reveal(client):
 
 @pytest.mark.django_db
 def test_already_revealed(client):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=1,
         submission_reveal_date=PAST_DATE,

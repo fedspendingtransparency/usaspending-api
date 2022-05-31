@@ -2,7 +2,7 @@ import json
 import pytest
 
 from datetime import datetime
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
@@ -11,65 +11,65 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def populate_models(db):
-    mommy.make("awards.Award", id=1, latest_transaction_id=1)
-    mommy.make("awards.Award", id=2, latest_transaction_id=2)
-    mommy.make("awards.Award", id=3, latest_transaction_id=3)
-    mommy.make("awards.Award", id=4, latest_transaction_id=4)
-    mommy.make("awards.Award", id=5, latest_transaction_id=5)
-    mommy.make("awards.Award", id=6, latest_transaction_id=6)
-    mommy.make("awards.Award", id=7, latest_transaction_id=7)
-    mommy.make("awards.Award", id=8, latest_transaction_id=8)
+    baker.make("awards.Award", id=1, latest_transaction_id=1)
+    baker.make("awards.Award", id=2, latest_transaction_id=2)
+    baker.make("awards.Award", id=3, latest_transaction_id=3)
+    baker.make("awards.Award", id=4, latest_transaction_id=4)
+    baker.make("awards.Award", id=5, latest_transaction_id=5)
+    baker.make("awards.Award", id=6, latest_transaction_id=6)
+    baker.make("awards.Award", id=7, latest_transaction_id=7)
+    baker.make("awards.Award", id=8, latest_transaction_id=8)
 
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=1,
         award_id=1,
         action_date=datetime(2010, 3, 1),
         federal_action_obligation=100.0,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=2,
         award_id=2,
         action_date=datetime(2011, 3, 1),
         federal_action_obligation=110.0,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=3,
         award_id=3,
         action_date=datetime(2012, 3, 1),
         federal_action_obligation=120.0,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=4,
         award_id=4,
         action_date=datetime(2013, 3, 1),
         federal_action_obligation=130.0,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=5,
         award_id=5,
         action_date=datetime(2014, 3, 1),
         federal_action_obligation=140.0,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=6,
         award_id=6,
         action_date=datetime(2015, 3, 1),
         federal_action_obligation=150.0,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=7,
         award_id=7,
         action_date=datetime(2016, 3, 1),
         federal_action_obligation=160.0,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=8,
         award_id=8,
@@ -80,7 +80,7 @@ def populate_models(db):
 
 @pytest.fixture
 def pragmatic_fixture():
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=1,
         action_date="2010-10-01",
@@ -90,7 +90,7 @@ def pragmatic_fixture():
         federal_action_obligation=9900,
         type="A",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=2,
         action_date="2019-01-19",
@@ -100,15 +100,15 @@ def pragmatic_fixture():
         federal_action_obligation=0,
         type="07",
     )
-    mommy.make("awards.TransactionFPDS", transaction_id=1, piid="piiiiid", federal_action_obligation=9900)
-    mommy.make(
+    baker.make("awards.TransactionFPDS", transaction_id=1, piid="piiiiid", federal_action_obligation=9900)
+    baker.make(
         "awards.TransactionFABS",
         transaction_id=2,
         fain="faiiin",
         original_loan_subsidy_cost=1000000,
         federal_action_obligation=None,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=1,
         latest_transaction_id=1,
@@ -117,7 +117,7 @@ def pragmatic_fixture():
         category="not loans",
         total_subsidy_cost=-1,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=2,
         latest_transaction_id=2,

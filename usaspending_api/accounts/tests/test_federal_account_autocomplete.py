@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.accounts.models import FederalAccount
@@ -10,10 +10,10 @@ from usaspending_api.common.tests.autocomplete import check_autocomplete
 
 @pytest.fixture
 def fed_account_data(db):
-    mommy.make(FederalAccount, account_title="zzz", main_account_code="abc")
-    mommy.make(FederalAccount, account_title="###", main_account_code="789")
-    mommy.make(FederalAccount, main_account_code="XYZ")
-    mommy.make(
+    baker.make(FederalAccount, account_title="zzz", main_account_code="abc")
+    baker.make(FederalAccount, account_title="###", main_account_code="789")
+    baker.make(FederalAccount, main_account_code="XYZ")
+    baker.make(
         FederalAccount,
         agency_identifier="999",
         main_account_code="0000",

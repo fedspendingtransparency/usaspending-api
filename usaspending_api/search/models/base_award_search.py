@@ -1,4 +1,4 @@
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
 from usaspending_api.awards.models import Award
@@ -110,7 +110,7 @@ class BaseAwardSearchModel(models.Model):
     tas_components = ArrayField(models.TextField(), default=list)
 
     disaster_emergency_fund_codes = ArrayField(models.TextField(), default=list)
-    covid_spending_by_defc = JSONField()
+    covid_spending_by_defc = models.JSONField()
     total_covid_outlay = models.DecimalField(max_digits=23, decimal_places=2)
     total_covid_obligation = models.DecimalField(max_digits=23, decimal_places=2)
 

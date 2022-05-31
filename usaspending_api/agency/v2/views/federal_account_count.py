@@ -56,18 +56,13 @@ class FederalAccountCount(AgencyBase):
         )
 
     def get_treasury_account_count(self, submission_ids: List[int]):
-        return (
-            TreasuryAppropriationAccount.objects.annotate(
-                include=Exists(
-                    FinancialAccountsByProgramActivityObjectClass.objects.filter(
-                        treasury_account_id=OuterRef("pk"),
-                        submission_id__in=submission_ids,
-                        treasury_account__funding_toptier_agency=self.toptier_agency,
-                        submission__reporting_fiscal_year=self.fiscal_year,
-                    ).values("pk")
+        return TreasuryAppropriationAccount.objects.filter(
+            Exists(
+                FinancialAccountsByProgramActivityObjectClass.objects.filter(
+                    treasury_account_id=OuterRef("pk"),
+                    submission_id__in=submission_ids,
+                    treasury_account__funding_toptier_agency=self.toptier_agency,
+                    submission__reporting_fiscal_year=self.fiscal_year,
                 )
             )
-            .filter(include=True)
-            .values("pk")
-            .count()
-        )
+        ).count()

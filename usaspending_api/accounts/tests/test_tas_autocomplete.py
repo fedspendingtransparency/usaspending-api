@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
@@ -10,9 +10,9 @@ from usaspending_api.common.tests.autocomplete import check_autocomplete
 
 @pytest.fixture
 def tas_data(db):
-    mommy.make(TreasuryAppropriationAccount, tas_rendering_label="zzz", main_account_code="abc")
-    mommy.make(TreasuryAppropriationAccount, tas_rendering_label="###", main_account_code="789")
-    mommy.make(TreasuryAppropriationAccount, main_account_code="XYZ")
+    baker.make(TreasuryAppropriationAccount, tas_rendering_label="zzz", main_account_code="abc")
+    baker.make(TreasuryAppropriationAccount, tas_rendering_label="###", main_account_code="789")
+    baker.make(TreasuryAppropriationAccount, main_account_code="XYZ")
 
 
 @pytest.mark.parametrize(

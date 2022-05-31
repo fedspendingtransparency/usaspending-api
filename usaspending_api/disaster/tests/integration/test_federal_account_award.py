@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 
 from rest_framework import status
 
@@ -144,7 +144,7 @@ def test_outlay_calculations(client, generic_account_data, monkeypatch, helpers,
     )
     defc_l = DisasterEmergencyFundCode.objects.get(code="L")
     ta = TreasuryAppropriationAccount.objects.get(account_title="flowers")
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         submission=sub,
         fain="43tgfvdvfv",
