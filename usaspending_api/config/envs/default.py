@@ -23,7 +23,9 @@ from pydantic import (
 from pydantic.fields import ModelField
 
 _PROJECT_NAME = "usaspending-api"
-_PROJECT_ROOT_DIR: pathlib.Path = pathlib.Path(__file__).parent.parent.parent.resolve()
+# WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
+# to the project root dir (i.e. usaspending-api/)
+_PROJECT_ROOT_DIR: pathlib.Path = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 _SRC_ROOT_DIR: pathlib.Path = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
 
 
