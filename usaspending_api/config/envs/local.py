@@ -56,8 +56,8 @@ class LocalConfig(DefaultConfig):
 
     # ==== [Spark] ====
     # Sensible defaults to underneath the project root dir. But look in .env for overriding of these
-    HIVE_METASTORE_DERBY_DB_DIR = _PROJECT_ROOT_DIR / "metastore_db"
-    SPARK_SQL_WAREHOUSE_DIR = _PROJECT_ROOT_DIR / "spark-warehouse"
+    SPARK_SQL_WAREHOUSE_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse")
+    HIVE_METASTORE_DERBY_DB_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse" / "metastore_db")
 
     # ==== [MinIO] ====
     MINIO_HOST: str = "localhost"

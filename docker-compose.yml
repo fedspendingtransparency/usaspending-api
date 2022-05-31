@@ -321,6 +321,10 @@ services:
         source: .
         target: /project
         read_only: false
+      # NOTE: The hive metastore_db derby database is expected to be configured to show up underneath the spark-warehouse dir
+#      - type: bind
+#        source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
+#        target: /spark-warehouse
       # Mount the JAR dependencies local repo on host into container to take advantage of caching/reuse
       # i.e., to download the dependencies only once and reuse on subsequent docker-compose run calls
       - type: bind

@@ -22,14 +22,19 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 
 
-def test_metastore(spark: SparkSession):
-    # spark.sql('drop database delta_test')
-    # spark.sql('create schema if not exists delta_test');
-    # spark.sql("""
-    #     create table delta_test.my_test_delta_table(id INT, name STRING, age INT)
-    #     using delta
-    #     location '/Users/keithhickey/Documents/BAH/Projects/Treasury/DATAAct/Development/data/usaspending/delta/my_test_delta_table'
-    # """);
+def test_metastore(spark: SparkSession, s3_unittest_data_bucket):
+    """Simple starter test to create a schema and table and see if they can be found in the metastore in subsequent
+    runs
+
+    Currently to run this accurately, you need to run it manually, comment out the top part, run it manually again and
+    see if the schema and table from the previous run are discoverable still (i.e. persisted)
+    """
+    spark.sql('create schema if not exists delta_test')
+    spark.sql(f"""
+        create table if not exists delta_test.my_test_delta_table(id INT, name STRING, age INT)
+        using delta
+        location 's3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/my_test_delta_table'
+    """)
 
     [print(s[0]) for s in spark.sql('show schemas').collect()]
     [print(t) for t in spark.sql('show tables').collect()]

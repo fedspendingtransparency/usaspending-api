@@ -70,7 +70,7 @@ def configure_spark_session(
     log_level: int = None,
     log_spark_config_vals: bool = False,
     log_hadoop_config_vals: bool = False,
-    enable_hive_support: bool = True,
+    enable_hive_support: bool = False,
     **options,
 ) -> SparkSession:
     """Get a SparkSession object with some of the default/boiler-plate config needed for THIS project pre-set
@@ -128,7 +128,7 @@ def configure_spark_session(
     conf.set("spark.yarn.maxAppAttempts", "1")
     conf.set("spark.hadoop.fs.s3a.endpoint", CONFIG.AWS_S3_ENDPOINT)
 
-    if not CONFIG.USE_AWS:
+    if not CONFIG.USE_AWS:  # i.e. running in a "local" [development] environment
         # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy
         conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         # "Enable S3 path style access ie disabling the default virtual hosting behaviour.
@@ -156,6 +156,17 @@ def configure_spark_session(
         # conf.set("spark.hadoop.fs.s3a.committer.staging.conflict-mode", "fail")
         # conf.set("spark.hadoop.fs.s3a.committer.staging.tmp.path", "tmp/staging")
 
+        # Turn on Hive support to use a Derby filesystem DB as the metastore DB for tracking of schemas and tables
+        enable_hive_support = True
+
+        # Add Spark conf to set the Spark SQL Warehouse to an explicit directory,
+        # and to make the Hive metastore_db folder get stored under that warehouse dir
+        conf.set("spark.sql.warehouse.dir", CONFIG.SPARK_SQL_WAREHOUSE_DIR)
+        conf.set(
+            "spark.hadoop.javax.jdo.option.ConnectionURL",
+            f"jdbc:derby:;databaseName={CONFIG.HIVE_METASTORE_DERBY_DB_DIR};create=true",
+        )
+
     # Set AWS credentials in the Spark config
     # Hint: If connecting to AWS resources when executing program from a local env, and you usually authenticate with
     # an AWS_PROFILE, set each of these config values to empty/None, and ensure your AWS_PROFILE env var is set in
@@ -167,11 +178,6 @@ def configure_spark_session(
         CONFIG.AWS_PROFILE,
         temporary_creds=False,
     )
-
-    #options["spark.hadoop.javax.jdo.option.ConnectionURL"] =
-    # "jdbc:derby:;databaseName=/Users/keithhickey/Documents/BAH/Projects/Treasury/DATAAct/Development/data/usaspending/spark-warehouse/metastore_db;create=true"
-    #options["spark.sql.warehouse.dir"] = "/Users/keithhickey/Documents/BAH/Projects/Treasury/DATAAct/Development
-    # /data/usaspending/spark-warehouse"
 
     # Set optional config key=value items passed in as args
     # Do this after all required config values are set with their defaults to allow overrides by passed-in values

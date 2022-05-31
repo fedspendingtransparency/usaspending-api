@@ -15,8 +15,8 @@ logs/*
 usaspending_api/logs/*
 matviews/*
 tmp/*
-metastore_db/
 spark-warehouse/
+derby.log
 
 data/output/
 
