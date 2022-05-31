@@ -23,8 +23,8 @@ from pydantic import (
 from pydantic.fields import ModelField
 
 _PROJECT_NAME = "usaspending-api"
-_PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.resolve()
-_SRC_ROOT_DIR = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
+_PROJECT_ROOT_DIR: pathlib.Path = pathlib.Path(__file__).parent.parent.parent.resolve()
+_SRC_ROOT_DIR: pathlib.Path = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
 
 
 class DefaultConfig(BaseSettings):

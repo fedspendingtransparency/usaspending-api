@@ -70,6 +70,7 @@ def configure_spark_session(
     log_level: int = None,
     log_spark_config_vals: bool = False,
     log_hadoop_config_vals: bool = False,
+    enable_hive_support: bool = True,
     **options,
 ) -> SparkSession:
     """Get a SparkSession object with some of the default/boiler-plate config needed for THIS project pre-set
@@ -167,6 +168,11 @@ def configure_spark_session(
         temporary_creds=False,
     )
 
+    #options["spark.hadoop.javax.jdo.option.ConnectionURL"] =
+    # "jdbc:derby:;databaseName=/Users/keithhickey/Documents/BAH/Projects/Treasury/DATAAct/Development/data/usaspending/spark-warehouse/metastore_db;create=true"
+    #options["spark.sql.warehouse.dir"] = "/Users/keithhickey/Documents/BAH/Projects/Treasury/DATAAct/Development
+    # /data/usaspending/spark-warehouse"
+
     # Set optional config key=value items passed in as args
     # Do this after all required config values are set with their defaults to allow overrides by passed-in values
     [conf.set(str(k), str(v)) for k, v in options.items() if options]
@@ -190,6 +196,8 @@ def configure_spark_session(
         builder = builder.master(master)
     if app_name:
         builder = builder.appName(app_name)
+    if enable_hive_support:
+        builder = builder.enableHiveSupport()
     spark = builder.config(conf=conf).getOrCreate()
 
     # Now that the SparkSession was created, check whether certain provided config values were ignored if given a

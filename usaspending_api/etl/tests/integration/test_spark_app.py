@@ -22,6 +22,21 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 
 
+def test_metastore(spark: SparkSession):
+    # spark.sql('drop database delta_test')
+    # spark.sql('create schema if not exists delta_test');
+    # spark.sql("""
+    #     create table delta_test.my_test_delta_table(id INT, name STRING, age INT)
+    #     using delta
+    #     location '/Users/keithhickey/Documents/BAH/Projects/Treasury/DATAAct/Development/data/usaspending/delta/my_test_delta_table'
+    # """);
+
+    [print(s[0]) for s in spark.sql('show schemas').collect()]
+    [print(t) for t in spark.sql('show tables').collect()]
+    spark.sql("use delta_test")
+    [print(t) for t in spark.sql('show tables').collect()]
+
+
 def test_spark_app_run_local_master(spark: SparkSession):
     """Execute a simple spark app and verify it logged expected output.
     Effectively if it runs without failing, it worked.

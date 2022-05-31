@@ -11,7 +11,7 @@ from typing import ClassVar
 
 from pydantic import root_validator
 from pydantic.types import SecretStr
-from usaspending_api.config.envs.default import DefaultConfig
+from usaspending_api.config.envs.default import DefaultConfig, _PROJECT_ROOT_DIR
 from usaspending_api.config.utils import (
     USER_SPECIFIC_OVERRIDE,
     FACTORY_PROVIDED_VALUE,
@@ -53,6 +53,11 @@ class LocalConfig(DefaultConfig):
     ES_SCHEME: str = "http"
     ES_HOST: str = "localhost"
     ES_PORT: str = "9200"
+
+    # ==== [Spark] ====
+    # Sensible defaults to underneath the project root dir. But look in .env for overriding of these
+    HIVE_METASTORE_DERBY_DB_DIR = _PROJECT_ROOT_DIR / "metastore_db"
+    SPARK_SQL_WAREHOUSE_DIR = _PROJECT_ROOT_DIR / "spark-warehouse"
 
     # ==== [MinIO] ====
     MINIO_HOST: str = "localhost"
