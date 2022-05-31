@@ -106,7 +106,7 @@ class _TimePeriods(_Filter):
         time_period_query = []
         if options:
             gte_field = options.get("gte_field", "action_date")
-            lte_field = options.get("lte_field", "date_signed")
+            lte_field = options.get("lte_field", "date_signed" if query_type == _QueryType.AWARDS else "action_date")
 
         for v in filter_values:
             start_date = v.get("start_date") or settings.API_SEARCH_MIN_DATE
@@ -116,7 +116,7 @@ class _TimePeriods(_Filter):
             lte_range = {
                 lte_field
                 if options
-                else v.get("gte_date_type", "date_signed" if query_type == _QueryType.AWARDS else "action_date"): {
+                else v.get("lte_date_type", "date_signed" if query_type == _QueryType.AWARDS else "action_date"): {
                     "lte": end_date
                 }
             }
