@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 
 from usaspending_api.awards.v2.views.accounts import AwardAccountsViewSet
 from usaspending_api.awards.v2.views.funding import AwardFundingViewSet
@@ -11,12 +11,12 @@ from usaspending_api.awards.v2.views.count.federal_accounts_count import Federal
 award_id_regex = "(?P<requested_award>(((CONT|ASST)_(AWD|IDV|NON|AGG)_.+)|([0-9]+)))"
 
 urlpatterns = [
-    url(r"^accounts/$", AwardAccountsViewSet.as_view()),
-    url(r"^funding/$", AwardFundingViewSet.as_view()),
-    url(r"^funding_rollup/$", AwardFundingRollupViewSet.as_view()),
-    url(r"^last_updated", AwardLastUpdatedViewSet.as_view()),
-    url(r"^count/transaction/{}/$".format(award_id_regex), TransactionCountRetrieveViewSet.as_view()),
-    url(r"^count/subaward/{}/$".format(award_id_regex), SubawardCountRetrieveViewSet.as_view()),
-    url(r"^count/federal_account/{}/$".format(award_id_regex), FederalAccountCountRetrieveViewSet.as_view()),
-    url(r"^{}/$".format(award_id_regex), AwardRetrieveViewSet.as_view()),
+    re_path(r"^accounts/$", AwardAccountsViewSet.as_view()),
+    re_path(r"^funding/$", AwardFundingViewSet.as_view()),
+    re_path(r"^funding_rollup/$", AwardFundingRollupViewSet.as_view()),
+    re_path(r"^last_updated", AwardLastUpdatedViewSet.as_view()),
+    re_path(r"^count/transaction/{}/$".format(award_id_regex), TransactionCountRetrieveViewSet.as_view()),
+    re_path(r"^count/subaward/{}/$".format(award_id_regex), SubawardCountRetrieveViewSet.as_view()),
+    re_path(r"^count/federal_account/{}/$".format(award_id_regex), FederalAccountCountRetrieveViewSet.as_view()),
+    re_path(r"^{}/$".format(award_id_regex), AwardRetrieveViewSet.as_view()),
 ]

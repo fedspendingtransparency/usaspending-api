@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.accounts.models import FederalAccount
@@ -9,12 +9,12 @@ from usaspending_api.accounts.models import FederalAccount
 
 @pytest.fixture
 def fixture_data(db):
-    ta0 = mommy.make("references.ToptierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts")
-    ta1 = mommy.make("references.ToptierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau")
-    ta2 = mommy.make("references.ToptierAgency", toptier_code="1601", abbreviation="DOL", name="Department of Labor")
-    ta3 = mommy.make("references.ToptierAgency", toptier_code="097", abbreviation="DOD", name="Department of Defense")
-    ta4 = mommy.make("references.ToptierAgency", toptier_code="021", abbreviation="DOD", name="Department of Navy")
-    fa0 = mommy.make(
+    ta0 = baker.make("references.ToptierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts")
+    ta1 = baker.make("references.ToptierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau")
+    ta2 = baker.make("references.ToptierAgency", toptier_code="1601", abbreviation="DOL", name="Department of Labor")
+    ta3 = baker.make("references.ToptierAgency", toptier_code="097", abbreviation="DOD", name="Department of Defense")
+    ta4 = baker.make("references.ToptierAgency", toptier_code="021", abbreviation="DOD", name="Department of Navy")
+    fa0 = baker.make(
         FederalAccount,
         agency_identifier="001",
         main_account_code="0005",
@@ -22,7 +22,7 @@ def fixture_data(db):
         federal_account_code="001-0005",
         parent_toptier_agency=ta0,
     )
-    fa1 = mommy.make(
+    fa1 = baker.make(
         FederalAccount,
         agency_identifier="002",
         main_account_code="0005",
@@ -30,7 +30,7 @@ def fixture_data(db):
         federal_account_code="002-0005",
         parent_toptier_agency=ta1,
     )
-    fa2 = mommy.make(
+    fa2 = baker.make(
         FederalAccount,
         agency_identifier="1600",
         main_account_code="0005",
@@ -38,7 +38,7 @@ def fixture_data(db):
         federal_account_code="1600-0005",
         parent_toptier_agency=ta2,
     )
-    fa3 = mommy.make(
+    fa3 = baker.make(
         FederalAccount,
         agency_identifier="097",
         main_account_code="0005",
@@ -46,7 +46,7 @@ def fixture_data(db):
         federal_account_code="097-0005",
         parent_toptier_agency=ta3,
     )
-    fa4 = mommy.make(
+    fa4 = baker.make(
         FederalAccount,
         agency_identifier="021",
         main_account_code="0005",
@@ -54,69 +54,69 @@ def fixture_data(db):
         federal_account_code="021-0005",
         parent_toptier_agency=ta4,
     )
-    ta0 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa0)
-    ta1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
-    ta2 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa2)
-    ta3 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa3)
-    ta4 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa4)
+    ta0 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa0)
+    ta1 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
+    ta2 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa2)
+    ta3 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa3)
+    ta4 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa4)
 
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta0,
         total_budgetary_resources_amount_cpe=1000,
         submission__reporting_period_start="2017-06-01",
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=False,  # so filter it out
         treasury_account_identifier=ta0,
         total_budgetary_resources_amount_cpe=100,
         submission__reporting_period_start="2017-03-01",
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta0,
         total_budgetary_resources_amount_cpe=2000,
         submission__reporting_period_start="2017-06-01",
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta1,
         total_budgetary_resources_amount_cpe=9000,
         submission__reporting_period_start="2017-06-01",
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta1,
         total_budgetary_resources_amount_cpe=500,
         submission__reporting_period_start="2016-06-01",
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier__treasury_account_identifier="999",
         total_budgetary_resources_amount_cpe=4000,
         submission__reporting_period_start="2017-06-01",
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta2,
         total_budgetary_resources_amount_cpe=1000,
         submission__reporting_period_start="2015-06-01",
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta3,
         total_budgetary_resources_amount_cpe=2000,
         submission__reporting_period_start="2018-03-01",
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta4,

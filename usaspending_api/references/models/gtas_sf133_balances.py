@@ -1,4 +1,5 @@
 from django.db import models
+from django_cte import CTEManager
 
 
 class GTASSF133Balances(models.Model):
@@ -36,6 +37,8 @@ class GTASSF133Balances(models.Model):
     update_date = models.DateTimeField(auto_now=True)
     anticipated_prior_year_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)
     prior_year_paid_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)
+
+    objects = CTEManager()
 
     class Meta:
         managed = True

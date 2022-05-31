@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.search.models import ContractAwardSearchMatview
 from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_nested_object,
@@ -14,8 +14,8 @@ from usaspending_api.common.exceptions import InvalidParameterException
 
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True, type="A")
-    mommy.make(
+    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True, type="A")
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
         legal_entity_city_name="BURBANK",
@@ -26,10 +26,10 @@ def award_data_fixture(db):
         place_of_performance_state="TX",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
+    baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
 
-    mommy.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True, type="A")
-    mommy.make(
+    baker.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True, type="A")
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=2,
         legal_entity_city_name="BRISTOL",
@@ -39,10 +39,10 @@ def award_data_fixture(db):
         place_of_performance_state="TX",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", type="A")
+    baker.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", type="A")
 
-    mommy.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True, type="A")
-    mommy.make(
+    baker.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True, type="A")
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=3,
         legal_entity_city_name="BRISBANE",
@@ -51,10 +51,10 @@ def award_data_fixture(db):
         place_of_performance_state="NE",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", type="A")
+    baker.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", type="A")
 
-    mommy.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True, type="A")
-    mommy.make(
+    baker.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True, type="A")
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=4,
         legal_entity_city_name="NEW YORK",
@@ -64,9 +64,9 @@ def award_data_fixture(db):
         place_of_performance_state="NE",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", type="A")
-    mommy.make("awards.TransactionNormalized", id=5, action_date="2010-10-01", award_id=5, is_fpds=True, type="A")
-    mommy.make(
+    baker.make("awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", type="A")
+    baker.make("awards.TransactionNormalized", id=5, action_date="2010-10-01", award_id=5, is_fpds=True, type="A")
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=5,
         legal_entity_city_name="NEW AMSTERDAM",
@@ -76,9 +76,9 @@ def award_data_fixture(db):
         place_of_performance_state="NE",
         place_of_perform_country_c="USA",
     )
-    mommy.make("awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", type="A")
+    baker.make("awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", type="A")
 
-    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
 def test_geocode_filter_locations(award_data_fixture):

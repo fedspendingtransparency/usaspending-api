@@ -4,7 +4,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone, timedelta
 from django.test import override_settings
 from elasticsearch import Elasticsearch
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.conftest_helpers import TestElasticSearchIndex
@@ -31,7 +31,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
 @pytest.fixture
 def award_data_fixture(db):
     fpds_unique_key = "fpds_transaction_id_1".upper()  # our ETL UPPERs all these when brought from Broker
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=1,
         award_id=1,
@@ -40,7 +40,7 @@ def award_data_fixture(db):
         type="A",
         transaction_unique_id=fpds_unique_key,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         detached_award_proc_unique=fpds_unique_key,
         transaction_id=1,
@@ -61,7 +61,7 @@ def award_data_fixture(db):
     )
 
     fabs_unique_key = "fabs_transaction_id_2".upper()  # our ETL UPPERs all these when brought from Broker
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=2,
         award_id=2,
@@ -70,7 +70,7 @@ def award_data_fixture(db):
         type="02",
         transaction_unique_id=fabs_unique_key,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction_id=2,
         fain="P063P100612",
@@ -78,10 +78,10 @@ def award_data_fixture(db):
         afa_generated_unique=fabs_unique_key,
     )
 
-    mommy.make("references.ToptierAgency", toptier_agency_id=1, name="Department of Transportation")
-    mommy.make("references.SubtierAgency", subtier_agency_id=1, name="Department of Transportation")
-    mommy.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1)
-    mommy.make(
+    baker.make("references.ToptierAgency", toptier_agency_id=1, name="Department of Transportation")
+    baker.make("references.SubtierAgency", subtier_agency_id=1, name="Department of Transportation")
+    baker.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1)
+    baker.make(
         "awards.Award",
         id=1,
         generated_unique_award_id="CONT_AWD_IND12PB00323",
@@ -96,7 +96,7 @@ def award_data_fixture(db):
         funding_agency_id=1,
         update_date="2012-05-19",
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=2,
         generated_unique_award_id="ASST_NON_P063P100612",
@@ -108,8 +108,8 @@ def award_data_fixture(db):
         date_signed="2016-10-1",
         update_date="2014-07-21",
     )
-    mommy.make("accounts.FederalAccount", id=1)
-    mommy.make(
+    baker.make("accounts.FederalAccount", id=1)
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=1,
         agency_id="097",
@@ -117,7 +117,7 @@ def award_data_fixture(db):
         federal_account_id=1,
     )
 
-    mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
 
 
 def mock_execute_sql(sql, results, verbosity=None):

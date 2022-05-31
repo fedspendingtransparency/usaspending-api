@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.awards.models import TransactionNormalized
@@ -12,37 +12,37 @@ from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgen
 def awards_and_transactions(db):
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    mommy.make("references.SubtierAgency", subtier_code="def", **subag)
-    mommy.make("references.ToptierAgency", toptier_code="abc", **subag)
+    baker.make("references.SubtierAgency", subtier_code="def", **subag)
+    baker.make("references.ToptierAgency", toptier_code="abc", **subag)
 
     duns = {"awardee_or_recipient_uniqu": "123", "uei": "ABC", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
     recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
     parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
     recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
-    mommy.make("references.Cfda", program_number=1234)
-    mommy.make("recipient.DUNS", **duns)
-    mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
-    mommy.make("recipient.RecipientLookup", **recipient_lookup)
-    mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
-    mommy.make("recipient.RecipientProfile", **recipient_profile)
+    baker.make("references.Cfda", program_number=1234)
+    baker.make("recipient.DUNS", **duns)
+    baker.make("recipient.RecipientLookup", **parent_recipient_lookup)
+    baker.make("recipient.RecipientLookup", **recipient_lookup)
+    baker.make("recipient.RecipientProfile", **parent_recipient_profile)
+    baker.make("recipient.RecipientProfile", **recipient_profile)
 
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
-    mommy.make("references.Agency", **ag)
+    baker.make("references.Agency", **ag)
 
     trans_asst = {"pk": 1, "award_id": 1, "business_categories": ["small_business"]}
     trans_cont_1 = {"pk": 2, "award_id": 2, "business_categories": ["small_business"]}
     trans_cont_2 = {"pk": 3, "award_id": 3, "business_categories": ["small_business"]}
-    mommy.make("awards.TransactionNormalized", **trans_asst)
-    mommy.make("awards.TransactionNormalized", **trans_cont_1)
-    mommy.make("awards.TransactionNormalized", **trans_cont_2)
+    baker.make("awards.TransactionNormalized", **trans_asst)
+    baker.make("awards.TransactionNormalized", **trans_cont_1)
+    baker.make("awards.TransactionNormalized", **trans_cont_2)
 
-    mommy.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
-    mommy.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")
+    baker.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
+    baker.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")
 
-    mommy.make("references.NAICS", code="333911", description="PUMP AND PUMPING EQUIPMENT MANUFACTURING")
-    mommy.make("references.NAICS", code="3339", description="Other General Purpose Machinery Manufacturing")
-    mommy.make("references.NAICS", code="33", description="Manufacturing")
+    baker.make("references.NAICS", code="333911", description="PUMP AND PUMPING EQUIPMENT MANUFACTURING")
+    baker.make("references.NAICS", code="3339", description="Other General Purpose Machinery Manufacturing")
+    baker.make("references.NAICS", code="33", description="Manufacturing")
 
     award_1_model = {
         "pk": 1,
@@ -103,9 +103,9 @@ def awards_and_transactions(db):
         "subaward_count": 10,
         "date_signed": "2004-03-02",
     }
-    mommy.make("awards.Award", **award_1_model)
-    mommy.make("awards.Award", **award_2_model)
-    mommy.make("awards.Award", **award_3_model)
+    baker.make("awards.Award", **award_1_model)
+    baker.make("awards.Award", **award_2_model)
+    baker.make("awards.Award", **award_3_model)
 
     asst_data = {"transaction": TransactionNormalized.objects.get(pk=1), "cfda_number": 1234, "cfda_title": "farms"}
 
@@ -329,9 +329,9 @@ def awards_and_transactions(db):
         "awarding_office_name": "awarding_office",
         "funding_office_name": "funding_office",
     }
-    mommy.make("awards.TransactionFABS", **asst_data)
-    mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data)
-    mommy.make("awards.TransactionFPDS", **latest_transaction_contract_data_without_recipient_name_or_id)
+    baker.make("awards.TransactionFABS", **asst_data)
+    baker.make("awards.TransactionFPDS", **latest_transaction_contract_data)
+    baker.make("awards.TransactionFPDS", **latest_transaction_contract_data_without_recipient_name_or_id)
 
 
 @pytest.mark.django_db

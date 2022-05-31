@@ -1,4 +1,4 @@
-from model_mommy import mommy
+from model_bakery import baker
 import pytest
 
 
@@ -159,6 +159,6 @@ def service_tier_four():
 
 
 def _psc(db, dictionary):
-    mommy.make(
+    baker.make(
         "references.PSC", code=dictionary["id"], length=len(dictionary["id"]), description=dictionary["description"]
     )

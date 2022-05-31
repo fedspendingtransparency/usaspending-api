@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -8,26 +8,26 @@ from rest_framework import status
 def financial_spending_data(db):
     # Create 2 objects that should be returned and one that should not.
     # Create AGENCY AND TopTier AGENCY For FinancialAccountsByProgramActivityObjectClass objects
-    ttagency1 = mommy.make("references.ToptierAgency", name="tta_name", toptier_code="abc")
-    mommy.make("references.Agency", id=1, toptier_agency=ttagency1)
+    ttagency1 = baker.make("references.ToptierAgency", name="tta_name", toptier_code="abc")
+    baker.make("references.Agency", id=1, toptier_agency=ttagency1)
 
     # Object 1
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
+    tas1 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
     # Financial Account with Object class and submission
-    object_class_1 = mommy.make(
+    object_class_1 = baker.make(
         "references.ObjectClass",
         major_object_class="10",
         major_object_class_name="mocName",
         object_class="ocCode",
         object_class_name="ocName",
     )
-    submission_1 = mommy.make(
+    submission_1 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         toptier_code="abc",
         is_final_balances_for_fy=True,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         object_class=object_class_1,
         obligations_incurred_by_program_object_class_cpe=1000,
@@ -36,27 +36,27 @@ def financial_spending_data(db):
     )
 
     # Object 2 (contains 2 fabpaoc s)
-    object_class_2 = mommy.make(
+    object_class_2 = baker.make(
         "references.ObjectClass",
         major_object_class="10",
         major_object_class_name="mocName2",
         object_class="ocCode2",
         object_class_name="ocName2",
     )
-    submission_2 = mommy.make(
+    submission_2 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         toptier_code="abc",
         is_final_balances_for_fy=True,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         object_class=object_class_2,
         obligations_incurred_by_program_object_class_cpe=1000,
         submission=submission_2,
         treasury_account=tas1,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         object_class=object_class_2,
         obligations_incurred_by_program_object_class_cpe=2000,
@@ -65,21 +65,21 @@ def financial_spending_data(db):
     )
 
     # 2018, not reported by 2017 api call
-    object_class_0 = mommy.make(
+    object_class_0 = baker.make(
         "references.ObjectClass",
         major_object_class="00",
         major_object_class_name="Zero object type, override me",
         object_class="ocCode2",
         object_class_name="ocName2",
     )
-    tas3 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
-    submission_3 = mommy.make(
+    tas3 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
+    submission_3 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2018,
         toptier_code="abc",
         is_final_balances_for_fy=True,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         object_class=object_class_0,
         obligations_incurred_by_program_object_class_cpe=1000,

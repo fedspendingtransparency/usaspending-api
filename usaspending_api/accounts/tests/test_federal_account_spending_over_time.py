@@ -1,21 +1,21 @@
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
 @pytest.fixture
 def financial_spending_data(db):
-    ta1 = mommy.make("TreasuryAppropriationAccount", federal_account__id=1, federal_account_id=1)
-    mommy.make(
+    ta1 = baker.make("TreasuryAppropriationAccount", federal_account__id=1, federal_account_id=1)
+    baker.make(
         "FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         object_class__major_object_class=10,
         object_class__object_class=111,
         program_activity__program_activity_code="0001",
     )
-    mommy.make(
+    baker.make(
         "AppropriationAccountBalances",
         reporting_period_start="2016-01-01",
         reporting_period_end="2016-06-01",
@@ -28,15 +28,15 @@ def financial_spending_data(db):
         obligations_incurred_total_by_tas_cpe=1000,
     )
 
-    ta1a = mommy.make("TreasuryAppropriationAccount", federal_account__id=1, federal_account_id=1)
-    mommy.make(
+    ta1a = baker.make("TreasuryAppropriationAccount", federal_account__id=1, federal_account_id=1)
+    baker.make(
         "FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         object_class__major_object_class=40,
         object_class__object_class=444,
         program_activity__program_activity_code="0004",
     )
-    mommy.make(
+    baker.make(
         "AppropriationAccountBalances",
         reporting_period_start="2014-01-01",
         reporting_period_end="2014-06-01",
@@ -49,8 +49,8 @@ def financial_spending_data(db):
         obligations_incurred_total_by_tas_cpe=1000,
     )
 
-    ta2 = mommy.make("TreasuryAppropriationAccount", federal_account__id=2, federal_account_id=2)
-    mommy.make(
+    ta2 = baker.make("TreasuryAppropriationAccount", federal_account__id=2, federal_account_id=2)
+    baker.make(
         "FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta2,
         object_class__major_object_class=10,
@@ -58,7 +58,7 @@ def financial_spending_data(db):
         program_activity__program_activity_code="0001",
     )
 
-    mommy.make(
+    baker.make(
         "AppropriationAccountBalances",
         reporting_period_start="2016-01-01",
         reporting_period_end="2016-06-01",
@@ -71,7 +71,7 @@ def financial_spending_data(db):
         obligations_incurred_total_by_tas_cpe=1000,
     )
 
-    mommy.make(
+    baker.make(
         "AppropriationAccountBalances",
         reporting_period_start="2016-01-01",
         reporting_period_end="2016-06-01",
@@ -84,7 +84,7 @@ def financial_spending_data(db):
         obligations_incurred_total_by_tas_cpe=1000,
     )
 
-    mommy.make(
+    baker.make(
         "AppropriationAccountBalances",
         reporting_period_start="2014-01-01",
         reporting_period_end="2014-06-01",
@@ -97,7 +97,7 @@ def financial_spending_data(db):
         obligations_incurred_total_by_tas_cpe=1000,
     )
 
-    mommy.make(
+    baker.make(
         "AppropriationAccountBalances",
         reporting_period_start="2016-01-01",
         reporting_period_end="2016-06-01",
@@ -110,7 +110,7 @@ def financial_spending_data(db):
         obligations_incurred_total_by_tas_cpe=1000,
     )
 
-    mommy.make(
+    baker.make(
         "AppropriationAccountBalances",
         reporting_period_start="2016-01-01",
         reporting_period_end="2016-06-01",

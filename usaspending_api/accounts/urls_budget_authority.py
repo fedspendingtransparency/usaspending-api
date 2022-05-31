@@ -1,5 +1,3 @@
-# from django.conf.urls import url
-
 from usaspending_api.accounts.views import budget_authority as views
 
 # bind ViewSets to URLs

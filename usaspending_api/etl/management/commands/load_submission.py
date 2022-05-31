@@ -160,8 +160,8 @@ class Command(load_base.Command):
                 with publish_certify_history as (
                     select
                         distinct_pairings.submission_id,
-                        jsonb_agg(
-                            jsonb_build_object(
+                        json_agg(
+                            json_build_object(
                                 'published_date', ph.updated_at::timestamptz,
                                 'certified_date', ch.updated_at::timestamptz
                             )

@@ -10,7 +10,7 @@ import uuid
 from datetime import date
 
 import boto3
-from model_mommy import mommy
+from model_bakery import baker
 from pyspark.sql import SparkSession, Row
 from pytest import fixture, mark
 from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
@@ -72,16 +72,16 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 
 @fixture()
 def _transaction_and_award_test_data(db):
-    agency1 = mommy.make("references.Agency")
-    awd1 = mommy.make("awards.Award", awarding_agency=agency1)
-    txn1 = mommy.make(
+    agency1 = baker.make("references.Agency")
+    awd1 = baker.make("awards.Award", awarding_agency=agency1)
+    txn1 = baker.make(
         "awards.TransactionNormalized",
         award=awd1,
         modification_number="1",
         awarding_agency=agency1,
         last_modified_date=date(2012, 3, 1),
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction=txn1,
         business_funds_indicator="a",
@@ -90,15 +90,15 @@ def _transaction_and_award_test_data(db):
     )
     assert TransactionFABS.objects.all().count() == 1
 
-    awd2 = mommy.make("awards.Award", awarding_agency=agency1)
-    txn2 = mommy.make(
+    awd2 = baker.make("awards.Award", awarding_agency=agency1)
+    txn2 = baker.make(
         "awards.TransactionNormalized",
         award=awd2,
         modification_number="1",
         awarding_agency=agency1,
         last_modified_date=date(2012, 4, 1),
     )
-    mommy.make("awards.TransactionFPDS", transaction=txn2, piid="abc", base_and_all_options_value=1000)
+    baker.make("awards.TransactionFPDS", transaction=txn2, piid="abc", base_and_all_options_value=1000)
     assert TransactionFPDS.objects.all().count() == 1
 
 

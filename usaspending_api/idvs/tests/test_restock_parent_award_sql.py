@@ -1,6 +1,6 @@
 import pytest
 from django.core.management import call_command
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.idvs.tests.data.idv_data import set_up_related_award_objects, create_tree
 from usaspending_api.awards.models import ParentAward
@@ -86,7 +86,7 @@ def set_up_db(*awards):
     set_up_related_award_objects()
     award_dict = create_tree(awards)
     for award in award_dict:
-        mommy.make("awards.Award", **award)
+        baker.make("awards.Award", **award)
     call_command("restock_parent_award")
 
 

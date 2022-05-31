@@ -6,7 +6,7 @@ from decimal import Decimal
 # Core Django imports
 
 # Third-party app imports
-from model_mommy import mommy
+from model_bakery import baker
 
 # Imports from your apps
 from usaspending_api.awards.v2.views.transactions import TransactionViewSet
@@ -41,8 +41,8 @@ def test_no_award_id():
 @pytest.mark.django_db
 def test_specific_award():
     create_dummy_awards()
-    mommy.make("awards.TransactionNormalized", **transaction_1)
-    mommy.make("awards.TransactionNormalized", **transaction_2)
+    baker.make("awards.TransactionNormalized", **transaction_1)
+    baker.make("awards.TransactionNormalized", **transaction_2)
     test_payload = {"award_id": "2"}
 
     svs = TransactionViewSet()
@@ -60,11 +60,11 @@ def test_specific_award():
 
 @pytest.mark.django_db
 def create_dummy_awards():
-    mommy.make("awards.Award", **{"id": 1})
+    baker.make("awards.Award", **{"id": 1})
     dummy_award_1 = Award.objects.get(id=1)
-    mommy.make("awards.Award", **{"id": 2})
+    baker.make("awards.Award", **{"id": 2})
     dummy_award_2 = Award.objects.get(id=2)
-    mommy.make("awards.Award", **{"id": 3})
+    baker.make("awards.Award", **{"id": 3})
     dummy_award_3 = Award.objects.get(id=3)
     transaction_1["award"] = dummy_award_1
     transaction_2["award"] = dummy_award_2

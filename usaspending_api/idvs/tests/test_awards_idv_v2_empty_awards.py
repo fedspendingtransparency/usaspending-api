@@ -1,14 +1,14 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.awards.models import Award
 
 
 @pytest.fixture
 def awards_and_transactions(db):
-    mommy.make("awards.Award", total_obligation="2000", _quantity=2)
-    mommy.make("awards.Award", type="U", total_obligation=None, date_signed=None)
+    baker.make("awards.Award", total_obligation="2000", _quantity=2)
+    baker.make("awards.Award", type="U", total_obligation=None, date_signed=None)
 
 
 @pytest.mark.django_db

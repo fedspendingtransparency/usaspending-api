@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.references.models import FilterHash
@@ -12,7 +12,7 @@ FILTER_ENDPOINT = "/api/v2/references/filter/"
 
 @pytest.fixture
 def stored_hashes(db):
-    mommy.make("references.FilterHash", filter={}, hash="")
+    baker.make("references.FilterHash", filter={}, hash="")
 
 
 @pytest.mark.django_db

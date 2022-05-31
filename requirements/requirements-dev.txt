@@ -4,8 +4,8 @@ docker==5.0.3
 dredd-hooks==0.2.0
 flake8==3.8.4
 mock==3.0.5
-model-mommy==2.0.0
+model-bakery==1.5.*
 pre-commit==1.20.0
 pytest-cov==2.10.1
-pytest-django==3.10.0
-pytest==6.2.1
+pytest-django==4.2.0
+pytest==6.2.*
