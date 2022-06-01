@@ -27,11 +27,13 @@ def test_hive_metastore_db(spark: SparkSession, s3_unittest_data_bucket, hive_un
     test_schema = "my_delta_test_schema"
     test_table = "my_delta_test_table"
     spark.sql(f"create schema if not exists {test_schema}")
-    spark.sql(f"""
+    spark.sql(
+        f"""
         create table if not exists {test_schema}.{test_table}(id INT, name STRING, age INT)
         using delta
         location 's3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{test_table}'
-    """)
+    """
+    )
 
     schemas_in_metastore = [s[0] for s in spark.sql("SHOW SCHEMAS").collect()]
     assert len(schemas_in_metastore) == 2
