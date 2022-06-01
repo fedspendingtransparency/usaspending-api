@@ -288,6 +288,28 @@ services:
         target: /project
         read_only: false
 
+  # Example of running spark-submit container:
+  #  NOTE: double check package dependency versions here with those used in unit tests (conftest_spark.py), as these docs could have gotten stale
+  #  (1) Review config values in usaspending_api/config/envs/local.py and override any as needed in a .env file or -e environment variable
+  #  (2) Deploy minio in docker container (see README.md)
+  #  (3) Deploy the postgres DB docker container, if your script connects to a DB.
+  #      - If so, also export a JDBC_URL environment variable to pass in to the spark-submit container so it can find its connection
+  #  (4) If reading or writing to S3, make sure the bucket given by the value of config setting CONFIG.AWS_S3_BUCKET exists
+  #      - e.g. create via UI at http://localhost:10001
+  #      - or use MinIO client CLI: mc mb local/data
+  #  (4) Run the spark-submit container, citing the dependent packages:
+  #    (NOTEs:
+  #      - postgresql is needed as a JDBC driver, if connecting to a Postgres DB
+  #      - delta-core is needed to read/write in Delta Lake format
+  #      - hadoop-aws is needed for the S3AFileSystem.java, used to write data to S3,
+  #        - and should use the same hadoop version in your local setup
+  #        - NOTE that specifying hadoop-awas should pull in on its own the required version of the aws-java-sdk
+  #      - spark-hive is needed to use a hive metastore_db of schemas and tables
+  #        - the Docker image at this time only installs spark and hadoop standalone, which does not seem to include all the needed Hive jars
+  #
+  #    make docker-compose-run profiles="--profile spark" args="--rm -e MINIO_HOST=minio -e JDBC_URL -e COMPONENT_NAME='My Spark Prototype Script' spark-submit \
+  #      --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.0.0,org.apache.hadoop:hadoop-aws:3.2.0,org.apache.spark:spark-hive_2.12:3.1.2 \
+  #      /project/usaspending_api/etl/tests/path_to_your_spark_prototype_script.py"
   spark-submit:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
@@ -307,6 +329,12 @@ services:
     environment:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
+      # i.e. target where host warehouse dir is bound in below volume config.
+      #   This env var needs to be picked up as the config for the spark.sql.warehouse.dir spark conf setting when SparkSessions are created inside of a spark-submitted job
+      SPARK_SQL_WAREHOUSE_DIR: /spark-warehouse
+      # i.e. a metastore_db sub dir of the target where host warehouse dir is bound in below volume config.
+      #   This env var needs to be picked up as the path part of the config for the spark.hadoop.javax.jdo.option.ConnectionURL spark conf setting when SparkSessions are created inside of a spark-submitted job
+      HIVE_METASTORE_DERBY_DB_DIR: /spark-warehouse/metastore_db
       PYTHONPATH: "/project"
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
     # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
@@ -321,10 +349,10 @@ services:
         source: .
         target: /project
         read_only: false
-      # NOTE: The hive metastore_db derby database is expected to be configured to show up underneath the spark-warehouse dir
-#      - type: bind
-#        source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
-#        target: /spark-warehouse
+      # NOTE: The hive metastore_db Derby database folder is expected to be configured to show up as a subfolder of the spark-warehouse dir
+      - type: bind
+        source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
+        target: /spark-warehouse
       # Mount the JAR dependencies local repo on host into container to take advantage of caching/reuse
       # i.e., to download the dependencies only once and reuse on subsequent docker-compose run calls
       - type: bind
