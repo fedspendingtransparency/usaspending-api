@@ -1,4 +1,4 @@
-from django.db.models import Sum, Q
+from django.db.models import DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -76,9 +76,19 @@ class AgencyViewSet(APIView):
             submission__reporting_fiscal_quarter=active_fiscal_quarter,
             treasury_account_identifier__funding_toptier_agency=toptier_agency,
         ).aggregate(
-            budget_authority_amount=Coalesce(Sum("total_budgetary_resources_amount_cpe"), 0),
-            obligated_amount=Coalesce(Sum("obligations_incurred_total_by_tas_cpe"), 0),
-            outlay_amount=Coalesce(Sum("gross_outlay_amount_by_tas_cpe"), 0),
+            budget_authority_amount=Coalesce(
+                Sum("total_budgetary_resources_amount_cpe"),
+                0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
+            ),
+            obligated_amount=Coalesce(
+                Sum("obligations_incurred_total_by_tas_cpe"),
+                0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
+            ),
+            outlay_amount=Coalesce(
+                Sum("gross_outlay_amount_by_tas_cpe"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+            ),
         )
 
         cj = toptier_agency.justification if toptier_agency.justification else None

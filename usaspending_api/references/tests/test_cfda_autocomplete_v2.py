@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.references.models import Cfda
@@ -9,19 +9,19 @@ from usaspending_api.references.models import Cfda
 
 @pytest.fixture
 def cfda_data(db):
-    mommy.make(
+    baker.make(
         Cfda,
         program_number="10.117",
         popular_name="Biofuel Infrastructure Partnership (BIP)",
         program_title="Biofuel Infrastructure Partnership",
     )
-    mommy.make(
+    baker.make(
         Cfda,
         program_number="93.794",
         popular_name="",
         program_title="Reimbursement of State Costs for Provision of Part D Drugs",
     )
-    mommy.make(
+    baker.make(
         Cfda,
         program_number="10.577",
         popular_name="National Accuracy Clearinghouse (NAC) Pilot",

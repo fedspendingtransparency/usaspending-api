@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class ReferencesConfig(AppConfig):
-    name = "references"
+    name = "usaspending_api.references"

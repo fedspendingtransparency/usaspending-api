@@ -14,7 +14,7 @@ in the IDV world but has been added for testing purposes.  Hope this helps.
                                   C11 C12   C13 C14      C15
 """
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.submissions.models.dabs_submission_window_schedule import DABSSubmissionWindowSchedule
 
@@ -30,7 +30,7 @@ DATE_IN_THE_FUTURE = "2553-04-01"
 
 @pytest.fixture
 def basic_idvs():
-    defc_a = mommy.make("references.DisasterEmergencyFundCode", code="A")
+    defc_a = baker.make("references.DisasterEmergencyFundCode", code="A")
 
     standard_sub_window_schedule(DATE_IN_THE_PAST)
 
@@ -50,14 +50,14 @@ def basic_idvs():
         string_award_id = str(award_id).zfill(3)
 
         # Awarding agency
-        awarding_toptier_agency = mommy.make(
+        awarding_toptier_agency = baker.make(
             "references.ToptierAgency",
             toptier_agency_id=8500 + award_id,
             toptier_code=str(award_id).zfill(3),
             name="toptier_awarding_agency_name_%s" % (8500 + award_id),
         )
 
-        awarding_agency = mommy.make(
+        awarding_agency = baker.make(
             "references.Agency",
             id=8000 + award_id,
             toptier_flag=True,
@@ -65,23 +65,23 @@ def basic_idvs():
         )
 
         # Funding agency
-        funding_toptier_agency = mommy.make(
+        funding_toptier_agency = baker.make(
             "references.ToptierAgency",
             toptier_agency_id=9500 + award_id,
             toptier_code=str(100 + award_id).zfill(3),
             name="toptier_funding_agency_name_%s" % (9500 + award_id),
         )
 
-        funding_agency = mommy.make(
+        funding_agency = baker.make(
             "references.Agency",
             id=9000 + award_id,
             toptier_flag=True,
             toptier_agency_id=funding_toptier_agency.toptier_agency_id,
         )
 
-        transaction_normalized = mommy.make("awards.TransactionNormalized", id=7000 + award_id, award_id=award_id)
+        transaction_normalized = baker.make("awards.TransactionNormalized", id=7000 + award_id, award_id=award_id)
 
-        mommy.make(
+        baker.make(
             "awards.TransactionFPDS",
             transaction_id=transaction_normalized.id,
             funding_agency_name="subtier_funding_agency_name_%s" % transaction_normalized.id,
@@ -90,7 +90,7 @@ def basic_idvs():
             period_of_perf_potential_e="2018-08-%02d" % award_id,
         )
 
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=award_id,
             generated_unique_award_id="CONT_IDV_%s" % string_award_id,
@@ -110,7 +110,7 @@ def basic_idvs():
             period_of_performance_start_date="2018-02-%02d" % award_id,
         )
 
-        submission_attributes = mommy.make(
+        submission_attributes = baker.make(
             "submissions.SubmissionAttributes",
             submission_id=1000 + award_id,
             submission_window=DABSSubmissionWindowSchedule.objects.filter(
@@ -122,7 +122,7 @@ def basic_idvs():
             quarter_format_flag=bool(award_id % 2),
         )
 
-        federal_account = mommy.make(
+        federal_account = baker.make(
             "accounts.FederalAccount",
             id=2000 + award_id,
             agency_identifier=funding_toptier_agency.toptier_code,
@@ -131,7 +131,7 @@ def basic_idvs():
             federal_account_code=funding_toptier_agency.toptier_code + "-" + str(award_id).zfill(4),
         )
 
-        treasury_appropriation_account = mommy.make(
+        treasury_appropriation_account = baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3000 + award_id,
             federal_account_id=federal_account.id,
@@ -144,21 +144,21 @@ def basic_idvs():
             funding_toptier_agency_id=funding_toptier_agency.toptier_agency_id,
         )
 
-        ref_program_activity = mommy.make(
+        ref_program_activity = baker.make(
             "references.RefProgramActivity",
             id=4000 + award_id,
             program_activity_code=str(4000 + award_id),
             program_activity_name="program_activity_%s" % (4000 + award_id),
         )
 
-        object_class = mommy.make(
+        object_class = baker.make(
             "references.ObjectClass",
             id=5000 + award_id,
             object_class=5000 + award_id,
             object_class_name="object_class_%s" % (5000 + award_id),
         )
 
-        mommy.make(
+        baker.make(
             "awards.FinancialAccountsByAwards",
             financial_accounts_by_awards_id=6000 + award_id,
             award_id=award_id,
@@ -171,7 +171,7 @@ def basic_idvs():
             disaster_emergency_fund=defc_a if award_id < 7 else None,
         )
 
-        mommy.make(
+        baker.make(
             "recipient.RecipientLookup",
             id=7000 + award_id,
             recipient_hash=RECIPIENT_HASH_PREFIX + str(7000 + award_id),
@@ -179,7 +179,7 @@ def basic_idvs():
             duns="duns_%s" % (7000 + award_id),
         )
 
-        mommy.make(
+        baker.make(
             "recipient.RecipientProfile",
             id=8000 + award_id,
             recipient_hash=RECIPIENT_HASH_PREFIX + str(7000 + award_id),
@@ -196,7 +196,7 @@ def basic_idvs():
     # what the endpoints return.
     for award_id in IDVS:
         string_award_id = str(award_id).zfill(3)
-        mommy.make(
+        baker.make(
             "awards.ParentAward",
             award_id=award_id,
             generated_unique_award_id="CONT_IDV_%s" % string_award_id,
@@ -208,7 +208,7 @@ def basic_idvs():
 
 @pytest.fixture
 def idv_with_unreleased_submissions():
-    defc_a = mommy.make("references.DisasterEmergencyFundCode", code="A")
+    defc_a = baker.make("references.DisasterEmergencyFundCode", code="A")
 
     standard_sub_window_schedule(DATE_IN_THE_FUTURE)
     idv_from_award_id(2, defc=defc_a)
@@ -216,7 +216,7 @@ def idv_with_unreleased_submissions():
 
 @pytest.fixture
 def idv_with_released_submissions():
-    defc_a = mommy.make("references.DisasterEmergencyFundCode", code="A")
+    defc_a = baker.make("references.DisasterEmergencyFundCode", code="A")
 
     standard_sub_window_schedule(DATE_IN_THE_PAST)
     idv_from_award_id(2, defc=defc_a)
@@ -234,14 +234,14 @@ def idv_from_award_id(award_id, defc):
     string_award_id = str(award_id).zfill(3)
 
     # Awarding agency
-    awarding_toptier_agency = mommy.make(
+    awarding_toptier_agency = baker.make(
         "references.ToptierAgency",
         toptier_agency_id=8500 + award_id,
         toptier_code=str(award_id).zfill(3),
         name="toptier_awarding_agency_name_%s" % (8500 + award_id),
     )
 
-    awarding_agency = mommy.make(
+    awarding_agency = baker.make(
         "references.Agency",
         id=8000 + award_id,
         toptier_flag=True,
@@ -249,23 +249,23 @@ def idv_from_award_id(award_id, defc):
     )
 
     # Funding agency
-    funding_toptier_agency = mommy.make(
+    funding_toptier_agency = baker.make(
         "references.ToptierAgency",
         toptier_agency_id=9500 + award_id,
         toptier_code=str(100 + award_id).zfill(3),
         name="toptier_funding_agency_name_%s" % (9500 + award_id),
     )
 
-    funding_agency = mommy.make(
+    funding_agency = baker.make(
         "references.Agency",
         id=9000 + award_id,
         toptier_flag=True,
         toptier_agency_id=funding_toptier_agency.toptier_agency_id,
     )
 
-    transaction_normalized = mommy.make("awards.TransactionNormalized", id=7000 + award_id, award_id=award_id)
+    transaction_normalized = baker.make("awards.TransactionNormalized", id=7000 + award_id, award_id=award_id)
 
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=transaction_normalized.id,
         funding_agency_name="subtier_funding_agency_name_%s" % transaction_normalized.id,
@@ -274,7 +274,7 @@ def idv_from_award_id(award_id, defc):
         period_of_perf_potential_e="2018-08-%02d" % award_id,
     )
 
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=award_id,
         generated_unique_award_id="CONT_IDV_%s" % string_award_id,
@@ -294,7 +294,7 @@ def idv_from_award_id(award_id, defc):
         period_of_performance_start_date="2018-02-%02d" % award_id,
     )
 
-    submission_attributes = mommy.make(
+    submission_attributes = baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1000 + award_id,
         submission_window=DABSSubmissionWindowSchedule.objects.filter(
@@ -306,7 +306,7 @@ def idv_from_award_id(award_id, defc):
         quarter_format_flag=bool(award_id % 2),
     )
 
-    federal_account = mommy.make(
+    federal_account = baker.make(
         "accounts.FederalAccount",
         id=2000 + award_id,
         agency_identifier=funding_toptier_agency.toptier_code,
@@ -315,7 +315,7 @@ def idv_from_award_id(award_id, defc):
         federal_account_code=funding_toptier_agency.toptier_code + "-" + str(award_id).zfill(4),
     )
 
-    treasury_appropriation_account = mommy.make(
+    treasury_appropriation_account = baker.make(
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=3000 + award_id,
         federal_account_id=federal_account.id,
@@ -328,21 +328,21 @@ def idv_from_award_id(award_id, defc):
         funding_toptier_agency_id=funding_toptier_agency.toptier_agency_id,
     )
 
-    ref_program_activity = mommy.make(
+    ref_program_activity = baker.make(
         "references.RefProgramActivity",
         id=4000 + award_id,
         program_activity_code=str(4000 + award_id),
         program_activity_name="program_activity_%s" % (4000 + award_id),
     )
 
-    object_class = mommy.make(
+    object_class = baker.make(
         "references.ObjectClass",
         id=5000 + award_id,
         object_class=5000 + award_id,
         object_class_name="object_class_%s" % (5000 + award_id),
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         financial_accounts_by_awards_id=6000 + award_id,
         award_id=award_id,
@@ -355,7 +355,7 @@ def idv_from_award_id(award_id, defc):
         disaster_emergency_fund=defc if award_id < 7 else None,
     )
 
-    mommy.make(
+    baker.make(
         "recipient.RecipientLookup",
         id=7000 + award_id,
         recipient_hash=RECIPIENT_HASH_PREFIX + str(7000 + award_id),
@@ -363,7 +363,7 @@ def idv_from_award_id(award_id, defc):
         duns="duns_%s" % (7000 + award_id),
     )
 
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         id=8000 + award_id,
         recipient_hash=RECIPIENT_HASH_PREFIX + str(7000 + award_id),
@@ -373,7 +373,7 @@ def idv_from_award_id(award_id, defc):
     )
 
     if parent_award_id:
-        mommy.make(
+        baker.make(
             "awards.ParentAward",
             award_id=parent_award_id,
             generated_unique_award_id="CONT_IDV_%s" % str(parent_award_id).zfill(3),
@@ -385,7 +385,7 @@ def idv_from_award_id(award_id, defc):
 
 def standard_sub_window_schedule(date):
     for month in range(1, 13):
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             submission_fiscal_year=2100,
             submission_fiscal_month=month,
@@ -394,7 +394,7 @@ def standard_sub_window_schedule(date):
             submission_reveal_date=date,
         )
 
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             submission_fiscal_year=2100,
             submission_fiscal_month=month,

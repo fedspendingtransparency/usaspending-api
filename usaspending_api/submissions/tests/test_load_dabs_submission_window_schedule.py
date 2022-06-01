@@ -1,7 +1,7 @@
 import pytest
 
 from datetime import datetime, timezone
-from model_mommy import mommy
+from model_bakery import baker
 from django.core.management import call_command
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
@@ -13,7 +13,7 @@ CURRENT_REVEAL_DATE = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 @pytest.mark.django_db
 def test_schedule_is_updated(client):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=2020121,
         submission_reveal_date="2020-12-23",
@@ -32,7 +32,7 @@ def test_schedule_is_updated(client):
 
 @pytest.mark.django_db
 def test_future_schedule_is_updated(client):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=2777121,
         submission_reveal_date="2076-12-23",
@@ -51,7 +51,7 @@ def test_future_schedule_is_updated(client):
 
 @pytest.mark.django_db
 def test_non_matching_schedule_is_removed(client):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=2010121,
         submission_reveal_date="2010-12-23",
@@ -81,7 +81,7 @@ def test_load_from_broker(client, monkeypatch):
     of the Submission Window; that is controlled by "reveal_dabs_submission_window_schedules".
     A default of datetime.max is used to ensure new Submission Windows are not revealed until intended.
     """
-    mommy.make(
+    baker.make(
         DABSSubmissionWindowSchedule,
         id=2020121,
         period_start_date="2020-07-01",

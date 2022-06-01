@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.core.management import call_command, CommandError
 from django.db import connections, DEFAULT_DB_ALIAS
 from django.test import TransactionTestCase
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
@@ -33,7 +33,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
         reset_object_class_cache()
 
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
             agency_id="111",
@@ -43,7 +43,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
             tas_rendering_label="111-X-1111-111",
         )
 
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
             agency_id="222",
@@ -53,49 +53,49 @@ class TestWithMultipleDatabases(TransactionTestCase):
             tas_rendering_label="222-X-2222-222",
         )
 
-        mommy.make("references.ObjectClass", major_object_class="10", object_class="10.1", direct_reimbursable="D")
-        mommy.make("references.ObjectClass", major_object_class="01", object_class="01.0", direct_reimbursable="D")
+        baker.make("references.ObjectClass", major_object_class="10", object_class="10.1", direct_reimbursable="D")
+        baker.make("references.ObjectClass", major_object_class="01", object_class="01.0", direct_reimbursable="D")
 
-        mommy.make("references.DisasterEmergencyFundCode", code="B", title="BB")
-        mommy.make("references.DisasterEmergencyFundCode", code="L", title="LL")
-        mommy.make("references.DisasterEmergencyFundCode", code="N", title="NN")
+        baker.make("references.DisasterEmergencyFundCode", code="B", title="BB")
+        baker.make("references.DisasterEmergencyFundCode", code="L", title="LL")
+        baker.make("references.DisasterEmergencyFundCode", code="N", title="NN")
 
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id="2000041",
             submission_fiscal_year=2000,
             submission_fiscal_month=4,
             is_quarter=True,
         )
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id="2000040",
             submission_fiscal_year=2000,
             submission_fiscal_month=4,
             is_quarter=False,
         )
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id="2000041",
             submission_fiscal_year=2000,
             submission_fiscal_month=4,
             is_quarter=True,
         )
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id="2000050",
             submission_fiscal_year=2000,
             submission_fiscal_month=5,
             is_quarter=False,
         )
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id="2000060",
             submission_fiscal_year=2000,
             submission_fiscal_month=6,
             is_quarter=False,
         )
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id="2000091",
             submission_fiscal_year=2000,
@@ -358,10 +358,24 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
         # Now that we have everything loaded, let's make sure our data make sense.
         with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
-            cursor.execute("select * from submission_attributes where submission_id = 1")
+            fields = [
+                "submission_id",
+                "certified_date",
+                "toptier_code",
+                "reporting_period_start",
+                "reporting_period_end",
+                "reporting_fiscal_year",
+                "reporting_fiscal_quarter",
+                "reporting_fiscal_period",
+                "quarter_format_flag",
+                "reporting_agency_name",
+                "is_final_balances_for_fy",
+                "published_date",
+                "submission_window_id",
+                "history::JSON",
+            ]
+            cursor.execute(f"select {', '.join(fields)} from submission_attributes where submission_id = 1")
             d = dict(ordered_dictionary_fetcher(cursor)[0])
-            del d["create_date"]
-            del d["update_date"]
             assert d == {
                 "submission_id": 1,
                 "certified_date": datetime(2000, 2, 1, 0, 0, tzinfo=timezone.utc),

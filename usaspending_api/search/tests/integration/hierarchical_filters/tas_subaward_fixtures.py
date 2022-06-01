@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from datetime import datetime
 
 
@@ -46,7 +46,7 @@ def multiple_subawards_with_sibling_tas(db, multiple_awards_with_sibling_tas):
 
 
 def subaward(db, award_id):
-    mommy.make(
+    baker.make(
         "awards.Subaward",
         funding_toptier_agency_name="test",
         id=award_id,

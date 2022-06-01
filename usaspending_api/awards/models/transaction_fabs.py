@@ -48,7 +48,7 @@ class TransactionFABS(models.Model):
     funding_sub_tier_agency_na = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(null=False, default=False)
     indirect_federal_sharing = NumericField(blank=True, null=True)
-    is_historical = models.NullBooleanField()
+    is_historical = models.BooleanField(null=True, blank=True)
     legal_entity_address_line1 = models.TextField(blank=True, null=True)
     legal_entity_address_line2 = models.TextField(blank=True, null=True)
     legal_entity_address_line3 = models.TextField(blank=True, null=True)

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.db import connection
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.reporting.models import ReportingAgencyMissingTas
 
@@ -37,24 +37,24 @@ def setup_test_data(db):
         },
     ]
     for dabs_window in dsws:
-        mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window)
+        baker.make("submissions.DABSSubmissionWindowSchedule", **dabs_window)
 
     sub = [
-        mommy.make(
+        baker.make(
             "submissions.SubmissionAttributes",
             submission_id=1,
             reporting_fiscal_year=2019,
             reporting_fiscal_period=3,
             submission_window_id=dsws[0]["id"],
         ),
-        mommy.make(
+        baker.make(
             "submissions.SubmissionAttributes",
             submission_id=2,
             reporting_fiscal_year=2019,
             reporting_fiscal_period=4,
             submission_window_id=dsws[0]["id"],
         ),
-        mommy.make(
+        baker.make(
             "submissions.SubmissionAttributes",
             submission_id=3,
             reporting_fiscal_year=future_date.year,
@@ -64,16 +64,16 @@ def setup_test_data(db):
         ),
     ]
 
-    agency = mommy.make("references.ToptierAgency", toptier_agency_id=1, toptier_code="123")
+    agency = baker.make("references.ToptierAgency", toptier_agency_id=1, toptier_code="123")
 
     treas_accounts = [
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
             funding_toptier_agency=agency,
             tas_rendering_label="tas-1",
         ),
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
             funding_toptier_agency=agency,
@@ -88,7 +88,7 @@ def setup_test_data(db):
         {"sub_id": sub[2].submission_id, "treasury_account": treas_accounts[1]},
     ]
     for approp in approps:
-        mommy.make(
+        baker.make(
             "accounts.AppropriationAccountBalances",
             submission_id=approp["sub_id"],
             treasury_account_identifier=approp["treasury_account"],
@@ -139,7 +139,7 @@ def setup_test_data(db):
         },
     ]
     for gtas in gtas_rows:
-        mommy.make(
+        baker.make(
             "references.GTASSF133Balances",
             treasury_account_identifier=gtas["treasury_account_identifier"],
             fiscal_year=gtas["fiscal_year"],

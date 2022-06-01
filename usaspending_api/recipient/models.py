@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
-from partial_index import PartialIndex, PQ
+from django.db.models import Index, Q
 
 
 class StateData(models.Model):
@@ -58,11 +58,22 @@ class DUNS(models.Model):
 
     class Meta:
         db_table = "duns"
+
         indexes = [
-            PartialIndex(
-                fields=["awardee_or_recipient_uniqu"], unique=True, where=PQ(awardee_or_recipient_uniqu__isnull=False)
+            Index(
+                name="duns_awardee_b30104_partial",
+                fields=["awardee_or_recipient_uniqu"],
+                condition=Q(awardee_or_recipient_uniqu__isnull=False),
+                # Django does not directly support a Unique Index so this is handled in the migration via RunSQL
+                # unique=True
             ),
-            PartialIndex(fields=["uei"], unique=True, where=PQ(uei__isnull=False)),
+            Index(
+                name="duns_uei_bee37a_partial",
+                fields=["uei"],
+                condition=Q(uei__isnull=False),
+                # Django does not directly support a Unique Index so this is handled in the migration via RunSQL
+                # unique=True
+            ),
         ]
 
 
@@ -158,8 +169,14 @@ class RecipientLookup(models.Model):
     class Meta:
         db_table = "recipient_lookup"
         indexes = [
-            PartialIndex(fields=["duns"], unique=False, where=PQ(duns__isnull=False)),
-            PartialIndex(fields=["parent_duns"], unique=False, where=PQ(parent_duns__isnull=False)),
-            PartialIndex(fields=["uei"], unique=True, where=PQ(uei__isnull=False)),
-            PartialIndex(fields=["parent_uei"], unique=False, where=PQ(parent_uei__isnull=False)),
+            Index(
+                name="recipient_l_uei_620159_partial",
+                fields=["uei"],
+                condition=Q(uei__isnull=False),
+                # Django does not directly support a Unique Index so this is handled in the migration via RunSQL
+                # unique=True
+            ),
+            Index(name="rl_duns_a43c07_partial", fields=["duns"], condition=Q(duns__isnull=False)),
+            Index(name="rl_parent__efd6d5_partial", fields=["parent_duns"], condition=Q(parent_duns__isnull=False)),
+            Index(name="rl_parent__271f5c_partial", fields=["parent_uei"], condition=Q(parent_uei__isnull=False)),
         ]

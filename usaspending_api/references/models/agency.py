@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import F
+from django_cte import CTEManager
 
 
 class Agency(models.Model):
@@ -16,6 +17,8 @@ class Agency(models.Model):
 
     # Not shown here is an index idx_agency_toptier_agency_id_null_subtier_agency_id_uniq that
     # is used to enforce uniquity on toptier_agency_id when subtier_agency_id is null.
+
+    objects = CTEManager()
 
     class Meta:
         db_table = "agency"

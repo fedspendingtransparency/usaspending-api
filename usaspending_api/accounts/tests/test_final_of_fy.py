@@ -1,48 +1,48 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.accounts.models import AppropriationAccountBalances
 
 
 @pytest.fixture
 def app_acc_bal_models():
-    sub_16_1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
-    sub_16_2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
-    sub_17_1 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
-    sub_17_2 = mommy.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
-    tas_1 = mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="ABC", _fill_optional=True)
-    tas_2 = mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="XYZ", _fill_optional=True)
-    mommy.make(
+    sub_16_1 = baker.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
+    sub_16_2 = baker.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
+    sub_17_1 = baker.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
+    sub_17_2 = baker.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
+    tas_1 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="ABC", _fill_optional=True)
+    tas_2 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="XYZ", _fill_optional=True)
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas_1,
         submission=sub_16_1,
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas_1,
         submission=sub_16_2,
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas_1,
         submission=sub_17_1,
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas_1,
         submission=sub_17_2,
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas_2,
         submission=sub_16_1,
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas_2,
         submission=sub_16_2,

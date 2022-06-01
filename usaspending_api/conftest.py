@@ -86,14 +86,14 @@ def django_db_setup(
     from file /pytest-django/fixtures.py.
 
     Because this "hides" the original implementation, it may get out-of-date as that plugin is upgraded. This override
-    takes the implementation from pytest-django Release 3.5.1, and extends it in order to execute materialized views
+    takes the implementation from pytest-django Release 4.2.0, and extends it in order to execute materialized views
     as part of database setup.
 
     If requirements.txt shows a different version than the one this is based on: compare, update, and test.
     More work could be put into trying to patch, replace, or wrap implementation of
     ``django.test.utils.setup_databases``, which is the actual method that needs to be wrapped and extended.
     """
-    from pytest_django.compat import setup_databases, teardown_databases
+    from django.test.utils import setup_databases, teardown_databases
     from pytest_django.fixtures import _disable_native_migrations
 
     setup_databases_args = {}

@@ -2,7 +2,7 @@ import pytest
 
 from django.core.management import call_command
 from django.db import DEFAULT_DB_ALIAS
-from model_mommy import mommy
+from model_bakery import baker
 from unittest.mock import MagicMock
 
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
@@ -15,8 +15,8 @@ def test_program_activity_fresh_load(monkeypatch):
     Test the gtas totals load to ensure data is loaded with the correct totals.
     """
 
-    mommy.make("references.DisasterEmergencyFundCode", code="A")
-    mommy.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="999-X-111")
+    baker.make("references.DisasterEmergencyFundCode", code="A")
+    baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="999-X-111")
 
     data_broker_mock = MagicMock()
     data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_gtas.json")

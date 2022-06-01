@@ -1,4 +1,5 @@
 from usaspending_api.config.envs.local import LocalConfig
+from usaspending_api.config.envs.qat import QATConfig
 
 __all__ = [
     "ENV_CODE_VAR",
@@ -18,6 +19,13 @@ ENVS = [
         "long_name": "local",
         "description": "Local Development Environment",
         "constructor": LocalConfig,
+    },
+    {
+        "env_type": "qat",
+        "code": QATConfig.ENV_CODE,
+        "long_name": "qat",
+        "description": "QAT Development Environment",
+        "constructor": QATConfig,
     },
     # {
     #     "env_type": "development",

@@ -1,83 +1,83 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
 @pytest.fixture
 def model_instances():
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="050",
         budget_function_title="National Defense",
         budget_subfunction_code="051",
         budget_subfunction_title="Department of Defense-Military",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="050",
         budget_function_title="National Defense",
         budget_subfunction_code="054",
         budget_subfunction_title="Defense-related activities",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="050",
         budget_function_title="National Defense",
         budget_subfunction_code="053",
         budget_subfunction_title="Atomic energy defense activities",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="270",
         budget_function_title="Energy",
         budget_subfunction_code="276",
         budget_subfunction_title="Energy information, policy, and regulation",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="270",
         budget_function_title="Energy",
         budget_subfunction_code="271",
         budget_subfunction_title="Energy supply",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="270",
         budget_function_title="Energy",
         budget_subfunction_code="272",
         budget_subfunction_title="Energy conservation",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="270",
         budget_function_title="Energy",
         budget_subfunction_code="274",
         budget_subfunction_title="Emergency energy preparedness",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="270",
         budget_function_title="Energy",
         budget_subfunction_code="276",
         budget_subfunction_title="Energy information, policy, and regulation",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="270",
         budget_function_title="Energy",
         budget_subfunction_code="271",
         budget_subfunction_title="Energy supply",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="270",
         budget_function_title="Energy",
         budget_subfunction_code="272",
         budget_subfunction_title="Energy conservation",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         budget_function_code="270",
         budget_function_title="Energy",

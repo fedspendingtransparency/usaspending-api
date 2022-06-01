@@ -4,19 +4,19 @@ from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
 
-from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.search.models import SummaryStateView
+from usaspending_api.common.helpers.orm_helpers import StringAggWithDefault
 from usaspending_api.awards.v2.filters.search import matview_search_filter
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.recipient.models import StateData
-from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters
+from usaspending_api.recipient.v2.helpers import reshape_filters, validate_year
+from usaspending_api.search.models import SummaryStateView
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             .values("pop_state_code")
             .annotate(
                 total=Sum("generated_pragmatic_obligation"),
-                distinct_awards=StringAgg("distinct_awards", ","),
+                distinct_awards=StringAggWithDefault("distinct_awards", ","),
                 total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
             )
             .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount")
@@ -91,7 +91,10 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             matview_search_filter(filters, SummaryStateView)
             .filter(pop_state_code__isnull=False, pop_country_code="USA")
             .values("pop_state_code")
-            .annotate(total=Sum("generated_pragmatic_obligation"), distinct_awards=StringAgg("distinct_awards", ","))
+            .annotate(
+                total=Sum("generated_pragmatic_obligation"),
+                distinct_awards=StringAggWithDefault("distinct_awards", ","),
+            )
             .values("pop_state_code", "total", "distinct_awards")
         )
 

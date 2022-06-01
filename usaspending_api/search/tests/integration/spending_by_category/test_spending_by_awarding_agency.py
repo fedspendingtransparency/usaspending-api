@@ -1,6 +1,6 @@
 import json
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
@@ -28,7 +28,7 @@ def test_correct_response_with_more_awards(
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    mommy.make("submissions.SubmissionAttributes", toptier_code="001")
+    baker.make("submissions.SubmissionAttributes", toptier_code="001")
     resp = client.post(
         "/api/v2/search/spending_by_category/awarding_agency",
         content_type="application/json",

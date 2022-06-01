@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 from usaspending_api.idvs.v2.views.accounts import IDVAccountsViewSet
 from usaspending_api.idvs.v2.views.activity import IDVActivityViewSet
 from usaspending_api.idvs.v2.views.amounts import IDVAmountsViewSet
@@ -9,13 +9,13 @@ from usaspending_api.idvs.v2.views.count.federal_account import IDVFederalAccoun
 
 
 urlpatterns = [
-    url(r"^accounts/$", IDVAccountsViewSet.as_view()),
-    url(r"^activity/$", IDVActivityViewSet.as_view()),
-    url("^amounts/(?P<requested_award>(CONT_IDV_.+)|([0-9]+))/$", IDVAmountsViewSet.as_view()),
-    url(r"^awards/$", IDVAwardsViewSet.as_view()),
-    url(r"^funding/$", IDVFundingViewSet.as_view()),
-    url(r"^funding_rollup/$", IDVFundingRollupViewSet.as_view()),
-    url(
+    re_path(r"^accounts/$", IDVAccountsViewSet.as_view()),
+    re_path(r"^activity/$", IDVActivityViewSet.as_view()),
+    re_path("^amounts/(?P<requested_award>(CONT_IDV_.+)|([0-9]+))/$", IDVAmountsViewSet.as_view()),
+    re_path(r"^awards/$", IDVAwardsViewSet.as_view()),
+    re_path(r"^funding/$", IDVFundingViewSet.as_view()),
+    re_path(r"^funding_rollup/$", IDVFundingRollupViewSet.as_view()),
+    re_path(
         "^count/federal_account/(?P<requested_award>(CONT_IDV_.+)|([0-9]+))/$", IDVFederalAccountCountViewSet.as_view()
     ),
 ]

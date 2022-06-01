@@ -23,7 +23,9 @@ from pydantic import (
 from pydantic.fields import ModelField
 
 _PROJECT_NAME = "usaspending-api"
-_PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.resolve()
+# WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
+# to the project root dir (i.e. usaspending-api/)
+_PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 _SRC_ROOT_DIR = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
 
 
@@ -130,7 +132,8 @@ class DefaultConfig(BaseSettings):
     # However ES does not appear to be able too handle that when several Executors make that request in parallel
     # Good tips from ES: https:#www.elastic.co/guide/en/elasticsearch/reference/6.2/tune-for-indexing-speed.html
     # Reducing to 10,000 DB rows per bulk indexing operation
-    PARTITION_SIZE: int = 10000
+    SPARK_PARTITION_ROWS: int = 10000
+    SPARK_MAX_PARTITIONS: int = 100000
 
     # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
@@ -161,9 +164,10 @@ class DefaultConfig(BaseSettings):
     AWS_REGION: str = "us-gov-west-1"
     AWS_ACCESS_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
-    AWS_PROFILE: str = ENV_SPECIFIC_OVERRIDE
-    AWS_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
-    AWS_S3_OUTPUT_PATH: str = "output"  # path within AWS_S3_BUCKET where output data will accumulate
+    # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
+    AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
+    SPARK_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
+    DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where output data will accumulate
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
     AWS_STS_ENDPOINT: str = "sts.us-gov-west-1.amazonaws.com"
 

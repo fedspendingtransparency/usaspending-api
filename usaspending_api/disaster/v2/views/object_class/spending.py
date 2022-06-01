@@ -1,7 +1,7 @@
 from typing import List
 from decimal import Decimal
 
-from django.db.models import Q, Sum, F, Value, Case, When, Min, TextField, IntegerField
+from django.db.models import Case, DecimalField, F, IntegerField, Min, Q, Sum, TextField, Value, When
 from django.db.models.functions import Coalesce, Cast
 from rest_framework.response import Response
 
@@ -99,9 +99,11 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                             + F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
                         ),
                         default=Value(0),
+                        output_field=DecimalField(max_digits=23, decimal_places=2),
                     )
                 ),
                 0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
             ),
             "outlay": Coalesce(
                 Sum(
@@ -113,9 +115,11 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                             + F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
                         ),
                         default=Value(0),
+                        output_field=DecimalField(max_digits=23, decimal_places=2),
                     )
                 ),
                 0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
             ),
             "award_count": Value(None, output_field=IntegerField()),
         }
