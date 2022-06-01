@@ -14,12 +14,13 @@ from usaspending_api.recipient.delta_models import (
 )
 from usaspending_api.transactions.delta_models import transaction_fabs_sql_string, transaction_fpds_sql_string
 
-from usaspending_api.recipient.models import DUNS
+from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
+from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
 
 
 TABLE_SPEC = {
     "recipient_lookup": {
-        "model": None,
+        "model": RecipientLookup,
         "source_table": "recipient_lookup",
         "destination_database": "raw",
         "partition_column": "id",
@@ -28,7 +29,7 @@ TABLE_SPEC = {
         "custom_schema": "",
     },
     "recipient_profile": {
-        "model": None,
+        "model": RecipientProfile,
         "source_table": "recipient_profile",
         "destination_database": "raw",
         "partition_column": "id",
@@ -46,7 +47,7 @@ TABLE_SPEC = {
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
     },
     "transaction_fabs": {
-        "model": None,
+        "model": TransactionFABS,
         "source_table": "transaction_fabs",
         "destination_database": "raw",
         "partition_column": "published_fabs_id",
@@ -55,7 +56,7 @@ TABLE_SPEC = {
         "custom_schema": "",
     },
     "transaction_fpds": {
-        "model": None,
+        "model": TransactionFPDS,
         "source_table": "transaction_fpds",
         "destination_database": "raw",
         "partition_column": "detached_award_procurement_id",
