@@ -94,7 +94,7 @@ TABLE_SPEC = {
         "partition_column": "award_id",
         "partition_column_type": "numeric",
         "custom_schema": "",
-    }
+    },
 }
 
 
