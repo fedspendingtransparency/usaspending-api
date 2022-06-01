@@ -15,6 +15,8 @@ logs/*
 usaspending_api/logs/*
 matviews/*
 tmp/*
+spark-warehouse/
+derby.log
 
 data/output/
 
