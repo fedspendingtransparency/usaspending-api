@@ -124,6 +124,15 @@ def django_db_setup(
             ensure_business_categories_functions_exist()
             call_command("load_broker_static_data")
 
+            # temporarily updating the environment so commands in tests will point to the test database
+            old_environ = os.environ.copy()
+            os.environ["DATABASE_URL"] = generate_test_db_connection_string()
+
+    def reset_environ():
+        os.environ = old_environ
+
+    request.addfinalizer(reset_environ)
+
     def teardown_database():
         with django_db_blocker.unblock():
             try:
@@ -133,12 +142,6 @@ def django_db_setup(
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
-
-
-@pytest.fixture
-def pass_test_db_to_commands():
-    with mock.patch.dict(os.environ, {"DATABASE_URL": generate_test_db_connection_string()}):
-        yield
 
 
 @pytest.fixture
