@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -38,83 +38,83 @@ def test_spending_by_award_subawards_fail(client):
 @pytest.mark.django_db
 def test_spending_by_award_subawards(client):
 
-    mommy.make(
+    baker.make(
         "awards.Subaward", id=1, recipient_unique_id="DUNS A", prime_award_type="IDV_A", award_type="procurement"
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward", id=2, recipient_unique_id="DUNS B", prime_award_type="IDV_B", award_type="procurement"
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward", id=3, recipient_unique_id="DUNS C", prime_award_type="IDV_C", award_type="procurement"
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward", id=4, recipient_unique_id="DUNS D", prime_award_type="IDV_D", award_type="procurement"
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward", id=5, recipient_unique_id="DUNS E", prime_award_type="IDV_E", award_type="procurement"
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward", id=6, recipient_unique_id="DUNS B_A", prime_award_type="IDV_B_A", award_type="procurement"
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward", id=7, recipient_unique_id="DUNS B_B", prime_award_type="IDV_B_B", award_type="procurement"
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward", id=8, recipient_unique_id="DUNS B_C", prime_award_type="IDV_B_C", award_type="procurement"
     )
 
-    mommy.make("recipient.RecipientLookup", duns="DUNS A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941")
-    mommy.make("recipient.RecipientLookup", duns="DUNS B", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a942")
-    mommy.make("recipient.RecipientLookup", duns="DUNS C", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a943")
-    mommy.make("recipient.RecipientLookup", duns="DUNS D", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a944")
-    mommy.make("recipient.RecipientLookup", duns="DUNS E", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a945")
-    mommy.make("recipient.RecipientLookup", duns="DUNS B_A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a946")
-    mommy.make("recipient.RecipientLookup", duns="DUNS B_B", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a947")
-    mommy.make("recipient.RecipientLookup", duns="DUNS B_C", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948")
+    baker.make("recipient.RecipientLookup", duns="DUNS A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941")
+    baker.make("recipient.RecipientLookup", duns="DUNS B", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a942")
+    baker.make("recipient.RecipientLookup", duns="DUNS C", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a943")
+    baker.make("recipient.RecipientLookup", duns="DUNS D", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a944")
+    baker.make("recipient.RecipientLookup", duns="DUNS E", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a945")
+    baker.make("recipient.RecipientLookup", duns="DUNS B_A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a946")
+    baker.make("recipient.RecipientLookup", duns="DUNS B_B", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a947")
+    baker.make("recipient.RecipientLookup", duns="DUNS B_C", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948")
 
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="DUNS A",
         recipient_level="P",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941",
     )
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="DUNS B",
         recipient_level="C",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a942",
     )
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="DUNS C",
         recipient_level="R",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a943",
     )
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="DUNS D",
         recipient_level="P",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a944",
     )
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="DUNS E",
         recipient_level="C",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a945",
     )
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="DUNS B_A",
         recipient_level="R",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a946",
     )
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="DUNS B_B",
         recipient_level="P",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a947",
     )
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="DUNS B_C",
         recipient_level="C",

@@ -156,9 +156,11 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                             + F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
                         ),
                         default=Value(0),
+                        output_field=DecimalField(max_digits=23, decimal_places=2),
                     )
                 ),
                 0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
             ),
             "outlay": Coalesce(
                 Sum(
@@ -170,9 +172,11 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                             + F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
                         ),
                         default=Value(0),
+                        output_field=DecimalField(max_digits=23, decimal_places=2),
                     )
                 ),
                 0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
             ),
             "total_budgetary_resources": Coalesce(
                 Subquery(
@@ -196,9 +200,10 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                         - F("prior_year")
                     )
                     .values("total_budget_authority"),
-                    output_field=DecimalField(),
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
                 0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
             ),
         }
 

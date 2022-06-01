@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -8,26 +8,26 @@ from rest_framework import status
 def create_agency_data():
     # Create agency - submission relationship
     # Create AGENCY AND TopTier AGENCY
-    ttagency1 = mommy.make(
+    ttagency1 = baker.make(
         "references.ToptierAgency",
         name="TTA Name",
         toptier_code="100",
         abbreviation="tta_abrev",
         justification="test.com/cj",
     )
-    ttagency2 = mommy.make(
+    ttagency2 = baker.make(
         "references.ToptierAgency", name="TTA Name 2", toptier_code="200", abbreviation="tta_abrev_2"
     )
 
-    mommy.make("references.Agency", id=1, toptier_agency=ttagency1, toptier_flag=True)
-    mommy.make("references.Agency", id=2, toptier_agency=ttagency2, toptier_flag=True)
+    baker.make("references.Agency", id=1, toptier_agency=ttagency1, toptier_flag=True)
+    baker.make("references.Agency", id=2, toptier_agency=ttagency2, toptier_flag=True)
 
     # create TAS
-    tas = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
-    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency2)
+    tas = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
+    tas2 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency2)
 
     # Create Submissions
-    dsws1 = mommy.make(
+    dsws1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_reveal_date="2017-02-01",
@@ -35,7 +35,7 @@ def create_agency_data():
         submission_fiscal_month=4,
         is_quarter=False,
     )
-    dsws2 = mommy.make(
+    dsws2 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_reveal_date="2017-04-01",
@@ -43,7 +43,7 @@ def create_agency_data():
         submission_fiscal_month=6,
         is_quarter=True,
     )
-    dsws3 = mommy.make(
+    dsws3 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_reveal_date="2017-04-01",
@@ -51,7 +51,7 @@ def create_agency_data():
         submission_fiscal_month=6,
         is_quarter=False,
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
@@ -60,7 +60,7 @@ def create_agency_data():
         is_final_balances_for_fy=False,
         submission_window=dsws1,
     )
-    submission_1 = mommy.make(
+    submission_1 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
@@ -69,7 +69,7 @@ def create_agency_data():
         is_final_balances_for_fy=True,
         submission_window=dsws2,
     )
-    submission_2 = mommy.make(
+    submission_2 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
@@ -80,7 +80,7 @@ def create_agency_data():
     )
 
     # CREATE AppropriationAccountBalances
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         reporting_period_start="2017-1-1",
@@ -90,7 +90,7 @@ def create_agency_data():
         gross_outlay_amount_by_tas_cpe=2,
         treasury_account_identifier=tas,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         reporting_period_start="2017-1-1",
@@ -101,14 +101,14 @@ def create_agency_data():
         treasury_account_identifier=tas2,
     )
 
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         total_budgetary_resources_cpe=100.00,
         obligations_incurred_total_cpe=1000.00,
         fiscal_year=2017,
         fiscal_period=4,
     )
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         total_budgetary_resources_cpe=200.00,
         obligations_incurred_total_cpe=2000.00,

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from django.db.models import F, Sum, Value, CharField, Q, OuterRef, Exists
+from django.db.models import Exists, F, OuterRef, Q, Sum, TextField, Value
 from django.db.models.functions import Coalesce
 from usaspending_api.references.models import Agency
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -27,7 +27,7 @@ class Explorer(object):
         queryset = (
             self.queryset.annotate(
                 id=F("treasury_account__budget_function_code"),
-                type=Value("budget_function", output_field=CharField()),
+                type=Value("budget_function", output_field=TextField()),
                 name=F("treasury_account__budget_function_title"),
                 code=F("treasury_account__budget_function_code"),
             )
@@ -43,7 +43,7 @@ class Explorer(object):
         queryset = (
             self.queryset.annotate(
                 id=F("treasury_account__budget_subfunction_code"),
-                type=Value("budget_subfunction", output_field=CharField()),
+                type=Value("budget_subfunction", output_field=TextField()),
                 name=F("treasury_account__budget_subfunction_title"),
                 code=F("treasury_account__budget_subfunction_code"),
             )
@@ -60,7 +60,7 @@ class Explorer(object):
             self.queryset.annotate(
                 id=F("treasury_account__federal_account"),
                 account_number=F("treasury_account__federal_account__federal_account_code"),
-                type=Value("federal_account", output_field=CharField()),
+                type=Value("federal_account", output_field=TextField()),
                 name=F("treasury_account__federal_account__account_title"),
                 code=F("treasury_account__federal_account__main_account_code"),
             )
@@ -76,7 +76,7 @@ class Explorer(object):
         queryset = (
             self.queryset.annotate(
                 id=F("program_activity"),
-                type=Value("program_activity", output_field=CharField()),
+                type=Value("program_activity", output_field=TextField()),
                 name=F("program_activity__program_activity_name"),
                 code=F("program_activity__program_activity_code"),
             )
@@ -92,7 +92,7 @@ class Explorer(object):
         queryset = (
             self.queryset.annotate(
                 id=F("object_class__major_object_class"),
-                type=Value("object_class", output_field=CharField()),
+                type=Value("object_class", output_field=TextField()),
                 name=F("object_class__major_object_class_name"),
                 code=F("object_class__major_object_class"),
             )
@@ -111,15 +111,18 @@ class Explorer(object):
                 id=Coalesce(
                     "award__latest_transaction__contract_data__awardee_or_recipient_legal",
                     "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                    output_field=TextField(),
                 ),
-                type=Value("recipient", output_field=CharField()),
+                type=Value("recipient", output_field=TextField()),
                 name=Coalesce(
                     "award__latest_transaction__contract_data__awardee_or_recipient_legal",
                     "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
+                    output_field=TextField(),
                 ),
                 code=Coalesce(
                     "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
                     "award__latest_transaction__contract_data__awardee_or_recipient_legal",
+                    output_field=TextField(),
                 ),
             )
             .values("id", "type", "name", "code", "amount")
@@ -134,7 +137,7 @@ class Explorer(object):
         queryset = (
             self.queryset.filter(treasury_account__funding_toptier_agency__isnull=False)
             .annotate(
-                type=Value("agency", output_field=CharField()),
+                type=Value("agency", output_field=TextField()),
                 name=F("treasury_account__funding_toptier_agency__name"),
                 code=F("treasury_account__funding_toptier_agency__toptier_code"),
             )
@@ -152,7 +155,7 @@ class Explorer(object):
         # Award Category Queryset
         alt_set = (
             self.alt_set.annotate(
-                id=F("award__id"), type=Value("award_category", output_field=CharField()), name=F("award__category")
+                id=F("award__id"), type=Value("award_category", output_field=TextField()), name=F("award__category")
             )
             .values("id", "type", "piid", "fain", "uri", "name", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
@@ -167,7 +170,7 @@ class Explorer(object):
             self.alt_set.annotate(
                 id=F("award__id"),
                 generated_unique_award_id=F("award__generated_unique_award_id"),
-                type=Value("award", output_field=CharField()),
+                type=Value("award", output_field=TextField()),
             )
             .values("id", "generated_unique_award_id", "type", "piid", "fain", "uri", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))

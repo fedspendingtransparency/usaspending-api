@@ -1,4 +1,4 @@
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
@@ -9,14 +9,14 @@ def set_up_related_award_objects():
 
     trans_cont = {"pk": 1, "business_categories": ["small_business"]}
     duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
-    mommy.make("recipient.DUNS", **duns)
-    mommy.make("references.SubtierAgency", **subag)
-    mommy.make("references.ToptierAgency", **subag)
+    baker.make("recipient.DUNS", **duns)
+    baker.make("references.SubtierAgency", **subag)
+    baker.make("references.ToptierAgency", **subag)
 
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
-    mommy.make("awards.TransactionNormalized", **trans_cont)
-    mommy.make("references.Agency", **ag)
+    baker.make("awards.TransactionNormalized", **trans_cont)
+    baker.make("references.Agency", **ag)
     cont_data = {
         "pk": 1,
         "transaction": TransactionNormalized.objects.get(pk=1),
@@ -60,7 +60,7 @@ def set_up_related_award_objects():
         "materials_supplies_descrip": "NO",
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
     }
-    mommy.make("awards.TransactionFPDS", **cont_data)
+    baker.make("awards.TransactionFPDS", **cont_data)
 
 
 def create_tree(awards):

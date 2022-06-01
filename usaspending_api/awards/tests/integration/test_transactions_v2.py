@@ -2,7 +2,7 @@ import pytest
 import json
 import datetime
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -33,9 +33,9 @@ def cfda_transactions(db):
         "afa_generated_unique": "Q25B9A1MQ0",
     }
 
-    mommy.make("awards.Award", **award_1)
-    mommy.make("awards.TransactionNormalized", **trx_norm_1)
-    mommy.make("awards.TransactionFABS", **trx_fabs_1)
+    baker.make("awards.Award", **award_1)
+    baker.make("awards.TransactionNormalized", **trx_norm_1)
+    baker.make("awards.TransactionFABS", **trx_fabs_1)
 
 
 def test_transaction_cfda(client, cfda_transactions):

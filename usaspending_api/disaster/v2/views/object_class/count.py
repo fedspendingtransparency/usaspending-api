@@ -24,10 +24,7 @@ class ObjectClassCountViewSet(DisasterBase):
             self.is_non_zero_total_spending,
         ]
         count = (
-            ObjectClass.objects.annotate(
-                include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).values("pk"))
-            )
-            .filter(include=True)
+            ObjectClass.objects.filter(Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)))
             .values("object_class")
             .distinct()
             .count()

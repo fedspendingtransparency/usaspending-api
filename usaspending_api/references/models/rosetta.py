@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
 
 
 class Rosetta(models.Model):
@@ -9,7 +8,7 @@ class Rosetta(models.Model):
     """
 
     document_name = models.TextField(primary_key=True)
-    document = JSONField()
+    document = models.JSONField()
 
     class Meta:
         managed = True

@@ -1,5 +1,5 @@
-from django.conf.urls import url, include
+from django.urls import include, re_path
 
 urlpatterns = [
-    url(r"^agencies/", include("usaspending_api.reporting.v2.views.agencies.urls")),
+    re_path(r"^agencies/", include("usaspending_api.reporting.v2.views.agencies.urls")),
 ]

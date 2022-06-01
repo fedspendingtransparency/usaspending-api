@@ -1,11 +1,11 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
 @pytest.fixture
 def award_subaward_count_data(db):
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=1,
         generated_unique_award_id="CONT_AWD_zzz_whatever",
@@ -15,7 +15,7 @@ def award_subaward_count_data(db):
         total_obligation=1000,
         subaward_count=10,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=2,
         generated_unique_award_id="CONT_AWD_aaa_whatever",

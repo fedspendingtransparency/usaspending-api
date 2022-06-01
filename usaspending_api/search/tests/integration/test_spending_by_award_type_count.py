@@ -2,7 +2,7 @@ import json
 import pytest
 from datetime import datetime
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
@@ -12,8 +12,8 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture():
-    mommy.make("awards.TransactionNormalized", id=2)
-    mommy.make(
+    baker.make("awards.TransactionNormalized", id=2)
+    baker.make(
         "awards.Award",
         base_and_all_options_value=None,
         base_exercised_options_val=None,
@@ -118,8 +118,8 @@ def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_aw
 
 @pytest.mark.django_db
 def test_spending_by_award_subawards_no_intersection(client):
-    mommy.make("awards.Award", id=90)
-    mommy.make(
+    baker.make("awards.Award", id=90)
+    baker.make(
         "awards.Subaward",
         id=9999,
         award_type="grant",
@@ -195,7 +195,7 @@ def awards_over_different_date_ranges_with_different_counts():
             award_id += 1
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
-            mommy.make(
+            baker.make(
                 "awards.Award",
                 id=award_id,
                 latest_transaction_id=award_id + 1000,
@@ -206,13 +206,13 @@ def awards_over_different_date_ranges_with_different_counts():
                 fain=None,
                 date_signed=date_range["date_signed"],
             )
-            mommy.make(
+            baker.make(
                 "awards.TransactionNormalized",
                 id=award_id + 1000,
                 award_id=award_id,
                 action_date=date_range["action_date"],
             )
-            mommy.make("awards.TransactionFPDS", transaction_id=award_id + 1000, pulled_from=None)
+            baker.make("awards.TransactionFPDS", transaction_id=award_id + 1000, pulled_from=None)
 
 
 @pytest.mark.django_db

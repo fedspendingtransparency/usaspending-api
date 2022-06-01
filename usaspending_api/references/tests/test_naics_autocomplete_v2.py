@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.references.models import NAICS
@@ -9,10 +9,10 @@ from usaspending_api.references.models import NAICS
 
 @pytest.fixture
 def naics_data(db):
-    mommy.make(NAICS, code="212113", description="Anthracite Mining")
-    mommy.make(NAICS, code="212112", description="Bituminous Coal Underground Mining")
-    mommy.make(NAICS, code="213111", description="Drilling Oil and Gas Wells")
-    mommy.make(NAICS, code="111331", description="Apple Orchards")
+    baker.make(NAICS, code="212113", description="Anthracite Mining")
+    baker.make(NAICS, code="212112", description="Bituminous Coal Underground Mining")
+    baker.make(NAICS, code="213111", description="Drilling Oil and Gas Wells")
+    baker.make(NAICS, code="111331", description="Apple Orchards")
 
 
 @pytest.mark.django_db

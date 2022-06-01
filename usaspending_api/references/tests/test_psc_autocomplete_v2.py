@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.references.models import PSC
@@ -9,9 +9,9 @@ from usaspending_api.references.models import PSC
 
 @pytest.fixture
 def psc_data(db):
-    mommy.make(PSC, code="3605", description="FOOD PRODUCTS MACHINE & EQ")
-    mommy.make(PSC, code="8435", description="FOOTWEAR, WOMEN'S")
-    mommy.make(PSC, code="6250", description="BALLASTS, LAMPHOLDERS, AND STARTERS")
+    baker.make(PSC, code="3605", description="FOOD PRODUCTS MACHINE & EQ")
+    baker.make(PSC, code="8435", description="FOOTWEAR, WOMEN'S")
+    baker.make(PSC, code="6250", description="BALLASTS, LAMPHOLDERS, AND STARTERS")
 
 
 @pytest.mark.django_db

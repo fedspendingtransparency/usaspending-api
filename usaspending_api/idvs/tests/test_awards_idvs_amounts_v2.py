@@ -1,7 +1,7 @@
 import json
 
 from django.test import TestCase
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from django.template.library import InvalidTemplateLibrary
 
@@ -36,8 +36,8 @@ EXPECTED_GOOD_OUTPUT = {
 class IDVAmountsTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        mommy.make("awards.Award", pk=1)
-        mommy.make(
+        baker.make("awards.Award", pk=1)
+        baker.make(
             "awards.ParentAward",
             award_id=1,
             generated_unique_award_id="CONT_IDV_2",
@@ -82,8 +82,8 @@ class IDVAmountsTestCase(TestCase):
             assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_special_characters(self):
-        mommy.make("awards.Award", pk=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
-        mommy.make(
+        baker.make("awards.Award", pk=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
+        baker.make(
             "awards.ParentAward", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700"
         )
         response = self.client.get("/api/v2/idvs/amounts/CONT_IDV_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")

@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -10,15 +10,15 @@ from usaspending_api.references.models import Definition
 
 @pytest.fixture
 def glossary_data(db):
-    mommy.make(Definition, term="Word", plain="Plaintext response.", official="Official language.")
-    mommy.make(Definition, term="Word2", plain="Plaintext response. 2", official="Official language. 2")
-    mommy.make(Definition, term="Word3", plain="Plaintext response. 3", official="Official language. 3")
+    baker.make(Definition, term="Word", plain="Plaintext response.", official="Official language.")
+    baker.make(Definition, term="Word2", plain="Plaintext response. 2", official="Official language. 2")
+    baker.make(Definition, term="Word3", plain="Plaintext response. 3", official="Official language. 3")
 
 
 @pytest.mark.django_db
 def test_glossary_v2_autocomplete(client):
-    mommy.make(Definition, term="Abacus", slug="ab")
-    mommy.make(Definition, term="Aardvark", slug="aa")
+    baker.make(Definition, term="Abacus", slug="ab")
+    baker.make(Definition, term="Aardvark", slug="aa")
 
     resp = client.post(
         "/api/v2/autocomplete/glossary/", content_type="application/json", data=json.dumps({"search_text": "ab"})

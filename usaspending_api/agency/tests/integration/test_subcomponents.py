@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.agency.tests.integration.conftest import CURRENT_FISCAL_YEAR
@@ -70,16 +70,16 @@ def test_invalid_agency(client, bureau_data):
 @pytest.mark.django_db
 def test_exclusion_bureau_codes(client):
     # Setup all Data (no bureau)
-    ta1 = mommy.make("references.ToptierAgency", name="Agency 1", toptier_code="001")
-    sa1 = mommy.make("references.SubtierAgency", name="Agency 1", subtier_code="0001")
-    mommy.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
+    ta1 = baker.make("references.ToptierAgency", name="Agency 1", toptier_code="001")
+    sa1 = baker.make("references.SubtierAgency", name="Agency 1", subtier_code="0001")
+    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
 
-    fa1 = mommy.make(
+    fa1 = baker.make(
         "accounts.FederalAccount", account_title="FA 1", federal_account_code="001-0000", parent_toptier_agency=ta1
     )
-    taa1 = mommy.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
+    taa1 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
 
-    dabs1 = mommy.make(
+    dabs1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date=f"{CURRENT_FISCAL_YEAR}-01-01",
         submission_fiscal_year=CURRENT_FISCAL_YEAR,
@@ -90,7 +90,7 @@ def test_exclusion_bureau_codes(client):
         period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
     )
 
-    sub_2020_ta1 = mommy.make(
+    sub_2020_ta1 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=CURRENT_FISCAL_YEAR,
         reporting_fiscal_period=12,
@@ -99,14 +99,14 @@ def test_exclusion_bureau_codes(client):
         submission_window_id=dabs1.id,
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=taa1,
         submission=sub_2020_ta1,
         obligations_incurred_by_program_object_class_cpe=1,
         gross_outlay_amount_by_program_object_class_cpe=10,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=taa1,
         submission=sub_2020_ta1,
@@ -119,7 +119,7 @@ def test_exclusion_bureau_codes(client):
     assert len(resp.json()["results"]) == 0
 
     # Create Bureau Lookup for existing Federal Account
-    mommy.make(
+    baker.make(
         "references.BureauTitleLookup",
         federal_account_code="001-0000",
         bureau_title="New Bureau",

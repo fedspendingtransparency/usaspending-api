@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 
 import usaspending_api.common.helpers.fiscal_year_helpers as fyh
 
@@ -79,7 +79,7 @@ def test_calculate_last_completed_fiscal_quarter():
     tomorrow = now + timedelta(days=1)
     current_fy = fyh.generate_fiscal_year(now)
 
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2000,
         submission_reveal_date=now,
@@ -87,7 +87,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_month=3,
         is_quarter=True,
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2000,
         submission_reveal_date=now,
@@ -95,7 +95,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_month=4,
         is_quarter=False,
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2010,
         submission_reveal_date=tomorrow,
@@ -103,7 +103,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_month=6,
         is_quarter=True,
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=current_fy,
         submission_reveal_date=yesterday,
@@ -111,7 +111,7 @@ def test_calculate_last_completed_fiscal_quarter():
         submission_fiscal_month=9,
         is_quarter=True,
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=current_fy,
         submission_reveal_date=now,

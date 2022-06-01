@@ -1,6 +1,6 @@
 import datetime
 
-from model_mommy import mommy
+from model_bakery import baker
 import pytest
 
 from django.core.management import call_command
@@ -31,16 +31,16 @@ def test_subtier(monkeypatch):
 @pytest.mark.django_db
 def test_get_by_toptier():
     """Test Agency lookup by toptier CGAC code."""
-    toptier = mommy.make("references.ToptierAgency", toptier_code="xyz", name="yo")
-    subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="yo")
+    toptier = baker.make("references.ToptierAgency", toptier_code="xyz", name="yo")
+    subtier = baker.make("references.SubtierAgency", subtier_code="abc", name="yo")
 
-    mommy.make(
+    baker.make(
         "references.Agency",
         toptier_agency=toptier,
-        subtier_agency=mommy.make("references.SubtierAgency", subtier_code="bbb", name="no"),
+        subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb", name="no"),
         update_date=datetime.date(2017, 10, 10),
     )
-    agency1 = mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
+    agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
 
     # lookup should return agency w/ most recent update_date that
     # matches the cgac code
@@ -52,15 +52,15 @@ def test_get_by_toptier():
 @pytest.mark.django_db
 def test_get_by_subtier():
     """Test Agency lookup by subtier."""
-    toptier = mommy.make("references.ToptierAgency", toptier_code="xyz", name="yo")
-    subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="hi")
+    toptier = baker.make("references.ToptierAgency", toptier_code="xyz", name="yo")
+    subtier = baker.make("references.SubtierAgency", subtier_code="abc", name="hi")
 
-    mommy.make(
+    baker.make(
         "references.Agency",
         toptier_agency=toptier,
-        subtier_agency=mommy.make("references.SubtierAgency", subtier_code="bbb"),
+        subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb"),
     )
-    agency1 = mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
+    agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
 
     # lookup should return agency w/ most recent updatea_date that
     # matches the subtier code
@@ -75,15 +75,15 @@ def test_get_by_subtier():
 @pytest.mark.django_db
 def test_get_by_toptier_subtier():
     """Test Agency lookup by subtier."""
-    toptier = mommy.make("references.ToptierAgency", toptier_code="xyz", name="yo")
-    subtier = mommy.make("references.SubtierAgency", subtier_code="abc", name="hi")
+    toptier = baker.make("references.ToptierAgency", toptier_code="xyz", name="yo")
+    subtier = baker.make("references.SubtierAgency", subtier_code="abc", name="hi")
 
-    mommy.make(
+    baker.make(
         "references.Agency",
         toptier_agency=toptier,
-        subtier_agency=mommy.make("references.SubtierAgency", subtier_code="bbb"),
+        subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb"),
     )
-    agency1 = mommy.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
+    agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier)
 
     # lookup should return agency w/ most recent updated_date that
     # matches the toptier and subtier code

@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -13,7 +13,7 @@ def basic_faba_with_object_class(award_count_sub_schedule, award_count_submissio
 
     award = _normal_award()
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         parent_award_id="basic award",
         award=award,
@@ -30,7 +30,7 @@ def basic_faba_with_object_class(award_count_sub_schedule, award_count_submissio
 def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_count_submission, defc_codes):
     basic_object_class = major_object_class_with_children("001", [1])
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -49,7 +49,7 @@ def basic_fa_by_object_class_with_multpile_object_class(
 ):
     major_object_class_1 = major_object_class_with_children("001", [1, 2, 3])
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -61,7 +61,7 @@ def basic_fa_by_object_class_with_multpile_object_class(
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=7,
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -73,7 +73,7 @@ def basic_fa_by_object_class_with_multpile_object_class(
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-130,
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -90,7 +90,7 @@ def basic_fa_by_object_class_with_multpile_object_class(
 def basic_fa_by_object_class_with_multpile_object_class_of_same_code(
     award_count_sub_schedule, award_count_quarterly_submission, defc_codes
 ):
-    class1 = mommy.make(
+    class1 = baker.make(
         "references.ObjectClass",
         id=9,
         major_object_class="major",
@@ -99,7 +99,7 @@ def basic_fa_by_object_class_with_multpile_object_class_of_same_code(
         object_class_name=f"0001 name",
     )
 
-    class2 = mommy.make(
+    class2 = baker.make(
         "references.ObjectClass",
         id=10,
         major_object_class="major",
@@ -108,7 +108,7 @@ def basic_fa_by_object_class_with_multpile_object_class_of_same_code(
         object_class_name=f"0001 name",
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -120,7 +120,7 @@ def basic_fa_by_object_class_with_multpile_object_class_of_same_code(
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-900,
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -139,7 +139,7 @@ def basic_fa_by_object_class_with_object_class_but_no_obligations(
 ):
     basic_object_class = major_object_class_with_children("001", [1])
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         disaster_emergency_fund=DisasterEmergencyFundCode.objects.filter(code="M").first(),
         submission=SubmissionAttributes.objects.all().first(),
@@ -159,7 +159,7 @@ def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_
     award1 = _normal_award()
     award2 = _normal_award()
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         parent_award_id="basic award 1",
         award=award1,
@@ -171,7 +171,7 @@ def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         parent_award_id="basic award 2",
         award=award2,
@@ -190,7 +190,7 @@ def faba_with_two_object_classes_and_two_awards(award_count_sub_schedule, award_
     award1 = _normal_award()
     award2 = _normal_award()
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         parent_award_id="basic award",
         award=award1,
@@ -200,7 +200,7 @@ def faba_with_two_object_classes_and_two_awards(award_count_sub_schedule, award_
         transaction_obligated_amount=1,
     )
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         parent_award_id="basic award",
         award=award2,
@@ -215,7 +215,7 @@ def major_object_class_with_children(major_code, minor_codes):
     retval = []
     for minor_code in minor_codes:
         retval.append(
-            mommy.make(
+            baker.make(
                 "references.ObjectClass",
                 id=minor_code,
                 major_object_class=major_code,

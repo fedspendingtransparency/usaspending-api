@@ -2,7 +2,7 @@ import json
 import pytest
 import re
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.download.lookups import JOB_STATUS
@@ -35,33 +35,33 @@ def _post(client, def_codes=None, query=None, award_type_codes=None, file_format
 def awards_and_transactions():
     # Populate job status lookup table
     for js in JOB_STATUS:
-        mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
+        baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
     # Awards
-    award1 = mommy.make("awards.Award", type="07", total_loan_value=3, generated_unique_award_id="ASST_NEW_1")
-    award2 = mommy.make("awards.Award", type="07", total_loan_value=30, generated_unique_award_id="ASST_NEW_2")
-    award3 = mommy.make("awards.Award", type="08", total_loan_value=300, generated_unique_award_id="ASST_NEW_3")
-    award4 = mommy.make("awards.Award", type="B", total_loan_value=0, generated_unique_award_id="CONT_NEW_1")
-    award5 = mommy.make("awards.Award", type="A", total_loan_value=0, generated_unique_award_id="CONT_NEW_2")
-    award6 = mommy.make("awards.Award", type="C", total_loan_value=0, generated_unique_award_id="CONT_NEW_3")
-    award7 = mommy.make("awards.Award", type="D", total_loan_value=0, generated_unique_award_id="CONT_NEW_4")
+    award1 = baker.make("awards.Award", type="07", total_loan_value=3, generated_unique_award_id="ASST_NEW_1")
+    award2 = baker.make("awards.Award", type="07", total_loan_value=30, generated_unique_award_id="ASST_NEW_2")
+    award3 = baker.make("awards.Award", type="08", total_loan_value=300, generated_unique_award_id="ASST_NEW_3")
+    award4 = baker.make("awards.Award", type="B", total_loan_value=0, generated_unique_award_id="CONT_NEW_1")
+    award5 = baker.make("awards.Award", type="A", total_loan_value=0, generated_unique_award_id="CONT_NEW_2")
+    award6 = baker.make("awards.Award", type="C", total_loan_value=0, generated_unique_award_id="CONT_NEW_3")
+    award7 = baker.make("awards.Award", type="D", total_loan_value=0, generated_unique_award_id="CONT_NEW_4")
 
     # Disaster Emergency Fund Code
-    defc1 = mommy.make(
+    defc1 = baker.make(
         "references.DisasterEmergencyFundCode",
         code="L",
         public_law="PUBLIC LAW FOR CODE L",
         title="TITLE FOR CODE L",
         group_name="covid_19",
     )
-    defc2 = mommy.make(
+    defc2 = baker.make(
         "references.DisasterEmergencyFundCode",
         code="M",
         public_law="PUBLIC LAW FOR CODE M",
         title="TITLE FOR CODE M",
         group_name="covid_19",
     )
-    mommy.make(
+    baker.make(
         "references.DisasterEmergencyFundCode",
         code="N",
         public_law="PUBLIC LAW FOR CODE N",
@@ -70,21 +70,21 @@ def awards_and_transactions():
     )
 
     # Submission Attributes
-    sub1 = mommy.make(
+    sub1 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
         reporting_period_start="2022-05-01",
     )
-    sub2 = mommy.make(
+    sub2 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
         quarter_format_flag=False,
         reporting_period_start="2022-05-01",
     )
-    sub3 = mommy.make(
+    sub3 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
@@ -93,7 +93,7 @@ def awards_and_transactions():
     )
 
     # Financial Accounts by Awards
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         pk=1,
         award=award1,
@@ -102,7 +102,7 @@ def awards_and_transactions():
         gross_outlay_amount_by_award_cpe=1,
         transaction_obligated_amount=2,
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         pk=2,
         award=award2,
@@ -111,7 +111,7 @@ def awards_and_transactions():
         gross_outlay_amount_by_award_cpe=10,
         transaction_obligated_amount=20,
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         pk=3,
         award=award3,
@@ -120,7 +120,7 @@ def awards_and_transactions():
         gross_outlay_amount_by_award_cpe=100,
         transaction_obligated_amount=200,
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         pk=4,
         award=award4,
@@ -129,7 +129,7 @@ def awards_and_transactions():
         gross_outlay_amount_by_award_cpe=1000,
         transaction_obligated_amount=2000,
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         pk=5,
         award=award5,
@@ -138,7 +138,7 @@ def awards_and_transactions():
         gross_outlay_amount_by_award_cpe=10000,
         transaction_obligated_amount=20000,
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         pk=6,
         award=award6,
@@ -147,7 +147,7 @@ def awards_and_transactions():
         gross_outlay_amount_by_award_cpe=100000,
         transaction_obligated_amount=200000,
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         pk=7,
         award=award7,
@@ -158,7 +158,7 @@ def awards_and_transactions():
     )
 
     # DABS Submission Window Schedule
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id="2022081",
         is_quarter=False,
@@ -169,7 +169,7 @@ def awards_and_transactions():
         submission_fiscal_month=8,
         submission_reveal_date="2020-5-15",
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id="2022080",
         is_quarter=True,
@@ -182,7 +182,7 @@ def awards_and_transactions():
     )
 
     # Transaction Normalized
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=10,
         award=award1,
@@ -191,7 +191,7 @@ def awards_and_transactions():
         is_fpds=False,
         unique_award_key="ASST_NEW_1",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=20,
         award=award2,
@@ -200,7 +200,7 @@ def awards_and_transactions():
         is_fpds=False,
         unique_award_key="ASST_NEW_2",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=30,
         award=award3,
@@ -209,7 +209,7 @@ def awards_and_transactions():
         is_fpds=False,
         unique_award_key="ASST_NEW_3",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=40,
         award=award4,
@@ -218,7 +218,7 @@ def awards_and_transactions():
         is_fpds=True,
         unique_award_key="CONT_NEW_1",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=50,
         award=award5,
@@ -227,7 +227,7 @@ def awards_and_transactions():
         is_fpds=True,
         unique_award_key="CONT_NEW_2",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=60,
         award=award6,
@@ -236,7 +236,7 @@ def awards_and_transactions():
         is_fpds=True,
         unique_award_key="CONT_NEW_3",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=70,
         award=award7,
@@ -247,7 +247,7 @@ def awards_and_transactions():
     )
 
     # Transaction FABS
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction_id=10,
         cfda_number="10.100",
@@ -259,7 +259,7 @@ def awards_and_transactions():
         awardee_or_recipient_legal="RECIPIENT 1",
         awardee_or_recipient_uniqu=None,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction_id=20,
         cfda_number="20.200",
@@ -271,7 +271,7 @@ def awards_and_transactions():
         awardee_or_recipient_legal="RECIPIENT 2",
         awardee_or_recipient_uniqu="456789123",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction_id=30,
         cfda_number="20.200",
@@ -285,7 +285,7 @@ def awards_and_transactions():
     )
 
     # Transaction FPDS
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=40,
         legal_entity_country_code="USA",
@@ -296,7 +296,7 @@ def awards_and_transactions():
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu="096354360",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=50,
         legal_entity_country_code="USA",
@@ -307,7 +307,7 @@ def awards_and_transactions():
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="987654321",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=60,
         legal_entity_country_code="USA",
@@ -318,7 +318,7 @@ def awards_and_transactions():
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="987654321",
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=70,
         legal_entity_country_code="USA",
@@ -333,7 +333,7 @@ def awards_and_transactions():
     def_codes = list(
         DisasterEmergencyFundCode.objects.filter(group_name="covid_19").order_by("code").values_list("code", flat=True)
     )
-    mommy.make(
+    baker.make(
         "download.DownloadJob",
         job_status_id=1,
         file_name="COVID-19_Profile_2021-09-20_H20M11S49647843.zip",
