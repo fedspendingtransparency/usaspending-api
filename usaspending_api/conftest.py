@@ -137,8 +137,9 @@ def django_db_setup(
 
 @pytest.fixture
 def pass_test_db_to_commands():
-    with mock.patch.dict(os.environ, {'DATABASE_URL': generate_test_db_connection_string()}):
+    with mock.patch.dict(os.environ, {"DATABASE_URL": generate_test_db_connection_string()}):
         yield
+
 
 @pytest.fixture
 def elasticsearch_transaction_index(db):
