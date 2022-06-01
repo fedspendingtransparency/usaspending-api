@@ -308,7 +308,7 @@ services:
   #        - the Docker image at this time only installs spark and hadoop standalone, which does not seem to include all the needed Hive jars
   #
   #    make docker-compose-run profiles="--profile spark" args="--rm -e MINIO_HOST=minio -e JDBC_URL -e COMPONENT_NAME='My Spark Prototype Script' spark-submit \
-  #      --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.0.0,org.apache.hadoop:hadoop-aws:3.2.0,org.apache.spark:spark-hive_2.12:3.1.2 \
+  #      --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
   #      /project/usaspending_api/etl/tests/path_to_your_spark_prototype_script.py"
   spark-submit:
     profiles:
