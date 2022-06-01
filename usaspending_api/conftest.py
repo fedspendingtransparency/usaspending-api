@@ -3,6 +3,7 @@ import logging
 import os
 import pytest
 import tempfile
+from unittest import mock
 
 from django.conf import settings
 from django.core.management import call_command
@@ -20,7 +21,7 @@ from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
-from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.common.helpers.generic_helper import generate_matviews, generate_test_db_connection_string
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
@@ -133,6 +134,11 @@ def django_db_setup(
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
 
+
+@pytest.fixture
+def pass_test_db_to_commands():
+    with mock.patch.dict(os.environ, {'DATABASE_URL': generate_test_db_connection_string()}):
+        yield
 
 @pytest.fixture
 def elasticsearch_transaction_index(db):
