@@ -14,46 +14,53 @@ from usaspending_api.recipient.delta_models import (
 )
 from usaspending_api.transactions.delta_models import transaction_fabs_sql_string, transaction_fpds_sql_string
 
+from usaspending_api.recipient.models import DUNS
+
 
 TABLE_SPEC = {
     "recipient_lookup": {
-        "schema_sql_string": recipient_lookup_sql_string,
+        "model": None,
         "source_table": "recipient_lookup",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "schema_sql_string": recipient_lookup_sql_string,
         "custom_schema": "",
     },
     "recipient_profile": {
-        "schema_sql_string": recipient_profile_sql_string,
+        "model": None,
         "source_table": "recipient_profile",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "schema_sql_string": recipient_profile_sql_string,
         "custom_schema": "",
     },
     "sam_recipient": {
-        "schema_sql_string": sam_recipient_sql_string,
+        "model": DUNS,
         "source_table": "duns",
         "destination_database": "raw",
         "partition_column": "broker_duns_id",
         "partition_column_type": "numeric",
+        "schema_sql_string": sam_recipient_sql_string,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
     },
     "transaction_fabs": {
-        "schema_sql_string": transaction_fabs_sql_string,
+        "model": None,
         "source_table": "transaction_fabs",
         "destination_database": "raw",
         "partition_column": "published_fabs_id",
         "partition_column_type": "numeric",
+        "schema_sql_string": transaction_fabs_sql_string,
         "custom_schema": "",
     },
     "transaction_fpds": {
-        "schema_sql_string": transaction_fpds_sql_string,
+        "model": None,
         "source_table": "transaction_fpds",
         "destination_database": "raw",
         "partition_column": "detached_award_procurement_id",
         "partition_column_type": "numeric",
+        "schema_sql_string": transaction_fpds_sql_string,
         "custom_schema": "",
     },
 }

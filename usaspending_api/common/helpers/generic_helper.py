@@ -7,6 +7,7 @@ import time
 from calendar import monthrange, isleap
 from datetime import datetime as dt
 from dateutil import parser
+from pandas.util.testing import assert_frame_equal
 
 from django.conf import settings
 from django.db import connection
@@ -324,3 +325,13 @@ def sort_with_null_last(to_sort, sort_key, sort_order, tie_breaker=None):
         key=lambda x: ((x[sort_key] is None) == (sort_order == "asc"), x[sort_key], x[tie_breaker]),
         reverse=(sort_order == "desc"),
     )
+
+
+def equal_dfs(df1, df2, **options):
+    """ Assert that two dataframes are equal, ignoring ordering of columns"""
+    try:
+        assert_frame_equal(df1.sort_index(axis=1), df2.sort_index(axis=1), check_like=True, **options)
+        return True
+    except AssertionError as e:
+        logger.exception(e)
+        return False
