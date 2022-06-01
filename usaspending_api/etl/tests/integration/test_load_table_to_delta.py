@@ -52,7 +52,9 @@ def _verify_delta_table_loaded(spark: SparkSession, delta_table_name: str, s3_bu
 
     assert equal_datasets(dummy_data, received_data)
 
+
 # TODO: Update dummy data to use factories with fuzzy data instead of blank values for a more accurate comparison
+
 
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket):
