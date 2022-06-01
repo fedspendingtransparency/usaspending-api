@@ -106,6 +106,11 @@ def configure_spark_session(
 
         log_hadoop_config_vals (bool): If True, log at INFO the current hadoop config property values
 
+        enable_hive_support (bool): If True, enable hive on the created SparkSession. Doing so internally sets the
+            spark conf spark.sql.catalogImplementation=hive, which persists the metastore_db to its configured location
+            (by default the working dir of the spark command run as a Derby DB folder, but configured explicitly here
+            if running locally (not AWS))
+
         options (kwargs): dict or named-arguments (unlikely due to dots in properties) of key-value pairs representing
             additional spark config values to set as the SparkContext and SparkSession are created.
             NOTE: If a value is provided, and a SparkContext is also provided, the value must be a modifiable
