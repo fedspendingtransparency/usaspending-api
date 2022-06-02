@@ -40,11 +40,16 @@ def _verify_delta_table_loaded(spark: SparkSession, delta_table_name: str, s3_bu
     # get the postgres data to compare
     model = TABLE_SPEC[delta_table_name]["model"]
     partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
-    dummy_data = list(model.objects.order_by(partition_col).all().values())
+    dummy_query = model.objects
+    if partition_col is not None:
+        dummy_query = dummy_query.order_by(partition_col)
+    dummy_data = list(dummy_query.all().values())
 
     # get the spark data to compare
-    received_data = spark.sql(f"select * from {delta_table_name} order by {partition_col}")
-    received_data = [row.asDict() for row in received_data.collect()]
+    received_query = f"select * from {delta_table_name}"
+    if partition_col is not None:
+        received_query = f"{received_query} order by {partition_col}"
+    received_data = [row.asDict() for row in spark.sql(received_query).collect()]
 
     assert equal_datasets(dummy_data, received_data)
 
