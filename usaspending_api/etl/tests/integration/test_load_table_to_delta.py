@@ -2,18 +2,14 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
-import os
-import pandas as pd
 from datetime import datetime
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
 from pytest import mark
 from django.core.management import call_command
-from django.db import connection, connections, DEFAULT_DB_ALIAS, models
 
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
-from usaspending_api.etl.management.commands.load_table_to_delta import JDBC_URL_KEY
 
 
 def equal_datasets(ds1, ds2):
