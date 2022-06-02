@@ -5,7 +5,7 @@ import pytest
 from datetime import date
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from model_mommy import mommy
+from model_bakery import baker
 from pathlib import Path
 from usaspending_api.awards.models import Subaward
 from usaspending_api.references.models import CityCountyStateCode
@@ -74,7 +74,7 @@ def test_change_reversion(disable_vacuuming):
     """ Let's make some very targeted changes and ensure that they are all resolved correctly on a followup load. """
 
     # Mock a subaward.
-    mommy.make(
+    baker.make(
         "awards.Subaward",
         id=1,
         pop_city_name="AGUA FRIA",

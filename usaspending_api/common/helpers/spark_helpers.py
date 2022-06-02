@@ -23,6 +23,20 @@ from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentia
 from usaspending_api.config import CONFIG
 
 
+def get_active_spark_context() -> SparkContext:
+    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+    if is_spark_context_stopped():
+        return None
+    return SparkContext._active_spark_context
+
+
+def get_active_spark_session() -> SparkContext:
+    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+    if is_spark_context_stopped():
+        return None
+    return SparkSession.getActiveSession()
+
+
 def is_spark_context_stopped() -> bool:
     is_stopped = True
     with SparkContext._lock:
@@ -56,6 +70,7 @@ def configure_spark_session(
     log_level: int = None,
     log_spark_config_vals: bool = False,
     log_hadoop_config_vals: bool = False,
+    enable_hive_support: bool = False,
     **options,
 ) -> SparkSession:
     """Get a SparkSession object with some of the default/boiler-plate config needed for THIS project pre-set
@@ -91,6 +106,11 @@ def configure_spark_session(
 
         log_hadoop_config_vals (bool): If True, log at INFO the current hadoop config property values
 
+        enable_hive_support (bool): If True, enable hive on the created SparkSession. Doing so internally sets the
+            spark conf spark.sql.catalogImplementation=hive, which persists the metastore_db to its configured location
+            (by default the working dir of the spark command run as a Derby DB folder, but configured explicitly here
+            if running locally (not AWS))
+
         options (kwargs): dict or named-arguments (unlikely due to dots in properties) of key-value pairs representing
             additional spark config values to set as the SparkContext and SparkSession are created.
             NOTE: If a value is provided, and a SparkContext is also provided, the value must be a modifiable
@@ -112,17 +132,45 @@ def configure_spark_session(
     # Assume that random errors are rare, and jobs have long runtimes, so fail fast, fix and retry manually.
     conf.set("spark.yarn.maxAppAttempts", "1")
     conf.set("spark.hadoop.fs.s3a.endpoint", CONFIG.AWS_S3_ENDPOINT)
-    if not CONFIG.USE_AWS:
+
+    if not CONFIG.USE_AWS:  # i.e. running in a "local" [development] environment
         # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy
         conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         # "Enable S3 path style access ie disabling the default virtual hosting behaviour.
         # Useful for S3A-compliant storage providers as it removes the need to set up DNS for virtual hosting."
         conf.set("spark.hadoop.fs.s3a.path.style.access", "true")
-        # Set Committer config compliant with MinIO
-        #   - (see: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/committers.html)
-        conf.set("spark.hadoop.fs.s3a.committer.name", "directory")
-        conf.set("spark.hadoop.fs.s3a.committer.staging.conflict-mode", "replace")
-        conf.set("spark.hadoop.fs.s3a.committer.staging.tmp.path", "/tmp/staging")
+
+        # Documenting for Awareness:
+        # Originally it was thought that the S3AFileSystem "Committer" needed config changes to be compliant when
+        # hitting MinIO locally instead of AWS S3 service. However, those changs were proven unnecessary.
+        # - There is however an intermitten issue which we cannot quite identify the root cause (perhaps changing
+        #   back to defaults will keep it from happening again). See: https://github.com/minio/minio/issues/10744
+        #   - The error comes back as "FileAlreadyExists" ... or just: "<file/folder> already exists"
+        #   - It is either some cache purging of Docker or MinIO or both over time that fixes it
+        #   - Or some fiddling with these committer settings
+        # - For Committer Details: https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/committers.html
+        # - Findings:
+        #   - If USE_AWS = True, and you point it at an AWS bucket...
+        #     - s3a.path.style.access=true works, by itself as well as with no committer specified (falls back to
+        #      FileOutputCommitter) and any combo of conflict-mode and tmp.path
+        #     - However if committer.name="directory" (it uses the StagingOutputCommitter) AND conflict-mode=replace,
+        #       it will replace the whole directory at the last file write, which is the _SUCCESS file, and that's why
+        #       that's the only file you see
+        # - The below settings are the DEFAULT when not set, but documenting here FYI
+        # conf.set("spark.hadoop.fs.s3a.committer.name", "file")
+        # conf.set("spark.hadoop.fs.s3a.committer.staging.conflict-mode", "fail")
+        # conf.set("spark.hadoop.fs.s3a.committer.staging.tmp.path", "tmp/staging")
+
+        # Turn on Hive support to use a Derby filesystem DB as the metastore DB for tracking of schemas and tables
+        enable_hive_support = True
+
+        # Add Spark conf to set the Spark SQL Warehouse to an explicit directory,
+        # and to make the Hive metastore_db folder get stored under that warehouse dir
+        conf.set("spark.sql.warehouse.dir", CONFIG.SPARK_SQL_WAREHOUSE_DIR)
+        conf.set(
+            "spark.hadoop.javax.jdo.option.ConnectionURL",
+            f"jdbc:derby:;databaseName={CONFIG.HIVE_METASTORE_DERBY_DB_DIR};create=true",
+        )
 
     # Set AWS credentials in the Spark config
     # Hint: If connecting to AWS resources when executing program from a local env, and you usually authenticate with
@@ -159,6 +207,8 @@ def configure_spark_session(
         builder = builder.master(master)
     if app_name:
         builder = builder.appName(app_name)
+    if enable_hive_support:
+        builder = builder.enableHiveSupport()
     spark = builder.config(conf=conf).getOrCreate()
 
     # Now that the SparkSession was created, check whether certain provided config values were ignored if given a
@@ -281,7 +331,7 @@ def attach_java_gateway(
 
 
 def get_jdbc_connection_properties() -> dict:
-    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.PARTITION_SIZE)}
+    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
 
 
 def get_jdbc_url():

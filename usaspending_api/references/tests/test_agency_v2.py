@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -8,7 +8,7 @@ from rest_framework import status
 def create_agency_data(db):
     # Create Agency - Submission relationship
     # Create Agency AND TopTier Agency
-    ttagency1 = mommy.make(
+    ttagency1 = baker.make(
         "references.ToptierAgency",
         name="tta_name",
         toptier_code="100",
@@ -18,17 +18,17 @@ def create_agency_data(db):
         icon_filename="test",
         justification="test.com/cj",
     )
-    mommy.make("references.Agency", id=1, toptier_agency=ttagency1)
+    baker.make("references.Agency", id=1, toptier_agency=ttagency1)
 
     # Create TAS
-    tas = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
+    tas = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
 
     # Create GTAS
-    mommy.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=4, total_budgetary_resources_cpe=1000)
-    mommy.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=6, total_budgetary_resources_cpe=2000)
+    baker.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=4, total_budgetary_resources_cpe=1000)
+    baker.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=6, total_budgetary_resources_cpe=2000)
 
     # Create Submissions
-    dsws1 = mommy.make(
+    dsws1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_reveal_date="2017-02-01",
@@ -36,7 +36,7 @@ def create_agency_data(db):
         submission_fiscal_month=4,
         is_quarter=False,
     )
-    dsws2 = mommy.make(
+    dsws2 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_reveal_date="2017-04-01",
@@ -45,7 +45,7 @@ def create_agency_data(db):
         is_quarter=True,
     )
 
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
@@ -54,7 +54,7 @@ def create_agency_data(db):
         is_final_balances_for_fy=False,
         submission_window=dsws1,
     )
-    submission_1 = mommy.make(
+    submission_1 = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2017,
         reporting_fiscal_quarter=2,
@@ -65,7 +65,7 @@ def create_agency_data(db):
     )
 
     # Create AppropriationAccountBalances
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         reporting_period_start="2017-1-1",
@@ -77,7 +77,7 @@ def create_agency_data(db):
     )
 
     # Create OverallTotals
-    mommy.make("references.OverallTotals", fiscal_year=2017, total_budget_authority=3860000000.00)
+    baker.make("references.OverallTotals", fiscal_year=2017, total_budget_authority=3860000000.00)
 
 
 @pytest.mark.django_db

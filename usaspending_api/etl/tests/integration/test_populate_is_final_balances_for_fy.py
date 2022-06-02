@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from django.core.management import call_command
 
 from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
@@ -14,7 +14,7 @@ from usaspending_api.submissions.models.submission_attributes import SubmissionA
 def test_quarterly_followed_by_monthly():
 
     # WINDOW - Period 10
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=11,
         submission_fiscal_year=2020,
@@ -25,7 +25,7 @@ def test_quarterly_followed_by_monthly():
     )
 
     # WINDOW - Quarter 3
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=22,
         submission_fiscal_year=2020,
@@ -36,7 +36,7 @@ def test_quarterly_followed_by_monthly():
     )
 
     # SUBMISSION - Agency A - Period 10
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         toptier_code="A",
@@ -47,7 +47,7 @@ def test_quarterly_followed_by_monthly():
     )
 
     # SUBMISSION - Agency A - Quarter 3
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         toptier_code="A",
@@ -70,7 +70,7 @@ def test_quarterly_followed_by_monthly():
 def test_monthly_followed_by_quarterly():
 
     # WINDOW - Period 9
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=11,
         submission_fiscal_year=2020,
@@ -81,7 +81,7 @@ def test_monthly_followed_by_quarterly():
     )
 
     # WINDOW - Quarter 4
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=22,
         submission_fiscal_year=2020,
@@ -92,7 +92,7 @@ def test_monthly_followed_by_quarterly():
     )
 
     # SUBMISSION - Agency A - Period 9
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         toptier_code="A",
@@ -103,7 +103,7 @@ def test_monthly_followed_by_quarterly():
     )
 
     # SUBMISSION - Agency A - Quarter 4
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         toptier_code="A",
@@ -126,7 +126,7 @@ def test_monthly_followed_by_quarterly():
 def test_period_789_submissions():
 
     # WINDOW - Period 7
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=11,
         submission_fiscal_year=2020,
@@ -137,7 +137,7 @@ def test_period_789_submissions():
     )
 
     # WINDOW - Period 8
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=22,
         submission_fiscal_year=2020,
@@ -148,7 +148,7 @@ def test_period_789_submissions():
     )
 
     # WINDOW - Period 9
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=33,
         submission_fiscal_year=2020,
@@ -159,7 +159,7 @@ def test_period_789_submissions():
     )
 
     # SUBMISSION - Agency A - Period 7
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         toptier_code="A",
@@ -170,7 +170,7 @@ def test_period_789_submissions():
     )
 
     # SUBMISSION - Agency A - Period 8
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         toptier_code="A",
@@ -181,7 +181,7 @@ def test_period_789_submissions():
     )
 
     # SUBMISSION - Agency A - Period 9
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=3,
         toptier_code="A",
@@ -211,7 +211,7 @@ def test_no_final_balances_for_agency():
     """
 
     # WINDOW - Period 8
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=11,
         submission_fiscal_year=2020,
@@ -222,7 +222,7 @@ def test_no_final_balances_for_agency():
     )
 
     # WINDOW - Period 10
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=22,
         submission_fiscal_year=2020,
@@ -233,7 +233,7 @@ def test_no_final_balances_for_agency():
     )
 
     # WINDOW - Quarter 3
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=33,
         submission_fiscal_year=2020,
@@ -244,7 +244,7 @@ def test_no_final_balances_for_agency():
     )
 
     # WINDOW - Quarter 4
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=44,
         submission_fiscal_year=2020,
@@ -255,7 +255,7 @@ def test_no_final_balances_for_agency():
     )
 
     # SUBMISSION - Agency A - Period 8
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         toptier_code="A",
@@ -266,7 +266,7 @@ def test_no_final_balances_for_agency():
     )
 
     # SUBMISSION - Agency A - Quarter 3
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         toptier_code="A",
@@ -293,7 +293,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     """
 
     # WINDOW - Period 9
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=11,
         submission_fiscal_year=2020,
@@ -304,7 +304,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     )
 
     # WINDOW - Period 10
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=22,
         submission_fiscal_year=2020,
@@ -315,7 +315,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     )
 
     # WINDOW - Quarter 3
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=33,
         submission_fiscal_year=2020,
@@ -326,7 +326,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     )
 
     # WINDOW - Quarter 4
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=44,
         submission_fiscal_year=2020,
@@ -337,7 +337,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     )
 
     # SUBMISSION - Agency A - Period 9
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         toptier_code="A",
@@ -348,7 +348,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     )
 
     # SUBMISSION - Agency A - Quarter 4
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         toptier_code="A",
@@ -359,7 +359,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     )
 
     # SUBMISSION - Agency B - Period 10
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=3,
         toptier_code="B",
@@ -370,7 +370,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
     )
 
     # SUBMISSION - Agency B - Quarter 3
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=4,
         toptier_code="B",
@@ -397,7 +397,7 @@ def test_diff_agencies_using_monthly_and_quarterly():
 def test_agency_across_years():
 
     # WINDOW 2019 Period 9
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=11,
         submission_fiscal_year=2019,
@@ -408,7 +408,7 @@ def test_agency_across_years():
     )
 
     # WINDOW 2020 Period 9
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=22,
         submission_fiscal_year=2020,
@@ -419,7 +419,7 @@ def test_agency_across_years():
     )
 
     # SUBMISSION - Agency A - 2019 Period 9
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         toptier_code="A",
@@ -430,7 +430,7 @@ def test_agency_across_years():
     )
 
     # SUBMISSION - Agency A - 2020 Period 9
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         toptier_code="A",

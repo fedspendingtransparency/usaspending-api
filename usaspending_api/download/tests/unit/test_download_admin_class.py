@@ -5,7 +5,7 @@ import pytest
 # Core Django imports
 
 # Third-party app imports
-from model_mommy import mommy
+from model_bakery import baker
 
 # Imports from your apps
 from usaspending_api.download.v2.download_admin import DownloadAdministrator
@@ -28,9 +28,9 @@ EXAMPLE_JSON_REQUEST = {
 @pytest.mark.django_db
 def test_simple_download_admin_pass():
     job_status_row = {"job_status_id": 77, "name": "placeholder", "description": "Example Job Status"}
-    mommy.make("download.JobStatus", **job_status_row)
+    baker.make("download.JobStatus", **job_status_row)
     download_job_row = {"download_job_id": 90, "file_name": "download_example_file.hdf5", "job_status_id": 77}
-    mommy.make("download.DownloadJob", **download_job_row)
+    baker.make("download.DownloadJob", **download_job_row)
 
     d = DownloadAdministrator()
     d.search_for_a_download(**{"download_job_id": 90})
@@ -56,14 +56,14 @@ def test_download_admin_restart_pass():
         {"job_status_id": 8, "name": "placeholder_8", "description": "Example Job Status 8"},
     ]
     for j in job_status_rows:
-        mommy.make("download.JobStatus", **j)
+        baker.make("download.JobStatus", **j)
     download_job_row = {
         "download_job_id": 90,
         "file_name": "all_contracts_prime_awards_98237483.zip",
         "job_status_id": 1,
         "json_request": json.dumps(EXAMPLE_JSON_REQUEST),
     }
-    mommy.make("download.DownloadJob", **download_job_row)
+    baker.make("download.DownloadJob", **download_job_row)
 
     d = DownloadAdministrator()
     d.search_for_a_download(**{"file_name": "all_contracts_prime_awards_98237483.zip"})

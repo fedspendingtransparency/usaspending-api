@@ -1,4 +1,4 @@
-from model_mommy import mommy
+from model_bakery import baker
 from datetime import datetime
 import pytest
 
@@ -78,7 +78,7 @@ def _matching_tas(id, fa):
 
 
 def _setup_agency(id):
-    mommy.make(
+    baker.make(
         "references.ToptierAgency",
         toptier_agency_id=id,
         name=f"Agency {str(id).zfill(3)}",
@@ -89,7 +89,7 @@ def _setup_agency(id):
 
 
 def _setup_fa(id, agency):
-    mommy.make(
+    baker.make(
         "accounts.FederalAccount",
         id=id,
         federal_account_code=str(id).zfill(4),
@@ -99,7 +99,7 @@ def _setup_fa(id, agency):
 
 
 def _setup_tas(id, fa):
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=id,
         federal_account_id=fa,
@@ -109,5 +109,5 @@ def _setup_tas(id, fa):
 
 
 def _setup_faba(id):
-    mommy.make("awards.Award", id=id)
-    mommy.make("awards.FinancialAccountsByAwards", treasury_account_id=id, award_id=id)
+    baker.make("awards.Award", id=id)
+    baker.make("awards.FinancialAccountsByAwards", treasury_account_id=id, award_id=id)

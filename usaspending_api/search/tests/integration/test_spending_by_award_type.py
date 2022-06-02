@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -11,9 +11,9 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 @pytest.mark.django_db
 def test_data():
 
-    mommy.make("awards.Award", id=1, type="A", latest_transaction_id=1, generated_unique_award_id="CONT_AWD_1")
-    mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
-    mommy.make(
+    baker.make("awards.Award", id=1, type="A", latest_transaction_id=1, generated_unique_award_id="CONT_AWD_1")
+    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
         legal_entity_country_code="USA",
@@ -24,9 +24,9 @@ def test_data():
         place_of_performance_zip5="00001",
     )
 
-    mommy.make("awards.Award", id=2, type="A", latest_transaction_id=2, generated_unique_award_id="CONT_AWD_2")
-    mommy.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True)
-    mommy.make(
+    baker.make("awards.Award", id=2, type="A", latest_transaction_id=2, generated_unique_award_id="CONT_AWD_2")
+    baker.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True)
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=2,
         legal_entity_country_code="USA",
@@ -37,9 +37,9 @@ def test_data():
         place_of_performance_zip5="00002",
     )
 
-    mommy.make("awards.Award", id=3, type="A", latest_transaction_id=3, generated_unique_award_id="CONT_AWD_3")
-    mommy.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True)
-    mommy.make(
+    baker.make("awards.Award", id=3, type="A", latest_transaction_id=3, generated_unique_award_id="CONT_AWD_3")
+    baker.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True)
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=3,
         legal_entity_country_code="USA",
@@ -50,9 +50,9 @@ def test_data():
         place_of_performance_zip5="00003",
     )
 
-    mommy.make("awards.Award", id=4, type="A", latest_transaction_id=4, generated_unique_award_id="CONT_AWD_4")
-    mommy.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True)
-    mommy.make(
+    baker.make("awards.Award", id=4, type="A", latest_transaction_id=4, generated_unique_award_id="CONT_AWD_4")
+    baker.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True)
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=4,
         legal_entity_country_code="GIB",
@@ -63,8 +63,8 @@ def test_data():
         place_of_performance_zip5="00004",
     )
 
-    mommy.make("references.RefCountryCode", country_code="GIB", country_name="GIBRALTAR")
-    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    baker.make("references.RefCountryCode", country_code="GIB", country_name="GIBRALTAR")
+    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
 @pytest.mark.django_db

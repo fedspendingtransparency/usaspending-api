@@ -9,16 +9,14 @@ class SourceAssistanceTransaction(models.Model):
 
     Model contains a 100% duplicate copy of *active*
     award modifications (aka transactions) stored in
-    published_award_financial_assistance from a Broker database.
+    published_fabs from a Broker database.
 
     NO DATA MANIPULATION SHOULD BE PERFORMED BY DATA ETL
 
     Put non-null fields on the top, all other fields sort alphabetically
     """
 
-    published_award_financial_assistance_id = models.IntegerField(
-        primary_key=True, help_text="surrogate primary key defined in Broker"
-    )
+    published_fabs_id = models.IntegerField(primary_key=True, help_text="surrogate primary key defined in Broker")
     afa_generated_unique = models.TextField(unique=True, help_text="natural key defined in Broker")
     action_date = models.TextField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
@@ -71,7 +69,7 @@ class SourceAssistanceTransaction(models.Model):
     high_comp_officer5_full_na = models.TextField(blank=True, null=True)
     indirect_federal_sharing = NumericField(blank=True, null=True)
     is_active = BooleanFieldWithDefault()
-    is_historical = models.NullBooleanField()
+    is_historical = models.BooleanField(null=True, blank=True)
     legal_entity_address_line1 = models.TextField(blank=True, null=True)
     legal_entity_address_line2 = models.TextField(blank=True, null=True)
     legal_entity_address_line3 = models.TextField(blank=True, null=True)
@@ -133,4 +131,4 @@ class SourceAssistanceTransaction(models.Model):
 
     @property
     def broker_source_table(self):
-        return "published_award_financial_assistance"
+        return "published_fabs"

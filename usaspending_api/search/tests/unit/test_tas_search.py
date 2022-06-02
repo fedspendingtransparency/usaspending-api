@@ -10,7 +10,7 @@ from django.conf import settings
 
 # Third-party app imports
 from fiscalyear import FiscalDate
-from model_mommy import mommy
+from model_bakery import baker
 
 # Imports from your apps
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -21,13 +21,13 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 @pytest.fixture
 def mock_tas_data(db):
 
-    a1 = mommy.make("references.ToptierAgency", toptier_agency_id=99, name="Department of Pizza", abbreviation="DOP")
-    a2 = mommy.make(
+    a1 = baker.make("references.ToptierAgency", toptier_agency_id=99, name="Department of Pizza", abbreviation="DOP")
+    a2 = baker.make(
         "references.SubtierAgency", subtier_agency_id=22, name="Department of Sub-Pizza", abbreviation="DOSP"
     )
-    mommy.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
-    mommy.make(FederalAccount, id=1, parent_toptier_agency_id=99, agency_identifier="99", main_account_code="0001")
-    mommy.make(
+    baker.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
+    baker.make(FederalAccount, id=1, parent_toptier_agency_id=99, agency_identifier="99", main_account_code="0001")
+    baker.make(
         TreasuryAppropriationAccount,
         treasury_account_identifier=1,
         allocation_transfer_agency_id="028",
@@ -40,7 +40,7 @@ def mock_tas_data(db):
         ending_period_of_availability="2013",
         tas_rendering_label="028-028-2011/2013-X-8006-000",
     )
-    mommy.make(
+    baker.make(
         TreasuryAppropriationAccount,
         treasury_account_identifier=2,
         allocation_transfer_agency_id="004",
@@ -53,7 +53,7 @@ def mock_tas_data(db):
         ending_period_of_availability="2013",
         tas_rendering_label="004-028-2012/2013-8006-005",
     )
-    mommy.make(
+    baker.make(
         TreasuryAppropriationAccount,
         treasury_account_identifier=3,
         allocation_transfer_agency_id="001",
@@ -67,11 +67,11 @@ def mock_tas_data(db):
         tas_rendering_label="001-011-2001/2002-X-8007-001",
     )
 
-    mommy.make(FinancialAccountsByAwards, treasury_account_id=1, award_id=1)
-    mommy.make(FinancialAccountsByAwards, treasury_account_id=2, award_id=2)
-    mommy.make(FinancialAccountsByAwards, treasury_account_id=3, award_id=3)
+    baker.make(FinancialAccountsByAwards, treasury_account_id=1, award_id=1)
+    baker.make(FinancialAccountsByAwards, treasury_account_id=2, award_id=2)
+    baker.make(FinancialAccountsByAwards, treasury_account_id=3, award_id=3)
 
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=1,
         action_date="2010-10-01",
@@ -80,7 +80,7 @@ def mock_tas_data(db):
         type="A",
         awarding_agency_id=1,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
         legal_entity_city_name="BURBANK",
@@ -92,11 +92,11 @@ def mock_tas_data(db):
         place_of_perform_country_c="USA",
     )
 
-    mommy.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piid", type="A", awarding_agency_id=1)
-    mommy.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", type="B")
-    mommy.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
+    baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piid", type="A", awarding_agency_id=1)
+    baker.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", type="B")
+    baker.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
 
-    mommy.make(
+    baker.make(
         "awards.Subaward",
         id=1,
         award_id=1,
@@ -105,7 +105,7 @@ def mock_tas_data(db):
         award_type="procurement",
         subaward_number="1A",
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward",
         id=2,
         award_id=2,
@@ -114,7 +114,7 @@ def mock_tas_data(db):
         award_type="procurement",
         subaward_number="2A",
     )
-    mommy.make(
+    baker.make(
         "awards.Subaward",
         id=3,
         award_id=3,
@@ -124,7 +124,7 @@ def mock_tas_data(db):
         subaward_number="3A",
     )
 
-    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
 def test_spending_by_award_tas_success(client, monkeypatch, elasticsearch_award_index, mock_tas_data):

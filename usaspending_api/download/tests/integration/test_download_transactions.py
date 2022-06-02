@@ -3,7 +3,7 @@ import pytest
 import random
 
 from django.conf import settings
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
 
@@ -20,10 +20,10 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 def download_test_data():
     # Populate job status lookup table
     for js in JOB_STATUS:
-        mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
+        baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
     # Create Awarding Top Agency
-    ata1 = mommy.make(
+    ata1 = baker.make(
         "references.ToptierAgency",
         name="Bureau of Things",
         toptier_code="100",
@@ -31,7 +31,7 @@ def download_test_data():
         mission="test",
         icon_filename="test",
     )
-    ata2 = mommy.make(
+    ata2 = baker.make(
         "references.ToptierAgency",
         name="Bureau of Stuff",
         toptier_code="101",
@@ -41,14 +41,14 @@ def download_test_data():
     )
 
     # Create Awarding subs
-    mommy.make("references.SubtierAgency", name="Bureau of Things")
+    baker.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Awarding Agencies
-    aa1 = mommy.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
-    aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    ata3 = mommy.make(
+    ata3 = baker.make(
         "references.ToptierAgency",
         name="Bureau of Money",
         toptier_code="102",
@@ -58,18 +58,18 @@ def download_test_data():
     )
 
     # Create Funding SUB
-    mommy.make("references.SubtierAgency", name="Bureau of Things")
+    baker.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", id=123, category="idv")
-    award2 = mommy.make("awards.Award", id=456, category="contracts")
-    award3 = mommy.make("awards.Award", id=789, category="assistance")
+    award1 = baker.make("awards.Award", id=123, category="idv")
+    award2 = baker.make("awards.Award", id=456, category="contracts")
+    award3 = baker.make("awards.Award", id=789, category="assistance")
 
     # Create Transactions
-    trann1 = mommy.make(
+    trann1 = baker.make(
         TransactionNormalized,
         award=award1,
         action_date="2018-01-01",
@@ -77,7 +77,7 @@ def download_test_data():
         modification_number=1,
         awarding_agency=aa1,
     )
-    trann2 = mommy.make(
+    trann2 = baker.make(
         TransactionNormalized,
         award=award2,
         action_date="2018-01-01",
@@ -85,7 +85,7 @@ def download_test_data():
         modification_number=1,
         awarding_agency=aa2,
     )
-    trann3 = mommy.make(
+    trann3 = baker.make(
         TransactionNormalized,
         award=award3,
         action_date="2018-01-01",
@@ -95,11 +95,11 @@ def download_test_data():
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid")
+    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid")
+    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain")
+    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain")
 
     # Set latest_award for each award
     update_awards()

@@ -31,7 +31,8 @@ POSTGRES INDEX FORMAT
 
 EXAMPLE SQL DESCRIPTION JSON FILE:
 
-{   "final_name": "example_matview",
+{   "schema_name": "public",
+    "final_name": "example_matview",
     "matview_sql": [
     "SELECT",
     "  action_date,",
@@ -73,14 +74,14 @@ def make_matview_drops(final_matview_name):
     return [TEMPLATE["drop_matview"].format(matview_temp_name), TEMPLATE["drop_matview"].format(matview_archive_name)]
 
 
-def make_matview_create(final_matview_name, sql):
+def make_matview_create(final_matview_name, final_matview_schema_name, sql):
     matview_sql = "\n".join(sql)
     matview_temp_name = final_matview_name + "_temp"
     with_or_without_data = ""
     if GLOBAL_ARGS.no_data:
         with_or_without_data = "NO "
-
-    return [TEMPLATE["create_matview"].format(matview_temp_name, matview_sql, with_or_without_data)]
+    matview_name_with_schema = f"{final_matview_schema_name}.{matview_temp_name}"
+    return [TEMPLATE["create_matview"].format(matview_name_with_schema, matview_sql, with_or_without_data)]
 
 
 def make_rename_sql(matview_name, old_indexes, old_stats, new_indexes, new_stats):
@@ -114,6 +115,7 @@ def create_all_sql_strings(sql_json):
     final_sql_strings = []
 
     matview_name = sql_json["final_name"]
+    matview_schema_name = sql_json.get("schema_name", "public")
     matview_temp_name = matview_name + "_temp"
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
@@ -123,7 +125,7 @@ def create_all_sql_strings(sql_json):
 
     final_sql_strings.extend(make_matview_drops(matview_name))
     final_sql_strings.append("")
-    final_sql_strings.extend(make_matview_create(matview_name, sql_json["matview_sql"]))
+    final_sql_strings.extend(make_matview_create(matview_name, matview_schema_name, sql_json["matview_sql"]))
 
     final_sql_strings.append("")
     final_sql_strings += create_indexes
@@ -155,6 +157,7 @@ def create_componentized_files(sql_json):
     index_dir_path = os.path.join(filename_base, "batch_indexes/")
 
     matview_name = sql_json["final_name"]
+    matview_schema_name = sql_json.get("schema_name", "public")
     matview_temp_name = matview_name + "_temp"
 
     create_indexes, rename_old_indexes, rename_new_indexes = make_indexes_sql(
@@ -165,7 +168,7 @@ def create_componentized_files(sql_json):
     sql_strings = make_matview_drops(matview_name)
     write_sql_file(sql_strings, filename_base + "__drops")
 
-    sql_strings = make_matview_create(matview_name, sql_json["matview_sql"])
+    sql_strings = make_matview_create(matview_name, matview_schema_name, sql_json["matview_sql"])
     write_sql_file(sql_strings, filename_base + "__matview")
 
     indexes_and_stats = create_indexes + create_stats

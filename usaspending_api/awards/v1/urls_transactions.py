@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 
 from usaspending_api.common.views import RemovedEndpointView
 
@@ -8,7 +8,7 @@ transaction_detail = RemovedEndpointView.as_view({"get": "retrieve", "post": "re
 transaction_total = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})
 
 urlpatterns = [
-    url(r"^$", transaction_list, name="transaction-list"),
-    url(r"(?P<pk>[0-9]+)/$", transaction_detail, name="transaction-detail"),
-    url(r"^total/", transaction_total, name="transaction-total"),
+    re_path(r"^$", transaction_list, name="transaction-list"),
+    re_path(r"(?P<pk>[0-9]+)/$", transaction_detail, name="transaction-detail"),
+    re_path(r"^total/", transaction_total, name="transaction-total"),
 ]

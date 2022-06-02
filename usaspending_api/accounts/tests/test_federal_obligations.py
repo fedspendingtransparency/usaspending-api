@@ -1,20 +1,20 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
 @pytest.fixture
 def financial_obligations_models():
-    fiscal_year = mommy.make(
+    fiscal_year = baker.make(
         "submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=True
     )
-    fiscal_year_2 = mommy.make(
+    fiscal_year_2 = baker.make(
         "submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=False
     )
-    top_tier_id = mommy.make("references.Agency", id=654, toptier_agency_id=987).toptier_agency_id
-    top_tier = mommy.make("references.ToptierAgency", toptier_agency_id=top_tier_id)
-    federal_id_awesome = mommy.make(
+    top_tier_id = baker.make("references.Agency", id=654, toptier_agency_id=987).toptier_agency_id
+    top_tier = baker.make("references.ToptierAgency", toptier_agency_id=top_tier_id)
+    federal_id_awesome = baker.make(
         "accounts.FederalAccount",
         id=6969,
         agency_identifier="867",
@@ -22,7 +22,7 @@ def financial_obligations_models():
         federal_account_code="867-5309",
         account_title="Turtlenecks and Chains",
     )
-    federal_id_lame = mommy.make(
+    federal_id_lame = baker.make(
         "accounts.FederalAccount",
         id=1234,
         agency_identifier="314",
@@ -35,24 +35,24 @@ def financial_obligations_models():
         the following cascade of variables applied to parameters,
         is the work around for annotating.
     """
-    funding = mommy.make(
+    funding = baker.make(
         "accounts.TreasuryAppropriationAccount", funding_toptier_agency=top_tier
     ).funding_toptier_agency
 
-    agency_name = mommy.make(
+    agency_name = baker.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=funding,
         reporting_agency_name="Department of Style",
     ).reporting_agency_name
 
-    acct_awesome = mommy.make(
+    acct_awesome = baker.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=funding,
         reporting_agency_name=agency_name,
         account_title="Turtlenecks and Chains",
     ).account_title
 
-    id_awesome = mommy.make(
+    id_awesome = baker.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=funding,
         reporting_agency_name=agency_name,
@@ -60,14 +60,14 @@ def financial_obligations_models():
         federal_account=federal_id_awesome,
     )
 
-    acct_lame = mommy.make(
+    acct_lame = baker.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=top_tier,
         reporting_agency_name=agency_name,
         account_title="Suits and Ties",
     ).account_title
 
-    id_lame = mommy.make(
+    id_lame = baker.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=funding,
         reporting_agency_name=agency_name,
@@ -76,14 +76,14 @@ def financial_obligations_models():
     )
 
     # AppropriationAccountBalances
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         submission=fiscal_year,
         final_of_fy=True,
         obligations_incurred_total_by_tas_cpe=-100,
         treasury_account_identifier=id_awesome,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         submission=fiscal_year,
         final_of_fy=True,
@@ -91,7 +91,7 @@ def financial_obligations_models():
         treasury_account_identifier=id_awesome,
     )
     # Test to make sure False value is ignored in calculation
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         submission=fiscal_year_2,
         final_of_fy=False,
@@ -100,14 +100,14 @@ def financial_obligations_models():
     )
 
     # Get Lame account values
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         submission=fiscal_year,
         final_of_fy=True,
         obligations_incurred_total_by_tas_cpe=500,
         treasury_account_identifier=id_lame,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         submission=fiscal_year,
         final_of_fy=True,

@@ -2,30 +2,30 @@ from copy import deepcopy
 import json
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
 @pytest.fixture
 def financial_spending_data(db):
 
-    ta1 = mommy.make("TreasuryAppropriationAccount", treasury_account_identifier=1, federal_account__id=1)
+    ta1 = baker.make("TreasuryAppropriationAccount", treasury_account_identifier=1, federal_account__id=1)
 
-    oc111 = mommy.make("references.ObjectClass", major_object_class="10", object_class="111")
-    oc113 = mommy.make("references.ObjectClass", major_object_class="10", object_class="113")
-    oc210 = mommy.make("references.ObjectClass", major_object_class="20", object_class="210")
-    oc310 = mommy.make("references.ObjectClass", major_object_class="30", object_class="310")
+    oc111 = baker.make("references.ObjectClass", major_object_class="10", object_class="111")
+    oc113 = baker.make("references.ObjectClass", major_object_class="10", object_class="113")
+    oc210 = baker.make("references.ObjectClass", major_object_class="20", object_class="210")
+    oc310 = baker.make("references.ObjectClass", major_object_class="30", object_class="310")
 
-    pa0001 = mommy.make(
+    pa0001 = baker.make(
         "references.RefProgramActivity", program_activity_code="0001", program_activity_name="Office of the Secretary"
     )
-    pa0002 = mommy.make(
+    pa0002 = baker.make(
         "references.RefProgramActivity",
         program_activity_code="0002",
         program_activity_name="Under/Assistant Secretaries",
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         reporting_period_start="2016-07-01",
@@ -34,7 +34,7 @@ def financial_spending_data(db):
         object_class=oc111,
         obligations_incurred_by_program_object_class_cpe=1000000,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         reporting_period_start="2016-07-01",
@@ -44,7 +44,7 @@ def financial_spending_data(db):
         obligations_incurred_by_program_object_class_cpe=1000000,
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         reporting_period_start="2017-07-01",
@@ -53,7 +53,7 @@ def financial_spending_data(db):
         object_class=oc113,
         obligations_incurred_by_program_object_class_cpe=1000000,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         reporting_period_start="2016-07-01",
@@ -63,7 +63,7 @@ def financial_spending_data(db):
         obligations_incurred_by_program_object_class_cpe=1000000,
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         reporting_period_start="2016-07-01",
@@ -72,7 +72,7 @@ def financial_spending_data(db):
         object_class=oc210,
         obligations_incurred_by_program_object_class_cpe=1000000,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         reporting_period_start="2017-07-01",
@@ -82,7 +82,7 @@ def financial_spending_data(db):
         obligations_incurred_by_program_object_class_cpe=1000000,
     )
 
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         reporting_period_start="2016-07-01",
@@ -91,7 +91,7 @@ def financial_spending_data(db):
         object_class=oc310,
         obligations_incurred_by_program_object_class_cpe=1000000,
     )
-    mommy.make(
+    baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=ta1,
         reporting_period_start="2016-07-01",

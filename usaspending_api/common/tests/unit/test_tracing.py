@@ -21,7 +21,7 @@ def datadog_tracer() -> ddtrace.Tracer:
     ddtrace.tracer.enabled = tracer_state
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def caplog(caplog):
     """A decorator (pattern) fixture around the pytest caplog fixture that adds the ability to temporarily alter
     loggers with propagate=False to True for duration of the test, so their output is propagated to the caplog log

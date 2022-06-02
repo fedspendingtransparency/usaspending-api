@@ -1,20 +1,20 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from django.template.library import InvalidTemplateLibrary
 
 
 @pytest.fixture()
 def naics_test_data():
-    mommy.make("references.NAICS", code="11", description="Agriculture, Forestry, Fishing and Hunting")
-    mommy.make("references.NAICS", code="1111", description="Oilseed and Grain Farming")
-    mommy.make("references.NAICS", code="111110", description="Soybean Farming")
-    mommy.make("references.NAICS", code="111120", description="Oilseed (except Soybean) Farming")
-    mommy.make("references.NAICS", code="1112", description="Vegetable and Melon Farming")
-    mommy.make("references.NAICS", code="111211", description="Potato Farming")
-    mommy.make("references.NAICS", code="21", description="Mining, Quarrying, and Oil and Gas Extraction")
-    mommy.make("references.NAICS", code="22", description="Utilities")
+    baker.make("references.NAICS", code="11", description="Agriculture, Forestry, Fishing and Hunting")
+    baker.make("references.NAICS", code="1111", description="Oilseed and Grain Farming")
+    baker.make("references.NAICS", code="111110", description="Soybean Farming")
+    baker.make("references.NAICS", code="111120", description="Oilseed (except Soybean) Farming")
+    baker.make("references.NAICS", code="1112", description="Vegetable and Melon Farming")
+    baker.make("references.NAICS", code="111211", description="Potato Farming")
+    baker.make("references.NAICS", code="21", description="Mining, Quarrying, and Oil and Gas Extraction")
+    baker.make("references.NAICS", code="22", description="Utilities")
 
 
 @pytest.mark.django_db

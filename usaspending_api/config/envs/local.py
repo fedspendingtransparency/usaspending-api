@@ -9,11 +9,14 @@
 ########################################################################################################################
 from typing import ClassVar
 
-from pydantic import validator
-from pydantic.fields import ModelField
+from pydantic import root_validator
 from pydantic.types import SecretStr
-from usaspending_api.config.envs.default import DefaultConfig
-from usaspending_api.config.utils import USER_SPECIFIC_OVERRIDE, FACTORY_PROVIDED_VALUE, eval_default_factory
+from usaspending_api.config.envs.default import DefaultConfig, _PROJECT_ROOT_DIR
+from usaspending_api.config.utils import (
+    USER_SPECIFIC_OVERRIDE,
+    FACTORY_PROVIDED_VALUE,
+    eval_default_factory_from_root_validator,
+)
 
 
 class LocalConfig(DefaultConfig):
@@ -51,13 +54,20 @@ class LocalConfig(DefaultConfig):
     ES_HOST: str = "localhost"
     ES_PORT: str = "9200"
 
+    # ==== [Spark] ====
+    # Sensible defaults to underneath the project root dir. But look in .env for overriding of these
+    SPARK_SQL_WAREHOUSE_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse")
+    HIVE_METASTORE_DERBY_DB_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse" / "metastore_db")
+
     # ==== [MinIO] ====
-    MINIO_HOST = "localhost"
-    MINIO_PORT: str = "9000"
+    MINIO_HOST: str = "localhost"
+    # Changing MinIO ports from defaults. Known to have port conflicts with proxies on developer laptops
+    MINIO_PORT: str = "10001"
+    MINIO_CONSOLE_PORT: str = "10002"
     MINIO_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
     MINIO_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
-    MINIO_DATA_DIR = USER_SPECIFIC_OVERRIDE
+    MINIO_DATA_DIR: str = USER_SPECIFIC_OVERRIDE
 
     # ==== [AWS] ====
     # In local dev env, default to NOT using AWS.
@@ -67,21 +77,21 @@ class LocalConfig(DefaultConfig):
     #   set this to True, and change the AWS endpoints/region to that of the targeted AWS account
     # - Then you MUST set your AWS creds (access/secret/token) by way of setting AWS_PROFILE env var (e.g. in your
     #   .env file)
-    USE_AWS = False
+    USE_AWS: bool = False
     AWS_ACCESS_KEY: SecretStr = MINIO_ACCESS_KEY
     AWS_SECRET_KEY: SecretStr = MINIO_SECRET_KEY
     AWS_PROFILE: str = None
-    AWS_REGION = ""
-    AWS_S3_BUCKET = "data"
+    AWS_REGION: str = ""
+    SPARK_S3_BUCKET: str = "data"
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
-    AWS_S3_ENDPOINT = FACTORY_PROVIDED_VALUE  # See below validator-based factory
+    AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory
 
-    @validator("AWS_S3_ENDPOINT")
-    def _AWS_S3_ENDPOINT_factory(cls, v, values, field: ModelField):
+    @root_validator
+    def _AWS_S3_ENDPOINT_factory(cls, values):
         def factory_func():
             return values["MINIO_HOST"] + ":" + values["MINIO_PORT"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory_from_root_validator(cls, values, "AWS_S3_ENDPOINT", factory_func)
 
-    AWS_STS_ENDPOINT = ""
+    AWS_STS_ENDPOINT: str = ""

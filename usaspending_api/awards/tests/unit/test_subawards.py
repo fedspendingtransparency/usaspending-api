@@ -1,17 +1,17 @@
 import datetime
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.awards.v2.views.subawards import SubawardsViewSet
 
 
 def create_subaward_test_data(*subawards_data_list):
-    mommy.make("awards.Award", id=88, generated_unique_award_id="generated_unique_award_id_for_88")
-    mommy.make("awards.Award", id=99, generated_unique_award_id="generated_unique_award_id_for_99")
+    baker.make("awards.Award", id=88, generated_unique_award_id="generated_unique_award_id_for_88")
+    baker.make("awards.Award", id=99, generated_unique_award_id="generated_unique_award_id_for_99")
 
     for subaward in subawards_data_list:
-        mommy.make("awards.Subaward", **subaward)
+        baker.make("awards.Subaward", **subaward)
 
 
 def strip_award_id(api_dict):

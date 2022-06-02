@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 
 from rest_framework import status
 
@@ -131,6 +131,24 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     )
     expected_results = [
         {
+            "id": 4,
+            "code": "009",
+            "description": "Agency 009",
+            "award_count": 1,
+            "obligation": 1000.0,
+            "outlay": 1000.0,
+            "children": [
+                {
+                    "id": 4,
+                    "code": "3008",
+                    "description": "Subtier 3008",
+                    "award_count": 1,
+                    "obligation": 1000.0,
+                    "outlay": 1000.0,
+                }
+            ],
+        },
+        {
             "id": 2,
             "code": "008",
             "description": "Agency 008",
@@ -209,6 +227,24 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
         client, url, award_type_codes=["02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
+        {
+            "id": 4,
+            "code": "009",
+            "description": "Agency 009",
+            "award_count": 1,
+            "obligation": 1000.0,
+            "outlay": 1000.0,
+            "children": [
+                {
+                    "id": 4,
+                    "code": "3008",
+                    "description": "Subtier 3008",
+                    "award_count": 1,
+                    "obligation": 1000.0,
+                    "outlay": 1000.0,
+                }
+            ],
+        },
         {
             "id": 2,
             "code": "008",
@@ -364,7 +400,7 @@ def test_outlay_calculation(client, disaster_account_data, elasticsearch_account
     defc_l = DisasterEmergencyFundCode.objects.get(code="L")
     tas = TreasuryAppropriationAccount.objects.get(account_title="TA 2")
     sub = SubmissionAttributes.objects.get(toptier_code="008", reporting_fiscal_year=2022, reporting_fiscal_period=8)
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         treasury_account=tas,
         submission=sub,

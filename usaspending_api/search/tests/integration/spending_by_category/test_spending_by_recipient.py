@@ -1,7 +1,7 @@
 import json
 import logging
 
-from model_mommy import mommy
+from model_bakery import baker
 from elasticsearch_dsl import A
 from rest_framework import status
 
@@ -13,7 +13,7 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 def _make_fpds_transaction(id, award_id, obligation, action_date, recipient_duns, recipient_name):
     # Transaction Normalized
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         id=id,
         is_fpds=True,
@@ -23,7 +23,7 @@ def _make_fpds_transaction(id, award_id, obligation, action_date, recipient_duns
     )
 
     # Transaction FPDS
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=id,
         awardee_or_recipient_uniqu=recipient_duns,
@@ -67,8 +67,8 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     recipient2 = "0aa0ab7e-efa0-e3f4-6f55-6b0ecaf636e6"
 
     # Recipient Lookup
-    mommy.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
-    mommy.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
+    baker.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
+    baker.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
 
     # Transaction FPDS
     _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1")
@@ -86,9 +86,9 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
 
     # Awards
     # Jam a routing key value into the piid field, and use the derived piid value for routing documents to shards later
-    mommy.make("awards.Award", id=1, latest_transaction_id=12, piid="shard_zero")
-    mommy.make("awards.Award", id=2, latest_transaction_id=6, piid="shard_one")
-    mommy.make("awards.Award", id=3, latest_transaction_id=9, piid="shard_two")
+    baker.make("awards.Award", id=1, latest_transaction_id=12, piid="shard_zero")
+    baker.make("awards.Award", id=2, latest_transaction_id=6, piid="shard_one")
+    baker.make("awards.Award", id=3, latest_transaction_id=9, piid="shard_two")
 
     # Push DB data into the test ES cluster
     # NOTE: Force routing of documents by the piid field, which will separate them int 3 groups, leading to an
@@ -160,8 +160,8 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     recipient2 = "0aa0ab7e-efa0-e3f4-6f55-6b0ecaf636e6"
 
     # Recipient Lookup
-    mommy.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
-    mommy.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
+    baker.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
+    baker.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
 
     # Transaction FPDS
     _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1")
@@ -178,9 +178,9 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2")
 
     # Awards
-    mommy.make("awards.Award", id=1, latest_transaction_id=12)
-    mommy.make("awards.Award", id=2, latest_transaction_id=6)
-    mommy.make("awards.Award", id=3, latest_transaction_id=9)
+    baker.make("awards.Award", id=1, latest_transaction_id=12)
+    baker.make("awards.Award", id=2, latest_transaction_id=6)
+    baker.make("awards.Award", id=3, latest_transaction_id=9)
 
     # Push DB data into the test ES cluster
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)

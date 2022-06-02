@@ -2,7 +2,7 @@ import json
 import pytest
 
 from datetime import datetime
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
@@ -39,28 +39,28 @@ def catch_filter_errors(viewset, filters, expected_exception):
 def add_award_recipients(db):
     current_id = 1
     new_award_count = 12
-    mommy.make(
+    baker.make(
         "recipient.RecipientLookup",
         uei="HX3VU12NNWN9",
         legal_business_name="Sample Recipient",
         recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
     )
 
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         uei="HX3VU12NNWN9",
         recipient_level="R",
         recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         recipient_name="Sample Recipient",
     )
-    mommy.make(
+    baker.make(
         "recipient.RecipientLookup",
         uei="K87WE4KQLBG4",
         legal_business_name="Sample Recipient",
         recipient_hash="6a1765a8-6948-6ae8-ee2a-1cfc72de739d",
     )
 
-    mommy.make(
+    baker.make(
         "recipient.RecipientProfile",
         uei="K87WE4KQLBG4",
         recipient_level="R",
@@ -68,7 +68,7 @@ def add_award_recipients(db):
         recipient_name="Sample Recipient",
     )
     for i in range(current_id, current_id + new_award_count):
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=i,
             date_signed=datetime(2009, 5, 30),
@@ -76,14 +76,14 @@ def add_award_recipients(db):
             earliest_transaction_id=i,
             type="A",
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionNormalized",
             id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2009, 5, 30),
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionFPDS",
             awardee_or_recipient_uei="HX3VU12NNWN9",
             ultimate_parent_uei=None,
@@ -93,7 +93,7 @@ def add_award_recipients(db):
     current_id += new_award_count
     new_award_count = 3
     for i in range(current_id, current_id + new_award_count):
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=i,
             date_signed=datetime(2009, 5, 1),
@@ -101,14 +101,14 @@ def add_award_recipients(db):
             earliest_transaction_id=i,
             type="A",
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionNormalized",
             id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2009, 5, 1),
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionFPDS",
             awardee_or_recipient_uei="HX3VU12NNWN9",
             ultimate_parent_uei=None,
@@ -118,7 +118,7 @@ def add_award_recipients(db):
     current_id += new_award_count
     new_award_count = 1
     for i in range(current_id, current_id + new_award_count):
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=i,
             date_signed=datetime(2009, 7, 2),
@@ -126,14 +126,14 @@ def add_award_recipients(db):
             earliest_transaction_id=i,
             type="A",
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionNormalized",
             id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2009, 7, 2),
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionFPDS",
             awardee_or_recipient_uei="HX3VU12NNWN9",
             ultimate_parent_uei=None,
@@ -143,7 +143,7 @@ def add_award_recipients(db):
     current_id += new_award_count
     new_award_count = 2
     for i in range(current_id, current_id + new_award_count):
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=i,
             date_signed=datetime(2008, 1, 10),
@@ -151,14 +151,14 @@ def add_award_recipients(db):
             earliest_transaction_id=i,
             type="A",
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionNormalized",
             id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2008, 1, 10),
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionFPDS",
             awardee_or_recipient_uei="HX3VU12NNWN9",
             ultimate_parent_uei=None,
@@ -168,7 +168,7 @@ def add_award_recipients(db):
     current_id += new_award_count
     new_award_count = 6
     for i in range(current_id, current_id + new_award_count):
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=i,
             date_signed=datetime(2009, 7, 30),
@@ -176,14 +176,14 @@ def add_award_recipients(db):
             earliest_transaction_id=i,
             type="A",
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionNormalized",
             id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2009, 7, 30),
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionFPDS",
             awardee_or_recipient_uei="K87WE4KQLBG4",
             ultimate_parent_uei=None,
