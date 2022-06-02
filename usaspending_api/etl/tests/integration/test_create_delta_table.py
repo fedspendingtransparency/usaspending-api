@@ -30,9 +30,9 @@ def _verify_delta_table_creation(spark: SparkSession, delta_table_name: str, s3_
     the_delta_table = [
         t
         for t in tables
-        if t["database"] == delta_table_spec["destination_database"] and t["tableName"] == delta_table_name
+        if t["namespace"] == delta_table_spec["destination_database"] and t["tableName"] == delta_table_name
     ][0]
-    assert the_delta_table["database"] == delta_table_spec["destination_database"]
+    assert the_delta_table["namespace"] == delta_table_spec["destination_database"]
     assert the_delta_table["isTemporary"] is False
 
 
@@ -54,3 +54,15 @@ def test_create_delta_table_for_transaction_fabs(spark, s3_unittest_data_bucket,
 
 def test_create_delta_table_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     _verify_delta_table_creation(spark, "transaction_fpds", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_transaction_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_search", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_transaction_normalized(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_normalized", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_awards(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "awards", s3_unittest_data_bucket)
