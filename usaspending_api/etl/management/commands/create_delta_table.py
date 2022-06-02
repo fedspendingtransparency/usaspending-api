@@ -40,7 +40,7 @@ TABLE_SPEC = {
         "partition_column": "id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": recipient_lookup_sql_string,
-        "custom_schema": "",
+        "custom_schema": "recipient_hash STRING",
     },
     "recipient_profile": {
         "model": RecipientProfile,
@@ -49,7 +49,7 @@ TABLE_SPEC = {
         "partition_column": "id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": recipient_profile_sql_string,
-        "custom_schema": "",
+        "custom_schema": "recipient_hash STRING",
     },
     "sam_recipient": {
         "model": DUNS,

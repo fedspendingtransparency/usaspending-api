@@ -13,20 +13,39 @@ from django.core.management import call_command
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
 
-def equal_datasets(ds1: List[Dict[str, Any]], ds2: List[Dict[str, Any]]):
+def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, Any]], custom_schema: str):
     """Helper function to compare the two datasets. Note the column types of ds1 will be used to cast columns in ds2."""
     datasets_match = True
-    for i, ds1_row in enumerate(ds1):
-        for k, val_1 in ds1_row.items():
-            val_1_type = type(val_1)
-            val_2 = ds2[i][k]
-            if not isinstance(val_1, type(None)) and not isinstance(val_1, type(val_2)):
-                val_2 = val_1_type(val_2)
-            if isinstance(val_1, datetime):
-                val_1 = val_1.replace(microsecond=0).replace(tzinfo=None)
-                val_2 = val_2.replace(microsecond=0).replace(tzinfo=None)
-            if val_1 != val_2:
-                raise Exception(f"Not equal: {val_1} {val_2} {val_1_type}")
+
+    # Parsing custom_schema to specify
+    schema_changes = {}
+    schema_type_converters = {
+        "INT": int,
+        "STRING": str,
+    }
+    if custom_schema:
+        for schema_change in custom_schema.split(","):
+            col, new_col_type = schema_change.split()[0].strip(), schema_change.split()[1].strip()
+            schema_changes[col] = new_col_type
+
+    # Iterating through the values and finding any differences
+    for i, psql_row in enumerate(psql_data):
+        for k, psql_val in psql_row.items():
+            psql_val_type = type(psql_val)
+            spark_val = spark_data[i][k]
+
+            # Casting the postgres values based on the custom schema
+            if k.strip() in schema_changes and schema_changes[k].strip() in schema_type_converters:
+                psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
+
+            # Equalize dates - Postgres TIMESTAMPs may include time zones while the Spark TIMESTAMPs may not
+            if isinstance(psql_val, datetime):
+                psql_val = psql_val.replace(tzinfo=None)
+
+            if psql_val != spark_val:
+                raise Exception(
+                    f"Not equal: col:{k} " f"left:{psql_val}({psql_val_type}) " f"right:{spark_val}({type(spark_val)})"
+                )
     return datasets_match
 
 
@@ -52,7 +71,7 @@ def _verify_delta_table_loaded(spark: SparkSession, delta_table_name: str, s3_bu
         received_query = f"{received_query} order by {partition_col}"
     received_data = [row.asDict() for row in spark.sql(received_query).collect()]
 
-    assert equal_datasets(dummy_data, received_data)
+    assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"])
 
 
 @mark.django_db(transaction=True)
