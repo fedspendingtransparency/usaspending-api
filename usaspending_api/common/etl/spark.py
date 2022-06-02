@@ -276,8 +276,8 @@ def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[]
         If compare_cols is left as an empty list, ALL columns will be compared to each other
         (for rows where unique_key_col values match).
         Otherwise, specify the columns that determine "sameness" of rows
-    Returns:Row level differences based on the dataframes. If Collect is called, will be accessible elsewhere,
-            if set to false, truncated output
+    Returns:Row level differences based on the dataframes. If collect is called, output is returned 
+            if set to false, truncated output will be displayed, not returned
     """
 
     if not compare_cols:
