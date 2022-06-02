@@ -7,7 +7,6 @@ import time
 from calendar import monthrange, isleap
 from datetime import datetime as dt
 from dateutil import parser
-from pandas.util.testing import assert_frame_equal
 
 from django.conf import settings
 from django.db import connection
