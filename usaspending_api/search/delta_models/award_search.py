@@ -14,7 +14,7 @@ CREATE OR REPLACE TABLE {DESTINATION_TABLE} (
     award_amount NUMERIC(23, 2),
     total_obligation NUMERIC(23, 2),
     description STRING,
-    total_obl_bin ENUM,
+    total_obl_bin STRING,
     total_subsidy_cost NUMERIC(23, 2),
     total_loan_value NUMERIC(23, 2),
     recipient_hash BINARY,
@@ -87,7 +87,7 @@ CREATE OR REPLACE TABLE {DESTINATION_TABLE} (
     tas_paths ARRAY<STRING>,
     tas_components ARRAY<STRING>,
     disaster_emergency_fund_codes ARRAY<STRING>,
-    covid_spending_by_defc JSONB,
+    covid_spending_by_defc STRING,
     total_covid_outlay NUMERIC(23, 2),
     total_covid_obligation NUMERIC(23, 2)
 )
