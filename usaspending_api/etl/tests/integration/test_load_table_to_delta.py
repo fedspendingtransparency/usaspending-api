@@ -49,39 +49,37 @@ def _verify_delta_table_loaded(spark: SparkSession, delta_table_name: str, s3_bu
     assert equal_datasets(dummy_data, received_data)
 
 
-# TODO: Update dummy data to use factories with fuzzy data instead of blank values for a more accurate comparison
-
-
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket):
-    baker.make("recipient.DUNS", broker_duns_id="1")
-    baker.make("recipient.DUNS", broker_duns_id="2")
+    baker.make("recipient.DUNS", broker_duns_id="1", _fill_optional=True)
+    baker.make("recipient.DUNS", broker_duns_id="2", _fill_optional=True)
     _verify_delta_table_loaded(spark, "sam_recipient", s3_unittest_data_bucket)
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_recipient_lookup(spark, s3_unittest_data_bucket):
-    baker.make("recipient.RecipientLookup", id="1")
-    baker.make("recipient.RecipientLookup", id="2")
+    baker.make("recipient.RecipientLookup", id="1", _fill_optional=True)
+    baker.make("recipient.RecipientLookup", id="2", _fill_optional=True)
     _verify_delta_table_loaded(spark, "recipient_lookup", s3_unittest_data_bucket)
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_recipient_profile(spark, s3_unittest_data_bucket):
-    baker.make("recipient.RecipientProfile", id="1")
-    baker.make("recipient.RecipientProfile", id="2")
+    baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
+    baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
     _verify_delta_table_loaded(spark, "recipient_profile", s3_unittest_data_bucket)
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_transaction_fabs(spark, s3_unittest_data_bucket):
-    baker.make("awards.TransactionFABS", published_fabs_id="1")
-    baker.make("awards.TransactionFABS", published_fabs_id="2")
+    # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
+    baker.make("awards.TransactionFABS", published_fabs_id="1", indirect_federal_sharing=1.0, _fill_optional=True)
+    baker.make("awards.TransactionFABS", published_fabs_id="2", indirect_federal_sharing=1.0, _fill_optional=True)
     _verify_delta_table_loaded(spark, "transaction_fabs", s3_unittest_data_bucket)
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_transaction_fpds(spark, s3_unittest_data_bucket):
-    baker.make("awards.TransactionFPDS", detached_award_procurement_id="1")
-    baker.make("awards.TransactionFPDS", detached_award_procurement_id="2")
+    baker.make("awards.TransactionFPDS", detached_award_procurement_id="1", _fill_optional=True)
+    baker.make("awards.TransactionFPDS", detached_award_procurement_id="2", _fill_optional=True)
     _verify_delta_table_loaded(spark, "transaction_fpds", s3_unittest_data_bucket)
