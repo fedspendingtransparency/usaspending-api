@@ -36,7 +36,7 @@ def test_hive_metastore_db(spark: SparkSession, s3_unittest_data_bucket, hive_un
     )
 
     schemas_in_metastore = [s[0] for s in spark.sql("SHOW SCHEMAS").collect()]
-    assert len(schemas_in_metastore) == 2
+    assert len(schemas_in_metastore) == 3
     assert "default" in schemas_in_metastore
     assert test_schema in schemas_in_metastore
 
