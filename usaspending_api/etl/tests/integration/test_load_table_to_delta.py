@@ -30,8 +30,8 @@ def equal_datasets(ds1, ds2):
 
 
 def _verify_delta_table_loaded(spark: SparkSession, delta_table_name: str, s3_bucket: str):
-    """Generic function that uses the create_delta_table command to create the given table and assert it was created
-    as expected
+    """Generic function that uses the create_delta_table and load_table_to_delta ommands to create and load the given
+    table and assert it was created and loaded as expected
     """
     # make the table and load it
     call_command("create_delta_table", f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}")
