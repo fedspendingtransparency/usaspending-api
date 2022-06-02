@@ -26,7 +26,7 @@ from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
 
 TABLE_SPEC = {
     "awards": {
-        "schema_sql_string": awards_sql_string,
+        "delta_table_create_sql": awards_sql_string,
         "source_table": "awards",
         "destination_database": "raw",
         "partition_column": "id",
@@ -39,7 +39,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "schema_sql_string": recipient_lookup_sql_string,
+        "delta_table_create_sql": recipient_lookup_sql_string,
         "custom_schema": "",
     },
     "recipient_profile": {
@@ -48,7 +48,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "schema_sql_string": recipient_profile_sql_string,
+        "delta_table_create_sql": recipient_profile_sql_string,
         "custom_schema": "",
     },
     "sam_recipient": {
@@ -57,7 +57,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "broker_duns_id",
         "partition_column_type": "numeric",
-        "schema_sql_string": sam_recipient_sql_string,
+        "delta_table_create_sql": sam_recipient_sql_string,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
     },
     "transaction_fabs": {
@@ -66,7 +66,7 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "published_fabs_id",
         "partition_column_type": "numeric",
-        "schema_sql_string": transaction_fabs_sql_string,
+        "delta_table_create_sql": transaction_fabs_sql_string,
         "custom_schema": "",
     },
     "transaction_fpds": {
@@ -75,11 +75,11 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "partition_column": "detached_award_procurement_id",
         "partition_column_type": "numeric",
-        "schema_sql_string": transaction_fpds_sql_string,
+        "delta_table_create_sql": transaction_fpds_sql_string,
         "custom_schema": "",
     },
     "transaction_normalized": {
-        "schema_sql_string": transaction_normalized_sql_string,
+        "delta_table_create_sql": transaction_normalized_sql_string,
         "source_table": "transaction_normalized",
         "destination_database": "raw",
         "partition_column": "id",
@@ -87,7 +87,7 @@ TABLE_SPEC = {
         "custom_schema": "",
     },
     "transaction_search": {
-        "schema_sql_string": transaction_search_sql_string,
+        "delta_table_create_sql": transaction_search_sql_string,
         "source_table": None,  # Placeholder for now
         "destination_database": "rpt",
         "partition_column": None,  # Placeholder for now
@@ -154,7 +154,7 @@ class Command(BaseCommand):
 
         # Define Schema Using CREATE TABLE AS command
         spark.sql(
-            TABLE_SPEC[destination_table]["schema_sql_string"].format(
+            TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
                 DESTINATION_TABLE=destination_table,
                 DESTINATION_DATABASE=table_spec["destination_database"],
                 SPARK_S3_BUCKET=spark_s3_bucket,
