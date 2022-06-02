@@ -43,7 +43,7 @@ def test_hive_metastore_db(spark: SparkSession, s3_unittest_data_bucket, hive_un
     spark.sql(f"USE {test_schema}")
     tables_in_test_schema = [t for t in spark.sql("SHOW TABLES").collect()]
     assert len(tables_in_test_schema) == 1
-    assert tables_in_test_schema[0]["database"] == test_schema
+    assert tables_in_test_schema[0]["namespace"] == test_schema
     assert tables_in_test_schema[0]["tableName"] == test_table
 
 
