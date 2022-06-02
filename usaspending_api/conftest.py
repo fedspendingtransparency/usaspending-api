@@ -3,7 +3,6 @@ import logging
 import os
 import pytest
 import tempfile
-from unittest import mock
 
 from django.conf import settings
 from django.core.management import call_command
