@@ -82,7 +82,7 @@ class Command(BaseCommand):
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
-        if partition_column_type == "numeric":
+        if partition_column_type in ("numeric", "long"):
             is_numeric_partitioning_col = True
             is_date_partitioning_col = False
         elif partition_column_type == "date":

@@ -21,7 +21,7 @@ from usaspending_api.transactions.delta_models import (
 )
 
 from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
-from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
+from usaspending_api.awards.models import TransactionFABS, TransactionFPDS, TransactionNormalized
 
 
 TABLE_SPEC = {
@@ -79,19 +79,21 @@ TABLE_SPEC = {
         "custom_schema": "",
     },
     "transaction_normalized": {
-        "delta_table_create_sql": transaction_normalized_sql_string,
+        "model": TransactionNormalized,
         "source_table": "transaction_normalized",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "long",
+        "delta_table_create_sql": transaction_normalized_sql_string,
         "custom_schema": "",
     },
     "transaction_search": {
-        "delta_table_create_sql": transaction_search_sql_string,
+        "model": None,  # Placeholder for now
         "source_table": None,  # Placeholder for now
         "destination_database": "rpt",
         "partition_column": None,  # Placeholder for now
         "partition_column_type": None,  # Placeholder for now
+        "delta_table_create_sql": transaction_search_sql_string,
         "custom_schema": None,  # Placeholder for now
     },
 }

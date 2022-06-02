@@ -89,3 +89,10 @@ def test_load_table_to_delta_for_transaction_fpds(spark, s3_unittest_data_bucket
     baker.make("awards.TransactionFPDS", detached_award_procurement_id="1", _fill_optional=True)
     baker.make("awards.TransactionFPDS", detached_award_procurement_id="2", _fill_optional=True)
     _verify_delta_table_loaded(spark, "transaction_fpds", s3_unittest_data_bucket)
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_transaction_normalized(spark, s3_unittest_data_bucket):
+    baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
+    baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
+    _verify_delta_table_loaded(spark, "transaction_normalized", s3_unittest_data_bucket)
