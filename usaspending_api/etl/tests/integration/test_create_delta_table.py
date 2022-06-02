@@ -54,3 +54,15 @@ def test_create_delta_table_for_transaction_fabs(spark, s3_unittest_data_bucket,
 
 def test_create_delta_table_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     _verify_delta_table_creation(spark, "transaction_fpds", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_transaction_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_search", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_transaction_normalized(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_normalized", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_awards(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "awards", s3_unittest_data_bucket)
