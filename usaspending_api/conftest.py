@@ -124,12 +124,21 @@ def django_db_setup(
             ensure_business_categories_functions_exist()
             call_command("load_broker_static_data")
 
-            # temporarily updating the environment so commands in tests will point to the test database
-            old_environ = os.environ.copy()
+            # The Django function "call_command", which runs a separate process of a django management command, will
+            # use the same settings as calling it normally via commandline. This is fine except when calling it in a
+            # Django test that usually involves the creation/teardown of a test database, and the new management command
+            # will work off the normal database (not the newly created test database). This resolves the issue by
+            # temporarily mocking the DATABASE_URL environment value (in python storage, not actually modifying your
+            # local environment) which will then allow the new python process to accurately point to the test database.
+            old_environ = os.environ.get("DATABASE_URL", None)
             os.environ["DATABASE_URL"] = get_database_dsn_string()
 
+    # This will be added to the finalizer which will be run when the newly made test database is being torn down
     def reset_environ():
-        os.environ = old_environ
+        if old_environ is not None:
+            os.environ["DATABASE_URL"] = old_environ
+        else:
+            del os.environ["DATABASE_URL"]
 
     request.addfinalizer(reset_environ)
 
