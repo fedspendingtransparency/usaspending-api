@@ -3,6 +3,7 @@
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
 from datetime import datetime
+from typing import List, Dict, Any
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
@@ -12,7 +13,7 @@ from django.core.management import call_command
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
 
-def equal_datasets(ds1, ds2):
+def equal_datasets(ds1: List[Dict[str, Any]], ds2: List[Dict[str, Any]]):
     """Helper function to compare the two datasets. Note the column types of ds1 will be used to cast columns in ds2."""
     datasets_match = True
     for i, ds1_row in enumerate(ds1):
