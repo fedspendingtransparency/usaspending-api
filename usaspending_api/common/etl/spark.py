@@ -1,4 +1,4 @@
-from pyspark.sql.functions import to_date
+from pyspark.sql.functions import to_date, lit, expr
 from pyspark.sql.types import StructType
 from pyspark.sql import DataFrame, SparkSession
 
