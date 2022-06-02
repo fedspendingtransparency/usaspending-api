@@ -18,7 +18,7 @@ logger = logging.getLogger("script")
 
 def get_file_a(submission_attributes, db_cursor):
     db_cursor.execute(
-        "SELECT * FROM certified_appropriation WHERE submission_id = %s", [submission_attributes.submission_id]
+        "SELECT * FROM published_appropriation WHERE submission_id = %s", [submission_attributes.submission_id]
     )
     return dictfetchall(db_cursor)
 

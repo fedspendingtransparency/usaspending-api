@@ -2632,7 +2632,7 @@
       "datetime_utc": "2016-06-27T12:08:24.297"
     }
   ],
-  "SELECT * FROM certified_object_class_program_activity WHERE submission_id = %s": [
+  "SELECT * FROM published_object_class_program_activity WHERE submission_id = %s": [
     {
       "obligations_delivered_orde_cpe": "4500",
       "gross_outlay_amount_by_pro_fyb": "4500",
@@ -3488,7 +3488,7 @@
       "fiscal_year_and_quarter_co": "20162"
     }
   ],
-  "SELECT * FROM certified_award_financial WHERE submission_id = %s": [
+  "SELECT * FROM published_award_financial WHERE submission_id = %s": [
     {
       "obligations_delivered_orde_cpe": "26000",
       "transaction_obligated_amou": "6500",
@@ -4132,7 +4132,7 @@
       "ussgl490800_authority_outl_fyb": "6500"
     }
   ],
-  "SELECT count(*) FROM certified_object_class_program_activity WHERE submission_id = %s AND length(object_class) = 4 GROUP BY account_num, program_activity_code, object_class HAVING COUNT(*) > 1": [
+  "SELECT count(*) FROM published_object_class_program_activity WHERE submission_id = %s AND length(object_class) = 4 GROUP BY account_num, program_activity_code, object_class HAVING COUNT(*) > 1": [
     {
       "count": 1
     }
@@ -4148,7 +4148,7 @@
       "allocation_transfer_agency": null
     }
   ],
-  "SELECT * FROM certified_appropriation WHERE submission_id = %s": [
+  "SELECT * FROM published_appropriation WHERE submission_id = %s": [
     {
       "borrowing_authority_amount_cpe": "1.51",
       "account_num": 0,
@@ -5086,7 +5086,7 @@
       "legal_entity_address_line2": "P.O. Box 12345"
     }
   ],
-  "SELECT submission_id, job_id, agency_identifier,allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3) AS object_class, CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, tas, account_num, program_activity_code, program_activity_name, sub_account_code, SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe FROM certified_object_class_program_activity WHERE submission_id = %s GROUP BY submission_id, job_id, agency_identifier, allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3), CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' ELSE by_direct_reimbursable_fun END, program_activity_code, program_activity_name, sub_account_code, tas, account_num": [
+  "SELECT submission_id, job_id, agency_identifier,allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3) AS object_class, CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' ELSE by_direct_reimbursable_fun END AS by_direct_reimbursable_fun, tas, account_num, program_activity_code, program_activity_name, sub_account_code, SUM(deobligations_recov_by_pro_cpe) AS deobligations_recov_by_pro_cpe, SUM(gross_outlay_amount_by_pro_cpe) AS gross_outlay_amount_by_pro_cpe, SUM(gross_outlay_amount_by_pro_fyb) AS gross_outlay_amount_by_pro_fyb, SUM(gross_outlays_delivered_or_cpe) AS gross_outlays_delivered_or_cpe, SUM(gross_outlays_delivered_or_fyb) AS gross_outlays_delivered_or_fyb, SUM(gross_outlays_undelivered_cpe) AS gross_outlays_undelivered_cpe, SUM(gross_outlays_undelivered_fyb) AS gross_outlays_undelivered_fyb, SUM(obligations_delivered_orde_cpe) AS obligations_delivered_orde_cpe, SUM(obligations_delivered_orde_fyb) AS obligations_delivered_orde_fyb, SUM(obligations_incurred_by_pr_cpe) AS obligations_incurred_by_pr_cpe, SUM(obligations_undelivered_or_cpe) AS obligations_undelivered_or_cpe, SUM(obligations_undelivered_or_fyb) AS obligations_undelivered_or_fyb, SUM(ussgl480100_undelivered_or_cpe) AS ussgl480100_undelivered_or_cpe, SUM(ussgl480100_undelivered_or_fyb) AS ussgl480100_undelivered_or_fyb, SUM(ussgl480200_undelivered_or_cpe) AS ussgl480200_undelivered_or_cpe, SUM(ussgl480200_undelivered_or_fyb) AS ussgl480200_undelivered_or_fyb, SUM(ussgl483100_undelivered_or_cpe) AS ussgl483100_undelivered_or_cpe, SUM(ussgl483200_undelivered_or_cpe) AS ussgl483200_undelivered_or_cpe, SUM(ussgl487100_downward_adjus_cpe) AS ussgl487100_downward_adjus_cpe, SUM(ussgl487200_downward_adjus_cpe) AS ussgl487200_downward_adjus_cpe, SUM(ussgl488100_upward_adjustm_cpe) AS ussgl488100_upward_adjustm_cpe, SUM(ussgl488200_upward_adjustm_cpe) AS ussgl488200_upward_adjustm_cpe, SUM(ussgl490100_delivered_orde_cpe) AS ussgl490100_delivered_orde_cpe, SUM(ussgl490100_delivered_orde_fyb) AS ussgl490100_delivered_orde_fyb, SUM(ussgl490200_delivered_orde_cpe) AS ussgl490200_delivered_orde_cpe, SUM(ussgl490800_authority_outl_cpe) AS ussgl490800_authority_outl_cpe, SUM(ussgl490800_authority_outl_fyb) AS ussgl490800_authority_outl_fyb, SUM(ussgl493100_delivered_orde_cpe) AS ussgl493100_delivered_orde_cpe, SUM(ussgl497100_downward_adjus_cpe) AS ussgl497100_downward_adjus_cpe, SUM(ussgl497200_downward_adjus_cpe) AS ussgl497200_downward_adjus_cpe, SUM(ussgl498100_upward_adjustm_cpe) AS ussgl498100_upward_adjustm_cpe, SUM(ussgl498200_upward_adjustm_cpe) AS ussgl498200_upward_adjustm_cpe FROM published_object_class_program_activity WHERE submission_id = %s GROUP BY submission_id, job_id, agency_identifier, allocation_transfer_agency, availability_type_code, beginning_period_of_availa, ending_period_of_availabil, main_account_code, RIGHT(object_class, 3), CASE WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '1' THEN 'D' WHEN length(object_class) = 4 AND LEFT(object_class, 1) = '2' THEN 'R' ELSE by_direct_reimbursable_fun END, program_activity_code, program_activity_name, sub_account_code, tas, account_num": [
     {
       "account_num": 0,
       "obligations_delivered_orde_cpe": "4500",
