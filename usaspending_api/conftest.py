@@ -20,7 +20,8 @@ from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
-from usaspending_api.common.helpers.generic_helper import generate_matviews, generate_test_db_connection_string
+from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
@@ -125,7 +126,7 @@ def django_db_setup(
 
             # temporarily updating the environment so commands in tests will point to the test database
             old_environ = os.environ.copy()
-            os.environ["DATABASE_URL"] = generate_test_db_connection_string()
+            os.environ["DATABASE_URL"] = get_database_dsn_string()
 
     def reset_environ():
         os.environ = old_environ
