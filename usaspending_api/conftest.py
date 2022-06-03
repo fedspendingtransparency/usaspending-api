@@ -124,12 +124,10 @@ def django_db_setup(
             ensure_business_categories_functions_exist()
             call_command("load_broker_static_data")
 
-            # The Django function "call_command", which runs a separate process of a django management command, will
-            # use the same settings as calling it normally via commandline. This is fine except when calling it in a
-            # Django test that usually involves the creation/teardown of a test database, and the new management command
-            # will work off the normal database (not the newly created test database). This resolves the issue by
-            # temporarily mocking the DATABASE_URL environment value (in python storage, not actually modifying your
-            # local environment) which will then allow the new python process to accurately point to the test database.
+            # This is necessary for any script/code run in a test that bases its database connection off the environment
+            # variables (instead of the normal settings). This resolves the issue by temporarily mocking the
+            # DATABASE_URL environment value (in python storage, not actually modifying your local environment)
+            # which will then allow the new python process to accurately point to the test database.
             old_environ = os.environ.get("DATABASE_URL", None)
             os.environ["DATABASE_URL"] = get_database_dsn_string()
 
