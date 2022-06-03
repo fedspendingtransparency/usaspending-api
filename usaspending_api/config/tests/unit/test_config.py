@@ -5,7 +5,7 @@ import os
 import pytest
 from pathlib import Path
 from pprint import pprint
-from pydantic import validator, root_validator
+from pydantic import validator, root_validator, PostgresDsn
 from pydantic.fields import ModelField
 from pydantic.error_wrappers import ValidationError
 
@@ -358,6 +358,145 @@ def test_config_loading():
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         cfg = _load_config()
         pprint(cfg.dict())
+
+
+def test_postgres_dsn_config_populated():
+    """Validate assumptions about parts of the PostgresDsn object getting populated by the default LocalConfig
+    config var values AND that the pytest-django fixtures have not altered the database name"""
+    pg_dsn = CONFIG.POSTGRES_DSN
+    assert pg_dsn.host is not None
+    assert pg_dsn.port is not None
+    assert pg_dsn.user is not None
+    assert pg_dsn.password is not None
+    assert pg_dsn.path is not None
+    assert pg_dsn.scheme is not None
+    assert not pg_dsn.path.startswith("/test_")
+
+
+def test_postgres_dsn_constructed_with_only_url_leaves_None_parts():
+    """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a URL.
+    Assumption is that the DSN can be used as string, but the "parts" will all be ``None``"""
+    pg_dsn = DefaultConfig.build_postgres_dsn(str(CONFIG.POSTGRES_DSN))
+
+    pg_dsn2 = PostgresDsn(str(CONFIG.POSTGRES_DSN), scheme="postgres")
+
+    assert pg_dsn == pg_dsn2
+    assert str(pg_dsn) == str(pg_dsn2)
+
+    assert pg_dsn.host is None
+    assert pg_dsn.port is None
+    assert pg_dsn.user is None
+    assert pg_dsn.password is None
+    assert pg_dsn.path is None
+    assert pg_dsn.scheme is not None
+
+    assert pg_dsn2.host is None
+    assert pg_dsn2.port is None
+    assert pg_dsn2.user is None
+    assert pg_dsn2.password is None
+    assert pg_dsn2.path is None
+    assert pg_dsn2.scheme is not None
+
+
+def test_postgres_dsn_constructed_with_only_parts_is_complete_and_consistent():
+    """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a parts.
+    Assumption is that the DSN used as a string is composed of the parts"""
+    pg_dsn = DefaultConfig.build_postgres_dsn(
+        postgres_host="injected_host",
+        postgres_port="0000",
+        postgres_user="injected_user",
+        postgres_password="injected_password",
+        postgres_db="injected_db",
+    )
+
+    pg_dsn2 = PostgresDsn(
+        url=None,
+        scheme="postgres",
+        host="injected_host",
+        port="0000",
+        user="injected_user",
+        password="injected_password",
+        path="/injected_db",
+    )
+
+    assert pg_dsn == pg_dsn2
+    assert str(pg_dsn) == str(pg_dsn2)
+
+    assert str(pg_dsn) is not None
+    assert pg_dsn.host is not None
+    assert pg_dsn.port is not None
+    assert pg_dsn.user is not None
+    assert pg_dsn.password is not None
+    assert pg_dsn.path is not None
+    assert pg_dsn.scheme is not None
+
+    assert str(pg_dsn2) is not None
+    assert pg_dsn2.host is not None
+    assert pg_dsn2.port is not None
+    assert pg_dsn2.user is not None
+    assert pg_dsn2.password is not None
+    assert pg_dsn2.path is not None
+    assert pg_dsn2.scheme is not None
+
+    assert pg_dsn2.host in str(pg_dsn2)
+    assert pg_dsn2.port in str(pg_dsn2)
+    assert pg_dsn2.user in str(pg_dsn2)
+    assert pg_dsn2.password in str(pg_dsn2)
+    assert pg_dsn2.path in str(pg_dsn2)
+
+
+def test_postgres_dsn_constructed_with_url_and_parts_can_diverge():
+    """Confirm unexpected behavior about parts of the PostgresDsn object getting populated when constructed with both a
+    URL and parts. Behavior is that it allows the URL and the parts to differ"""
+    pg_dsn = DefaultConfig.build_postgres_dsn(
+        database_url=str(CONFIG.POSTGRES_DSN),
+        postgres_host="injected_host",
+        postgres_port="0000",
+        postgres_user="injected_user",
+        postgres_password="injected_password",
+        postgres_db="injected_db",
+    )
+
+    pg_dsn2 = PostgresDsn(
+        url=str(CONFIG.POSTGRES_DSN),
+        scheme="postgres",
+        host="injected_host",
+        port="0000",
+        user="injected_user",
+        password="injected_password",
+        path="/injected_db",
+    )
+
+    assert pg_dsn == pg_dsn2
+    assert str(pg_dsn) == str(pg_dsn2)
+
+    assert pg_dsn.host is not None
+    assert pg_dsn.port is not None
+    assert pg_dsn.user is not None
+    assert pg_dsn.password is not None
+    assert pg_dsn.path is not None
+    assert pg_dsn.scheme is not None
+
+    assert pg_dsn2.host is not None
+    assert pg_dsn2.port is not None
+    assert pg_dsn2.user is not None
+    assert pg_dsn2.password is not None
+    assert pg_dsn2.path is not None
+    assert pg_dsn2.scheme is not None
+
+    # Confirm that the constructor allows for parts of the URL string provided to be different than the component
+    # parts that are also provided (not really a good thing, but it is how it behaves)
+    assert pg_dsn.host not in str(pg_dsn)
+    assert pg_dsn.port not in str(pg_dsn)
+    assert pg_dsn.user not in str(pg_dsn)
+    assert pg_dsn.password not in str(pg_dsn)
+    assert pg_dsn.path not in str(pg_dsn)
+
+    assert pg_dsn2.host not in str(pg_dsn2)
+    assert pg_dsn2.port not in str(pg_dsn2)
+    assert pg_dsn2.user not in str(pg_dsn2)
+    assert pg_dsn2.password not in str(pg_dsn2)
+    assert pg_dsn2.path not in str(pg_dsn2)
 
 
 def test_cannot_instantiate_default_settings():
