@@ -44,7 +44,9 @@ def test_create_delta_table_for_awards(spark, s3_unittest_data_bucket, hive_unit
     _verify_delta_table_creation(spark, "awards", s3_unittest_data_bucket)
 
 
-def test_create_delta_table_for_financial_accounts_by_awards(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def test_create_delta_table_for_financial_accounts_by_awards(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
     _verify_delta_table_creation(spark, "financial_accounts_by_awards", s3_unittest_data_bucket)
 
 

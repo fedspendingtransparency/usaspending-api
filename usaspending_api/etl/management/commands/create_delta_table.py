@@ -7,10 +7,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
-from usaspending_api.awards.delta_models import (
-    awards_sql_string,
-    financial_accounts_by_awards_sql_string
-)
+from usaspending_api.awards.delta_models import awards_sql_string, financial_accounts_by_awards_sql_string
 from usaspending_api.recipient.delta_models import (
     recipient_lookup_sql_string,
     recipient_profile_sql_string,
