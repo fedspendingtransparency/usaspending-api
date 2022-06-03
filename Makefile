@@ -205,8 +205,7 @@ docker-compose-spark-submit:
 	${if ${python_script}, \
 		${python_script}, \
 		/project/manage.py ${django_command} \
-	} \
-	${job_args}
+	}
 
 .PHONY: localhost-spark-submit
 localhost-spark-submit:
@@ -215,5 +214,4 @@ localhost-spark-submit:
 	${if ${python_script}, \
 		${python_script}, \
 		manage.py ${django_command} \
-	} \
-	${job_args}
+	}
