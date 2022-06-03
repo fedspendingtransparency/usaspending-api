@@ -12,7 +12,6 @@ import logging
 from usaspending_api.awards.models import Award
 from usaspending_api.etl.elasticsearch_loader_helpers.aggregate_key_functions import return_one_level
 from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
-from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
@@ -91,9 +90,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
         json_request = self.validate_request_data(request.data)
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
-        self.filters = add_date_range_comparison_types(
-            json_request.get("filters"), self.is_subaward, gte_date_type="action_date", lte_date_type="date_signed"
-        )
+        filters = json_request.get("filters", {})
+        if not self.is_subaward and filters.get("time_period") is not None:
+            for time_period in filters["time_period"]:
+                time_period["gte_date_type"] = time_period.get("date_type", "action_date")
+                time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
+        self.filters = filters
         self.fields = json_request["fields"]
         self.pagination = {
             "limit": json_request["limit"],

@@ -19,6 +19,7 @@ from usaspending_api.transactions.delta_models import (
     transaction_normalized_sql_string,
     transaction_search_sql_string,
 )
+from usaspending_api.search.delta_models.award_search import award_search_sql_string
 
 from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
 from usaspending_api.awards.models import TransactionFABS, TransactionFPDS, TransactionNormalized
@@ -95,6 +96,14 @@ TABLE_SPEC = {
         "partition_column_type": None,  # Placeholder for now
         "delta_table_create_sql": transaction_search_sql_string,
         "custom_schema": None,  # Placeholder for now
+    },
+    "award_search": {
+        "schema_sql_string": award_search_sql_string,
+        "source_table": None,
+        "destination_database": "rpt",
+        "partition_column": None,
+        "partition_column_type": None,
+        "custom_schema": None,
     },
 }
 
