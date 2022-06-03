@@ -298,8 +298,7 @@ def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[]
     differences = (
         left.withColumn("exists", lit(1))
             .alias("l")
-            .join(right.withColumn("exists", lit(1)).alias("r"), left[unique_key_col] == right[unique_key_col],
-                  "fullouter")
+            .join(right.withColumn("exists", lit(1)).alias("r"), left[unique_key_col] == right[unique_key_col], "fullouter")
             .withColumn("diff", expr(compare_expr))
     )
     cols_to_show = ["diff"] + [f"l.{c}" for c in compare_cols] + [f"r.{c}" for c in compare_cols]
