@@ -565,7 +565,7 @@ def create_ref_temp_views(spark: SparkSession):
     jdbc_conn_props = get_jdbc_connection_properties()
     rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in RDS_REF_TABLES]
 
-    logger.info(f'Creating the following tables under the global_temp database: {rds_ref_tables}')
+    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
     for ref_rdf_table in rds_ref_tables:
         spark_sql = f"""
         CREATE OR REPLACE GLOBAL TEMPORARY VIEW {ref_rdf_table}
@@ -577,6 +577,5 @@ def create_ref_temp_views(spark: SparkSession):
           dbtable '{ref_rdf_table}'
         )
         """
-        print(spark_sql)
         spark.sql(spark_sql)
-    logger.info(f'Created the reference views in the global_temp database')
+    logger.info(f"Created the reference views in the global_temp database")

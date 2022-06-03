@@ -240,16 +240,17 @@ def test_spark_write_to_s3_delta_from_db(
 
 
 @mark.django_db(transaction=True)
-def test_create_ref_temp_views(spark: SparkSession, db):
+def test_create_ref_temp_views(spark: SparkSession):
     # Add dummy data to each test views
     for rds_ref_table in RDS_REF_TABLES:
-        baker.make(rds_ref_table, _fill_optional=True)
-        baker.make(rds_ref_table, _fill_optional=True)
-        baker.make(rds_ref_table, _fill_optional=True)
+        baker.make(rds_ref_table)
+        baker.make(rds_ref_table)
+        baker.make(rds_ref_table)
 
     # make the temp views
     create_ref_temp_views(spark)
 
     # verify the data in the temp view matches the dummy data
     for rds_ref_table in RDS_REF_TABLES:
-        assert spark.sql(f"select count(*) from global_temp.{rds_ref_table._meta.db_table}").collect()[0][0] == 3
+        spark_count = spark.sql(f"select count(*) from global_temp.{rds_ref_table._meta.db_table}").collect()[0][0]
+        assert rds_ref_table.objects.count() == spark_count
