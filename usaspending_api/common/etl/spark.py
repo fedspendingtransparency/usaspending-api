@@ -266,18 +266,21 @@ def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_nam
 def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[], collect=False):
     """
     Compares two dataframes that share a schema and returns difference at a row level. 
-    Meant to be run in a databricks notebook.
     Args:
         left: assumes a DataFrame wtih a schema that matches the right DataFrame
         right: assumes a DataFrame wtih a schema that matches the right DataFrame
         unique_key_col: indidcates a unique indentification column for comparison
         compare_cols: list of columns to be compared, must exist in both left and right dataframe
-        collect: spark function to limit number of rows returned
-        If compare_cols is left as an empty list, ALL columns will be compared to each other
-        (for rows where unique_key_col values match).
-        Otherwise, specify the columns that determine "sameness" of rows
-    Returns:Row level differences based on the dataframes. If collect is called, output is returned 
-            if set to false, truncated output will be displayed, not returned
+            If compare_cols is left as an empty list, ALL columns will be compared to each other
+            (for rows where unique_key_col values match).
+            Otherwise, specify the columns that determine "sameness" of rows
+        collect: collect (bool): flag indicating whether to simply show and print the results 
+            (if False) or to instead run the Spark ``.collect()`` function on the diff results 
+            DataFrame and return that list of ``Row`` objects
+        
+    Returns:
+        Row level differences based on the dataframes. If collect is called, output is returned 
+        if set to false, truncated output will be displayed, not returned
     """
 
     if not compare_cols:
@@ -304,4 +307,4 @@ def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[]
     if collect:
         return differences.collect()
     else:
-        differences.show(truncate=False)
+        return differences.show(truncate=False)
