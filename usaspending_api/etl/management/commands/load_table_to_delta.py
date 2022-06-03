@@ -1,5 +1,3 @@
-import os
-
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -13,7 +11,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
-    get_jdbc_url_from_pg_uri,
+    get_jdbc_url,
     get_jvm_logger,
 )
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
@@ -73,14 +71,13 @@ class Command(BaseCommand):
         spark.sql(f"use {destination_database};")
 
         # Resolve JDBC URL for Source Database
-        jdbc_url = os.environ.get(JDBC_URL_KEY)
-        jdbc_url = get_jdbc_url_from_pg_uri(jdbc_url)
+        jdbc_url = get_jdbc_url()
         if not jdbc_url:
-            raise RuntimeError(f"Looking for JDBC URL passed to env var '{JDBC_URL_KEY}', but not set.")
+            raise RuntimeError(f"Could'nt find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
-        if partition_column_type == "numeric":
+        if partition_column_type in ("numeric", "long"):
             is_numeric_partitioning_col = True
             is_date_partitioning_col = False
         elif partition_column_type == "date":
