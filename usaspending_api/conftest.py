@@ -128,15 +128,15 @@ def django_db_setup(
             # This is necessary for any script/code run in a test that bases its database connection off the postgres
             # config. This resolves the issue by temporarily mocking the POSTGRES_DSN to accurately point to the test
             # database.
-            old_ps_url = CONFIG.POSTGRES_URL
+            old_db_url = CONFIG.DATABASE_URL
             old_ps_db = CONFIG.POSTGRES_DB
             old_ps_dsn = CONFIG.POSTGRES_DSN
 
             test_db_name = f"test_{CONFIG.POSTGRES_DB}"
-            CONFIG.POSTGRES_URL = get_database_dsn_string()
+            CONFIG.DATABASE_URL = get_database_dsn_string()
             CONFIG.POSTGRES_DB = test_db_name
             CONFIG.POSTGRES_DSN = CONFIG.build_postgres_dsn(
-                postgres_url=get_database_dsn_string(),
+                database_url=get_database_dsn_string(),
                 postgres_user=CONFIG.POSTGRES_DSN.user,
                 postgres_password=CONFIG.POSTGRES_DSN.password,
                 postgres_host=CONFIG.POSTGRES_DSN.host,
@@ -146,7 +146,7 @@ def django_db_setup(
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down
     def reset_postgres_dsn():
-        CONFIG.POSTGRES_URL = old_ps_url
+        CONFIG.DATABASE_URL = old_db_url
         CONFIG.POSTGRES_DB = old_ps_db
         CONFIG.POSTGRES_DSN = old_ps_dsn
 
