@@ -125,7 +125,6 @@ def django_db_setup(
             ensure_business_categories_functions_exist()
             call_command("load_broker_static_data")
 
-
             # This is necessary for any script/code run in a test that bases its database connection off the postgres
             # config. This resolves the issue by temporarily mocking the POSTGRES_DSN to accurately point to the test
             # database.
