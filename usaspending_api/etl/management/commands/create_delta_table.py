@@ -50,8 +50,8 @@ TABLE_SPEC = {
         "schema_sql_string": sam_recipient_sql_string,
         "source_table": "duns",
         "destination_database": "raw",
-        "partition_column": "broker_duns_id",
-        "partition_column_type": "numeric",
+        "partition_column": None,
+        "partition_column_type": None,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
     },
     "transaction_fabs": {
