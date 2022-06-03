@@ -39,6 +39,9 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
                 psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
 
             # Equalize dates - Postgres TIMESTAMPs may include time zones while the Spark TIMESTAMPs may not
+            # TODO: Initial implementation by naively stripping off timezone info and comparing core date.
+            #  Eventually refactor to normalize timezone-aware datetime objects from psql to UTC, but shifting their
+            #  core date and time to UTC before/after stripping timezone info
             if isinstance(psql_val, datetime):
                 psql_val = psql_val.replace(tzinfo=None)
 
