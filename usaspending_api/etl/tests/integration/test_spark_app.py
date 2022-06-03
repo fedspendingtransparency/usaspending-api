@@ -184,7 +184,7 @@ def test_spark_write_to_s3_delta_from_db(
     # ==== transaction_fabs ====
     table_name = "transaction_fabs"
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
-    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
+    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
@@ -202,7 +202,7 @@ def test_spark_write_to_s3_delta_from_db(
     # ==== transaction_fpds ====
     table_name = "transaction_fpds"
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
-    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
+    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
