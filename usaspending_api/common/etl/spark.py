@@ -263,7 +263,6 @@ def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_nam
     )
 
 
-
 def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[], collect=False):
     """
     Compares two dataframes that share a schema and returns difference at a row level.
@@ -310,4 +309,3 @@ def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[]
         return differences.collect()
     else:
         return differences.show(truncate=False)
-
