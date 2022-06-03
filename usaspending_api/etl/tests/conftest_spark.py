@@ -27,9 +27,9 @@ from usaspending_api.config import CONFIG
 #    uncertain of compatibility, see what working version-sets are aligned to an Amazon EMR release here:
 #    https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html
 _SCALA_VERSION = "2.12"
-_HADOOP_VERSION = "3.2.0"
-_SPARK_VERSION = "3.1.2"
-_DELTA_VERSION = "1.0.0"
+_HADOOP_VERSION = "3.3.1"
+_SPARK_VERSION = "3.2.1"
+_DELTA_VERSION = "1.2.1"
 
 # List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
 # executor class paths
@@ -116,7 +116,7 @@ def s3_unittest_data_bucket(s3_unittest_data_bucket_setup_and_teardown):
 
 
 @fixture(scope="session")
-def spark() -> SparkSession:
+def spark(tmp_path_factory) -> SparkSession:
     """Throw an error if coming into a test using this fixture which needs to create a
     NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
     AND, proactively cleanup any SparkContext created by this test after it completes
@@ -129,6 +129,12 @@ def spark() -> SparkSession:
             "Error: Test session cannot create a SparkSession because one already exists at the time this "
             "test-session-scoped fixture is being evaluated."
         )
+
+    # Storing spark warehouse and hive metastore_db in a tmpdir so it does not leave cruft behind from test session runs
+    # So as not to have interfering schemas and tables in the metastore_db from individual test run to run,
+    # another test-scoped fixture should be created, pulling this in, and blowing away all schemas and tables as part
+    # of each run
+    spark_sql_warehouse_dir = str(tmp_path_factory.mktemp(basename="spark-warehouse", numbered=False))
 
     extra_conf = {
         # This is the default, but being explicit
@@ -146,11 +152,15 @@ def spark() -> SparkSession:
         # See comment below about old date and time values cannot parsed without these
         "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
         "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+        # For Spark SQL warehouse dir and Hive metastore_db
+        "spark.sql.warehouse.dir": spark_sql_warehouse_dir,
+        "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={spark_sql_warehouse_dir}/metastore_db;create=true",
     }
     spark = configure_spark_session(
         app_name="Unit Test Session",
         log_level=logging.INFO,
         log_spark_config_vals=True,
+        enable_hive_support=True,
         **extra_conf,
     )  # type: SparkSession
 
@@ -160,7 +170,44 @@ def spark() -> SparkSession:
 
 
 @fixture
-def delta_lake_unittest_schema(spark: SparkSession):
+def hive_unittest_metastore_db(spark: SparkSession):
+    """A fixture that WIPES all of the schemas (aka databases) and tables in each schema from the hive metastore_db
+    at the end of each test run, so that the metastore is fresh.
+
+    NOTE: This relies on setup in the session-scoped ``spark`` fixture:
+      - That fixture must enableHiveSupport() when creating the SparkSession
+      - That fixture needs to set the filesystem location of the hive metastore_db (Derby DB) folder in a tmp dir
+        - (so that it doesn't interfere or leave cruft behind)
+      - That fixture needs to set the Spark SQL Warehouse dir in a tmp dir
+        - (so that it doesn't interfere or leave cruft behind)
+
+    WARNING: If the spark test fixture is not setup to initialize the hive metastore_db in this way for the
+    SparkSession used by tests, then this fixture may inadvertently wipe all hive schemas and tables in you dev env
+    """
+    metastore_db_path = None
+    metastore_db_url = spark.conf.get("spark.hadoop.javax.jdo.option.ConnectionURL")
+    if metastore_db_url:
+        metastore_db_path = metastore_db_url.split("=")[1].split(";")[0]
+
+    yield metastore_db_path
+
+    schemas_in_metastore = [s[0] for s in spark.sql("SHOW SCHEMAS").collect()]
+
+    # Cascade will remove the tables and functions in each SCHEMA *other than* the default (cannot drop that one)
+    for s in schemas_in_metastore:
+        if s == "default":
+            continue
+        spark.sql(f"DROP SCHEMA IF EXISTS {s} CASCADE")
+
+    # Handle default schema specially
+    spark.sql("USE DEFAULT")
+    tables_in_default_schema = [t for t in spark.sql("SHOW TABLES").collect()]
+    for t in tables_in_default_schema:
+        spark.sql(f"DROP TABLE IF EXISTS {t['tableName']} CASCADE")
+
+
+@fixture
+def delta_lake_unittest_schema(spark: SparkSession, hive_unittest_metastore_db):
     """Specify which Delta 'SCHEMA' to use (NOTE: 'SCHEMA' and 'DATABASE' are interchangeable in Delta Spark SQL),
     and cleanup any objects created in the schema after the test run."""
 
@@ -171,5 +218,4 @@ def delta_lake_unittest_schema(spark: SparkSession):
     # Yield the name of the db that test delta lake tables and records should be put in.
     yield DELTA_LAKE_UNITTEST_SCHEMA_NAME
 
-    # Cascade will remove the tables and functions in this SCHEMA
-    spark.sql(f"DROP SCHEMA IF EXISTS {DELTA_LAKE_UNITTEST_SCHEMA_NAME} CASCADE")
+    # The dependent hive_unittest_metastore_db fixture will take care of cleaning up this schema post-test

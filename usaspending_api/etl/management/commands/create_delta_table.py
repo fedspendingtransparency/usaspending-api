@@ -7,15 +7,29 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
+from usaspending_api.awards.delta_models import awards_sql_string
 from usaspending_api.recipient.delta_models import (
     recipient_lookup_sql_string,
     recipient_profile_sql_string,
     sam_recipient_sql_string,
 )
-from usaspending_api.transactions.delta_models import transaction_fabs_sql_string, transaction_fpds_sql_string
+from usaspending_api.transactions.delta_models import (
+    transaction_fabs_sql_string,
+    transaction_fpds_sql_string,
+    transaction_normalized_sql_string,
+    transaction_search_sql_string,
+)
 
 
 TABLE_SPEC = {
+    "awards": {
+        "schema_sql_string": awards_sql_string,
+        "source_table": "awards",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "long",
+        "custom_schema": "",
+    },
     "recipient_lookup": {
         "schema_sql_string": recipient_lookup_sql_string,
         "source_table": "recipient_lookup",
@@ -55,6 +69,22 @@ TABLE_SPEC = {
         "partition_column": "detached_award_procurement_id",
         "partition_column_type": "numeric",
         "custom_schema": "",
+    },
+    "transaction_normalized": {
+        "schema_sql_string": transaction_normalized_sql_string,
+        "source_table": "transaction_normalized",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "long",
+        "custom_schema": "",
+    },
+    "transaction_search": {
+        "schema_sql_string": transaction_search_sql_string,
+        "source_table": None,  # Placeholder for now
+        "destination_database": "rpt",
+        "partition_column": None,  # Placeholder for now
+        "partition_column_type": None,  # Placeholder for now
+        "custom_schema": None,  # Placeholder for now
     },
 }
 
