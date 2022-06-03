@@ -11,7 +11,7 @@ from django.test import override_settings
 from pathlib import Path
 
 from usaspending_api.config import CONFIG
-from usaspending_api.common.helpers.sql_helpers import execute_sql_simple, get_database_dsn_string
+from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
     ensure_business_categories_functions_exist,
