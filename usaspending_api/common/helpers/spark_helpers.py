@@ -560,7 +560,9 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
 
 
 def create_ref_temp_views(spark: SparkSession):
-    """ Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables """
+    """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
+    Note: They will all be listed under global_temp.{table_name}
+    """
     logger = get_jvm_logger(spark)
     jdbc_conn_props = get_jdbc_connection_properties()
     rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in RDS_REF_TABLES]
