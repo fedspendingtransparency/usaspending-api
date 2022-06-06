@@ -100,7 +100,9 @@ class DefaultConfig(BaseSettings):
                     cls, values, "USASPENDING_DB_HOST", lambda: url_parts.hostname
                 )
             if not values["USASPENDING_DB_PORT"]:
-                values = eval_default_factory_from_root_validator(cls, values, "USASPENDING_DB_PORT", lambda: url_parts.port)
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "USASPENDING_DB_PORT", lambda: url_parts.port
+                )
             if not values["USASPENDING_DB_NAME"]:
                 values = eval_default_factory_from_root_validator(
                     cls, values, "USASPENDING_DB_NAME", lambda: url_parts.path.lstrip("/")
@@ -108,7 +110,9 @@ class DefaultConfig(BaseSettings):
             if not values["USASPENDING_DB_USER"]:
                 values = eval_default_factory_from_root_validator(cls, values, "USASPENDING_DB_USER", lambda: username)
             if not values["USASPENDING_DB_PASSWORD"]:
-                values = eval_default_factory_from_root_validator(cls, values, "USASPENDING_DB_PASSWORD", lambda: password)
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "USASPENDING_DB_PASSWORD", lambda: password
+                )
 
         # If DATABASE_URL is not provided, try to build-it-up from provided parts, then backfill it
         if not is_database_url_provided:
