@@ -15,8 +15,11 @@ from pyspark.sql import SparkSession, Row
 from pytest import fixture, mark
 from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
 from usaspending_api.common.helpers.spark_helpers import (
+    create_ref_temp_views,
     get_jvm_logger,
     get_jdbc_url_from_pg_uri,
+    get_jdbc_connection_properties,
+    RDS_REF_TABLES,
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
@@ -153,8 +156,6 @@ def test_spark_write_to_s3_delta_from_db(
 ):
     """Test that we can read from Postgres DB and write to new delta tables,
     and the tables are created and data gets there"""
-    jdbc_conn_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
-
     pg_uri = get_database_dsn_string()
     jdbc_url = get_jdbc_url_from_pg_uri(pg_uri)
     if not jdbc_url.startswith("jdbc:postgresql://"):
@@ -165,7 +166,7 @@ def test_spark_write_to_s3_delta_from_db(
     # ==== transaction_normalized ====
     table_name = "transaction_normalized"
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
-    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
+    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
@@ -183,7 +184,7 @@ def test_spark_write_to_s3_delta_from_db(
     # ==== transaction_fabs ====
     table_name = "transaction_fabs"
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
-    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
+    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
@@ -201,7 +202,7 @@ def test_spark_write_to_s3_delta_from_db(
     # ==== transaction_fpds ====
     table_name = "transaction_fpds"
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
-    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=jdbc_conn_props)
+    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
@@ -236,3 +237,20 @@ def test_spark_write_to_s3_delta_from_db(
     assert spark.sql("select count(*) from transaction_normalized").collect()[0][0] == 2
     assert spark.sql("select count(*) from transaction_fabs").collect()[0][0] == 1
     assert spark.sql("select count(*) from transaction_fpds").collect()[0][0] == 1
+
+
+@mark.django_db(transaction=True)
+def test_create_ref_temp_views(spark: SparkSession):
+    # Add dummy data to each test views
+    for rds_ref_table in RDS_REF_TABLES:
+        baker.make(rds_ref_table)
+        baker.make(rds_ref_table)
+        baker.make(rds_ref_table)
+
+    # make the temp views
+    create_ref_temp_views(spark)
+
+    # verify the data in the temp view matches the dummy data
+    for rds_ref_table in RDS_REF_TABLES:
+        spark_count = spark.sql(f"select count(*) from global_temp.{rds_ref_table._meta.db_table}").collect()[0][0]
+        assert rds_ref_table.objects.count() == spark_count

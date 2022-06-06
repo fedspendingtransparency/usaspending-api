@@ -22,6 +22,39 @@ from pyspark.sql.types import StringType
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
 
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.recipient.models import StateData
+from usaspending_api.references.models import (
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+)
+
+RDS_REF_TABLES = [
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+    StateData,
+    FederalAccount,
+    TreasuryAppropriationAccount,
+]
+
 
 def get_active_spark_context() -> SparkContext:
     """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
@@ -524,3 +557,27 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
         for (k, v) in {str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()}.items()
         if config_key_contains in k
     ]
+
+
+def create_ref_temp_views(spark: SparkSession):
+    """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
+    Note: They will all be listed under global_temp.{table_name}
+    """
+    logger = get_jvm_logger(spark)
+    jdbc_conn_props = get_jdbc_connection_properties()
+    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in RDS_REF_TABLES]
+
+    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
+    for ref_rdf_table in rds_ref_tables:
+        spark_sql = f"""
+        CREATE OR REPLACE GLOBAL TEMPORARY VIEW {ref_rdf_table}
+        USING JDBC
+        OPTIONS (
+          driver '{jdbc_conn_props["driver"]}',
+          fetchsize '{jdbc_conn_props["fetchsize"]}',
+          url '{get_jdbc_url()}',
+          dbtable '{ref_rdf_table}'
+        )
+        """
+        spark.sql(spark_sql)
+    logger.info(f"Created the reference views in the global_temp database")
