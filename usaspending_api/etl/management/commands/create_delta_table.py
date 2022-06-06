@@ -7,7 +7,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
-from usaspending_api.awards.delta_models import awards_sql_string
+from usaspending_api.awards.delta_models import awards_sql_string, financial_accounts_by_awards_sql_string
 from usaspending_api.recipient.delta_models import (
     recipient_lookup_sql_string,
     recipient_profile_sql_string,
@@ -19,15 +19,32 @@ from usaspending_api.transactions.delta_models import (
     transaction_normalized_sql_string,
     transaction_search_sql_string,
 )
+from usaspending_api.search.delta_models.award_search import award_search_sql_string
 
 
 TABLE_SPEC = {
+    "award_search": {
+        "schema_sql_string": award_search_sql_string,
+        "source_table": None,
+        "destination_database": "rpt",
+        "partition_column": None,
+        "partition_column_type": None,
+        "custom_schema": None,
+    },
     "awards": {
         "schema_sql_string": awards_sql_string,
         "source_table": "awards",
         "destination_database": "raw",
         "partition_column": "id",
-        "partition_column_type": "long",
+        "partition_column_type": "numeric",
+        "custom_schema": "",
+    },
+    "financial_accounts_by_awards": {
+        "schema_sql_string": financial_accounts_by_awards_sql_string,
+        "source_table": "financial_accounts_by_awards",
+        "destination_database": "raw",
+        "partition_column": "financial_accounts_by_awards_id",
+        "partition_column_type": "numeric",
         "custom_schema": "",
     },
     "recipient_lookup": {
@@ -75,7 +92,7 @@ TABLE_SPEC = {
         "source_table": "transaction_normalized",
         "destination_database": "raw",
         "partition_column": "id",
-        "partition_column_type": "long",
+        "partition_column_type": "numeric",
         "custom_schema": "",
     },
     "transaction_search": {
