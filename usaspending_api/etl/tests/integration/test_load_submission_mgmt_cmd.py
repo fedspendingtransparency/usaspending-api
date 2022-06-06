@@ -322,7 +322,7 @@ def _assemble_broker_submission_records() -> list:
         "publishable": False,
         "reporting_fiscal_period": 0,
         "reporting_fiscal_year": 0,
-        "d2_submission": False,
+        "is_fabs": False,
         "publishing_user_id": None,
         "frec_code": None,
     }

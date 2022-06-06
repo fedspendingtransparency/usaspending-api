@@ -138,7 +138,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     reporting_fiscal_year,
                     reporting_fiscal_period,
                     is_quarter_format,
-                    d2_submission,
+                    is_fabs,
                     publish_status_id,
                     updated_at
                 ) (values

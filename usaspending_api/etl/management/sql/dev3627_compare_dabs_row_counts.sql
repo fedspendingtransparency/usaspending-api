@@ -113,7 +113,7 @@ INNER JOIN dblink(
         ) AS count_file_c
     FROM submission AS s
     WHERE
-            s.d2_submission = FALSE
+            s.is_fabs = FALSE
         AND s.publish_status_id IN (2, 3)'
 ) AS bs (submission_id integer, count_file_a integer, count_file_b integer, count_file_c integer) USING (submission_id)
 WHERE
