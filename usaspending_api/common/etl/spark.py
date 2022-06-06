@@ -1,4 +1,4 @@
-from pyspark.sql.functions import to_date
+from pyspark.sql.functions import to_date, lit, expr
 from pyspark.sql.types import StructType
 from pyspark.sql import DataFrame, SparkSession
 
@@ -261,3 +261,50 @@ def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_nam
         WHEN NOT MATCHED THEN INSERT *
     """
     )
+
+
+def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[], collect=False):
+    """
+    Compares two dataframes that share a schema and returns difference at a row level.
+    Args:
+        left: assumes a DataFrame wtih a schema that matches the right DataFrame
+        right: assumes a DataFrame wtih a schema that matches the right DataFrame
+        unique_key_col: indidcates a unique indentification column for comparison
+        compare_cols: list of columns to be compared, must exist in both left and right dataframe
+            If compare_cols is left as an empty list, ALL columns will be compared to each other
+            (for rows where unique_key_col values match).
+            Otherwise, specify the columns that determine "sameness" of rows
+        collect: collect (bool): flag indicating whether to simply show and print the results
+            (if False) or to instead run the Spark ``.collect()`` function on the diff results
+            DataFrame and return that list of ``Row`` objects
+
+    Returns:
+        Row level differences based on the dataframes. If collect is called, output is returned
+        if set to false, truncated output will be displayed, not returned
+    """
+
+    if not compare_cols:
+        compare_cols = set(left.schema.names + right.schema.names)
+    distinct_stmts = " ".join([f"WHEN l.{c} IS DISTINCT FROM r.{c} THEN 'C'" for c in compare_cols])
+    compare_expr = f"""
+     CASE
+         WHEN l.exists IS NULL THEN 'I'
+         WHEN r.exists IS NULL THEN 'D'
+         {distinct_stmts}
+         ELSE 'N'
+     END
+     """
+
+    differences = (
+        left.withColumn("exists", lit(1))
+        .alias("l")
+        .join(right.withColumn("exists", lit(1)).alias("r"), left[unique_key_col] == right[unique_key_col], "fullouter")
+        .withColumn("diff", expr(compare_expr))
+    )
+    cols_to_show = ["diff"] + [f"l.{c}" for c in compare_cols] + [f"r.{c}" for c in compare_cols]
+    differences = differences.select(*cols_to_show)
+    # NOTE: .show() shows only a few rows. Call with collect=True to get ALL results, then show
+    if collect:
+        return differences.collect()
+    else:
+        return differences.show(truncate=False)
