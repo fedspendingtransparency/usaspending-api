@@ -22,32 +22,41 @@ from usaspending_api.transactions.delta_models import (
 from usaspending_api.search.delta_models.award_search import award_search_sql_string
 
 from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
-from usaspending_api.awards.models import TransactionFABS, TransactionFPDS, TransactionNormalized
+from usaspending_api.awards.models import (
+    Award,
+    FinancialAccountsByAwards,
+    TransactionFABS,
+    TransactionFPDS,
+    TransactionNormalized,
+)
 
 
 TABLE_SPEC = {
     "award_search": {
-        "schema_sql_string": award_search_sql_string,
+        "model": None,
         "source_table": None,
         "destination_database": "rpt",
         "partition_column": None,
         "partition_column_type": None,
+        "delta_table_create_sql": award_search_sql_string,
         "custom_schema": None,
     },
     "awards": {
-        "delta_table_create_sql": awards_sql_string,
+        "model": Award,
         "source_table": "awards",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "delta_table_create_sql": awards_sql_string,
         "custom_schema": "",
     },
     "financial_accounts_by_awards": {
-        "schema_sql_string": financial_accounts_by_awards_sql_string,
+        "model": FinancialAccountsByAwards,
         "source_table": "financial_accounts_by_awards",
         "destination_database": "raw",
         "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
+        "delta_table_create_sql": financial_accounts_by_awards_sql_string,
         "custom_schema": "",
     },
     "recipient_lookup": {
