@@ -362,7 +362,7 @@ def test_config_loading():
 
 def test_postgres_dsn_config_populated():
     """Validate assumptions about parts of the PostgresDsn object getting populated by the default LocalConfig
-    config var values AND that the pytest-django fixtures have not altered the database name"""
+    config var values"""
     pg_dsn = CONFIG.POSTGRES_DSN
     assert pg_dsn.host is not None
     assert pg_dsn.port is not None
@@ -370,7 +370,6 @@ def test_postgres_dsn_config_populated():
     assert pg_dsn.password is not None
     assert pg_dsn.path is not None
     assert pg_dsn.scheme is not None
-    assert not pg_dsn.path.startswith("/test_")
 
 
 def test_postgres_dsn_constructed_with_only_url_leaves_None_parts():
