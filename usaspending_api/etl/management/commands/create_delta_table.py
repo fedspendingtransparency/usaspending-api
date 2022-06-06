@@ -7,7 +7,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
-from usaspending_api.awards.delta_models import awards_sql_string
+from usaspending_api.awards.delta_models import awards_sql_string, financial_accounts_by_awards_sql_string
 from usaspending_api.recipient.delta_models import (
     recipient_lookup_sql_string,
     recipient_profile_sql_string,
@@ -21,79 +21,106 @@ from usaspending_api.transactions.delta_models import (
 )
 from usaspending_api.search.delta_models.award_search import award_search_sql_string
 
+from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
+from usaspending_api.awards.models import (
+    Award,
+    FinancialAccountsByAwards,
+    TransactionFABS,
+    TransactionFPDS,
+    TransactionNormalized,
+)
+
 
 TABLE_SPEC = {
-    "awards": {
-        "schema_sql_string": awards_sql_string,
-        "source_table": "awards",
-        "destination_database": "raw",
-        "partition_column": "id",
-        "partition_column_type": "long",
-        "custom_schema": "",
-    },
-    "recipient_lookup": {
-        "schema_sql_string": recipient_lookup_sql_string,
-        "source_table": "recipient_lookup",
-        "destination_database": "raw",
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "custom_schema": "",
-    },
-    "recipient_profile": {
-        "schema_sql_string": recipient_profile_sql_string,
-        "source_table": "recipient_profile",
-        "destination_database": "raw",
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "custom_schema": "",
-    },
-    "sam_recipient": {
-        "schema_sql_string": sam_recipient_sql_string,
-        "source_table": "duns",
-        "destination_database": "raw",
-        "partition_column": "broker_duns_id",
-        "partition_column_type": "numeric",
-        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
-    },
-    "transaction_fabs": {
-        "schema_sql_string": transaction_fabs_sql_string,
-        "source_table": "transaction_fabs",
-        "destination_database": "raw",
-        "partition_column": "published_fabs_id",
-        "partition_column_type": "numeric",
-        "custom_schema": "",
-    },
-    "transaction_fpds": {
-        "schema_sql_string": transaction_fpds_sql_string,
-        "source_table": "transaction_fpds",
-        "destination_database": "raw",
-        "partition_column": "detached_award_procurement_id",
-        "partition_column_type": "numeric",
-        "custom_schema": "",
-    },
-    "transaction_normalized": {
-        "schema_sql_string": transaction_normalized_sql_string,
-        "source_table": "transaction_normalized",
-        "destination_database": "raw",
-        "partition_column": "id",
-        "partition_column_type": "long",
-        "custom_schema": "",
-    },
-    "transaction_search": {
-        "schema_sql_string": transaction_search_sql_string,
-        "source_table": None,  # Placeholder for now
-        "destination_database": "rpt",
-        "partition_column": None,  # Placeholder for now
-        "partition_column_type": None,  # Placeholder for now
-        "custom_schema": None,  # Placeholder for now
-    },
     "award_search": {
-        "schema_sql_string": award_search_sql_string,
+        "model": None,
         "source_table": None,
         "destination_database": "rpt",
         "partition_column": None,
         "partition_column_type": None,
+        "delta_table_create_sql": award_search_sql_string,
         "custom_schema": None,
+    },
+    "awards": {
+        "model": Award,
+        "source_table": "awards",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": awards_sql_string,
+        "custom_schema": "",
+    },
+    "financial_accounts_by_awards": {
+        "model": FinancialAccountsByAwards,
+        "source_table": "financial_accounts_by_awards",
+        "destination_database": "raw",
+        "partition_column": "financial_accounts_by_awards_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": financial_accounts_by_awards_sql_string,
+        "custom_schema": "",
+    },
+    "recipient_lookup": {
+        "model": RecipientLookup,
+        "source_table": "recipient_lookup",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": recipient_lookup_sql_string,
+        "custom_schema": "recipient_hash STRING",
+    },
+    "recipient_profile": {
+        "model": RecipientProfile,
+        "source_table": "recipient_profile",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": recipient_profile_sql_string,
+        "custom_schema": "recipient_hash STRING",
+    },
+    "sam_recipient": {
+        "model": DUNS,
+        "source_table": "duns",
+        "destination_database": "raw",
+        "partition_column": "broker_duns_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": sam_recipient_sql_string,
+        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
+    },
+    "transaction_fabs": {
+        "model": TransactionFABS,
+        "source_table": "transaction_fabs",
+        "destination_database": "raw",
+        "partition_column": "published_fabs_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_fabs_sql_string,
+        "custom_schema": "",
+    },
+    "transaction_fpds": {
+        "model": TransactionFPDS,
+        "source_table": "transaction_fpds",
+        "destination_database": "raw",
+        "partition_column": "detached_award_procurement_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_fpds_sql_string,
+        "custom_schema": "",
+    },
+    "transaction_normalized": {
+        "model": TransactionNormalized,
+        "source_table": "transaction_normalized",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_normalized_sql_string,
+        "custom_schema": "",
+    },
+    "transaction_search": {
+        "model": None,  # Placeholder for now
+        "source_table": None,  # Placeholder for now
+        "destination_database": "rpt",
+        "partition_column": None,  # Placeholder for now
+        "partition_column_type": None,  # Placeholder for now
+        "delta_table_create_sql": transaction_search_sql_string,
+        "custom_schema": None,  # Placeholder for now
     },
 }
 
@@ -155,7 +182,7 @@ class Command(BaseCommand):
 
         # Define Schema Using CREATE TABLE AS command
         spark.sql(
-            TABLE_SPEC[destination_table]["schema_sql_string"].format(
+            TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
                 DESTINATION_TABLE=destination_table,
                 DESTINATION_DATABASE=table_spec["destination_database"],
                 SPARK_S3_BUCKET=spark_s3_bucket,
