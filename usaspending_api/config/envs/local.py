@@ -45,7 +45,7 @@ class LocalConfig(DefaultConfig):
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
-    POSTGRES_HOST: str = "localhost"
+    POSTGRES_HOST: str = "usaspending-db"
     POSTGRES_PORT: str = "5432"
 
     # ==== [Elasticsearch] ====

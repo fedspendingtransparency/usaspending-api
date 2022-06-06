@@ -13,7 +13,7 @@ from usaspending_api.awards.models import (
     BrokerSubaward,
 )
 from usaspending_api.awards.v2.lookups.lookups import all_subaward_types, award_type_mapping
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
@@ -432,7 +432,7 @@ def award_data(transactional_db):
 
 
 def test_download_awards_with_all_award_types(client, award_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "prime_award_types": [*list(award_type_mapping.keys())],
@@ -455,7 +455,7 @@ def test_download_awards_with_all_award_types(client, award_data):
 
 
 def test_download_awards_with_all_prime_awards(client, award_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "prime_award_types": list(award_type_mapping.keys()),
@@ -477,7 +477,7 @@ def test_download_awards_with_all_prime_awards(client, award_data):
 
 
 def test_download_awards_with_some_prime_awards(client, award_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "prime_award_types": ["A", "IDV_B"],
@@ -499,7 +499,7 @@ def test_download_awards_with_some_prime_awards(client, award_data):
 
 
 def test_download_awards_with_all_sub_awards(client, award_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "sub_award_types": all_subaward_types,
@@ -521,7 +521,7 @@ def test_download_awards_with_all_sub_awards(client, award_data):
 
 
 def test_download_awards_with_some_sub_awards(client, award_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "sub_award_types": ["grant"],
@@ -544,7 +544,7 @@ def test_download_awards_with_some_sub_awards(client, award_data):
 
 def test_download_awards_with_domestic_scope(client, award_data):
     # Recipient Location Scope
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "prime_award_types": [*list(award_type_mapping.keys())],
@@ -567,7 +567,7 @@ def test_download_awards_with_domestic_scope(client, award_data):
     assert resp.json()["total_columns"] == 590
 
     # Place of Performance Scope
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "prime_award_types": [*list(award_type_mapping.keys())],
@@ -592,7 +592,7 @@ def test_download_awards_with_domestic_scope(client, award_data):
 
 def test_download_awards_with_foreign_scope(client, award_data):
     # Recipient Location Scope
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "prime_award_types": [*list(award_type_mapping.keys())],
@@ -615,7 +615,7 @@ def test_download_awards_with_foreign_scope(client, award_data):
     assert resp.json()["total_columns"] == 590
 
     # Place of Performance Scope
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
         "prime_award_types": [*list(award_type_mapping.keys())],
