@@ -10,6 +10,7 @@ from django.db import connections
 from django.test import override_settings
 from pathlib import Path
 
+from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
@@ -21,6 +22,7 @@ from usaspending_api.common.sqs.sqs_handler import (
     _FakeUnitTestFileBackedSQSQueue,
 )
 from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
@@ -122,6 +124,23 @@ def django_db_setup(
             add_view_protection()
             ensure_business_categories_functions_exist()
             call_command("load_broker_static_data")
+
+            # This is necessary for any script/code run in a test that bases its database connection off the postgres
+            # config. This resolves the issue by temporarily mocking the DATABASE_URL to accurately point to the test
+            # database.
+            old_db_url = CONFIG.DATABASE_URL
+            old_ps_db = CONFIG.USASPENDING_DB_NAME
+
+            test_db_name = f"test_{CONFIG.USASPENDING_DB_NAME}"
+            CONFIG.DATABASE_URL = get_database_dsn_string()
+            CONFIG.USASPENDING_DB_NAME = test_db_name
+
+    # This will be added to the finalizer which will be run when the newly made test database is being torn down
+    def reset_postgres_dsn():
+        CONFIG.DATABASE_URL = old_db_url
+        CONFIG.USASPENDING_DB_NAME = old_ps_db
+
+    request.addfinalizer(reset_postgres_dsn)
 
     def teardown_database():
         with django_db_blocker.unblock():

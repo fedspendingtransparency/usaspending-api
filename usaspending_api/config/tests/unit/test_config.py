@@ -1,3 +1,4 @@
+import shutil
 import sys
 from unittest.mock import patch
 
@@ -5,12 +6,13 @@ import os
 import pytest
 from pathlib import Path
 from pprint import pprint
-from pydantic import validator, root_validator
+from pydantic import validator, root_validator, PostgresDsn
 from pydantic.fields import ModelField
 from pydantic.error_wrappers import ValidationError
 
 from usaspending_api.config import CONFIG, _load_config
 from usaspending_api.config.envs import ENV_CODE_VAR
+from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR
 from usaspending_api.config.utils import (
     eval_default_factory,
     FACTORY_PROVIDED_VALUE,
@@ -345,11 +347,11 @@ def test_config_values():
     config_values: dict = CONFIG.dict()
     assert len(config_values) > 0
     pprint(config_values)
-    pg_dsn = CONFIG.POSTGRES_DSN
-    print(CONFIG.POSTGRES_DSN)
-    assert pg_dsn is not None
-    assert len(str(pg_dsn)) > 0
-    print(str(CONFIG.POSTGRES_DSN))
+    pg_uri = CONFIG.DATABASE_URL
+    print(CONFIG.DATABASE_URL)
+    assert pg_uri is not None
+    assert len(str(pg_uri)) > 0
+    print(str(CONFIG.DATABASE_URL))
 
 
 def test_config_loading():
@@ -358,6 +360,90 @@ def test_config_loading():
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         cfg = _load_config()
         pprint(cfg.dict())
+
+
+def test_database_url_config_populated():
+    """Validate that the pytest-django fixtures have not altered the database name when not relying on that fixture"""
+    pg_uri = CONFIG.DATABASE_URL
+    assert "/test_" not in pg_uri
+
+    assert CONFIG.USASPENDING_DB_HOST is not None
+    assert CONFIG.USASPENDING_DB_PORT is not None
+    assert CONFIG.USASPENDING_DB_NAME is not None
+    assert CONFIG.USASPENDING_DB_USER is not None
+    assert CONFIG.USASPENDING_DB_PASSWORD is not None
+
+    assert not CONFIG.USASPENDING_DB_NAME.startswith("test_")
+
+
+def test_postgres_dsn_constructed_with_only_url_leaves_None_parts():
+    """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a URL.
+    Assumption is that the DSN can be used as string, but the "parts" will all be ``None``"""
+    pg_dsn = PostgresDsn(str(CONFIG.DATABASE_URL), scheme="postgres")
+
+    assert pg_dsn.host is None
+    assert pg_dsn.port is None
+    assert pg_dsn.user is None
+    assert pg_dsn.password is None
+    assert pg_dsn.path is None
+    assert pg_dsn.scheme is not None
+
+
+def test_postgres_dsn_constructed_with_only_parts_is_complete_and_consistent():
+    """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a parts.
+    Assumption is that the DSN used as a string is composed of the parts"""
+    pg_dsn = PostgresDsn(
+        url=None,
+        scheme="postgres",
+        host="injected_host",
+        port="0000",
+        user="injected_user",
+        password="injected_password",
+        path="/injected_db",
+    )
+
+    assert str(pg_dsn) is not None
+    assert pg_dsn.host is not None
+    assert pg_dsn.port is not None
+    assert pg_dsn.user is not None
+    assert pg_dsn.password is not None
+    assert pg_dsn.path is not None
+    assert pg_dsn.scheme is not None
+
+    assert pg_dsn.host in str(pg_dsn)
+    assert pg_dsn.port in str(pg_dsn)
+    assert pg_dsn.user in str(pg_dsn)
+    assert pg_dsn.password in str(pg_dsn)
+    assert pg_dsn.path in str(pg_dsn)
+
+
+def test_postgres_dsn_constructed_with_url_and_parts_can_diverge():
+    """Confirm unexpected behavior about parts of the PostgresDsn object getting populated when constructed with both a
+    URL and parts. Behavior is that it allows the URL and the parts to differ"""
+    pg_dsn = PostgresDsn(
+        url=str(CONFIG.DATABASE_URL),
+        scheme="postgres",
+        host="injected_host",
+        port="0000",
+        user="injected_user",
+        password="injected_password",
+        path="/injected_db",
+    )
+
+    assert pg_dsn.host is not None
+    assert pg_dsn.port is not None
+    assert pg_dsn.user is not None
+    assert pg_dsn.password is not None
+    assert pg_dsn.path is not None
+    assert pg_dsn.scheme is not None
+
+    # Confirm that the constructor allows for parts of the URL string provided to be different than the component
+    # parts that are also provided (not really a good thing, but it is how it behaves)
+    assert pg_dsn.host not in str(pg_dsn)
+    assert pg_dsn.port not in str(pg_dsn)
+    assert pg_dsn.user not in str(pg_dsn)
+    assert pg_dsn.password not in str(pg_dsn)
+    assert pg_dsn.path not in str(pg_dsn)
 
 
 def test_cannot_instantiate_default_settings():
@@ -379,8 +465,6 @@ def test_env_code_for_non_default_env():
 def test_dotenv_file_template_found(tmpdir):
     """Verifying that the way the paths to locate the .env file are valid, by way of using them to locate the
     .env.template file which will always be alongside it"""
-    from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR
-
     proj_root_dir = Path(_PROJECT_ROOT_DIR)
     env_file_template = Path(_PROJECT_ROOT_DIR / ".env.template")
     assert env_file_template.is_file()
@@ -397,10 +481,14 @@ def test_override_with_dotenv_file(tmpdir):
     rather than the other way around."""
     cfg = LocalConfig()
     assert cfg.COMPONENT_NAME == "USAspending API"
+    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
+
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
-    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
+    # Must use some of the default overrides from .env.template, like POSTRES_*
+    shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+    with open(dotenv_file, "a"):
+        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val
@@ -430,8 +518,10 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        with open(dotenv_file, "w"):
-            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\n" f"UNITTEST_CFG_A={dotenv_val_a}")
+        # Must use some of the default overrides from .env.template, like POSTRES_*
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        with open(dotenv_file, "a"):
+            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\n" f"UNITTEST_CFG_A={dotenv_val_a}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -463,8 +553,10 @@ def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        with open(dotenv_file, "w"):
-            dotenv_file.write(f"SUB_UNITTEST_3={dotenv_sub_3}")
+        # Must use some of the default overrides from .env.template, like POSTRES_*
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        with open(dotenv_file, "a"):
+            dotenv_file.write(f"SUB_UNITTEST_3={dotenv_sub_3}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -496,8 +588,11 @@ def test_override_with_dotenv_file_for_validated_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        with open(dotenv_file, "w"):
-            dotenv_file.write(f"{var_name}={dotenv_val}")
+        # Must use some of the default overrides from .env.template, like POSTRES_*
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        with open(dotenv_file, "a"):
+            dotenv_file.write(f"\n{var_name}={dotenv_val}", "a")
+        print(dotenv_file.read_text("utf-8"))
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -529,8 +624,10 @@ def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        with open(dotenv_file, "w"):
-            dotenv_file.write(f"{var_name}={dotenv_val}")
+        # Must use some of the default overrides from .env.template, like POSTRES_*
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        with open(dotenv_file, "a"):
+            dotenv_file.write(f"{var_name}={dotenv_val}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -563,8 +660,10 @@ def test_override_with_dotenv_file_for_subclass_overriding_validated_var(tmpdir)
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        with open(dotenv_file, "w"):
-            dotenv_file.write(f"{var_name}={dotenv_val}")
+        # Must use some of the default overrides from .env.template, like POSTRES_*
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        with open(dotenv_file, "a"):
+            dotenv_file.write(f"{var_name}={dotenv_val}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -597,8 +696,10 @@ def test_override_with_dotenv_file_for_subclass_overriding_root_validated_var(tm
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        with open(dotenv_file, "w"):
-            dotenv_file.write(f"{var_name}={dotenv_val}")
+        # Must use some of the default overrides from .env.template, like POSTRES_*
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        with open(dotenv_file, "a"):
+            dotenv_file.write(f"{var_name}={dotenv_val}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -623,12 +724,15 @@ def test_override_dotenv_file_with_env_var(tmpdir):
     # Verify default if nothing overriding
     cfg = LocalConfig()
     assert cfg.COMPONENT_NAME == "USAspending API"
+    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
 
     # Now the .env file takes precedence
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
-    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
+    # Must use some of the default overrides from .env.template, like POSTRES_*
+    shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+    with open(dotenv_file, "a"):
+        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val
@@ -659,20 +763,20 @@ def test_override_with_command_line_args():
 
 def test_override_multiple_with_command_line_args():
     assert CONFIG.COMPONENT_NAME == "USAspending API"
-    original_postgres_port = CONFIG.POSTGRES_PORT
+    original_aws_region = CONFIG.AWS_REGION
     test_args = [
         "dummy_program",
         "--config",
-        "COMPONENT_NAME=test_override_multiple_with_command_line_args " "POSTGRES_PORT=123456789",
+        "COMPONENT_NAME=test_override_multiple_with_command_line_args AWS_REGION=a-new-region",
     ]
     with patch.object(sys, "argv", test_args):
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         app_cfg_copy = _load_config()
         assert app_cfg_copy.COMPONENT_NAME == "test_override_multiple_with_command_line_args"
-        assert app_cfg_copy.POSTGRES_PORT == "123456789"
+        assert app_cfg_copy.AWS_REGION == "a-new-region"
     # Ensure the official CONFIG is unchanged
     assert CONFIG.COMPONENT_NAME == "USAspending API"
-    assert CONFIG.POSTGRES_PORT == original_postgres_port
+    assert CONFIG.AWS_REGION == original_aws_region
 
 
 def test_precedence_order(tmpdir):
@@ -689,12 +793,15 @@ def test_precedence_order(tmpdir):
     # Verify default if nothing overriding
     cfg = LocalConfig()
     assert cfg.COMPONENT_NAME == "USAspending API"
+    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
 
     # Now the .env file takes precedence
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    dotenv_val = "a_test_verifying_dotenv_overrides_runtime_env_default_config"
-    dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
+    # Must use some of the default overrides from .env.template, like POSTRES_*
+    shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+    with open(dotenv_file, "a"):
+        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val

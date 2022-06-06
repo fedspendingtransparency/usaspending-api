@@ -1,4 +1,5 @@
 from typing import Any, Dict, Callable, TypeVar
+from urllib.parse import ParseResult, urlparse, parse_qs
 
 from pydantic import BaseSettings
 from pydantic.fields import ModelField
@@ -134,3 +135,24 @@ def eval_default_factory_from_root_validator(
     )
     configured_vars[config_var_name] = produced_value
     return configured_vars
+
+
+def parse_pg_uri(pg_uri) -> (ParseResult, str, str):
+    """Use the urlparse lib to parse out parts of a PostgreSQL URI connection string
+
+    Supports ``username:password`` format or if ``?username=...&password=...`` format
+
+    Returns: A a three-tuple of the URL Parts ParseResult, the username (or None), and the password (or None)
+    """
+    url_parts = urlparse(pg_uri)
+    user = (
+        url_parts.username if url_parts.username else parse_qs(url_parts.query)["user"][0] if url_parts.query else None
+    )
+    password = (
+        url_parts.password
+        if url_parts.password
+        else parse_qs(url_parts.query)["password"][0]
+        if url_parts.query
+        else None
+    )
+    return url_parts, user, password
