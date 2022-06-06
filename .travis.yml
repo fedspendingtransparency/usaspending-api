@@ -19,6 +19,7 @@ addons:
 
 env:
   global:
+  - POSTGRES_HOST=localhost
   - USASPENDING_DB_HOST=localhost
   - USASPENDING_DB_PORT=5432
   - USASPENDING_DB_USER=usaspending
