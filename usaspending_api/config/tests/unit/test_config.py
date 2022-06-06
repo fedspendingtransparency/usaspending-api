@@ -485,8 +485,10 @@ def test_override_with_dotenv_file(tmpdir):
 
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    # Must use some of the default overrides from .env.template, like POSTRES_*
+    # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
     shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+    if Path(_PROJECT_ROOT_DIR / ".env").exists():
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
     with open(dotenv_file, "a"):
         dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
@@ -518,8 +520,10 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env.template, like POSTRES_*
+        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        if Path(_PROJECT_ROOT_DIR / ".env").exists():
+            shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
             dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\n" f"UNITTEST_CFG_A={dotenv_val_a}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
@@ -553,8 +557,10 @@ def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env.template, like POSTRES_*
+        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        if Path(_PROJECT_ROOT_DIR / ".env").exists():
+            shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
             dotenv_file.write(f"SUB_UNITTEST_3={dotenv_sub_3}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
@@ -588,8 +594,10 @@ def test_override_with_dotenv_file_for_validated_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env.template, like POSTRES_*
+        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        if Path(_PROJECT_ROOT_DIR / ".env").exists():
+            shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
             dotenv_file.write(f"\n{var_name}={dotenv_val}", "a")
         print(dotenv_file.read_text("utf-8"))
@@ -624,8 +632,10 @@ def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env.template, like POSTRES_*
+        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        if Path(_PROJECT_ROOT_DIR / ".env").exists():
+            shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
             dotenv_file.write(f"{var_name}={dotenv_val}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
@@ -660,8 +670,10 @@ def test_override_with_dotenv_file_for_subclass_overriding_validated_var(tmpdir)
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env.template, like POSTRES_*
+        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        if Path(_PROJECT_ROOT_DIR / ".env").exists():
+            shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
             dotenv_file.write(f"{var_name}={dotenv_val}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
@@ -696,8 +708,10 @@ def test_override_with_dotenv_file_for_subclass_overriding_root_validated_var(tm
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env.template, like POSTRES_*
+        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+        if Path(_PROJECT_ROOT_DIR / ".env").exists():
+            shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
             dotenv_file.write(f"{var_name}={dotenv_val}", "a")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
@@ -729,8 +743,10 @@ def test_override_dotenv_file_with_env_var(tmpdir):
     # Now the .env file takes precedence
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    # Must use some of the default overrides from .env.template, like POSTRES_*
+    # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
     shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+    if Path(_PROJECT_ROOT_DIR / ".env").exists():
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
     with open(dotenv_file, "a"):
         dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
@@ -798,8 +814,10 @@ def test_precedence_order(tmpdir):
     # Now the .env file takes precedence
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    # Must use some of the default overrides from .env.template, like POSTRES_*
+    # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
     shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
+    if Path(_PROJECT_ROOT_DIR / ".env").exists():
+        shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
     with open(dotenv_file, "a"):
         dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
