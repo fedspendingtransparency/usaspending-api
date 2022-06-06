@@ -22,7 +22,7 @@ endif
 #### Variables used in this Makefile.
 #### Uppercased are environment vars, or make-specific vars. All others should be lower-snake-case
 ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
-python_version := 3.7.3
+python_version := 3.7.13
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_spark := Dockerfile.spark
@@ -161,7 +161,7 @@ docker-compose-up-spark: ## Deploy containerized version of spark cluster infras
 .PHONY: docker-compose-run
 docker-compose-run: ## Use docker-compose run <args> to run one or more Docker Compose services with options
 	# NOTE: [See NOTE in docker-compose rule about .env file]
-	docker-compose --project-directory . --file ${docker_compose_file} run ${args}
+	docker-compose ${profiles} --project-directory . --file ${docker_compose_file} run ${args}
 
 .PHONY: docker-compose-down
 docker-compose-down: ## Run docker-compose down to bring down services listed in the compose file
@@ -193,3 +193,25 @@ docker-compose-build-spark: ## See: docker-compose-build rule. This builds just 
 	# NOTE: [See NOTE in above docker-compose rule about .env file]=
 	echo "docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
 	docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+
+
+.PHONY: docker-compose-spark-submit
+docker-compose-spark-submit:
+	docker-compose --profile=spark --project-directory . --file ${docker_compose_file} run \
+		-e MINIO_HOST=minio \
+		-e COMPONENT_NAME='${django_command}${python_script}' \
+		-e DATABASE_URL=${DATABASE_URL} \
+	spark-submit --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
+	${if ${python_script}, \
+		${python_script}, \
+		/project/manage.py ${django_command} \
+	}
+
+.PHONY: localhost-spark-submit
+localhost-spark-submit:
+	SPARK_LOCAL_IP=127.0.0.1 \
+	spark-submit --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
+	${if ${python_script}, \
+		${python_script}, \
+		manage.py ${django_command} \
+	}

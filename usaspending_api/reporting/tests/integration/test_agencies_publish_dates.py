@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 url = "/api/v2/reporting/agencies/publish_dates/"
@@ -7,7 +7,7 @@ url = "/api/v2/reporting/agencies/publish_dates/"
 
 @pytest.fixture
 def publish_dates_data(db):
-    dabs1 = mommy.make(
+    dabs1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2020-01-30 00:00:00.000000+00",
         submission_fiscal_year=2020,
@@ -15,7 +15,7 @@ def publish_dates_data(db):
         submission_fiscal_quarter=2,
         is_quarter=True,
     )
-    dabs2 = mommy.make(
+    dabs2 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2020-05-02 00:00:00.000000+00",
         submission_fiscal_year=2020,
@@ -23,7 +23,7 @@ def publish_dates_data(db):
         submission_fiscal_quarter=3,
         is_quarter=False,
     )
-    dabs3 = mommy.make(
+    dabs3 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2019-10-01 00:00:00.000000+00",
         submission_fiscal_year=2019,
@@ -31,7 +31,7 @@ def publish_dates_data(db):
         submission_fiscal_quarter=4,
         is_quarter=True,
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2020-09-02 00:00:00.000000+00",
         submission_fiscal_year=2020,
@@ -39,7 +39,7 @@ def publish_dates_data(db):
         submission_fiscal_quarter=1,
         is_quarter=False,
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2021-01-01 00:00:00.000000+00",
         submission_fiscal_year=2021,
@@ -47,9 +47,9 @@ def publish_dates_data(db):
         submission_fiscal_quarter=1,
         is_quarter=False,
     )
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount")
-    tas2 = mommy.make("accounts.TreasuryAppropriationAccount")
-    sub1 = mommy.make(
+    tas1 = baker.make("accounts.TreasuryAppropriationAccount")
+    tas2 = baker.make("accounts.TreasuryAppropriationAccount")
+    sub1 = baker.make(
         "submissions.SubmissionAttributes",
         toptier_code="001",
         reporting_fiscal_year=2020,
@@ -60,7 +60,7 @@ def publish_dates_data(db):
         certified_date="2020-04-30 07:46:21.419796+00",
         submission_window=dabs1,
     )
-    sub2 = mommy.make(
+    sub2 = baker.make(
         "submissions.SubmissionAttributes",
         toptier_code="001",
         reporting_fiscal_year=2020,
@@ -72,7 +72,7 @@ def publish_dates_data(db):
         submission_window=dabs2,
     )
 
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         toptier_code="001",
         reporting_fiscal_year=2019,
@@ -83,7 +83,7 @@ def publish_dates_data(db):
         certified_date="2020-10-02 07:46:21.419796+00",
         submission_window=dabs3,
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         toptier_code="002",
         reporting_fiscal_year=2019,
@@ -94,30 +94,30 @@ def publish_dates_data(db):
         certified_date="2020-10-02 07:46:21.419796+00",
         submission_window=dabs3,
     )
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
-    mommy.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub2)
-    mommy.make(
+    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
+    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub2)
+    baker.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="001",
         fiscal_year=2020,
         fiscal_period=3,
         total_budgetary_resources=100.00,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="001",
         fiscal_year=2020,
         fiscal_period=7,
         total_budgetary_resources=50.00,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="001",
         fiscal_year=2019,
         fiscal_period=12,
         total_budgetary_resources=200.00,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="002",
         fiscal_year=2019,
@@ -125,11 +125,11 @@ def publish_dates_data(db):
         total_budgetary_resources=300.00,
     )
 
-    ta1 = mommy.make("references.ToptierAgency", toptier_code="001", name="Test Agency", abbreviation="TA")
-    ta2 = mommy.make("references.ToptierAgency", toptier_code="002", name="Test Agency 2", abbreviation="TA2")
+    ta1 = baker.make("references.ToptierAgency", toptier_code="001", name="Test Agency", abbreviation="TA")
+    ta2 = baker.make("references.ToptierAgency", toptier_code="002", name="Test Agency 2", abbreviation="TA2")
 
-    mommy.make("references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True)
-    mommy.make("references.Agency", id=2, toptier_agency_id=ta2.toptier_agency_id, toptier_flag=True)
+    baker.make("references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True)
+    baker.make("references.Agency", id=2, toptier_agency_id=ta2.toptier_agency_id, toptier_flag=True)
 
 
 def test_basic_success(client, publish_dates_data):
@@ -405,7 +405,7 @@ def test_publication_date_sort(client, publish_dates_data):
     assert response == {
         "detail": "publication_date sort param must be in the format 'publication_date,<fiscal_period>' where <fiscal_period> is in the range 2-12"
     }
-    dabs5 = mommy.make(
+    dabs5 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         pk=5,
         submission_reveal_date="2020-01-05 00:00:00.000000+00",
@@ -414,7 +414,7 @@ def test_publication_date_sort(client, publish_dates_data):
         submission_fiscal_month=3,
         is_quarter=True,
     )
-    dabs6 = mommy.make(
+    dabs6 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         pk=6,
         submission_reveal_date="2020-01-06 00:00:00.000000+00",
@@ -423,7 +423,7 @@ def test_publication_date_sort(client, publish_dates_data):
         submission_fiscal_month=3,
         is_quarter=False,
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=5,
         toptier_code="001",
@@ -435,7 +435,7 @@ def test_publication_date_sort(client, publish_dates_data):
         certified_date="2020-01-02 07:46:21.419796+00",
         submission_window=dabs5,
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=6,
         toptier_code="002",
@@ -447,14 +447,14 @@ def test_publication_date_sort(client, publish_dates_data):
         certified_date="2020-01-28 07:46:21.419796+00",
         submission_window=dabs6,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="001",
         fiscal_year=2019,
         fiscal_period=3,
         total_budgetary_resources=10.00,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="002",
         fiscal_year=2019,

@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.etl.operations.federal_account.update_agency import update_federal_account_agency
 from usaspending_api.etl.operations.treasury_appropriation_account.update_agencies import (
@@ -11,7 +11,7 @@ from usaspending_api.etl.operations.treasury_appropriation_account.update_agenci
 @pytest.fixture
 def data_fixture(db):
     # CGAC agency
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         pk=1,
         allocation_transfer_agency_id="123",
@@ -21,7 +21,7 @@ def data_fixture(db):
     )
 
     # One more CGAC agency so we can test a different mapping
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         pk=2,
         allocation_transfer_agency_id=None,
@@ -31,7 +31,7 @@ def data_fixture(db):
     )
 
     # Shared FREC agency
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         pk=3,
         allocation_transfer_agency_id=None,
@@ -41,7 +41,7 @@ def data_fixture(db):
     )
 
     # A few agencies that are shared non-FREC agencies so we can test grouping/counting.
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         pk=4,
         allocation_transfer_agency_id=None,
@@ -49,7 +49,7 @@ def data_fixture(db):
         main_account_code="0444",
         fr_entity_code="5678",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         pk=5,
         allocation_transfer_agency_id=None,
@@ -57,7 +57,7 @@ def data_fixture(db):
         main_account_code="0444",
         fr_entity_code="6789",
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         pk=6,
         allocation_transfer_agency_id=None,
@@ -67,20 +67,20 @@ def data_fixture(db):
     )
 
     # Stuff required to support the above.
-    mommy.make("accounts.FederalAccount", pk=1, agency_identifier="123", main_account_code="0111")
-    mommy.make("accounts.FederalAccount", pk=2, agency_identifier="234", main_account_code="0222")
-    mommy.make("accounts.FederalAccount", pk=3, agency_identifier="345", main_account_code="0333")
-    mommy.make("accounts.FederalAccount", pk=4, agency_identifier="345", main_account_code="0444")
+    baker.make("accounts.FederalAccount", pk=1, agency_identifier="123", main_account_code="0111")
+    baker.make("accounts.FederalAccount", pk=2, agency_identifier="234", main_account_code="0222")
+    baker.make("accounts.FederalAccount", pk=3, agency_identifier="345", main_account_code="0333")
+    baker.make("accounts.FederalAccount", pk=4, agency_identifier="345", main_account_code="0444")
 
-    mommy.make("references.FREC", frec_code="2345", associated_cgac_code="123")
-    mommy.make("references.FREC", frec_code="3456", associated_cgac_code="234")
-    mommy.make("references.FREC", frec_code="4567", associated_cgac_code="234")
-    mommy.make("references.FREC", frec_code="5678", associated_cgac_code="123")
-    mommy.make("references.FREC", frec_code="6789", associated_cgac_code="234")
+    baker.make("references.FREC", frec_code="2345", associated_cgac_code="123")
+    baker.make("references.FREC", frec_code="3456", associated_cgac_code="234")
+    baker.make("references.FREC", frec_code="4567", associated_cgac_code="234")
+    baker.make("references.FREC", frec_code="5678", associated_cgac_code="123")
+    baker.make("references.FREC", frec_code="6789", associated_cgac_code="234")
 
-    mommy.make("references.ToptierAgency", pk=1, toptier_code="123")  # CGAC agency
-    mommy.make("references.ToptierAgency", pk=2, toptier_code="234")  # Another CGAC agency
-    mommy.make("references.ToptierAgency", pk=3, toptier_code="4567")  # FREC agency
+    baker.make("references.ToptierAgency", pk=1, toptier_code="123")  # CGAC agency
+    baker.make("references.ToptierAgency", pk=2, toptier_code="234")  # Another CGAC agency
+    baker.make("references.ToptierAgency", pk=3, toptier_code="4567")  # FREC agency
 
 
 def test_federal_account_update_agency(data_fixture):

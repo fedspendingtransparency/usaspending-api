@@ -3,7 +3,7 @@ import json
 import pytest
 
 from datetime import datetime, timezone
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -95,7 +95,7 @@ GLOBAL_MOCK_DICT = [
 
 @pytest.fixture
 def setup_only_dabs_window():
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_fiscal_quarter=1,
@@ -104,7 +104,7 @@ def setup_only_dabs_window():
         period_start_date="2017-03-13",
         period_end_date="2017-04-13",
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_fiscal_quarter=3,
@@ -113,7 +113,7 @@ def setup_only_dabs_window():
         period_start_date="2017-10-01",
         period_end_date="2017-09-01",
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_fiscal_month=3,
@@ -122,7 +122,7 @@ def setup_only_dabs_window():
         period_start_date="2017-03-13",
         period_end_date="2017-04-13",
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_fiscal_month=9,
@@ -138,7 +138,7 @@ def test_unreported_data_actual_value_file_b(client):
 
     models = copy.deepcopy(GLOBAL_MOCK_DICT)
     for entry in models:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     json_request = {"type": "agency", "filters": {"fy": "1600", "quarter": "1"}}
 
@@ -243,7 +243,7 @@ def test_unreported_data_actual_value_file_c(client):
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     json_request = {"type": "recipient", "filters": {"agency": "-1", "fy": "1600", "quarter": "1"}}
 
@@ -282,7 +282,7 @@ def test_unreported_data_no_data_available(client):
 def test_federal_account_linkage(client):
     models = copy.deepcopy(GLOBAL_MOCK_DICT)
     for entry in models:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
     json_request = {"type": "federal_account", "filters": {"fy": "1600", "quarter": "1"}}
     response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
     json_response = response.json()
@@ -414,7 +414,7 @@ def test_budget_function_failure(client):
 
 @pytest.mark.django_db
 def test_object_class_filter_success(setup_only_dabs_window, client):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_fiscal_quarter=1,
@@ -510,7 +510,7 @@ def test_object_class_failure(client):
 
 @pytest.mark.django_db
 def test_agency_filter_success(setup_only_dabs_window, client):
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_fiscal_quarter=1,
@@ -518,7 +518,7 @@ def test_agency_filter_success(setup_only_dabs_window, client):
         submission_reveal_date="2017-06-01",
         period_start_date="2017-04-01",
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2017,
         submission_fiscal_quarter=3,
@@ -633,8 +633,8 @@ def test_object_budget_match(client):
 
     models = copy.deepcopy(GLOBAL_MOCK_DICT)
     for entry in models:
-        mommy.make(entry.pop("model"), **entry)
-    mommy.make(
+        baker.make(entry.pop("model"), **entry)
+    baker.make(
         FinancialAccountsByProgramActivityObjectClass,
         **{
             "financial_accounts_by_program_activity_object_class_id": -4,
@@ -933,7 +933,7 @@ def test_unreported_file_c(client):
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     json_request = {"type": "recipient", "filters": {"agency": "-1", "fy": "1600", "quarter": "1"}}
     resp = client.post("/api/v2/spending/", content_type="application/json", data=json_request)

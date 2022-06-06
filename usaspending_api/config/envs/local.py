@@ -11,7 +11,7 @@ from typing import ClassVar
 
 from pydantic import root_validator
 from pydantic.types import SecretStr
-from usaspending_api.config.envs.default import DefaultConfig
+from usaspending_api.config.envs.default import DefaultConfig, _PROJECT_ROOT_DIR
 from usaspending_api.config.utils import (
     USER_SPECIFIC_OVERRIDE,
     FACTORY_PROVIDED_VALUE,
@@ -54,9 +54,16 @@ class LocalConfig(DefaultConfig):
     ES_HOST: str = "localhost"
     ES_PORT: str = "9200"
 
+    # ==== [Spark] ====
+    # Sensible defaults to underneath the project root dir. But look in .env for overriding of these
+    SPARK_SQL_WAREHOUSE_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse")
+    HIVE_METASTORE_DERBY_DB_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse" / "metastore_db")
+
     # ==== [MinIO] ====
     MINIO_HOST: str = "localhost"
-    MINIO_PORT: str = "9000"
+    # Changing MinIO ports from defaults. Known to have port conflicts with proxies on developer laptops
+    MINIO_PORT: str = "10001"
+    MINIO_CONSOLE_PORT: str = "10002"
     MINIO_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
     MINIO_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
@@ -75,7 +82,7 @@ class LocalConfig(DefaultConfig):
     AWS_SECRET_KEY: SecretStr = MINIO_SECRET_KEY
     AWS_PROFILE: str = None
     AWS_REGION: str = ""
-    AWS_S3_BUCKET: str = "data"
+    SPARK_S3_BUCKET: str = "data"
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
     AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory

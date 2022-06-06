@@ -1,7 +1,7 @@
 import pytest
 
 from django.conf import settings
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
@@ -12,7 +12,7 @@ url = "/api/v2/reporting/agencies/123/overview/"
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
-    sub = mommy.make(
+    sub = baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         toptier_code="123",
@@ -21,7 +21,7 @@ def setup_test_data(db):
         reporting_fiscal_period=6,
         published_date="2019-07-03",
     )
-    sub2 = mommy.make(
+    sub2 = baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         toptier_code="123",
@@ -30,22 +30,22 @@ def setup_test_data(db):
         reporting_fiscal_period=12,
         published_date="2021-02-11",
     )
-    agency = mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency")
+    agency = baker.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency")
 
     treas_accounts = [
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
             awarding_toptier_agency_id=agency.toptier_agency_id,
             tas_rendering_label="tas-1-overview",
         ),
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
             awarding_toptier_agency_id=agency.toptier_agency_id,
             tas_rendering_label="tas-2-overview",
         ),
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3,
             awarding_toptier_agency_id=agency.toptier_agency_id,
@@ -59,7 +59,7 @@ def setup_test_data(db):
         {"sub_id": sub2.submission_id, "treasury_account": treas_accounts[2], "total_resources": 15.5},
     ]
     for approp in approps:
-        mommy.make(
+        baker.make(
             "accounts.AppropriationAccountBalances",
             submission_id=approp["sub_id"],
             treasury_account_identifier=approp["treasury_account"],
@@ -90,7 +90,7 @@ def setup_test_data(db):
         },
     ]
     for reporting_tas in reporting_tases:
-        mommy.make(
+        baker.make(
             "reporting.ReportingAgencyTas",
             fiscal_year=reporting_tas["year"],
             fiscal_period=reporting_tas["period"],
@@ -100,7 +100,7 @@ def setup_test_data(db):
             appropriation_obligated_amount=100,
         )
 
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=1,
         toptier_code=123,
@@ -114,7 +114,7 @@ def setup_test_data(db):
         unlinked_procurement_d_awards=3,
         unlinked_assistance_d_awards=4,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=2,
         toptier_code=123,
@@ -128,7 +128,7 @@ def setup_test_data(db):
         unlinked_procurement_d_awards=30,
         unlinked_assistance_d_awards=40,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=3,
         toptier_code=123,
@@ -143,7 +143,7 @@ def setup_test_data(db):
         unlinked_assistance_d_awards=None,
     )
 
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2019,
@@ -151,7 +151,7 @@ def setup_test_data(db):
         tas_rendering_label="TAS 1",
         obligated_amount=10.0,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2019,
@@ -159,7 +159,7 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=1.0,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2020,
@@ -167,7 +167,7 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2020,
@@ -175,28 +175,28 @@ def setup_test_data(db):
         tas_rendering_label="TAS 3",
         obligated_amount=0,
     )
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         id=1,
         fiscal_year=2019,
         fiscal_period=6,
         total_budgetary_resources_cpe=200000000,
     )
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         id=2,
         fiscal_year=2019,
         fiscal_period=9,
         total_budgetary_resources_cpe=150000000,
     )
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         id=3,
         fiscal_year=2020,
         fiscal_period=12,
         total_budgetary_resources_cpe=100000000,
     )
-    mommy.make(
+    baker.make(
         "references.GTASSF133Balances",
         id=4,
         fiscal_year=2019,
@@ -569,7 +569,7 @@ def test_quarterly_assurance_statements():
 
 
 def test_secondary_period_sort(setup_test_data, client):
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=4,
         toptier_code=123,
@@ -583,7 +583,7 @@ def test_secondary_period_sort(setup_test_data, client):
         unlinked_procurement_d_awards=None,
         unlinked_assistance_d_awards=None,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2019,
@@ -774,7 +774,7 @@ def test_invalid_monthly_period_filter(client):
     """
     for year in [2017, 2018, 2019, 2020, 2021]:
         for period in range(2, 13):
-            mommy.make(
+            baker.make(
                 "reporting.ReportingAgencyOverview",
                 reporting_agency_overview_id=year * 100 + period,
                 toptier_code=123,

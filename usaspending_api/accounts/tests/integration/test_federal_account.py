@@ -6,7 +6,7 @@ from decimal import Decimal
 
 # Third-party app imports
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 # Imports from your apps
@@ -66,7 +66,7 @@ def test_federal_account_spending_by_category_unique_program_activity_names(clie
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     request = {
         "group": "program_activity__program_activity_name",

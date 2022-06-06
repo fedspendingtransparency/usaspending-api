@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
@@ -10,15 +10,15 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("awards.TransactionNormalized", id=210210210, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=321032103, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=432104321, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=543210543, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=654321065, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=765432107, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=876543210, action_date="2013-09-17")
-    mommy.make("awards.TransactionNormalized", id=987654321, action_date="2013-09-17")
-    mommy.make(
+    baker.make("awards.TransactionNormalized", id=210210210, action_date="2013-09-17")
+    baker.make("awards.TransactionNormalized", id=321032103, action_date="2013-09-17")
+    baker.make("awards.TransactionNormalized", id=432104321, action_date="2013-09-17")
+    baker.make("awards.TransactionNormalized", id=543210543, action_date="2013-09-17")
+    baker.make("awards.TransactionNormalized", id=654321065, action_date="2013-09-17")
+    baker.make("awards.TransactionNormalized", id=765432107, action_date="2013-09-17")
+    baker.make("awards.TransactionNormalized", id=876543210, action_date="2013-09-17")
+    baker.make("awards.TransactionNormalized", id=987654321, action_date="2013-09-17")
+    baker.make(
         "awards.Award",
         category="loans",
         date_signed="2012-09-10",
@@ -32,7 +32,7 @@ def award_data_fixture(db):
         type="07",
         uri=None,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         category="idvs",
         date_signed="2009-12-10",
@@ -46,7 +46,7 @@ def award_data_fixture(db):
         type="IDV_B_A",
         uri=None,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         category="idvs",
         date_signed="2015-05-10",
@@ -60,7 +60,7 @@ def award_data_fixture(db):
         type="IDV_B",
         uri=None,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         category="idvs",
         date_signed="2009-09-10",
@@ -74,7 +74,7 @@ def award_data_fixture(db):
         type="IDV_B_C",
         uri=None,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         category="idvs",
         date_signed="2009-09-10",
@@ -88,7 +88,7 @@ def award_data_fixture(db):
         type="IDV_C",
         uri=None,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         category="idvs",
         date_signed="2009-12-20",
@@ -102,7 +102,7 @@ def award_data_fixture(db):
         type="A",
         uri=None,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         category="idvs",
         date_signed="2011-09-10",
@@ -116,7 +116,7 @@ def award_data_fixture(db):
         type="C",
         uri=None,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         category="other",
         date_signed="2013-09-10",

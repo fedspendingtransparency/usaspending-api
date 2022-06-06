@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from django.conf import settings
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.reporting.models import ReportingAgencyTas
 
@@ -32,17 +32,17 @@ def setup_test_data(db):
         },
     ]
     for dabs_window in dsws:
-        mommy.make("submissions.DABSSubmissionWindowSchedule", **dabs_window)
+        baker.make("submissions.DABSSubmissionWindowSchedule", **dabs_window)
 
     sub = [
-        mommy.make(
+        baker.make(
             "submissions.SubmissionAttributes",
             submission_id=1,
             reporting_fiscal_year=2019,
             reporting_fiscal_period=3,
             submission_window_id=dsws[0]["id"],
         ),
-        mommy.make(
+        baker.make(
             "submissions.SubmissionAttributes",
             submission_id=2,
             reporting_fiscal_year=future_date.year,
@@ -53,24 +53,24 @@ def setup_test_data(db):
     ]
 
     agencies = [
-        mommy.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency"),
-        mommy.make("references.ToptierAgency", toptier_code="987", abbreviation="XYZ", name="Test Agency 2"),
+        baker.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency"),
+        baker.make("references.ToptierAgency", toptier_code="987", abbreviation="XYZ", name="Test Agency 2"),
     ]
 
     treas_accounts = [
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
             funding_toptier_agency=agencies[0],
             tas_rendering_label="tas-1",
         ),
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
             funding_toptier_agency=agencies[0],
             tas_rendering_label="tas-2",
         ),
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3,
             funding_toptier_agency=agencies[1],
@@ -85,7 +85,7 @@ def setup_test_data(db):
         {"sub_id": sub[1].submission_id, "treasury_account": treas_accounts[2], "ob_incur": 1000},
     ]
     for approp in approps:
-        mommy.make(
+        baker.make(
             "accounts.AppropriationAccountBalances",
             submission_id=approp["sub_id"],
             treasury_account_identifier=approp["treasury_account"],
@@ -120,7 +120,7 @@ def setup_test_data(db):
         },
     ]
     for ocpa in ocpas:
-        mommy.make(
+        baker.make(
             "financial_activities.FinancialAccountsByProgramActivityObjectClass",
             submission_id=ocpa["sub_id"],
             treasury_account_id=ocpa["treasury_account"],

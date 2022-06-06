@@ -1,4 +1,4 @@
-from django.db.models import F, Sum, Q, Case, Value, When, CharField
+from django.db.models import Case, CharField, F, Q, Sum, TextField, Value, When
 from django.db.models.functions import Coalesce
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.serializers_v2.serializers import RecipientAwardSpendingSerializer
@@ -41,6 +41,7 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
             recipient_name=Coalesce(
                 F("award__latest_transaction__assistance_data__awardee_or_recipient_legal"),
                 F("award__latest_transaction__contract_data__awardee_or_recipient_legal"),
+                output_field=TextField(),
             ),
         )
 

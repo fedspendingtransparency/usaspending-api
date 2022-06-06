@@ -1,7 +1,7 @@
 from datetime import date
 import json
 
-from model_mommy import mommy
+from model_bakery import baker
 import pytest
 from rest_framework import status
 
@@ -21,10 +21,10 @@ def test_transaction_endpoint_v2(client):
 def test_transaction_endpoint_v2_award_fk(client):
     """Test the transaction endpoint."""
 
-    awd = mommy.make(
+    awd = baker.make(
         "awards.Award", id=10, total_obligation="2000", _fill_optional=True, generated_unique_award_id="-TEST-"
     )
-    mommy.make("awards.TransactionNormalized", description="this should match", _fill_optional=True, award=awd)
+    baker.make("awards.TransactionNormalized", description="this should match", _fill_optional=True, award=awd)
 
     resp = client.post("/api/v2/transactions/", {"award_id": 10})
     assert resp.status_code == status.HTTP_200_OK
@@ -46,10 +46,10 @@ def test_txn_total_grouped(client):
 def test_txn_get_or_create():
     """Test TransactionNormalized.get_or_create_transaction method."""
 
-    agency1 = mommy.make("references.Agency")
-    agency2 = mommy.make("references.Agency")
-    awd1 = mommy.make("awards.Award", awarding_agency=agency1)
-    txn1 = mommy.make(
+    agency1 = baker.make("references.Agency")
+    agency2 = baker.make("references.Agency")
+    awd1 = baker.make("awards.Award", awarding_agency=agency1)
+    txn1 = baker.make(
         "awards.TransactionNormalized",
         award=awd1,
         modification_number="1",
@@ -73,7 +73,7 @@ def test_txn_get_or_create():
 
     # record with same agency/mod # but different award is inserted as new txn
     txn_dict = {
-        "award": mommy.make("awards.Award"),
+        "award": baker.make("awards.Award"),
         "modification_number": "1",
         "awarding_agency": agency1,
         "action_date": date(1999, 12, 31),  # irrelevant, but required txn field
@@ -85,7 +85,7 @@ def test_txn_get_or_create():
 
     # record with no matching pieces of info is inserted as new txn
     txn_dict = {
-        "award": mommy.make("awards.Award"),
+        "award": baker.make("awards.Award"),
         "modification_number": "99",
         "awarding_agency": agency2,
         "action_date": date(1999, 12, 31),  # irrelevant, but required txn field
@@ -135,16 +135,16 @@ def test_txn_get_or_create():
 def test_txn_assistance_get_or_create():
     """Test TransactionFABS.get_or_create_2 method."""
 
-    agency1 = mommy.make("references.Agency")
-    awd1 = mommy.make("awards.Award", awarding_agency=agency1)
-    txn1 = mommy.make(
+    agency1 = baker.make("references.Agency")
+    awd1 = baker.make("awards.Award", awarding_agency=agency1)
+    txn1 = baker.make(
         "awards.TransactionNormalized",
         award=awd1,
         modification_number="1",
         awarding_agency=agency1,
         last_modified_date=date(2012, 3, 1),
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction=txn1,
         business_funds_indicator="a",
@@ -166,7 +166,7 @@ def test_txn_assistance_get_or_create():
 
     # a new transaction gets a new TransactionFABS record
     ta_dict = {"business_funds_indicator": "z", "record_type": 5, "total_funding_amount": 8000}
-    ta3 = TransactionFABS.get_or_create_2(mommy.make("awards.TransactionNormalized"), **ta_dict)
+    ta3 = TransactionFABS.get_or_create_2(baker.make("awards.TransactionNormalized"), **ta_dict)
     ta3.save()
     assert TransactionFABS.objects.all().count() == 2
 
@@ -175,16 +175,16 @@ def test_txn_assistance_get_or_create():
 def test_txn_contract_get_or_create():
     """Test TransactionFPDS.get_or_create_2 method."""
 
-    agency1 = mommy.make("references.Agency")
-    awd1 = mommy.make("awards.Award", awarding_agency=agency1)
-    txn1 = mommy.make(
+    agency1 = baker.make("references.Agency")
+    awd1 = baker.make("awards.Award", awarding_agency=agency1)
+    txn1 = baker.make(
         "awards.TransactionNormalized",
         award=awd1,
         modification_number="1",
         awarding_agency=agency1,
         last_modified_date=date(2012, 3, 1),
     )
-    mommy.make("awards.TransactionFPDS", transaction=txn1, piid="abc", base_and_all_options_value=1000)
+    baker.make("awards.TransactionFPDS", transaction=txn1, piid="abc", base_and_all_options_value=1000)
     assert TransactionFPDS.objects.all().count() == 1
 
     # an updated transaction should also update existing TransactionFPDS
@@ -199,6 +199,6 @@ def test_txn_contract_get_or_create():
 
     # a new transaction gets a new TransactionFABS record
     tc_dict = {"piid": "xyz", "base_and_all_options_value": 5555}
-    tc3 = TransactionFPDS.get_or_create_2(mommy.make("awards.TransactionNormalized"), **tc_dict)
+    tc3 = TransactionFPDS.get_or_create_2(baker.make("awards.TransactionNormalized"), **tc_dict)
     tc3.save()
     assert TransactionFPDS.objects.all().count() == 2

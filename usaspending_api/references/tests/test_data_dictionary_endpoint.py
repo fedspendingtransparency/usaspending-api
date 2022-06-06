@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.references.models import Rosetta
@@ -12,7 +12,7 @@ TEST_JSON_DOC = json.dumps({"headers": ["brats", "burgers"], "data": {"rows": [0
 
 @pytest.fixture
 def rosetta_data(db):
-    mommy.make(Rosetta, document_name="api_response", document=TEST_JSON_DOC)
+    baker.make(Rosetta, document_name="api_response", document=TEST_JSON_DOC)
 
 
 @pytest.mark.django_db

@@ -1,5 +1,5 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
@@ -9,7 +9,7 @@ url = "/api/v2/reporting/agencies/123/discrepancies/"
 @pytest.fixture
 def setup_test_data(db):
     """ Insert test data into DB """
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2020,
         submission_fiscal_month=6,
@@ -18,7 +18,7 @@ def setup_test_data(db):
         submission_reveal_date="2020-04-01",
         period_start_date="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2020,
@@ -26,7 +26,7 @@ def setup_test_data(db):
         tas_rendering_label="TAS 1",
         obligated_amount=10.0,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=123,
         fiscal_year=2020,
@@ -34,7 +34,7 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=1.0,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code=321,
         fiscal_year=2020,

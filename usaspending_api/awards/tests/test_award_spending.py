@@ -1,17 +1,17 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from datetime import datetime
 
 
 @pytest.fixture
 def award_spending_data(db):
-    ttagency = mommy.make("references.ToptierAgency")
-    agency = mommy.make("references.Agency", id=111, toptier_flag=True, toptier_agency=ttagency)
-    award = mommy.make("awards.Award", category="grants", awarding_agency=agency)
-    award1 = mommy.make("awards.Award", category="contracts", awarding_agency=agency)
-    award2 = mommy.make("awards.Award", category=None, awarding_agency=agency)
-    mommy.make(
+    ttagency = baker.make("references.ToptierAgency")
+    agency = baker.make("references.Agency", id=111, toptier_flag=True, toptier_agency=ttagency)
+    award = baker.make("awards.Award", category="grants", awarding_agency=agency)
+    award1 = baker.make("awards.Award", category="contracts", awarding_agency=agency)
+    award2 = baker.make("awards.Award", category=None, awarding_agency=agency)
+    baker.make(
         "awards.TransactionNormalized",
         award=award,
         awarding_agency=agency,
@@ -19,7 +19,7 @@ def award_spending_data(db):
         action_date=datetime(2017, 1, 1),
         fiscal_year=2017,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=award1,
         awarding_agency=agency,
@@ -27,7 +27,7 @@ def award_spending_data(db):
         action_date=datetime(2017, 9, 1),
         fiscal_year=2017,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=award1,
         awarding_agency=agency,
@@ -35,7 +35,7 @@ def award_spending_data(db):
         action_date=datetime(2016, 12, 1),
         fiscal_year=2017,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award=award2,
         awarding_agency=agency,

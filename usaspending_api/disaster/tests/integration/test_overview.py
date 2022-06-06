@@ -2,7 +2,7 @@ import pytest
 
 from decimal import Decimal
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     EARLY_MONTH,
@@ -240,8 +240,8 @@ def test_award_outlays_ignores_future_faba(
 def test_dol_defc_v_special_case(client, monkeypatch, helpers, defc_codes, basic_ref_data):
     helpers.patch_datetime_now(monkeypatch, 2022, 6, 1)
     helpers.reset_dabs_cache()
-    fta = mommy.make("references.ToptierAgency", abbreviation="DOL")
-    taa = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=fta)
+    fta = baker.make("references.ToptierAgency", abbreviation="DOL")
+    taa = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=fta)
 
     def _gtas_values(multiplier):
         return {
@@ -259,15 +259,15 @@ def test_dol_defc_v_special_case(client, monkeypatch, helpers, defc_codes, basic
             "anticipated_prior_year_obligation_recoveries": 1000 * multiplier,
         }
 
-    mommy.make("references.GTASSF133Balances", fiscal_year=2020, fiscal_period=12, **_gtas_values(1))
-    mommy.make("references.GTASSF133Balances", fiscal_year=2021, fiscal_period=6, **_gtas_values(2))
-    mommy.make("references.GTASSF133Balances", fiscal_year=2021, fiscal_period=12, **_gtas_values(3))
-    mommy.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **_gtas_values(4))
+    baker.make("references.GTASSF133Balances", fiscal_year=2020, fiscal_period=12, **_gtas_values(1))
+    baker.make("references.GTASSF133Balances", fiscal_year=2021, fiscal_period=6, **_gtas_values(2))
+    baker.make("references.GTASSF133Balances", fiscal_year=2021, fiscal_period=12, **_gtas_values(3))
+    baker.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **_gtas_values(4))
     defc_v_values = _gtas_values(6)
     defc_v_values.update(
         {"disaster_emergency_fund_id": "V", "treasury_account_identifier": None, "tas_rendering_label": None}
     )
-    mommy.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **defc_v_values)
+    baker.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **defc_v_values)
     resp = client.get(f"{OVERVIEW_URL}?def_codes=V")
     assert resp.data == {
         "funding": [{"amount": 599334.0, "def_code": "V"}],

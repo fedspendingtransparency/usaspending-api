@@ -1,7 +1,7 @@
 import pytest
 
 from django.conf import settings
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from datetime import datetime, timezone
 
@@ -27,7 +27,7 @@ assurance_statement_3 = (
 @pytest.fixture
 def setup_test_data(db):
     """ Insert data into DB for testing """
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=CURRENT_FISCAL_YEAR,
         submission_reveal_date=datetime.now(timezone.utc),
@@ -35,7 +35,7 @@ def setup_test_data(db):
         submission_fiscal_month=CURRENT_LAST_PERIOD,
         is_quarter=True,
     )
-    dabs = mommy.make(
+    dabs = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2018,
         submission_reveal_date="2018-10-09",
@@ -43,7 +43,7 @@ def setup_test_data(db):
         submission_fiscal_month=6,
         is_quarter=True,
     )
-    sub = mommy.make(
+    sub = baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         toptier_code="123",
@@ -53,7 +53,7 @@ def setup_test_data(db):
         published_date="2018-07-03",
         submission_window_id=dabs.id,
     )
-    sub2 = mommy.make(
+    sub2 = baker.make(
         "submissions.SubmissionAttributes",
         submission_id=2,
         toptier_code="987",
@@ -63,7 +63,7 @@ def setup_test_data(db):
         published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07",
         submission_window_id=dabs.id,
     )
-    sub3 = mommy.make(
+    sub3 = baker.make(
         "submissions.SubmissionAttributes",
         submission_id=3,
         toptier_code="001",
@@ -73,21 +73,21 @@ def setup_test_data(db):
         published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07",
         submission_window_id=dabs.id,
     )
-    mommy.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
-    mommy.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True)
-    mommy.make("references.Agency", id=3, toptier_agency_id=3, toptier_flag=True)
+    baker.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
+    baker.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True)
+    baker.make("references.Agency", id=3, toptier_agency_id=3, toptier_flag=True)
     agencies = [
-        mommy.make(
+        baker.make(
             "references.ToptierAgency", toptier_agency_id=1, toptier_code="123", abbreviation="ABC", name="Test Agency"
         ),
-        mommy.make(
+        baker.make(
             "references.ToptierAgency",
             toptier_agency_id=2,
             toptier_code="987",
             abbreviation="XYZ",
             name="Test Agency 2",
         ),
-        mommy.make(
+        baker.make(
             "references.ToptierAgency",
             toptier_agency_id=3,
             toptier_code="001",
@@ -97,19 +97,19 @@ def setup_test_data(db):
     ]
 
     treas_accounts = [
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=1,
             awarding_toptier_agency_id=agencies[0].toptier_agency_id,
             tas_rendering_label="tas-1-overview",
         ),
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=2,
             awarding_toptier_agency_id=agencies[2].toptier_agency_id,
             tas_rendering_label="tas-2-overview",
         ),
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3,
             awarding_toptier_agency_id=agencies[1].toptier_agency_id,
@@ -123,7 +123,7 @@ def setup_test_data(db):
         {"sub_id": sub2.submission_id, "treasury_account": treas_accounts[2], "total_resources": 15.5},
     ]
     for approp in approps:
-        mommy.make(
+        baker.make(
             "accounts.AppropriationAccountBalances",
             submission_id=approp["sub_id"],
             treasury_account_identifier=approp["treasury_account"],
@@ -154,7 +154,7 @@ def setup_test_data(db):
         },
     ]
     for reporting_tas in reporting_tases:
-        mommy.make(
+        baker.make(
             "reporting.ReportingAgencyTas",
             fiscal_year=reporting_tas["year"],
             fiscal_period=reporting_tas["period"],
@@ -164,7 +164,7 @@ def setup_test_data(db):
             appropriation_obligated_amount=100,
         )
 
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=1,
         toptier_code="123",
@@ -178,7 +178,7 @@ def setup_test_data(db):
         unlinked_procurement_d_awards=3,
         unlinked_assistance_d_awards=4,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=2,
         toptier_code="987",
@@ -192,7 +192,7 @@ def setup_test_data(db):
         unlinked_procurement_d_awards=30,
         unlinked_assistance_d_awards=40,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyOverview",
         reporting_agency_overview_id=3,
         toptier_code="001",
@@ -206,7 +206,7 @@ def setup_test_data(db):
         unlinked_procurement_d_awards=300,
         unlinked_assistance_d_awards=400,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code="123",
         fiscal_year=2018,
@@ -214,7 +214,7 @@ def setup_test_data(db):
         tas_rendering_label="TAS 1",
         obligated_amount=10.0,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code="123",
         fiscal_year=2018,
@@ -222,7 +222,7 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=1.0,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code="987",
         fiscal_year=CURRENT_FISCAL_YEAR,
@@ -230,7 +230,7 @@ def setup_test_data(db):
         tas_rendering_label="TAS 2",
         obligated_amount=12.0,
     )
-    mommy.make(
+    baker.make(
         "reporting.ReportingAgencyMissingTas",
         toptier_code="987",
         fiscal_year=CURRENT_FISCAL_YEAR,

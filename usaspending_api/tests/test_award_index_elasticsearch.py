@@ -1,12 +1,12 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A")
-    mommy.make(
+    baker.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A")
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
         legal_entity_zip5="abcde",
@@ -24,12 +24,12 @@ def award_data_fixture(db):
         type_of_contract_pricing="2",
         extent_competed="F",
     )
-    mommy.make("awards.TransactionNormalized", id=2, award_id=2, action_date="2016-10-01", is_fpds=False, type="02")
-    mommy.make("awards.TransactionFABS", transaction_id=2, fain="P063P100612", cfda_number="84.063")
-    mommy.make("references.ToptierAgency", toptier_agency_id=1, name="Department of Transportation")
-    mommy.make("references.SubtierAgency", subtier_agency_id=1, name="Department of Transportation")
-    mommy.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1)
-    mommy.make(
+    baker.make("awards.TransactionNormalized", id=2, award_id=2, action_date="2016-10-01", is_fpds=False, type="02")
+    baker.make("awards.TransactionFABS", transaction_id=2, fain="P063P100612", cfda_number="84.063")
+    baker.make("references.ToptierAgency", toptier_agency_id=1, name="Department of Transportation")
+    baker.make("references.SubtierAgency", subtier_agency_id=1, name="Department of Transportation")
+    baker.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1)
+    baker.make(
         "awards.Award",
         id=1,
         latest_transaction_id=1,
@@ -42,7 +42,7 @@ def award_data_fixture(db):
         awarding_agency_id=1,
         funding_agency_id=1,
     )
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=2,
         latest_transaction_id=2,
@@ -52,17 +52,17 @@ def award_data_fixture(db):
         total_obligation=1000000.00,
         date_signed="2016-10-1",
     )
-    mommy.make(
+    baker.make(
         "accounts.FederalAccount", id=1, parent_toptier_agency_id=1, agency_identifier="1", main_account_code="0001"
     )
-    mommy.make(
+    baker.make(
         "accounts.TreasuryAppropriationAccount",
         treasury_account_identifier=1,
         agency_id="097",
         main_account_code="4930",
         federal_account_id=1,
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
         reporting_fiscal_year=2020,
@@ -72,7 +72,7 @@ def award_data_fixture(db):
         quarter_format_flag=True,
         submission_window_id=2020121,
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=2020121,
         submission_fiscal_year=2020,
@@ -81,8 +81,8 @@ def award_data_fixture(db):
         period_start_date="2020-04-21",
         submission_reveal_date="2020-04-30",
     )
-    code = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
-    mommy.make(
+    code = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    baker.make(
         "awards.FinancialAccountsByAwards",
         financial_accounts_by_awards_id=1,
         award_id=1,
@@ -92,7 +92,7 @@ def award_data_fixture(db):
         gross_outlay_amount_by_award_cpe=100,
         transaction_obligated_amount=100,
     )
-    mommy.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
 def create_query(should) -> dict:

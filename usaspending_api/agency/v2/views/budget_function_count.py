@@ -49,10 +49,6 @@ class BudgetFunctionCount(AgencyBase):
                 | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
             ),
         ]
-        return (
-            TreasuryAppropriationAccount.objects.annotate(
-                include=Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters).values("pk"))
-            )
-            .filter(include=True)
-            .values("budget_function_code", "budget_subfunction_code")
-        )
+        return TreasuryAppropriationAccount.objects.filter(
+            Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))
+        ).values("budget_function_code", "budget_subfunction_code")

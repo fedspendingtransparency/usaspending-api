@@ -2,7 +2,7 @@ import json
 import pytest
 
 from datetime import datetime
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters, legacy_filters
@@ -100,9 +100,9 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
 @pytest.mark.django_db
 def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
 
-    mommy.make("awards.Award", id=1, type="A", latest_transaction_id=1)
-    mommy.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
-    mommy.make("awards.TransactionFPDS", transaction_id=1)
+    baker.make("awards.Award", id=1, type="A", latest_transaction_id=1)
+    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
+    baker.make("awards.TransactionFPDS", transaction_id=1)
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -161,7 +161,7 @@ def awards_over_different_date_ranges():
             guai = "AWARD_{}".format(award_id)
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
-            award = mommy.make(
+            award = baker.make(
                 "awards.Award",
                 id=award_id,
                 generated_unique_award_id=guai,
@@ -173,7 +173,7 @@ def awards_over_different_date_ranges():
                 fain="xyz{}".format(award_id),
                 uri="abcxyx{}".format(award_id),
             )
-            mommy.make(
+            baker.make(
                 "awards.TransactionNormalized", id=1000 + award_id, award=award, action_date=date_range["action_date"]
             )
 
@@ -367,6 +367,53 @@ def test_date_range_search_with_two_ranges(
 
 
 @pytest.mark.django_db
+def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    contract_type_list = all_award_types_mappings["contracts"]
+
+    request_for_2015 = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "time_period": [
+                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "date_signed"},
+            ],
+            "award_type_codes": contract_type_list,
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 5
+
+    request_for_2016 = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "time_period": [
+                {"start_date": "2016-01-01", "end_date": "2016-12-31", "date_type": "date_signed"},
+            ],
+            "award_type_codes": contract_type_list,
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2016)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 2
+
+
+@pytest.mark.django_db
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
@@ -457,7 +504,7 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
     Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
 
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=5,
         type="A",
@@ -470,8 +517,8 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
         total_obligation=12.00,
     )
 
-    mommy.make("awards.TransactionNormalized", id=8, award_id=5, action_date="2019-10-1", is_fpds=True)
-    mommy.make("awards.TransactionFPDS", transaction_id=8, naics="222233", awardee_or_recipient_uniqu="duns_1001")
+    baker.make("awards.TransactionNormalized", id=8, award_id=5, action_date="2019-10-1", is_fpds=True)
+    baker.make("awards.TransactionFPDS", transaction_id=8, naics="222233", awardee_or_recipient_uniqu="duns_1001")
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 

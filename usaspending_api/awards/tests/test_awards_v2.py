@@ -3,7 +3,7 @@ import pytest
 import json
 
 from rest_framework import status
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import Agency
@@ -15,25 +15,25 @@ def awards_and_transactions(db):
     # DUNS
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
 
-    mommy.make("recipient.DUNS", **duns)
+    baker.make("recipient.DUNS", **duns)
 
     # Recipient Lookup
     parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
     recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
 
-    mommy.make("recipient.RecipientLookup", **parent_recipient_lookup)
-    mommy.make("recipient.RecipientLookup", **recipient_lookup)
+    baker.make("recipient.RecipientLookup", **parent_recipient_lookup)
+    baker.make("recipient.RecipientLookup", **recipient_lookup)
 
     # Recipient Profile
     parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
     recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
 
-    mommy.make("recipient.RecipientProfile", **parent_recipient_profile)
-    mommy.make("recipient.RecipientProfile", **recipient_profile)
+    baker.make("recipient.RecipientProfile", **parent_recipient_profile)
+    baker.make("recipient.RecipientProfile", **recipient_profile)
 
     # CFDA
-    mommy.make("references.Cfda", program_number=12.340)
-    mommy.make(
+    baker.make("references.Cfda", program_number=12.340)
+    baker.make(
         "references.Cfda",
         applicant_eligibility="Hello. I am an applicant eligibility statement.",
         beneficiary_eligibility="Hello. I am a beneficiary eligibility statement.",
@@ -46,7 +46,7 @@ def awards_and_transactions(db):
         url="www.website.com",
         website_address="www.website.biz",
     )
-    mommy.make(
+    baker.make(
         "references.Cfda",
         federal_agency="Agency 2",
         objectives="objectives",
@@ -59,34 +59,34 @@ def awards_and_transactions(db):
     )
 
     # PSC
-    mommy.make("references.PSC", code="10", description="Whatever")
-    mommy.make("references.PSC", code="1005", description="More specific whatever")
-    mommy.make("references.PSC", code="A", description="R&D")
-    mommy.make("references.PSC", code="A1", description="R&D - Steak Sauce")
-    mommy.make("references.PSC", code="A13", description="R&D - Brand specific steak condiments")
-    mommy.make("references.PSC", code="A136", description="R&D - Very specific steak research")
-    mommy.make("references.PSC", code="M", description="Something")
-    mommy.make("references.PSC", code="M1", description="Something More Specific")
-    mommy.make("references.PSC", code="M123", description="Something Most Specific")
+    baker.make("references.PSC", code="10", description="Whatever")
+    baker.make("references.PSC", code="1005", description="More specific whatever")
+    baker.make("references.PSC", code="A", description="R&D")
+    baker.make("references.PSC", code="A1", description="R&D - Steak Sauce")
+    baker.make("references.PSC", code="A13", description="R&D - Brand specific steak condiments")
+    baker.make("references.PSC", code="A136", description="R&D - Very specific steak research")
+    baker.make("references.PSC", code="M", description="Something")
+    baker.make("references.PSC", code="M1", description="Something More Specific")
+    baker.make("references.PSC", code="M123", description="Something Most Specific")
 
     # NAICS
-    mommy.make("references.NAICS", code="11", description="Agriculture")
-    mommy.make("references.NAICS", code="1111", description="Soybean & Oilseed Agriculture")
-    mommy.make("references.NAICS", code="111120", description="Soybean Harvesting")
+    baker.make("references.NAICS", code="11", description="Agriculture")
+    baker.make("references.NAICS", code="1111", description="Soybean & Oilseed Agriculture")
+    baker.make("references.NAICS", code="111120", description="Soybean Harvesting")
 
     # Toptier Agency
     toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
     toptier_agency_2 = {"pk": 2, "abbreviation": "TA2", "name": "TOPTIER AGENCY 2", "toptier_code": "002"}
 
-    ta1 = mommy.make("references.ToptierAgency", **toptier_agency_1)
-    ta2 = mommy.make("references.ToptierAgency", **toptier_agency_2)
+    ta1 = baker.make("references.ToptierAgency", **toptier_agency_1)
+    ta2 = baker.make("references.ToptierAgency", **toptier_agency_2)
 
     # Subtier Agency
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
     subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
 
-    sa1 = mommy.make("references.SubtierAgency", **subtier_agency_1)
-    sa2 = mommy.make("references.SubtierAgency", **subtier_agency_2)
+    sa1 = baker.make("references.SubtierAgency", **subtier_agency_1)
+    sa2 = baker.make("references.SubtierAgency", **subtier_agency_2)
 
     # Agency
     agency = {
@@ -102,8 +102,8 @@ def awards_and_transactions(db):
         "toptier_flag": True,
     }
 
-    mommy.make("references.Agency", **agency)
-    mommy.make("references.Agency", **agency_2)
+    baker.make("references.Agency", **agency)
+    baker.make("references.Agency", **agency_2)
 
     # Transaction Normalized
     bc = {"business_categories": ["small_business"]}
@@ -122,19 +122,19 @@ def awards_and_transactions(db):
     cont_trans_norm_6 = {"pk": 10, "award_id": 9, **bc}
     cont_trans_norm_7 = {"pk": 11, "award_id": 10, **bc}
 
-    mommy.make("awards.TransactionNormalized", **asst_trans_norm_1)
-    mommy.make("awards.TransactionNormalized", **asst_trans_norm_2)
-    mommy.make("awards.TransactionNormalized", **asst_trans_norm_3)
-    mommy.make("awards.TransactionNormalized", **asst_trans_norm_4)
-    mommy.make("awards.TransactionNormalized", **asst_trans_norm_5)
+    baker.make("awards.TransactionNormalized", **asst_trans_norm_1)
+    baker.make("awards.TransactionNormalized", **asst_trans_norm_2)
+    baker.make("awards.TransactionNormalized", **asst_trans_norm_3)
+    baker.make("awards.TransactionNormalized", **asst_trans_norm_4)
+    baker.make("awards.TransactionNormalized", **asst_trans_norm_5)
 
-    mommy.make("awards.TransactionNormalized", **cont_trans_norm_1)
-    mommy.make("awards.TransactionNormalized", **cont_trans_norm_2)
-    mommy.make("awards.TransactionNormalized", **cont_trans_norm_3)
-    mommy.make("awards.TransactionNormalized", **cont_trans_norm_4)
-    mommy.make("awards.TransactionNormalized", **cont_trans_norm_5)
-    mommy.make("awards.TransactionNormalized", **cont_trans_norm_6)
-    mommy.make("awards.TransactionNormalized", **cont_trans_norm_7)
+    baker.make("awards.TransactionNormalized", **cont_trans_norm_1)
+    baker.make("awards.TransactionNormalized", **cont_trans_norm_2)
+    baker.make("awards.TransactionNormalized", **cont_trans_norm_3)
+    baker.make("awards.TransactionNormalized", **cont_trans_norm_4)
+    baker.make("awards.TransactionNormalized", **cont_trans_norm_5)
+    baker.make("awards.TransactionNormalized", **cont_trans_norm_6)
+    baker.make("awards.TransactionNormalized", **cont_trans_norm_7)
 
     # Transaction FABS
     asst_trans_1 = {
@@ -367,11 +367,11 @@ def awards_and_transactions(db):
         "ultimate_parent_unique_ide": "123",
     }
 
-    mommy.make("awards.TransactionFABS", **asst_trans_1)
-    mommy.make("awards.TransactionFABS", **asst_trans_2)
-    mommy.make("awards.TransactionFABS", **asst_trans_3)
-    mommy.make("awards.TransactionFABS", **asst_trans_4)
-    mommy.make("awards.TransactionFABS", **asst_trans_5)
+    baker.make("awards.TransactionFABS", **asst_trans_1)
+    baker.make("awards.TransactionFABS", **asst_trans_2)
+    baker.make("awards.TransactionFABS", **asst_trans_3)
+    baker.make("awards.TransactionFABS", **asst_trans_4)
+    baker.make("awards.TransactionFABS", **asst_trans_5)
 
     # Transaction FPDS
     cont_trans_1 = {
@@ -666,13 +666,13 @@ def awards_and_transactions(db):
         "national_interest_desc": "NONE",
     }
 
-    mommy.make("awards.TransactionFPDS", **cont_trans_1)
-    mommy.make("awards.TransactionFPDS", **cont_trans_2)
-    mommy.make("awards.TransactionFPDS", **cont_trans_3)
-    mommy.make("awards.TransactionFPDS", **cont_trans_4)
-    mommy.make("awards.TransactionFPDS", **cont_trans_5)
-    mommy.make("awards.TransactionFPDS", **cont_trans_6)
-    mommy.make("awards.TransactionFPDS", **cont_trans_7)
+    baker.make("awards.TransactionFPDS", **cont_trans_1)
+    baker.make("awards.TransactionFPDS", **cont_trans_2)
+    baker.make("awards.TransactionFPDS", **cont_trans_3)
+    baker.make("awards.TransactionFPDS", **cont_trans_4)
+    baker.make("awards.TransactionFPDS", **cont_trans_5)
+    baker.make("awards.TransactionFPDS", **cont_trans_6)
+    baker.make("awards.TransactionFPDS", **cont_trans_7)
 
     # Awards
     award_1 = {
@@ -893,18 +893,18 @@ def awards_and_transactions(db):
         "uri": 1234,
     }
 
-    mommy.make("awards.Award", **award_1)
-    mommy.make("awards.Award", **award_2)
-    mommy.make("awards.Award", **award_3)
-    mommy.make("awards.Award", **award_4)
-    mommy.make("awards.Award", **award_5)
-    mommy.make("awards.Award", **award_6)
-    mommy.make("awards.Award", **award_7)
-    mommy.make("awards.Award", **award_8)
-    mommy.make("awards.Award", **award_9)
-    mommy.make("awards.Award", **award_10)
-    mommy.make("awards.Award", **award_11)
-    mommy.make("awards.Award", **award_13)
+    baker.make("awards.Award", **award_1)
+    baker.make("awards.Award", **award_2)
+    baker.make("awards.Award", **award_3)
+    baker.make("awards.Award", **award_4)
+    baker.make("awards.Award", **award_5)
+    baker.make("awards.Award", **award_6)
+    baker.make("awards.Award", **award_7)
+    baker.make("awards.Award", **award_8)
+    baker.make("awards.Award", **award_9)
+    baker.make("awards.Award", **award_10)
+    baker.make("awards.Award", **award_11)
+    baker.make("awards.Award", **award_13)
 
     # Parent Award
     parent_award_1 = {
@@ -925,18 +925,18 @@ def awards_and_transactions(db):
     parent_award_2 = {"award_id": 8, "generated_unique_award_id": "CONT_IDV_AWARD8_1000", "parent_award_id": 9}
     parent_award_3 = {"award_id": 9, "generated_unique_award_id": "CONT_IDV_AWARD9_1000", "parent_award_id": None}
 
-    mommy.make("awards.ParentAward", **parent_award_1)
-    mommy.make("awards.ParentAward", **parent_award_2)
-    mommy.make("awards.ParentAward", **parent_award_3)
+    baker.make("awards.ParentAward", **parent_award_1)
+    baker.make("awards.ParentAward", **parent_award_2)
+    baker.make("awards.ParentAward", **parent_award_3)
 
-    dsws1 = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
-    mommy.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
+    dsws1 = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
+    baker.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
 
 
 @pytest.fixture
 def update_awards(db):
-    mommy.make("awards.Award", pk=11)
-    mommy.make("awards.Award", pk=12)
+    baker.make("awards.Award", pk=11)
+    baker.make("awards.Award", pk=12)
 
 
 def test_award_last_updated_endpoint(client, update_awards):
@@ -967,9 +967,9 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
 
 def test_award_endpoint_parent_award(client, awards_and_transactions):
 
-    dsws1 = mommy.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
-    mommy.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
-    mommy.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws1)
+    dsws1 = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
+    baker.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
+    baker.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws1)
 
     # Test contract award with parent
     resp = client.get("/api/v2/awards/7/")
@@ -1116,8 +1116,8 @@ def test_zip4_switch(client, awards_and_transactions):
 
 
 def test_file_c_data(client, awards_and_transactions):
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="L")
-    mommy.make(
+    defc = baker.make("references.DisasterEmergencyFundCode", code="L")
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2019,
         submission_fiscal_month=12,
@@ -1125,7 +1125,7 @@ def test_file_c_data(client, awards_and_transactions):
         submission_reveal_date="2020-04-01",
         period_start_date="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2018,
         submission_fiscal_month=12,
@@ -1133,7 +1133,7 @@ def test_file_c_data(client, awards_and_transactions):
         submission_reveal_date="2020-04-01",
         period_start_date="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2020,
         submission_fiscal_month=12,
@@ -1141,7 +1141,7 @@ def test_file_c_data(client, awards_and_transactions):
         submission_reveal_date="2020-04-01",
         period_start_date="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         pk=2,
         reporting_fiscal_period=8,
@@ -1151,7 +1151,7 @@ def test_file_c_data(client, awards_and_transactions):
         is_final_balances_for_fy=False,
         reporting_period_start="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         transaction_obligated_amount=100,
@@ -1166,7 +1166,7 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 0.0}]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 100.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 0.0
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         pk=1,
         reporting_fiscal_period=12,
@@ -1176,7 +1176,7 @@ def test_file_c_data(client, awards_and_transactions):
         is_final_balances_for_fy=True,
         reporting_period_start="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         transaction_obligated_amount=100,
@@ -1191,7 +1191,7 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 200.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         pk=3,
         reporting_fiscal_period=10,
@@ -1201,7 +1201,7 @@ def test_file_c_data(client, awards_and_transactions):
         is_final_balances_for_fy=False,
         reporting_period_start="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         transaction_obligated_amount=10,
@@ -1216,7 +1216,7 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 210.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         pk=4,
         reporting_fiscal_period=12,
@@ -1226,7 +1226,7 @@ def test_file_c_data(client, awards_and_transactions):
         is_final_balances_for_fy=True,
         reporting_period_start="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         transaction_obligated_amount=10,
@@ -1241,7 +1241,7 @@ def test_file_c_data(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 110.0}]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 220.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         pk=5,
         reporting_fiscal_period=12,
@@ -1250,7 +1250,7 @@ def test_file_c_data(client, awards_and_transactions):
         reporting_period_end="2020-06-30",
         quarter_format_flag=True,
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         transaction_obligated_amount=0,
@@ -1268,8 +1268,8 @@ def test_file_c_data(client, awards_and_transactions):
 
 
 def test_outlay_calculations(client, awards_and_transactions):
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="L")
-    mommy.make(
+    defc = baker.make("references.DisasterEmergencyFundCode", code="L")
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2019,
         submission_fiscal_month=12,
@@ -1277,7 +1277,7 @@ def test_outlay_calculations(client, awards_and_transactions):
         submission_reveal_date="2020-04-01",
         period_start_date="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         pk=4,
         reporting_fiscal_period=12,
@@ -1287,7 +1287,7 @@ def test_outlay_calculations(client, awards_and_transactions):
         is_final_balances_for_fy=True,
         reporting_period_start="2020-04-01",
     )
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award_id=1,
         transaction_obligated_amount=10,
