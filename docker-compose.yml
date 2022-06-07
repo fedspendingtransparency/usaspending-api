@@ -22,11 +22,11 @@ services:
         source: local_pg_data
         target: /var/lib/postgresql/data
     ports:
-      - ${POSTGRES_PORT}:5432
+      - ${USASPENDING_DB_PORT:-5432}:5432
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: data_store_api
+      POSTGRES_USER: ${USASPENDING_DB_USER:-usaspending}
+      POSTGRES_PASSWORD: ${USASPENDING_DB_PASSWORD:-usaspender}
+      POSTGRES_DB: ${USASPENDING_DB_NAME:-data_store_api}
 
   usaspending-manage:
     profiles:
@@ -42,7 +42,7 @@ services:
     command: python3 -u manage.py help
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
 
@@ -62,7 +62,7 @@ services:
       - usaspending-es
     command: pytest
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
       # Location in host machine where broker src code root can be found
@@ -97,7 +97,7 @@ services:
         printf -- "-------\nRunning integration tests:\n"
         pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
       # Location in host machine where broker src code root can be found
@@ -122,9 +122,9 @@ services:
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       RUN_LOCAL_DOWNLOAD_IN_PROCESS: "False"
-      DB_SOURCE: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      DB_R1: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DB_SOURCE: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      DB_R1: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
 
   usaspending-bulk-download:
@@ -139,8 +139,8 @@ services:
     command: python3 manage.py download_sqs_worker
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
 
   usaspending-es:
     profiles:

@@ -40,13 +40,13 @@ class LocalConfig(DefaultConfig):
     _USASPENDING_PASSWORD: SecretStr = "usaspender"
 
     # ==== [Postgres] ====
-    POSTGRES_USER: str = _USASPENDING_USER
-    POSTGRES_PASSWORD: SecretStr = _USASPENDING_PASSWORD
+    USASPENDING_DB_USER: str = _USASPENDING_USER
+    USASPENDING_DB_PASSWORD: SecretStr = _USASPENDING_PASSWORD
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
-    POSTGRES_HOST: str = "usaspending-db"
-    POSTGRES_PORT: str = "5432"
+    USASPENDING_DB_HOST: str = "usaspending-db"
+    USASPENDING_DB_PORT: str = "5432"
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
