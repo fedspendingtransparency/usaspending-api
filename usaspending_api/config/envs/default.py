@@ -10,7 +10,7 @@
 # - See https://pydantic-docs.helpmanual.io/usage/settings/#field-value-priority for precedence of overrides
 ########################################################################################################################
 import pathlib
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from usaspending_api.config.utils import ENV_SPECIFIC_OVERRIDE, eval_default_factory
 from pydantic import (
@@ -33,7 +33,7 @@ class DefaultConfig(BaseSettings):
     """Top-level config that defines all configuration variables, and their default, overridable values
 
     Attributes:
-        POSTGRES_URL: (optional) Full URL to Postgres DB  that can be used to override the URL-by-parts
+        DATABASE_URL: (optional) Full URL to Postgres DB  that can be used to override the URL-by-parts
         POSTGRES_DB: The name of the Postgres DB that contains USAspending data
         POSTGRES_USER: Authorized user used to connect to the USAspending DB
         POSTGRES_PASSWORD: Password for the user used to connect to the USAspending DB
@@ -60,7 +60,7 @@ class DefaultConfig(BaseSettings):
     PROJECT_LOG_DIR: str = str(_SRC_ROOT_DIR / "logs")
 
     # ==== [Postgres] ====
-    POSTGRES_URL: str = None
+    DATABASE_URL: str = None
     POSTGRES_DB: str = "data_store_api"
     POSTGRES_USER: str = ENV_SPECIFIC_OVERRIDE
     POSTGRES_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
@@ -68,25 +68,46 @@ class DefaultConfig(BaseSettings):
     POSTGRES_PORT: str = ENV_SPECIFIC_OVERRIDE
     POSTGRES_DSN: PostgresDsn = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
 
+    @staticmethod
+    def build_postgres_dsn(
+        database_url: Optional[str] = None,
+        postgres_user: Optional[str] = None,
+        postgres_password: Optional[str] = None,
+        postgres_host: Optional[str] = None,
+        postgres_port: Optional[str] = None,
+        postgres_db: Optional[str] = None,
+    ) -> PostgresDsn:
+        """A builder method that builds a PostgresDsn. If ``database_url` is provided, it will use that.
+        Otherwise it will build the URL from the component parts."""
+        path = None
+        if postgres_db:
+            path = "/" + postgres_db
+
+        return PostgresDsn(
+            url=database_url,
+            scheme="postgres",
+            user=postgres_user,
+            password=postgres_password,
+            host=postgres_host,
+            port=postgres_port,
+            path=path,
+        )
+
     @validator("POSTGRES_DSN")
     def _POSTGRES_DSN_factory(cls, v, values, field: ModelField):
         def factory_func() -> PostgresDsn:
             """A factory that assembles the full DSN URL to the Postgres DB.
 
-            If ``POSTGRES_URL`` is provided e.g. as an env var, it will be used. Otherwise this URL is assembled from
-            the other ``POSTGRES_*`` config vars
+            If ``DATABASE_URL`` is provided e.g. as an env var, it will be used. Otherwise this URL is
+            assembled from the other ``POSTGRES_*`` config vars
             """
-            path = None
-            if values["POSTGRES_DB"]:
-                path = "/" + values["POSTGRES_DB"]
-            return PostgresDsn(
-                url=values["POSTGRES_URL"],
-                scheme="postgres",
-                user=values["POSTGRES_USER"],
-                password=values["POSTGRES_PASSWORD"].get_secret_value(),
-                host=values["POSTGRES_HOST"],
-                port=values["POSTGRES_PORT"],
-                path=path,
+            return DefaultConfig.build_postgres_dsn(
+                database_url=values["DATABASE_URL"],
+                postgres_user=values["POSTGRES_USER"],
+                postgres_password=values["POSTGRES_PASSWORD"].get_secret_value(),
+                postgres_host=values["POSTGRES_HOST"],
+                postgres_port=values["POSTGRES_PORT"],
+                postgres_db=values["POSTGRES_DB"],
             )
 
         return eval_default_factory(cls, v, values, field, factory_func)

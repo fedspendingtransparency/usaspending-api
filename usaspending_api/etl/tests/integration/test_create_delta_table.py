@@ -36,8 +36,18 @@ def _verify_delta_table_creation(spark: SparkSession, delta_table_name: str, s3_
     assert the_delta_table["isTemporary"] is False
 
 
-def test_create_delta_table_for_sam_recipient(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    _verify_delta_table_creation(spark, "sam_recipient", s3_unittest_data_bucket)
+def test_create_delta_table_for_award_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "award_search", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_awards(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "awards", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_financial_accounts_by_awards(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
+    _verify_delta_table_creation(spark, "financial_accounts_by_awards", s3_unittest_data_bucket)
 
 
 def test_create_delta_table_for_recipient_lookup(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
@@ -48,6 +58,10 @@ def test_create_delta_table_for_recipient_profile(spark, s3_unittest_data_bucket
     _verify_delta_table_creation(spark, "recipient_profile", s3_unittest_data_bucket)
 
 
+def test_create_delta_table_for_sam_recipient(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "sam_recipient", s3_unittest_data_bucket)
+
+
 def test_create_delta_table_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     _verify_delta_table_creation(spark, "transaction_fabs", s3_unittest_data_bucket)
 
@@ -56,13 +70,9 @@ def test_create_delta_table_for_transaction_fpds(spark, s3_unittest_data_bucket,
     _verify_delta_table_creation(spark, "transaction_fpds", s3_unittest_data_bucket)
 
 
-def test_create_delta_table_for_transaction_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    _verify_delta_table_creation(spark, "transaction_search", s3_unittest_data_bucket)
-
-
 def test_create_delta_table_for_transaction_normalized(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     _verify_delta_table_creation(spark, "transaction_normalized", s3_unittest_data_bucket)
 
 
-def test_create_delta_table_for_awards(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    _verify_delta_table_creation(spark, "awards", s3_unittest_data_bucket)
+def test_create_delta_table_for_transaction_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_search", s3_unittest_data_bucket)
