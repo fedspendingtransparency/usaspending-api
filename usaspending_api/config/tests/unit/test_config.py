@@ -835,7 +835,7 @@ def test_override_with_dotenv_file(tmpdir):
 
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+    # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
     shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
     if Path(_PROJECT_ROOT_DIR / ".env").exists():
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -870,7 +870,7 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -907,7 +907,7 @@ def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -944,7 +944,7 @@ def test_override_with_dotenv_file_for_validated_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -982,7 +982,7 @@ def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1020,7 +1020,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_validated_var(tmpdir)
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1058,7 +1058,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_root_validated_var(tm
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1093,7 +1093,7 @@ def test_override_dotenv_file_with_env_var(tmpdir):
     # Now the .env file takes precedence
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+    # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
     shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
     if Path(_PROJECT_ROOT_DIR / ".env").exists():
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1164,7 +1164,7 @@ def test_precedence_order(tmpdir):
     # Now the .env file takes precedence
     tmp_config_dir = tmpdir.mkdir("config_dir")
     dotenv_file = tmp_config_dir.join(".env")
-    # Must use some of the default overrides from .env, like POSTRES_*. Fallback to .env.template if not existing
+    # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
     shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
     if Path(_PROJECT_ROOT_DIR / ".env").exists():
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
