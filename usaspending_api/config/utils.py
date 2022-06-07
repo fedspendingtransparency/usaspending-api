@@ -82,13 +82,18 @@ def eval_default_factory(
             f"precedence as the new value."
         )
 
-    if assigned_or_sourced_value and assigned_or_sourced_value not in CONFIG_VAR_PLACEHOLDERS:
-        # The value of this field is being explicitly set in some source (initializer param, env var, etc.)
+    if assigned_or_sourced_value != default_value and assigned_or_sourced_value not in CONFIG_VAR_PLACEHOLDERS:
+        # The value of this field is being explicitly set DIFFERENT than its default value
+        # in some source (initializer param, env var, etc.)
         # So honor it and don't use the default below
         return assigned_or_sourced_value
 
     if is_override and default_value and default_value not in CONFIG_VAR_PLACEHOLDERS:
-        return default_value  # the value set on the overriding subclass is next in line for precedence
+        # If this validator exists on a field (which is causing this evaluation), however that field was overridden
+        # in a subclass to the class where the validator was defined, and an explicit non-None, non-placeholder value
+        # is being set for that field in the overridden subclass...
+        # Then the (new default) value set on the overriding subclass is next in line for precedence
+        return default_value
 
     # Otherwise let this validator be the field's default factory
     # The provided factory function is assumed to be a closure, enclosing variable values it needs in its scoped
@@ -128,7 +133,7 @@ def eval_default_factory_from_root_validator(
             f"into a root_validator and override that."
         )
 
-    assigned_or_sourced_value = configured_vars[config_var_name]
+    assigned_or_sourced_value = configured_vars[config_var_name] if config_var_name in configured_vars else None
     config_var = config_class.__fields__[config_var_name]
     produced_value = eval_default_factory(
         config_class, assigned_or_sourced_value, configured_vars, config_var, factory_func

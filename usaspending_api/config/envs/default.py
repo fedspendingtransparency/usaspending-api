@@ -95,23 +95,23 @@ class DefaultConfig(BaseSettings):
             url_parts, username, password = parse_pg_uri(values["DATABASE_URL"])
 
             # Backfill only POSTGRES DSN CONFIG vars that are missing their value
-            if not values["USASPENDING_DB_HOST"]:
+            if "USASPENDING_DB_HOST" not in values or values["USASPENDING_DB_HOST"] is None:
                 values = eval_default_factory_from_root_validator(
                     cls, values, "USASPENDING_DB_HOST", lambda: url_parts.hostname
                 )
-            if not values["USASPENDING_DB_PORT"]:
+            if "USASPENDING_DB_PORT" not in values or values["USASPENDING_DB_PORT"] is None:
                 values = eval_default_factory_from_root_validator(
-                    cls, values, "USASPENDING_DB_PORT", lambda: url_parts.port
+                    cls, values, "USASPENDING_DB_PORT", lambda: str(url_parts.port)
                 )
-            if not values["USASPENDING_DB_NAME"]:
+            if "USASPENDING_DB_NAME" not in values or values["USASPENDING_DB_NAME"] is None:
                 values = eval_default_factory_from_root_validator(
                     cls, values, "USASPENDING_DB_NAME", lambda: url_parts.path.lstrip("/")
                 )
-            if not values["USASPENDING_DB_USER"]:
+            if "USASPENDING_DB_USER" not in values or values["USASPENDING_DB_USER"] is None:
                 values = eval_default_factory_from_root_validator(cls, values, "USASPENDING_DB_USER", lambda: username)
-            if not values["USASPENDING_DB_PASSWORD"]:
+            if "USASPENDING_DB_PASSWORD" not in values or values["USASPENDING_DB_PASSWORD"] is None:
                 values = eval_default_factory_from_root_validator(
-                    cls, values, "USASPENDING_DB_PASSWORD", lambda: password
+                    cls, values, "USASPENDING_DB_PASSWORD", lambda: SecretStr(password)
                 )
 
         # If DATABASE_URL is not provided, try to build-it-up from provided parts, then backfill it
@@ -164,7 +164,10 @@ class DefaultConfig(BaseSettings):
             )
         if pg_username != values["USASPENDING_DB_USER"]:
             pg_url_config_errors["USASPENDING_DB_USER"] = (values["USASPENDING_DB_USER"], pg_username)
-        if pg_password != values["USASPENDING_DB_PASSWORD"].get_secret_value():
+        stored_usaspending_db_password = values["USASPENDING_DB_PASSWORD"]
+        if stored_usaspending_db_password and isinstance(stored_usaspending_db_password, SecretStr):
+            stored_usaspending_db_password = stored_usaspending_db_password.get_secret_value()
+        if pg_password != stored_usaspending_db_password:
             # NOTE: Keeping password text obfuscated in the error output
             pg_url_config_errors["USASPENDING_DB_PASSWORD"] = (
                 values["USASPENDING_DB_PASSWORD"],

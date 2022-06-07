@@ -2,11 +2,12 @@ import shutil
 import sys
 from unittest.mock import patch
 
+import re
 import os
 import pytest
 from pathlib import Path
 from pprint import pprint
-from pydantic import validator, root_validator, PostgresDsn
+from pydantic import validator, root_validator, PostgresDsn, SecretStr
 from pydantic.fields import ModelField
 from pydantic.error_wrappers import ValidationError
 
@@ -302,6 +303,15 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator3(_UnitTestBaseConfi
         return eval_default_factory_from_root_validator(cls, values, "UNITTEST_CFG_AL", factory_func)
 
 
+class _UnitTestDbPartsConfig(DefaultConfig):
+    ENV_CODE = "utdbp"
+    USASPENDING_DB_HOST: str = None
+    USASPENDING_DB_PORT: str = None
+    USASPENDING_DB_NAME: str = None
+    USASPENDING_DB_USER: str = None
+    USASPENDING_DB_PASSWORD: SecretStr = None
+
+
 _UNITTEST_ENVS_DICTS = [
     {
         "env_type": "unittest",
@@ -338,6 +348,13 @@ _UNITTEST_ENVS_DICTS = [
         "description": "Unit Testing Sub Config",
         "constructor": _UnitTestSubConfigFailFindingSubclassFieldsInValidator3,
     },
+    {
+        "env_type": "unittest",
+        "code": _UnitTestDbPartsConfig.ENV_CODE,
+        "long_name": "unittest_db_parts",
+        "description": "Unit Testing DB Parts Config",
+        "constructor": _UnitTestDbPartsConfig,
+    },
 ]
 
 
@@ -362,21 +379,177 @@ def test_config_loading():
         pprint(cfg.dict())
 
 
-def test_database_url_config_populated():
-    """Validate that the pytest-django fixtures have not altered the database name when not relying on that fixture"""
-    pg_uri = CONFIG.DATABASE_URL
-    assert "/test_" not in pg_uri
-
+def test_database_url_and_parts_config_populated():
+    """Validate that DATABASE_URL and all USASPENDING_DB_* parts are populated after config is loaded"""
+    assert CONFIG.DATABASE_URL is not None
     assert CONFIG.USASPENDING_DB_HOST is not None
     assert CONFIG.USASPENDING_DB_PORT is not None
     assert CONFIG.USASPENDING_DB_NAME is not None
     assert CONFIG.USASPENDING_DB_USER is not None
     assert CONFIG.USASPENDING_DB_PASSWORD is not None
 
-    assert not CONFIG.USASPENDING_DB_NAME.startswith("test_")
+
+def test_database_url_only_backfills_parts():
+    """Test that only providing a value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and keeps them
+    consistent
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to be defaulted to None (not set)
+    - Instantiate the config with a DATABASE_URL env var (ONLY) set
+    """
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsConfig.ENV_CODE,
+            "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+        },
+        clear=True,
+    ):
+        cfg = _UnitTestDbPartsConfig(_env_file=None)
+
+        assert cfg.DATABASE_URL is not None
+        assert cfg.USASPENDING_DB_HOST is not None
+        assert cfg.USASPENDING_DB_PORT is not None
+        assert cfg.USASPENDING_DB_NAME is not None
+        assert cfg.USASPENDING_DB_USER is not None
+        assert cfg.USASPENDING_DB_PASSWORD is not None
+
+        assert cfg.USASPENDING_DB_HOST == "foobar"
+        assert cfg.USASPENDING_DB_PORT == "12345"
+        assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
+        assert cfg.USASPENDING_DB_USER == "dummy"
+        assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
 
 
-def test_postgres_dsn_constructed_with_only_url_leaves_None_parts():
+def test_database_url_parts_only_will_build_database_url():
+    """Test that if only the CONFIG.USASPENDING_DB_* parts are provided, the DATABASE_URL will be built-up from
+    parts, set on the CONFIG object, and consistent with the parts
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to be defaulted to None (not set)
+    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part
+    """
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsConfig.ENV_CODE,
+            "USASPENDING_DB_HOST": "foobar",
+            "USASPENDING_DB_PORT": "12345",
+            "USASPENDING_DB_NAME": "fresh_new_db_name",
+            "USASPENDING_DB_USER": "dummy",
+            "USASPENDING_DB_PASSWORD": "pwd",
+        },
+        clear=True,
+    ):
+        cfg = _UnitTestDbPartsConfig(_env_file=None)
+
+        assert cfg.DATABASE_URL is not None
+        assert cfg.USASPENDING_DB_HOST is not None
+        assert cfg.USASPENDING_DB_PORT is not None
+        assert cfg.USASPENDING_DB_NAME is not None
+        assert cfg.USASPENDING_DB_USER is not None
+        assert cfg.USASPENDING_DB_PASSWORD is not None
+
+        assert cfg.USASPENDING_DB_HOST == "foobar"
+        assert cfg.USASPENDING_DB_PORT == "12345"
+        assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
+        assert cfg.USASPENDING_DB_USER == "dummy"
+        assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+        assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
+
+
+def test_database_url_and_parts_defined_ok_if_consistent():
+    """Test that if BOTH the CONFIG.DATABASE_URL and the CONFIG.USASPENDING_DB_* parts are provided, neither is
+    built-up or backfilled, but they are validated to ensure they are equal. This should validate fine.
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to be defaulted to None (not set)
+    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part and with a DATABASE_URL env var made up of those parts.
+    """
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsConfig.ENV_CODE,
+            "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+            "USASPENDING_DB_HOST": "foobar",
+            "USASPENDING_DB_PORT": "12345",
+            "USASPENDING_DB_NAME": "fresh_new_db_name",
+            "USASPENDING_DB_USER": "dummy",
+            "USASPENDING_DB_PASSWORD": "pwd",
+        },
+        clear=True,
+    ):
+        cfg = _UnitTestDbPartsConfig(_env_file=None)
+
+        assert cfg.DATABASE_URL is not None
+        assert cfg.USASPENDING_DB_HOST is not None
+        assert cfg.USASPENDING_DB_PORT is not None
+        assert cfg.USASPENDING_DB_NAME is not None
+        assert cfg.USASPENDING_DB_USER is not None
+        assert cfg.USASPENDING_DB_PASSWORD is not None
+
+        assert cfg.USASPENDING_DB_HOST == "foobar"
+        assert cfg.USASPENDING_DB_PORT == "12345"
+        assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
+        assert cfg.USASPENDING_DB_USER == "dummy"
+        assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+        assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
+
+
+def test_database_url_and_parts_error_if_consistent():
+    """Test that if BOTH the CONFIG.DATABASE_URL and the CONFIG.USASPENDING_DB_* parts are provided,
+    but their values are not consistent with each other, than the validation will catch that and throw an error
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to be defaulted to None (not set)
+    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part and with a DATABASE_URL env var made up of those parts.
+    - Force the values to not match
+    - Iterate through each part and test it fails validation
+    """
+    consistent_dict = {
+        ENV_CODE_VAR: _UnitTestDbPartsConfig.ENV_CODE,
+        "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+        "USASPENDING_DB_HOST": "foobar",
+        "USASPENDING_DB_PORT": "12345",
+        "USASPENDING_DB_NAME": "fresh_new_db_name",
+        "USASPENDING_DB_USER": "dummy",
+        "USASPENDING_DB_PASSWORD": "pwd",
+    }
+    mismatched_parts = {
+        "USASPENDING_DB_HOST": "bad_host",
+        "USASPENDING_DB_PORT": "990099",
+        "USASPENDING_DB_NAME": "misnamed_db",
+        "USASPENDING_DB_USER": "fake_user",
+        "USASPENDING_DB_PASSWORD": "not_your_secret",
+    }
+
+    for part, bad_val in mismatched_parts.items():
+        test_env = consistent_dict.copy()
+        test_env[part] = bad_val
+        with mock.patch.dict(os.environ, test_env, clear=True):
+            with pytest.raises(ValidationError) as exc_info:
+                _UnitTestDbPartsConfig(_env_file=None)
+
+            provided = mismatched_parts[part]
+            expected = consistent_dict[part]
+            if part == "USASPENDING_DB_PASSWORD":
+                # The error keeps the provided password obfuscated as a SecretStr
+                provided = SecretStr(provided)
+                expected = "*" * len(expected) if expected else None
+            expected_error = (
+                f"Part: {part}, Part Value Provided: {provided}, " f"Value found in DATABASE_URL: {expected}"
+            )
+            assert exc_info.match(re.escape(expected_error))
+
+
+def test_postgres_dsn_constructed_with_only_url_leaves_none_parts():
     """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a URL.
     Assumption is that the DSN can be used as string, but the "parts" will all be ``None``"""
     pg_dsn = PostgresDsn(str(CONFIG.DATABASE_URL), scheme="postgres")
