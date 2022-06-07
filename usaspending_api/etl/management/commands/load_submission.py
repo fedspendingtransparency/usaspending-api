@@ -199,7 +199,7 @@ class Command(load_base.Command):
                     s.reporting_fiscal_year,
                     s.reporting_fiscal_period,
                     s.is_quarter_format,
-                    s.d2_submission,
+                    s.is_fabs,
                     s.publish_status_id,
                     pch.history
                 from
@@ -222,7 +222,7 @@ class Command(load_base.Command):
 
         if submission_data["publish_status_id"] not in (2, 3):
             raise RuntimeError(f"publish_status_id {submission_data['publish_status_id']} is not allowed")
-        if submission_data["d2_submission"] is not False:
-            raise RuntimeError(f"d2_submission {submission_data['d2_submission']} is not allowed")
+        if submission_data["is_fabs"] is not False:
+            raise RuntimeError(f"is_fabs {submission_data['is_fabs']} is not allowed")
 
         return submission_data
