@@ -10,6 +10,7 @@ from django.db import connections
 from django.test import override_settings
 from pathlib import Path
 
+from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
@@ -21,6 +22,7 @@ from usaspending_api.common.sqs.sqs_handler import (
     _FakeUnitTestFileBackedSQSQueue,
 )
 from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
@@ -122,6 +124,33 @@ def django_db_setup(
             add_view_protection()
             ensure_business_categories_functions_exist()
             call_command("load_broker_static_data")
+
+            # This is necessary for any script/code run in a test that bases its database connection off the postgres
+            # config. This resolves the issue by temporarily mocking the POSTGRES_DSN to accurately point to the test
+            # database.
+            old_db_url = CONFIG.DATABASE_URL
+            old_ps_db = CONFIG.POSTGRES_DB
+            old_ps_dsn = CONFIG.POSTGRES_DSN
+
+            test_db_name = f"test_{CONFIG.POSTGRES_DB}"
+            CONFIG.DATABASE_URL = get_database_dsn_string()
+            CONFIG.POSTGRES_DB = test_db_name
+            CONFIG.POSTGRES_DSN = CONFIG.build_postgres_dsn(
+                database_url=get_database_dsn_string(),
+                postgres_user=CONFIG.POSTGRES_DSN.user,
+                postgres_password=CONFIG.POSTGRES_DSN.password,
+                postgres_host=CONFIG.POSTGRES_DSN.host,
+                postgres_port=CONFIG.POSTGRES_DSN.port,
+                postgres_db=test_db_name,
+            )
+
+    # This will be added to the finalizer which will be run when the newly made test database is being torn down
+    def reset_postgres_dsn():
+        CONFIG.DATABASE_URL = old_db_url
+        CONFIG.POSTGRES_DB = old_ps_db
+        CONFIG.POSTGRES_DSN = old_ps_dsn
+
+    request.addfinalizer(reset_postgres_dsn)
 
     def teardown_database():
         with django_db_blocker.unblock():

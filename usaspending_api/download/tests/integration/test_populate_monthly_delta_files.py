@@ -10,7 +10,7 @@ from csv import reader
 
 from usaspending_api.settings import HOST
 from usaspending_api.awards.models import TransactionDelta
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
@@ -88,7 +88,7 @@ def monthly_download_delta_data(db, monkeypatch):
     )
     TransactionDelta.objects.update_or_create_transaction(i)
 
-    monkeypatch.setenv("DOWNLOAD_DATABASE_URL", generate_test_db_connection_string())
+    monkeypatch.setenv("DOWNLOAD_DATABASE_URL", get_database_dsn_string())
 
 
 @pytest.mark.django_db(transaction=True)

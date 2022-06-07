@@ -16,7 +16,7 @@ from usaspending_api.awards.models import (
 )
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.download.filestreaming import download_generation
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.lookups import JOB_STATUS, VALID_ACCOUNT_SUBMISSION_TYPES
 from usaspending_api.etl.award_helpers import update_awards
 
@@ -120,7 +120,7 @@ def download_test_data(db):
 
 
 def test_tas_a_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -138,7 +138,7 @@ def test_tas_a_defaults_success(client, download_test_data):
 
 
 def test_tas_b_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -156,7 +156,7 @@ def test_tas_b_defaults_success(client, download_test_data):
 
 
 def test_tas_c_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -174,7 +174,7 @@ def test_tas_c_defaults_success(client, download_test_data):
 
 
 def test_federal_account_a_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -192,7 +192,7 @@ def test_federal_account_a_defaults_success(client, download_test_data):
 
 
 def test_federal_account_b_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -210,7 +210,7 @@ def test_federal_account_b_defaults_success(client, download_test_data):
 
 
 def test_federal_account_c_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -228,7 +228,7 @@ def test_federal_account_c_defaults_success(client, download_test_data):
 
 
 def test_agency_filter_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -245,7 +245,7 @@ def test_agency_filter_success(client, download_test_data):
 
 
 def test_agency_filter_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -267,7 +267,7 @@ def test_agency_filter_failure(client, download_test_data):
 
 
 def test_federal_account_filter_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -289,7 +289,7 @@ def test_federal_account_filter_success(client, download_test_data):
 
 
 def test_federal_account_filter_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -311,7 +311,7 @@ def test_federal_account_filter_failure(client, download_test_data):
 
 
 def test_account_level_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -328,7 +328,7 @@ def test_account_level_failure(client, download_test_data):
 
 
 def test_submission_type_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -345,7 +345,7 @@ def test_submission_type_failure(client, download_test_data):
 
 
 def test_fy_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -362,7 +362,7 @@ def test_fy_failure(client, download_test_data):
 
 
 def test_quarter_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -379,7 +379,7 @@ def test_quarter_failure(client, download_test_data):
 
 
 def test_download_accounts_bad_filter_type_raises(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     payload = {"account_level": "federal_account", "filters": "01", "columns": []}
     resp = client.post("/api/v2/download/accounts/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -387,7 +387,7 @@ def test_download_accounts_bad_filter_type_raises(client, download_test_data):
 
 
 def test_multiple_submission_types_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     def all_subsets(ss):
         return chain(*map(lambda x: combinations(ss, x), range(1, len(ss) + 1)))
@@ -412,7 +412,7 @@ def test_multiple_submission_types_success(client, download_test_data):
 
 
 def test_duplicate_submission_types_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     duplicated_submission_list = VALID_ACCOUNT_SUBMISSION_TYPES * 11
 
     resp = client.post(
@@ -435,7 +435,7 @@ def test_duplicate_submission_types_success(client, download_test_data):
 
 
 def test_empty_submission_types_enum_fail(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
         "/api/v2/download/accounts/",
@@ -456,7 +456,7 @@ def test_empty_submission_types_enum_fail(client, download_test_data):
 
 
 def test_empty_array_filter_fail(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
         "/api/v2/download/accounts/",

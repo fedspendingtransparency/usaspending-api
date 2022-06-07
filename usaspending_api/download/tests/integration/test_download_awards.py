@@ -8,7 +8,7 @@ from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
@@ -107,7 +107,7 @@ def download_test_data():
 @pytest.mark.django_db(transaction=True)
 def test_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
         "/api/v2/download/awards/",
@@ -122,7 +122,7 @@ def test_download_awards_without_columns(client, monkeypatch, download_test_data
 @pytest.mark.django_db(transaction=True)
 def test_tsv_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
         "/api/v2/download/awards/",
@@ -137,7 +137,7 @@ def test_tsv_download_awards_without_columns(client, monkeypatch, download_test_
 @pytest.mark.django_db(transaction=True)
 def test_pstxt_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
         "/api/v2/download/awards/",
@@ -152,7 +152,7 @@ def test_pstxt_download_awards_without_columns(client, monkeypatch, download_tes
 @pytest.mark.django_db(transaction=True)
 def test_download_awards_with_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
         "/api/v2/download/awards/",
@@ -178,7 +178,7 @@ def test_download_awards_with_columns(client, monkeypatch, download_test_data, e
 @pytest.mark.django_db(transaction=True)
 def test_download_awards_bad_filter_type_raises(client, monkeypatch, download_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     payload = {"filters": "01", "columns": []}
     resp = client.post("/api/v2/download/awards/", content_type="application/json", data=json.dumps(payload))
