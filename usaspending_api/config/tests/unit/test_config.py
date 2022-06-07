@@ -18,6 +18,7 @@ from usaspending_api.config.utils import (
     eval_default_factory,
     FACTORY_PROVIDED_VALUE,
     eval_default_factory_from_root_validator,
+    ENV_SPECIFIC_OVERRIDE,
 )
 from usaspending_api.config.envs.default import DefaultConfig
 from usaspending_api.config.envs.local import LocalConfig
@@ -303,13 +304,22 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator3(_UnitTestBaseConfi
         return eval_default_factory_from_root_validator(cls, values, "UNITTEST_CFG_AL", factory_func)
 
 
-class _UnitTestDbPartsConfig(DefaultConfig):
-    ENV_CODE = "utdbp"
+class _UnitTestDbPartsNoneConfig(DefaultConfig):
+    ENV_CODE = "utdbpn"
     USASPENDING_DB_HOST: str = None
     USASPENDING_DB_PORT: str = None
     USASPENDING_DB_NAME: str = None
     USASPENDING_DB_USER: str = None
     USASPENDING_DB_PASSWORD: SecretStr = None
+
+
+class _UnitTestDbPartsPlaceholderConfig(DefaultConfig):
+    ENV_CODE = "utdbpp"
+    USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
+    USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
+    USASPENDING_DB_NAME: str = ENV_SPECIFIC_OVERRIDE
+    USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
+    USASPENDING_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
 
 
 _UNITTEST_ENVS_DICTS = [
@@ -350,10 +360,17 @@ _UNITTEST_ENVS_DICTS = [
     },
     {
         "env_type": "unittest",
-        "code": _UnitTestDbPartsConfig.ENV_CODE,
-        "long_name": "unittest_db_parts",
-        "description": "Unit Testing DB Parts Config",
-        "constructor": _UnitTestDbPartsConfig,
+        "code": _UnitTestDbPartsNoneConfig.ENV_CODE,
+        "long_name": "unittest_db_parts_none",
+        "description": "Unit Testing DB Parts None Config",
+        "constructor": _UnitTestDbPartsNoneConfig,
+    },
+    {
+        "env_type": "unittest",
+        "code": _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+        "long_name": "unittest_db_parts_placeholder",
+        "description": "Unit Testing DB Parts with Placeholders Config",
+        "constructor": _UnitTestDbPartsPlaceholderConfig,
     },
 ]
 
@@ -389,7 +406,7 @@ def test_database_url_and_parts_config_populated():
     assert CONFIG.USASPENDING_DB_PASSWORD is not None
 
 
-def test_database_url_only_backfills_parts():
+def test_database_url_only_backfills_none_parts():
     """Test that only providing a value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and keeps them
     consistent
 
@@ -401,12 +418,12 @@ def test_database_url_only_backfills_parts():
     with mock.patch.dict(
         os.environ,
         {
-            ENV_CODE_VAR: _UnitTestDbPartsConfig.ENV_CODE,
+            ENV_CODE_VAR: _UnitTestDbPartsNoneConfig.ENV_CODE,
             "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
         },
         clear=True,
     ):
-        cfg = _UnitTestDbPartsConfig(_env_file=None)
+        cfg = _UnitTestDbPartsNoneConfig(_env_file=None)
 
         assert cfg.DATABASE_URL is not None
         assert cfg.USASPENDING_DB_HOST is not None
@@ -422,7 +439,40 @@ def test_database_url_only_backfills_parts():
         assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
 
 
-def test_database_url_parts_only_will_build_database_url():
+def test_database_url_only_backfills_placeholder_parts():
+    """Test that only providing a value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and keeps them
+    consistent
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to ENV_SPECIFIC_PLACEHOLDERs
+    - Instantiate the config with a DATABASE_URL env var (ONLY) set
+    """
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+            "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+        },
+        clear=True,
+    ):
+        cfg = _UnitTestDbPartsPlaceholderConfig(_env_file=None)
+
+        assert cfg.DATABASE_URL is not None
+        assert cfg.USASPENDING_DB_HOST is not None
+        assert cfg.USASPENDING_DB_PORT is not None
+        assert cfg.USASPENDING_DB_NAME is not None
+        assert cfg.USASPENDING_DB_USER is not None
+        assert cfg.USASPENDING_DB_PASSWORD is not None
+
+        assert cfg.USASPENDING_DB_HOST == "foobar"
+        assert cfg.USASPENDING_DB_PORT == "12345"
+        assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
+        assert cfg.USASPENDING_DB_USER == "dummy"
+        assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+
+
+def test_database_url_none_parts_will_build_database_url_with_only_parts_set():
     """Test that if only the CONFIG.USASPENDING_DB_* parts are provided, the DATABASE_URL will be built-up from
     parts, set on the CONFIG object, and consistent with the parts
 
@@ -435,7 +485,7 @@ def test_database_url_parts_only_will_build_database_url():
     with mock.patch.dict(
         os.environ,
         {
-            ENV_CODE_VAR: _UnitTestDbPartsConfig.ENV_CODE,
+            ENV_CODE_VAR: _UnitTestDbPartsNoneConfig.ENV_CODE,
             "USASPENDING_DB_HOST": "foobar",
             "USASPENDING_DB_PORT": "12345",
             "USASPENDING_DB_NAME": "fresh_new_db_name",
@@ -444,7 +494,7 @@ def test_database_url_parts_only_will_build_database_url():
         },
         clear=True,
     ):
-        cfg = _UnitTestDbPartsConfig(_env_file=None)
+        cfg = _UnitTestDbPartsNoneConfig(_env_file=None)
 
         assert cfg.DATABASE_URL is not None
         assert cfg.USASPENDING_DB_HOST is not None
@@ -461,7 +511,46 @@ def test_database_url_parts_only_will_build_database_url():
         assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
 
 
-def test_database_url_and_parts_defined_ok_if_consistent():
+def test_database_url_placeholder_parts_will_build_database_url_with_only_parts_set():
+    """Test that if only the CONFIG.USASPENDING_DB_* parts are provided, the DATABASE_URL will be built-up from
+    parts, set on the CONFIG object, and consistent with the parts
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to ENV_SPECIFIC_PLACEHOLDERs
+    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part
+    """
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+            "USASPENDING_DB_HOST": "foobar",
+            "USASPENDING_DB_PORT": "12345",
+            "USASPENDING_DB_NAME": "fresh_new_db_name",
+            "USASPENDING_DB_USER": "dummy",
+            "USASPENDING_DB_PASSWORD": "pwd",
+        },
+        clear=True,
+    ):
+        cfg = _UnitTestDbPartsPlaceholderConfig(_env_file=None)
+
+        assert cfg.DATABASE_URL is not None
+        assert cfg.USASPENDING_DB_HOST is not None
+        assert cfg.USASPENDING_DB_PORT is not None
+        assert cfg.USASPENDING_DB_NAME is not None
+        assert cfg.USASPENDING_DB_USER is not None
+        assert cfg.USASPENDING_DB_PASSWORD is not None
+
+        assert cfg.USASPENDING_DB_HOST == "foobar"
+        assert cfg.USASPENDING_DB_PORT == "12345"
+        assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
+        assert cfg.USASPENDING_DB_USER == "dummy"
+        assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+        assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
+
+
+def test_database_url_and_parts_defined_ok_if_consistent_none_parts():
     """Test that if BOTH the CONFIG.DATABASE_URL and the CONFIG.USASPENDING_DB_* parts are provided, neither is
     built-up or backfilled, but they are validated to ensure they are equal. This should validate fine.
 
@@ -474,7 +563,7 @@ def test_database_url_and_parts_defined_ok_if_consistent():
     with mock.patch.dict(
         os.environ,
         {
-            ENV_CODE_VAR: _UnitTestDbPartsConfig.ENV_CODE,
+            ENV_CODE_VAR: _UnitTestDbPartsNoneConfig.ENV_CODE,
             "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
             "USASPENDING_DB_HOST": "foobar",
             "USASPENDING_DB_PORT": "12345",
@@ -484,7 +573,7 @@ def test_database_url_and_parts_defined_ok_if_consistent():
         },
         clear=True,
     ):
-        cfg = _UnitTestDbPartsConfig(_env_file=None)
+        cfg = _UnitTestDbPartsNoneConfig(_env_file=None)
 
         assert cfg.DATABASE_URL is not None
         assert cfg.USASPENDING_DB_HOST is not None
@@ -501,7 +590,47 @@ def test_database_url_and_parts_defined_ok_if_consistent():
         assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
 
 
-def test_database_url_and_parts_error_if_consistent():
+def test_database_url_and_parts_defined_ok_if_consistent_placeholder_parts():
+    """Test that if BOTH the CONFIG.DATABASE_URL and the CONFIG.USASPENDING_DB_* parts are provided, neither is
+    built-up or backfilled, but they are validated to ensure they are equal. This should validate fine.
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to ENV_SPECIFIC_PLACEHOLDERs
+    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part and with a DATABASE_URL env var made up of those parts.
+    """
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+            "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+            "USASPENDING_DB_HOST": "foobar",
+            "USASPENDING_DB_PORT": "12345",
+            "USASPENDING_DB_NAME": "fresh_new_db_name",
+            "USASPENDING_DB_USER": "dummy",
+            "USASPENDING_DB_PASSWORD": "pwd",
+        },
+        clear=True,
+    ):
+        cfg = _UnitTestDbPartsPlaceholderConfig(_env_file=None)
+
+        assert cfg.DATABASE_URL is not None
+        assert cfg.USASPENDING_DB_HOST is not None
+        assert cfg.USASPENDING_DB_PORT is not None
+        assert cfg.USASPENDING_DB_NAME is not None
+        assert cfg.USASPENDING_DB_USER is not None
+        assert cfg.USASPENDING_DB_PASSWORD is not None
+
+        assert cfg.USASPENDING_DB_HOST == "foobar"
+        assert cfg.USASPENDING_DB_PORT == "12345"
+        assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
+        assert cfg.USASPENDING_DB_USER == "dummy"
+        assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+        assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
+
+
+def test_database_url_and_parts_error_if_inconsistent_none_parts():
     """Test that if BOTH the CONFIG.DATABASE_URL and the CONFIG.USASPENDING_DB_* parts are provided,
     but their values are not consistent with each other, than the validation will catch that and throw an error
 
@@ -514,7 +643,7 @@ def test_database_url_and_parts_error_if_consistent():
     - Iterate through each part and test it fails validation
     """
     consistent_dict = {
-        ENV_CODE_VAR: _UnitTestDbPartsConfig.ENV_CODE,
+        ENV_CODE_VAR: _UnitTestDbPartsNoneConfig.ENV_CODE,
         "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
         "USASPENDING_DB_HOST": "foobar",
         "USASPENDING_DB_PORT": "12345",
@@ -535,7 +664,55 @@ def test_database_url_and_parts_error_if_consistent():
         test_env[part] = bad_val
         with mock.patch.dict(os.environ, test_env, clear=True):
             with pytest.raises(ValidationError) as exc_info:
-                _UnitTestDbPartsConfig(_env_file=None)
+                _UnitTestDbPartsNoneConfig(_env_file=None)
+
+            provided = mismatched_parts[part]
+            expected = consistent_dict[part]
+            if part == "USASPENDING_DB_PASSWORD":
+                # The error keeps the provided password obfuscated as a SecretStr
+                provided = SecretStr(provided)
+                expected = "*" * len(expected) if expected else None
+            expected_error = (
+                f"Part: {part}, Part Value Provided: {provided}, " f"Value found in DATABASE_URL: {expected}"
+            )
+            assert exc_info.match(re.escape(expected_error))
+
+
+def test_database_url_and_parts_error_if_inconsistent_placeholder_parts():
+    """Test that if BOTH the CONFIG.DATABASE_URL and the CONFIG.USASPENDING_DB_* parts are provided,
+    but their values are not consistent with each other, than the validation will catch that and throw an error
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values ENV_SPECIFIC_PLACEHOLDERs
+    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part and with a DATABASE_URL env var made up of those parts.
+    - Force the values to not match
+    - Iterate through each part and test it fails validation
+    """
+    consistent_dict = {
+        ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+        "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+        "USASPENDING_DB_HOST": "foobar",
+        "USASPENDING_DB_PORT": "12345",
+        "USASPENDING_DB_NAME": "fresh_new_db_name",
+        "USASPENDING_DB_USER": "dummy",
+        "USASPENDING_DB_PASSWORD": "pwd",
+    }
+    mismatched_parts = {
+        "USASPENDING_DB_HOST": "bad_host",
+        "USASPENDING_DB_PORT": "990099",
+        "USASPENDING_DB_NAME": "misnamed_db",
+        "USASPENDING_DB_USER": "fake_user",
+        "USASPENDING_DB_PASSWORD": "not_your_secret",
+    }
+
+    for part, bad_val in mismatched_parts.items():
+        test_env = consistent_dict.copy()
+        test_env[part] = bad_val
+        with mock.patch.dict(os.environ, test_env, clear=True):
+            with pytest.raises(ValidationError) as exc_info:
+                _UnitTestDbPartsPlaceholderConfig(_env_file=None)
 
             provided = mismatched_parts[part]
             expected = consistent_dict[part]

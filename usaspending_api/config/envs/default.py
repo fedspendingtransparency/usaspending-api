@@ -18,6 +18,7 @@ from usaspending_api.config.utils import (
     eval_default_factory_from_root_validator,
     CONFIG_VAR_PLACEHOLDERS,
     parse_pg_uri,
+    unhide,
 )
 from pydantic import (
     AnyHttpUrl,
@@ -95,21 +96,21 @@ class DefaultConfig(BaseSettings):
             url_parts, username, password = parse_pg_uri(values["DATABASE_URL"])
 
             # Backfill only POSTGRES DSN CONFIG vars that are missing their value
-            if "USASPENDING_DB_HOST" not in values or values["USASPENDING_DB_HOST"] is None:
+            if values.get("USASPENDING_DB_HOST", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
                 values = eval_default_factory_from_root_validator(
                     cls, values, "USASPENDING_DB_HOST", lambda: url_parts.hostname
                 )
-            if "USASPENDING_DB_PORT" not in values or values["USASPENDING_DB_PORT"] is None:
+            if values.get("USASPENDING_DB_PORT", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
                 values = eval_default_factory_from_root_validator(
                     cls, values, "USASPENDING_DB_PORT", lambda: str(url_parts.port)
                 )
-            if "USASPENDING_DB_NAME" not in values or values["USASPENDING_DB_NAME"] is None:
+            if values.get("USASPENDING_DB_NAME", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
                 values = eval_default_factory_from_root_validator(
                     cls, values, "USASPENDING_DB_NAME", lambda: url_parts.path.lstrip("/")
                 )
-            if "USASPENDING_DB_USER" not in values or values["USASPENDING_DB_USER"] is None:
+            if values.get("USASPENDING_DB_USER", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
                 values = eval_default_factory_from_root_validator(cls, values, "USASPENDING_DB_USER", lambda: username)
-            if "USASPENDING_DB_PASSWORD" not in values or values["USASPENDING_DB_PASSWORD"] is None:
+            if unhide(values.get("USASPENDING_DB_PASSWORD", None)) in [None] + CONFIG_VAR_PLACEHOLDERS:
                 values = eval_default_factory_from_root_validator(
                     cls, values, "USASPENDING_DB_PASSWORD", lambda: SecretStr(password)
                 )
@@ -145,14 +146,20 @@ class DefaultConfig(BaseSettings):
         # Now validate the provided and/or built values are consistent between DATABASE_URL and USASPENDING_DB_* parts
         pg_url_config_errors = {}
         pg_url_parts, pg_username, pg_password = parse_pg_uri(values["DATABASE_URL"])
+
+        # Validate host
         if pg_url_parts.hostname != values["USASPENDING_DB_HOST"]:
             pg_url_config_errors["USASPENDING_DB_HOST"] = (values["USASPENDING_DB_HOST"], pg_url_parts.hostname)
+
+        # Validate port
         if (
             (pg_url_parts.port is not None and str(pg_url_parts.port) != values["USASPENDING_DB_PORT"])
             or pg_url_parts.port is None
             and values["USASPENDING_DB_PORT"] is not None
         ):
             pg_url_config_errors["USASPENDING_DB_PORT"] = (values["USASPENDING_DB_PORT"], pg_url_parts.port)
+
+        # Validate DB name (path)
         if (
             (pg_url_parts.path is not None and pg_url_parts.path.lstrip("/") != values["USASPENDING_DB_NAME"])
             or pg_url_parts.path is None
@@ -162,12 +169,13 @@ class DefaultConfig(BaseSettings):
                 values["USASPENDING_DB_NAME"],
                 pg_url_parts.path.lstrip("/") if pg_url_parts.path is not None and pg_url_parts.path != "/" else None,
             )
+
+        # Validate username
         if pg_username != values["USASPENDING_DB_USER"]:
             pg_url_config_errors["USASPENDING_DB_USER"] = (values["USASPENDING_DB_USER"], pg_username)
-        stored_usaspending_db_password = values["USASPENDING_DB_PASSWORD"]
-        if stored_usaspending_db_password and isinstance(stored_usaspending_db_password, SecretStr):
-            stored_usaspending_db_password = stored_usaspending_db_password.get_secret_value()
-        if pg_password != stored_usaspending_db_password:
+
+        # Validate password
+        if pg_password != unhide(values["USASPENDING_DB_PASSWORD"]):
             # NOTE: Keeping password text obfuscated in the error output
             pg_url_config_errors["USASPENDING_DB_PASSWORD"] = (
                 values["USASPENDING_DB_PASSWORD"],
