@@ -46,7 +46,7 @@ def get_file_b(submission_attributes, db_cursor):
     # does this file B have the dupe object class edge case?
     check_dupe_oc = f"""
         select      count(*)
-        from        certified_object_class_program_activity
+        from        published_object_class_program_activity
         where       submission_id = %s and length(object_class) = 4
         group by    account_num, program_activity_code, object_class, disaster_emergency_fund_code
         having      count(*) > 1
@@ -57,7 +57,7 @@ def get_file_b(submission_attributes, db_cursor):
     if dupe_oc_count == 0:
         # there are no object class duplicates, so proceed as usual
         db_cursor.execute(
-            "select * from certified_object_class_program_activity where submission_id = %s", [submission_id]
+            "select * from published_object_class_program_activity where submission_id = %s", [submission_id]
         )
     else:
         # file b contains at least one case of duplicate 4 digit object classes for the same program activity/tas,
@@ -113,7 +113,7 @@ def get_file_b(submission_attributes, db_cursor):
                 sum(ussgl498200_upward_adjustm_cpe) as ussgl498200_upward_adjustm_cpe,
                 disaster_emergency_fund_code
             from
-                certified_object_class_program_activity
+                published_object_class_program_activity
             where
                 submission_id = %s
             group by

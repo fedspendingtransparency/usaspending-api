@@ -198,8 +198,8 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
             cursor.execute(
                 """
-                insert into certified_appropriation (
-                    certified_appropriation_id,
+                insert into published_appropriation (
+                    published_appropriation_id,
                     submission_id,
                     account_num,
                     total_budgetary_resources_cpe
@@ -217,8 +217,8 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
             cursor.execute(
                 """
-                insert into certified_object_class_program_activity (
-                    certified_object_class_program_activity_id,
+                insert into published_object_class_program_activity (
+                    published_object_class_program_activity_id,
                     submission_id,
                     account_num,
                     object_class,
@@ -245,8 +245,8 @@ class TestWithMultipleDatabases(TransactionTestCase):
 
             cursor.execute(
                 """
-                insert into certified_award_financial (
-                    certified_award_financial_id,
+                insert into published_award_financial (
+                    published_award_financial_id,
                     submission_id,
                     account_num,
                     object_class,
@@ -289,9 +289,9 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     from    information_schema.columns
                     where   table_schema = 'public' and
                             table_name in (
-                                'certified_appropriation',
-                                'certified_object_class_program_activity',
-                                'certified_award_financial'
+                                'published_appropriation',
+                                'published_object_class_program_activity',
+                                'published_award_financial'
                             ) and
                             (column_name like '%cpe' or column_name like '%fyb')
                 """
@@ -312,9 +312,9 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 """
                     truncate table certify_history restart identity cascade;
                     truncate table publish_history restart identity cascade;
-                    truncate table certified_appropriation restart identity cascade;
-                    truncate table certified_object_class_program_activity restart identity cascade;
-                    truncate table certified_award_financial restart identity cascade;
+                    truncate table published_appropriation restart identity cascade;
+                    truncate table published_object_class_program_activity restart identity cascade;
+                    truncate table published_award_financial restart identity cascade;
                     truncate table tas_lookup restart identity cascade;
                     truncate table submission restart identity cascade;
                 """

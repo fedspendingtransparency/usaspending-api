@@ -39,16 +39,16 @@ def update_program_activities(submission_id):
             dblink(
                 '{settings.DATA_BROKER_DBLINK_NAME}',
                 '
-                    select  c.program_activity_code,
-                            upper(c.program_activity_name) program_activity_name,
+                    select  b.program_activity_code,
+                            upper(b.program_activity_name) program_activity_name,
                             s.reporting_fiscal_year,
-                            c.agency_identifier,
-                            c.allocation_transfer_agency,
-                            c.main_account_code
-                    from    certified_object_class_program_activity c
-                            inner join submission s on s.submission_id = c.submission_id
+                            b.agency_identifier,
+                            b.allocation_transfer_agency,
+                            b.main_account_code
+                    from    published_object_class_program_activity b
+                            inner join submission s on s.submission_id = b.submission_id
                     where   s.submission_id = {submission_id}
-                            and c.program_activity_code is not null
+                            and b.program_activity_code is not null
 
                     union
 
@@ -58,7 +58,7 @@ def update_program_activities(submission_id):
                             c.agency_identifier,
                             c.allocation_transfer_agency,
                             c.main_account_code
-                    from    certified_award_financial c
+                    from    published_award_financial c
                             inner join submission s on s.submission_id = c.submission_id
                     where   s.submission_id = {submission_id}
                             and c.program_activity_code is not null
