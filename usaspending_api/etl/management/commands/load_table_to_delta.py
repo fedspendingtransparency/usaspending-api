@@ -77,33 +77,41 @@ class Command(BaseCommand):
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
-        if partition_column_type == "numeric":
-            is_numeric_partitioning_col = True
-            is_date_partitioning_col = False
-        elif partition_column_type == "date":
-            is_numeric_partitioning_col = False
-            is_date_partitioning_col = True
-        else:
-            raise ValueError("partition_column_type should be either 'numeric' or 'date'")
+        # If a partition_column is present, read from jdbc using partitioning
+        if partition_column:
+            if partition_column_type == "numeric":
+                is_numeric_partitioning_col = True
+                is_date_partitioning_col = False
+            elif partition_column_type == "date":
+                is_numeric_partitioning_col = False
+                is_date_partitioning_col = True
+            else:
+                raise ValueError("partition_column_type should be either 'numeric' or 'date'")
 
-        # Read from table or view
-        df = extract_db_data_frame(
-            spark,
-            get_jdbc_connection_properties(),
-            jdbc_url,
-            SPARK_PARTITION_ROWS,
-            get_partition_bounds_sql(
+            # Read from table or view
+            df = extract_db_data_frame(
+                spark,
+                get_jdbc_connection_properties(),
+                jdbc_url,
+                SPARK_PARTITION_ROWS,
+                get_partition_bounds_sql(
+                    source_table,
+                    partition_column,
+                    partition_column,
+                    is_partitioning_col_unique=False,
+                ),
                 source_table,
                 partition_column,
-                partition_column,
-                is_partitioning_col_unique=False,
-            ),
-            source_table,
-            partition_column,
-            is_numeric_partitioning_col=is_numeric_partitioning_col,
-            is_date_partitioning_col=is_date_partitioning_col,
-            custom_schema=custom_schema,
-        )
+                is_numeric_partitioning_col=is_numeric_partitioning_col,
+                is_date_partitioning_col=is_date_partitioning_col,
+                custom_schema=custom_schema,
+            )
+        else:
+            df = spark.read.options(customSchema=custom_schema).jdbc(
+                url=jdbc_url,
+                table=source_table,
+                properties=get_jdbc_connection_properties(),
+            )
 
         # Write to S3
         load_delta_table(spark, df, destination_table, True)
