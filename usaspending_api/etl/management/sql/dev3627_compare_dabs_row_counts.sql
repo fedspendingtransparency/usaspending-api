@@ -32,7 +32,7 @@ INNER JOIN dblink(
     'broker_server',
     'WITH subs_with_duplicate_file_b AS (
         SELECT    DISTINCT submission_id
-        FROM      certified_object_class_program_activity
+        FROM      published_object_class_program_activity
         WHERE     LENGTH(object_class) = 4
         GROUP BY  submission_id, account_num, program_activity_code, object_class, disaster_emergency_fund_code
         HAVING    COUNT(*) > 1
@@ -45,8 +45,8 @@ INNER JOIN dblink(
     SELECT
         submission_id,
         (
-            SELECT COUNT(*) FROM certified_appropriation AS ca
-            INNER JOIN valid_tas ON valid_tas.account_num = ca.account_num
+            SELECT COUNT(*) FROM published_appropriation AS pa
+            INNER JOIN valid_tas ON valid_tas.account_num = pa.account_num
             WHERE (
                 submission_id = s.submission_id
             )
@@ -58,39 +58,39 @@ INNER JOIN dblink(
                     SELECT COUNT(*)
                     FROM (
                         SELECT 1
-                        FROM certified_object_class_program_activity AS cocpa
-                        INNER JOIN valid_tas ON valid_tas.account_num = cocpa.account_num
+                        FROM published_object_class_program_activity AS pocpa
+                        INNER JOIN valid_tas ON valid_tas.account_num = pocpa.account_num
                         WHERE (
                             submission_id = s.submission_id
                         )
                         GROUP BY
-                            cocpa.submission_id,
-                            cocpa.job_id,
-                            cocpa.agency_identifier,
-                            cocpa.allocation_transfer_agency,
-                            cocpa.availability_type_code,
-                            cocpa.beginning_period_of_availa,
-                            cocpa.ending_period_of_availabil,
-                            cocpa.main_account_code,
-                            RIGHT(cocpa.object_class, 3),
+                            pocpa.submission_id,
+                            pocpa.job_id,
+                            pocpa.agency_identifier,
+                            pocpa.allocation_transfer_agency,
+                            pocpa.availability_type_code,
+                            pocpa.beginning_period_of_availa,
+                            pocpa.ending_period_of_availabil,
+                            pocpa.main_account_code,
+                            RIGHT(pocpa.object_class, 3),
                             CASE
-                                WHEN length(cocpa.object_class) = 4 AND LEFT(cocpa.object_class, 1) = ''1'' THEN ''D''
-                                WHEN length(cocpa.object_class) = 4 AND LEFT(cocpa.object_class, 1) = ''2'' THEN ''R''
+                                WHEN length(pocpa.object_class) = 4 AND LEFT(pocpa.object_class, 1) = ''1'' THEN ''D''
+                                WHEN length(pocpa.object_class) = 4 AND LEFT(pocpa.object_class, 1) = ''2'' THEN ''R''
                                 ELSE by_direct_reimbursable_fun
                             END,
-                            cocpa.program_activity_code,
-                            cocpa.program_activity_name,
-                            cocpa.sub_account_code,
-                            cocpa.tas,
-                            cocpa.account_num,
-                            cocpa.disaster_emergency_fund_code
+                            pocpa.program_activity_code,
+                            pocpa.program_activity_name,
+                            pocpa.sub_account_code,
+                            pocpa.tas,
+                            pocpa.account_num,
+                            pocpa.disaster_emergency_fund_code
                     ) temp_file_b
                 )
                 ELSE
                     (
                         SELECT COUNT(*)
-                        FROM certified_object_class_program_activity AS cocpa
-                        INNER JOIN valid_tas ON valid_tas.account_num = cocpa.account_num
+                        FROM published_object_class_program_activity AS pocpa
+                        INNER JOIN valid_tas ON valid_tas.account_num = pocpa.account_num
                         WHERE (
                             submission_id = s.submission_id
                         )
@@ -99,21 +99,21 @@ INNER JOIN dblink(
         AS count_file_b,
         (
             SELECT COUNT(*)
-            FROM certified_award_financial AS caf
-            INNER JOIN valid_tas ON valid_tas.account_num = caf.account_num
+            FROM published_award_financial AS paf
+            INNER JOIN valid_tas ON valid_tas.account_num = paf.account_num
             WHERE (
                 submission_id = s.submission_id
                 AND (
-                    COALESCE(caf.transaction_obligated_amou, 0) != 0
-                    OR COALESCE(caf.gross_outlay_amount_by_awa_cpe, 0) != 0
-                    OR COALESCE(caf.ussgl487200_downward_adjus_cpe, 0) != 0
-                    OR COALESCE(caf.ussgl497200_downward_adjus_cpe, 0) != 0
+                    COALESCE(paf.transaction_obligated_amou, 0) != 0
+                    OR COALESCE(paf.gross_outlay_amount_by_awa_cpe, 0) != 0
+                    OR COALESCE(paf.ussgl487200_downward_adjus_cpe, 0) != 0
+                    OR COALESCE(paf.ussgl497200_downward_adjus_cpe, 0) != 0
                 )
             )
         ) AS count_file_c
     FROM submission AS s
     WHERE
-            s.d2_submission = FALSE
+            s.is_fabs = FALSE
         AND s.publish_status_id IN (2, 3)'
 ) AS bs (submission_id integer, count_file_a integer, count_file_b integer, count_file_c integer) USING (submission_id)
 WHERE

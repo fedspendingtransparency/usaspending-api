@@ -130,14 +130,14 @@ class Command(load_base.Command):
         logger.info(f"Finished loading File B data, took {datetime.now() - start_time}")
 
         logger.info("Getting File C data")
-        certified_award_financial = get_file_c(submission_attributes, self.db_cursor, self.file_c_chunk_size)
+        published_award_financial = get_file_c(submission_attributes, self.db_cursor, self.file_c_chunk_size)
         logger.info(
             f"Acquired File C (award financial) data for {self.submission_id}, "
-            f"there are {certified_award_financial.count:,} rows."
+            f"there are {published_award_financial.count:,} rows."
         )
         logger.info("Loading File C data")
         start_time = datetime.now()
-        load_file_c(submission_attributes, self.db_cursor, certified_award_financial)
+        load_file_c(submission_attributes, self.db_cursor, published_award_financial)
         logger.info(f"Finished loading File C data, took {datetime.now() - start_time}")
 
         if self.skip_final_of_fy_calculation:
@@ -199,7 +199,7 @@ class Command(load_base.Command):
                     s.reporting_fiscal_year,
                     s.reporting_fiscal_period,
                     s.is_quarter_format,
-                    s.d2_submission,
+                    s.is_fabs,
                     s.publish_status_id,
                     pch.history
                 from
@@ -222,7 +222,7 @@ class Command(load_base.Command):
 
         if submission_data["publish_status_id"] not in (2, 3):
             raise RuntimeError(f"publish_status_id {submission_data['publish_status_id']} is not allowed")
-        if submission_data["d2_submission"] is not False:
-            raise RuntimeError(f"d2_submission {submission_data['d2_submission']} is not allowed")
+        if submission_data["is_fabs"] is not False:
+            raise RuntimeError(f"is_fabs {submission_data['is_fabs']} is not allowed")
 
         return submission_data
