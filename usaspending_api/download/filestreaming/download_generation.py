@@ -182,12 +182,13 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
 
             # Use correct date range columns for advanced search
             # (Will not change anything for keyword search since "time_period" is not provided))
-            if download_type == "elasticsearch_awards" or download_type == "awards":
+            if (download_type == "elasticsearch_awards" or download_type == "awards") and json_request["filters"].get(
+                "time_period"
+            ) is not None:
                 filters = deepcopy(json_request["filters"])
-                if filters.get("time_period") is not None:
-                    for time_period in filters["time_period"]:
-                        time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                        time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
+                for time_period in filters["time_period"]:
+                    time_period["gte_date_type"] = time_period.get("date_type", "action_date")
+                    time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
             else:
                 filters = add_date_range_comparison_types(
                     json_request["filters"],
