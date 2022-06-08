@@ -2,6 +2,7 @@ import json
 import logging
 import multiprocessing
 import os
+from copy import deepcopy
 from pathlib import Path
 from typing import Optional, Tuple, List
 
@@ -181,11 +182,24 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
 
             # Use correct date range columns for advanced search
             # (Will not change anything for keyword search since "time_period" is not provided))
-            filters = json_request["filters"]
-            if not download_type != "awards" and filters.get("time_period") is not None:
-                for time_period in filters["time_period"]:
-                    time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                    time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
+            if download_type == "elasticsearch_awards" or download_type == "awards":
+                filters = deepcopy(json_request["filters"])
+                if filters.get("time_period") is not None:
+                    for time_period in filters["time_period"]:
+                        time_period["gte_date_type"] = time_period.get("date_type", "action_date")
+                        time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
+            else:
+                filters = add_date_range_comparison_types(
+                    json_request["filters"],
+                    is_subaward=download_type != "awards",
+                    gte_date_type="action_date",
+                    lte_date_type="date_signed",
+                )
+                # Sub awards don't have a `date_signed` field so we just go to the default, which is `action_date`
+                if filters.get("time_period") is not None:
+                    for time_period in filters["time_period"]:
+                        if time_period.get("date_type") == "date_signed":
+                            time_period.pop("date_type")
             if download_type == "elasticsearch_awards" or download_type == "elasticsearch_transactions":
                 queryset = filter_function(filters, download_job=download_job)
             else:
