@@ -21,7 +21,6 @@ from django.conf import settings
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
-from usaspending_api.awards.v2.filters.filter_helpers import add_date_range_comparison_types
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -182,25 +181,17 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
 
             # Use correct date range columns for advanced search
             # (Will not change anything for keyword search since "time_period" is not provided))
+            filters = deepcopy(json_request["filters"])
             if (download_type == "elasticsearch_awards" or download_type == "awards") and json_request["filters"].get(
                 "time_period"
             ) is not None:
-                filters = deepcopy(json_request["filters"])
                 for time_period in filters["time_period"]:
                     time_period["gte_date_type"] = time_period.get("date_type", "action_date")
                     time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
-            else:
-                filters = add_date_range_comparison_types(
-                    json_request["filters"],
-                    is_subaward=download_type != "awards",
-                    gte_date_type="action_date",
-                    lte_date_type="date_signed",
-                )
-                # Sub awards don't have a `date_signed` field so we just go to the default, which is `action_date`
-                if filters.get("time_period") is not None:
-                    for time_period in filters["time_period"]:
-                        if time_period.get("date_type") == "date_signed":
-                            time_period.pop("date_type")
+            if json_request["filters"].get("time_period") is not None and download_type == "sub_awards":
+                for time_period in filters["time_period"]:
+                    if time_period.get("date_type") == "date_signed":
+                        time_period["date_type"] = "action_date"
             if download_type == "elasticsearch_awards" or download_type == "elasticsearch_transactions":
                 queryset = filter_function(filters, download_job=download_job)
             else:
