@@ -2,10 +2,12 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
-from django.core.management import call_command
-from usaspending_api.etl.tests.conftest import DELTA_LAKE_UNITTEST_SCHEMA_NAME
-from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 from pyspark.sql import SparkSession
+
+from django.core.management import call_command
+
+from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.etl.tests.conftest import DELTA_LAKE_UNITTEST_SCHEMA_NAME
 
 
 def _verify_delta_table_creation(spark: SparkSession, delta_table_name: str, s3_bucket: str):
@@ -74,5 +76,12 @@ def test_create_delta_table_for_transaction_normalized(spark, s3_unittest_data_b
     _verify_delta_table_creation(spark, "transaction_normalized", s3_unittest_data_bucket)
 
 
-def test_create_delta_table_for_transaction_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    _verify_delta_table_creation(spark, "transaction_search", s3_unittest_data_bucket)
+def test_create_delta_table_for_transaction_search_testing(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    """
+    The actual transaction_search create is tested with load commands because data is loaded in during the
+    creation of the table via 'CREATE TABLE ... SELECT AS ...'. This test is used for the
+    'transaction_search_testing' table which is a direct copy of the current 'transaction_search' Postgres table
+    to aid in testing.
+    TODO: Remove this test and relevant 'transaction_search_testing' code when we go to copy over transaction_search
+    """
+    _verify_delta_table_creation(spark, "transaction_search_testing", s3_unittest_data_bucket)

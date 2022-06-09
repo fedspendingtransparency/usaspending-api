@@ -1,5 +1,8 @@
+import uuid
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
+from pyspark.sql.types import StringType
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
@@ -13,11 +16,13 @@ from usaspending_api.recipient.delta_models import (
     recipient_profile_sql_string,
     sam_recipient_sql_string,
 )
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.transactions.delta_models import (
     transaction_fabs_sql_string,
     transaction_fpds_sql_string,
     transaction_normalized_sql_string,
     transaction_search_sql_string,
+    transaction_search_testing_sql_string,
 )
 from usaspending_api.search.delta_models.award_search import award_search_sql_string
 
@@ -57,7 +62,7 @@ TABLE_SPEC = {
         "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": financial_accounts_by_awards_sql_string,
-        "custom_schema": "",
+        "custom_schema": "award_id LONG",
     },
     "recipient_lookup": {
         "model": RecipientLookup,
@@ -114,13 +119,29 @@ TABLE_SPEC = {
         "custom_schema": "",
     },
     "transaction_search": {
-        "model": None,  # Placeholder for now
-        "source_table": None,  # Placeholder for now
+        "model": TransactionSearch,
         "destination_database": "rpt",
-        "partition_column": None,  # Placeholder for now
-        "partition_column_type": None,  # Placeholder for now
+        "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_search_sql_string,
-        "custom_schema": None,  # Placeholder for now
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "user_defined_functions": [
+            {
+                "name": "format_as_uuid",
+                "f": lambda val: str(uuid.UUID(val)) if val else None,
+                "returnType": StringType(),
+            },
+        ],
+    },
+    # Additional definitions for use in testing
+    "transaction_search_testing": {
+        "model": TransactionSearch,
+        "source_table": "transaction_search",
+        "destination_database": "raw",
+        "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_search_testing_sql_string,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
     },
 }
 
@@ -179,6 +200,11 @@ class Command(BaseCommand):
         spark.sql(f"use {destination_database};")
 
         spark.sql(f"DROP TABLE IF EXISTS {destination_table}")
+
+        # Create User Defined Functions if needed
+        if TABLE_SPEC[destination_table].get("user_defined_functions"):
+            for udf_args in TABLE_SPEC[destination_table]["user_defined_functions"]:
+                spark.udf.register(**udf_args)
 
         # Define Schema Using CREATE TABLE AS command
         spark.sql(
