@@ -311,11 +311,11 @@ def diff(
 
         Remaining columns returned are the values of the left and right DataFrames' compare_cols.
         Example contents of a returned DataFrame data structure:
-            +----+---------+---------+---+---+-----+-----+-----------+-----------+
-            |diff|first_col|first_col|id |id |color|color|numeric_val|numeric_val|
-            +----+---------+---------+---+---+-----+-----+-----------+-----------+
-            |C   |row 1    |row 1    |101|101|blue |blue |-98        |-196       |
-            +----+---------+---------+---+---+-----+-----+-----------+-----------+
+            +----+---+---+---------+---------+-----+-----+-----------+-----------+
+            |diff|id |id |first_col|first_col|color|color|numeric_val|numeric_val|
+            +----+---+---+---------+---------+-----+-----+-----------+-----------+
+            |C   |101|101|row 1    |row 1    |blue |blue |-98        |-196       |
+            +----+---+---+---------+---------+-----+-----+-----------+-----------+
     """
     if not compare_cols:
         if set(left.schema.names) != set(right.schema.names):
@@ -330,7 +330,8 @@ def diff(
         compare_cols = [c for c in left.schema.names if c in compare_cols]
 
     # unique_key_col does not need to be compared
-    compare_cols.remove(unique_key_col)
+    if unique_key_col in compare_cols:
+        compare_cols.remove(unique_key_col)
 
     distinct_stmts = " ".join([f"WHEN l.{c} IS DISTINCT FROM r.{c} THEN 'C'" for c in compare_cols])
     compare_expr = f"""
