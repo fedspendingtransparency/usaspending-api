@@ -1,5 +1,3 @@
-import os
-
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -12,16 +10,14 @@ from usaspending_api.common.etl.spark import (
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
-    get_jdbc_url_from_pg_uri,
+    get_jdbc_connection_properties,
+    get_jdbc_url,
     get_jvm_logger,
 )
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
-
 JDBC_URL_KEY = "DATABASE_URL"
 SPARK_PARTITION_ROWS = CONFIG.SPARK_PARTITION_ROWS
-# Abort processing the data if it would yield more than this many partitions to process as individual tasks
-JDBC_CONN_PROPS = {"driver": "org.postgresql.Driver", "fetchsize": str(SPARK_PARTITION_ROWS)}
 
 
 class Command(BaseCommand):
@@ -75,40 +71,47 @@ class Command(BaseCommand):
         spark.sql(f"use {destination_database};")
 
         # Resolve JDBC URL for Source Database
-        jdbc_url = os.environ.get(JDBC_URL_KEY)
-        jdbc_url = get_jdbc_url_from_pg_uri(jdbc_url)
+        jdbc_url = get_jdbc_url()
         if not jdbc_url:
-            raise RuntimeError(f"Looking for JDBC URL passed to env var '{JDBC_URL_KEY}', but not set.")
+            raise RuntimeError(f"Could'nt find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
-        if partition_column_type == "numeric":
-            is_numeric_partitioning_col = True
-            is_date_partitioning_col = False
-        elif partition_column_type == "date":
-            is_numeric_partitioning_col = False
-            is_date_partitioning_col = True
-        else:
-            raise ValueError("partition_column_type should be either 'numeric' or 'date'")
+        # If a partition_column is present, read from jdbc using partitioning
+        if partition_column:
+            if partition_column_type == "numeric":
+                is_numeric_partitioning_col = True
+                is_date_partitioning_col = False
+            elif partition_column_type == "date":
+                is_numeric_partitioning_col = False
+                is_date_partitioning_col = True
+            else:
+                raise ValueError("partition_column_type should be either 'numeric' or 'date'")
 
-        # Read from table or view
-        df = extract_db_data_frame(
-            spark,
-            JDBC_CONN_PROPS,
-            jdbc_url,
-            SPARK_PARTITION_ROWS,
-            get_partition_bounds_sql(
+            # Read from table or view
+            df = extract_db_data_frame(
+                spark,
+                get_jdbc_connection_properties(),
+                jdbc_url,
+                SPARK_PARTITION_ROWS,
+                get_partition_bounds_sql(
+                    source_table,
+                    partition_column,
+                    partition_column,
+                    is_partitioning_col_unique=False,
+                ),
                 source_table,
                 partition_column,
-                partition_column,
-                is_partitioning_col_unique=False,
-            ),
-            source_table,
-            partition_column,
-            is_numeric_partitioning_col=is_numeric_partitioning_col,
-            is_date_partitioning_col=is_date_partitioning_col,
-            custom_schema=custom_schema,
-        )
+                is_numeric_partitioning_col=is_numeric_partitioning_col,
+                is_date_partitioning_col=is_date_partitioning_col,
+                custom_schema=custom_schema,
+            )
+        else:
+            df = spark.read.options(customSchema=custom_schema).jdbc(
+                url=jdbc_url,
+                table=source_table,
+                properties=get_jdbc_connection_properties(),
+            )
 
         # Write to S3
         load_delta_table(spark, df, destination_table, True)

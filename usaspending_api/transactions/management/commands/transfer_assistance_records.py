@@ -22,7 +22,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
                 "submission_id" in (
                     select  "submission_id"
                     from    "submission"
-                    where   "d2_submission" is true and
+                    where   "is_fabs" is true and
                             "publish_status_id" in (2, 3)
                             {optional_predicate}
                 )
