@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -65,7 +65,7 @@ def multiple_file_c_to_same_award_that_cancel_out(award_count_sub_schedule, awar
 def obligations_incurred_award(award_count_sub_schedule, award_count_submission, defc_codes):
     award = _normal_award()
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         award=award,
         parent_award_id="obligations award",
@@ -79,7 +79,7 @@ def obligations_incurred_award(award_count_sub_schedule, award_count_submission,
 def non_matching_defc_award(award_count_sub_schedule, award_count_submission, defc_codes):
     award = _normal_award()
 
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         piid="piid 1",
         parent_award_id="same parent award",
@@ -94,7 +94,7 @@ def non_matching_defc_award(award_count_sub_schedule, award_count_submission, de
 
 @pytest.fixture
 def award_count_submission():
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
         reporting_fiscal_period=8,
@@ -109,7 +109,7 @@ def _award_count_early_submission():
     if not DABSSubmissionWindowSchedule.objects.filter(
         submission_fiscal_year=2020
     ):  # hack since in some environments these auto-populate
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id=20200700,
             is_quarter=False,
@@ -119,7 +119,7 @@ def _award_count_early_submission():
             submission_reveal_date="2020-5-15",
         )
 
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2020,
         reporting_fiscal_period=7,
@@ -131,7 +131,7 @@ def _award_count_early_submission():
 
 @pytest.fixture
 def award_count_quarterly_submission():
-    mommy.make(
+    baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2022,
         reporting_fiscal_quarter=3,
@@ -145,7 +145,7 @@ def award_count_quarterly_submission():
 
 @pytest.fixture
 def award_count_sub_schedule():
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=20220800,
         is_quarter=False,
@@ -154,7 +154,7 @@ def award_count_sub_schedule():
         submission_fiscal_month=8,
         submission_reveal_date="2020-5-15",
     )
-    mommy.make(
+    baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         id=20220801,
         is_quarter=True,
@@ -166,11 +166,11 @@ def award_count_sub_schedule():
 
 
 def _normal_award():
-    return mommy.make("awards.Award", type="A")
+    return baker.make("awards.Award", type="A")
 
 
 def _faba_for_award(award, id=1, negative=False, outlay_based=False):
-    mommy.make(
+    baker.make(
         "awards.FinancialAccountsByAwards",
         piid=f"piid {id}",
         parent_award_id="same parent award",

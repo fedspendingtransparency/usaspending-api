@@ -4,7 +4,7 @@ import random
 from datetime import datetime, timezone, timedelta
 from django.core.management import call_command
 from django.db.models import Max
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 
@@ -15,29 +15,29 @@ SCRIPT_NAME = "update_missing_covid_awards"
 @pytest.fixture
 def award_data1(db):
     award_id = 111  # used below
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
+    defc = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
 
-    aw1 = mommy.make("awards.Award", id=award_id)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
+    aw1 = baker.make("awards.Award", id=award_id)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
 
     yield award_id
 
 
 @pytest.fixture
 def award_data2(db):
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19")
+    defc = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19")
 
     award_id = 987
     yesterday = datetime.now() - timedelta(days=1)
     piids = ["abc", "def", "ghi", "jki"]
 
     awards = [
-        mommy.make("awards.Award", piid=random.choice(piids), id=award_id),
-        *mommy.make("awards.Award", piid=random.choice(piids), _quantity=9),
+        baker.make("awards.Award", piid=random.choice(piids), id=award_id),
+        *baker.make("awards.Award", piid=random.choice(piids), _quantity=9),
     ]
 
     for index, award in enumerate(awards):
-        mommy.make("awards.FinancialAccountsByAwards", submission_id=10, award=award, disaster_emergency_fund=defc)
+        baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=award, disaster_emergency_fund=defc)
         if index % 2 == 0:
             Award.objects.filter(pk=award.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
         else:
@@ -48,59 +48,59 @@ def award_data2(db):
 
 @pytest.fixture
 def award_data3(db):
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
+    defc = baker.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
 
-    aw1 = mommy.make("awards.Award", fain="abc123")
-    aw2 = mommy.make("awards.Award", fain="zyx987")
+    aw1 = baker.make("awards.Award", fain="abc123")
+    aw2 = baker.make("awards.Award", fain="zyx987")
 
     Award.objects.filter(pk=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
     Award.objects.filter(pk=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
 
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw2, disaster_emergency_fund=defc)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=11, award=aw1, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw2, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=11, award=aw1, disaster_emergency_fund=defc)
 
     yield aw1, aw2
 
 
 @pytest.fixture
 def award_data4(db):
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
+    defc = baker.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
 
-    aw1 = mommy.make("awards.Award", fain="abc123")
-    aw2 = mommy.make("awards.Award", fain="zyx987")
+    aw1 = baker.make("awards.Award", fain="abc123")
+    aw2 = baker.make("awards.Award", fain="zyx987")
 
     Award.objects.filter(pk=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
     Award.objects.filter(pk=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
 
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=9, award=aw1, disaster_emergency_fund=defc)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=9, award=aw2, disaster_emergency_fund=defc)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=11, award=aw1, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=9, award=aw1, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=9, award=aw2, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=11, award=aw1, disaster_emergency_fund=defc)
 
     yield aw1, aw2
 
 
 @pytest.fixture
 def award_mixed_periods(db):
-    defc = mommy.make("references.DisasterEmergencyFundCode", code="O", group_name="covid_19")
+    defc = baker.make("references.DisasterEmergencyFundCode", code="O", group_name="covid_19")
 
-    aw1 = mommy.make("awards.Award", piid="abc123")
-    aw2 = mommy.make("awards.Award", piid="zyx987")
-    aw3 = mommy.make("awards.Award", piid="ABC321")
-    aw4 = mommy.make("awards.Award", piid="ZYX789")
+    aw1 = baker.make("awards.Award", piid="abc123")
+    aw2 = baker.make("awards.Award", piid="zyx987")
+    aw3 = baker.make("awards.Award", piid="ABC321")
+    aw4 = baker.make("awards.Award", piid="ZYX789")
 
     Award.objects.filter(pk=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
     Award.objects.filter(pk=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
     Award.objects.filter(pk=aw3.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
     Award.objects.filter(pk=aw4.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
 
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw2, disaster_emergency_fund=defc)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=11, award=aw1, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw2, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=11, award=aw1, disaster_emergency_fund=defc)
 
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=20, award=aw3, disaster_emergency_fund=defc)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=20, award=aw4, disaster_emergency_fund=defc)
-    mommy.make("awards.FinancialAccountsByAwards", submission_id=21, award=aw3, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=20, award=aw3, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=20, award=aw4, disaster_emergency_fund=defc)
+    baker.make("awards.FinancialAccountsByAwards", submission_id=21, award=aw3, disaster_emergency_fund=defc)
 
     yield aw1, aw2, aw3, aw4
 

@@ -2,13 +2,13 @@ import json
 import pytest
 import random
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
@@ -20,10 +20,10 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 def download_test_data(transactional_db):
     # Populate job status lookup table
     for js in JOB_STATUS:
-        mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
+        baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
     # Create Awarding Top Agency
-    ata1 = mommy.make(
+    ata1 = baker.make(
         "references.ToptierAgency",
         name="Bureau of Things",
         toptier_code="100",
@@ -31,7 +31,7 @@ def download_test_data(transactional_db):
         mission="test",
         icon_filename="test",
     )
-    ata2 = mommy.make(
+    ata2 = baker.make(
         "references.ToptierAgency",
         name="Bureau of Stuff",
         toptier_code="101",
@@ -41,14 +41,14 @@ def download_test_data(transactional_db):
     )
 
     # Create Awarding subs
-    mommy.make("references.SubtierAgency", name="Bureau of Things")
+    baker.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Awarding Agencies
-    aa1 = mommy.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
-    aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    ata3 = mommy.make(
+    ata3 = baker.make(
         "references.ToptierAgency",
         name="Bureau of Money",
         toptier_code="102",
@@ -58,18 +58,18 @@ def download_test_data(transactional_db):
     )
 
     # Create Funding SUB
-    mommy.make("references.SubtierAgency", name="Bureau of Things")
+    baker.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_NEW")
-    award2 = mommy.make("awards.Award", id=456, category="contracts", generated_unique_award_id="CONT_AWD_NEW")
-    award3 = mommy.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_NEW")
+    award1 = baker.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_NEW")
+    award2 = baker.make("awards.Award", id=456, category="contracts", generated_unique_award_id="CONT_AWD_NEW")
+    award3 = baker.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_NEW")
 
     # Create Transactions
-    trann1 = mommy.make(
+    trann1 = baker.make(
         TransactionNormalized,
         id=1,
         award=award1,
@@ -79,7 +79,7 @@ def download_test_data(transactional_db):
         awarding_agency=aa1,
         unique_award_key="CONT_IDV_NEW",
     )
-    trann2 = mommy.make(
+    trann2 = baker.make(
         TransactionNormalized,
         id=2,
         award=award2,
@@ -89,7 +89,7 @@ def download_test_data(transactional_db):
         awarding_agency=aa2,
         unique_award_key="CONT_AWD_NEW",
     )
-    trann3 = mommy.make(
+    trann3 = baker.make(
         TransactionNormalized,
         id=3,
         award=award3,
@@ -101,11 +101,11 @@ def download_test_data(transactional_db):
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_NEW")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_NEW")
+    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_NEW")
+    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_NEW")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_NEW")
+    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_NEW")
 
     # Set latest_award for each award
     update_awards()
@@ -121,7 +121,7 @@ def get_number_of_columns_for_query_paths(*download_tuples):
 
 
 def test_download_assistance_status(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -164,7 +164,7 @@ def test_download_assistance_status(client, download_test_data):
 
 def test_download_awards_status(client, download_test_data, monkeypatch, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -207,7 +207,7 @@ def test_download_awards_status(client, download_test_data, monkeypatch, elastic
 
 
 def test_download_contract_status(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -248,7 +248,7 @@ def test_download_contract_status(client, download_test_data):
 
 
 def test_download_idv_status(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     # Test without columns specified
     dl_resp = client.post("/api/v2/download/idv/", content_type="application/json", data=json.dumps({"award_id": 123}))
@@ -282,7 +282,7 @@ def test_download_idv_status(client, download_test_data):
 
 def test_download_transactions_status(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     # Test without columns specified
     dl_resp = client.post(
@@ -331,7 +331,7 @@ def test_download_transactions_status(client, download_test_data, monkeypatch, e
 
 def test_download_transactions_limit(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     dl_resp = client.post(
         "/api/v2/download/transactions/",

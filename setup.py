@@ -1,5 +1,4 @@
 """This setup.py module accommodates dynamic core metadata via a setuptools build-system backend
-
 See:
     - More background on this approach documented in ./pyproject.toml [build-system] and [project] tables
     - Details of setuptools.setup parameters:

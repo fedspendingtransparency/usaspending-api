@@ -2,13 +2,12 @@ import inspect
 import logging
 import os
 import sys
-from urllib.parse import urlparse, parse_qs
 
 from py4j.java_gateway import (
     JavaGateway,
 )
 from py4j.protocol import Py4JJavaError
-from pydantic import PostgresDsn, AnyHttpUrl
+from pydantic import AnyHttpUrl
 from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
 from pyspark.find_spark_home import _find_spark_home
@@ -21,6 +20,54 @@ from pyspark.sql.types import DecimalType
 from pyspark.sql.types import StringType
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
+
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.config.utils import parse_pg_uri
+from usaspending_api.recipient.models import StateData
+from usaspending_api.references.models import (
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+)
+
+RDS_REF_TABLES = [
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+    StateData,
+    FederalAccount,
+    TreasuryAppropriationAccount,
+]
+
+
+def get_active_spark_context() -> SparkContext:
+    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+    if is_spark_context_stopped():
+        return None
+    return SparkContext._active_spark_context
+
+
+def get_active_spark_session() -> SparkContext:
+    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+    if is_spark_context_stopped():
+        return None
+    return SparkSession.getActiveSession()
 
 
 def is_spark_context_stopped() -> bool:
@@ -56,6 +103,7 @@ def configure_spark_session(
     log_level: int = None,
     log_spark_config_vals: bool = False,
     log_hadoop_config_vals: bool = False,
+    enable_hive_support: bool = False,
     **options,
 ) -> SparkSession:
     """Get a SparkSession object with some of the default/boiler-plate config needed for THIS project pre-set
@@ -91,6 +139,11 @@ def configure_spark_session(
 
         log_hadoop_config_vals (bool): If True, log at INFO the current hadoop config property values
 
+        enable_hive_support (bool): If True, enable hive on the created SparkSession. Doing so internally sets the
+            spark conf spark.sql.catalogImplementation=hive, which persists the metastore_db to its configured location
+            (by default the working dir of the spark command run as a Derby DB folder, but configured explicitly here
+            if running locally (not AWS))
+
         options (kwargs): dict or named-arguments (unlikely due to dots in properties) of key-value pairs representing
             additional spark config values to set as the SparkContext and SparkSession are created.
             NOTE: If a value is provided, and a SparkContext is also provided, the value must be a modifiable
@@ -113,7 +166,7 @@ def configure_spark_session(
     conf.set("spark.yarn.maxAppAttempts", "1")
     conf.set("spark.hadoop.fs.s3a.endpoint", CONFIG.AWS_S3_ENDPOINT)
 
-    if not CONFIG.USE_AWS:
+    if not CONFIG.USE_AWS:  # i.e. running in a "local" [development] environment
         # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy
         conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         # "Enable S3 path style access ie disabling the default virtual hosting behaviour.
@@ -140,6 +193,17 @@ def configure_spark_session(
         # conf.set("spark.hadoop.fs.s3a.committer.name", "file")
         # conf.set("spark.hadoop.fs.s3a.committer.staging.conflict-mode", "fail")
         # conf.set("spark.hadoop.fs.s3a.committer.staging.tmp.path", "tmp/staging")
+
+        # Turn on Hive support to use a Derby filesystem DB as the metastore DB for tracking of schemas and tables
+        enable_hive_support = True
+
+        # Add Spark conf to set the Spark SQL Warehouse to an explicit directory,
+        # and to make the Hive metastore_db folder get stored under that warehouse dir
+        conf.set("spark.sql.warehouse.dir", CONFIG.SPARK_SQL_WAREHOUSE_DIR)
+        conf.set(
+            "spark.hadoop.javax.jdo.option.ConnectionURL",
+            f"jdbc:derby:;databaseName={CONFIG.HIVE_METASTORE_DERBY_DB_DIR};create=true",
+        )
 
     # Set AWS credentials in the Spark config
     # Hint: If connecting to AWS resources when executing program from a local env, and you usually authenticate with
@@ -176,6 +240,8 @@ def configure_spark_session(
         builder = builder.master(master)
     if app_name:
         builder = builder.appName(app_name)
+    if enable_hive_support:
+        builder = builder.enableHiveSupport()
     spark = builder.config(conf=conf).getOrCreate()
 
     # Now that the SparkSession was created, check whether certain provided config values were ignored if given a
@@ -298,39 +364,26 @@ def attach_java_gateway(
 
 
 def get_jdbc_connection_properties() -> dict:
-    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.PARTITION_SIZE)}
-
-
-def get_jdbc_url():
-    """Getting a JDBC-compliant Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
-    pg_dsn = CONFIG.POSTGRES_DSN  # type: PostgresDsn
-    if pg_dsn.user is None or pg_dsn.password is None:
-        raise ValueError("postgres_dsn config val must provide username and password")
-    # JDBC URLs only support postgresql://
-    pg_uri = f"postgresql://{pg_dsn.host}:{pg_dsn.port}{pg_dsn.path}?user={pg_dsn.user}&password={pg_dsn.password}"
-
-    return f"jdbc:{pg_uri}"
+    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
 
 
 def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
     """Converts the passed-in Postgres DB connection URI to a JDBC-compliant Postgres DB connection string"""
-    url_parts = urlparse(pg_uri)
-    user = (
-        url_parts.username if url_parts.username else parse_qs(url_parts.query)["user"][0] if url_parts.query else None
-    )
-    password = (
-        url_parts.password
-        if url_parts.password
-        else parse_qs(url_parts.query)["password"][0]
-        if url_parts.query
-        else None
-    )
+    url_parts, user, password = parse_pg_uri(pg_uri)
     if user is None or password is None:
         raise ValueError("pg_uri provided must have username and password with host or in query string")
     # JDBC URLs only support postgresql://
-    pg_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password=" f"{password}"
+    pg_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password={password}"
 
     return f"jdbc:{pg_uri}"
+
+
+def get_jdbc_url():
+    """Getting a JDBC-compliant Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
+    if not CONFIG.DATABASE_URL:
+        raise ValueError("DATABASE_URL config val must provided")
+
+    return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually
@@ -491,3 +544,27 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
         for (k, v) in {str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()}.items()
         if config_key_contains in k
     ]
+
+
+def create_ref_temp_views(spark: SparkSession):
+    """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
+    Note: They will all be listed under global_temp.{table_name}
+    """
+    logger = get_jvm_logger(spark)
+    jdbc_conn_props = get_jdbc_connection_properties()
+    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in RDS_REF_TABLES]
+
+    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
+    for ref_rdf_table in rds_ref_tables:
+        spark_sql = f"""
+        CREATE OR REPLACE GLOBAL TEMPORARY VIEW {ref_rdf_table}
+        USING JDBC
+        OPTIONS (
+          driver '{jdbc_conn_props["driver"]}',
+          fetchsize '{jdbc_conn_props["fetchsize"]}',
+          url '{get_jdbc_url()}',
+          dbtable '{ref_rdf_table}'
+        )
+        """
+        spark.sql(spark_sql)
+    logger.info(f"Created the reference views in the global_temp database")

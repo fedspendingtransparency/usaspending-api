@@ -69,7 +69,7 @@ class SourceAssistanceTransaction(models.Model):
     high_comp_officer5_full_na = models.TextField(blank=True, null=True)
     indirect_federal_sharing = NumericField(blank=True, null=True)
     is_active = BooleanFieldWithDefault()
-    is_historical = models.NullBooleanField()
+    is_historical = models.BooleanField(null=True, blank=True)
     legal_entity_address_line1 = models.TextField(blank=True, null=True)
     legal_entity_address_line2 = models.TextField(blank=True, null=True)
     legal_entity_address_line3 = models.TextField(blank=True, null=True)

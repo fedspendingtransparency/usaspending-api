@@ -22,11 +22,11 @@ services:
         source: local_pg_data
         target: /var/lib/postgresql/data
     ports:
-      - ${POSTGRES_PORT}:5432
+      - ${USASPENDING_DB_PORT:-5432}:5432
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: data_store_api
+      POSTGRES_USER: ${USASPENDING_DB_USER:-usaspending}
+      POSTGRES_PASSWORD: ${USASPENDING_DB_PASSWORD:-usaspender}
+      POSTGRES_DB: ${USASPENDING_DB_NAME:-data_store_api}
 
   usaspending-manage:
     profiles:
@@ -42,7 +42,7 @@ services:
     command: python3 -u manage.py help
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
 
@@ -62,7 +62,7 @@ services:
       - usaspending-es
     command: pytest
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
       # Location in host machine where broker src code root can be found
@@ -97,7 +97,7 @@ services:
         printf -- "-------\nRunning integration tests:\n"
         pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
       # Location in host machine where broker src code root can be found
@@ -122,9 +122,9 @@ services:
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       RUN_LOCAL_DOWNLOAD_IN_PROCESS: "False"
-      DB_SOURCE: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      DB_R1: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DB_SOURCE: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      DB_R1: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
 
   usaspending-bulk-download:
@@ -139,8 +139,8 @@ services:
     command: python3 manage.py download_sqs_worker
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
-      DOWNLOAD_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/data_store_api
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
 
   usaspending-es:
     profiles:
@@ -199,14 +199,14 @@ services:
         source: ${MINIO_DATA_DIR:-../data/s3}
         target: /data
     ports:
-      - ${MINIO_PORT:-9000}:9000
-      - ${MINIO_CONSOLE_PORT:-9001}:9001
+      - ${MINIO_PORT:-10001}:10001
+      - ${MINIO_CONSOLE_PORT:-10002}:10002
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
-    command: server --address ":${MINIO_PORT:-9000}" --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
+    command: server --address ":10001" --console-address ":10002" /data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-9000}/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-10001}/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -288,6 +288,28 @@ services:
         target: /project
         read_only: false
 
+  # Example of running spark-submit container:
+  #  NOTE: double check package dependency versions here with those used in unit tests (conftest_spark.py), as these docs could have gotten stale
+  #  (1) Review config values in usaspending_api/config/envs/local.py and override any as needed in a .env file or -e environment variable
+  #  (2) Deploy minio in docker container (see README.md)
+  #  (3) Deploy the postgres DB docker container, if your script connects to a DB.
+  #      - If so, also export a JDBC_URL environment variable to pass in to the spark-submit container so it can find its connection
+  #  (4) If reading or writing to S3, make sure the bucket given by the value of config setting CONFIG.AWS_S3_BUCKET exists
+  #      - e.g. create via UI at http://localhost:10001
+  #      - or use MinIO client CLI: mc mb local/data
+  #  (4) Run the spark-submit container, citing the dependent packages:
+  #    (NOTEs:
+  #      - postgresql is needed as a JDBC driver, if connecting to a Postgres DB
+  #      - delta-core is needed to read/write in Delta Lake format
+  #      - hadoop-aws is needed for the S3AFileSystem.java, used to write data to S3,
+  #        - and should use the same hadoop version in your local setup
+  #        - NOTE that specifying hadoop-awas should pull in on its own the required version of the aws-java-sdk
+  #      - spark-hive is needed to use a hive metastore_db of schemas and tables
+  #        - the Docker image at this time only installs spark and hadoop standalone, which does not seem to include all the needed Hive jars
+  #
+  #    make docker-compose-run profiles="--profile spark" args="--rm -e MINIO_HOST=minio -e JDBC_URL -e COMPONENT_NAME='My Spark Prototype Script' spark-submit \
+  #      --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
+  #      /project/usaspending_api/etl/tests/path_to_your_spark_prototype_script.py"
   spark-submit:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
@@ -307,6 +329,12 @@ services:
     environment:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
+      # i.e. target where host warehouse dir is bound in below volume config.
+      #   This env var needs to be picked up as the config for the spark.sql.warehouse.dir spark conf setting when SparkSessions are created inside of a spark-submitted job
+      SPARK_SQL_WAREHOUSE_DIR: /spark-warehouse
+      # i.e. a metastore_db sub dir of the target where host warehouse dir is bound in below volume config.
+      #   This env var needs to be picked up as the path part of the config for the spark.hadoop.javax.jdo.option.ConnectionURL spark conf setting when SparkSessions are created inside of a spark-submitted job
+      HIVE_METASTORE_DERBY_DB_DIR: /spark-warehouse/metastore_db
       PYTHONPATH: "/project"
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
     # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
@@ -321,6 +349,10 @@ services:
         source: .
         target: /project
         read_only: false
+      # NOTE: The hive metastore_db Derby database folder is expected to be configured to show up as a subfolder of the spark-warehouse dir
+      - type: bind
+        source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
+        target: /spark-warehouse
       # Mount the JAR dependencies local repo on host into container to take advantage of caching/reuse
       # i.e., to download the dependencies only once and reuse on subsequent docker-compose run calls
       - type: bind

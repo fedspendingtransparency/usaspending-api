@@ -91,6 +91,7 @@ This endpoint takes award filters, and returns the number of awards in each awar
     + Members
         + `action_date`
         + `last_modified_date`
+        + `date_signed`
 
 ### LocationObject (object)
 + `country`: `USA` (required, string)

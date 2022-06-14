@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
 from django_cte import CTEManager
 
 
@@ -19,7 +18,7 @@ class SubmissionAttributes(models.Model):
     is_final_balances_for_fy = models.BooleanField(default=False)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
-    history = JSONField(null=True)
+    history = models.JSONField(null=True)
 
     objects = CTEManager()
 

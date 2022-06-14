@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -9,9 +9,9 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture(db):
-    mommy.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A")
-    mommy.make("awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323")
-    mommy.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
+    baker.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A")
+    baker.make("awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323")
+    baker.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
 
 def test_positive_sample_query(award_data_fixture, elasticsearch_transaction_index):

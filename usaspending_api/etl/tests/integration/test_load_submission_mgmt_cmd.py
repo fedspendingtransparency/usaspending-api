@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.db import connections
 from django.db.models import Q
 from django.test import TestCase
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
@@ -24,7 +24,7 @@ class TestWithMultipleDatabases(TestCase):
 
         reset_object_class_cache()
 
-        mommy.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=-99999,
             allocation_transfer_agency_id="999",
@@ -36,10 +36,10 @@ class TestWithMultipleDatabases(TestCase):
             sub_account_code="0000",
             tas_rendering_label="1004-1002-1003-1007-1008",
         )
-        mommy.make(
+        baker.make(
             "references.ObjectClass", id=0, major_object_class="00", object_class="00.0", direct_reimbursable=None
         )
-        mommy.make(
+        baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             id="2000060",
             submission_fiscal_year=0,
@@ -58,9 +58,9 @@ class TestWithMultipleDatabases(TestCase):
                 "broker_object": _assemble_published_files_history(),
                 "conflict_column": "published_files_history_id",
             },
-            "certified_award_financial": {
-                "broker_object": _assemble_certified_award_financial_records(),
-                "conflict_column": "certified_award_financial_id",
+            "published_award_financial": {
+                "broker_object": _assemble_published_award_financial_records(),
+                "conflict_column": "published_award_financial_id",
             },
         }
         connection = connections["data_broker"]
@@ -92,22 +92,22 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with FAIN and URI
         """
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-999,
             uri="RANDOM_LOAD_SUB_URI_999",
             fain="RANDOM_LOAD_SUB_FAIN_999",
             latest_transaction_id=-999,
         )
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-1999,
             uri="RANDOM_LOAD_SUB_URI_1999",
             fain="RANDOM_LOAD_SUB_FAIN_1999",
             latest_transaction_id=-1999,
         )
-        mommy.make("awards.TransactionNormalized", id=-999)
-        mommy.make("awards.TransactionNormalized", id=-1999)
+        baker.make("awards.TransactionNormalized", id=-999)
+        baker.make("awards.TransactionNormalized", id=-1999)
 
         call_command("load_submission", "-9999")
 
@@ -126,8 +126,8 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a URI
         """
-        mommy.make("awards.Award", id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
-        mommy.make("awards.TransactionNormalized", id=-997)
+        baker.make("awards.Award", id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
+        baker.make("awards.TransactionNormalized", id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -144,8 +144,8 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a FAIN
         """
-        mommy.make("awards.Award", id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
-        mommy.make("awards.TransactionNormalized", id=-997)
+        baker.make("awards.Award", id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
+        baker.make("awards.TransactionNormalized", id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -162,14 +162,14 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a piid and parent piid
         """
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-997,
             piid="RANDOM_LOAD_SUB_PIID",
             parent_award_piid="RANDOM_LOAD_SUB_PARENT_PIID",
             latest_transaction_id=-997,
         )
-        mommy.make("awards.TransactionNormalized", id=-997)
+        baker.make("awards.TransactionNormalized", id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -186,10 +186,10 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a piid and no parent piid
         """
-        mommy.make(
+        baker.make(
             "awards.Award", id=-998, piid="RANDOM_LOAD_SUB_PIID", parent_award_piid=None, latest_transaction_id=-998
         )
-        mommy.make("awards.TransactionNormalized", id=-998)
+        baker.make("awards.TransactionNormalized", id=-998)
 
         call_command("load_submission", "-9999")
 
@@ -206,14 +206,14 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data
         """
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-1001,
             piid="RANDOM_LOAD_SUB_PIID",
             parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
             latest_transaction_id=-1234,
         )
-        mommy.make("awards.TransactionNormalized", id=-1234)
+        baker.make("awards.TransactionNormalized", id=-1234)
 
         call_command("load_submission", "-9999")
 
@@ -230,14 +230,14 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data
         """
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=-999,
             piid="RANDOM_LOAD_SUB_PIID_DNE",
             parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
             latest_transaction_id=-999,
         )
-        mommy.make("awards.TransactionNormalized", id=-999, award_id=-999)
+        baker.make("awards.TransactionNormalized", id=-999, award_id=-999)
 
         call_command("load_submission", "-9999")
 
@@ -252,7 +252,7 @@ class TestWithMultipleDatabases(TestCase):
 
     def test_load_submission_file_c_zero_and_null_amount_rows_ignored(self):
         """
-        Test that 'certified_award_financial` rows that have a zero or null for both
+        Test that 'published_award_financial` rows that have a zero or null for both
         'transaction_obligated_amou' and 'gross_outlay_amount_by_awa_cpe' are not loaded  from Broker.
         """
         call_command("load_submission", "-9999")
@@ -322,7 +322,7 @@ def _assemble_broker_submission_records() -> list:
         "publishable": False,
         "reporting_fiscal_period": 0,
         "reporting_fiscal_year": 0,
-        "d2_submission": False,
+        "is_fabs": False,
         "publishing_user_id": None,
         "frec_code": None,
     }
@@ -333,11 +333,11 @@ def _assemble_broker_submission_records() -> list:
     return [default_submission_record]
 
 
-def _assemble_certified_award_financial_records() -> list:
+def _assemble_published_award_financial_records() -> list:
     base_record = {
         "created_at": None,
         "updated_at": None,
-        "certified_award_financial_id": None,
+        "published_award_financial_id": None,
         "submission_id": -9999,
         "job_id": None,
         "row_number": None,
@@ -394,38 +394,38 @@ def _assemble_certified_award_financial_records() -> list:
     }
 
     row_with_piid_and_no_parent_piid = copy.copy(base_record)
-    row_with_piid_and_no_parent_piid["certified_award_financial_id"] = 1
+    row_with_piid_and_no_parent_piid["published_award_financial_id"] = 1
     row_with_piid_and_no_parent_piid["piid"] = "RANDOM_LOAD_SUB_PIID"
 
     row_with_piid_and_parent_piid = copy.copy(base_record)
-    row_with_piid_and_parent_piid["certified_award_financial_id"] = 2
+    row_with_piid_and_parent_piid["published_award_financial_id"] = 2
     row_with_piid_and_parent_piid["piid"] = "RANDOM_LOAD_SUB_PIID"
     row_with_piid_and_parent_piid["parent_award_id"] = "RANDOM_LOAD_SUB_PARENT_PIID"
 
     row_with_fain = copy.copy(base_record)
-    row_with_fain["certified_award_financial_id"] = 3
+    row_with_fain["published_award_financial_id"] = 3
     row_with_fain["fain"] = "RANDOM_LOAD_SUB_FAIN"
 
     row_with_uri = copy.copy(base_record)
-    row_with_uri["certified_award_financial_id"] = 4
+    row_with_uri["published_award_financial_id"] = 4
     row_with_uri["uri"] = "RANDOM_LOAD_SUB_URI"
 
     row_with_fain_and_uri_dne = copy.copy(base_record)
-    row_with_fain_and_uri_dne["certified_award_financial_id"] = 5
+    row_with_fain_and_uri_dne["published_award_financial_id"] = 5
     row_with_fain_and_uri_dne["fain"] = "RANDOM_LOAD_SUB_FAIN_999"
     row_with_fain_and_uri_dne["uri"] = "RANDOM_LOAD_SUB_URI_DNE"
 
     row_with_uri_and_fain_dne = copy.copy(base_record)
-    row_with_uri_and_fain_dne["certified_award_financial_id"] = 6
+    row_with_uri_and_fain_dne["published_award_financial_id"] = 6
     row_with_uri_and_fain_dne["fain"] = "RANDOM_LOAD_SUB_FAIN_DNE"
     row_with_uri_and_fain_dne["uri"] = "RANDOM_LOAD_SUB_URI_1999"
 
     row_with_zero_transaction_obligated_amount = copy.copy(base_record)
-    row_with_zero_transaction_obligated_amount["certified_award_financial_id"] = 7
+    row_with_zero_transaction_obligated_amount["published_award_financial_id"] = 7
     row_with_zero_transaction_obligated_amount["transaction_obligated_amou"] = 0
 
     row_with_null_transaction_obligated_amount = copy.copy(base_record)
-    row_with_null_transaction_obligated_amount["certified_award_financial_id"] = 8
+    row_with_null_transaction_obligated_amount["published_award_financial_id"] = 8
     row_with_null_transaction_obligated_amount["transaction_obligated_amou"] = None
 
     return [

@@ -1,11 +1,11 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
 @pytest.fixture
 def awards_federal_account_data(db):
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=1,
         generated_unique_award_id="CONT_AWD_zzz_whatever",
@@ -15,10 +15,10 @@ def awards_federal_account_data(db):
         total_obligation=1000,
     )
 
-    mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1)
-    mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=2, award_id=1)
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1)
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=2, award_id=1)
 
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=2,
         generated_unique_award_id="CONT_AWD_aaa_whatever",
@@ -28,9 +28,9 @@ def awards_federal_account_data(db):
         total_obligation=1000,
     )
 
-    mommy.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=3, award_id=2)
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=3, award_id=2)
 
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=3,
         generated_unique_award_id="ASST_NON_bbb_abc123",

@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.search.models import AgencyAutocompleteMatview
@@ -8,9 +8,9 @@ from usaspending_api.search.models import AgencyAutocompleteMatview
 
 @pytest.fixture
 def agency_data(db):
-    tn = mommy.make("awards.TransactionNormalized", action_date="1900-01-01")
+    tn = baker.make("awards.TransactionNormalized", action_date="1900-01-01")
 
-    a = mommy.make(
+    a = baker.make(
         "references.Agency",
         id=1,
         toptier_agency__name="Really Old Agency That Shouldn't Show Up In Any Results",
@@ -18,13 +18,13 @@ def agency_data(db):
         subtier_agency__name="ROATSSUIAR subtier",
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
     )
 
-    tn = mommy.make("awards.TransactionNormalized", action_date="2020-01-01")
+    tn = baker.make("awards.TransactionNormalized", action_date="2020-01-01")
 
-    a = mommy.make(
+    a = baker.make(
         "references.Agency",
         id=2,
         toptier_agency__name="Agency With No Subtier That Shouldn't Show Up In Any Results",
@@ -32,11 +32,11 @@ def agency_data(db):
         subtier_agency=None,
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
     )
 
-    a = mommy.make(
+    a = baker.make(
         "references.Agency",
         id=3,
         toptier_agency__name="Lunar Colonization Society",
@@ -44,11 +44,11 @@ def agency_data(db):
         subtier_agency__name="Darkside Chapter",
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
     )
 
-    a = mommy.make(
+    a = baker.make(
         "references.Agency",
         id=4,
         toptier_agency__name="Cerean Mineral Extraction Corp.",
@@ -56,11 +56,11 @@ def agency_data(db):
         subtier_agency__name="Copper Division",
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
     )
 
-    a = mommy.make(
+    a = baker.make(
         "references.Agency",
         id=5,
         toptier_agency__name="Department of Transportation",
@@ -68,11 +68,11 @@ def agency_data(db):
         toptier_flag=True,
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
     )
 
-    a = mommy.make(
+    a = baker.make(
         "references.Agency",
         id=6,
         toptier_agency__name="Department of Defense",
@@ -81,7 +81,7 @@ def agency_data(db):
         toptier_flag=False,
         _fill_optional=True,
     )
-    mommy.make(
+    baker.make(
         "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
     )
 

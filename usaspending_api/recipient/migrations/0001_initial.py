@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 import django.contrib.postgres.fields
 import django.contrib.postgres.indexes
-import partial_index
 
 from django.contrib.postgres.operations import TrigramExtension
 from django.db import migrations, models
@@ -147,13 +146,13 @@ class Migration(migrations.Migration):
             name='recipientprofile',
             unique_together=set([('recipient_hash', 'recipient_level')]),
         ),
-        migrations.AddIndex(
-            model_name='recipientlookup',
-            index=partial_index.PartialIndex(fields=['duns'], name='recipient_l_duns_bb057a_partial', unique=True, where=partial_index.PQ(duns__isnull=False)),
+        migrations.RunSQL(
+            sql="CREATE UNIQUE INDEX recipient_l_duns_bb057a_partial ON recipient_lookup (duns) WHERE duns IS NOT NULL",
+            reverse_sql="DROP INDEX recipient_l_duns_bb057a_partial",
         ),
-        migrations.AddIndex(
-            model_name='recipientlookup',
-            index=partial_index.PartialIndex(fields=['parent_duns'], name='recipient_l_parent__efd6d5_partial', unique=False, where=partial_index.PQ(parent_duns__isnull=False)),
+        migrations.RunSQL(
+            sql="CREATE INDEX recipient_l_parent__efd6d5_partial ON recipient_lookup (parent_duns) WHERE parent_duns IS NOT NULL",
+            reverse_sql="DROP INDEX recipient_l_parent__efd6d5_partial"
         ),
         migrations.RunSQL(
             sql=[

@@ -1,4 +1,5 @@
 from django.db.models import BooleanField, Model, TextField
+from django_cte import CTEManager
 
 
 class CGAC(Model):
@@ -16,6 +17,8 @@ class CGAC(Model):
     # are referred to as FREC agencies.  Occasionally you will also see them referred to as "shared CGAC"
     # or "shared AID" agencies.
     is_frec_agency = BooleanField(default=False)
+
+    objects = CTEManager()
 
     class Meta:
         db_table = "cgac"

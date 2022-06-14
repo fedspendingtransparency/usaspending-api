@@ -2,7 +2,7 @@ import pytest
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from model_mommy import mommy
+from model_bakery import baker
 from pathlib import Path
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.awards.models import Award, Subaward, TransactionFPDS, TransactionNormalized
@@ -195,7 +195,7 @@ def test_delete_agency(disable_vacuuming, monkeypatch):
 def test_update_treasury_appropriation_account(disable_vacuuming):
 
     # Create a bogus TAS.
-    mommy.make("accounts.TreasuryAppropriationAccount", agency_id="009")
+    baker.make("accounts.TreasuryAppropriationAccount", agency_id="009")
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)
@@ -231,12 +231,12 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
     """ Test all three together since they're so tightly intertwined. """
 
     # Create some test data.
-    a = mommy.make("awards.Award", generated_unique_award_id="AWARD_1")
-    tn = mommy.make("awards.TransactionNormalized", award=a, unique_award_key="AWARD_1")
+    a = baker.make("awards.Award", generated_unique_award_id="AWARD_1")
+    tn = baker.make("awards.TransactionNormalized", award=a, unique_award_key="AWARD_1")
     a.latest_transaction = tn
     a.save()
-    mommy.make("awards.TransactionFPDS", transaction=tn, funding_sub_tier_agency_co="0901", unique_award_key="AWARD_1")
-    mommy.make("awards.Subaward", award=a, unique_award_key="AWARD_1")
+    baker.make("awards.TransactionFPDS", transaction=tn, funding_sub_tier_agency_co="0901", unique_award_key="AWARD_1")
+    baker.make("awards.Subaward", award=a, unique_award_key="AWARD_1")
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)

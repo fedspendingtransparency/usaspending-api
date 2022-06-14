@@ -2,7 +2,7 @@ import json
 
 from django.test import TestCase
 from django.utils.text import slugify
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, IDVS, PARENTS
 from usaspending_api.idvs.v2.views.awards import SORTABLE_COLUMNS
@@ -202,16 +202,16 @@ class IDVAwardsTestCase(TestCase):
         parent_award_id = PARENTS.get(3)  # Use use parent information for I3
         string_parent_award_id = str(parent_award_id).zfill(3)
 
-        mommy.make("awards.TransactionNormalized", id=award_id, award_id=award_id)
+        baker.make("awards.TransactionNormalized", id=award_id, award_id=award_id)
 
-        mommy.make(
+        baker.make(
             "awards.TransactionFPDS",
             transaction_id=award_id,
             funding_agency_name="subtier_funding_agency_name_%s" % string_award_id,
             awarding_agency_name="subtier_awarding_agency_name_%s" % string_award_id,
         )
 
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=award_id,
             generated_unique_award_id="CONT_IDV_%s" % string_award_id,

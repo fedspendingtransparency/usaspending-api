@@ -36,7 +36,7 @@ def get_new_or_updated_submission_ids(since_datetime=None):
                     from
                         submission as s
                     where
-                        s.d2_submission is false
+                        s.is_fabs is false
                         and s.publish_status_id in (2, 3)
                         {since_sql}
                 '

@@ -5,7 +5,7 @@ import os
 
 from django.core.management import call_command
 from csv import reader
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
@@ -405,15 +405,15 @@ def generate_assistance_data(fiscal_year, i):
 @pytest.fixture
 def monthly_download_data(db, monkeypatch):
     for js in JOB_STATUS:
-        mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
+        baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
-    mommy.make("references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency")
-    mommy.make("references.Agency", pk=1, toptier_agency_id=1)
-    mommy.make("references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2")
-    mommy.make("references.Agency", pk=2, toptier_agency_id=2)
+    baker.make("references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency")
+    baker.make("references.Agency", pk=1, toptier_agency_id=1)
+    baker.make("references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2")
+    baker.make("references.Agency", pk=2, toptier_agency_id=2)
     i = 1
     for fiscal_year in range(2001, 2021):
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=i,
             generated_unique_award_id="CONT_AWD_1_0_0",
@@ -426,7 +426,7 @@ def monthly_download_data(db, monkeypatch):
             latest_transaction_id=i,
             fiscal_year=fiscal_year,
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionFPDS",
             transaction_id=i,
             detached_award_procurement_id=i,
@@ -444,7 +444,7 @@ def monthly_download_data(db, monkeypatch):
             created_at=datetime.datetime(fiscal_year, 5, 7),
             updated_at=datetime.datetime(fiscal_year, 5, 7),
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionNormalized",
             award_id=i,
             id=i,
@@ -476,7 +476,7 @@ def monthly_download_data(db, monkeypatch):
             unique_award_key=1,
             business_categories=[],
         )
-        mommy.make(
+        baker.make(
             "awards.Award",
             id=i + 100,
             generated_unique_award_id="ASST_NON_2_0_0",
@@ -489,7 +489,7 @@ def monthly_download_data(db, monkeypatch):
             latest_transaction_id=i + 100,
             fiscal_year=fiscal_year,
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionFABS",
             transaction_id=i + 100,
             fain=f"fain{i}",
@@ -498,7 +498,7 @@ def monthly_download_data(db, monkeypatch):
             awarding_agency_name="Test_Agency",
             awarding_sub_tier_agency_n="Test_Agency",
         )
-        mommy.make(
+        baker.make(
             "awards.TransactionNormalized",
             award_id=i + 100,
             id=i + 100,

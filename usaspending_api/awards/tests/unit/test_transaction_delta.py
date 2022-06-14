@@ -1,6 +1,6 @@
 from django.db.utils import IntegrityError
 from django.test import TransactionTestCase
-from model_mommy import mommy
+from model_bakery import baker
 from time import sleep
 from usaspending_api.awards.models import TransactionDelta
 from usaspending_api.awards.models.transaction_delta import CHUNK_SIZE
@@ -9,9 +9,9 @@ from usaspending_api.awards.models.transaction_delta import CHUNK_SIZE
 class TransactionDeltaTestCase(TransactionTestCase):
     def setUp(self):
         for _id in range(1, 5):
-            mommy.make("awards.TransactionNormalized", id=_id)
-            mommy.make("awards.TransactionFPDS", transaction_id=_id)
-            mommy.make("awards.Award", id=_id, latest_transaction_id=_id)
+            baker.make("awards.TransactionNormalized", id=_id)
+            baker.make("awards.TransactionFPDS", transaction_id=_id)
+            baker.make("awards.Award", id=_id, latest_transaction_id=_id)
 
     @staticmethod
     def test_get_max_created_at():

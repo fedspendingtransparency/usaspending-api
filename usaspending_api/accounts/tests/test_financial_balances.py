@@ -1,22 +1,22 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 
 
 @pytest.fixture
 def financial_balances_models():
-    sub = mommy.make(
+    sub = baker.make(
         "submissions.SubmissionAttributes",
         reporting_fiscal_year=2016,
         toptier_code="abc",
         is_final_balances_for_fy=True,
     )
-    agency1_toptier = mommy.make("references.TopTierAgency", toptier_agency_id=123, toptier_code="abc")
-    mommy.make("references.Agency", id=456, toptier_agency_id=123)
-    tas1 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=agency1_toptier)
-    tas2 = mommy.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=agency1_toptier)
-    mommy.make(
+    agency1_toptier = baker.make("references.TopTierAgency", toptier_agency_id=123, toptier_code="abc")
+    baker.make("references.Agency", id=456, toptier_agency_id=123)
+    tas1 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=agency1_toptier)
+    tas2 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=agency1_toptier)
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=tas1,
@@ -25,7 +25,7 @@ def financial_balances_models():
         gross_outlay_amount_by_tas_cpe=3000,
         submission=sub,
     )
-    mommy.make(
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=tas2,
@@ -36,7 +36,7 @@ def financial_balances_models():
     )
     # throw in some random noise to ensure only the balances for the specified
     # agency are returned in the response
-    mommy.make("accounts.AppropriationAccountBalances", _quantity=3, _fill_optional=True)
+    baker.make("accounts.AppropriationAccountBalances", _quantity=3, _fill_optional=True)
 
 
 @pytest.mark.django_db

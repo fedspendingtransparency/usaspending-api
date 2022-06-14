@@ -23,8 +23,13 @@ from usaspending_api.references.models import Agency
 
 
 logger = logging.getLogger(__name__)
-TEMP_SQL_FILES = [DEFAULT_MATIVEW_DIR / val["sql_filename"] for val in MATERIALIZED_VIEWS.values()]
-TEMP_SQL_FILES += [DEFAULT_MATIVEW_DIR / val["sql_filename"] for val in CHUNKED_MATERIALIZED_VIEWS.values()]
+TEMP_SQL_FILES = [
+    {"name": key, "sql_file": DEFAULT_MATIVEW_DIR / val["sql_filename"]} for key, val in MATERIALIZED_VIEWS.items()
+]
+TEMP_SQL_FILES += [
+    {"name": key, "sql_file": DEFAULT_MATIVEW_DIR / val["sql_filename"]}
+    for key, val in CHUNKED_MATERIALIZED_VIEWS.items()
+]
 
 
 def read_text_file(filepath):
@@ -113,10 +118,17 @@ def generate_matviews(materialized_views_as_traditional_views=False):
         cursor.execute(CREATE_READONLY_SQL)
         cursor.execute(DEPENDENCY_FILEPATH.read_text())
         subprocess.call(f"python3 {MATVIEW_GENERATOR_FILE} --dest {DEFAULT_MATIVEW_DIR} --quiet", shell=True)
-        for matview_sql_file in TEMP_SQL_FILES:
-            sql = matview_sql_file.read_text()
+        for matview_sql_lookup in TEMP_SQL_FILES:
+            name = matview_sql_lookup["name"]
+            sql = matview_sql_lookup["sql_file"].read_text()
             if materialized_views_as_traditional_views:
                 sql = convert_matview_to_view(sql)
+                # Put in place to help resolve issues where records are deleted from TransactionSearch;
+                # it is converted to be a View for tests, but is normally a Table which allows DELETEs
+                sql += (
+                    f" DROP RULE IF EXISTS {name}_delete_rule ON {name};"
+                    f" CREATE RULE {name}_delete_rule AS ON DELETE TO {name} DO INSTEAD NOTHING;"
+                )
             cursor.execute(sql)
         for view_sql_file in OVERLAY_VIEWS:
             cursor.execute(view_sql_file.read_text())
@@ -294,11 +306,6 @@ IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly') THEN
 CREATE ROLE readonly;
 END IF;
 END$$;"""
-
-
-def generate_test_db_connection_string():
-    db = connection.cursor().db.settings_dict
-    return "postgres://{}:{}@{}:5432/{}".format(db["USER"], db["PASSWORD"], db["HOST"], db["NAME"])
 
 
 def sort_with_null_last(to_sort, sort_key, sort_order, tie_breaker=None):

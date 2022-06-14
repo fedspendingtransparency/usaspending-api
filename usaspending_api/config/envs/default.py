@@ -12,31 +12,41 @@
 import pathlib
 from typing import ClassVar
 
-from usaspending_api.config.utils import ENV_SPECIFIC_OVERRIDE, eval_default_factory
+from usaspending_api.config.utils import (
+    ENV_SPECIFIC_OVERRIDE,
+    eval_default_factory,
+    eval_default_factory_from_root_validator,
+    CONFIG_VAR_PLACEHOLDERS,
+    parse_pg_uri,
+    unhide,
+)
 from pydantic import (
     AnyHttpUrl,
     BaseSettings,
     PostgresDsn,
     SecretStr,
     validator,
+    root_validator,
 )
 from pydantic.fields import ModelField
 
 _PROJECT_NAME = "usaspending-api"
-_PROJECT_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.resolve()
-_SRC_ROOT_DIR = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
+# WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
+# to the project root dir (i.e. usaspending-api/)
+_PROJECT_ROOT_DIR: pathlib.Path = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
+_SRC_ROOT_DIR: pathlib.Path = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
 
 
 class DefaultConfig(BaseSettings):
     """Top-level config that defines all configuration variables, and their default, overridable values
 
     Attributes:
-        POSTGRES_URL: (optional) Full URL to Postgres DB  that can be used to override the URL-by-parts
-        POSTGRES_DB: The name of the Postgres DB that contains USAspending data
-        POSTGRES_USER: Authorized user used to connect to the USAspending DB
-        POSTGRES_PASSWORD: Password for the user used to connect to the USAspending DB
-        POSTGRES_HOST: Host on which to to connect to the USAspending DB
-        POSTGRES_PORT: Port on which to connect to the USAspending DB
+        DATABASE_URL: (optional) Full URL to Postgres DB  that can be used to override the URL-by-parts
+        USASPENDING_DB_NAME: The name of the Postgres DB that contains USAspending data
+        USASPENDING_DB_USER: Authorized user used to connect to the USAspending DB
+        USASPENDING_DB_PASSWORD: Password for the user used to connect to the USAspending DB
+        USASPENDING_DB_HOST: Host on which to to connect to the USAspending DB
+        USASPENDING_DB_PORT: Port on which to connect to the USAspending DB
         ES_URL: (optional) Full URL to Elasticsearch cluster that can be used to override the URL-by-parts
         ES_SCHEME: "http" or "https". Defaults to "https:
         ES_HOST: Host on which to connect to the USAspending Elasticsearch cluster
@@ -58,36 +68,133 @@ class DefaultConfig(BaseSettings):
     PROJECT_LOG_DIR: str = str(_SRC_ROOT_DIR / "logs")
 
     # ==== [Postgres] ====
-    POSTGRES_URL: str = None
-    POSTGRES_DB: str = "data_store_api"
-    POSTGRES_USER: str = ENV_SPECIFIC_OVERRIDE
-    POSTGRES_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
-    POSTGRES_HOST: str = ENV_SPECIFIC_OVERRIDE
-    POSTGRES_PORT: str = ENV_SPECIFIC_OVERRIDE
-    POSTGRES_DSN: PostgresDsn = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
+    DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See below root validator-factory
+    USASPENDING_DB_NAME: str = "data_store_api"
+    USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
+    USASPENDING_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
+    USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
+    USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
-    @validator("POSTGRES_DSN")
-    def _POSTGRES_DSN_factory(cls, v, values, field: ModelField):
-        def factory_func() -> PostgresDsn:
-            """A factory that assembles the full DSN URL to the Postgres DB.
+    @root_validator
+    def _DATABASE_URL_and_parts_factory(cls, values):
+        """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are all
+        consistent.
 
-            If ``POSTGRES_URL`` is provided e.g. as an env var, it will be used. Otherwise this URL is assembled from
-            the other ``POSTGRES_*`` config vars
-            """
-            path = None
-            if values["POSTGRES_DB"]:
-                path = "/" + values["POSTGRES_DB"]
-            return PostgresDsn(
-                url=values["POSTGRES_URL"],
+        - Serves as a factory function to fill out all places where we track the database URL as both one complete
+        connection string and as individual parts.
+        - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
+        be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
+        """
+
+        # First determine if DATABASE_URL was provided.
+        is_database_url_provided = values["DATABASE_URL"] and values["DATABASE_URL"] not in CONFIG_VAR_PLACEHOLDERS
+
+        # If DATABASE_URL was provided
+        # - it should take precedence
+        # - its values will be used to backfill any missing POSTGRES DSN parts stored as separate config vars
+        if is_database_url_provided:
+            url_parts, username, password = parse_pg_uri(values["DATABASE_URL"])
+
+            # Backfill only POSTGRES DSN CONFIG vars that are missing their value
+            if values.get("USASPENDING_DB_HOST", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "USASPENDING_DB_HOST", lambda: url_parts.hostname
+                )
+            if values.get("USASPENDING_DB_PORT", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "USASPENDING_DB_PORT", lambda: str(url_parts.port)
+                )
+            if values.get("USASPENDING_DB_NAME", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "USASPENDING_DB_NAME", lambda: url_parts.path.lstrip("/")
+                )
+            if values.get("USASPENDING_DB_USER", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(cls, values, "USASPENDING_DB_USER", lambda: username)
+            if unhide(values.get("USASPENDING_DB_PASSWORD", None)) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "USASPENDING_DB_PASSWORD", lambda: SecretStr(password)
+                )
+
+        # If DATABASE_URL is not provided, try to build-it-up from provided parts, then backfill it
+        if not is_database_url_provided:
+            # First validate that we have enough parts to provide it
+            required_pg_dsn_parts = [
+                "USASPENDING_DB_HOST",
+                "USASPENDING_DB_PORT",
+                "USASPENDING_DB_NAME",
+                "USASPENDING_DB_USER",
+                "USASPENDING_DB_PASSWORD",
+            ]
+            if not all(pg_dsn_part in values for pg_dsn_part in required_pg_dsn_parts):
+                raise ValueError(
+                    "PostgreSQL DATABASE_URL was not provided and could not be built because one or more of these "
+                    "required parts were missing. Please check that the parts are completely configured, or provide a "
+                    f"DATABASE_URL instead: {required_pg_dsn_parts}"
+                )
+
+            pg_dsn = PostgresDsn(
+                url=None,
                 scheme="postgres",
-                user=values["POSTGRES_USER"],
-                password=values["POSTGRES_PASSWORD"].get_secret_value(),
-                host=values["POSTGRES_HOST"],
-                port=values["POSTGRES_PORT"],
-                path=path,
+                user=values["USASPENDING_DB_USER"],
+                password=values["USASPENDING_DB_PASSWORD"].get_secret_value(),
+                host=values["USASPENDING_DB_HOST"],
+                port=values["USASPENDING_DB_PORT"],
+                path="/" + values["USASPENDING_DB_NAME"] if values["USASPENDING_DB_NAME"] else None,
+            )
+            values = eval_default_factory_from_root_validator(cls, values, "DATABASE_URL", lambda: str(pg_dsn))
+
+        # Now validate the provided and/or built values are consistent between DATABASE_URL and USASPENDING_DB_* parts
+        pg_url_config_errors = {}
+        pg_url_parts, pg_username, pg_password = parse_pg_uri(values["DATABASE_URL"])
+
+        # Validate host
+        if pg_url_parts.hostname != values["USASPENDING_DB_HOST"]:
+            pg_url_config_errors["USASPENDING_DB_HOST"] = (values["USASPENDING_DB_HOST"], pg_url_parts.hostname)
+
+        # Validate port
+        if (
+            (pg_url_parts.port is not None and str(pg_url_parts.port) != values["USASPENDING_DB_PORT"])
+            or pg_url_parts.port is None
+            and values["USASPENDING_DB_PORT"] is not None
+        ):
+            pg_url_config_errors["USASPENDING_DB_PORT"] = (values["USASPENDING_DB_PORT"], pg_url_parts.port)
+
+        # Validate DB name (path)
+        if (
+            (pg_url_parts.path is not None and pg_url_parts.path.lstrip("/") != values["USASPENDING_DB_NAME"])
+            or pg_url_parts.path is None
+            and values["USASPENDING_DB_NAME"] is not None
+        ):
+            pg_url_config_errors["USASPENDING_DB_NAME"] = (
+                values["USASPENDING_DB_NAME"],
+                pg_url_parts.path.lstrip("/") if pg_url_parts.path is not None and pg_url_parts.path != "/" else None,
             )
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        # Validate username
+        if pg_username != values["USASPENDING_DB_USER"]:
+            pg_url_config_errors["USASPENDING_DB_USER"] = (values["USASPENDING_DB_USER"], pg_username)
+
+        # Validate password
+        if pg_password != unhide(values["USASPENDING_DB_PASSWORD"]):
+            # NOTE: Keeping password text obfuscated in the error output
+            pg_url_config_errors["USASPENDING_DB_PASSWORD"] = (
+                values["USASPENDING_DB_PASSWORD"],
+                "*" * len(pg_password) if pg_password is not None else None,
+            )
+
+        if len(pg_url_config_errors) > 0:
+            err_msg = (
+                "The DATABASE_URL config var value was provided along with one or more USASPENDING_DB_* config var "
+                "values, however they were not consistent. Differing configuration sources that should match "
+                "will cause confusion. Either provide all values consistently, or only provide a complete "
+                "DATABASE_URL and leave the others as None or unset, or leave the DATABASE_URL None or unset "
+                "and provide only the required POSTGRES DSN parts. Parts not matching:\n"
+            )
+            for k, v in pg_url_config_errors.items():
+                err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in DATABASE_URL: {v[1]}\n"
+            raise ValueError(err_msg)
+
+        return values
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
@@ -130,7 +237,8 @@ class DefaultConfig(BaseSettings):
     # However ES does not appear to be able too handle that when several Executors make that request in parallel
     # Good tips from ES: https:#www.elastic.co/guide/en/elasticsearch/reference/6.2/tune-for-indexing-speed.html
     # Reducing to 10,000 DB rows per bulk indexing operation
-    PARTITION_SIZE: int = 10000
+    SPARK_PARTITION_ROWS: int = 10000
+    SPARK_MAX_PARTITIONS: int = 100000
 
     # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
@@ -161,9 +269,10 @@ class DefaultConfig(BaseSettings):
     AWS_REGION: str = "us-gov-west-1"
     AWS_ACCESS_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
-    AWS_PROFILE: str = ENV_SPECIFIC_OVERRIDE
-    AWS_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
-    AWS_S3_OUTPUT_PATH: str = "output"  # path within AWS_S3_BUCKET where output data will accumulate
+    # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
+    AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
+    SPARK_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
+    DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where output data will accumulate
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
     AWS_STS_ENDPOINT: str = "sts.us-gov-west-1.amazonaws.com"
 

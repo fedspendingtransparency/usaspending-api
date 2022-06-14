@@ -2,7 +2,7 @@ import json
 import pytest
 import random
 
-from model_mommy import mommy
+from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
 from itertools import chain, combinations
@@ -16,7 +16,7 @@ from usaspending_api.awards.models import (
 )
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.download.filestreaming import download_generation
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.lookups import JOB_STATUS, VALID_ACCOUNT_SUBMISSION_TYPES
 from usaspending_api.etl.award_helpers import update_awards
 
@@ -25,10 +25,10 @@ from usaspending_api.etl.award_helpers import update_awards
 def download_test_data(db):
     # Populate job status lookup table
     for js in JOB_STATUS:
-        mommy.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
+        baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
     # Create Awarding Top Agency
-    ata1 = mommy.make(
+    ata1 = baker.make(
         "references.ToptierAgency",
         toptier_agency_id=100,
         name="Bureau of Things",
@@ -37,7 +37,7 @@ def download_test_data(db):
         mission="test0",
         icon_filename="test0",
     )
-    ata2 = mommy.make(
+    ata2 = baker.make(
         "references.ToptierAgency",
         toptier_agency_id=101,
         name="Bureau of Stuff",
@@ -48,11 +48,11 @@ def download_test_data(db):
     )
 
     # Create Awarding Agencies
-    aa1 = mommy.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
-    aa2 = mommy.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
 
     # Create Funding Top Agency
-    ata3 = mommy.make(
+    ata3 = baker.make(
         "references.ToptierAgency",
         toptier_agency_id=102,
         name="Bureau of Money",
@@ -63,15 +63,15 @@ def download_test_data(db):
     )
 
     # Create Funding Agency
-    mommy.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
-    award1 = mommy.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_1")
-    award2 = mommy.make("awards.Award", id=456, category="contracts", generated_unique_award_id="CONT_AWD_1")
-    award3 = mommy.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_1")
+    award1 = baker.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_1")
+    award2 = baker.make("awards.Award", id=456, category="contracts", generated_unique_award_id="CONT_AWD_1")
+    award3 = baker.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_1")
 
     # Create Transactions
-    trann1 = mommy.make(
+    trann1 = baker.make(
         TransactionNormalized,
         award=award1,
         action_date="2018-01-01",
@@ -80,7 +80,7 @@ def download_test_data(db):
         awarding_agency=aa1,
         unique_award_key="CONT_IDV_1",
     )
-    trann2 = mommy.make(
+    trann2 = baker.make(
         TransactionNormalized,
         award=award2,
         action_date="2018-01-01",
@@ -89,7 +89,7 @@ def download_test_data(db):
         awarding_agency=aa2,
         unique_award_key="CONT_AWD_1",
     )
-    trann3 = mommy.make(
+    trann3 = baker.make(
         TransactionNormalized,
         award=award3,
         action_date="2018-01-01",
@@ -100,27 +100,27 @@ def download_test_data(db):
     )
 
     # Create TransactionContract
-    mommy.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_1")
-    mommy.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_1")
+    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_1")
+    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_1")
 
     # Create TransactionAssistance
-    mommy.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_1")
+    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_1")
 
     # Create FederalAccount
-    fa1 = mommy.make(FederalAccount, id=10)
+    fa1 = baker.make(FederalAccount, id=10)
 
     # Create TreasuryAppropriationAccount
-    taa1 = mommy.make(TreasuryAppropriationAccount, treasury_account_identifier=100, federal_account=fa1)
+    taa1 = baker.make(TreasuryAppropriationAccount, treasury_account_identifier=100, federal_account=fa1)
 
     # Create FinancialAccountsByAwards
-    mommy.make(FinancialAccountsByAwards, financial_accounts_by_awards_id=1000, award=award1, treasury_account=taa1)
+    baker.make(FinancialAccountsByAwards, financial_accounts_by_awards_id=1000, award=award1, treasury_account=taa1)
 
     # Set latest_award for each award
     update_awards()
 
 
 def test_tas_a_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -138,7 +138,7 @@ def test_tas_a_defaults_success(client, download_test_data):
 
 
 def test_tas_b_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -156,7 +156,7 @@ def test_tas_b_defaults_success(client, download_test_data):
 
 
 def test_tas_c_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -174,7 +174,7 @@ def test_tas_c_defaults_success(client, download_test_data):
 
 
 def test_federal_account_a_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -192,7 +192,7 @@ def test_federal_account_a_defaults_success(client, download_test_data):
 
 
 def test_federal_account_b_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -210,7 +210,7 @@ def test_federal_account_b_defaults_success(client, download_test_data):
 
 
 def test_federal_account_c_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -228,7 +228,7 @@ def test_federal_account_c_defaults_success(client, download_test_data):
 
 
 def test_agency_filter_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -245,7 +245,7 @@ def test_agency_filter_success(client, download_test_data):
 
 
 def test_agency_filter_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -267,7 +267,7 @@ def test_agency_filter_failure(client, download_test_data):
 
 
 def test_federal_account_filter_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -289,7 +289,7 @@ def test_federal_account_filter_success(client, download_test_data):
 
 
 def test_federal_account_filter_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -311,7 +311,7 @@ def test_federal_account_filter_failure(client, download_test_data):
 
 
 def test_account_level_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -328,7 +328,7 @@ def test_account_level_failure(client, download_test_data):
 
 
 def test_submission_type_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -345,7 +345,7 @@ def test_submission_type_failure(client, download_test_data):
 
 
 def test_fy_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -362,7 +362,7 @@ def test_fy_failure(client, download_test_data):
 
 
 def test_quarter_failure(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
@@ -379,7 +379,7 @@ def test_quarter_failure(client, download_test_data):
 
 
 def test_download_accounts_bad_filter_type_raises(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     payload = {"account_level": "federal_account", "filters": "01", "columns": []}
     resp = client.post("/api/v2/download/accounts/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -387,7 +387,7 @@ def test_download_accounts_bad_filter_type_raises(client, download_test_data):
 
 
 def test_multiple_submission_types_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     def all_subsets(ss):
         return chain(*map(lambda x: combinations(ss, x), range(1, len(ss) + 1)))
@@ -412,7 +412,7 @@ def test_multiple_submission_types_success(client, download_test_data):
 
 
 def test_duplicate_submission_types_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     duplicated_submission_list = VALID_ACCOUNT_SUBMISSION_TYPES * 11
 
     resp = client.post(
@@ -435,7 +435,7 @@ def test_duplicate_submission_types_success(client, download_test_data):
 
 
 def test_empty_submission_types_enum_fail(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
         "/api/v2/download/accounts/",
@@ -456,7 +456,7 @@ def test_empty_submission_types_enum_fail(client, download_test_data):
 
 
 def test_empty_array_filter_fail(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=generate_test_db_connection_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
         "/api/v2/download/accounts/",

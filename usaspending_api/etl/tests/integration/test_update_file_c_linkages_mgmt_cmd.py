@@ -5,7 +5,7 @@ from django.core.management import call_command
 
 # Third-party app imports
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 
 # Imports from your apps
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
@@ -28,7 +28,7 @@ def test_update_contract_linkages_piid_with_no_parent_piid():
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     call_command("update_file_c_linkages")
 
@@ -64,7 +64,7 @@ def test_update_contract_linkages_piid_with_parent_piid():
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     call_command("update_file_c_linkages")
 
@@ -98,7 +98,7 @@ def test_update_assistance_linkages_fain():
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     call_command("update_file_c_linkages")
 
@@ -122,7 +122,7 @@ def test_update_assistance_linkages_uri():
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     call_command("update_file_c_linkages")
 
@@ -158,7 +158,7 @@ def test_update_assistance_linkages_fain_and_uri():
     ]
 
     for entry in models_to_mock:
-        mommy.make(entry.pop("model"), **entry)
+        baker.make(entry.pop("model"), **entry)
 
     call_command("update_file_c_linkages")
 

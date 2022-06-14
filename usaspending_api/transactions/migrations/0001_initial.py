@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
                 ('high_comp_officer5_amount', models.TextField(blank=True, null=True)),
                 ('high_comp_officer5_full_na', models.TextField(blank=True, null=True)),
                 ('is_active', usaspending_api.common.custom_django_fields.BooleanFieldWithDefault()),
-                ('is_historical', models.NullBooleanField()),
+                ('is_historical', models.BooleanField(null=True, blank=True)),
                 ('legal_entity_address_line1', models.TextField(blank=True, null=True)),
                 ('legal_entity_address_line2', models.TextField(blank=True, null=True)),
                 ('legal_entity_address_line3', models.TextField(blank=True, null=True)),

@@ -1,7 +1,7 @@
 import pytest
 
 from datetime import datetime, timedelta, timezone
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.awards.models import TransactionFABS
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.management.commands.fabs_nightly_loader import (
@@ -26,7 +26,7 @@ def test_get_incremental_load_start_datetime():
         get_incremental_load_start_datetime()
 
     # Add a last load.
-    mommy.make(
+    baker.make(
         "broker.ExternalDataLoadDate",
         external_data_type__external_data_type_id=EXTERNAL_DATA_TYPE_DICT["fabs"],
         last_load_date=may5,
@@ -34,7 +34,7 @@ def test_get_incremental_load_start_datetime():
     assert get_incremental_load_start_datetime() == may5 - lookback_minutes
 
     # Add a FABS updated_at that is older than last load date so it is chosen.
-    mommy.make("awards.TransactionFABS", transaction__id=1, updated_at=may4)
+    baker.make("awards.TransactionFABS", transaction__id=1, updated_at=may4)
     assert get_incremental_load_start_datetime() == may4 + updated_at_modifier
 
     # Make FABS updated_at newer so last load date is chosen.

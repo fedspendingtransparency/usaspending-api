@@ -26,7 +26,7 @@ from usaspending_api.etl.submission_loader_helpers.treasury_appropriation_accoun
 logger = logging.getLogger("script")
 
 
-class CertifiedAwardFinancialIterator:
+class PublishedAwardFinancialIterator:
     def __init__(self, submission_attributes, chunk_size):
         self.submission_attributes = submission_attributes
         self.chunk_size = chunk_size
@@ -38,9 +38,9 @@ class CertifiedAwardFinancialIterator:
     def _retrieve_and_prepare_next_chunk(self):
         sql = f"""
             select  c.*
-            {CertifiedAwardFinancial.get_from_where(self.submission_attributes.submission_id)}
-            {"" if self._last_id is None else f"and certified_award_financial_id > {self._last_id}"}
-            order   by c.certified_award_financial_id
+            {PublishedAwardFinancial.get_from_where(self.submission_attributes.submission_id)}
+            {"" if self._last_id is None else f"and published_award_financial_id > {self._last_id}"}
+            order   by c.published_award_financial_id
             limit   {self.chunk_size}
         """
 
@@ -53,7 +53,7 @@ class CertifiedAwardFinancialIterator:
             )
             award_financial_frame = award_financial_frame.replace({np.nan: None})
 
-            self._last_id = award_financial_frame["certified_award_financial_id"].max()
+            self._last_id = award_financial_frame["published_award_financial_id"].max()
             self._current_chunk = deque(award_financial_frame.to_dict(orient="records"))
 
         else:
@@ -68,8 +68,8 @@ class CertifiedAwardFinancialIterator:
         return self._current_chunk.popleft()
 
 
-class CertifiedAwardFinancial:
-    """ Abstract away the messy details of how we retrieve and prepare certified_award_financial rows. """
+class PublishedAwardFinancial:
+    """ Abstract away the messy details of how we retrieve and prepare published_award_financial rows. """
 
     def __init__(self, submission_attributes, db_cursor, chunk_size):
         self.submission_attributes = submission_attributes
@@ -95,7 +95,7 @@ class CertifiedAwardFinancial:
     @staticmethod
     def get_from_where(submission_id):
         return f"""
-            from    certified_award_financial c
+            from    published_award_financial c
                     inner join submission s on s.submission_id = c.submission_id
             where   s.submission_id = {submission_id} and
                     (
@@ -107,21 +107,21 @@ class CertifiedAwardFinancial:
         """
 
     def __iter__(self):
-        return CertifiedAwardFinancialIterator(self.submission_attributes, self.chunk_size)
+        return PublishedAwardFinancialIterator(self.submission_attributes, self.chunk_size)
 
 
 def get_file_c(submission_attributes, db_cursor, chunk_size):
-    return CertifiedAwardFinancial(submission_attributes, db_cursor, chunk_size)
+    return PublishedAwardFinancial(submission_attributes, db_cursor, chunk_size)
 
 
-def load_file_c(submission_attributes, db_cursor, certified_award_financial):
+def load_file_c(submission_attributes, db_cursor, published_award_financial):
     """
     Process and load file C broker data.
     Note: this should run AFTER the D1 and D2 files are loaded because we try to join to those records to retrieve some
     additional information about the awarding sub-tier agency.
     """
 
-    if certified_award_financial.count == 0:
+    if published_award_financial.count == 0:
         logger.warning("No File C (award financial) data found, skipping...")
         return
 
@@ -129,12 +129,12 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
     # change up the order of file loading
     reverse = re.compile(r"(_(cpe|fyb)$)|^transaction_obligated_amount$")
     skipped_tas = defaultdict(int)  # tracks count of rows skipped due to "missing" TAS
-    total_rows = certified_award_financial.count
+    total_rows = published_award_financial.count
     start_time = datetime.now()
 
-    bulk_treasury_appropriation_account_tas_lookup(certified_award_financial.account_nums, db_cursor)
+    bulk_treasury_appropriation_account_tas_lookup(published_award_financial.account_nums, db_cursor)
 
-    _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse)
+    _save_file_c_rows(published_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse)
 
     update_c_to_d_linkages("contract", False, submission_attributes.submission_id)
     update_c_to_d_linkages("assistance", False, submission_attributes.submission_id)
@@ -150,9 +150,9 @@ def load_file_c(submission_attributes, db_cursor, certified_award_financial):
         logger.info("All File C records in Broker loaded into USAspending")
 
 
-def _save_file_c_rows(certified_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse):
+def _save_file_c_rows(published_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse):
     save_manager = BulkCreateManager(FinancialAccountsByAwards)
-    for index, row in enumerate(certified_award_financial, 1):
+    for index, row in enumerate(published_award_financial, 1):
         if not (index % 1000):
             logger.info(f"C File Load: Loading row {index:,} of {total_rows:,} ({datetime.now() - start_time})")
 

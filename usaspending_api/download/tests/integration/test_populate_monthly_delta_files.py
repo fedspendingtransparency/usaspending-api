@@ -5,25 +5,25 @@ import os
 
 from django.core.management import call_command
 from os import listdir
-from model_mommy import mommy
+from model_bakery import baker
 from csv import reader
 
 from usaspending_api.settings import HOST
 from usaspending_api.awards.models import TransactionDelta
-from usaspending_api.common.helpers.generic_helper import generate_test_db_connection_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
 @pytest.fixture
 @pytest.mark.django_db(transaction=True)
 def monthly_download_delta_data(db, monkeypatch):
-    mommy.make("references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency")
-    mommy.make("references.Agency", pk=1, toptier_agency_id=1)
-    mommy.make("references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2")
-    mommy.make("references.Agency", pk=2, toptier_agency_id=2)
+    baker.make("references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency")
+    baker.make("references.Agency", pk=1, toptier_agency_id=1)
+    baker.make("references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2")
+    baker.make("references.Agency", pk=2, toptier_agency_id=2)
     i = 1
     fiscal_year = 2020
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=i,
         generated_unique_award_id="CONT_AWD_1_0_0",
@@ -35,8 +35,8 @@ def monthly_download_delta_data(db, monkeypatch):
         funding_agency_id=1,
         fiscal_year=fiscal_year,
     )
-    mommy.make("awards.FinancialAccountsByAwards", award_id=i)
-    mommy.make(
+    baker.make("awards.FinancialAccountsByAwards", award_id=i)
+    baker.make(
         "awards.TransactionNormalized",
         award_id=i,
         id=i,
@@ -68,7 +68,7 @@ def monthly_download_delta_data(db, monkeypatch):
         unique_award_key=1,
         business_categories=[],
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFPDS",
         transaction_id=i,
         detached_award_procurement_id=i,
@@ -88,7 +88,7 @@ def monthly_download_delta_data(db, monkeypatch):
     )
     TransactionDelta.objects.update_or_create_transaction(i)
 
-    monkeypatch.setenv("DOWNLOAD_DATABASE_URL", generate_test_db_connection_string())
+    monkeypatch.setenv("DOWNLOAD_DATABASE_URL", get_database_dsn_string())
 
 
 @pytest.mark.django_db(transaction=True)
@@ -428,7 +428,7 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
     formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
     assert f"FY(All)_001_Assistance_Delta_{formatted_date}.zip" not in file_list
 
-    mommy.make(
+    baker.make(
         "awards.Award",
         id=2,
         is_fpds=False,
@@ -439,7 +439,7 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         funding_agency_id=2,
         fiscal_year=2020,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionNormalized",
         award_id=2,
         id=2,
@@ -459,7 +459,7 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         funding_agency_id=1,
         unique_award_key=2,
     )
-    mommy.make(
+    baker.make(
         "awards.TransactionFABS",
         transaction_id=2,
         fain="fain2",
@@ -468,7 +468,7 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         awarding_agency_name="Test_Agency",
         awarding_sub_tier_agency_n="Test_Agency",
     )
-    mommy.make("awards.TransactionDelta", transaction_id=2, created_at=datetime.datetime.now())
+    baker.make("awards.TransactionDelta", transaction_id=2, created_at=datetime.datetime.now())
     call_command(
         "populate_monthly_delta_files",
         "--agencies=1",

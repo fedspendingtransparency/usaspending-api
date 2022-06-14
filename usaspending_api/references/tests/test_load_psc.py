@@ -3,7 +3,7 @@ import pytest
 from django.core.management import call_command
 from datetime import datetime
 from usaspending_api.references.models import PSC
-from model_mommy import mommy
+from model_bakery import baker
 
 
 @pytest.mark.django_db
@@ -12,8 +12,8 @@ def test_load_psc():
     Test to ensure the ingested data size is correct
     Test to make sure previously missing information has been added
     """
-    mommy.make("references.PSC", code="1005", description="whatever")
-    mommy.make("references.PSC", code="10", description="whatever", start_date="1978-12-31")
+    baker.make("references.PSC", code="1005", description="whatever")
+    baker.make("references.PSC", code="10", description="whatever", start_date="1978-12-31")
 
     call_command("load_psc")
 

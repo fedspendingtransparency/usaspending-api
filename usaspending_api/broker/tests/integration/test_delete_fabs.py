@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 from usaspending_api.awards.models import Award, TransactionNormalized, TransactionFABS
 from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
 from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
@@ -13,27 +13,27 @@ def test_delete_fabs_success():
     """ Testing delete fabs works properly """
 
     # Award/Transaction deleted based on 1-1 transaction
-    mommy.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
-    mommy.make(TransactionNormalized, id=1, award_id=1, unique_award_key="TEST_AWARD_1")
-    mommy.make(TransactionFABS, transaction_id=1, published_fabs_id=301, unique_award_key="TEST_AWARD_1")
+    baker.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
+    baker.make(TransactionNormalized, id=1, award_id=1, unique_award_key="TEST_AWARD_1")
+    baker.make(TransactionFABS, transaction_id=1, published_fabs_id=301, unique_award_key="TEST_AWARD_1")
 
     # Award kept despite having one of their associated transactions removed
-    mommy.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
-    mommy.make(TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2")
-    mommy.make(TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2")
-    mommy.make(TransactionFABS, transaction_id=2, published_fabs_id=302, unique_award_key="TEST_AWARD_2")
-    mommy.make(TransactionFABS, transaction_id=3, published_fabs_id=303, unique_award_key="TEST_AWARD_2")
+    baker.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
+    baker.make(TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2")
+    baker.make(TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2")
+    baker.make(TransactionFABS, transaction_id=2, published_fabs_id=302, unique_award_key="TEST_AWARD_2")
+    baker.make(TransactionFABS, transaction_id=3, published_fabs_id=303, unique_award_key="TEST_AWARD_2")
 
     # Award/Transaction untouched at all as control
-    mommy.make(Award, id=3, generated_unique_award_id="TEST_AWARD_3")
-    mommy.make(TransactionNormalized, id=4, award_id=3, unique_award_key="TEST_AWARD_3")
-    mommy.make(TransactionFABS, transaction_id=4, published_fabs_id=304, unique_award_key="TEST_AWARD_3")
+    baker.make(Award, id=3, generated_unique_award_id="TEST_AWARD_3")
+    baker.make(TransactionNormalized, id=4, award_id=3, unique_award_key="TEST_AWARD_3")
+    baker.make(TransactionFABS, transaction_id=4, published_fabs_id=304, unique_award_key="TEST_AWARD_3")
 
     # Award is not deleted; old transaction deleted; new transaction uses old award
-    mommy.make(Award, id=4, generated_unique_award_id="TEST_AWARD_4")
-    mommy.make(TransactionNormalized, id=5, award_id=4, unique_award_key="TEST_AWARD_4")
-    mommy.make(TransactionFABS, transaction_id=5, published_fabs_id=305, unique_award_key="TEST_AWARD_4")
-    mommy.make(
+    baker.make(Award, id=4, generated_unique_award_id="TEST_AWARD_4")
+    baker.make(TransactionNormalized, id=5, award_id=4, unique_award_key="TEST_AWARD_4")
+    baker.make(TransactionFABS, transaction_id=5, published_fabs_id=305, unique_award_key="TEST_AWARD_4")
+    baker.make(
         SourceAssistanceTransaction,
         published_fabs_id=306,
         afa_generated_unique="TEST_TRANSACTION_6",

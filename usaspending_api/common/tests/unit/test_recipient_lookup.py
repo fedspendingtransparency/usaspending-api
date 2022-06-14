@@ -1,6 +1,6 @@
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 
@@ -8,19 +8,19 @@ from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 @pytest.fixture
 def recipient_lookup(db):
     # DUNS Test Data
-    mommy.make("recipient.RecipientLookup", duns="123", uei=None, recipient_hash="01c03484-d1bd-41cc-2aca-4b427a2d0611")
-    mommy.make("recipient.RecipientLookup", duns="456", uei=None, recipient_hash="1c4e7c2a-efe3-1b7e-2190-6f4487f808ac")
-    mommy.make("recipient.RecipientProfile", recipient_hash="01c03484-d1bd-41cc-2aca-4b427a2d0611", recipient_level="P")
-    mommy.make("recipient.RecipientProfile", recipient_hash="1c4e7c2a-efe3-1b7e-2190-6f4487f808ac", recipient_level="C")
+    baker.make("recipient.RecipientLookup", duns="123", uei=None, recipient_hash="01c03484-d1bd-41cc-2aca-4b427a2d0611")
+    baker.make("recipient.RecipientLookup", duns="456", uei=None, recipient_hash="1c4e7c2a-efe3-1b7e-2190-6f4487f808ac")
+    baker.make("recipient.RecipientProfile", recipient_hash="01c03484-d1bd-41cc-2aca-4b427a2d0611", recipient_level="P")
+    baker.make("recipient.RecipientProfile", recipient_hash="1c4e7c2a-efe3-1b7e-2190-6f4487f808ac", recipient_level="C")
 
     # This is required for test_child_recipient_with_name_and_no_id.
-    mommy.make("recipient.RecipientProfile", recipient_hash="b2c8fe8e-b520-c47f-31e3-3620a358ce48", recipient_level="C")
+    baker.make("recipient.RecipientProfile", recipient_hash="b2c8fe8e-b520-c47f-31e3-3620a358ce48", recipient_level="C")
 
     # UEI Test Data
-    mommy.make("recipient.RecipientLookup", duns=None, uei="123", recipient_hash="f5ba3b35-167d-8f32-57b0-406c3479de90")
-    mommy.make("recipient.RecipientLookup", duns=None, uei="456", recipient_hash="ede3440b-e344-a923-035e-feed34773b57")
-    mommy.make("recipient.RecipientProfile", recipient_hash="f5ba3b35-167d-8f32-57b0-406c3479de90", recipient_level="P")
-    mommy.make("recipient.RecipientProfile", recipient_hash="ede3440b-e344-a923-035e-feed34773b57", recipient_level="C")
+    baker.make("recipient.RecipientLookup", duns=None, uei="123", recipient_hash="f5ba3b35-167d-8f32-57b0-406c3479de90")
+    baker.make("recipient.RecipientLookup", duns=None, uei="456", recipient_hash="ede3440b-e344-a923-035e-feed34773b57")
+    baker.make("recipient.RecipientProfile", recipient_hash="f5ba3b35-167d-8f32-57b0-406c3479de90", recipient_level="P")
+    baker.make("recipient.RecipientProfile", recipient_hash="ede3440b-e344-a923-035e-feed34773b57", recipient_level="C")
 
 
 # Child Recipient Tests

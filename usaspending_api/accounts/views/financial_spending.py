@@ -1,4 +1,4 @@
-from django.db.models import F, Sum, Case, Value, When
+from django.db.models import F, Sum, Case, TextField, Value, When
 from usaspending_api.accounts.serializers import (
     ObjectClassFinancialSpendingSerializer,
     MinorObjectClassFinancialSpendingSerializer,
@@ -64,6 +64,7 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
                 major_object_class_name=Case(
                     When(object_class__major_object_class="00", then=Value("Unknown Object Type")),
                     default="object_class__major_object_class_name",
+                    output_field=TextField(),
                 ),
                 major_object_class_code=F("object_class__major_object_class"),
             )

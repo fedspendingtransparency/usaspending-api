@@ -1,17 +1,17 @@
 import pytest
-from model_mommy import mommy
+from model_bakery import baker
 
 from rest_framework import status
 
 
 @pytest.fixture
 def model_instances():
-    mommy.make("accounts.BudgetAuthority", year=2000, amount=2000000, agency_identifier="000")
-    mommy.make("accounts.BudgetAuthority", year=2001, amount=2001000, agency_identifier="000")
-    mommy.make("accounts.BudgetAuthority", year=2002, amount=2002000, agency_identifier="000")
-    mommy.make("accounts.BudgetAuthority", year=2003, amount=1003000, agency_identifier="000")
-    mommy.make("accounts.BudgetAuthority", year=2000, amount=1000, agency_identifier="002")
-    mommy.make("accounts.BudgetAuthority", year=2000, amount=2000, fr_entity_code="0202", agency_identifier="002")
+    baker.make("accounts.BudgetAuthority", year=2000, amount=2000000, agency_identifier="000")
+    baker.make("accounts.BudgetAuthority", year=2001, amount=2001000, agency_identifier="000")
+    baker.make("accounts.BudgetAuthority", year=2002, amount=2002000, agency_identifier="000")
+    baker.make("accounts.BudgetAuthority", year=2003, amount=1003000, agency_identifier="000")
+    baker.make("accounts.BudgetAuthority", year=2000, amount=1000, agency_identifier="002")
+    baker.make("accounts.BudgetAuthority", year=2000, amount=2000, fr_entity_code="0202", agency_identifier="002")
 
 
 @pytest.mark.skip

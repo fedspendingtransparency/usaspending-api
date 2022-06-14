@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from model_mommy import mommy
+from model_bakery import baker
 
 
 BASE_ENDPOINT = "/api/v2/autocomplete/accounts/"
@@ -9,12 +9,12 @@ BASE_ENDPOINT = "/api/v2/autocomplete/accounts/"
 
 @pytest.fixture
 def test_data(db):
-    mommy.make("references.CGAC", cgac_code="000", agency_name="Agency 000", agency_abbreviation="A000")
-    mommy.make("references.CGAC", cgac_code="002", agency_name="Agency 002", agency_abbreviation="A002")
+    baker.make("references.CGAC", cgac_code="000", agency_name="Agency 000", agency_abbreviation="A000")
+    baker.make("references.CGAC", cgac_code="002", agency_name="Agency 002", agency_abbreviation="A002")
 
-    award = mommy.make("awards.Award")
+    award = baker.make("awards.Award")
 
-    taa = mommy.make(
+    taa = baker.make(
         "accounts.TreasuryAppropriationAccount",
         allocation_transfer_agency_id=None,
         agency_id="000",
@@ -24,9 +24,9 @@ def test_data(db):
         main_account_code="2121",
         sub_account_code="212",
     )
-    mommy.make("awards.FinancialAccountsByAwards", treasury_account=taa, award=award)
+    baker.make("awards.FinancialAccountsByAwards", treasury_account=taa, award=award)
 
-    taa = mommy.make(
+    taa = baker.make(
         "accounts.TreasuryAppropriationAccount",
         allocation_transfer_agency_id="000",
         agency_id="001",
@@ -36,9 +36,9 @@ def test_data(db):
         main_account_code="1234",
         sub_account_code="321",
     )
-    mommy.make("awards.FinancialAccountsByAwards", treasury_account=taa, award=award)
+    baker.make("awards.FinancialAccountsByAwards", treasury_account=taa, award=award)
 
-    taa = mommy.make(
+    taa = baker.make(
         "accounts.TreasuryAppropriationAccount",
         allocation_transfer_agency_id="001",
         agency_id="002",
@@ -48,9 +48,9 @@ def test_data(db):
         main_account_code="9234",
         sub_account_code="921",
     )
-    mommy.make("awards.FinancialAccountsByAwards", treasury_account=taa, award=award)
+    baker.make("awards.FinancialAccountsByAwards", treasury_account=taa, award=award)
 
-    taa = mommy.make(
+    taa = baker.make(
         "accounts.TreasuryAppropriationAccount",
         allocation_transfer_agency_id="001",
         agency_id="002",
@@ -60,7 +60,7 @@ def test_data(db):
         main_account_code="9234",
         sub_account_code="921",
     )
-    mommy.make("awards.FinancialAccountsByAwards", treasury_account=taa, award=award)
+    baker.make("awards.FinancialAccountsByAwards", treasury_account=taa, award=award)
 
 
 def _post(client, endpoint, request, expected_response):
