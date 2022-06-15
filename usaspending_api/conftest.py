@@ -23,11 +23,14 @@ from usaspending_api.common.sqs.sqs_handler import (
 )
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+
+# Compose other supporting conftest_*.py files
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
     remove_unittest_queue_data_files,
 )
+from usaspending_api.tests.conftest_spark import *  # noqa
 
 
 logger = logging.getLogger("console")
