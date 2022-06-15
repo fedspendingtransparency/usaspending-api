@@ -36,6 +36,19 @@ class Command(BaseCommand):
             help="The destination Delta Table to write the data",
             choices=list(TABLE_SPEC.keys()),
         )
+        parser.add_argument(
+            "--alt-db",
+            type=str,
+            required=False,
+            help="An alternate database (aka schema) in which to create this table, overriding the TABLE_SPEC db",
+        )
+        parser.add_argument(
+            "--alt-name",
+            type=str,
+            required=False,
+            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
+            "name",
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -60,11 +73,12 @@ class Command(BaseCommand):
         destination_table = options["destination_table"]
 
         table_spec = TABLE_SPEC[destination_table]
-        destination_database = table_spec["destination_database"]
+        destination_database = options.get("alt_db", table_spec["destination_database"])
         source_table = table_spec["source_table"]
         partition_column = table_spec["partition_column"]
         partition_column_type = table_spec["partition_column_type"]
         custom_schema = table_spec["custom_schema"]
+        destination_table_name = options.get("alt_name", destination_table)
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
@@ -114,6 +128,6 @@ class Command(BaseCommand):
             )
 
         # Write to S3
-        load_delta_table(spark, df, destination_table, True)
+        load_delta_table(spark, df, destination_table_name, True)
         if spark_created_by_command:
             spark.stop()

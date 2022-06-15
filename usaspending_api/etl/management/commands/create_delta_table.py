@@ -146,6 +146,19 @@ class Command(BaseCommand):
             default=CONFIG.SPARK_S3_BUCKET,
             help="The destination bucket in S3 to write the data",
         )
+        parser.add_argument(
+            "--alt-db",
+            type=str,
+            required=False,
+            help="An alternate database (aka schema) in which to create this table, overriding the TABLE_SPEC db",
+        )
+        parser.add_argument(
+            "--alt-name",
+            type=str,
+            required=False,
+            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
+            "name",
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -171,20 +184,21 @@ class Command(BaseCommand):
         spark_s3_bucket = options["spark_s3_bucket"]
 
         table_spec = TABLE_SPEC[destination_table]
-        destination_database = table_spec["destination_database"]
+        destination_database = options.get("alt_db", table_spec["destination_database"])
+        destination_table_name = options.get("alt_name", destination_table)
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
         spark.sql(f"create database if not exists {destination_database};")
         spark.sql(f"use {destination_database};")
 
-        spark.sql(f"DROP TABLE IF EXISTS {destination_table}")
+        spark.sql(f"DROP TABLE IF EXISTS {destination_table_name}")
 
         # Define Schema Using CREATE TABLE AS command
         spark.sql(
             TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
-                DESTINATION_TABLE=destination_table,
-                DESTINATION_DATABASE=table_spec["destination_database"],
+                DESTINATION_TABLE=destination_table_name,
+                DESTINATION_DATABASE=destination_database,
                 SPARK_S3_BUCKET=spark_s3_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
             )
