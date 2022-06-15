@@ -160,6 +160,15 @@ def configure_spark_session(
 
     conf = SparkConf()
 
+    # Normalize all timestamps read into the SparkSession to UTC time.
+    # So if timezone-aware timestamps are read-in, Spark will shifted to UTC and then strip off the timezone so they
+    # are only an "instant" (no timezone part)
+    # - See also: https://docs.databricks.com/spark/latest/dataframes-datasets/dates-timestamps.html#timestamps-and
+    #   time-zones
+    # - if not set, it will fallback to the timezone of the JVM running spark, which could be the local time zone of
+    #   the machine
+    #   - Still would be ok so long as reads and writes of an "instant" happen from the same session timezone
+    conf.set("spark.sql.session.timeZone", "UTC")
     conf.set("spark.scheduler.mode", CONFIG.SPARK_SCHEDULER_MODE)
     # Don't try to re-run the whole job if there's an error
     # Assume that random errors are rare, and jobs have long runtimes, so fail fast, fix and retry manually.

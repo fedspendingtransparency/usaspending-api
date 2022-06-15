@@ -7,20 +7,16 @@ from pyspark.sql import SparkSession
 from django.core.management import call_command
 
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
-from usaspending_api.etl.tests.conftest import DELTA_LAKE_UNITTEST_SCHEMA_NAME
 
 
 def _verify_delta_table_creation(spark: SparkSession, delta_table_name: str, s3_bucket: str):
     """Generic function that uses the create_delta_table command to create the given table and assert it was created
     as expected
+
+    NOTE: If calling test is using the hive_unittest_metastore_db fixture, these tables will be blown away after
+    each test (and the metastore_db itself will be blown away after the full test session)
     """
     delta_table_spec = TABLE_SPEC[delta_table_name]
-
-    # NOTE: As of now, these tests allow the delta table to be created in a delta database (aka schema) as declared
-    # in the table spec, rather than in the schema declared by DELTA_LAKE_UNITTEST_SCHEMA_NAME
-    # This means they WILL NOT get removed/cleaned up from test run to test run. And may cause collisions
-    # TODO: Fix the above, by forcing each table to be created in the unittest Delta Db schema
-    assert delta_table_spec["destination_database"] != DELTA_LAKE_UNITTEST_SCHEMA_NAME
 
     call_command("create_delta_table", f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}")
 
