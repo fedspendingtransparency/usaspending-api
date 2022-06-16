@@ -173,11 +173,11 @@ LEFT OUTER JOIN
       rl_country_lookup.country_code = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code, 'USA')
       OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code))
 LEFT OUTER JOIN
- (SELECT DISTINCT ON (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM ref_city_county_state_code) AS rl_county_lookup on
+ (SELECT DISTINCT (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM ref_city_county_state_code) AS rl_county_lookup ON 
    rl_county_lookup.state_alpha = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) and
    rl_county_lookup.county_numeric = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0')
 LEFT OUTER JOIN
- (SELECT DISTINCT ON (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM ref_city_county_state_code) AS pop_county_lookup on
+ (SELECT DISTINCT (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM ref_city_county_state_code) AS pop_county_lookup on
    pop_county_lookup.state_alpha = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) and
    pop_county_lookup.county_numeric = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0')
 LEFT JOIN
@@ -217,7 +217,7 @@ LEFT JOIN LATERAL (
 LEFT JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
-        jsonb_agg(
+        COLLECT_SET(
             TO_JSON('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation)
         ) AS covid_spending_by_defc,
         sum(GROUPED_BY_DEFC.outlay) AS total_covid_outlay,
@@ -293,6 +293,4 @@ LEFT JOIN (
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
 WHERE
   latest_transaction.action_date >= '2007-10-01'
-ORDER BY
-  awards.total_obligation DESC NULLS LAST
 """
