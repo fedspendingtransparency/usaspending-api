@@ -73,12 +73,12 @@ class Command(BaseCommand):
         destination_table = options["destination_table"]
 
         table_spec = TABLE_SPEC[destination_table]
-        destination_database = options.get("alt_db", table_spec["destination_database"])
+        destination_database = options["alt_db"] or table_spec["destination_database"]
+        destination_table_name = options["alt_name"] or destination_table
         source_table = table_spec["source_table"]
         partition_column = table_spec["partition_column"]
         partition_column_type = table_spec["partition_column_type"]
         custom_schema = table_spec["custom_schema"]
-        destination_table_name = options.get("alt_name", destination_table)
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
