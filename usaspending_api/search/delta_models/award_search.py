@@ -48,7 +48,7 @@ SELECT
   TFA.toptier_code AS funding_toptier_agency_code,
   SAA.subtier_code AS awarding_subtier_agency_code,
   SFA.subtier_code AS funding_subtier_agency_code,
-  (SELECT a1.id FROM agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM agency a2 WHERE a2.id = latest_transaction.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1) AS funding_toptier_agency_id,
+  (SELECT a1.id FROM global_temp.agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM global_temp.agency a2 WHERE a2.id = latest_transaction.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1) AS funding_toptier_agency_id,
   latest_transaction.funding_agency_id AS funding_subtier_agency_id,
 
   rl_country_lookup.country_code AS recipient_location_country_code,
@@ -102,62 +102,62 @@ SELECT
   DEFC.total_covid_outlay,
   DEFC.total_covid_obligation
 FROM
-  awards
+  raw.awards
 INNER JOIN
-  transaction_normalized AS latest_transaction
+  raw.transaction_normalized AS latest_transaction
     ON (awards.latest_transaction_id = latest_transaction.id)
 LEFT OUTER JOIN
-  transaction_fpds
+  raw.transaction_fpds
     ON (awards.latest_transaction_id = transaction_fpds.transaction_id AND latest_transaction.is_fpds = true)
 LEFT OUTER JOIN
-  transaction_fabs
+  raw.transaction_fabs
     ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)
 LEFT OUTER JOIN
   (SELECT
     legal_business_name AS recipient_name,
     duns,
     recipient_hash
-  FROM recipient_lookup AS rlv
+  FROM raw.recipient_lookup AS rlv
   ) recipient_lookup ON recipient_lookup.recipient_hash = MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
        ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END))
 LEFT OUTER JOIN
-  psc ON (transaction_fpds.product_or_service_code = psc.code)
+  global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
     (SELECT
       award_id, COLLECT_SET(DISTINCT TO_JSON('cfda_number', cfda_number, 'cfda_program_title', cfda_title)) as cfdas
       FROM
-         transaction_fabs tf
+         raw.transaction_fabs tf
        INNER JOIN transaction_normalized tn ON
          tf.transaction_id = tn.id
        GROUP BY
          award_id
     ) AS transaction_cfdas ON awards.id = transaction_cfdas.award_id
 LEFT OUTER JOIN
-  agency AS AA
+  global_temp.agency AS AA
     ON (awards.awarding_agency_id = AA.id)
 LEFT OUTER JOIN
-  toptier_agency AS TAA
+  global_temp.toptier_agency AS TAA
     ON (AA.toptier_agency_id = TAA.toptier_agency_id)
 LEFT OUTER JOIN
-  subtier_agency AS SAA
+  global_temp.subtier_agency AS SAA
     ON (AA.subtier_agency_id = SAA.subtier_agency_id)
 LEFT OUTER JOIN
-  agency AS FA ON (awards.funding_agency_id = FA.id)
+  global_temp.agency AS FA ON (awards.funding_agency_id = FA.id)
 LEFT OUTER JOIN
-  toptier_agency AS TFA
+  global_temp.toptier_agency AS TFA
     ON (FA.toptier_agency_id = TFA.toptier_agency_id)
 LEFT OUTER JOIN
-  subtier_agency AS SFA
+  global_temp.subtier_agency AS SFA
     ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,
     COLLECT_SET(DISTINCT taa.treasury_account_identifier) treasury_account_identifiers
   FROM
-    treasury_appropriation_account taa
+    global_temp.treasury_appropriation_account taa
     INNER JOIN financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
   WHERE
     faba.award_id IS NOT NULL
@@ -165,26 +165,26 @@ LEFT OUTER JOIN (
     faba.award_id
 ) tas ON (tas.award_id = awards.id)
 LEFT OUTER JOIN
-   ref_country_code AS pop_country_lookup on (
+   global_temp.ref_country_code AS pop_country_lookup on (
       pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
       OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c))
 LEFT OUTER JOIN
-   ref_country_code AS rl_country_lookup on (
+   global_temp.ref_country_code AS rl_country_lookup on (
       rl_country_lookup.country_code = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code, 'USA')
       OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code))
 LEFT OUTER JOIN
- (SELECT DISTINCT (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM ref_city_county_state_code) AS rl_county_lookup ON 
+ (SELECT DISTINCT (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM global_temp.ref_city_county_state_code) AS rl_county_lookup ON 
    rl_county_lookup.state_alpha = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) and
    rl_county_lookup.county_numeric = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0')
 LEFT OUTER JOIN
- (SELECT DISTINCT (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM ref_city_county_state_code) AS pop_county_lookup on
+ (SELECT DISTINCT (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM global_temp.ref_city_county_state_code) AS pop_county_lookup on
    pop_county_lookup.state_alpha = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) and
    pop_county_lookup.county_numeric = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0')
 LEFT JOIN
- (SELECT code, name, fips, MAX(id) FROM state_data GROUP BY code, name, fips) AS POP_STATE_LOOKUP
+ (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS POP_STATE_LOOKUP
  ON (POP_STATE_LOOKUP.code = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.legal_entity_state_code))
 LEFT JOIN
- (SELECT code, name, fips, MAX(id) FROM state_data GROUP BY code, name, fips) AS RL_STATE_LOOKUP
+ (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS RL_STATE_LOOKUP
  ON (RL_STATE_LOOKUP.code = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code))
 LEFT JOIN ref_population_county AS POP_STATE_POPULATION 
   ON (POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_STATE_POPULATION.county_number = '000')
@@ -200,7 +200,7 @@ LEFT JOIN ref_population_cong_district AS RL_DISTRICT_POPULATION
   ON (RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 2, '0'))
 LEFT JOIN LATERAL (
   SELECT recipient_hash, recipient_unique_id, COLLECT_SET(recipient_level) AS recipient_levels
-  FROM recipient_profile
+  FROM raw.recipient_profile
   WHERE (recipient_hash = COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(CASE WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei)) WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu)) ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END)))
    ) AND
       recipient_name NOT IN (
@@ -237,7 +237,7 @@ LEFT JOIN (
                 END), 0) AS outlay,
             COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
         FROM
-            financial_accounts_by_awards AS faba
+            raw.financial_accounts_by_awards AS faba
         INNER JOIN
             disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
         INNER JOIN
@@ -282,7 +282,7 @@ LEFT JOIN (
     ) tas_components,
     COLLECT_SET(DISTINCT faba.disaster_emergency_fund_code) FILTER (WHERE faba.disaster_emergency_fund_code IS NOT NULL) disaster_emergency_fund_codes
   FROM
-    treasury_appropriation_account taa
+    global_temp.treasury_appropriation_account taa
   INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
   INNER JOIN federal_account fa ON (taa.federal_account_id = fa.id)
   INNER JOIN toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
