@@ -48,14 +48,7 @@ SELECT
   TFA.toptier_code AS funding_toptier_agency_code,
   SAA.subtier_code AS awarding_subtier_agency_code,
   SFA.subtier_code AS funding_subtier_agency_code,
-  (
-    SELECT a1.id FROM global_temp.agency a1 
-    WHERE
-        a1.toptier_agency_id = (
-            SELECT a2.toptier_agency_id FROM global_temp.agency a2 
-            WHERE a2.id = latest_transaction.funding_agency_id
-        ) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1
-  ) AS funding_toptier_agency_id,
+  (SELECT first(a.id) FROM global_temp.agency a WHERE a.toptier_agency_id = TFA.toptier_agency_id AND a.toptier_flag = TRUE) AS funding_toptier_agency_id,
   latest_transaction.funding_agency_id AS funding_subtier_agency_id,
 
   rl_country_lookup.country_code AS recipient_location_country_code,
