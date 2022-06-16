@@ -34,7 +34,7 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The destination Delta Table to write the data",
-            choices=list(TABLE_SPEC.keys()),
+            choices=list(filter(lambda key: TABLE_SPEC[key].get("source_table") is not None, TABLE_SPEC.keys())),
         )
 
     def handle(self, *args, **options):
