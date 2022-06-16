@@ -300,19 +300,19 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     return datasets_match
 
 
-def _verify_delta_table_loaded(spark: SparkSession, delta_table_name: str, s3_bucket: str, is_aggregate_table=False):
-    """Generic function that uses the create_delta_table and load_table_to_delta ommands to create and load the given
+def _verify_delta_table_loaded(
+    spark: SparkSession, delta_table_name: str, s3_bucket: str, load_command="load_table_to_delta"
+):
+    """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the given
     table and assert it was created and loaded as expected
     """
     # make the table and load it
     call_command("create_delta_table", f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}")
-    if not is_aggregate_table:
-        # aggregate table is loaded during the "create_delta_table" via SELECT AS statement
-        call_command("load_table_to_delta", f"--destination-table={delta_table_name}")
+    call_command(load_command, f"--destination-table={delta_table_name}")
 
     # get the postgres data to compare
     model = TABLE_SPEC[delta_table_name]["model"]
-    partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
+    partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
     dummy_query = model.objects
     if partition_col is not None:
         dummy_query = dummy_query.order_by(partition_col)
@@ -518,7 +518,7 @@ def test_load_table_to_delta_for_transaction_search(
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
 
-    _verify_delta_table_loaded(spark, "transaction_search", s3_unittest_data_bucket, is_aggregate_table=True)
+    _verify_delta_table_loaded(spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta")
 
 
 @mark.django_db(transaction=True)
