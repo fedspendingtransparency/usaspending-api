@@ -36,7 +36,8 @@ from usaspending_api.references.models import (
     CityCountyStateCode,
     PopCounty,
     PopCongressionalDistrict,
-)
+    DisasterEmergencyFundCode)
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 RDS_REF_TABLES = [
     Cfda,
@@ -53,6 +54,9 @@ RDS_REF_TABLES = [
     StateData,
     FederalAccount,
     TreasuryAppropriationAccount,
+    DisasterEmergencyFundCode,
+    SubmissionAttributes,
+    DABSSubmissionWindowSchedule
 ]
 
 

@@ -9,7 +9,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_jvm_logger,
     get_active_spark_session,
-)
+    create_ref_temp_views)
 from usaspending_api.awards.delta_models import awards_sql_string, financial_accounts_by_awards_sql_string
 from usaspending_api.recipient.delta_models import (
     recipient_lookup_sql_string,
@@ -182,7 +182,7 @@ class Command(BaseCommand):
 
         # Setup Logger
         logger = get_jvm_logger(spark)
-
+        create_ref_temp_views(spark)
         # Resolve Parameters
         destination_table = options["destination_table"]
         spark_s3_bucket = options["spark_s3_bucket"]

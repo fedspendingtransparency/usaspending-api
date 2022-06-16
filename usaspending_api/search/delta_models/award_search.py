@@ -48,15 +48,24 @@ SELECT
   TFA.toptier_code AS funding_toptier_agency_code,
   SAA.subtier_code AS awarding_subtier_agency_code,
   SFA.subtier_code AS funding_subtier_agency_code,
-  (SELECT a1.id FROM global_temp.agency a1 WHERE a1.toptier_agency_id = (SELECT a2.toptier_agency_id FROM global_temp.agency a2 WHERE a2.id = latest_transaction.funding_agency_id) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1) AS funding_toptier_agency_id,
+  (
+    SELECT a1.id FROM global_temp.agency a1 
+    WHERE
+        a1.toptier_agency_id = (
+            SELECT a2.toptier_agency_id FROM global_temp.agency a2 
+            WHERE a2.id = latest_transaction.funding_agency_id
+        ) ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1
+  ) AS funding_toptier_agency_id,
   latest_transaction.funding_agency_id AS funding_subtier_agency_id,
 
   rl_country_lookup.country_code AS recipient_location_country_code,
   rl_country_lookup.country_name AS recipient_location_country_name,
   COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,
-  LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0') AS recipient_location_county_code,
+  LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+            AS recipient_location_county_code,  
   COALESCE(rl_county_lookup.county_name, transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,
-  LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 2, '0') AS recipient_location_congressional_code,
+  LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
+            AS recipient_location_congressional_code,
   COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)) AS recipient_location_city_name,
   RL_STATE_LOOKUP.name AS recipient_location_state_name,
@@ -68,11 +77,13 @@ SELECT
   pop_country_lookup.country_name AS pop_country_name,
   pop_country_lookup.country_code AS pop_country_code,
   COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) AS pop_state_code,
-  LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0') AS pop_county_code,
+  LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+            AS pop_county_code,
   COALESCE(pop_county_lookup.county_name, COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na)) AS pop_county_name,
   transaction_fabs.place_of_performance_code AS pop_city_code,
   COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5) AS pop_zip5,
-  LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 2, '0') AS pop_congressional_code,
+  LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
+            AS pop_congressional_code,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)) AS pop_city_name,
   POP_STATE_LOOKUP.name AS pop_state_name,
   POP_STATE_LOOKUP.fips AS pop_state_fips,
@@ -127,10 +138,10 @@ LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
     (SELECT
-      award_id, COLLECT_SET(DISTINCT TO_JSON('cfda_number', cfda_number, 'cfda_program_title', cfda_title)) as cfdas
+      award_id, COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title))) as cfdas
       FROM
          raw.transaction_fabs tf
-       INNER JOIN transaction_normalized tn ON
+       INNER JOIN raw.transaction_normalized tn ON
          tf.transaction_id = tn.id
        GROUP BY
          award_id
@@ -158,46 +169,68 @@ LEFT OUTER JOIN (
     COLLECT_SET(DISTINCT taa.treasury_account_identifier) treasury_account_identifiers
   FROM
     global_temp.treasury_appropriation_account taa
-    INNER JOIN financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
+    INNER JOIN raw.financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
   WHERE
     faba.award_id IS NOT NULL
   GROUP BY
     faba.award_id
 ) tas ON (tas.award_id = awards.id)
 LEFT OUTER JOIN
-   global_temp.ref_country_code AS pop_country_lookup on (
-      pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
-      OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c))
+    global_temp.ref_country_code AS pop_country_lookup ON (
+        pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
+        OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n)
+)
 LEFT OUTER JOIN
    global_temp.ref_country_code AS rl_country_lookup on (
       rl_country_lookup.country_code = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code, 'USA')
       OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code))
-LEFT OUTER JOIN
- (SELECT DISTINCT (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM global_temp.ref_city_county_state_code) AS rl_county_lookup ON 
-   rl_county_lookup.state_alpha = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) and
-   rl_county_lookup.county_numeric = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0')
-LEFT OUTER JOIN
- (SELECT DISTINCT (state_alpha, county_numeric) state_alpha, county_numeric, UPPER(county_name) AS county_name FROM global_temp.ref_city_county_state_code) AS pop_county_lookup on
-   pop_county_lookup.state_alpha = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) and
-   pop_county_lookup.county_numeric = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0')
+LEFT OUTER JOIN (
+        SELECT DISTINCT state_alpha, county_numeric, UPPER(county_name) AS county_name
+        FROM global_temp.ref_city_county_state_code
+    ) AS rl_county_lookup ON (
+        rl_county_lookup.state_alpha = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
+        AND rl_county_lookup.county_numeric = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+    )
+LEFT OUTER JOIN (
+        SELECT DISTINCT state_alpha, county_numeric, UPPER(county_name) AS county_name
+        FROM global_temp.ref_city_county_state_code
+    ) AS pop_county_lookup ON (
+        pop_county_lookup.state_alpha = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
+        AND pop_county_lookup.county_numeric = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+    )
 LEFT JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS POP_STATE_LOOKUP
  ON (POP_STATE_LOOKUP.code = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.legal_entity_state_code))
 LEFT JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS RL_STATE_LOOKUP
  ON (RL_STATE_LOOKUP.code = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code))
-LEFT JOIN ref_population_county AS POP_STATE_POPULATION 
-  ON (POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_STATE_POPULATION.county_number = '000')
-LEFT JOIN ref_population_county AS POP_COUNTY_POPULATION
-  ON (POP_COUNTY_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_COUNTY_POPULATION.county_number = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0'))
-LEFT JOIN ref_population_county AS RL_STATE_POPULATION
-  ON (RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_STATE_POPULATION.county_number = '000')
-LEFT JOIN ref_population_county AS RL_COUNTY_POPULATION
-  ON (RL_COUNTY_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_COUNTY_POPULATION.county_number = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 3, '0'))
-LEFT JOIN ref_population_cong_district AS POP_DISTRICT_POPULATION
-  ON (POP_DISTRICT_POPULATION.state_code = POP_STATE_LOOKUP.fips AND POP_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 2, '0'))
-LEFT JOIN ref_population_cong_district AS RL_DISTRICT_POPULATION
-  ON (RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST((REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS short) AS STRING), 2, '0'))
+LEFT JOIN global_temp.ref_population_county AS POP_STATE_POPULATION ON (
+    POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips 
+    AND POP_STATE_POPULATION.county_number = '000'
+)
+LEFT JOIN global_temp.ref_population_county AS POP_COUNTY_POPULATION ON (
+    POP_COUNTY_POPULATION.state_code = POP_STATE_LOOKUP.fips AND 
+    POP_COUNTY_POPULATION.county_number = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+)
+LEFT JOIN global_temp.ref_population_county AS RL_STATE_POPULATION ON (
+    RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips 
+    AND RL_STATE_POPULATION.county_number = '000'
+)
+LEFT JOIN
+    global_temp.ref_population_county RL_COUNTY_POPULATION ON (
+        RL_COUNTY_POPULATION.state_code = RL_STATE_LOOKUP.fips
+        AND RL_COUNTY_POPULATION.county_number = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+)
+LEFT OUTER JOIN
+    global_temp.ref_population_cong_district POP_DISTRICT_POPULATION ON (
+        POP_DISTRICT_POPULATION.state_code = POP_STATE_LOOKUP.fips
+        AND POP_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
+)
+LEFT JOIN
+    global_temp.ref_population_cong_district RL_DISTRICT_POPULATION ON (
+         RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips
+        AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
+)
 LEFT JOIN LATERAL (
   SELECT recipient_hash, recipient_unique_id, COLLECT_SET(recipient_level) AS recipient_levels
   FROM raw.recipient_profile
@@ -218,7 +251,7 @@ LEFT JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
         COLLECT_SET(
-            TO_JSON('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation)
+            TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
         ) AS covid_spending_by_defc,
         sum(GROUPED_BY_DEFC.outlay) AS total_covid_outlay,
         sum(GROUPED_BY_DEFC.obligation) AS total_covid_obligation
@@ -239,11 +272,11 @@ LEFT JOIN (
         FROM
             raw.financial_accounts_by_awards AS faba
         INNER JOIN
-            disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
+            global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
         INNER JOIN
-            submission_attributes AS sa ON (faba.submission_id = sa.submission_id AND sa.reporting_period_start >= '2020-04-01')
+            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id AND sa.reporting_period_start >= '2020-04-01')
         INNER JOIN
-            dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
+            global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
         GROUP BY
             faba.award_id, faba.disaster_emergency_fund_code
     ) AS GROUPED_BY_DEFC
@@ -283,9 +316,9 @@ LEFT JOIN (
     COLLECT_SET(DISTINCT faba.disaster_emergency_fund_code) FILTER (WHERE faba.disaster_emergency_fund_code IS NOT NULL) disaster_emergency_fund_codes
   FROM
     global_temp.treasury_appropriation_account taa
-  INNER JOIN financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
-  INNER JOIN federal_account fa ON (taa.federal_account_id = fa.id)
-  INNER JOIN toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
+  INNER JOIN raw.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+  INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
+  INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
   WHERE
     faba.award_id IS NOT NULL
   GROUP BY
