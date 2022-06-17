@@ -110,7 +110,7 @@ transaction_search_create_sql_string = fr"""
 """
 
 transaction_search_load_sql_string = fr"""
-    INSERT OVERWRITE transaction_search
+    INSERT OVERWRITE rpt.transaction_search
     (
         {",".join([col for col in _transaction_search_types])}
     )
