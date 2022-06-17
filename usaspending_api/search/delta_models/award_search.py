@@ -100,7 +100,7 @@ award_search_create_sql_string = fr"""
 """
 
 award_search_load_sql_string = f"""    
-    INSERT OVERWRITE rpt.transaction_search
+    INSERT OVERWRITE rpt.award_search
         (
             {",".join([col for col in _award_search_types])}
         )
