@@ -1,12 +1,8 @@
-from django.core.management.base import BaseCommand
+from django.core.management import BaseCommand
 from pyspark.sql import SparkSession
 
-from usaspending_api.config import CONFIG
-from usaspending_api.common.etl.spark import (
-    extract_db_data_frame,
-    get_partition_bounds_sql,
-    load_delta_table,
-)
+from usaspending_api.awards.delta_models import awards_sql_string, financial_accounts_by_awards_sql_string
+from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -14,7 +10,125 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_url,
     get_jvm_logger,
 )
-from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.config import CONFIG
+from usaspending_api.recipient.delta_models import (
+    recipient_lookup_sql_string,
+    recipient_profile_sql_string,
+    sam_recipient_sql_string,
+)
+from usaspending_api.search.models import TransactionSearch
+from usaspending_api.transactions.delta_models import (
+    transaction_fabs_sql_string,
+    transaction_fpds_sql_string,
+    transaction_normalized_sql_string,
+    transaction_search_create_sql_string,
+)
+from usaspending_api.search.delta_models.award_search import award_search_sql_string
+
+from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
+from usaspending_api.awards.models import (
+    Award,
+    FinancialAccountsByAwards,
+    TransactionFABS,
+    TransactionFPDS,
+    TransactionNormalized,
+)
+
+
+TABLE_SPEC = {
+    "award_search": {
+        "model": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "partition_column": None,
+        "partition_column_type": None,
+        "delta_table_create_sql": award_search_sql_string,
+        "custom_schema": None,
+    },
+    "awards": {
+        "model": Award,
+        "source_table": "awards",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": awards_sql_string,
+        "custom_schema": "",
+    },
+    "financial_accounts_by_awards": {
+        "model": FinancialAccountsByAwards,
+        "source_table": "financial_accounts_by_awards",
+        "destination_database": "raw",
+        "partition_column": "financial_accounts_by_awards_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": financial_accounts_by_awards_sql_string,
+        "custom_schema": "award_id LONG",
+    },
+    "recipient_lookup": {
+        "model": RecipientLookup,
+        "source_table": "recipient_lookup",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": recipient_lookup_sql_string,
+        "custom_schema": "recipient_hash STRING",
+    },
+    "recipient_profile": {
+        "model": RecipientProfile,
+        "source_table": "recipient_profile",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": recipient_profile_sql_string,
+        "custom_schema": "recipient_hash STRING",
+    },
+    "sam_recipient": {
+        "model": DUNS,
+        "source_table": "duns",
+        "destination_database": "raw",
+        "partition_column": None,
+        "partition_column_type": None,
+        "delta_table_create_sql": sam_recipient_sql_string,
+        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
+    },
+    "transaction_fabs": {
+        "model": TransactionFABS,
+        "source_table": "transaction_fabs",
+        "destination_database": "raw",
+        "partition_column": "published_fabs_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_fabs_sql_string,
+        "custom_schema": "",
+    },
+    "transaction_fpds": {
+        "model": TransactionFPDS,
+        "source_table": "transaction_fpds",
+        "destination_database": "raw",
+        "partition_column": "detached_award_procurement_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_fpds_sql_string,
+        "custom_schema": "",
+    },
+    "transaction_normalized": {
+        "model": TransactionNormalized,
+        "source_table": "transaction_normalized",
+        "destination_database": "raw",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_normalized_sql_string,
+        "custom_schema": "",
+    },
+    # Additional definitions for use in testing
+    "transaction_search_testing": {
+        "model": TransactionSearch,
+        "source_table": "transaction_search",
+        "destination_database": "raw",
+        "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_search_create_sql_string,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+    },
+}
+
 
 JDBC_URL_KEY = "DATABASE_URL"
 SPARK_PARTITION_ROWS = CONFIG.SPARK_PARTITION_ROWS
@@ -24,7 +138,7 @@ class Command(BaseCommand):
 
     help = """
     This command reads data from a Postgres database table and inserts it into a corresponding Delta
-    Table. As of now, it only supports a full reload of a table. All existing data will be delted
+    Table. As of now, it only supports a full reload of a table. All existing data will be deleted
     before new data is written.
     """
 
@@ -34,7 +148,7 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The destination Delta Table to write the data",
-            choices=list(filter(lambda key: TABLE_SPEC[key].get("source_table") is not None, TABLE_SPEC.keys())),
+            choices=list(TABLE_SPEC),
         )
 
     def handle(self, *args, **options):
@@ -73,7 +187,7 @@ class Command(BaseCommand):
         # Resolve JDBC URL for Source Database
         jdbc_url = get_jdbc_url()
         if not jdbc_url:
-            raise RuntimeError(f"Could'nt find JDBC url, please properly configure your CONFIG.")
+            raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 

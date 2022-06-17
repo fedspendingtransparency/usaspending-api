@@ -1,23 +1,48 @@
+import uuid
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
+from pyspark.sql.types import StringType
 
-from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
-    get_jvm_logger,
     get_active_spark_session,
+    get_jvm_logger,
 )
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
-from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
+from usaspending_api.search.models import TransactionSearch
+from usaspending_api.transactions.delta_models import (
+    transaction_search_create_sql_string,
+    transaction_search_load_sql_string,
+)
+from usaspending_api.search.delta_models import (
+    award_search_sql_string
+)
 
-
-TABLE_SPEC = {**LOAD_TABLE_TABLE_SPEC, **LOAD_QUERY_TABLE_SPEC}
+TABLE_SPEC = {
+    "transaction_search": {
+        "model": TransactionSearch,
+        "source_query": transaction_search_load_sql_string,
+        "destination_database": "rpt",
+        "partition_column": "transaction_id",
+        "delta_table_create_sql": transaction_search_create_sql_string,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "user_defined_functions": [
+            {
+                "name": "format_as_uuid",
+                "f": lambda val: str(uuid.UUID(val)) if val else None,
+                "returnType": StringType(),
+            },
+        ],
+    }
+}
 
 
 class Command(BaseCommand):
 
     help = """
-    This command creates an empty Delta Table based on the provided --destination-table argument.
+    This command reads data via a Spark SQL query that relies on delta tables that have already been loaded paired
+    with temporary views of tables in a Postgres database. As of now, it only supports a full reload of a table.
+    All existing data will be deleted before new data is written.
     """
 
     def add_arguments(self, parser):
@@ -27,13 +52,6 @@ class Command(BaseCommand):
             required=True,
             help="The destination Delta Table to write the data",
             choices=list(TABLE_SPEC),
-        )
-        parser.add_argument(
-            "--spark-s3-bucket",
-            type=str,
-            required=False,
-            default=CONFIG.SPARK_S3_BUCKET,
-            help="The destination bucket in S3 to write the data",
         )
 
     def handle(self, *args, **options):
@@ -57,27 +75,20 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         destination_table = options["destination_table"]
-        spark_s3_bucket = options["spark_s3_bucket"]
 
         table_spec = TABLE_SPEC[destination_table]
         destination_database = table_spec["destination_database"]
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
-        spark.sql(f"create database if not exists {destination_database};")
         spark.sql(f"use {destination_database};")
 
-        spark.sql(f"DROP TABLE IF EXISTS {destination_table}")
+        # Create User Defined Functions if needed
+        if TABLE_SPEC[destination_table].get("user_defined_functions"):
+            for udf_args in TABLE_SPEC[destination_table]["user_defined_functions"]:
+                spark.udf.register(**udf_args)
 
-        # Define Schema Using CREATE TABLE AS command
-        spark.sql(
-            TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
-                DESTINATION_TABLE=destination_table,
-                DESTINATION_DATABASE=table_spec["destination_database"],
-                SPARK_S3_BUCKET=spark_s3_bucket,
-                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
-            )
-        )
+        spark.sql(transaction_search_load_sql_string)
 
         if spark_created_by_command:
             spark.stop()
