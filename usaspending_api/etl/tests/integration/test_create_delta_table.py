@@ -7,7 +7,9 @@ from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPE
 from pyspark.sql import SparkSession
 
 
-def _verify_delta_table_creation(spark: SparkSession, delta_table_name: str, s3_bucket: str):
+def _verify_delta_table_creation(
+    spark: SparkSession, delta_table_name: str, s3_bucket: str, alt_db: str = None, alt_name: str = None
+):
     """Generic function that uses the create_delta_table command to create the given table and assert it was created
     as expected
 
@@ -16,20 +18,29 @@ def _verify_delta_table_creation(spark: SparkSession, delta_table_name: str, s3_
     """
     delta_table_spec = TABLE_SPEC[delta_table_name]
 
-    call_command("create_delta_table", f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}")
+    cmd_args = [f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}"]
+    expected_db_name = delta_table_spec["destination_database"]
+    if alt_db:
+        cmd_args += [f"--alt-db={alt_db}"]
+        expected_db_name = alt_db
+    expected_table_name = delta_table_name
+    if alt_name:
+        cmd_args += [f"--alt-name={alt_name}"]
+        expected_table_name = alt_name
+    call_command("create_delta_table", *cmd_args)
 
     schemas = spark.sql("show schemas").collect()
-    assert delta_table_spec["destination_database"] in [s["namespace"] for s in schemas]
+    assert expected_db_name in [s["namespace"] for s in schemas]
 
+    # NOTE: The ``use <db>`` from table creation is still in effect for this verification. So no need to call again
     tables = spark.sql("show tables").collect()
-    assert delta_table_name in [t["tableName"] for t in tables]
-    the_delta_table = [
-        t
-        for t in tables
-        if t["namespace"] == delta_table_spec["destination_database"] and t["tableName"] == delta_table_name
-    ][0]
-    assert the_delta_table["namespace"] == delta_table_spec["destination_database"]
-    assert the_delta_table["isTemporary"] is False
+    assert expected_table_name in [t["tableName"] for t in tables]
+    delta_table_metadata_rows = [
+        t for t in tables if t["namespace"] == expected_db_name and t["tableName"] == expected_table_name
+    ]
+    assert len(delta_table_metadata_rows) == 1
+    assert delta_table_metadata_rows[0]["namespace"] == expected_db_name
+    assert delta_table_metadata_rows[0]["isTemporary"] is False
 
 
 def test_create_delta_table_for_award_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
@@ -72,3 +83,11 @@ def test_create_delta_table_for_transaction_normalized(spark, s3_unittest_data_b
 
 def test_create_delta_table_for_transaction_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     _verify_delta_table_creation(spark, "transaction_search", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_recipient_lookup_with_alt_db_and_name(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
+    _verify_delta_table_creation(
+        spark, "recipient_lookup", s3_unittest_data_bucket, alt_db="my_alt_db", alt_name="recipient_lookup_alt_name"
+    )
