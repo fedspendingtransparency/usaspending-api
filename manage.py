@@ -26,7 +26,6 @@ if __name__ == "__main__":
     # Setup logs dir
     logs_dir = APP_DIR / "logs"
     console_log_file_path = logs_dir / "console.log"
-
     logs_dir.mkdir(parents=True, exist_ok=True)
     console_log_file_path.touch(exist_ok=True)
 
