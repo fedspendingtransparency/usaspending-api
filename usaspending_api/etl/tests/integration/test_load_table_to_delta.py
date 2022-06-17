@@ -2,21 +2,238 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+import json
 import psycopg2
 import pytz
+
 from datetime import datetime
 from typing import List, Dict, Any
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
-from pytest import mark
+from pytest import fixture, mark
+
 from django.core.management import call_command
 from django.db import connection, transaction
 from django.db.models import sql
 
+from usaspending_api.common.helpers.spark_helpers import create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 from usaspending_api.awards.models import TransactionFABS
+
+
+@fixture
+def populate_data_for_transaction_search():
+    # Create recipient data for two transactions; the other two will generate ad hoc
+    baker.make(
+        "recipient.RecipientLookup",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        uei="FABSUEI12345",
+        legal_business_name="FABS TEST RECIPIENT",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        uei="FABSUEI12345",
+        recipient_level="R",
+        recipient_name="FABS TEST RECIPIENT",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.DUNS",
+        broker_duns_id="1",
+        uei="FABSUEI12345",
+        legal_business_name="FABS TEST RECIPIENT",
+        _fill_optional=True,
+    )
+
+    # Create agency data
+    funding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
+    funding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
+    funding_agency = baker.make(
+        "references.Agency",
+        toptier_agency=funding_toptier_agency,
+        subtier_agency=funding_subtier_agency,
+        toptier_flag=True,
+        _fill_optional=True,
+    )
+
+    awarding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
+    awarding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
+    awarding_agency = baker.make(
+        "references.Agency",
+        toptier_agency=awarding_toptier_agency,
+        subtier_agency=awarding_subtier_agency,
+        toptier_flag=True,
+        _fill_optional=True,
+    )
+
+    # Create reference data
+    baker.make("references.NAICS", code="123456", _fill_optional=True)
+    baker.make("references.PSC", code="12", _fill_optional=True)
+    baker.make("references.Cfda", program_number="12.456", _fill_optional=True)
+    baker.make("references.CityCountyStateCode", state_alpha="VA", county_numeric="001", _fill_optional=True)
+    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
+    baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
+    baker.make("references.PopCounty", state_code="51", county_number="000", _fill_optional=True)
+    baker.make("references.PopCounty", state_code="51", county_number="001", _fill_optional=True)
+    baker.make("references.PopCongressionalDistrict", state_code="51", congressional_district="01")
+    defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", _fill_optional=True)
+    defc_m = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19", _fill_optional=True)
+    defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
+
+    # Create awards and transactions
+    asst_award = baker.make("awards.Award", type="07")
+    cont_award = baker.make("awards.Award", type="A")
+
+    asst_trx1 = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-01-01",
+        award=asst_award,
+        is_fpds=False,
+        type="07",
+        awarding_agency=awarding_agency,
+        funding_agency=funding_agency,
+        _fill_optional=True,
+    )
+    asst_trx2 = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-04-01",
+        award=asst_award,
+        is_fpds=False,
+        type="07",
+        awarding_agency=awarding_agency,
+        funding_agency=funding_agency,
+        _fill_optional=True,
+    )
+    cont_trx1 = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-07-01",
+        award=cont_award,
+        is_fpds=True,
+        type="A",
+        awarding_agency=awarding_agency,
+        funding_agency=funding_agency,
+        _fill_optional=True,
+    )
+    cont_trx2 = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-10-01",
+        award=cont_award,
+        is_fpds=True,
+        type="A",
+        awarding_agency=awarding_agency,
+        funding_agency=funding_agency,
+        _fill_optional=True,
+    )
+
+    baker.make(
+        "awards.TransactionFABS",
+        transaction=asst_trx1,
+        cfda_number="12.456",
+        action_date="2021-01-01",
+        uei="FABSUEI12345",
+        indirect_federal_sharing=1.0,
+        legal_entity_state_code="VA",
+        legal_entity_county_code="001",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        legal_entity_congressional="01",
+        place_of_perfor_state_code="VA",
+        place_of_perform_county_co="001",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+        place_of_performance_congr="01",
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction=asst_trx2,
+        cfda_number="12.456",
+        action_date="2021-04-01",
+        uei="FABSUEI12345",
+        indirect_federal_sharing=1.0,
+        legal_entity_state_code="VA",
+        legal_entity_county_code="001",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        legal_entity_congressional="01",
+        place_of_perfor_state_code="VA",
+        place_of_perform_county_co="001",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+        place_of_performance_congr="01",
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.TransactionFPDS",
+        transaction=cont_trx1,
+        naics="123456",
+        product_or_service_code="12",
+        action_date="2021-07-01",
+        awardee_or_recipient_uei="FPDSUEI12345",
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.TransactionFPDS",
+        transaction=cont_trx2,
+        naics="123456",
+        product_or_service_code="12",
+        action_date="2021-10-01",
+        awardee_or_recipient_uei="FPDSUEI12345",
+        _fill_optional=True,
+    )
+
+    # Create account data
+    federal_account = baker.make(
+        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
+    )
+    tas = baker.make("accounts.TreasuryAppropriationAccount", federal_account=federal_account, _fill_optional=True)
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award=asst_award,
+        treasury_account=tas,
+        disaster_emergency_fund=defc_l,
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award=asst_award,
+        treasury_account=tas,
+        disaster_emergency_fund=defc_m,
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award=cont_award,
+        treasury_account=tas,
+        disaster_emergency_fund=defc_q,
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award=cont_award,
+        treasury_account=tas,
+        disaster_emergency_fund=None,
+        _fill_optional=True,
+    )
+
+    update_awards()
+
+
+def _cast_to_string(val: Any) -> str:
+    """
+    Dictionaries that are converted to strings need to use 'json.dumps()' so we try that first
+    and then fallback to the regular 'str()' method.
+    """
+    try:
+        return json.dumps(val)
+    except TypeError:
+        pass
+    return str(val)
 
 
 def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, Any]], custom_schema: str):
@@ -27,7 +244,7 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     schema_changes = {}
     schema_type_converters = {
         "INT": int,
-        "STRING": str,
+        "STRING": _cast_to_string,
     }
     if custom_schema:
         for schema_change in custom_schema.split(","):
@@ -60,6 +277,20 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
                 psql_val_utc = psql_val.astimezone(utc_tz)
                 psql_val = psql_val_utc.replace(tzinfo=None)
 
+            # In the case of a list make sure they are ordered prior to comparison
+            if isinstance(psql_val, list):
+                psql_val = sorted(psql_val)
+
+            if isinstance(spark_val, list):
+                spark_val = sorted(spark_val)
+
+            # Handle JSON formatted strings where the only difference is spacing between keys
+            if isinstance(psql_val, str):
+                psql_val = psql_val.replace(" ", "")
+
+            if isinstance(spark_val, str):
+                spark_val = spark_val.replace(" ", "")
+
             if psql_val != spark_val:
                 raise Exception(
                     f"Not equal: col:{k} "
@@ -70,40 +301,42 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
 
 
 def _verify_delta_table_loaded(
-    spark: SparkSession, delta_table_name: str, s3_bucket: str, alt_db: str = None, alt_name: str = None
+    spark: SparkSession, delta_table_name: str, s3_bucket: str, load_command="load_table_to_delta"
 ):
-    """Generic function that uses the create_delta_table and load_table_to_delta ommands to create and load the given
+    """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the given
     table and assert it was created and loaded as expected
     """
-
-    cmd_args = [f"--destination-table={delta_table_name}"]
-    if alt_db:
-        cmd_args += [f"--alt-db={alt_db}"]
-    expected_table_name = delta_table_name
-    if alt_name:
-        cmd_args += [f"--alt-name={alt_name}"]
-        expected_table_name = alt_name
-
     # make the table and load it
-    call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
-    call_command("load_table_to_delta", *cmd_args)
+    call_command("create_delta_table", f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}")
+    call_command(load_command, f"--destination-table={delta_table_name}")
 
     # get the postgres data to compare
     model = TABLE_SPEC[delta_table_name]["model"]
-    partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
+    partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
     dummy_query = model.objects
     if partition_col is not None:
         dummy_query = dummy_query.order_by(partition_col)
     dummy_data = list(dummy_query.all().values())
 
     # get the spark data to compare
-    # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again
-    received_query = f"select * from {expected_table_name}"
+    received_query = f"select * from {delta_table_name}"
     if partition_col is not None:
         received_query = f"{received_query} order by {partition_col}"
     received_data = [row.asDict() for row in spark.sql(received_query).collect()]
 
     assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"])
+
+
+def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str):
+    non_aggregate_table_specs = {
+        key: val
+        for key, val in TABLE_SPEC.items()
+        if val.get("source_table") is not None and key == val.get("source_table")
+    }
+    for dest_table in non_aggregate_table_specs:
+        call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
+        call_command("load_table_to_delta", f"--destination-table={dest_table}")
+    create_ref_temp_views(spark)
 
 
 @mark.django_db(transaction=True)
@@ -280,13 +513,30 @@ def test_load_table_to_delta_for_transaction_normalized(spark, s3_unittest_data_
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_recipient_lookup_alt_db_and_name(spark, s3_unittest_data_bucket):
-    baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
-    baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
-    _verify_delta_table_loaded(
-        spark,
-        "transaction_normalized",
-        s3_unittest_data_bucket,
-        alt_db="my_alt_db",
-        alt_name="recipient_lookup_alt_name",
-    )
+def test_load_table_to_delta_for_transaction_search(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+
+    _verify_delta_table_loaded(spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta")
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_transaction_search_testing(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    _verify_delta_table_loaded(spark, "transaction_search_testing", s3_unittest_data_bucket)
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_award_search(spark, s3_unittest_data_bucket, populate_data_for_transaction_search):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+
+    _verify_delta_table_loaded(spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta")
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_award_search_testing(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    _verify_delta_table_loaded(spark, "award_search_testing", s3_unittest_data_bucket)

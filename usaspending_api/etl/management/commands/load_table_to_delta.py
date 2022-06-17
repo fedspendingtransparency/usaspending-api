@@ -16,6 +16,7 @@ from usaspending_api.recipient.delta_models import (
     recipient_profile_sql_string,
     sam_recipient_sql_string,
 )
+from usaspending_api.search.delta_models import award_search_create_sql_string
 from usaspending_api.search.models import TransactionSearch, AwardSearchView
 from usaspending_api.transactions.delta_models import (
     transaction_fabs_sql_string,
@@ -115,6 +116,15 @@ TABLE_SPEC = {
         "partition_column": "transaction_id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_search_create_sql_string,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+    },
+    "award_search_testing": {
+        "model": AwardSearchView,
+        "source_table": "award_search",
+        "destination_database": "raw",
+        "partition_column": "award_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": award_search_create_sql_string,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
     },
 }

@@ -88,7 +88,7 @@ _award_search_types = {
     "disaster_emergency_fund_codes": "ARRAY<STRING>",
     "covid_spending_by_defc": "STRING",
     "total_covid_outlay": "NUMERIC(23, 2)",
-    "total_covid_obligation": "NUMERIC(23, 2)"
+    "total_covid_obligation": "NUMERIC(23, 2)",
 }
 
 award_search_create_sql_string = fr"""
@@ -99,7 +99,7 @@ award_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-award_search_load_sql_string = f"""    
+award_search_load_sql_string = f"""
     INSERT OVERWRITE rpt.award_search
         (
             {",".join([col for col in _award_search_types])}
@@ -123,7 +123,7 @@ award_search_load_sql_string = f"""
   COALESCE(awards.total_subsidy_cost, 0) AS total_subsidy_cost,
   COALESCE(awards.total_loan_value, 0) AS total_loan_value,
 
-  recipient_profile.recipient_hash,
+  FORMAT_AS_UUID(recipient_profile.recipient_hash),
   recipient_profile.recipient_levels,
   UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
@@ -160,7 +160,7 @@ award_search_load_sql_string = f"""
   rl_country_lookup.country_name AS recipient_location_country_name,
   COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
-            AS recipient_location_county_code,  
+            AS recipient_location_county_code,
   COALESCE(rl_county_lookup.county_name, transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
@@ -303,15 +303,15 @@ LEFT JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS RL_STATE_LOOKUP
  ON (RL_STATE_LOOKUP.code = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code))
 LEFT JOIN global_temp.ref_population_county AS POP_STATE_POPULATION ON (
-    POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips 
+    POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips
     AND POP_STATE_POPULATION.county_number = '000'
 )
 LEFT JOIN global_temp.ref_population_county AS POP_COUNTY_POPULATION ON (
-    POP_COUNTY_POPULATION.state_code = POP_STATE_LOOKUP.fips AND 
+    POP_COUNTY_POPULATION.state_code = POP_STATE_LOOKUP.fips AND
     POP_COUNTY_POPULATION.county_number = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
 )
 LEFT JOIN global_temp.ref_population_county AS RL_STATE_POPULATION ON (
-    RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips 
+    RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips
     AND RL_STATE_POPULATION.county_number = '000'
 )
 LEFT JOIN
