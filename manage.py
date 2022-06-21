@@ -23,7 +23,7 @@ if __name__ == "__main__":
             )
         raise
 
-    # Setup logs dir
+    # Setup logs dir if it doesn't exist
     logs_dir = APP_DIR / "logs"
     console_log_file_path = logs_dir / "console.log"
     logs_dir.mkdir(parents=True, exist_ok=True)
