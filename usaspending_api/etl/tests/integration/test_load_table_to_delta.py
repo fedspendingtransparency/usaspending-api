@@ -69,13 +69,24 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     return datasets_match
 
 
-def _verify_delta_table_loaded(spark: SparkSession, delta_table_name: str, s3_bucket: str):
+def _verify_delta_table_loaded(
+    spark: SparkSession, delta_table_name: str, s3_bucket: str, alt_db: str = None, alt_name: str = None
+):
     """Generic function that uses the create_delta_table and load_table_to_delta ommands to create and load the given
     table and assert it was created and loaded as expected
     """
+
+    cmd_args = [f"--destination-table={delta_table_name}"]
+    if alt_db:
+        cmd_args += [f"--alt-db={alt_db}"]
+    expected_table_name = delta_table_name
+    if alt_name:
+        cmd_args += [f"--alt-name={alt_name}"]
+        expected_table_name = alt_name
+
     # make the table and load it
-    call_command("create_delta_table", f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}")
-    call_command("load_table_to_delta", f"--destination-table={delta_table_name}")
+    call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
+    call_command("load_table_to_delta", *cmd_args)
 
     # get the postgres data to compare
     model = TABLE_SPEC[delta_table_name]["model"]
@@ -86,7 +97,8 @@ def _verify_delta_table_loaded(spark: SparkSession, delta_table_name: str, s3_bu
     dummy_data = list(dummy_query.all().values())
 
     # get the spark data to compare
-    received_query = f"select * from {delta_table_name}"
+    # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again
+    received_query = f"select * from {expected_table_name}"
     if partition_col is not None:
         received_query = f"{received_query} order by {partition_col}"
     received_data = [row.asDict() for row in spark.sql(received_query).collect()]
@@ -265,3 +277,16 @@ def test_load_table_to_delta_for_transaction_normalized(spark, s3_unittest_data_
     baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
     baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
     _verify_delta_table_loaded(spark, "transaction_normalized", s3_unittest_data_bucket)
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_recipient_lookup_alt_db_and_name(spark, s3_unittest_data_bucket):
+    baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
+    baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
+    _verify_delta_table_loaded(
+        spark,
+        "transaction_normalized",
+        s3_unittest_data_bucket,
+        alt_db="my_alt_db",
+        alt_name="recipient_lookup_alt_name",
+    )
