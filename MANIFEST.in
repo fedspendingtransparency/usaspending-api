@@ -1,0 +1,2 @@
+# By default, include ALL files in the code repository when pip installing
+global-include *
