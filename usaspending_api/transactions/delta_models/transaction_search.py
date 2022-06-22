@@ -1,6 +1,6 @@
 # The order of these fields should always match the order of the
 # SELECT statement in "transaction_search_load_sql_string"
-_transaction_search_types = {
+TRANSACTION_SEARCH_COLUMNS = {
     "transaction_id": "LONG NOT NULL",
     "award_id": "LONG NOT NULL",
     "modification_number": "STRING",
@@ -103,16 +103,16 @@ _transaction_search_types = {
 
 transaction_search_create_sql_string = fr"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in _transaction_search_types.items()])}
+        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
 transaction_search_load_sql_string = fr"""
-    INSERT OVERWRITE rpt.transaction_search
+    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
-        {",".join([col for col in _transaction_search_types])}
+        {",".join([col for col in TRANSACTION_SEARCH_COLUMNS])}
     )
     SELECT
         transaction_normalized.id AS transaction_id,

@@ -532,7 +532,6 @@ def test_load_table_to_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-
     _verify_delta_table_loaded(spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta")
 
 
@@ -543,7 +542,8 @@ def test_load_table_to_delta_for_transaction_search_testing(
     _verify_delta_table_loaded(spark, "transaction_search_testing", s3_unittest_data_bucket)
 
 
-def test_load_table_to_delta_for_recipient_lookup_alt_db_and_name(spark, s3_unittest_data_bucket):
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(spark, s3_unittest_data_bucket):
     baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
     baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
     _verify_delta_table_loaded(
@@ -551,5 +551,20 @@ def test_load_table_to_delta_for_recipient_lookup_alt_db_and_name(spark, s3_unit
         "transaction_normalized",
         s3_unittest_data_bucket,
         alt_db="my_alt_db",
-        alt_name="recipient_lookup_alt_name",
+        alt_name="transaction_normalized_alt_name",
+    )
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_transaction_search_alt_db_and_name(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded(
+        spark,
+        "transaction_search",
+        s3_unittest_data_bucket,
+        alt_db="my_alt_db",
+        alt_name="transaction_search_alt_name",
+        load_command="load_query_to_delta",
     )
