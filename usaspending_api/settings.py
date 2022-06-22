@@ -361,6 +361,12 @@ STATIC_URL = "/static/"
 STATIC_ROOT = str(APP_DIR / "static/") + "/"
 STATICFILES_DIRS = (str(APP_DIR / "static_doc_files") + "/",)
 
+# Setup dir for console.log if it doesn't exist
+logs_dir = APP_DIR / "logs"
+console_log_file_path = logs_dir / "console.log"
+logs_dir.mkdir(parents=True, exist_ok=True)
+console_log_file_path.touch(exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
