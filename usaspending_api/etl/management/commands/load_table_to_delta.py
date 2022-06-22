@@ -127,6 +127,9 @@ class Command(BaseCommand):
                 properties=get_jdbc_connection_properties(),
             )
 
+        if table_spec.get("column_names"):
+            df = df.select(table_spec.get("column_names"))
+
         # Write to S3
         load_delta_table(spark, df, destination_table_name, True)
         if spark_created_by_command:
