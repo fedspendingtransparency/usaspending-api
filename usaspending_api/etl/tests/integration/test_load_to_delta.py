@@ -7,7 +7,7 @@ import psycopg2
 import pytz
 
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List, Union
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
@@ -224,13 +224,15 @@ def populate_data_for_transaction_search():
     update_awards()
 
 
-def _cast_to_string(val: Any) -> str:
+def _handle_string_cast(val: str) -> Union[str, dict]:
     """
-    Dictionaries that are converted to strings need to use 'json.dumps()' so we try that first
-    and then fallback to the regular 'str()' method.
+    JSON columns are represented as JSON formatted strings in the Spark data, but dictionaries in the Postgres data.
+    Both columns will have a "custom_schema" defined for "<FIELD_TYPE> STRING". To handle this comparison the casting of
+    values for "custom_schema" of STRING will attempt to convert a string to a dictionary in the case of a dictionary
+    and fallback to a simple string cast.
     """
     try:
-        return json.dumps(val)
+        return json.loads(val)
     except TypeError:
         pass
     return str(val)
@@ -244,7 +246,7 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     schema_changes = {}
     schema_type_converters = {
         "INT": int,
-        "STRING": _cast_to_string,
+        "STRING": _handle_string_cast,
     }
     if custom_schema:
         for schema_change in custom_schema.split(","):
@@ -257,9 +259,15 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
             psql_val_type = type(psql_val)
             spark_val = spark_data[i][k]
 
-            # Casting the postgres values based on the custom schema
+            # Casting values based on the custom schema
             if k.strip() in schema_changes and schema_changes[k].strip() in schema_type_converters:
-                psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
+                # To avoid issues with spaces in JSON strings all cases of a psql_val that is either
+                # a list of dictionaries or a dictionary result in the conversion of the spark_val to match
+                if psql_val_type == list and all([type(val) == dict for val in psql_val]) or psql_val_type == dict:
+                    spark_val = schema_type_converters[schema_changes[k].strip()](spark_val)
+                else:
+                    # For non JSON values the psql_val should be cast to match the spark_val
+                    psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
 
             # Equalize dates
             # - Postgres TIMESTAMPs may include time zones
@@ -277,19 +285,9 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
                 psql_val_utc = psql_val.astimezone(utc_tz)
                 psql_val = psql_val_utc.replace(tzinfo=None)
 
-            # In the case of a list make sure they are ordered prior to comparison
+            # Make sure Postgres data is sorted in the case of a list since the Spark list data is sorted in ASC order
             if isinstance(psql_val, list):
                 psql_val = sorted(psql_val)
-
-            if isinstance(spark_val, list):
-                spark_val = sorted(spark_val)
-
-            # Handle JSON formatted strings where the only difference is spacing between keys
-            if isinstance(psql_val, str):
-                psql_val = psql_val.replace(" ", "")
-
-            if isinstance(spark_val, str):
-                spark_val = spark_val.replace(" ", "")
 
             if psql_val != spark_val:
                 raise Exception(
