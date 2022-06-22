@@ -9,25 +9,25 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.awards.delta_models import (
     awards_sql_string,
-    AWARDS_TYPES,
+    AWARDS_COLUMNS,
     financial_accounts_by_awards_sql_string,
-    FINANCIAL_ACCOUNTS_BY_AWARDS_TYPES,
+    FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
 )
 from usaspending_api.recipient.delta_models import (
     recipient_lookup_sql_string,
-    RECIPIENT_LOOKUP_TYPES,
+    RECIPIENT_LOOKUP_COLUMNS,
     recipient_profile_sql_string,
-    RECIPIENT_PROFILE_TYPES,
+    RECIPIENT_PROFILE_COLUMNS,
     sam_recipient_sql_string,
-    SAM_RECIPIENT_TYPES,
+    SAM_RECIPIENT_COLUMNS,
 )
 from usaspending_api.transactions.delta_models import (
     transaction_fabs_sql_string,
-    TRANSACTION_FABS_TYPES,
+    TRANSACTION_FABS_COLUMNS,
     transaction_fpds_sql_string,
-    TRANSACTION_FPDS_TYPES,
+    TRANSACTION_FPDS_COLUMNS,
     transaction_normalized_sql_string,
-    TRANSACTION_NORMALIZED_TYPES,
+    TRANSACTION_NORMALIZED_COLUMNS,
     transaction_search_sql_string,
 )
 from usaspending_api.search.delta_models.award_search import award_search_sql_string
@@ -59,7 +59,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": awards_sql_string,
         "custom_schema": "",
-        "column_names": list(AWARDS_TYPES),
+        "column_names": list(AWARDS_COLUMNS),
     },
     "financial_accounts_by_awards": {
         "model": FinancialAccountsByAwards,
@@ -69,7 +69,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": financial_accounts_by_awards_sql_string,
         "custom_schema": "",
-        "column_names": list(FINANCIAL_ACCOUNTS_BY_AWARDS_TYPES),
+        "column_names": list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS),
     },
     "recipient_lookup": {
         "model": RecipientLookup,
@@ -79,7 +79,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": recipient_lookup_sql_string,
         "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_LOOKUP_TYPES),
+        "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
     },
     "recipient_profile": {
         "model": RecipientProfile,
@@ -89,7 +89,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": recipient_profile_sql_string,
         "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_PROFILE_TYPES),
+        "column_names": list(RECIPIENT_PROFILE_COLUMNS),
     },
     "sam_recipient": {
         "model": DUNS,
@@ -99,7 +99,7 @@ TABLE_SPEC = {
         "partition_column_type": None,
         "delta_table_create_sql": sam_recipient_sql_string,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
-        "column_names": list(SAM_RECIPIENT_TYPES),
+        "column_names": list(SAM_RECIPIENT_COLUMNS),
     },
     "transaction_fabs": {
         "model": TransactionFABS,
@@ -109,7 +109,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_fabs_sql_string,
         "custom_schema": "",
-        "column_names": list(TRANSACTION_FABS_TYPES),
+        "column_names": list(TRANSACTION_FABS_COLUMNS),
     },
     "transaction_fpds": {
         "model": TransactionFPDS,
@@ -119,7 +119,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_fpds_sql_string,
         "custom_schema": "",
-        "column_names": list(TRANSACTION_FPDS_TYPES),
+        "column_names": list(TRANSACTION_FPDS_COLUMNS),
     },
     "transaction_normalized": {
         "model": TransactionNormalized,
@@ -129,7 +129,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_normalized_sql_string,
         "custom_schema": "",
-        "column_names": list(TRANSACTION_NORMALIZED_TYPES),
+        "column_names": list(TRANSACTION_NORMALIZED_COLUMNS),
     },
     "transaction_search": {
         "model": None,  # Placeholder for now

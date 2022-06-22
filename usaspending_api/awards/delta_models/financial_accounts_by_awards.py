@@ -1,4 +1,4 @@
-FINANCIAL_ACCOUNTS_BY_AWARDS_TYPES = {
+FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS = {
     "data_source": "STRING",
     "financial_accounts_by_awards_id": "INTEGER NOT NULL",
     "piid": "STRING",
@@ -57,7 +57,7 @@ FINANCIAL_ACCOUNTS_BY_AWARDS_TYPES = {
 
 financial_accounts_by_awards_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in FINANCIAL_ACCOUNTS_BY_AWARDS_TYPES.items()])}
+        {", ".join([f'{key} {val}' for key, val in FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

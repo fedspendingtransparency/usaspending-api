@@ -1,4 +1,4 @@
-RECIPIENT_PROFILE_TYPES = {
+RECIPIENT_PROFILE_COLUMNS = {
     "recipient_level": "STRING NOT NULL",
     "recipient_hash": "STRING",
     "recipient_unique_id": "STRING",
@@ -19,7 +19,7 @@ RECIPIENT_PROFILE_TYPES = {
 
 recipient_profile_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in RECIPIENT_PROFILE_TYPES.items()])}
+        {", ".join([f'{key} {val}' for key, val in RECIPIENT_PROFILE_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

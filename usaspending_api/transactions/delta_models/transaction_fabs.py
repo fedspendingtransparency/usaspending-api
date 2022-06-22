@@ -1,4 +1,4 @@
-TRANSACTION_FABS_TYPES = {
+TRANSACTION_FABS_COLUMNS = {
     "transaction_id": "LONG NOT NULL",
     "published_fabs_id": "INTEGER",
     "action_date": "STRING",
@@ -104,7 +104,7 @@ TRANSACTION_FABS_TYPES = {
 
 transaction_fabs_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in TRANSACTION_FABS_TYPES.items()])}
+        {", ".join([f'{key} {val}' for key, val in TRANSACTION_FABS_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

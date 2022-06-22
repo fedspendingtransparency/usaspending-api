@@ -1,4 +1,4 @@
-TRANSACTION_FPDS_TYPES = {
+TRANSACTION_FPDS_COLUMNS = {
     "transaction_id": "LONG NOT NULL",
     "detached_award_procurement_id": "INTEGER",
     "detached_award_proc_unique": "STRING",
@@ -308,7 +308,7 @@ TRANSACTION_FPDS_TYPES = {
 
 transaction_fpds_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in TRANSACTION_FPDS_TYPES.items()])}
+        {", ".join([f'{key} {val}' for key, val in TRANSACTION_FPDS_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

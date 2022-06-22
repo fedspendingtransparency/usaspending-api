@@ -1,4 +1,4 @@
-SAM_RECIPIENT_TYPES = {
+SAM_RECIPIENT_COLUMNS = {
     "awardee_or_recipient_uniqu": "STRING",
     "legal_business_name": "STRING",
     "ultimate_parent_unique_ide": "STRING",
@@ -22,7 +22,7 @@ SAM_RECIPIENT_TYPES = {
 
 sam_recipient_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in SAM_RECIPIENT_TYPES.items()])}
+        {", ".join([f'{key} {val}' for key, val in SAM_RECIPIENT_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

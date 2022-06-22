@@ -1,4 +1,4 @@
-RECIPIENT_LOOKUP_TYPES = {
+RECIPIENT_LOOKUP_COLUMNS = {
     "id": "LONG NOT NULL",
     "recipient_hash": "STRING",
     "legal_business_name": "STRING",
@@ -23,7 +23,7 @@ RECIPIENT_LOOKUP_TYPES = {
 
 recipient_lookup_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in RECIPIENT_LOOKUP_TYPES.items()])}
+        {", ".join([f'{key} {val}' for key, val in RECIPIENT_LOOKUP_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
