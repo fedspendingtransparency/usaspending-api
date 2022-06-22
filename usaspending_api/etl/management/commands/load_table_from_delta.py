@@ -103,7 +103,7 @@ class Command(BaseCommand):
             logger.info(f"Creating {temp_destination_table}")
             create_temp_sql = (
                 f"CREATE TABLE {temp_destination_table}"
-                f" (LIKE {source_table} INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING INDEXES)"
+                f" (LIKE {source_table} INCLUDING DEFAULTS INCLUDING INDEXES)"
             )
             with db.connection.cursor() as cursor:
                 cursor.execute(create_temp_sql)
