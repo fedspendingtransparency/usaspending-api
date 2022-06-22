@@ -16,7 +16,6 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
-JDBC_URL_KEY = "DATABASE_URL"
 SPARK_PARTITION_ROWS = CONFIG.SPARK_PARTITION_ROWS
 
 
@@ -24,7 +23,7 @@ class Command(BaseCommand):
 
     help = """
     This command reads data from a Postgres database table and inserts it into a corresponding Delta
-    Table. As of now, it only supports a full reload of a table. All existing data will be delted
+    Table. As of now, it only supports a full reload of a table. All existing data will be deleted
     before new data is written.
     """
 
@@ -73,7 +72,7 @@ class Command(BaseCommand):
         # Resolve JDBC URL for Source Database
         jdbc_url = get_jdbc_url()
         if not jdbc_url:
-            raise RuntimeError(f"Could'nt find JDBC url, please properly configure your CONFIG.")
+            raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
