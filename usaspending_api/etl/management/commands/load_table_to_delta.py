@@ -127,6 +127,12 @@ class Command(BaseCommand):
                 properties=get_jdbc_connection_properties(),
             )
 
+        # Make sure that the column order defined in the Delta table schema matches
+        # that of the Spark dataframe used to pull from the Postgres table. While not
+        # always needed, this should help to prevent any future mismatch between the two.
+        if table_spec.get("column_names"):
+            df = df.select(table_spec.get("column_names"))
+
         # Write to S3
         load_delta_table(spark, df, destination_table_name, True)
         if spark_created_by_command:
