@@ -28,7 +28,7 @@ class Command(BaseCommand):
             choices=list(TABLE_SPEC.keys()),
         )
         parser.add_argument(
-            "--drop-recreate",
+            "--recreate",
             action="store_true",
             help="If provided, drops the temp table if exists and makes it from scratch. By default, the script"
             " just truncates and repopulates if it exists, which is more efficient. However, the schema may have"
@@ -56,19 +56,17 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         delta_table = options["delta_table"]
-        drop_recreate = options["drop_recreate"]
+        recreate = options["recreate"]
 
         table_spec = TABLE_SPEC[delta_table]
         destination_database = table_spec["destination_database"]
-        source_table = table_spec["source_table"]
+        source_table_name = table_spec["source_table"]
         custom_schema = table_spec["custom_schema"]
+        source_table = f"{destination_database}.{source_table_name}" if destination_database else source_table_name
 
         temp_schema = "temp"
-        temp_destination_table = f"{temp_schema}.{source_table}_temp"
-
-        # Set the database that will be interacted with for all Delta Lake table Spark-based activity
-        logger.info(f"Using Spark Database: {destination_database}")
-        spark.sql(f"use {destination_database};")
+        temp_destination_table_name = f"{source_table_name}_temp"
+        temp_destination_table = f"{temp_schema}.{temp_destination_table_name}"
 
         # Resolve JDBC URL for Source Database
         jdbc_url = get_jdbc_url()
@@ -77,13 +75,39 @@ class Command(BaseCommand):
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
-        if drop_recreate:
-            logger.info(f"Drop-recreate argument provided. Dropping {delta_table} first if exists.")
+        # Checking if the temp destination table already exists
+        temp_dest_table_exists_sql = f"""
+        SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = '{temp_schema}'
+                    AND table_name = '{temp_destination_table_name}')
+        """
+        with db.connection.cursor() as cursor:
+            cursor.execute(temp_dest_table_exists_sql)
+            temp_dest_table_exists = cursor.fetchone()[0]
+
+        # If it does and we're recreating it, drop it first
+        if temp_dest_table_exists and recreate:
+            logger.info(f"{delta_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
-            clear_table_sql = f"DROP {temp_destination_table} IF EXISTS"
+            clear_table_sql = f"DROP {temp_destination_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
-            logger.info(f"{delta_table} dropped. Now creating.")
+            logger.info(f"{delta_table} dropped.")
+            temp_dest_table_exists = False
+
+        # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
+        # the extra indexes, constraints, defaults which CREATE TABLE X LIKE Y accounts for
+        if not temp_dest_table_exists:
+            logger.info(f"Creating {temp_destination_table}")
+            create_temp_sql = (
+                f"CREATE TABLE {temp_destination_table}"
+                f" (LIKE {source_table} INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING INDEXES)"
+            )
+            with db.connection.cursor() as cursor:
+                cursor.execute(create_temp_sql)
+            logger.info(f"{temp_destination_table} created.")
 
         # Read from Delta
         df = spark.sql(f"SELECT * FROM {delta_table}")
