@@ -17,6 +17,7 @@ CREATE OR REPLACE TABLE {DESTINATION_TABLE} (
     total_obl_bin STRING,
     total_subsidy_cost NUMERIC(23, 2),
     total_loan_value NUMERIC(23, 2),
+    total_indirect_federal_sharing NUMERIC(23, 2),
     recipient_hash STRING,
     recipient_levels ARRAY<STRING>,
     recipient_name STRING,
