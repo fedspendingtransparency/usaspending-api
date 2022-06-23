@@ -46,7 +46,7 @@ FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS = {
     "certified_date": "DATE",
     "create_date": "TIMESTAMP",
     "update_date": "TIMESTAMP",
-    "award_id": "INTEGER",
+    "award_id": "LONG",
     "object_class_id": "INTEGER",
     "program_activity_id": "INTEGER",
     "submission_id": "INTEGER NOT NULL",

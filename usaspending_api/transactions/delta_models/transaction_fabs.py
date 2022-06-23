@@ -99,7 +99,7 @@ TRANSACTION_FABS_COLUMNS = {
     "ultimate_parent_uei": "STRING",
     "funding_opportunity_goals": "STRING",
     "funding_opportunity_number": "STRING",
-    "indirect_federal_sharing": "NUMERIC(38, 18)",
+    "indirect_federal_sharing": "NUMERIC(38,18)",
 }
 
 transaction_fabs_sql_string = rf"""

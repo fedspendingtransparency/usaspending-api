@@ -194,7 +194,6 @@ docker-compose-build-spark: ## See: docker-compose-build rule. This builds just 
 	echo "docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
 	docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
-
 .PHONY: docker-compose-spark-submit
 docker-compose-spark-submit:
 	docker-compose --profile=spark --project-directory . --file ${docker_compose_file} run \
