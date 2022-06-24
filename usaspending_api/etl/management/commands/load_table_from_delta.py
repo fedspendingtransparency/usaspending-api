@@ -114,6 +114,7 @@ class Command(BaseCommand):
                 # Copy over the indexes, preserving the names (mostly, includes "_temp")
                 # Note: we could of included indexes above (`INCLUDING INDEXES`) but that renames them,
                 #       which would run into issues with migrations that have specific names
+                print(source_table, temp_destination_table)
                 copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
                 if copy_index_sql:
                     cursor.execute("; ".join(copy_index_sql))
@@ -128,7 +129,6 @@ class Command(BaseCommand):
             logger.info(f"{temp_destination_table} created.")
 
         # Read from Delta
-        print(delta_table)
         df = spark.table(delta_table)
 
         # Write to Postgres
