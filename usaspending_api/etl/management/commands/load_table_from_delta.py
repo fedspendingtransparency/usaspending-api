@@ -67,6 +67,7 @@ class Command(BaseCommand):
         source_table_name = table_spec["source_table"]
         custom_schema = table_spec["custom_schema"]
         source_table = f"{destination_database}.{source_table_name}" if destination_database else source_table_name
+        delta_table = f"{destination_database}.{delta_table}" if destination_database else delta_table
 
         temp_schema = "temp"
         temp_destination_table_name = f"{source_table_name}_temp"
@@ -93,12 +94,12 @@ class Command(BaseCommand):
 
         # If it does and we're recreating it, drop it first
         if temp_dest_table_exists and recreate:
-            logger.info(f"{delta_table} exists and recreate argument provided. Dropping first.")
+            logger.info(f"{temp_destination_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
             clear_table_sql = f"DROP {temp_destination_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
-            logger.info(f"{delta_table} dropped.")
+            logger.info(f"{temp_destination_table} dropped.")
             temp_dest_table_exists = False
 
         # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
