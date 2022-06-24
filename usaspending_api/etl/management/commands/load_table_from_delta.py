@@ -119,8 +119,9 @@ class Command(BaseCommand):
                 # Copy over the constraints
                 # Note: we could of included indexes above (`INCLUDING CONSTRAINTS`) but we need to drop the
                 #       foreign key ones
-                copy_constraint_sql = make_copy_constraints(cursor, source_table, temp_destination_table,
-                                                            drop_foreign_keys=True)
+                copy_constraint_sql = make_copy_constraints(
+                    cursor, source_table, temp_destination_table, drop_foreign_keys=True
+                )
                 if copy_constraint_sql:
                     cursor.execute("; ".join(copy_constraint_sql))
             logger.info(f"{temp_destination_table} created.")
