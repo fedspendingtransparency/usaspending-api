@@ -111,18 +111,18 @@ class Command(BaseCommand):
             )
             with db.connection.cursor() as cursor:
                 cursor.execute(create_temp_sql)
-                # Copy over the indexes, preserving the names (mostly, includes "_temp")
-                # Note: we could of included indexes above (`INCLUDING INDEXES`) but that renames them,
-                #       which would run into issues with migrations that have specific names
-                copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
-                cursor.execute("; ".join(copy_index_sql))
-                # Copy over the constraints
+                # Copy over the constraints first
                 # Note: we could of included indexes above (`INCLUDING CONSTRAINTS`) but we need to drop the
                 #       foreign key ones
                 copy_constraint_sql = make_copy_constraints(
                     cursor, source_table, temp_destination_table, drop_foreign_keys=True
                 )
                 cursor.execute("; ".join(copy_constraint_sql))
+                # Copy over the indexes, preserving the names (mostly, includes "_temp")
+                # Note: we could of included indexes above (`INCLUDING INDEXES`) but that renames them,
+                #       which would run into issues with migrations that have specific names
+                copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
+                cursor.execute("; ".join(copy_index_sql))
             logger.info(f"{temp_destination_table} created.")
 
         # Read from Delta
