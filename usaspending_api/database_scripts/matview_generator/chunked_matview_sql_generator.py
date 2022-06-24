@@ -118,6 +118,8 @@ def make_copy_indexes(cursor, source_table, dest_table):
     cursor.execute(make_read_indexes(source_table)[0])
     src_indexes = dictfetchall(cursor)
 
+    print(src_indexes)
+
     # reading the existing indexes of destination table (to not duplicate anything)
     cursor.execute(make_read_indexes(dest_table)[0])
     dest_indexes = [ix_dict["indexname"] for ix_dict in dictfetchall(cursor)]
