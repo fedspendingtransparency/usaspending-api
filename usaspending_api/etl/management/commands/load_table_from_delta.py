@@ -128,6 +128,7 @@ class Command(BaseCommand):
             logger.info(f"{temp_destination_table} created.")
 
         # Read from Delta
+        print(delta_table)
         df = spark.table(delta_table)
 
         # Write to Postgres
