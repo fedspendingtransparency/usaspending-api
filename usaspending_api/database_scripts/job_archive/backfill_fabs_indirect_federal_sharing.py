@@ -38,6 +38,7 @@ SQL_LOOKUP = {
             FROM transaction_fabs AS fabs
             WHERE fabs.transaction_id BETWEEN {min_id} AND {max_id}
                 AND tn.id = fabs.transaction_id
+                AND fabs.indirect_federal_sharing IS NOT NULL
         """,
     },
     "Award": {
@@ -48,6 +49,7 @@ SQL_LOOKUP = {
                 FROM transaction_normalized AS tn
                 WHERE tn.award_id BETWEEN {min_id} AND {max_id}
                     AND tn.is_fpds = FALSE
+                    AND tn.indirect_federal_sharing IS NOT NULL
                 GROUP BY tn.award_id
             )
             UPDATE awards AS aw
