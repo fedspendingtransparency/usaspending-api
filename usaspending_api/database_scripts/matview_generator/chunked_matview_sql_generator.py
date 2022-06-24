@@ -120,7 +120,6 @@ def make_copy_constraints(cursor, source_table, dest_table, drop_foreign_keys=Fa
 
 def make_copy_indexes(cursor, source_table, dest_table):
     # read the existing indexes of source table
-    print(make_read_indexes(source_table))
     cursor.execute(make_read_indexes(source_table)[0])
     src_indexes = dictfetchall(cursor)
 
