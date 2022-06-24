@@ -115,16 +115,14 @@ class Command(BaseCommand):
                 # Note: we could of included indexes above (`INCLUDING INDEXES`) but that renames them,
                 #       which would run into issues with migrations that have specific names
                 copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
-                if copy_index_sql:
-                    cursor.execute("; ".join(copy_index_sql))
+                cursor.execute("; ".join(copy_index_sql))
                 # Copy over the constraints
                 # Note: we could of included indexes above (`INCLUDING CONSTRAINTS`) but we need to drop the
                 #       foreign key ones
                 copy_constraint_sql = make_copy_constraints(
                     cursor, source_table, temp_destination_table, drop_foreign_keys=True
                 )
-                if copy_constraint_sql:
-                    cursor.execute("; ".join(copy_constraint_sql))
+                cursor.execute("; ".join(copy_constraint_sql))
             logger.info(f"{temp_destination_table} created.")
 
         # Read from Delta
