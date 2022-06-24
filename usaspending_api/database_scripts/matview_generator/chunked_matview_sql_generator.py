@@ -5,8 +5,9 @@ import glob
 import hashlib
 import os
 import copy
+import re
 
-from shared_sql_generator import (
+from usaspending_api.database_scripts.matview_generator.shared_sql_generator import (
     COMPONENT_DIR,
     generate_uid,
     HERE,
@@ -16,6 +17,7 @@ from shared_sql_generator import (
     make_matview_refresh,
     TEMPLATE,
 )
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 # Usage: python chunked_matview_sql_generator.py --file <file_name> (from usaspending_api/database_scripts/matview_generator)
 #        ^--- Will clobber files in usaspending_api/database_scripts/matviews
@@ -91,6 +93,53 @@ def make_rename_sql(table_name):
     sql_strings.append(TEMPLATE["rename_table"].format("", table_temp_name, table_name))
     sql_strings.append("")
     return sql_strings
+
+
+def make_copy_constraints(cursor, source_table, dest_table, drop_foreign_keys=False):
+    # read the existing indexes
+    cursor.execute(make_read_constraints(source_table)[0])
+    src_constrs = dictfetchall(cursor)
+
+    # build the destination index sql
+    dest_constr_sql = []
+    for constr_dict in src_constrs:
+        create_constr_name = constr_dict["conname"]
+        create_constr_content = constr_dict["pg_get_constraintdef"]
+        if "FOREIGN KEY" in create_constr_content and drop_foreign_keys:
+            continue
+        dest_constr_sql.append(
+            f"ALTER TABLE {dest_table} ADD CONSTRAINT {create_constr_name}_temp" f" {create_constr_content}"
+        )
+    return dest_constr_sql
+
+
+def make_copy_indexes(cursor, source_table, dest_table):
+    # read the existing indexes of source table
+    cursor.execute(make_read_indexes(source_table)[0])
+    src_indexes = dictfetchall(cursor)
+
+    # reading the existing indexes of destination table (to not duplicate anything)
+    cursor.execute(make_read_indexes(dest_table)[0])
+    dest_indexes = [ix_dict["indexname"] for ix_dict in dictfetchall(cursor)]
+
+    # build the destination index sql
+    dest_ix_sql = []
+    for ix_dict in src_indexes:
+        ix_name = ix_dict["indexname"]
+        dest_ix_name = f"{ix_name}_temp"
+        if dest_ix_name in dest_indexes:
+            # if it's already made, ignore
+            continue
+
+        create_ix_sql = ix_dict["indexdef"]
+        ix_regex = r"CREATE\s.*INDEX\s\S+\sON\s(\S+)\s.*"
+        # this *should* match source_table, but can get funky with/without the schema included and regex
+        # for example, a table 'x' in the public schema could be provided and the string will include `public.x'
+        src_table = re.findall(ix_regex, create_ix_sql)[0]
+        create_ix_sql = create_ix_sql.replace(ix_name, dest_ix_name)
+        create_ix_sql = create_ix_sql.replace(src_table, dest_table)
+        dest_ix_sql.append(create_ix_sql)
+    return dest_ix_sql
 
 
 def create_all_sql_strings(sql_json):

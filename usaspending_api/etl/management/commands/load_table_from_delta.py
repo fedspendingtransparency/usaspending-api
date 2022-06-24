@@ -10,6 +10,10 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_generator import (
+    make_copy_indexes,
+    make_copy_constraints,
+)
 
 
 class Command(BaseCommand):
@@ -98,15 +102,26 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
 
         # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
-        # the extra indexes, constraints, defaults which CREATE TABLE X LIKE Y accounts for
+        # the extra stuff (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for
         if not temp_dest_table_exists:
             logger.info(f"Creating {temp_destination_table}")
             create_temp_sql = (
-                f"CREATE TABLE {temp_destination_table}"
-                f" (LIKE {source_table} INCLUDING DEFAULTS INCLUDING INDEXES)"
+                f"CREATE TABLE {temp_destination_table}" f" (LIKE {source_table} INCLUDING DEFAULTS INCLUDING IDENTITY)"
             )
             with db.connection.cursor() as cursor:
                 cursor.execute(create_temp_sql)
+                # Copy over the indexes, preserving the names (mostly, includes "_temp")
+                # Note: we could of included indexes above (`INCLUDING INDEXES`) but that renames them,
+                #       which would run into issues with migrations that have specific names
+                cursor.execute("; ".join(make_copy_indexes(cursor, source_table, temp_destination_table)))
+                # Copy over the constraints
+                # Note: we could of included indexes above (`INCLUDING CONSTRAINTS`) but we need to drop the
+                #       foreign key ones
+                cursor.execute(
+                    "; ".join(
+                        make_copy_constraints(cursor, source_table, temp_destination_table, drop_foreign_keys=True)
+                    )
+                )
             logger.info(f"{temp_destination_table} created.")
 
         # Read from Delta
