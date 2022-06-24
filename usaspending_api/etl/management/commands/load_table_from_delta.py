@@ -63,10 +63,11 @@ class Command(BaseCommand):
         recreate = options["recreate"]
 
         table_spec = TABLE_SPEC[delta_table]
+        source_database = table_spec['source_database']
         destination_database = table_spec["destination_database"]
         source_table_name = table_spec["source_table"]
         custom_schema = table_spec["custom_schema"]
-        source_table = f"{destination_database}.{source_table_name}" if destination_database else source_table_name
+        source_table = f"{source_database}.{source_table_name}" if source_database else source_table_name
         delta_table = f"{destination_database}.{delta_table}" if destination_database else delta_table
 
         temp_schema = "temp"

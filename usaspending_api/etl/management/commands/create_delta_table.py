@@ -35,6 +35,7 @@ TABLE_SPEC = {
     "award_search": {
         "model": None,
         "source_table": None,
+        "source_database": None,
         "destination_database": "rpt",
         "partition_column": None,
         "partition_column_type": None,
@@ -44,6 +45,7 @@ TABLE_SPEC = {
     "awards": {
         "model": Award,
         "source_table": "awards",
+        "source_database": "rpt",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
@@ -53,6 +55,7 @@ TABLE_SPEC = {
     "financial_accounts_by_awards": {
         "model": FinancialAccountsByAwards,
         "source_table": "financial_accounts_by_awards",
+        "source_database": "public",
         "destination_database": "raw",
         "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
@@ -62,6 +65,7 @@ TABLE_SPEC = {
     "recipient_lookup": {
         "model": RecipientLookup,
         "source_table": "recipient_lookup",
+        "source_database": "rpt",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
@@ -71,6 +75,7 @@ TABLE_SPEC = {
     "recipient_profile": {
         "model": RecipientProfile,
         "source_table": "recipient_profile",
+        "source_database": "rpt",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
@@ -80,6 +85,7 @@ TABLE_SPEC = {
     "sam_recipient": {
         "model": DUNS,
         "source_table": "duns",
+        "source_database": "raw",
         "destination_database": "raw",
         "partition_column": None,
         "partition_column_type": None,
@@ -89,6 +95,7 @@ TABLE_SPEC = {
     "transaction_fabs": {
         "model": TransactionFABS,
         "source_table": "transaction_fabs",
+        "source_database": "int",
         "destination_database": "raw",
         "partition_column": "published_fabs_id",
         "partition_column_type": "numeric",
@@ -98,6 +105,7 @@ TABLE_SPEC = {
     "transaction_fpds": {
         "model": TransactionFPDS,
         "source_table": "transaction_fpds",
+        "source_database": "int",
         "destination_database": "raw",
         "partition_column": "detached_award_procurement_id",
         "partition_column_type": "numeric",
@@ -107,6 +115,7 @@ TABLE_SPEC = {
     "transaction_normalized": {
         "model": TransactionNormalized,
         "source_table": "transaction_normalized",
+        "source_database": "int",
         "destination_database": "raw",
         "partition_column": "id",
         "partition_column_type": "numeric",
@@ -116,6 +125,7 @@ TABLE_SPEC = {
     "transaction_search": {
         "model": None,  # Placeholder for now
         "source_table": None,  # Placeholder for now
+        "source_database": None, # Placeholder for now
         "destination_database": "rpt",
         "partition_column": None,  # Placeholder for now
         "partition_column_type": None,  # Placeholder for now
