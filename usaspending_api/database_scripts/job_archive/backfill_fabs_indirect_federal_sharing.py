@@ -31,7 +31,11 @@ TOTAL_UPDATES = 0
 
 SQL_LOOKUP = {
     "Transaction": {
-        "min_max_sql": "SELECT MIN(transaction_id), MAX(transaction_id) FROM transaction_fabs",
+        "min_max_sql": """
+            SELECT MIN(transaction_id), MAX(transaction_id)
+            FROM transaction_fabs
+            WHERE indirect_federal_sharing IS NOT NULL
+        """,
         "update_sql": """
             UPDATE transaction_normalized AS tn
             SET indirect_federal_sharing = fabs.indirect_federal_sharing
@@ -42,7 +46,12 @@ SQL_LOOKUP = {
         """,
     },
     "Award": {
-        "min_max_sql": "SELECT MIN(id), MAX(id) FROM awards WHERE piid IS NULL",
+        "min_max_sql": """
+            SELECT MIN(award_id), MAX(award_id)
+            FROM transaction_normalized
+            WHERE is_fpds = FALSE
+                AND indirect_federal_sharing IS NOT NULL
+        """,
         "update_sql": """
             WITH award_transaction_sum AS (
                 SELECT tn.award_id, SUM(tn.indirect_federal_sharing) AS total_indirect_federal_sharing
