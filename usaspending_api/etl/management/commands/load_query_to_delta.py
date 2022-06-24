@@ -14,11 +14,12 @@ from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
 )
-
 TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
         "source_query": transaction_search_load_sql_string,
+        "source_database": None,
+        "source_table": None,
         "destination_database": "rpt",
         "partition_column": "transaction_id",
         "delta_table_create_sql": transaction_search_create_sql_string,

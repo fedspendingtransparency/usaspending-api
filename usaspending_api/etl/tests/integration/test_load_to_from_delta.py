@@ -234,7 +234,7 @@ def _handle_string_cast(val: str) -> Union[str, dict]:
     """
     try:
         return json.loads(val)
-    except TypeError:
+    except (TypeError, json.decoder.JSONDecodeError):
         pass
     return str(val)
 
@@ -269,6 +269,9 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
                 else:
                     # For non JSON values the psql_val should be cast to match the spark_val
                     psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
+                    if type(psql_val) != type(spark_val):
+                        # Converting the spark too if the psql value got parsed in JSON
+                        spark_val = schema_type_converters[schema_changes[k].strip()](spark_val)
 
             # Equalize dates
             # - Postgres TIMESTAMPs may include time zones
@@ -293,7 +296,7 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
             if psql_val != spark_val:
                 raise Exception(
                     f"Not equal: col:{k} "
-                    f"left(psql):{psql_val} ({psql_val_type}) "
+                    f"left(psql):{psql_val} ({type(psql_val)}) "
                     f"right(spark):{spark_val} ({type(spark_val)})"
                 )
     return datasets_match
@@ -365,7 +368,10 @@ def _verify_delta_table_loaded_from_delta(
     # get the postgres data to compare
     source_table = TABLE_SPEC[delta_table_name]["source_table"]
     temp_schema = "temp"
-    tmp_table_name = f"{temp_schema}.{source_table}_temp"
+    if source_table:
+        tmp_table_name = f"{temp_schema}.{source_table}_temp"
+    else:
+        tmp_table_name = f"{temp_schema}.{expected_table_name}_temp"
     postgres_query = f"SELECT * FROM {tmp_table_name}"
     partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
     if partition_col is not None:

@@ -38,6 +38,19 @@ class Command(BaseCommand):
             " just truncates and repopulates if it exists, which is more efficient. However, the schema may have"
             "updated since or you may just want to recreate it.",
         )
+        parser.add_argument(
+            "--alt-db",
+            type=str,
+            required=False,
+            help="An alternate database (aka schema) in which to create this table, overriding the TABLE_SPEC db",
+        )
+        parser.add_argument(
+            "--alt-name",
+            type=str,
+            required=False,
+            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
+            "name",
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -63,15 +76,26 @@ class Command(BaseCommand):
         recreate = options["recreate"]
 
         table_spec = TABLE_SPEC[delta_table]
-        source_database = table_spec['source_database']
-        destination_database = table_spec["destination_database"]
-        source_table_name = table_spec["source_table"]
         custom_schema = table_spec["custom_schema"]
-        source_table = f"{source_database}.{source_table_name}" if source_database else source_table_name
-        delta_table = f"{destination_database}.{delta_table}" if destination_database else delta_table
 
+        # Delta side
+        destination_database = options["alt_db"] or table_spec["destination_database"]
+        delta_table_name = options['alt_name'] or delta_table
+        delta_table = f"{destination_database}.{delta_table_name}" if destination_database else delta_table_name
+
+        # Postgres side
+        source_table = None
+        source_database = table_spec['source_database']
+        source_table_name = table_spec["source_table"]
+        if source_table_name:
+            source_table = f"{source_database}.{source_table_name}" if source_database else source_table_name
+
+        # Temp side
         temp_schema = "temp"
-        temp_destination_table_name = f"{source_table_name}_temp"
+        if source_table:
+            temp_destination_table_name = f"{source_table_name}_temp"
+        else:
+            temp_destination_table_name = f"{delta_table_name}_temp"
         temp_destination_table = f"{temp_schema}.{temp_destination_table_name}"
 
         # Resolve JDBC URL for Source Database
@@ -104,8 +128,9 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
 
         # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
-        # the extra stuff (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for
-        if not temp_dest_table_exists:
+        # the extra stuff (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
+        # If there is no source_table to base it on, it just relies on spark to make it and work with delta table
+        if source_table and not temp_dest_table_exists:
             logger.info(f"Creating {temp_destination_table}")
             create_temp_sql = (
                 f"CREATE TABLE {temp_destination_table}" f" (LIKE {source_table} INCLUDING DEFAULTS INCLUDING IDENTITY)"
@@ -120,17 +145,16 @@ class Command(BaseCommand):
                 )
                 if copy_constraint_sql:
                     cursor.execute("; ".join(copy_constraint_sql))
-
-                # Copy over the indexes, preserving the names (mostly, includes "_temp")
-                # Note: we could of included indexes above (`INCLUDING INDEXES`) but that renames them,
-                #       which would run into issues with migrations that have specific names
-                copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
-                if copy_index_sql:
-                    cursor.execute("; ".join(copy_index_sql))
             logger.info(f"{temp_destination_table} created.")
 
         # Read from Delta
         df = spark.table(delta_table)
+
+        # Make sure that the column order defined in the Delta table schema matches
+        # that of the Spark dataframe used to pull from the Postgres table. While not
+        # always needed, this should help to prevent any future mismatch between the two.
+        if table_spec.get("column_names"):
+            df = df.select(table_spec.get("column_names"))
 
         # Write to Postgres
         logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_destination_table}")
@@ -138,6 +162,17 @@ class Command(BaseCommand):
             url=jdbc_url, table=temp_destination_table, mode="overwrite", properties=get_jdbc_connection_properties()
         )
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_destination_table}")
+
+        # Load indexes if applicable
+        if source_table:
+            with db.connection.cursor() as cursor:
+                # Copy over the indexes, preserving the names (mostly, includes "_temp")
+                # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
+                #       which would run into issues with migrations that have specific names.
+                #       Additionally, we want to run this after we loaded in the data for performance.
+                copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
+                if copy_index_sql:
+                    cursor.execute("; ".join(copy_index_sql))
 
         if spark_created_by_command:
             spark.stop()
