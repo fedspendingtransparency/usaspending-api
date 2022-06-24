@@ -113,19 +113,20 @@ class Command(BaseCommand):
                 # Copy over the indexes, preserving the names (mostly, includes "_temp")
                 # Note: we could of included indexes above (`INCLUDING INDEXES`) but that renames them,
                 #       which would run into issues with migrations that have specific names
-                cursor.execute("; ".join(make_copy_indexes(cursor, source_table, temp_destination_table)))
+                copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
+                if copy_index_sql:
+                    cursor.execute("; ".join(copy_index_sql))
                 # Copy over the constraints
                 # Note: we could of included indexes above (`INCLUDING CONSTRAINTS`) but we need to drop the
                 #       foreign key ones
-                cursor.execute(
-                    "; ".join(
-                        make_copy_constraints(cursor, source_table, temp_destination_table, drop_foreign_keys=True)
-                    )
-                )
+                copy_constraint_sql = make_copy_constraints(cursor, source_table, temp_destination_table,
+                                                            drop_foreign_keys=True)
+                if copy_constraint_sql:
+                    cursor.execute("; ".join(copy_constraint_sql))
             logger.info(f"{temp_destination_table} created.")
 
         # Read from Delta
-        df = spark.sql(f"SELECT * FROM {delta_table}")
+        df = spark.table(delta_table)
 
         # Write to Postgres
         logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_destination_table}")
