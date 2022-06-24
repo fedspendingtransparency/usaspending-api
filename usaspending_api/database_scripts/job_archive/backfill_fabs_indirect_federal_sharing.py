@@ -26,7 +26,7 @@ from os import environ
 CONNECTION_STRING = environ["DATABASE_URL"]
 
 
-CHUNK_SIZE = 50000
+CHUNK_SIZE = 200000
 TOTAL_UPDATES = 0
 
 SQL_LOOKUP = {
