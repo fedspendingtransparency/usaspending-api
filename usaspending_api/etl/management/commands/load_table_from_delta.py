@@ -80,12 +80,12 @@ class Command(BaseCommand):
 
         # Delta side
         destination_database = options["alt_db"] or table_spec["destination_database"]
-        delta_table_name = options['alt_name'] or delta_table
+        delta_table_name = options["alt_name"] or delta_table
         delta_table = f"{destination_database}.{delta_table_name}" if destination_database else delta_table_name
 
         # Postgres side
         source_table = None
-        source_database = table_spec['source_database']
+        source_database = table_spec["source_database"]
         source_table_name = table_spec["source_table"]
         if source_table_name:
             source_table = f"{source_database}.{source_table_name}" if source_database else source_table_name
