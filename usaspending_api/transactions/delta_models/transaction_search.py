@@ -1,6 +1,6 @@
 # The order of these fields should always match the order of the
 # SELECT statement in "transaction_search_load_sql_string"
-TRANSACTION_SEARCH_COLUMNS = {
+TRANSACTION_SEARCH_DELTA_COLUMNS = {
     "transaction_id": "LONG NOT NULL",
     "award_id": "LONG NOT NULL",
     "modification_number": "STRING",
@@ -101,9 +101,110 @@ TRANSACTION_SEARCH_COLUMNS = {
     "funding_office_name": "STRING",
 }
 
+TRANSACTION_SEARCH_POSTGRES_COLUMNS = {
+    "transaction_id": "BIGINT NOT NULL",
+    "award_id": "BIGINT NOT NULL",
+    "modification_number": "TEXT",
+    "detached_award_proc_unique": "TEXT",
+    "afa_generated_unique": "TEXT",
+    "generated_unique_award_id": "TEXT",
+    "fain": "TEXT",
+    "uri": "TEXT",
+    "piid": "TEXT",
+    "action_date": "DATE",
+    "fiscal_action_date": "DATE",
+    "last_modified_date": "DATE",
+    "fiscal_year": "INTEGER",
+    "award_certified_date": "DATE",
+    "award_fiscal_year": "INTEGER",
+    "update_date": "TIMESTAMP",
+    "award_update_date": "TIMESTAMP",
+    "award_date_signed": "DATE",
+    "etl_update_date": "TIMESTAMP",
+    "period_of_performance_start_date": "DATE",
+    "period_of_performance_current_end_date": "DATE",
+    "type": "TEXT",
+    "type_description": "TEXT",
+    "award_category": "TEXT",
+    "transaction_description": "TEXT",
+    "award_amount": "NUMERIC(23,2)",
+    "generated_pragmatic_obligation": "NUMERIC(23,2)",
+    "federal_action_obligation": "NUMERIC(23,2)",
+    "original_loan_subsidy_cost": "NUMERIC(23,2)",
+    "face_value_loan_guarantee": "NUMERIC(23,2)",
+    "business_categories": "TEXT[]",
+    "naics_code": "TEXT",
+    "naics_description": "TEXT",
+    "product_or_service_code": "TEXT",
+    "product_or_service_description": "TEXT",
+    "type_of_contract_pricing": "TEXT",
+    "type_set_aside": "TEXT",
+    "extent_competed": "TEXT",
+    "ordering_period_end_date": "TEXT",
+    "cfda_number": "TEXT",
+    "cfda_title": "TEXT",
+    "cfda_id": "INTEGER",
+    "pop_country_name": "TEXT",
+    "pop_country_code": "TEXT",
+    "pop_state_name": "TEXT",
+    "pop_state_code": "TEXT",
+    "pop_county_code": "TEXT",
+    "pop_county_name": "TEXT",
+    "pop_zip5": "TEXT",
+    "pop_congressional_code": "TEXT",
+    "pop_congressional_population": "INTEGER",
+    "pop_county_population": "INTEGER",
+    "pop_state_fips": "TEXT",
+    "pop_state_population": "INTEGER",
+    "pop_city_name": "TEXT",
+    "recipient_location_country_code": "TEXT",
+    "recipient_location_country_name": "TEXT",
+    "recipient_location_state_name": "TEXT",
+    "recipient_location_state_code": "TEXT",
+    "recipient_location_state_fips": "TEXT",
+    "recipient_location_state_population": "INTEGER",
+    "recipient_location_county_code": "TEXT",
+    "recipient_location_county_name": "TEXT",
+    "recipient_location_county_population": "INTEGER",
+    "recipient_location_congressional_code": "TEXT",
+    "recipient_location_congressional_population": "INTEGER",
+    "recipient_location_zip5": "TEXT",
+    "recipient_location_city_name": "TEXT",
+    "recipient_hash": "UUID",
+    "recipient_levels": "TEXT[]",
+    "recipient_name": "TEXT",
+    "recipient_unique_id": "TEXT",
+    "parent_recipient_hash": "UUID",
+    "parent_recipient_name": "TEXT",
+    "parent_recipient_unique_id": "TEXT",
+    "recipient_uei": "TEXT",
+    "parent_uei": "TEXT",
+    "awarding_toptier_agency_id": "INTEGER",
+    "funding_toptier_agency_id": "INTEGER",
+    "awarding_agency_id": "INTEGER",
+    "funding_agency_id": "INTEGER",
+    "awarding_toptier_agency_name": "TEXT",
+    "funding_toptier_agency_name": "TEXT",
+    "awarding_subtier_agency_name": "TEXT",
+    "funding_subtier_agency_name": "TEXT",
+    "awarding_toptier_agency_abbreviation": "TEXT",
+    "funding_toptier_agency_abbreviation": "TEXT",
+    "awarding_subtier_agency_abbreviation": "TEXT",
+    "funding_subtier_agency_abbreviation": "TEXT",
+    "treasury_account_identifiers": "INTEGER[]",
+    "tas_paths": "TEXT[]",
+    "tas_components": "TEXT[]",
+    "federal_accounts": "JSONB",
+    "disaster_emergency_fund_codes": "TEXT[]",
+    "awarding_office_code": "TEXT",
+    "awarding_office_name": "TEXT",
+    "funding_office_code": "TEXT",
+    "funding_office_name": "TEXT",
+}
+
 transaction_search_create_sql_string = fr"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_COLUMNS.items()])}
+        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
@@ -112,7 +213,7 @@ transaction_search_create_sql_string = fr"""
 transaction_search_load_sql_string = fr"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
-        {",".join([col for col in TRANSACTION_SEARCH_COLUMNS])}
+        {",".join([col for col in TRANSACTION_SEARCH_DELTA_COLUMNS])}
     )
     SELECT
         transaction_normalized.id AS transaction_id,

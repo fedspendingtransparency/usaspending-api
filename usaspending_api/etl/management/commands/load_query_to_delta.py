@@ -13,6 +13,7 @@ from usaspending_api.search.models import TransactionSearch
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
+    TRANSACTION_SEARCH_POSTGRES_COLUMNS,
 )
 
 TABLE_SPEC = {
@@ -24,6 +25,7 @@ TABLE_SPEC = {
         "destination_database": "rpt",
         "partition_column": "transaction_id",
         "delta_table_create_sql": transaction_search_create_sql_string,
+        "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "user_defined_functions": [
             {
