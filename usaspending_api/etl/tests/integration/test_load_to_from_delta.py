@@ -269,9 +269,6 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
                 else:
                     # For non JSON values the psql_val should be cast to match the spark_val
                     psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
-                    if type(psql_val) != type(spark_val):
-                        # Converting the spark too if the psql value got parsed in JSON
-                        spark_val = schema_type_converters[schema_changes[k].strip()](spark_val)
 
             # Equalize dates
             # - Postgres TIMESTAMPs may include time zones
@@ -376,9 +373,10 @@ def _verify_delta_table_loaded_from_delta(
     partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
     if partition_col is not None:
         postgres_query = f"{postgres_query} ORDER BY {partition_col}"
-    with connection.cursor() as cursor:
-        cursor.execute(postgres_query)
-        postgres_data = dictfetchall(cursor)
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(postgres_query)
+            postgres_data = dictfetchall(cursor)
 
     # get the spark data to compare
     delta_query = f"SELECT * FROM {expected_table_name}"
