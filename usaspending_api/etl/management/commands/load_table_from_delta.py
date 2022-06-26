@@ -15,6 +15,15 @@ from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_gene
     make_copy_constraints,
 )
 
+SPECIAL_TYPES_MAPPING = {
+    db.models.UUIDField: {"postgres": "UUID USING {column_name}::UUID", "delta": "TEXT"},
+    "UUID": {"postgres": "UUID USING {column_name}::UUID", "delta": "TEXT"},
+    db.models.JSONField: {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
+    "JSONB": {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
+    db.models.DateTimeField: {"postgres": "TIMESTAMP WITH TIME ZONE", "delta": "TIMESTAMP WITHOUT TIME ZONE"},
+    "TIMESTAMP": {"postgres": "TIMESTAMP WITH TIME ZONE", "delta": "TIMESTAMP WITHOUT TIME ZONE"},
+}
+
 
 class Command(BaseCommand):
 
@@ -30,13 +39,6 @@ class Command(BaseCommand):
             required=True,
             help="The source Delta Table to read the data",
             choices=list(TABLE_SPEC.keys()),
-        )
-        parser.add_argument(
-            "--recreate",
-            action="store_true",
-            help="If provided, drops the temp table if exists and makes it from scratch. By default, the script"
-            " just truncates and repopulates if it exists, which is more efficient. However, the schema may have"
-            "updated since or you may just want to recreate it.",
         )
         parser.add_argument(
             "--alt-db",
@@ -73,10 +75,10 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         delta_table = options["delta_table"]
-        recreate = options["recreate"]
 
         table_spec = TABLE_SPEC[delta_table]
         custom_schema = table_spec["custom_schema"]
+        special_columns = {}
 
         # Delta side
         destination_database = options["alt_db"] or table_spec["destination_database"]
@@ -85,8 +87,10 @@ class Command(BaseCommand):
 
         # Postgres side
         source_table = None
+        source_model = table_spec["model"]
         source_database = table_spec["source_database"]
         source_table_name = table_spec["source_table"]
+        source_schema = table_spec["source_schema"]
         if source_table_name:
             source_table = f"{source_database}.{source_table_name}" if source_database else source_table_name
 
@@ -118,34 +122,67 @@ class Command(BaseCommand):
             temp_dest_table_exists = cursor.fetchone()[0]
 
         # If it does and we're recreating it, drop it first
-        if temp_dest_table_exists and recreate:
+        if temp_dest_table_exists:
             logger.info(f"{temp_destination_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
-            clear_table_sql = f"DROP {temp_destination_table}"
+            clear_table_sql = f"DROP TABLE {temp_destination_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
             logger.info(f"{temp_destination_table} dropped.")
-            temp_dest_table_exists = False
 
         # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
         # the extra stuff (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
         # If there is no source_table to base it on, it just relies on spark to make it and work with delta table
-        if source_table and not temp_dest_table_exists:
-            logger.info(f"Creating {temp_destination_table}")
-            create_temp_sql = (
-                f"CREATE TABLE {temp_destination_table}" f" (LIKE {source_table} INCLUDING DEFAULTS INCLUDING IDENTITY)"
-            )
+        if source_table or source_schema:
+            if source_table:
+                create_temp_sql = f"""
+                    CREATE TABLE {temp_destination_table} (
+                        LIKE {source_table} INCLUDING DEFAULTS INCLUDING IDENTITY
+                    )
+                """
+            else:
+                create_temp_sql = f"""
+                    CREATE TABLE {temp_destination_table} (
+                        {", ".join([f'{key} {val}' for key, val in source_schema.items()])}
+                    )
+                """
             with db.connection.cursor() as cursor:
+                logger.info(f"Creating {temp_destination_table}")
                 cursor.execute(create_temp_sql)
-                # Copy over the constraints first
+                logger.info(f"{temp_destination_table} created.")
+
+                # Copy over the constraints before indexes
                 # Note: we could of included indexes above (`INCLUDING CONSTRAINTS`) but we need to drop the
                 #       foreign key ones
-                copy_constraint_sql = make_copy_constraints(
-                    cursor, source_table, temp_destination_table, drop_foreign_keys=True
-                )
-                if copy_constraint_sql:
-                    cursor.execute("; ".join(copy_constraint_sql))
-            logger.info(f"{temp_destination_table} created.")
+                if source_table:
+                    logger.info(f"Copying constraints over from {source_table}")
+                    copy_constraint_sql = make_copy_constraints(
+                        cursor, source_table, temp_destination_table, drop_foreign_keys=True
+                    )
+                    if copy_constraint_sql:
+                        cursor.execute("; ".join(copy_constraint_sql))
+                    logger.info(f"Constraints from {source_table} copied over")
+
+            # Converting unsupported data types on spark to their delta equivalent
+            # We will cast these back to their original intended types afterwards
+            # Only applicable if we're copying down a table that was already in postgres
+            alter_column_sql = []
+            source_columns = []
+            if source_model:
+                source_columns = [(column.name, type(column)) for column in source_model._meta.get_fields()]
+            else:
+                source_columns = list(source_schema.items())
+
+            for column_name, column_type in source_columns:
+                if column_type in SPECIAL_TYPES_MAPPING:
+                    special_columns[column_name] = column_type
+                    delta_type = SPECIAL_TYPES_MAPPING[column_type]["delta"].format(column_name=column_name)
+                    alter_column_sql.append(
+                        f"ALTER TABLE {temp_destination_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}"
+                    )
+            if alter_column_sql:
+                with db.connection.cursor() as cursor:
+                    cursor.execute(";".join(alter_column_sql))
 
         # Read from Delta
         df = spark.table(delta_table)
@@ -163,16 +200,28 @@ class Command(BaseCommand):
         )
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_destination_table}")
 
-        # Load indexes if applicable
-        if source_table:
-            with db.connection.cursor() as cursor:
-                # Copy over the indexes, preserving the names (mostly, includes "_temp")
-                # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
-                #       which would run into issues with migrations that have specific names.
-                #       Additionally, we want to run this after we loaded in the data for performance.
-                copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
-                if copy_index_sql:
-                    cursor.execute("; ".join(copy_index_sql))
+        if source_table or source_schema:
+            # Recast the special case columns to their postgres equivalents
+            alter_column_sql = []
+            for column_name, column_type in special_columns.items():
+                delta_type = SPECIAL_TYPES_MAPPING[column_type]["postgres"].format(column_name=column_name)
+                alter_column_sql.append(
+                    f"ALTER TABLE {temp_destination_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}"
+                )
+            if alter_column_sql:
+                with db.connection.cursor() as cursor:
+                    cursor.execute(";".join(alter_column_sql))
+
+            if source_table:
+                # Load indexes if applicable
+                with db.connection.cursor() as cursor:
+                    # Copy over the indexes, preserving the names (mostly, includes "_temp")
+                    # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
+                    #       which would run into issues with migrations that have specific names.
+                    #       Additionally, we want to run this after we loaded in the data for performance.
+                    copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
+                    if copy_index_sql:
+                        cursor.execute("; ".join(copy_index_sql))
 
         if spark_created_by_command:
             spark.stop()
