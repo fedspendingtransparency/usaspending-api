@@ -8,7 +8,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jvm_logger,
-)
+    create_ref_temp_views)
 from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
@@ -102,7 +102,6 @@ class Command(BaseCommand):
         destination_table = options["destination_table"]
 
         table_spec = TABLE_SPEC[destination_table]
-
         destination_database = options["alt_db"] or table_spec["destination_database"]
         destination_table_name = options["alt_name"] or destination_table
 
@@ -115,6 +114,7 @@ class Command(BaseCommand):
             for udf_args in TABLE_SPEC[destination_table]["user_defined_functions"]:
                 spark.udf.register(**udf_args)
 
+        spark.sql(create_ref_temp_views)
         spark.sql(
             options["source_query"].format(
                 DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name
