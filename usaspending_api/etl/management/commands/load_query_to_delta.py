@@ -116,7 +116,7 @@ class Command(BaseCommand):
                 spark.udf.register(**udf_args)
 
         spark.sql(
-            transaction_search_load_sql_string.format(
+            options["source_query"].format(
                 DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name
             )
         )
