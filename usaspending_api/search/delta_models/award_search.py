@@ -99,8 +99,7 @@ award_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-award_search_load_sql_string = f"""                             
-
+award_search_load_sql_string = f"""            
     INSERT OVERWRITE rpt.award_search
         (
             {",".join([col for col in _award_search_types])}
@@ -119,7 +118,7 @@ award_search_load_sql_string = f"""
   awards.uri AS uri,
   COALESCE(awards.total_obligation, 0) AS award_amount,
   COALESCE(awards.total_obligation, 0) AS total_obligation,
-  awards.description,  
+  awards.description,
   CASE WHEN awards.total_obligation = 500000000.0 THEN '500M'
     WHEN awards.total_obligation = 100000000.0 THEN '100M'
     WHEN awards.total_obligation = 1000000.0 THEN '1M'
