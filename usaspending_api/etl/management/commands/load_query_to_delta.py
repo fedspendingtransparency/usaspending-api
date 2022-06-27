@@ -70,7 +70,12 @@ class Command(BaseCommand):
             help="The destination Delta Table to write the data",
             choices=list(TABLE_SPEC),
         )
-
+        parser.add_argument(
+            "--alt-db",
+            type=str,
+            required=False,
+            help="An alternate database (aka schema) in which to create this table, overriding the TABLE_SPEC db",
+        )
         parser.add_argument(
             "--alt-name",
             type=str,
