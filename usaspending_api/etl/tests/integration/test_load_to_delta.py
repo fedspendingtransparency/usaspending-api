@@ -192,12 +192,16 @@ def populate_data_for_transaction_search():
         "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
     )
     tas = baker.make("accounts.TreasuryAppropriationAccount", federal_account=federal_account, _fill_optional=True)
+    dabs = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01")
+    sa = baker.make("submissions.SubmissionAttributes", reporting_period_start="2020-04-02", submission_window=dabs)
+
     baker.make(
         "awards.FinancialAccountsByAwards",
         award=asst_award,
         treasury_account=tas,
         disaster_emergency_fund=defc_l,
         _fill_optional=True,
+        submission=sa,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -205,6 +209,7 @@ def populate_data_for_transaction_search():
         treasury_account=tas,
         disaster_emergency_fund=defc_m,
         _fill_optional=True,
+        submission=sa,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -212,6 +217,7 @@ def populate_data_for_transaction_search():
         treasury_account=tas,
         disaster_emergency_fund=defc_q,
         _fill_optional=True,
+        submission=sa,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -219,6 +225,7 @@ def populate_data_for_transaction_search():
         treasury_account=tas,
         disaster_emergency_fund=None,
         _fill_optional=True,
+        submission=sa,
     )
 
     update_awards()
@@ -564,5 +571,33 @@ def test_load_table_to_delta_for_transaction_search_alt_db_and_name(
         s3_unittest_data_bucket,
         alt_db="my_alt_db",
         alt_name="transaction_search_alt_name",
+        load_command="load_query_to_delta",
+    )
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_award_search(spark, s3_unittest_data_bucket, populate_data_for_transaction_search):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded(spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta")
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_award_search_testing(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    _verify_delta_table_loaded(spark, "award_search_testing", s3_unittest_data_bucket)
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_award_search_alt_db_and_name(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded(
+        spark,
+        "award_search",
+        s3_unittest_data_bucket,
+        alt_db="my_alt_db",
+        alt_name="award_search_alt_name",
         load_command="load_query_to_delta",
     )
