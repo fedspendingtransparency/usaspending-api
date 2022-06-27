@@ -119,7 +119,7 @@ class Command(BaseCommand):
             for udf_args in TABLE_SPEC[destination_table]["user_defined_functions"]:
                 spark.udf.register(**udf_args)
 
-        spark.sql(create_ref_temp_views)
+        create_ref_temp_views(spark)
         spark.sql(
             options["source_query"].format(
                 DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name
