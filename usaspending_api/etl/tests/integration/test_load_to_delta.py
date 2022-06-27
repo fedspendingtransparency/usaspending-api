@@ -86,8 +86,24 @@ def populate_data_for_transaction_search():
     defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
 
     # Create awards and transactions
-    asst_award = baker.make("awards.Award", type="07")
-    cont_award = baker.make("awards.Award", type="A")
+    asst_award = baker.make(
+        "awards.Award",
+        type="07",
+        period_of_performance_start_date="2021-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2021-01-01",
+        total_obligation=100.00,
+        total_subsidy_cost=100.00,
+        type_description="Direct Loan",
+    )
+    cont_award = baker.make(
+        "awards.Award",
+        type="A",
+        period_of_performance_start_date="2021-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2021-01-01",
+        total_obligation=100.00,
+    )
 
     asst_trx1 = baker.make(
         "awards.TransactionNormalized",
@@ -98,6 +114,7 @@ def populate_data_for_transaction_search():
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
         _fill_optional=True,
+        last_modified_date="2021-01-01",
     )
     asst_trx2 = baker.make(
         "awards.TransactionNormalized",
@@ -108,6 +125,7 @@ def populate_data_for_transaction_search():
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
         _fill_optional=True,
+        last_modified_date="2021-01-01",
     )
     cont_trx1 = baker.make(
         "awards.TransactionNormalized",
@@ -118,6 +136,7 @@ def populate_data_for_transaction_search():
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
         _fill_optional=True,
+        last_modified_date="2021-01-01",
     )
     cont_trx2 = baker.make(
         "awards.TransactionNormalized",
@@ -128,6 +147,7 @@ def populate_data_for_transaction_search():
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
         _fill_optional=True,
+        last_modified_date="2021-01-01",
     )
 
     baker.make(
@@ -176,6 +196,7 @@ def populate_data_for_transaction_search():
         action_date="2021-07-01",
         awardee_or_recipient_uei="FPDSUEI12345",
         _fill_optional=True,
+        ordering_period_end_date="2020-07-01",
     )
     baker.make(
         "awards.TransactionFPDS",
@@ -185,6 +206,7 @@ def populate_data_for_transaction_search():
         action_date="2021-10-01",
         awardee_or_recipient_uei="FPDSUEI12345",
         _fill_optional=True,
+        ordering_period_end_date="2020-07-01",
     )
 
     # Create account data

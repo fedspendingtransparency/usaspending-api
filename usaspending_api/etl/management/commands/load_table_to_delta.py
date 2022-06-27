@@ -7,7 +7,6 @@ from usaspending_api.awards.delta_models import (
     FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
     financial_accounts_by_awards_sql_string,
 )
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -25,7 +24,7 @@ from usaspending_api.recipient.delta_models import (
     SAM_RECIPIENT_COLUMNS,
     sam_recipient_sql_string,
 )
-from usaspending_api.search.models import TransactionSearch
+from usaspending_api.search.models import TransactionSearch, AwardSearchView
 from usaspending_api.transactions.delta_models import (
     TRANSACTION_FABS_COLUMNS,
     transaction_fabs_sql_string,
@@ -50,7 +49,7 @@ from usaspending_api.awards.models import (
 
 TABLE_SPEC = {
     "award_search_testing": {
-        "model": AwardSearch,
+        "model": AwardSearchView,
         "source_table": "award_search",
         "destination_database": "rpt",
         "partition_column": "award_id",
