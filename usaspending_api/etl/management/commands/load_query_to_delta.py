@@ -8,7 +8,8 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jvm_logger,
-    create_ref_temp_views)
+    create_ref_temp_views,
+)
 from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
@@ -121,9 +122,9 @@ class Command(BaseCommand):
 
         create_ref_temp_views(spark)
         spark.sql(
-            TABLE_SPEC[destination_table].get("source_query").format(
-                DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name
-            )
+            TABLE_SPEC[destination_table]
+            .get("source_query")
+            .format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
         )
 
         if spark_created_by_command:
