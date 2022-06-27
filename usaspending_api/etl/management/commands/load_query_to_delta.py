@@ -121,7 +121,7 @@ class Command(BaseCommand):
 
         create_ref_temp_views(spark)
         spark.sql(
-            options["source_query"].format(
+            TABLE_SPEC[destination_table].get("source_query").format(
                 DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name
             )
         )
