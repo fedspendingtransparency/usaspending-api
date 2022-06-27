@@ -7,7 +7,7 @@ import psycopg2
 import pytz
 
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List, Union
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
@@ -224,13 +224,15 @@ def populate_data_for_transaction_search():
     update_awards()
 
 
-def _cast_to_string(val: Any) -> str:
+def _handle_string_cast(val: str) -> Union[str, dict]:
     """
-    Dictionaries that are converted to strings need to use 'json.dumps()' so we try that first
-    and then fallback to the regular 'str()' method.
+    JSON columns are represented as JSON formatted strings in the Spark data, but dictionaries in the Postgres data.
+    Both columns will have a "custom_schema" defined for "<FIELD_TYPE> STRING". To handle this comparison the casting of
+    values for "custom_schema" of STRING will attempt to convert a string to a dictionary in the case of a dictionary
+    and fallback to a simple string cast.
     """
     try:
-        return json.dumps(val)
+        return json.loads(val)
     except TypeError:
         pass
     return str(val)
@@ -244,7 +246,7 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     schema_changes = {}
     schema_type_converters = {
         "INT": int,
-        "STRING": _cast_to_string,
+        "STRING": _handle_string_cast,
     }
     if custom_schema:
         for schema_change in custom_schema.split(","):
@@ -257,9 +259,15 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
             psql_val_type = type(psql_val)
             spark_val = spark_data[i][k]
 
-            # Casting the postgres values based on the custom schema
+            # Casting values based on the custom schema
             if k.strip() in schema_changes and schema_changes[k].strip() in schema_type_converters:
-                psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
+                # To avoid issues with spaces in JSON strings all cases of a psql_val that is either
+                # a list of dictionaries or a dictionary result in the conversion of the spark_val to match
+                if psql_val_type == list and all([type(val) == dict for val in psql_val]) or psql_val_type == dict:
+                    spark_val = schema_type_converters[schema_changes[k].strip()](spark_val)
+                else:
+                    # For non JSON values the psql_val should be cast to match the spark_val
+                    psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
 
             # Equalize dates
             # - Postgres TIMESTAMPs may include time zones
@@ -277,19 +285,9 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
                 psql_val_utc = psql_val.astimezone(utc_tz)
                 psql_val = psql_val_utc.replace(tzinfo=None)
 
-            # In the case of a list make sure they are ordered prior to comparison
+            # Make sure Postgres data is sorted in the case of a list since the Spark list data is sorted in ASC order
             if isinstance(psql_val, list):
                 psql_val = sorted(psql_val)
-
-            if isinstance(spark_val, list):
-                spark_val = sorted(spark_val)
-
-            # Handle JSON formatted strings where the only difference is spacing between keys
-            if isinstance(psql_val, str):
-                psql_val = psql_val.replace(" ", "")
-
-            if isinstance(spark_val, str):
-                spark_val = spark_val.replace(" ", "")
 
             if psql_val != spark_val:
                 raise Exception(
@@ -301,14 +299,28 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
 
 
 def _verify_delta_table_loaded(
-    spark: SparkSession, delta_table_name: str, s3_bucket: str, load_command="load_table_to_delta"
+    spark: SparkSession,
+    delta_table_name: str,
+    s3_bucket: str,
+    alt_db: str = None,
+    alt_name: str = None,
+    load_command="load_table_to_delta",
 ):
-    """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the given
+    """Generic function that uses the create_delta_table and load_table_to_delta ommands to create and load the given
     table and assert it was created and loaded as expected
     """
+
+    cmd_args = [f"--destination-table={delta_table_name}"]
+    if alt_db:
+        cmd_args += [f"--alt-db={alt_db}"]
+    expected_table_name = delta_table_name
+    if alt_name:
+        cmd_args += [f"--alt-name={alt_name}"]
+        expected_table_name = alt_name
+
     # make the table and load it
-    call_command("create_delta_table", f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}")
-    call_command(load_command, f"--destination-table={delta_table_name}")
+    call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
+    call_command(load_command, *cmd_args)
 
     # get the postgres data to compare
     model = TABLE_SPEC[delta_table_name]["model"]
@@ -319,7 +331,8 @@ def _verify_delta_table_loaded(
     dummy_data = list(dummy_query.all().values())
 
     # get the spark data to compare
-    received_query = f"select * from {delta_table_name}"
+    # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again
+    received_query = f"select * from {expected_table_name}"
     if partition_col is not None:
         received_query = f"{received_query} order by {partition_col}"
     received_data = [row.asDict() for row in spark.sql(received_query).collect()]
@@ -517,7 +530,6 @@ def test_load_table_to_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-
     _verify_delta_table_loaded(spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta")
 
 
@@ -529,14 +541,28 @@ def test_load_table_to_delta_for_transaction_search_testing(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_award_search(spark, s3_unittest_data_bucket, populate_data_for_transaction_search):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-
-    _verify_delta_table_loaded(spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta")
+def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(spark, s3_unittest_data_bucket):
+    baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
+    baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
+    _verify_delta_table_loaded(
+        spark,
+        "transaction_normalized",
+        s3_unittest_data_bucket,
+        alt_db="my_alt_db",
+        alt_name="transaction_normalized_alt_name",
+    )
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_award_search_testing(
+def test_load_table_to_delta_for_transaction_search_alt_db_and_name(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
-    _verify_delta_table_loaded(spark, "award_search_testing", s3_unittest_data_bucket)
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded(
+        spark,
+        "transaction_search",
+        s3_unittest_data_bucket,
+        alt_db="my_alt_db",
+        alt_name="transaction_search_alt_name",
+        load_command="load_query_to_delta",
+    )

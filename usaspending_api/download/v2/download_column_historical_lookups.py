@@ -719,6 +719,8 @@ query_paths = {
                     "latest_transaction__assistance_data__place_of_performance_forei",
                 ),
                 ("cfda_numbers_and_titles", None),  # Annotation is used to create this column
+                ("funding_opportunity_number", "latest_transaction__assistance_data__funding_opportunity_number"),
+                ("funding_opportunity_goals_text", "latest_transaction__assistance_data__funding_opportunity_goals"),
                 ("assistance_type_code", "latest_transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "latest_transaction__assistance_data__assistance_type_desc"),
                 ("award_description", "description"),
@@ -1226,6 +1228,8 @@ query_paths = {
                 ),
                 ("cfda_number", "transaction__assistance_data__cfda_number"),
                 ("cfda_title", "transaction__assistance_data__cfda_title"),
+                ("funding_opportunity_number", "transaction__assistance_data__funding_opportunity_number"),
+                ("funding_opportunity_goals_text", "transaction__assistance_data__funding_opportunity_goals"),
                 ("assistance_type_code", "transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "transaction__assistance_data__assistance_type_desc"),
                 ("award_description", "transaction__assistance_data__award_description"),

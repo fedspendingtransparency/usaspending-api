@@ -71,6 +71,14 @@ class Command(BaseCommand):
             choices=list(TABLE_SPEC),
         )
 
+        parser.add_argument(
+            "--alt-name",
+            type=str,
+            required=False,
+            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
+            "name",
+        )
+
     def handle(self, *args, **options):
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
@@ -94,7 +102,9 @@ class Command(BaseCommand):
         destination_table = options["destination_table"]
 
         table_spec = TABLE_SPEC[destination_table]
-        destination_database = table_spec["destination_database"]
+
+        destination_database = options["alt_db"] or table_spec["destination_database"]
+        destination_table_name = options["alt_name"] or destination_table
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
@@ -105,7 +115,11 @@ class Command(BaseCommand):
             for udf_args in TABLE_SPEC[destination_table]["user_defined_functions"]:
                 spark.udf.register(**udf_args)
 
-        spark.sql(table_spec["source_query"])
+        spark.sql(
+            transaction_search_load_sql_string.format(
+                DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name
+            )
+        )
 
         if spark_created_by_command:
             spark.stop()

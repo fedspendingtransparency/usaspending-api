@@ -1,7 +1,12 @@
 from django.core.management import BaseCommand
 from pyspark.sql import SparkSession
 
-from usaspending_api.awards.delta_models import awards_sql_string, financial_accounts_by_awards_sql_string
+from usaspending_api.awards.delta_models import (
+    AWARDS_COLUMNS,
+    awards_sql_string,
+    FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
+    financial_accounts_by_awards_sql_string,
+)
 from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -12,18 +17,25 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
+    RECIPIENT_LOOKUP_COLUMNS,
     recipient_lookup_sql_string,
+    RECIPIENT_PROFILE_COLUMNS,
     recipient_profile_sql_string,
+    SAM_RECIPIENT_COLUMNS,
     sam_recipient_sql_string,
 )
-from usaspending_api.search.delta_models import award_search_create_sql_string
-from usaspending_api.search.models import TransactionSearch, AwardSearchView
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.transactions.delta_models import (
+    TRANSACTION_FABS_COLUMNS,
     transaction_fabs_sql_string,
+    TRANSACTION_FPDS_COLUMNS,
     transaction_fpds_sql_string,
+    TRANSACTION_NORMALIZED_COLUMNS,
     transaction_normalized_sql_string,
+    TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
 )
+from usaspending_api.search.delta_models.award_search import award_search_sql_string
 
 from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
 from usaspending_api.awards.models import (
@@ -36,6 +48,15 @@ from usaspending_api.awards.models import (
 
 
 TABLE_SPEC = {
+    "award_search": {
+        "model": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "partition_column": None,
+        "partition_column_type": None,
+        "delta_table_create_sql": award_search_sql_string,
+        "custom_schema": None,
+    },
     "awards": {
         "model": Award,
         "source_table": "awards",
@@ -44,6 +65,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": awards_sql_string,
         "custom_schema": "",
+        "column_names": list(AWARDS_COLUMNS),
     },
     "financial_accounts_by_awards": {
         "model": FinancialAccountsByAwards,
@@ -53,6 +75,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": financial_accounts_by_awards_sql_string,
         "custom_schema": "award_id LONG",
+        "column_names": list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS),
     },
     "recipient_lookup": {
         "model": RecipientLookup,
@@ -62,6 +85,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": recipient_lookup_sql_string,
         "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
     },
     "recipient_profile": {
         "model": RecipientProfile,
@@ -71,6 +95,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": recipient_profile_sql_string,
         "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_PROFILE_COLUMNS),
     },
     "sam_recipient": {
         "model": DUNS,
@@ -80,6 +105,7 @@ TABLE_SPEC = {
         "partition_column_type": None,
         "delta_table_create_sql": sam_recipient_sql_string,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
+        "column_names": list(SAM_RECIPIENT_COLUMNS),
     },
     "transaction_fabs": {
         "model": TransactionFABS,
@@ -89,6 +115,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_fabs_sql_string,
         "custom_schema": "",
+        "column_names": list(TRANSACTION_FABS_COLUMNS),
     },
     "transaction_fpds": {
         "model": TransactionFPDS,
@@ -98,6 +125,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_fpds_sql_string,
         "custom_schema": "",
+        "column_names": list(TRANSACTION_FPDS_COLUMNS),
     },
     "transaction_normalized": {
         "model": TransactionNormalized,
@@ -107,25 +135,20 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_normalized_sql_string,
         "custom_schema": "",
+        "column_names": list(TRANSACTION_NORMALIZED_COLUMNS),
     },
-    # Additional definitions for use in testing
+    # Additional definitions for use in testing;
+    # These are copies of Views / Materialized Views / Tables from Postgres to Spark to aid in
+    # data comparison between current Postgres data and the data transformed via Spark.
     "transaction_search_testing": {
         "model": TransactionSearch,
         "source_table": "transaction_search",
-        "destination_database": "raw",
+        "destination_database": "test",
         "partition_column": "transaction_id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": transaction_search_create_sql_string,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
-    },
-    "award_search_testing": {
-        "model": AwardSearchView,
-        "source_table": "award_search",
-        "destination_database": "raw",
-        "partition_column": "award_id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": award_search_create_sql_string,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
 }
 
@@ -240,6 +263,12 @@ class Command(BaseCommand):
                 table=source_table,
                 properties=get_jdbc_connection_properties(),
             )
+
+        # Make sure that the column order defined in the Delta table schema matches
+        # that of the Spark dataframe used to pull from the Postgres table. While not
+        # always needed, this should help to prevent any future mismatch between the two.
+        if table_spec.get("column_names"):
+            df = df.select(table_spec.get("column_names"))
 
         # Write to S3
         load_delta_table(spark, df, destination_table_name, True)

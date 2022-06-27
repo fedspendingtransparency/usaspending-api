@@ -1,6 +1,6 @@
 # The order of these fields should always match the order of the
 # SELECT statement in "transaction_search_load_sql_string"
-_transaction_search_types = {
+TRANSACTION_SEARCH_COLUMNS = {
     "transaction_id": "LONG NOT NULL",
     "award_id": "LONG NOT NULL",
     "modification_number": "STRING",
@@ -103,16 +103,16 @@ _transaction_search_types = {
 
 transaction_search_create_sql_string = fr"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in _transaction_search_types.items()])}
+        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
 transaction_search_load_sql_string = fr"""
-    INSERT OVERWRITE rpt.transaction_search
+    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
-        {",".join([col for col in _transaction_search_types])}
+        {",".join([col for col in TRANSACTION_SEARCH_COLUMNS])}
     )
     SELECT
         transaction_normalized.id AS transaction_id,
@@ -323,7 +323,7 @@ transaction_search_load_sql_string = fr"""
     LEFT OUTER JOIN (
         SELECT
             faba.award_id,
-            COLLECT_SET(taa.treasury_account_identifier) treasury_account_identifiers
+            SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier), TRUE) treasury_account_identifiers
         FROM
             global_temp.treasury_appropriation_account taa
         INNER JOIN raw.financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
@@ -369,7 +369,7 @@ transaction_search_load_sql_string = fr"""
             )))
         )
     LEFT OUTER JOIN (
-        SELECT recipient_hash, uei, COLLECT_SET(recipient_level) AS recipient_levels
+        SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level), TRUE) AS recipient_levels
         FROM raw.recipient_profile
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (
@@ -431,30 +431,35 @@ transaction_search_load_sql_string = fr"""
     LEFT JOIN (
         SELECT
             faba.award_id,
-            COLLECT_SET(
-                CONCAT(
-                    'agency=', agency.toptier_code,
-                    'faaid=', fa.agency_identifier,
-                    'famain=', fa.main_account_code,
-                    'aid=', taa.agency_id,
-                    'main=', taa.main_account_code,
-                    'ata=', taa.allocation_transfer_agency_id,
-                    'sub=', taa.sub_account_code,
-                    'bpoa=', taa.beginning_period_of_availability,
-                    'epoa=', taa.ending_period_of_availability,
-                    'a=', taa.availability_type_code
-                )
+            SORT_ARRAY(
+                COLLECT_SET(
+                    CONCAT(
+                        'agency=', agency.toptier_code,
+                        'faaid=', fa.agency_identifier,
+                        'famain=', fa.main_account_code,
+                        'aid=', taa.agency_id,
+                        'main=', taa.main_account_code,
+                        'ata=', taa.allocation_transfer_agency_id,
+                        'sub=', taa.sub_account_code,
+                        'bpoa=', taa.beginning_period_of_availability,
+                        'epoa=', taa.ending_period_of_availability,
+                        'a=', taa.availability_type_code
+                    )
+                ), TRUE
             ) tas_paths,
-            COLLECT_SET(
-                CONCAT(
-                    'aid=', taa.agency_id,
-                    'main=', taa.main_account_code,
-                    'ata=', taa.allocation_transfer_agency_id,
-                    'sub=', taa.sub_account_code,
-                    'bpoa=', taa.beginning_period_of_availability,
-                    'epoa=', taa.ending_period_of_availability,
-                    'a=', taa.availability_type_code
-                )
+            SORT_ARRAY(
+                COLLECT_SET(
+                    CONCAT(
+                        'aid=', taa.agency_id,
+                        'main=', taa.main_account_code,
+                        'ata=', taa.allocation_transfer_agency_id,
+                        'sub=', taa.sub_account_code,
+                        'bpoa=', taa.beginning_period_of_availability,
+                        'epoa=', taa.ending_period_of_availability,
+                        'a=', taa.availability_type_code
+                    )
+                ),
+                TRUE
             ) tas_components
         FROM global_temp.treasury_appropriation_account taa
         INNER JOIN raw.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
@@ -467,15 +472,20 @@ transaction_search_load_sql_string = fr"""
         SELECT
             faba.award_id,
             TO_JSON(
-                COLLECT_SET(
-                    NAMED_STRUCT(
-                        'id', fa.id,
-                        'account_title', fa.account_title,
-                        'federal_account_code', fa.federal_account_code
-                    )
+                SORT_ARRAY(
+                    COLLECT_SET(
+                        NAMED_STRUCT(
+                            'id', fa.id,
+                            'account_title', fa.account_title,
+                            'federal_account_code', fa.federal_account_code
+                        )
+                    ), TRUE
                 )
             ) federal_accounts,
-            COLLECT_SET(disaster_emergency_fund_code) FILTER (WHERE disaster_emergency_fund_code IS NOT NULL) defc
+            SORT_ARRAY(
+                COLLECT_SET(disaster_emergency_fund_code) FILTER (WHERE disaster_emergency_fund_code IS NOT NULL),
+                TRUE
+            ) defc
         FROM global_temp.federal_account fa
         INNER JOIN global_temp.treasury_appropriation_account taa ON fa.id = taa.federal_account_id
         INNER JOIN raw.financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
