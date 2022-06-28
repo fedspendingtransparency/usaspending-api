@@ -24,7 +24,7 @@ from usaspending_api.recipient.delta_models import (
     SAM_RECIPIENT_COLUMNS,
     sam_recipient_sql_string,
 )
-from usaspending_api.search.models import TransactionSearch
+from usaspending_api.search.models import TransactionSearch, AwardSearchView
 from usaspending_api.transactions.delta_models import (
     TRANSACTION_FABS_COLUMNS,
     transaction_fabs_sql_string,
@@ -35,7 +35,7 @@ from usaspending_api.transactions.delta_models import (
     TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
 )
-from usaspending_api.search.delta_models.award_search import award_search_sql_string
+from usaspending_api.search.delta_models.award_search import award_search_create_sql_string
 
 from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
 from usaspending_api.awards.models import (
@@ -48,15 +48,6 @@ from usaspending_api.awards.models import (
 
 
 TABLE_SPEC = {
-    "award_search": {
-        "model": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "partition_column": None,
-        "partition_column_type": None,
-        "delta_table_create_sql": award_search_sql_string,
-        "custom_schema": None,
-    },
     "awards": {
         "model": Award,
         "source_table": "awards",
@@ -149,6 +140,16 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_search_create_sql_string,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+    },
+    "award_search_testing": {
+        "model": AwardSearchView,
+        "source_table": "vw_award_search",
+        "destination_database": "rpt",
+        "partition_column": "award_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": award_search_create_sql_string,
+        "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
+        "STRING, federal_accounts STRING",
     },
 }
 

@@ -75,7 +75,13 @@ def populate_data_for_transaction_search():
     baker.make("references.NAICS", code="123456", _fill_optional=True)
     baker.make("references.PSC", code="12", _fill_optional=True)
     baker.make("references.Cfda", program_number="12.456", _fill_optional=True)
-    baker.make("references.CityCountyStateCode", state_alpha="VA", county_numeric="001", _fill_optional=True)
+    baker.make(
+        "references.CityCountyStateCode",
+        state_alpha="VA",
+        county_numeric="001",
+        _fill_optional=True,
+        county_name="County Name",
+    )
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
     baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
     baker.make("references.PopCounty", state_code="51", county_number="000", _fill_optional=True)
@@ -86,8 +92,24 @@ def populate_data_for_transaction_search():
     defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
 
     # Create awards and transactions
-    asst_award = baker.make("awards.Award", type="07")
-    cont_award = baker.make("awards.Award", type="A")
+    asst_award = baker.make(
+        "awards.Award",
+        type="07",
+        period_of_performance_start_date="2021-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2021-01-01",
+        total_obligation=100.00,
+        total_subsidy_cost=100.00,
+        type_description="Direct Loan",
+    )
+    cont_award = baker.make(
+        "awards.Award",
+        type="A",
+        period_of_performance_start_date="2021-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2021-01-01",
+        total_obligation=100.00,
+    )
 
     asst_trx1 = baker.make(
         "awards.TransactionNormalized",
@@ -98,6 +120,7 @@ def populate_data_for_transaction_search():
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
         _fill_optional=True,
+        last_modified_date="2021-01-01",
     )
     asst_trx2 = baker.make(
         "awards.TransactionNormalized",
@@ -108,6 +131,7 @@ def populate_data_for_transaction_search():
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
         _fill_optional=True,
+        last_modified_date="2021-01-01",
     )
     cont_trx1 = baker.make(
         "awards.TransactionNormalized",
@@ -118,6 +142,7 @@ def populate_data_for_transaction_search():
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
         _fill_optional=True,
+        last_modified_date="2021-01-01",
     )
     cont_trx2 = baker.make(
         "awards.TransactionNormalized",
@@ -128,6 +153,7 @@ def populate_data_for_transaction_search():
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
         _fill_optional=True,
+        last_modified_date="2021-01-01",
     )
 
     baker.make(
@@ -176,6 +202,7 @@ def populate_data_for_transaction_search():
         action_date="2021-07-01",
         awardee_or_recipient_uei="FPDSUEI12345",
         _fill_optional=True,
+        ordering_period_end_date="2020-07-01",
     )
     baker.make(
         "awards.TransactionFPDS",
@@ -185,6 +212,7 @@ def populate_data_for_transaction_search():
         action_date="2021-10-01",
         awardee_or_recipient_uei="FPDSUEI12345",
         _fill_optional=True,
+        ordering_period_end_date="2020-07-01",
     )
 
     # Create account data
@@ -192,12 +220,16 @@ def populate_data_for_transaction_search():
         "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
     )
     tas = baker.make("accounts.TreasuryAppropriationAccount", federal_account=federal_account, _fill_optional=True)
+    dabs = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01")
+    sa = baker.make("submissions.SubmissionAttributes", reporting_period_start="2020-04-02", submission_window=dabs)
+
     baker.make(
         "awards.FinancialAccountsByAwards",
         award=asst_award,
         treasury_account=tas,
         disaster_emergency_fund=defc_l,
         _fill_optional=True,
+        submission=sa,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -205,6 +237,7 @@ def populate_data_for_transaction_search():
         treasury_account=tas,
         disaster_emergency_fund=defc_m,
         _fill_optional=True,
+        submission=sa,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -212,6 +245,7 @@ def populate_data_for_transaction_search():
         treasury_account=tas,
         disaster_emergency_fund=defc_q,
         _fill_optional=True,
+        submission=sa,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -219,6 +253,7 @@ def populate_data_for_transaction_search():
         treasury_account=tas,
         disaster_emergency_fund=None,
         _fill_optional=True,
+        submission=sa,
     )
 
     update_awards()
@@ -249,7 +284,7 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
         "STRING": _handle_string_cast,
     }
     if custom_schema:
-        for schema_change in custom_schema.split(","):
+        for schema_change in custom_schema.split(", "):
             col, new_col_type = schema_change.split()[0].strip(), schema_change.split()[1].strip()
             schema_changes[col] = new_col_type
 
@@ -258,9 +293,12 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
         for k, psql_val in psql_row.items():
             psql_val_type = type(psql_val)
             spark_val = spark_data[i][k]
-
             # Casting values based on the custom schema
-            if k.strip() in schema_changes and schema_changes[k].strip() in schema_type_converters:
+            if (
+                k.strip() in schema_changes
+                and schema_changes[k].strip() in schema_type_converters
+                and psql_val is not None
+            ):
                 # To avoid issues with spaces in JSON strings all cases of a psql_val that is either
                 # a list of dictionaries or a dictionary result in the conversion of the spark_val to match
                 if psql_val_type == list and all([type(val) == dict for val in psql_val]) or psql_val_type == dict:
@@ -287,12 +325,18 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
 
             # Make sure Postgres data is sorted in the case of a list since the Spark list data is sorted in ASC order
             if isinstance(psql_val, list):
-                psql_val = sorted(psql_val)
+                if len(psql_val) > 0 and isinstance(psql_val[0], dict):
+                    psql_val = sorted(psql_val, key=lambda x: x.get(list(x.keys())[0]))
+                else:
+                    psql_val = sorted(psql_val)
+                if isinstance(spark_val, str):
+                    spark_val = [json.loads(idx.replace("'", '"')) for idx in [spark_val]][0]
+                    spark_val = sorted(spark_val, key=lambda x: x.get(list(x.keys())[0]))
 
             if psql_val != spark_val:
                 raise Exception(
                     f"Not equal: col:{k} "
-                    f"left(psql):{psql_val} ({psql_val_type}) "
+                    f"left(psql):{psql_val} ({type(psql_val)}) "
                     f"right(spark):{spark_val} ({type(spark_val)})"
                 )
     return datasets_match
@@ -564,5 +608,33 @@ def test_load_table_to_delta_for_transaction_search_alt_db_and_name(
         s3_unittest_data_bucket,
         alt_db="my_alt_db",
         alt_name="transaction_search_alt_name",
+        load_command="load_query_to_delta",
+    )
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_award_search(spark, s3_unittest_data_bucket, populate_data_for_transaction_search):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded(spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta")
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_award_search_testing(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    _verify_delta_table_loaded(spark, "award_search_testing", s3_unittest_data_bucket)
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_award_search_alt_db_and_name(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded(
+        spark,
+        "award_search",
+        s3_unittest_data_bucket,
+        alt_db="my_alt_db",
+        alt_name="award_search_alt_name",
         load_command="load_query_to_delta",
     )
