@@ -187,8 +187,11 @@ class Command(BaseCommand):
                         f"ALTER TABLE {temp_destination_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}"
                     )
             if alter_column_sql:
+                logger.info(f"Before loading, we're altering columns to their delta-side types for columns:"
+                            f" {list(special_columns)}")
                 with db.connection.cursor() as cursor:
                     cursor.execute(";".join(alter_column_sql))
+                logger.info(f"Finished updating columns: {list(special_columns)}")
 
         # Read from Delta
         df = spark.table(delta_table)
@@ -207,7 +210,6 @@ class Command(BaseCommand):
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_destination_table}")
 
         if source_table or source_schema:
-            # Recast the special case columns to their postgres equivalents
             alter_column_sql = []
             for column_name, column_type in special_columns.items():
                 delta_type = SPECIAL_TYPES_MAPPING[column_type]["postgres"].format(column_name=column_name)
@@ -215,8 +217,11 @@ class Command(BaseCommand):
                     f"ALTER TABLE {temp_destination_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}"
                 )
             if alter_column_sql:
+                logger.info(f"With the data loaded, we're altering columns back to their postgres-side types for"
+                            f" columns: {list(special_columns)}")
                 with db.connection.cursor() as cursor:
                     cursor.execute(";".join(alter_column_sql))
+                logger.info(f"Finished updating columns: {list(special_columns)}")
 
             if source_table:
                 # Load indexes if applicable
