@@ -234,7 +234,7 @@ def _handle_string_cast(val: str) -> Union[str, dict]:
     """
     try:
         return json.loads(val)
-    except (TypeError, json.decoder.JSONDecodeError):
+    except TypeError:
         pass
     return str(val)
 
