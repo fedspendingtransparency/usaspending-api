@@ -103,6 +103,11 @@ class Command(BaseCommand):
             temp_destination_table_name = f"{delta_table_name}_temp"
         temp_destination_table = f"{temp_schema}.{temp_destination_table_name}"
 
+        summary_msg = f"Copying delta table{delta_table} to a Postgres temp table {temp_destination_table}."
+        if source_table:
+            summary_msg = f"{summary_msg} The temp table will be based on the postgres table {source_table}"
+        logger.info(summary_msg)
+
         # Resolve JDBC URL for Source Database
         jdbc_url = get_jdbc_url()
         if not jdbc_url:
