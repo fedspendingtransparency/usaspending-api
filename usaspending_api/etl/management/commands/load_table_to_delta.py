@@ -148,7 +148,8 @@ TABLE_SPEC = {
         "partition_column": "award_id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": award_search_create_sql_string,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
+        "STRING, federal_accounts STRING",
     },
 }
 

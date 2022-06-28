@@ -284,7 +284,7 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
         "STRING": _handle_string_cast,
     }
     if custom_schema:
-        for schema_change in custom_schema.split(","):
+        for schema_change in custom_schema.split(", "):
             col, new_col_type = schema_change.split()[0].strip(), schema_change.split()[1].strip()
             schema_changes[col] = new_col_type
 
