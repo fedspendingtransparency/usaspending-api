@@ -307,7 +307,7 @@ def _verify_delta_table_loaded_to_delta(
     alt_name: str = None,
     load_command="load_table_to_delta",
 ):
-    """Generic function that uses the create_delta_table and load_table_to_delta ommands to create and load the given
+    """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the given
     table and assert it was created and loaded as expected
     """
 
@@ -363,7 +363,7 @@ def _verify_delta_table_loaded_from_delta(
     call_command(load_command, *cmd_args)
 
     # get the postgres data to compare
-    source_table = TABLE_SPEC[delta_table_name]["source_table"]
+    source_table = TABLE_SPEC[delta_table_name]["source_table"] or TABLE_SPEC[delta_table_name]["swap_table"]
     temp_schema = "temp"
     if source_table:
         tmp_table_name = f"{temp_schema}.{source_table}_temp"

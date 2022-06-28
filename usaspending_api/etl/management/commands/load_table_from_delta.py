@@ -22,9 +22,14 @@ SPECIAL_TYPES_MAPPING = {
     "UUID": {"postgres": "UUID USING {column_name}::UUID", "delta": "TEXT"},
     db.models.JSONField: {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
     "JSONB": {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
-    db.models.DateTimeField: {"postgres": "TIMESTAMP WITH TIME ZONE AT TIME ZONE 'UTC'",
-                              "delta": "TIMESTAMP WITHOUT TIME ZONE"},
-    "TIMESTAMP": {"postgres": "TIMESTAMP WITH TIME ZONE AT TIME ZONE 'UTC'", "delta": "TIMESTAMP WITHOUT TIME ZONE"},
+    db.models.DateTimeField: {
+        "postgres": "TIMESTAMP WITH TIME ZONE USING {column_name} AT TIME ZONE 'UTC'",
+        "delta": "TIMESTAMP WITHOUT TIME ZONE",
+    },
+    "TIMESTAMP": {
+        "postgres": "TIMESTAMP WITH TIME ZONE USING {column_name} AT TIME ZONE 'UTC'",
+        "delta": "TIMESTAMP WITHOUT TIME ZONE",
+    },
 }
 
 
@@ -54,8 +59,7 @@ class Command(BaseCommand):
             "--alt-delta-name",
             type=str,
             required=False,
-            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table"
-            "name",
+            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table" "name",
         )
 
     def handle(self, *args, **options):
@@ -89,26 +93,26 @@ class Command(BaseCommand):
         delta_table_name = options["alt_delta_name"] or delta_table
         delta_table = f"{destination_database}.{delta_table_name}" if destination_database else delta_table_name
 
-        # Postgres side
-        source_table = None
-        source_model = table_spec["model"]
-        source_database = table_spec["source_database"]
-        source_table_name = table_spec["source_table"]
-        source_schema = table_spec["source_schema"]
-        if source_table_name:
-            source_table = f"{source_database}.{source_table_name}" if source_database else source_table_name
+        # Postgres side - source
+        postgres_table = None
+        postgres_model = table_spec["model"]
+        postgres_schema = table_spec["source_database"] or table_spec["swap_schema"]
+        postgres_table_name = table_spec["source_table"] or table_spec["swap_table"]
+        postgres_cols = table_spec["source_schema"]
+        if postgres_table_name:
+            postgres_table = f"{postgres_schema}.{postgres_table_name}" if postgres_schema else postgres_table_name
 
-        # Temp side
+        # Postgres side - temp
         temp_schema = "temp"
-        if source_table:
-            temp_destination_table_name = f"{source_table_name}_temp"
+        if postgres_table:
+            temp_table_name = f"{postgres_table_name}_temp"
         else:
-            temp_destination_table_name = f"{delta_table_name}_temp"
-        temp_destination_table = f"{temp_schema}.{temp_destination_table_name}"
+            temp_table_name = f"{delta_table_name}_temp"
+        temp_table = f"{temp_schema}.{temp_table_name}"
 
-        summary_msg = f"Copying delta table{delta_table} to a Postgres temp table {temp_destination_table}."
-        if source_table:
-            summary_msg = f"{summary_msg} The temp table will be based on the postgres table {source_table}"
+        summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
+        if postgres_table:
+            summary_msg = f"{summary_msg} The temp table will be based on the postgres table {postgres_table}"
         logger.info(summary_msg)
 
         # Resolve JDBC URL for Source Database
@@ -124,7 +128,7 @@ class Command(BaseCommand):
                 SELECT 1
                 FROM information_schema.tables
                 WHERE table_schema = '{temp_schema}'
-                    AND table_name = '{temp_destination_table_name}')
+                    AND table_name = '{temp_table_name}')
         """
         with db.connection.cursor() as cursor:
             cursor.execute(temp_dest_table_exists_sql)
@@ -132,66 +136,68 @@ class Command(BaseCommand):
 
         # If it does and we're recreating it, drop it first
         if temp_dest_table_exists:
-            logger.info(f"{temp_destination_table} exists and recreate argument provided. Dropping first.")
+            logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
-            clear_table_sql = f"DROP TABLE {temp_destination_table}"
+            clear_table_sql = f"DROP TABLE {temp_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
-            logger.info(f"{temp_destination_table} dropped.")
+            logger.info(f"{temp_table} dropped.")
 
         # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
         # the extra stuff (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
-        # If there is no source_table to base it on, it just relies on spark to make it and work with delta table
-        if source_table or source_schema:
-            if source_table:
+        # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
+        if postgres_table or postgres_cols:
+            if postgres_table:
                 create_temp_sql = f"""
-                    CREATE TABLE {temp_destination_table} (
-                        LIKE {source_table} INCLUDING DEFAULTS INCLUDING IDENTITY
+                    CREATE TABLE {temp_table} (
+                        LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
                     )
                 """
             else:
                 create_temp_sql = f"""
-                    CREATE TABLE {temp_destination_table} (
-                        {", ".join([f'{key} {val}' for key, val in source_schema.items()])}
+                    CREATE TABLE {temp_table} (
+                        {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
                     )
                 """
             with db.connection.cursor() as cursor:
-                logger.info(f"Creating {temp_destination_table}")
+                logger.info(f"Creating {temp_table}")
                 cursor.execute(create_temp_sql)
-                logger.info(f"{temp_destination_table} created.")
+                logger.info(f"{temp_table} created.")
 
                 # Copy over the constraints before indexes
                 # Note: we could of included constraints above (`INCLUDING CONSTRAINTS`) but we need to drop the
                 #       foreign key ones
-                if source_table:
-                    logger.info(f"Copying constraints over from {source_table}")
+                if postgres_table:
+                    logger.info(f"Copying constraints over from {postgres_table}")
                     copy_constraint_sql = make_copy_constraints(
-                        cursor, source_table, temp_destination_table, drop_foreign_keys=True
+                        cursor, postgres_table, temp_table, drop_foreign_keys=True
                     )
                     if copy_constraint_sql:
                         cursor.execute("; ".join(copy_constraint_sql))
-                    logger.info(f"Constraints from {source_table} copied over")
+                    logger.info(f"Constraints from {postgres_table} copied over")
 
             # Converting unsupported data types on spark to their delta equivalent
             # We will cast these back to their original intended types afterwards
             # Only applicable if we're copying down a table that was already in postgres
             alter_column_sql = []
-            source_columns = []
-            if source_model:
-                source_columns = [(column.name, type(column)) for column in source_model._meta.get_fields()]
+            postgres_cols = []
+            if postgres_model:
+                postgres_cols = [(column.name, type(column)) for column in postgres_model._meta.get_fields()]
             else:
-                source_columns = list(source_schema.items())
+                postgres_cols = list(postgres_cols.items())
 
-            for column_name, column_type in source_columns:
+            for column_name, column_type in postgres_cols:
                 if column_type in SPECIAL_TYPES_MAPPING:
                     special_columns[column_name] = column_type
                     delta_type = SPECIAL_TYPES_MAPPING[column_type]["delta"].format(column_name=column_name)
                     alter_column_sql.append(
-                        f"ALTER TABLE {temp_destination_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}"
+                        f"ALTER TABLE {temp_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}"
                     )
             if alter_column_sql:
-                logger.info(f"Before loading, we're altering columns to their delta-side types for columns:"
-                            f" {list(special_columns)}")
+                logger.info(
+                    f"Before loading, we're altering columns to their delta-side types for columns:"
+                    f" {list(special_columns)}"
+                )
                 with db.connection.cursor() as cursor:
                     cursor.execute(";".join(alter_column_sql))
                 logger.info(f"Finished updating columns: {list(special_columns)}")
@@ -206,34 +212,34 @@ class Command(BaseCommand):
             df = df.select(table_spec.get("column_names"))
 
         # Write to Postgres
-        logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_destination_table}")
+        logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table}")
         df.write.options(customSchema=custom_schema, truncate=True).jdbc(
-            url=jdbc_url, table=temp_destination_table, mode="overwrite", properties=get_jdbc_connection_properties()
+            url=jdbc_url, table=temp_table, mode="overwrite", properties=get_jdbc_connection_properties()
         )
-        logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_destination_table}")
+        logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")
 
-        if source_table or source_schema:
+        if postgres_table or postgres_cols:
             alter_column_sql = []
             for column_name, column_type in special_columns.items():
                 delta_type = SPECIAL_TYPES_MAPPING[column_type]["postgres"].format(column_name=column_name)
-                alter_column_sql.append(
-                    f"ALTER TABLE {temp_destination_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}"
-                )
+                alter_column_sql.append(f"ALTER TABLE {temp_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}")
             if alter_column_sql:
-                logger.info(f"With the data loaded, we're altering columns back to their postgres-side types for"
-                            f" columns: {list(special_columns)}")
+                logger.info(
+                    f"With the data loaded, we're altering columns back to their postgres-side types for"
+                    f" columns: {list(special_columns)}"
+                )
                 with db.connection.cursor() as cursor:
                     cursor.execute(";".join(alter_column_sql))
                 logger.info(f"Finished updating columns: {list(special_columns)}")
 
-            if source_table:
+            if postgres_table:
                 # Load indexes if applicable
                 with db.connection.cursor() as cursor:
                     # Copy over the indexes, preserving the names (mostly, includes "_temp")
                     # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
                     #       which would run into issues with migrations that have specific names.
                     #       Additionally, we want to run this after we loaded in the data for performance.
-                    copy_index_sql = make_copy_indexes(cursor, source_table, temp_destination_table)
+                    copy_index_sql = make_copy_indexes(cursor, postgres_table, temp_table)
                     if copy_index_sql:
                         cursor.execute("; ".join(copy_index_sql))
 
