@@ -42,16 +42,16 @@ class Command(BaseCommand):
             choices=list(TABLE_SPEC),
         )
         parser.add_argument(
-            "--alt-db",
+            "--alt-delta-db",
             type=str,
             required=False,
-            help="An alternate database (aka schema) in which to create this table, overriding the TABLE_SPEC db",
+            help="An alternate delta database (aka schema) in which to load, overriding the TABLE_SPEC db",
         )
         parser.add_argument(
-            "--alt-name",
+            "--alt-delta-name",
             type=str,
             required=False,
-            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
+            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table"
             "name",
         )
 
@@ -82,8 +82,8 @@ class Command(BaseCommand):
         special_columns = {}
 
         # Delta side
-        destination_database = options["alt_db"] or table_spec["destination_database"]
-        delta_table_name = options["alt_name"] or delta_table
+        destination_database = options["alt_delta_db"] or table_spec["destination_database"]
+        delta_table_name = options["alt_delta_name"] or delta_table
         delta_table = f"{destination_database}.{delta_table_name}" if destination_database else delta_table_name
 
         # Postgres side

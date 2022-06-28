@@ -353,10 +353,10 @@ def _verify_delta_table_loaded_from_delta(
     """
     cmd_args = [f"--delta-table={delta_table_name}"]
     if alt_db:
-        cmd_args += [f"--alt-db={alt_db}"]
+        cmd_args += [f"--alt-delta-db={alt_db}"]
     expected_table_name = delta_table_name
     if alt_name:
-        cmd_args += [f"--alt-name={alt_name}"]
+        cmd_args += [f"--alt-delta-name={alt_name}"]
         expected_table_name = alt_name
 
     # table already made, let's load it
