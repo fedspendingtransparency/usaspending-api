@@ -158,7 +158,7 @@ class Command(BaseCommand):
                 logger.info(f"{temp_destination_table} created.")
 
                 # Copy over the constraints before indexes
-                # Note: we could of included indexes above (`INCLUDING CONSTRAINTS`) but we need to drop the
+                # Note: we could of included constraints above (`INCLUDING CONSTRAINTS`) but we need to drop the
                 #       foreign key ones
                 if source_table:
                     logger.info(f"Copying constraints over from {source_table}")
