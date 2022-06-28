@@ -98,6 +98,13 @@ class Award(DataSourceTrackedModel):
         blank=True,
         help_text="The total of the face_value_loan_guarantee from associated transactions",
     )
+    total_indirect_federal_sharing = models.DecimalField(
+        max_digits=23,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="The total of the indirect_federal_sharing from associated transactions",
+    )
     awarding_agency = models.ForeignKey(
         "references.Agency",
         on_delete=models.DO_NOTHING,

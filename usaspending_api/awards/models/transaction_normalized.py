@@ -62,6 +62,13 @@ class TransactionNormalized(models.Model):
         blank=True,
         help_text="The face_value_loan_guarantee for loan type transactions",
     )
+    indirect_federal_sharing = models.DecimalField(
+        max_digits=23,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="The indirect_federal_sharing for this transaction",
+    )
     modification_number = models.TextField(
         blank=True,
         null=True,

@@ -11,6 +11,7 @@ AWARDS_COLUMNS = {
     "fain": "STRING",
     "uri": "STRING",
     "total_obligation": "NUMERIC(23,2)",
+    "total_indirect_federal_sharing": "NUMERIC(23,2)",
     "base_and_all_options_value": "NUMERIC(23,2)",
     "total_subsidy_cost": "NUMERIC(23,2)",
     "date_signed": "DATE",

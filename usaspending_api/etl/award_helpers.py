@@ -47,7 +47,8 @@ txn_totals AS (
     SUM(tn.original_loan_subsidy_cost)  AS total_subsidy_cost,
     SUM(tn.funding_amount)              AS total_funding_amount,
     SUM(tn.face_value_loan_guarantee)   AS total_loan_value,
-    SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount
+    SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount,
+    SUM(tn.indirect_federal_sharing)    AS total_indirect_federal_sharing
   FROM transaction_normalized tn
   {predicate}
   GROUP BY tn.award_id
@@ -76,7 +77,8 @@ SET
   total_funding_amount                    = t.total_funding_amount,
   total_loan_value                        = t.total_loan_value,
   total_obligation                        = t.total_obligation,
-  total_subsidy_cost                      = t.total_subsidy_cost
+  total_subsidy_cost                      = t.total_subsidy_cost,
+  total_indirect_federal_sharing          = t.total_indirect_federal_sharing
 
 FROM txn_earliest e
 INNER JOIN txn_latest   l ON e.award_id = l.award_id
@@ -104,6 +106,7 @@ WHERE
     OR a.total_loan_value                        IS DISTINCT FROM t.total_loan_value
     OR a.total_obligation                        IS DISTINCT FROM t.total_obligation
     OR a.total_subsidy_cost                      IS DISTINCT FROM t.total_subsidy_cost
+    or a.total_indirect_federal_sharing          IS DISTINCT FROM t.total_indirect_federal_sharing
   )
 """
 
