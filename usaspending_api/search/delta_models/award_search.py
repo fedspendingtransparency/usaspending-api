@@ -99,7 +99,7 @@ award_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-award_search_load_sql_string = f"""
+award_search_load_sql_string = fr"""
     INSERT OVERWRITE rpt.award_search
         (
             {",".join([col for col in _award_search_types])}
@@ -135,8 +135,14 @@ award_search_load_sql_string = f"""
     WHEN awards.total_obligation < 100000000.0 THEN '25M..100M'
     WHEN awards.total_obligation < 500000000.0 THEN '100M..500M'
     ELSE NULL END AS total_obl_bin,
-  COALESCE(awards.total_subsidy_cost, 0) AS total_subsidy_cost,
-  COALESCE(awards.total_loan_value, 0) AS total_loan_value,
+  CAST(
+    COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE 0 END, 0 ) AS NUMERIC(23, 2) ) AS total_subsidy_cost,
+CAST(
+    COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_loan_value
+            ELSE 0 END, 0 ) AS NUMERIC(23, 2) ) AS total_loan_value,
 
   recipient_lookup.recipient_hash AS recipient_hash,
   RECIPIENT_HASH_AND_LEVELS.recipient_levels,
@@ -221,7 +227,7 @@ award_search_load_sql_string = f"""
 
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
-  TREASURY_ACCT.disaster_emergency_fund_codes,
+  SORT_ARRAY(TREASURY_ACCT.disaster_emergency_fund_codes),
   DEFC.covid_spending_by_defc,
   DEFC.total_covid_outlay,
   DEFC.total_covid_obligation

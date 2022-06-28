@@ -48,15 +48,6 @@ from usaspending_api.awards.models import (
 
 
 TABLE_SPEC = {
-    "award_search_testing": {
-        "model": AwardSearchView,
-        "source_table": "award_search",
-        "destination_database": "rpt",
-        "partition_column": "award_id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": award_search_create_sql_string,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
-    },
     "awards": {
         "model": Award,
         "source_table": "awards",
@@ -149,6 +140,15 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_search_create_sql_string,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+    },
+    "award_search_testing": {
+        "model": AwardSearchView,
+        "source_table": "award_search",
+        "destination_database": "rpt",
+        "partition_column": "award_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": award_search_create_sql_string,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
     },
 }
 

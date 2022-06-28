@@ -69,7 +69,7 @@ def get_active_spark_context() -> Optional[SparkContext]:
     return SparkContext._active_spark_context
 
 
-def get_active_spark_session() -> Optional[SparkContext]:
+def get_active_spark_session() -> Optional[SparkSession]:
     """Returns the active ``SparkSession`` if there is one and it's not stopped, otherwise returns None"""
     if is_spark_context_stopped():
         return None

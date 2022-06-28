@@ -75,7 +75,13 @@ def populate_data_for_transaction_search():
     baker.make("references.NAICS", code="123456", _fill_optional=True)
     baker.make("references.PSC", code="12", _fill_optional=True)
     baker.make("references.Cfda", program_number="12.456", _fill_optional=True)
-    baker.make("references.CityCountyStateCode", state_alpha="VA", county_numeric="001", _fill_optional=True)
+    baker.make(
+        "references.CityCountyStateCode",
+        state_alpha="VA",
+        county_numeric="001",
+        _fill_optional=True,
+        county_name="County Name",
+    )
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
     baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
     baker.make("references.PopCounty", state_code="51", county_number="000", _fill_optional=True)
@@ -287,7 +293,6 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
         for k, psql_val in psql_row.items():
             psql_val_type = type(psql_val)
             spark_val = spark_data[i][k]
-
             # Casting values based on the custom schema
             if k.strip() in schema_changes and schema_changes[k].strip() in schema_type_converters:
                 # To avoid issues with spaces in JSON strings all cases of a psql_val that is either
@@ -316,7 +321,13 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
 
             # Make sure Postgres data is sorted in the case of a list since the Spark list data is sorted in ASC order
             if isinstance(psql_val, list):
-                psql_val = sorted(psql_val)
+                if len(psql_val) > 0 and isinstance(psql_val[0], dict):
+                    psql_val = sorted(psql_val, key=lambda x: x.get(list(x.keys())[0]))
+                else:
+                    psql_val = sorted(psql_val)
+                if isinstance(spark_val, str):
+                    spark_val = [json.loads(idx.replace("'", '"')) for idx in [spark_val]][0]
+                    spark_val = sorted(spark_val, key=lambda x: x.get(list(x.keys())[0]))
 
             if psql_val != spark_val:
                 raise Exception(
