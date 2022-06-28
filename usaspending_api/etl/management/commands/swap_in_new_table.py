@@ -140,9 +140,7 @@ class Command(BaseCommand):
         cursor.execute(f"ANALYZE VERBOSE {self.db_table_name}")
         cursor.execute(f"GRANT SELECT ON {self.db_table_name} TO readonly")
 
-    def validate_state_of_tables(self, cursor, options):
-        logger.info(f"Running validation to swap: {self.db_table_name} with {self.temp_db_table_name}.")
-
+    def validate_tables(self, cursor):
         logger.info("Verifying that the old table exists.")
         cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.db_table_name}'")
         temp_tables = cursor.fetchall()
@@ -155,11 +153,12 @@ class Command(BaseCommand):
         if len(temp_tables) == 0:
             raise ValueError(f"There are no tables matching: {self.temp_db_table_name}")
 
+    def validate_indexes(self, cursor):
         logger.info("Verifying that the same number of indexes exist for the old and new table.")
-        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_db_table_name}' ORDER BY indexname")
+        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_db_table_name}'")
         temp_indexes = ordered_dictionary_fetcher(cursor)
         self.query_result_lookup["temp_table_indexes"] = temp_indexes
-        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.db_table_name}' ORDER BY indexname")
+        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.db_table_name}'")
         curr_indexes = ordered_dictionary_fetcher(cursor)
         self.query_result_lookup["curr_table_indexes"] = curr_indexes
         if len(temp_indexes) != len(curr_indexes):
@@ -180,20 +179,26 @@ class Command(BaseCommand):
                     f"The index definitions are different for the tables: {self.temp_db_table_name} and {self.db_table_name}"
                 )
 
-        if not options["allow_foreign_key"]:
-            logger.info("Verifying that Foreign Key constraints are not found.")
-            cursor.execute(
-                f"SELECT * FROM information_schema.table_constraints"
-                f" WHERE table_name IN ('{self.temp_db_table_name}', '{self.db_table_name}')"
-                f" AND constraint_type = 'FOREIGN KEY'"
+    def validate_foreign_keys(self, cursor):
+        logger.info("Verifying that Foreign Key constraints are not found.")
+        cursor.execute(
+            f"SELECT * FROM information_schema.table_constraints"
+            f" WHERE table_name IN ('{self.temp_db_table_name}', '{self.db_table_name}')"
+            f" AND constraint_type = 'FOREIGN KEY'"
+        )
+        constraints = cursor.fetchall()
+        if len(constraints) > 0:
+            raise ValueError(
+                f"Foreign Key constraints are not allowed on '{self.temp_db_table_name}' or '{self.db_table_name}'."
+                " It is advised to not allow Foreign Key constraints on swapped tables to avoid potential deadlock."
+                " However, if needed they can be allowed with the `--allow-foreign-key` flag."
             )
-            constraints = cursor.fetchall()
-            if len(constraints) > 0:
-                raise ValueError(
-                    f"Foreign Key constraints are not allowed on '{self.temp_db_table_name}' or '{self.db_table_name}'."
-                    " It is advised to not allow Foreign Key constraints on swapped tables to avoid potential deadlock."
-                    " However, if needed they can be allowed with the `--allow-foreign-key` flag."
-                )
+
+    def validate_constraints(self, cursor):
+        # Used to sort constraints for comparison since sorting in the original SQL query that retrieves them
+        # would not be taking into account that some would have "_temp" appended
+        def _sort_key(val):
+            return val["constraint_name"]
 
         logger.info("Verifying that the same number of constraints exist for the old and new table.")
         cursor.execute(
@@ -238,12 +243,12 @@ class Command(BaseCommand):
             }
             for val in curr_constraints
         ]
-
-        if temp_constraints != curr_constraints:
+        if sorted(temp_constraints, key=_sort_key) != sorted(curr_constraints, key=_sort_key):
             raise ValueError(
                 f"The constraint definitions are different for the tables: {self.temp_db_table_name} and {self.db_table_name}."
             )
 
+    def validate_columns(self, cursor):
         logger.info("Verifying that the same number of columns exist for the old and new table.")
         columns_to_compare = [
             "column_name",
@@ -275,3 +280,13 @@ class Command(BaseCommand):
             raise ValueError(
                 f"The column definitions are different for the tables: {self.temp_db_table_name} and {self.db_table_name}."
             )
+
+    def validate_state_of_tables(self, cursor, options):
+        logger.info(f"Running validation to swap: {self.db_table_name} with {self.temp_db_table_name}.")
+
+        self.validate_tables(cursor)
+        self.validate_indexes(cursor)
+        if not options["allow_foreign_key"]:
+            self.validate_foreign_keys(cursor)
+        self.validate_constraints(cursor)
+        self.validate_columns(cursor)
