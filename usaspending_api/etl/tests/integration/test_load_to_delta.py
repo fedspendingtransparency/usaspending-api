@@ -294,7 +294,11 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
             psql_val_type = type(psql_val)
             spark_val = spark_data[i][k]
             # Casting values based on the custom schema
-            if k.strip() in schema_changes and schema_changes[k].strip() in schema_type_converters:
+            if (
+                k.strip() in schema_changes
+                and schema_changes[k].strip() in schema_type_converters
+                and psql_val is not None
+            ):
                 # To avoid issues with spaces in JSON strings all cases of a psql_val that is either
                 # a list of dictionaries or a dictionary result in the conversion of the spark_val to match
                 if psql_val_type == list and all([type(val) == dict for val in psql_val]) or psql_val_type == dict:
