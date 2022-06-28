@@ -15,13 +15,16 @@ from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_gene
     make_copy_constraints,
 )
 
+# Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
+#       to the proper postgres type, since pySpark doesn't automatically support this conversion.
 SPECIAL_TYPES_MAPPING = {
     db.models.UUIDField: {"postgres": "UUID USING {column_name}::UUID", "delta": "TEXT"},
     "UUID": {"postgres": "UUID USING {column_name}::UUID", "delta": "TEXT"},
     db.models.JSONField: {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
     "JSONB": {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
-    db.models.DateTimeField: {"postgres": "TIMESTAMP WITH TIME ZONE", "delta": "TIMESTAMP WITHOUT TIME ZONE"},
-    "TIMESTAMP": {"postgres": "TIMESTAMP WITH TIME ZONE", "delta": "TIMESTAMP WITHOUT TIME ZONE"},
+    db.models.DateTimeField: {"postgres": "TIMESTAMP WITH TIME ZONE AT TIME ZONE 'UTC'",
+                              "delta": "TIMESTAMP WITHOUT TIME ZONE"},
+    "TIMESTAMP": {"postgres": "TIMESTAMP WITH TIME ZONE AT TIME ZONE 'UTC'", "delta": "TIMESTAMP WITHOUT TIME ZONE"},
 }
 
 
