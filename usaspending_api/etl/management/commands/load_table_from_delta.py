@@ -38,7 +38,7 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The source Delta Table to read the data",
-            choices=list(TABLE_SPEC.keys()),
+            choices=list(TABLE_SPEC),
         )
         parser.add_argument(
             "--alt-db",
