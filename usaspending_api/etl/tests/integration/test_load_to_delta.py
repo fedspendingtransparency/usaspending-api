@@ -332,7 +332,7 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
             if psql_val != spark_val:
                 raise Exception(
                     f"Not equal: col:{k} "
-                    f"left(psql):{psql_val} ({psql_val_type}) "
+                    f"left(psql):{psql_val} ({type(psql_val)}) "
                     f"right(spark):{spark_val} ({type(spark_val)})"
                 )
     return datasets_match

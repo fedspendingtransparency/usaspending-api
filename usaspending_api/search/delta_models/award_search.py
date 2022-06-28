@@ -139,13 +139,12 @@ award_search_load_sql_string = fr"""
     COALESCE(
         CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
             ELSE 0 END, 0 ) AS NUMERIC(23, 2) ) AS total_subsidy_cost,
-CAST(
+  CAST(
     COALESCE(
         CASE WHEN awards.type IN('07', '08') THEN awards.total_loan_value
             ELSE 0 END, 0 ) AS NUMERIC(23, 2) ) AS total_loan_value,
-
-  recipient_lookup.recipient_hash AS recipient_hash,
-  RECIPIENT_HASH_AND_LEVELS.recipient_levels,
+  FORMAT_AS_UUID(RECIPIENT_HASH_AND_LEVELS.recipient_hash) AS recipient_hash,
+  RECIPIENT_HASH_AND_LEVELS.recipient_levels AS recipient_levels,
   UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
   COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
