@@ -143,7 +143,7 @@ TABLE_SPEC = {
     },
     "award_search_testing": {
         "model": AwardSearchView,
-        "source_table": "award_search",
+        "source_table": "vw_award_search",
         "destination_database": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",

@@ -100,7 +100,7 @@ award_search_create_sql_string = fr"""
 """
 
 award_search_load_sql_string = fr"""
-    INSERT OVERWRITE rpt.award_search
+    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
             {",".join([col for col in _award_search_types])}
         )
