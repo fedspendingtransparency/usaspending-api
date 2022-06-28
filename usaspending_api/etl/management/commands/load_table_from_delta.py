@@ -28,8 +28,9 @@ SPECIAL_TYPES_MAPPING = {
 class Command(BaseCommand):
 
     help = """
-    This command reads data from a Delta table and copies it into a corresponding Postgres database (under a temp name).
-    As of now, it only supports a full reload of a table. All existing data will be deleted before new data is written.
+    This command reads data from a Delta table and copies it into a corresponding Postgres database table (under a
+    temp name). As of now, it only supports a full reload of a table. All existing data will be deleted before new data
+    is written.
     """
 
     def add_arguments(self, parser):
