@@ -26,6 +26,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "funding_agency_id": "INTEGER",
     "original_loan_subsidy_cost": "NUMERIC(23,2)",
     "face_value_loan_guarantee": "NUMERIC(23,2)",
+    "indirect_federal_sharing": "NUMERIC(23,2)",
     "funding_amount": "NUMERIC(23,2)",
     "non_federal_funding_amount": "NUMERIC(23,2)",
     "unique_award_key": "STRING",
