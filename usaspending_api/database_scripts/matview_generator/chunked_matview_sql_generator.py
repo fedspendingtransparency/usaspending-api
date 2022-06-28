@@ -6,6 +6,7 @@ import hashlib
 import os
 import copy
 import re
+import logging
 
 from usaspending_api.database_scripts.matview_generator.shared_sql_generator import (
     COMPONENT_DIR,
@@ -18,6 +19,9 @@ from usaspending_api.database_scripts.matview_generator.shared_sql_generator imp
     TEMPLATE,
 )
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
+
+logger = logging.getLogger()
+
 
 # Usage: python chunked_matview_sql_generator.py --file <file_name> (from usaspending_api/database_scripts/matview_generator)
 #        ^--- Will clobber files in usaspending_api/database_scripts/matviews
@@ -133,7 +137,7 @@ def make_copy_indexes(cursor, source_table, dest_table):
         ix_name = ix_dict["indexname"]
         dest_ix_name = f"{ix_name}_temp"
         if dest_ix_name in dest_indexes:
-            # if it's already made, ignore
+            logger.info(f"Index {dest_ix_name} already in {dest_table}. Skipping.")
             continue
 
         create_ix_sql = ix_dict["indexdef"]
