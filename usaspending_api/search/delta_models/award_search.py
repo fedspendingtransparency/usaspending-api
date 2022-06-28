@@ -43,8 +43,8 @@ _award_search_types = {
     "funding_toptier_agency_code": "STRING",
     "awarding_subtier_agency_code": "STRING",
     "funding_subtier_agency_code": "STRING",
-    "funding_toptier_agency_id": "STRING",
-    "funding_subtier_agency_id": "STRING",
+    "funding_toptier_agency_id": "INT",
+    "funding_subtier_agency_id": "INT",
     "recipient_location_country_code": "STRING",
     "recipient_location_country_name": "STRING",
     "recipient_location_state_code": "STRING",
@@ -120,7 +120,10 @@ award_search_load_sql_string = f"""
     COALESCE(
         CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
             ELSE awards.total_obligation END, 0) AS NUMERIC(23, 2) ) AS award_amount,
-  CAST(COALESCE(awards.total_obligation, 0) AS NUMERIC(23, 2)) AS total_obligation,
+  CAST(
+    COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN 0
+            ELSE awards.total_obligation END, 0) AS NUMERIC(23, 2) ) AS total_obligation,
   awards.description,
   CASE WHEN awards.total_obligation = 500000000.0 THEN '500M'
     WHEN awards.total_obligation = 100000000.0 THEN '100M'
@@ -135,8 +138,8 @@ award_search_load_sql_string = f"""
   COALESCE(awards.total_subsidy_cost, 0) AS total_subsidy_cost,
   COALESCE(awards.total_loan_value, 0) AS total_loan_value,
 
-  FORMAT_AS_UUID(recipient_profile.recipient_hash),
-  recipient_profile.recipient_levels,
+  recipient_lookup.recipient_hash AS recipient_hash,
+  RECIPIENT_HASH_AND_LEVELS.recipient_levels,
   UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
   COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
@@ -239,11 +242,11 @@ LEFT OUTER JOIN
     duns,
     recipient_hash
   FROM raw.recipient_lookup AS rlv
-  ) recipient_lookup ON recipient_lookup.recipient_hash = MD5(UPPER(
+  ) recipient_lookup ON recipient_lookup.recipient_hash = FORMAT_AS_UUID(MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END))
+       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END)))
 LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
@@ -341,22 +344,22 @@ LEFT JOIN
          RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips
         AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
 )
-LEFT JOIN LATERAL (
-  SELECT recipient_hash, recipient_unique_id, COLLECT_SET(recipient_level) AS recipient_levels
-  FROM raw.recipient_profile
-  WHERE (recipient_hash = COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(CASE WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei)) WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu)) ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END)))
-   ) AND
-      recipient_name NOT IN (
-      'MULTIPLE RECIPIENTS',
-      'REDACTED DUE TO PII',
-      'MULTIPLE FOREIGN RECIPIENTS',
-      'PRIVATE INDIVIDUAL',
-      'INDIVIDUAL RECIPIENT',
-      'MISCELLANEOUS FOREIGN AWARDEES'
-    ) AND recipient_name IS NOT NULL
-    AND recipient_level != 'P'
-  GROUP BY recipient_hash, recipient_unique_id
-) recipient_profile ON TRUE
+LEFT OUTER JOIN (
+        SELECT recipient_hash, uei, COLLECT_SET(recipient_level) AS recipient_levels
+        FROM raw.recipient_profile
+        GROUP BY recipient_hash, uei
+    ) RECIPIENT_HASH_AND_LEVELS ON (
+        recipient_lookup.recipient_hash = RECIPIENT_HASH_AND_LEVELS.recipient_hash
+        AND recipient_lookup.recipient_name NOT IN (
+            'MULTIPLE RECIPIENTS',
+            'REDACTED DUE TO PII',
+            'MULTIPLE FOREIGN RECIPIENTS',
+            'PRIVATE INDIVIDUAL',
+            'INDIVIDUAL RECIPIENT',
+            'MISCELLANEOUS FOREIGN AWARDEES'
+        )
+        AND recipient_lookup.recipient_name IS NOT NULL
+    )
 LEFT JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
