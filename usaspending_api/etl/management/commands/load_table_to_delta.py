@@ -32,7 +32,7 @@ from usaspending_api.transactions.delta_models import (
     transaction_fpds_sql_string,
     TRANSACTION_NORMALIZED_COLUMNS,
     transaction_normalized_sql_string,
-    TRANSACTION_SEARCH_DELTA_COLUMNS,
+    TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
 )
 from usaspending_api.search.delta_models.award_search import award_search_sql_string
@@ -189,7 +189,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_search_create_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
-        "column_names": list(TRANSACTION_SEARCH_DELTA_COLUMNS),
+        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
 }
 
