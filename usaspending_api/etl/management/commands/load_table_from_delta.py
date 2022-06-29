@@ -1,3 +1,5 @@
+import itertools
+import numpy as np
 from django import db
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
@@ -22,14 +24,6 @@ SPECIAL_TYPES_MAPPING = {
     "UUID": {"postgres": "UUID USING {column_name}::UUID", "delta": "TEXT"},
     db.models.JSONField: {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
     "JSONB": {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
-    db.models.DateTimeField: {
-        "postgres": "TIMESTAMP WITH TIME ZONE USING {column_name} AT TIME ZONE 'UTC'",
-        "delta": "TIMESTAMP WITHOUT TIME ZONE",
-    },
-    "TIMESTAMP": {
-        "postgres": "TIMESTAMP WITH TIME ZONE USING {column_name} AT TIME ZONE 'UTC'",
-        "delta": "TIMESTAMP WITHOUT TIME ZONE",
-    },
 }
 
 
@@ -61,6 +55,43 @@ class Command(BaseCommand):
             required=False,
             help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table" "name",
         )
+        parser.add_argument(
+            "--recreate",
+            action="store_true",
+            help="Instead of truncating and reloading into an existing table, this forces the script to drop and"
+            "rebuild the table from scratch.",
+        )
+
+    # Unfortunately, pySpark with the JDBC doesn't handle UUIDs/JSON well.
+    # In addition to using "stringype": "unspecified", it can't handle null values in the UUID columns
+    # The only way to get around this is to split the dataframe into smaller chunks filtering out the null values.
+    # In said smaller chunks, where it would be null, we simply drop the column entirely from the insert,
+    # resorting to the default null values.
+    def _split_dfs(self, df, special_columns):
+        if not special_columns:
+            return [df]
+
+        # Caching for performance
+        df = df.cache()
+
+        # Figure all the possible combos of filters
+        filter_batches = []
+        for subset in itertools.product([True, False], repeat=len(special_columns)):
+            filter_batches.append({col: subset[i] for i, col in enumerate(special_columns)})
+
+        # Generate all the split dfs based on the filter batches
+        split_dfs = []
+        for filter_batch in filter_batches:
+            # Apply the filters (True = null column, drop it. False = not null column, keep it)
+            modified_filters = [df[col].isNull() if val else df[col].isNotNull() for col, val in filter_batch.items()]
+            split_df = df.filter(np.bitwise_and.reduce(modified_filters))
+
+            # Drop the columns where it's null **after filtering them out**
+            drop_cols = [drop_col for drop_col, val in filter_batch.items() if val]
+            split_df = split_df.drop(*drop_cols)
+
+            split_dfs.append(split_df)
+        return split_dfs
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -83,9 +114,9 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         delta_table = options["delta_table"]
+        recreate = options["recreate"]
 
         table_spec = TABLE_SPEC[delta_table]
-        custom_schema = table_spec["custom_schema"]
         special_columns = {}
 
         # Delta side
@@ -135,18 +166,19 @@ class Command(BaseCommand):
             temp_dest_table_exists = cursor.fetchone()[0]
 
         # If it does and we're recreating it, drop it first
-        if temp_dest_table_exists:
+        if temp_dest_table_exists and recreate:
             logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
             clear_table_sql = f"DROP TABLE {temp_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
             logger.info(f"{temp_table} dropped.")
+            temp_dest_table_exists = False
 
         # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
-        # the extra stuff (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
+        # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
         # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
-        if postgres_table or postgres_cols:
+        if not temp_dest_table_exists and (postgres_table or postgres_cols):
             if postgres_table:
                 create_temp_sql = f"""
                     CREATE TABLE {temp_table} (
@@ -176,31 +208,14 @@ class Command(BaseCommand):
                         cursor.execute("; ".join(copy_constraint_sql))
                     logger.info(f"Constraints from {postgres_table} copied over")
 
-            # Converting unsupported data types on spark to their delta equivalent
-            # We will cast these back to their original intended types afterwards
-            # Only applicable if we're copying down a table that was already in postgres
-            alter_column_sql = []
-            postgres_cols = []
+            # Getting a list of the special columns that will need to be particularly handed
             if postgres_model:
                 postgres_cols = [(column.name, type(column)) for column in postgres_model._meta.get_fields()]
             else:
                 postgres_cols = list(postgres_cols.items())
-
             for column_name, column_type in postgres_cols:
                 if column_type in SPECIAL_TYPES_MAPPING:
                     special_columns[column_name] = column_type
-                    delta_type = SPECIAL_TYPES_MAPPING[column_type]["delta"].format(column_name=column_name)
-                    alter_column_sql.append(
-                        f"ALTER TABLE {temp_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}"
-                    )
-            if alter_column_sql:
-                logger.info(
-                    f"Before loading, we're altering columns to their delta-side types for columns:"
-                    f" {list(special_columns)}"
-                )
-                with db.connection.cursor() as cursor:
-                    cursor.execute(";".join(alter_column_sql))
-                logger.info(f"Finished updating columns: {list(special_columns)}")
 
         # Read from Delta
         df = spark.table(delta_table)
@@ -213,35 +228,28 @@ class Command(BaseCommand):
 
         # Write to Postgres
         logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table}")
-        df.write.options(customSchema=custom_schema, truncate=True).jdbc(
-            url=jdbc_url, table=temp_table, mode="overwrite", properties=get_jdbc_connection_properties()
-        )
+        split_dfs = self._split_dfs(df, list(special_columns))
+        split_df_count = len(split_dfs)
+        for i, split_df in enumerate(split_dfs):
+            logger.info(f"LOAD: Loading part {i+1} of {split_df_count} (note: unequal part sizes)")
+            split_df.write.options(truncate=True).jdbc(
+                url=jdbc_url, table=temp_table, mode="overwrite", properties=get_jdbc_connection_properties()
+            )
+            logger.info(f"LOAD: Part {i+1} of {split_df_count} loaded (note: unequal part sizes)")
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")
 
-        if postgres_table or postgres_cols:
-            alter_column_sql = []
-            for column_name, column_type in special_columns.items():
-                delta_type = SPECIAL_TYPES_MAPPING[column_type]["postgres"].format(column_name=column_name)
-                alter_column_sql.append(f"ALTER TABLE {temp_table}" f" ALTER COLUMN {column_name} TYPE {delta_type}")
-            if alter_column_sql:
-                logger.info(
-                    f"With the data loaded, we're altering columns back to their postgres-side types for"
-                    f" columns: {list(special_columns)}"
-                )
-                with db.connection.cursor() as cursor:
-                    cursor.execute(";".join(alter_column_sql))
-                logger.info(f"Finished updating columns: {list(special_columns)}")
-
-            if postgres_table:
-                # Load indexes if applicable
-                with db.connection.cursor() as cursor:
-                    # Copy over the indexes, preserving the names (mostly, includes "_temp")
-                    # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
-                    #       which would run into issues with migrations that have specific names.
-                    #       Additionally, we want to run this after we loaded in the data for performance.
-                    copy_index_sql = make_copy_indexes(cursor, postgres_table, temp_table)
-                    if copy_index_sql:
-                        cursor.execute("; ".join(copy_index_sql))
+        # Load indexes if applicable
+        if postgres_table:
+            with db.connection.cursor() as cursor:
+                # Copy over the indexes, preserving the names (mostly, includes "_temp")
+                # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
+                #       which would run into issues with migrations that have specific names.
+                #       Additionally, we want to run this after we loaded in the data for performance.
+                copy_index_sql = make_copy_indexes(cursor, postgres_table, temp_table)
+                if copy_index_sql:
+                    logger.info(f"Copying indexes over from {postgres_table}.")
+                    cursor.execute("; ".join(copy_index_sql))
+                    logger.info(f"Indexes from {postgres_table} copied over.")
 
         if spark_created_by_command:
             spark.stop()
