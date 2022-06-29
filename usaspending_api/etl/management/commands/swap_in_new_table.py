@@ -18,8 +18,15 @@ class Command(BaseCommand):
     NOTE: This entire process IS NOT ATOMIC (only the final swap of tables)!
     This choice was made to prevent potential deadlock scenarios since the swapping / renaming of indexes, constraints,
     and tables should only take milliseconds. If this command fails then any cleanup will have to be done manually.
-    Any failure in this command should not affect current API since the final "DROP TABLE" command is not run
-    until the very end.
+
+    Current API and Download functionality is not affected until the step that actually renames the old table. That
+    change will take an ACCESS EXCLUSIVE LOCK and any future queries following it will hit the new table. On a Primary
+    database where typical query performance is under 1 minute this could cause some queries to take longer as they wait
+    on the LOCK to be released, depending on what the lock is waiting on. For a Replica database this will cause some
+    queries to cancel if they are blocking the ACCESS EXCLUSIVE LOCK for too long and could impede replication.
+
+    At the time of the actual DROP TABLE command there should be no activity present on the old table since the
+    ALTER TABLE for the rename would have blocked all activity and routed to the new table following the rename.
     """
 
     # Values are set in the beginning of "handle()"
@@ -38,7 +45,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--table",
             type=str,
-            help="The Postgres Table to swap with another containing the same name with '_temp' appended",
+            help="The active Postgres Table to swap with another containing the same name with '_temp' appended",
         )
         parser.add_argument(
             "--keep-old-data",
@@ -50,7 +57,8 @@ class Command(BaseCommand):
             "--allow-foreign-key",
             action="store_true",
             default=False,
-            help="Indicates whether Foreign Key constraints should be allowed."
+            help="A guard is enabled / disabled depending on the value of this flag. When 'FALSE' Foreign Keys are not"
+            " allowed and both the active and new table are searched for any Foreign Keys before proceeding."
             " It is advised to not allow Foreign Key constraints since they can cause deadlock.",
         )
 
