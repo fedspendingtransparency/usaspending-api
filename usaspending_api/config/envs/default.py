@@ -18,7 +18,7 @@ from usaspending_api.config.utils import (
     eval_default_factory_from_root_validator,
     CONFIG_VAR_PLACEHOLDERS,
     parse_pg_uri,
-    unhide,
+    unveil,
 )
 from pydantic import (
     AnyHttpUrl,
@@ -110,7 +110,7 @@ class DefaultConfig(BaseSettings):
                 )
             if values.get("USASPENDING_DB_USER", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
                 values = eval_default_factory_from_root_validator(cls, values, "USASPENDING_DB_USER", lambda: username)
-            if unhide(values.get("USASPENDING_DB_PASSWORD", None)) in [None] + CONFIG_VAR_PLACEHOLDERS:
+            if unveil(values.get("USASPENDING_DB_PASSWORD", None)) in [None] + CONFIG_VAR_PLACEHOLDERS:
                 values = eval_default_factory_from_root_validator(
                     cls, values, "USASPENDING_DB_PASSWORD", lambda: SecretStr(password)
                 )
@@ -175,7 +175,7 @@ class DefaultConfig(BaseSettings):
             pg_url_config_errors["USASPENDING_DB_USER"] = (values["USASPENDING_DB_USER"], pg_username)
 
         # Validate password
-        if pg_password != unhide(values["USASPENDING_DB_PASSWORD"]):
+        if pg_password != unveil(values["USASPENDING_DB_PASSWORD"]):
             # NOTE: Keeping password text obfuscated in the error output
             pg_url_config_errors["USASPENDING_DB_PASSWORD"] = (
                 values["USASPENDING_DB_PASSWORD"],

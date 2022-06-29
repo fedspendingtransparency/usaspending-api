@@ -313,4 +313,5 @@ LONG_TO_TERSE_LABELS = {
     "original_loan_subsidy_cost": "original_loan_subsidy_cost",
     "business_funds_indicator": "business_funds_indicator",
     "business_funds_ind_desc": "business_funds_ind_desc",
+    "indirect_federal_sharing": "indirect_federal_sharing",
 }

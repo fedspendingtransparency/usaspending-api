@@ -616,6 +616,7 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "total_obligation"),
+                ("indirect_cost_federal_share_amount", "total_indirect_federal_sharing"),
                 ("total_non_federal_funding_amount", "non_federal_funding_amount"),
                 ("total_funding_amount", "total_funding_amount"),
                 ("total_face_value_of_loan", "total_loan_value"),
@@ -719,6 +720,8 @@ query_paths = {
                     "latest_transaction__assistance_data__place_of_performance_forei",
                 ),
                 ("cfda_numbers_and_titles", None),  # Annotation is used to create this column
+                ("funding_opportunity_number", "latest_transaction__assistance_data__funding_opportunity_number"),
+                ("funding_opportunity_goals_text", "latest_transaction__assistance_data__funding_opportunity_goals"),
                 ("assistance_type_code", "latest_transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "latest_transaction__assistance_data__assistance_type_desc"),
                 ("award_description", "description"),
@@ -1138,6 +1141,7 @@ query_paths = {
                 ("sai_number", "transaction__assistance_data__sai_number"),
                 ("federal_action_obligation", "transaction__federal_action_obligation"),
                 ("total_obligated_amount", "transaction__award__total_obligation"),
+                ("indirect_cost_federal_share_amount", "transaction__assistance_data__indirect_federal_sharing"),
                 ("non_federal_funding_amount", "transaction__assistance_data__non_federal_funding_amount"),
                 ("total_non_federal_funding_amount", "transaction__award__non_federal_funding_amount"),
                 ("face_value_of_loan", "transaction__assistance_data__face_value_loan_guarantee"),
@@ -1226,6 +1230,8 @@ query_paths = {
                 ),
                 ("cfda_number", "transaction__assistance_data__cfda_number"),
                 ("cfda_title", "transaction__assistance_data__cfda_title"),
+                ("funding_opportunity_number", "transaction__assistance_data__funding_opportunity_number"),
+                ("funding_opportunity_goals_text", "transaction__assistance_data__funding_opportunity_goals"),
                 ("assistance_type_code", "transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "transaction__assistance_data__assistance_type_desc"),
                 ("award_description", "transaction__assistance_data__award_description"),

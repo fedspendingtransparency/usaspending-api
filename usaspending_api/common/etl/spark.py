@@ -1,3 +1,4 @@
+from itertools import chain
 from pyspark.sql.functions import to_date, lit, expr
 from pyspark.sql.types import StructType
 from pyspark.sql import DataFrame, SparkSession
@@ -263,28 +264,75 @@ def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_nam
     )
 
 
-def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[], collect=False):
-    """
-    Compares two dataframes that share a schema and returns difference at a row level.
+def diff(
+    left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=None, include_unchanged_rows=False
+) -> DataFrame:
+    """Compares two Spark DataFrames that share a schema and returns row-level differences in a DataFrame
+
+    NOTE: Given this returns a DataFrame, two common things to do with it afterwards are:
+        1. df.show() ... to print out a display of *some* of the differences. Args to show() include:
+                n (int): number of rows to show
+                truncate (bool): whether to trim overflowing text in shown results
+                vertical (bool): whether to orient data vertically (for perhaps better reading)
+            What seems to work well is diff_df.show(n=<how_many>, truncate=False, vertical=True)
+        2. df.collect() ... to actually compare ALL rows and then collect all results from the in-memory comparison
+           into a Python data structure (List[Row]), for further iteration/manipulation. Use this with CAUTION if the
+           result set could be very LARGE, it might overload the memory on your machine
+
+        Or, you can write the resulting DataFrame's data to some other place like a CSV file or database table or Delta
+        table
+
     Args:
-        left: assumes a DataFrame wtih a schema that matches the right DataFrame
-        right: assumes a DataFrame wtih a schema that matches the right DataFrame
-        unique_key_col: indidcates a unique indentification column for comparison
-        compare_cols: list of columns to be compared, must exist in both left and right dataframe
-            If compare_cols is left as an empty list, ALL columns will be compared to each other
-            (for rows where unique_key_col values match).
-            Otherwise, specify the columns that determine "sameness" of rows
-        collect: collect (bool): flag indicating whether to simply show and print the results
-            (if False) or to instead run the Spark ``.collect()`` function on the diff results
-            DataFrame and return that list of ``Row`` objects
+        left (DataFrame): DataFrame with a schema that matches the right DataFrame
+
+        right (DataFrame): DataFrame with a schema that matches the right DataFrame
+
+        unique_key_col (str): Column in the dataframes that uniquely identifies the Row, which can be used
+            to find matching Rows in each DataFrame. Defaults to "id"
+
+        compare_cols (List[str]): list of columns to be compared, must exist in both left and right DataFrame;
+            defaults to None
+            list which indicates ALL columns should be compared.
+            - If compare_cols is None or an empty list, ALL columns will be compared to each other (for rows where
+              unique_key_col values match).
+            - Otherwise, specify the columns that determine "sameness" of rows
+
+        include_unchanged_rows (bool): Whether the DataFrame of differences should retain rows that are unchanged;
+            default is False
 
     Returns:
-        Row level differences based on the dataframes. If collect is called, output is returned
-        if set to false, truncated output will be displayed, not returned
-    """
+        A DataFrame containing a comparison of the left and right DataFrames. The first column will be named "diff",
+        and will have a value of:
+        - N = No Change
+        - C = Changed. unique_key_column matched for a Row in left and right, but at least one of the columns being
+              compared is different from left to right.
+        - I = Inserted on the right (not present in the left)
+        - D = Deleted on the right (present in left, but not in right)
 
+        Remaining columns returned are the values of the left and right DataFrames' compare_cols.
+        Example contents of a returned DataFrame data structure:
+            +----+---+---+---------+---------+-----+-----+-----------+-----------+
+            |diff|id |id |first_col|first_col|color|color|numeric_val|numeric_val|
+            +----+---+---+---------+---------+-----+-----+-----------+-----------+
+            |C   |101|101|row 1    |row 1    |blue |blue |-98        |-196       |
+            +----+---+---+---------+---------+-----+-----+-----------+-----------+
+    """
     if not compare_cols:
-        compare_cols = set(left.schema.names + right.schema.names)
+        if set(left.schema.names) != set(right.schema.names):
+            raise ValueError(
+                "The two DataFrames to compare do not contain the same columns. "
+                f"\n\tleft cols (in alpha order):  {sorted(set(left.schema.names))} "
+                f"\n\tright cols (in alpha order): {sorted(set(right.schema.names))}"
+            )
+        compare_cols = left.schema.names
+    else:
+        # Keep the cols to compare ordered as they are defined in the DataFrame schema (the left one to be exact)
+        compare_cols = [c for c in left.schema.names if c in compare_cols]
+
+    # unique_key_col does not need to be compared
+    if unique_key_col in compare_cols:
+        compare_cols.remove(unique_key_col)
+
     distinct_stmts = " ".join([f"WHEN l.{c} IS DISTINCT FROM r.{c} THEN 'C'" for c in compare_cols])
     compare_expr = f"""
      CASE
@@ -301,10 +349,13 @@ def diff(left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=[]
         .join(right.withColumn("exists", lit(1)).alias("r"), left[unique_key_col] == right[unique_key_col], "fullouter")
         .withColumn("diff", expr(compare_expr))
     )
-    cols_to_show = ["diff"] + [f"l.{c}" for c in compare_cols] + [f"r.{c}" for c in compare_cols]
+    # Put "diff" col first, then follow by the l and r value for each column, for all columns compared
+    cols_to_show = (
+        ["diff"]
+        + [f"l.{unique_key_col}", f"r.{unique_key_col}"]
+        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols])))
+    )
     differences = differences.select(*cols_to_show)
-    # NOTE: .show() shows only a few rows. Call with collect=True to get ALL results, then show
-    if collect:
-        return differences.collect()
-    else:
-        return differences.show(truncate=False)
+    if not include_unchanged_rows:
+        differences = differences.where("diff != 'N'")
+    return differences
