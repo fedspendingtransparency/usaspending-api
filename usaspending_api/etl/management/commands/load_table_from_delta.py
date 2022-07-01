@@ -233,7 +233,8 @@ class Command(BaseCommand):
         for i, split_df in enumerate(split_dfs):
             logger.info(f"LOAD: Loading part {i+1} of {split_df_count} (note: unequal part sizes)")
             split_df.write.options(truncate=True).jdbc(
-                url=jdbc_url, table=temp_table, mode="overwrite", properties=get_jdbc_connection_properties()
+                url=jdbc_url, table=temp_table, mode="overwrite", properties=get_jdbc_connection_properties(
+                    boost_writing=True)
             )
             logger.info(f"LOAD: Part {i+1} of {split_df_count} loaded (note: unequal part sizes)")
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")
