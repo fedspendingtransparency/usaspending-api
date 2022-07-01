@@ -8,8 +8,14 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jvm_logger,
+    create_ref_temp_views,
 )
-from usaspending_api.search.models import TransactionSearch
+from usaspending_api.search.delta_models.award_search import (
+    award_search_create_sql_string,
+    award_search_load_sql_string,
+    AWARD_SEARCH_POSTGRES_COLUMNS,
+)
+from usaspending_api.search.models import TransactionSearch, AwardSearchView
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
@@ -36,7 +42,28 @@ TABLE_SPEC = {
                 "returnType": StringType(),
             },
         ],
-    }
+    },
+    "award_search": {
+        "model": AwardSearchView,
+        "source_query": award_search_load_sql_string,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": "vw_award_search",
+        "swap_schema": "rpt",
+        "partition_column": "award_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": award_search_create_sql_string,
+        "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "user_defined_functions": [
+            {
+                "name": "format_as_uuid",
+                "f": lambda val: str(uuid.UUID(val)) if val else None,
+                "returnType": StringType(),
+            },
+        ],
+    },
 }
 
 
@@ -105,10 +132,11 @@ class Command(BaseCommand):
             for udf_args in TABLE_SPEC[destination_table]["user_defined_functions"]:
                 spark.udf.register(**udf_args)
 
+        create_ref_temp_views(spark)
         spark.sql(
-            transaction_search_load_sql_string.format(
-                DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name
-            )
+            TABLE_SPEC[destination_table]
+            .get("source_query")
+            .format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
         )
 
         if spark_created_by_command:
