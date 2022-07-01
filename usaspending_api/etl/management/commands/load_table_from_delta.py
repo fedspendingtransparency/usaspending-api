@@ -115,6 +115,7 @@ class Command(BaseCommand):
         # Resolve Parameters
         delta_table = options["delta_table"]
         recreate = options["recreate"]
+        create = False
 
         table_spec = TABLE_SPEC[delta_table]
         special_columns = {}
@@ -175,10 +176,11 @@ class Command(BaseCommand):
             logger.info(f"{temp_table} dropped.")
             temp_dest_table_exists = False
 
+        make_new_table = (not temp_dest_table_exists)
         # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
         # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
         # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
-        if not temp_dest_table_exists and (postgres_table or postgres_cols):
+        if make_new_table and (postgres_table or postgres_cols):
             if postgres_table:
                 create_temp_sql = f"""
                     CREATE TABLE {temp_table} (
@@ -240,7 +242,7 @@ class Command(BaseCommand):
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")
 
         # Load indexes if applicable
-        if postgres_table:
+        if make_new_table and postgres_table:
             with db.connection.cursor() as cursor:
                 # Copy over the indexes, preserving the names (mostly, includes "_temp")
                 # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
