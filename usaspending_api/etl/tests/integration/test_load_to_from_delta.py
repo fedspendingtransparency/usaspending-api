@@ -327,14 +327,12 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
             # Make sure Postgres data is sorted in the case of a list since the Spark list data is sorted in ASC order
             if isinstance(psql_val, list):
                 if len(psql_val) > 0 and isinstance(psql_val[0], dict):
-                    psql_val = sorted(psql_val, key=lambda x: (x.get(list(x.keys())[0]), (x.get(list(x.values())[0]))))
+                    psql_val = sorted(psql_val, key=lambda x: x.get(list(x.values())[0]))
                 else:
                     psql_val = sorted(psql_val)
                 if isinstance(spark_val, str):
                     spark_val = [json.loads(idx.replace("'", '"')) for idx in [spark_val]][0]
-                    spark_val = sorted(
-                        spark_val, key=lambda x: (x.get(list(x.keys())[0]), (x.get(list(x.values())[0])))
-                    )
+                    spark_val = sorted(spark_val, key=lambda x: x.get(list(x.values())[0]))
 
             if psql_val != spark_val:
                 raise Exception(
