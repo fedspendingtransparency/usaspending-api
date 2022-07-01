@@ -383,7 +383,7 @@ def get_jdbc_connection_properties(fix_strings=True, boost_writing=False) -> dic
     if fix_strings:
         jdbc_props["stringtype"] = "unspecified"
     if boost_writing:
-        jdbc_props["reWriteBatchedInserts"] = True
+        jdbc_props["reWriteBatchedInserts"] = "true"
     return jdbc_props
 
 
