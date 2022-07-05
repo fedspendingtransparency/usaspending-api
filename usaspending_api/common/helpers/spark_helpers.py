@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 import sys
+from typing import Optional, Union
 
 from py4j.java_gateway import (
     JavaGateway,
@@ -36,7 +37,9 @@ from usaspending_api.references.models import (
     CityCountyStateCode,
     PopCounty,
     PopCongressionalDistrict,
+    DisasterEmergencyFundCode,
 )
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 RDS_REF_TABLES = [
     Cfda,
@@ -53,18 +56,21 @@ RDS_REF_TABLES = [
     StateData,
     FederalAccount,
     TreasuryAppropriationAccount,
+    DisasterEmergencyFundCode,
+    SubmissionAttributes,
+    DABSSubmissionWindowSchedule,
 ]
 
 
-def get_active_spark_context() -> SparkContext:
-    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+def get_active_spark_context() -> Optional[SparkContext]:
+    """Returns the active ``SparkContext`` if there is one and it's not stopped, otherwise returns None"""
     if is_spark_context_stopped():
         return None
     return SparkContext._active_spark_context
 
 
-def get_active_spark_session() -> SparkContext:
-    """Returns the active spark context if there is one and it's not stopped, otherwise returns None"""
+def get_active_spark_session() -> Optional[SparkSession]:
+    """Returns the active ``SparkSession`` if there is one and it's not stopped, otherwise returns None"""
     if is_spark_context_stopped():
         return None
     return SparkSession.getActiveSession()
@@ -97,7 +103,7 @@ def stop_spark_context() -> bool:
 
 def configure_spark_session(
     java_gateway: JavaGateway = None,
-    spark_context: SparkContext = None,
+    spark_context: Union[SparkContext, SparkSession] = None,
     master=None,
     app_name="Spark App",
     log_level: int = None,
@@ -160,6 +166,15 @@ def configure_spark_session(
 
     conf = SparkConf()
 
+    # Normalize all timestamps read into the SparkSession to UTC time.
+    # So if timezone-aware timestamps are read-in, Spark will shifted to UTC and then strip off the timezone so they
+    # are only an "instant" (no timezone part)
+    # - See also: https://docs.databricks.com/spark/latest/dataframes-datasets/dates-timestamps.html#timestamps-and
+    #   time-zones
+    # - if not set, it will fallback to the timezone of the JVM running spark, which could be the local time zone of
+    #   the machine
+    #   - Still would be ok so long as reads and writes of an "instant" happen from the same session timezone
+    conf.set("spark.sql.session.timeZone", "UTC")
     conf.set("spark.scheduler.mode", CONFIG.SPARK_SCHEDULER_MODE)
     # Don't try to re-run the whole job if there's an error
     # Assume that random errors are rare, and jobs have long runtimes, so fail fast, fix and retry manually.

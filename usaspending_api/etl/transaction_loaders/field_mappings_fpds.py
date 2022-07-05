@@ -349,6 +349,7 @@ transaction_normalized_functions = {
     "usaspending_unique_transaction_id": lambda broker: None,  # likely obsolete
     "original_loan_subsidy_cost": lambda broker: None,  # FABS only
     "face_value_loan_guarantee": lambda broker: None,  # FABS only
+    "indirect_federal_sharing": lambda broker: None,  # FABS only
     "drv_potential_total_award_value_amount_adjustment": lambda broker: None,  # ?
     "drv_current_total_award_value_amount_adjustment": lambda broker: None,  # ?
     "drv_award_transaction_usaspend": lambda broker: None,  # ?

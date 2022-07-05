@@ -22,7 +22,7 @@ CONFIG_VAR_PLACEHOLDERS = [ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE, FACTOR
 TBaseSettings = TypeVar("TBaseSettings", bound=BaseSettings)
 
 
-def unhide(possible_secret_str: Union[Any, SecretStr]) -> Any:
+def unveil(possible_secret_str: Union[Any, SecretStr]) -> Any:
     """A way to compare SecretStr wrappers to regular strings"""
     if isinstance(possible_secret_str, SecretStr):
         return possible_secret_str.get_secret_value()
@@ -80,7 +80,7 @@ def eval_default_factory(
     overridable_config_fields = {k for bc in overridable_config_base_classes for k in bc.__fields__.keys()}
     is_override = config_var.name in overridable_config_fields
 
-    if not is_override and default_value is not None and unhide(default_value) not in CONFIG_VAR_PLACEHOLDERS:
+    if not is_override and default_value is not None and unveil(default_value) not in CONFIG_VAR_PLACEHOLDERS:
         raise ValueError(
             f'The "{config_var.name}" field, which is tied to a default-factory-based validator, must have its '
             f"default value set to None, "
@@ -90,15 +90,15 @@ def eval_default_factory(
         )
 
     if (
-        unhide(assigned_or_sourced_value) != unhide(default_value)
-        and unhide(assigned_or_sourced_value) not in CONFIG_VAR_PLACEHOLDERS
+        unveil(assigned_or_sourced_value) != unveil(default_value)
+        and unveil(assigned_or_sourced_value) not in CONFIG_VAR_PLACEHOLDERS
     ):
         # The value of this field is being explicitly set DIFFERENT than its default value
         # in some source (initializer param, env var, etc.)
         # So honor it and don't use the default below
         return assigned_or_sourced_value
 
-    if is_override and default_value and unhide(default_value) not in CONFIG_VAR_PLACEHOLDERS:
+    if is_override and default_value and unveil(default_value) not in CONFIG_VAR_PLACEHOLDERS:
         # If this validator exists on a field (which is causing this evaluation), however that field was overridden
         # in a subclass to the class where the validator was defined, and an explicit non-None, non-placeholder value
         # is being set for that field in the overridden subclass...
