@@ -61,6 +61,18 @@ class Command(BaseCommand):
             help="Instead of truncating and reloading into an existing table, this forces the script to drop and"
             "rebuild the table from scratch.",
         )
+        parser.add_argument(
+            "--max-parallel-maintenance-workers",
+            type=int,
+            required=False,
+            help="Postgres session setting for max parallel workers for creating indexes",
+        )
+        parser.add_argument(
+            "--maintenance-work-mem",
+            type=int,
+            required=False,
+            help="Postgres session setting for max memory to use for creating indexes (in GBs)",
+        )
 
     # Unfortunately, pySpark with the JDBC doesn't handle UUIDs/JSON well.
     # In addition to using "stringype": "unspecified", it can't handle null values in the UUID columns
@@ -116,6 +128,8 @@ class Command(BaseCommand):
         delta_table = options["delta_table"]
         recreate = options["recreate"]
         create = False
+        max_parallel_maintenance_workers = options["max_parallel_maintenance_workers"]
+        maintenance_work_mem = options["maintenance_work_mem"]
 
         table_spec = TABLE_SPEC[delta_table]
         special_columns = {}
@@ -252,12 +266,15 @@ class Command(BaseCommand):
         # Load indexes if applicable
         if make_new_table and postgres_table:
             with db.connection.cursor() as cursor:
-                # Ensuring we're using the max cores available when generating indexes
-                # TODO: dynamically set rds_core_count by a setting per environment.
                 copy_index_sql = []
-                rds_core_count = 8
-                index_performance_sql = f"SET max_parallel_maintenance_workers = {rds_core_count}"
-                copy_index_sql.append(index_performance_sql)
+
+                # Ensuring we're using the max cores available when generating indexes
+                if max_parallel_maintenance_workers:
+                    max_workers_sql = f"SET max_parallel_maintenance_workers = {max_parallel_maintenance_workers}"
+                    copy_index_sql.append(max_workers_sql)
+                if maintenance_work_mem:
+                    max_memory_sql = f"SET maintenance_work_mem = '{maintenance_work_mem}GB'"
+                    copy_index_sql.append(max_memory_sql)
 
                 # Copy over the indexes, preserving the names (mostly, includes "_temp")
                 # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
