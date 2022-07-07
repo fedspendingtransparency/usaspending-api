@@ -176,7 +176,7 @@ class Command(BaseCommand):
             logger.info(f"{temp_table} dropped.")
             temp_dest_table_exists = False
 
-        make_new_table = (not temp_dest_table_exists)
+        make_new_table = not temp_dest_table_exists
         # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
         # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
         # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
@@ -228,15 +228,23 @@ class Command(BaseCommand):
         if table_spec.get("column_names"):
             df = df.select(table_spec.get("column_names"))
 
+        # If we're working off an existing table, truncate before loading in all the data
+        if not make_new_table:
+            with db.connection.cursor() as cursor:
+                cursor.execute(f"TRUNCATE {temp_table}")
+
         # Write to Postgres
         logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table}")
         split_dfs = self._split_dfs(df, list(special_columns))
         split_df_count = len(split_dfs)
         for i, split_df in enumerate(split_dfs):
+            # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
             logger.info(f"LOAD: Loading part {i+1} of {split_df_count} (note: unequal part sizes)")
-            split_df.write.options(truncate=True).jdbc(
-                url=jdbc_url, table=temp_table, mode="overwrite", properties=get_jdbc_connection_properties(
-                    boost_writing=True)
+            split_df.write.jdbc(
+                url=jdbc_url,
+                table=temp_table,
+                mode="append",
+                properties=get_jdbc_connection_properties(boost_writing=True),
             )
             logger.info(f"LOAD: Part {i+1} of {split_df_count} loaded (note: unequal part sizes)")
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")
@@ -248,7 +256,7 @@ class Command(BaseCommand):
                 # TODO: dynamically set rds_core_count by a setting per environment.
                 copy_index_sql = []
                 rds_core_count = 8
-                index_performance_sql = f'SET max_parallel_maintenance_workers = {rds_core_count}'
+                index_performance_sql = f"SET max_parallel_maintenance_workers = {rds_core_count}"
                 copy_index_sql.append(index_performance_sql)
 
                 # Copy over the indexes, preserving the names (mostly, includes "_temp")
