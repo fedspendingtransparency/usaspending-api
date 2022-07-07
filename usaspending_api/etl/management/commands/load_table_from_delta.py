@@ -266,22 +266,20 @@ class Command(BaseCommand):
         # Load indexes if applicable
         if make_new_table and postgres_table:
             with db.connection.cursor() as cursor:
-                copy_index_sql = []
 
                 # Ensuring we're using the max cores available when generating indexes
                 if max_parallel_maintenance_workers:
                     max_workers_sql = f"SET max_parallel_maintenance_workers = {max_parallel_maintenance_workers}"
-                    copy_index_sql.append(max_workers_sql)
+                    cursor.execute(max_workers_sql)
                 if maintenance_work_mem:
                     max_memory_sql = f"SET maintenance_work_mem = '{maintenance_work_mem}GB'"
-                    copy_index_sql.append(max_memory_sql)
+                    cursor.execute(max_memory_sql)
 
                 # Copy over the indexes, preserving the names (mostly, includes "_temp")
                 # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
                 #       which would run into issues with migrations that have specific names.
                 #       Additionally, we want to run this after we loaded in the data for performance.
-                copy_index_sql.extend(make_copy_indexes(cursor, postgres_table, temp_table))
-
+                copy_index_sql = make_copy_indexes(cursor, postgres_table, temp_table)
                 if copy_index_sql:
                     logger.info(f"Copying indexes over from {postgres_table}.")
                     cursor.execute("; ".join(copy_index_sql))
