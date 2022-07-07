@@ -258,7 +258,7 @@ class Command(BaseCommand):
                 url=jdbc_url,
                 table=temp_table,
                 mode="append",
-                properties=get_jdbc_connection_properties(boost_writing=True),
+                properties=get_jdbc_connection_properties(),
             )
             logger.info(f"LOAD: Part {i+1} of {split_df_count} loaded (note: unequal part sizes)")
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")

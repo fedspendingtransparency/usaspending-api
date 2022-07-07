@@ -378,12 +378,10 @@ def attach_java_gateway(
     return gateway
 
 
-def get_jdbc_connection_properties(fix_strings=True, boost_writing=False) -> dict:
+def get_jdbc_connection_properties(fix_strings=True) -> dict:
     jdbc_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
     if fix_strings:
         jdbc_props["stringtype"] = "unspecified"
-    if boost_writing:
-        jdbc_props["reWriteBatchedInserts"] = "true"
     return jdbc_props
 
 
