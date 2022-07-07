@@ -269,11 +269,9 @@ class Command(BaseCommand):
 
                 # Ensuring we're using the max cores available when generating indexes
                 if max_parallel_maintenance_workers:
-                    max_workers_sql = f"SET max_parallel_maintenance_workers = {max_parallel_maintenance_workers}"
-                    cursor.execute(max_workers_sql)
+                    cursor.execute(f"SET max_parallel_maintenance_workers = {max_parallel_maintenance_workers}")
                 if maintenance_work_mem:
-                    max_memory_sql = f"SET maintenance_work_mem = '{maintenance_work_mem}GB'"
-                    cursor.execute(max_memory_sql)
+                    cursor.execute(f"SET maintenance_work_mem = '{maintenance_work_mem}GB'")
 
                 # Copy over the indexes, preserving the names (mostly, includes "_temp")
                 # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
