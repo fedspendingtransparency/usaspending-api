@@ -33,12 +33,12 @@ class Command(BaseCommand):
         parser.add_argument(
             "--copy-constraints",
             action="store_true",
-            help="If provided, copies over the old constraints to the downloaded table.",
+            help="If provided, copies over the constraints to the destination table.",
         )
         parser.add_argument(
             "--copy-indexes",
             action="store_true",
-            help="If provided, copies over the old indexes to the downloaded table.",
+            help="If provided, copies over the indexes to the destination table.",
         )
         parser.add_argument(
             "--max-parallel-maintenance-workers",
