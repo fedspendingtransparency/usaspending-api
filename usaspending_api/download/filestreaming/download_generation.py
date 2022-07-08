@@ -475,6 +475,7 @@ def generate_export_query(source_query, limit, source, columns, file_format):
         source_query = source_query[:limit]
     query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
     options = FILE_FORMATS[file_format]["options"]
+    print(query_annotated)
     return r"\COPY ({}) TO STDOUT {}".format(query_annotated, options)
 
 

@@ -1,5 +1,6 @@
 from usaspending_api.config.envs.local import LocalConfig
 from usaspending_api.config.envs.qat import QATConfig
+from usaspending_api.config.envs.staging import StagingConfig
 
 __all__ = [
     "ENV_CODE_VAR",
@@ -27,6 +28,13 @@ ENVS = [
         "description": "QAT Development Environment",
         "constructor": QATConfig,
     },
+    {
+        "env_type": "staging",
+        "code": StagingConfig.ENV_CODE,
+        "long_name": "staging",
+        "description": "Staging Environment",
+        "constructor": StagingConfig
+    },
     # {
     #     "env_type": "development",
     #     "code": "dev",
@@ -44,12 +52,6 @@ ENVS = [
     #     "code": "qa",
     #     "long_name": "quality_assurance",
     #     "description": "Quality Assurance Testing Environment"
-    # },
-    # {
-    #     "env_type": "staging",
-    #     "code": "stg",
-    #     "long_name": "staging",
-    #     "description": "Staging Environment"
     # },
     # {
     #     "env_type": "production",
