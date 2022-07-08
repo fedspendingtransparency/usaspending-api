@@ -8,7 +8,7 @@ from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_gene
     make_copy_constraints,
 )
 
-logger = logging.getLogger()
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
