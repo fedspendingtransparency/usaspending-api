@@ -2,7 +2,6 @@ import logging
 from django import db
 from django.core.management.base import BaseCommand
 
-from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 from usaspending_api.etl.management.commands.combine_transaction_search_chunks import Command as CTSC_Command
 from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_generator import (
     make_copy_indexes,
