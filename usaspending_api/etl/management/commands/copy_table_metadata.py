@@ -69,7 +69,7 @@ class Command(BaseCommand):
         maintenance_work_mem = options["maintenance_work_mem"]
         index_concurrency = options["index_concurrency"]
 
-        logger.info(f"Copying metadata from table {source_table} to a the destination table {dest_table}.")
+        logger.info(f"Copying metadata from table {source_table} to table {dest_table}.")
 
         copy_index_sql = None
         with db.connection.cursor() as cursor:
