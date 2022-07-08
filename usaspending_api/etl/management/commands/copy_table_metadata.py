@@ -45,14 +45,14 @@ class Command(BaseCommand):
             type=int,
             required=False,
             help="Postgres session setting for max parallel workers for creating indexes."
-                 " Only applicable if copy-indexes is provided.",
+            " Only applicable if copy-indexes is provided.",
         )
         parser.add_argument(
             "--maintenance-work-mem",
             type=int,
             required=False,
             help="Postgres session setting for max memory to use for creating indexes (in GBs)."
-                 "Only applicable if copy-indexes is provided.",
+            "Only applicable if copy-indexes is provided.",
         )
         parser.add_argument(
             "--index-concurrency",
@@ -77,9 +77,7 @@ class Command(BaseCommand):
         with db.connection.cursor() as cursor:
             if copy_constraints:
                 logger.info(f"Copying constraints over from {source_table}")
-                copy_constraint_sql = make_copy_constraints(
-                    cursor, source_table, dest_table, drop_foreign_keys=True
-                )
+                copy_constraint_sql = make_copy_constraints(cursor, source_table, dest_table, drop_foreign_keys=True)
                 if copy_constraint_sql:
                     cursor.execute("; ".join(copy_constraint_sql))
                 logger.info(f"Constraints from {source_table} copied over")
