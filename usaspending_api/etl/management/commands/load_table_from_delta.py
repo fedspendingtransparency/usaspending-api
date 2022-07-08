@@ -266,11 +266,12 @@ class Command(BaseCommand):
         # Load indexes if applicable
         if make_new_table and postgres_table:
             with db.connection.cursor() as cursor:
-
                 # Ensuring we're using the max cores available when generating indexes
                 if max_parallel_maintenance_workers:
+                    logger.info(f"Setting max_parallel_maintenance_workers to {max_parallel_maintenance_workers}")
                     cursor.execute(f"SET max_parallel_maintenance_workers = {max_parallel_maintenance_workers}")
                 if maintenance_work_mem:
+                    logger.info(f"Setting maintenance_work_mem to '{max_parallel_maintenance_workers}GB'")
                     cursor.execute(f"SET maintenance_work_mem = '{maintenance_work_mem}GB'")
 
                 # Copy over the indexes, preserving the names (mostly, includes "_temp")
