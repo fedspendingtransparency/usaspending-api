@@ -22,13 +22,13 @@ class Command(BaseCommand):
             "--source-table",
             type=str,
             required=True,
-            help="The source Delta Table to read the data",
+            help="The source postgres table to read the metadata",
         )
         parser.add_argument(
             "--dest-table",
             type=str,
             required=True,
-            help="The source Delta Table to read the data",
+            help="The source postgres table to copy the metadata to",
         )
         parser.add_argument(
             "--copy-constraints",
@@ -44,13 +44,15 @@ class Command(BaseCommand):
             "--max-parallel-maintenance-workers",
             type=int,
             required=False,
-            help="Postgres session setting for max parallel workers for creating indexes.",
+            help="Postgres session setting for max parallel workers for creating indexes."
+                 " Only applicable if copy-indexes is provided.",
         )
         parser.add_argument(
             "--maintenance-work-mem",
             type=int,
             required=False,
-            help="Postgres session setting for max memory to use for creating indexes (in GBs).",
+            help="Postgres session setting for max memory to use for creating indexes (in GBs)."
+                 "Only applicable if copy-indexes is provided.",
         )
         parser.add_argument(
             "--index-concurrency",
