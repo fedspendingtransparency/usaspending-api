@@ -414,7 +414,7 @@ def _verify_delta_table_loaded_from_delta(
     if alt_name:
         cmd_args += [f"--alt-delta-name={alt_name}"]
         expected_table_name = alt_name
-    cmd_args += ["--recreate", "--copy-constraints", "--copy-indexes"]
+    cmd_args += ["--copy-constraints", "--copy-indexes"]
 
     # table already made, let's load it
     call_command(load_command, *cmd_args)
@@ -457,11 +457,36 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str):
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_sam_recipient(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_sam_recipient_and_reload(spark, s3_unittest_data_bucket):
     baker.make("recipient.DUNS", broker_duns_id="1", _fill_optional=True)
     baker.make("recipient.DUNS", broker_duns_id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "sam_recipient")
+
+    # Getting count of the first load
+    expected_exported_table = "duns_temp"
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        with connection.cursor() as cursor:
+            # get a list of tables
+            cursor.execute(f"SELECT COUNT(*) FROM {expected_exported_table}")
+            expected_exported_table_count = dictfetchall(cursor)[0]["count"]
+
+    # Rerunning again to see it working as intended
+    _verify_delta_table_loaded_from_delta(spark, "sam_recipient")
+
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        with connection.cursor() as cursor:
+            # get a list of tables and ensure no other new tables got made
+            cursor.execute("SELECT * FROM pg_catalog.pg_tables;")
+            postgres_data = [
+                d["tablename"] for d in dictfetchall(cursor) if d["tablename"].startswith(expected_exported_table)
+            ]
+            assert len(postgres_data) == 1
+
+            # make sure the new table has been truncated and reloaded
+            cursor.execute(f"SELECT COUNT(*) FROM {expected_exported_table}")
+            expected_new_exported_table_count = dictfetchall(cursor)[0]["count"]
+            assert expected_exported_table_count == expected_new_exported_table_count
 
 
 @mark.django_db(transaction=True)
