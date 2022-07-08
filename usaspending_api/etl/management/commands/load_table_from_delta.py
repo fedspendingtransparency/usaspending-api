@@ -12,6 +12,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.etl.management.commands.combine_transaction_search_chunks import Command as CTSC_Command
 from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_generator import (
     make_copy_indexes,
     make_copy_constraints,
@@ -85,6 +86,12 @@ class Command(BaseCommand):
             help="Postgres session setting for max memory to use for creating indexes (in GBs). Only applicable if"
             " copy-indexes is provided.",
         )
+        parser.add_argument(
+            "--index-concurrency",
+            type=int,
+            default=5,
+            help="Concurrency limit for index creation. Only applicable if copy-indexes is provided.",
+        )
 
     # Unfortunately, pySpark with the JDBC doesn't handle UUIDs/JSON well.
     # In addition to using "stringype": "unspecified", it can't handle null values in the UUID columns
@@ -143,6 +150,7 @@ class Command(BaseCommand):
         copy_indexes = options["copy_indexes"]
         max_parallel_maintenance_workers = options["max_parallel_maintenance_workers"]
         maintenance_work_mem = options["maintenance_work_mem"]
+        index_concurrency = options["index_concurrency"]
 
         table_spec = TABLE_SPEC[delta_table]
         special_columns = {}
@@ -292,10 +300,10 @@ class Command(BaseCommand):
                 #       which would run into issues with migrations that have specific names.
                 #       Additionally, we want to run this after we loaded in the data for performance.
                 copy_index_sql = make_copy_indexes(cursor, postgres_table, temp_table)
-                if copy_index_sql:
-                    logger.info(f"Copying indexes over from {postgres_table}.")
-                    cursor.execute("; ".join(copy_index_sql))
-                    logger.info(f"Indexes from {postgres_table} copied over.")
+            if copy_index_sql:
+                logger.info(f"Copying indexes over from {postgres_table}.")
+                CTSC_Command().create_indexes(copy_index_sql, index_concurrency)
+                logger.info(f"Indexes from {postgres_table} copied over.")
 
         if spark_created_by_command:
             spark.stop()
