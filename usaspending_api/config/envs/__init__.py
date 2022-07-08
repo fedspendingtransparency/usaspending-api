@@ -33,7 +33,7 @@ ENVS = [
         "code": StagingConfig.ENV_CODE,
         "long_name": "staging",
         "description": "Staging Environment",
-        "constructor": StagingConfig
+        "constructor": StagingConfig,
     },
     # {
     #     "env_type": "development",
