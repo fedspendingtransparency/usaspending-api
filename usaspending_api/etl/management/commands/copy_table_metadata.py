@@ -24,14 +24,12 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The source Delta Table to read the data",
-            choices=list(TABLE_SPEC),
         )
         parser.add_argument(
             "--dest-table",
             type=str,
             required=True,
             help="The source Delta Table to read the data",
-            choices=list(TABLE_SPEC),
         )
         parser.add_argument(
             "--copy-constraints",
