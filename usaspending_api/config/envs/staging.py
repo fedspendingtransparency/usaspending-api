@@ -1,5 +1,5 @@
 ########################################################################################################################
-# QAT runtime env configuration
+# Staging runtime env configuration
 # - Inherits all defaults from DefaultConfig in default.py
 # - Overrides any default config variables with local runtime env specific values
 # - Users may override local config vars values declared here by putting values in a git-ignored .env file alongside
@@ -13,7 +13,7 @@ from usaspending_api.config.envs.default import DefaultConfig
 
 
 class StagingConfig(DefaultConfig):
-    """Config for a qat runtime environment, which inherits and overrides from DefaultConfig
+    """Config for a staging runtime environment, which inherits and overrides from DefaultConfig
 
     See Also:
         Attributes inherited from or overridden from ``DefaultConfig``
