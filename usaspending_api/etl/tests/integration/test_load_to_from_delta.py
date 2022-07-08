@@ -326,13 +326,25 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
 
             # Make sure Postgres data is sorted in the case of a list since the Spark list data is sorted in ASC order
             if isinstance(psql_val, list):
-                if len(psql_val) > 0 and isinstance(psql_val[0], dict):
-                    psql_val = sorted(psql_val, key=lambda x: x.get(list(x.values())[0]))
-                else:
-                    psql_val = sorted(psql_val)
+
+                def sorted_deep(d):
+                    def make_tuple(v):
+                        if isinstance(v, list):
+                            return (*sorted_deep(v),)
+                        if isinstance(v, dict):
+                            return (*sorted_deep(list(v.items())),)
+                        return (v,)
+
+                    if isinstance(d, list):
+                        return sorted(map(sorted_deep, d), key=make_tuple)
+                    if isinstance(d, dict):
+                        return {k: sorted_deep(d[k]) for k in sorted(d)}
+                    return d
+
+                psql_val = sorted_deep(psql_val)
                 if isinstance(spark_val, str):
                     spark_val = [json.loads(idx.replace("'", '"')) for idx in [spark_val]][0]
-                    spark_val = sorted(spark_val, key=lambda x: x.get(list(x.values())[0]))
+                spark_val = sorted_deep(spark_val)
 
             if psql_val != spark_val:
                 raise Exception(
@@ -402,7 +414,7 @@ def _verify_delta_table_loaded_from_delta(
     if alt_name:
         cmd_args += [f"--alt-delta-name={alt_name}"]
         expected_table_name = alt_name
-    cmd_args += ["--recreate"]
+    cmd_args += ["--recreate", "--copy-constraints", "--copy-indexes"]
 
     # table already made, let's load it
     call_command(load_command, *cmd_args)
