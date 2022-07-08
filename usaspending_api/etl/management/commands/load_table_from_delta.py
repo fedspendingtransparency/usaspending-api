@@ -62,16 +62,28 @@ class Command(BaseCommand):
             "rebuild the table from scratch.",
         )
         parser.add_argument(
+            "--copy-constraints",
+            action="store_true",
+            help="If provided and if based on a table, copies over the old constraints to the downloaded table.",
+        )
+        parser.add_argument(
+            "--copy-indexes",
+            action="store_true",
+            help="If provided and if based on a table, copies over the old indexes to the downloaded table.",
+        )
+        parser.add_argument(
             "--max-parallel-maintenance-workers",
             type=int,
             required=False,
-            help="Postgres session setting for max parallel workers for creating indexes",
+            help="Postgres session setting for max parallel workers for creating indexes. Only applicable if"
+            " copy-indexes is provided.",
         )
         parser.add_argument(
             "--maintenance-work-mem",
             type=int,
             required=False,
-            help="Postgres session setting for max memory to use for creating indexes (in GBs)",
+            help="Postgres session setting for max memory to use for creating indexes (in GBs). Only applicable if"
+            " copy-indexes is provided.",
         )
 
     # Unfortunately, pySpark with the JDBC doesn't handle UUIDs/JSON well.
@@ -127,7 +139,8 @@ class Command(BaseCommand):
         # Resolve Parameters
         delta_table = options["delta_table"]
         recreate = options["recreate"]
-        create = False
+        copy_constraints = options["copy_constraints"]
+        copy_indexes = options["copy_indexes"]
         max_parallel_maintenance_workers = options["max_parallel_maintenance_workers"]
         maintenance_work_mem = options["maintenance_work_mem"]
 
@@ -215,7 +228,7 @@ class Command(BaseCommand):
                 # Copy over the constraints before indexes
                 # Note: we could of included constraints above (`INCLUDING CONSTRAINTS`) but we need to drop the
                 #       foreign key ones
-                if postgres_table:
+                if postgres_table and copy_constraints:
                     logger.info(f"Copying constraints over from {postgres_table}")
                     copy_constraint_sql = make_copy_constraints(
                         cursor, postgres_table, temp_table, drop_foreign_keys=True
@@ -264,7 +277,7 @@ class Command(BaseCommand):
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")
 
         # Load indexes if applicable
-        if make_new_table and postgres_table:
+        if make_new_table and postgres_table and copy_indexes:
             with db.connection.cursor() as cursor:
                 # Ensuring we're using the max cores available when generating indexes
                 if max_parallel_maintenance_workers:
