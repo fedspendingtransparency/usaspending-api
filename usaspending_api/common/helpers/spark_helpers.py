@@ -24,6 +24,7 @@ from usaspending_api.config import CONFIG
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.config.utils import parse_pg_uri
+from usaspending_api.recipient.delta_models import sam_recipient
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     Cfda,
@@ -59,6 +60,8 @@ RDS_REF_TABLES = [
     DisasterEmergencyFundCode,
     SubmissionAttributes,
     DABSSubmissionWindowSchedule,
+    sam_recipient,
+
 ]
 
 
@@ -399,6 +402,19 @@ def get_jdbc_url():
         raise ValueError("DATABASE_URL config val must provided")
 
     return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
+
+
+def get_broker_jdbc_url(databroker_uri: str)->str:
+    """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
+    if not CONFIG.DATA_BROKER_DATABASE_URL:
+        raise ValueError("DATABASE_URL config val must provided")
+    url_parts, user, password = parse_pg_uri(databroker_uri)
+    if user is None or password is None:
+        raise ValueError("databroker_uri provided must have username and password with host or in query string")
+    # JDBC URLs only support postgresql://
+    databroker_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password={password}"
+
+    return f"jdbc:{databroker_uri}"
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually
