@@ -271,7 +271,7 @@ class Command(BaseCommand):
             spark.stop()
 
         # Load indexes and constraints if applicable
-        if make_new_table and postgres_table and (copy_indexes or copy_constraints):
+        if postgres_table and (copy_indexes or copy_constraints):
             copy_table_metadata_args = [
                 "--source-table",
                 postgres_table,
