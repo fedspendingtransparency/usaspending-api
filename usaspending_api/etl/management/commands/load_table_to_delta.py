@@ -192,6 +192,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
+
 }
 
 
