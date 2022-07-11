@@ -88,16 +88,6 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_PROFILE_COLUMNS),
     },
-    "sam_recipient": {
-        "model": DUNS,
-        "source_table": "duns",
-        "destination_database": "raw",
-        "partition_column": None,
-        "partition_column_type": None,
-        "delta_table_create_sql": sam_recipient_sql_string,
-        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
-        "column_names": list(SAM_RECIPIENT_COLUMNS),
-    },
     "transaction_fabs": {
         "model": TransactionFABS,
         "source_table": "transaction_fabs",
@@ -150,16 +140,6 @@ TABLE_SPEC = {
         "delta_table_create_sql": award_search_create_sql_string,
         "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
         "STRING, federal_accounts STRING",
-    },
-    "sam_recipient": {
-        "model": DUNS,
-        "source_table": "duns",
-        "destination_database": "raw",
-        "partition_column": None,
-        "partition_column_type": None,
-        "delta_table_create_sql": sam_recipient_sql_string,
-        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
-        "column_names": list(SAM_RECIPIENT_COLUMNS),
     },
 }
 
