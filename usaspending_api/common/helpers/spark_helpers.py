@@ -27,6 +27,44 @@ from usaspending_api.config import CONFIG
 
 from usaspending_api.config.utils import parse_pg_uri
 
+from usaspending_api.recipient.delta_models import sam_recipient
+from usaspending_api.recipient.models import StateData
+from usaspending_api.references.models import (
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+    DisasterEmergencyFundCode,
+)
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
+
+RDS_REF_TABLES = [
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+    StateData,
+    DisasterEmergencyFundCode,
+    SubmissionAttributes,
+    DABSSubmissionWindowSchedule,
+    sam_recipient,
+
+]
+
 
 def get_active_spark_context() -> Optional[SparkContext]:
     """Returns the active ``SparkContext`` if there is one and it's not stopped, otherwise returns None"""
@@ -373,13 +411,13 @@ def get_usas_jdbc_url():
 
     return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
 
-
 def get_broker_jdbc_url():
     """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.DATA_BROKER_DATABASE_URL:
         raise ValueError("DATA_BROKER_DATABASE_URL config val must provided")
 
     return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
+
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually
