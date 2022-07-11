@@ -433,12 +433,12 @@ transaction_search_load_sql_string = fr"""
                     )
                 )
             ) AS federal_accounts,
-            -- "IF" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
-            IF (
-                SIZE(COLLECT_SET(faba.disaster_emergency_fund_code)) > 0,
-                SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code)),
-                NULL
-            ) AS disaster_emergency_fund_codes,
+            -- "CASE" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
+            CASE
+                WHEN SIZE(COLLECT_SET(faba.disaster_emergency_fund_code)) > 0
+                    THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
+                ELSE NULL
+            END AS disaster_emergency_fund_codes,
             SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) treasury_account_identifiers,
             SORT_ARRAY(
                 COLLECT_SET(
