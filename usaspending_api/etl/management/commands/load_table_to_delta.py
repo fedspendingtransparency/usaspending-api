@@ -103,6 +103,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
         "column_names": list(SAM_RECIPIENT_COLUMNS),
+
     },
     "transaction_fabs": {
         "model": TransactionFABS,
@@ -192,9 +193,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
-
 }
-
 
 SPARK_PARTITION_ROWS = CONFIG.SPARK_PARTITION_ROWS
 
