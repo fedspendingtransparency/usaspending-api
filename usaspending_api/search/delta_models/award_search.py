@@ -105,7 +105,7 @@ award_search_load_sql_string = fr"""
             {",".join([col for col in _award_search_types])}
         )
     SELECT
-  tas.treasury_account_identifiers,
+  TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
   awards.category,
   awards.type,
@@ -226,7 +226,7 @@ award_search_load_sql_string = fr"""
 
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
-  SORT_ARRAY(TREASURY_ACCT.disaster_emergency_fund_codes),
+  TREASURY_ACCT.disaster_emergency_fund_codes,
   DEFC.covid_spending_by_defc,
   DEFC.total_covid_outlay,
   DEFC.total_covid_obligation
@@ -251,7 +251,7 @@ LEFT OUTER JOIN
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END)))
+       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, '')) END)))
 LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
@@ -281,22 +281,10 @@ LEFT OUTER JOIN
 LEFT OUTER JOIN
   global_temp.subtier_agency AS SFA
     ON (FA.subtier_agency_id = SFA.subtier_agency_id)
-LEFT OUTER JOIN (
-  SELECT
-    faba.award_id,
-    COLLECT_SET(DISTINCT taa.treasury_account_identifier) treasury_account_identifiers
-  FROM
-    global_temp.treasury_appropriation_account taa
-    INNER JOIN raw.financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
-  WHERE
-    faba.award_id IS NOT NULL
-  GROUP BY
-    faba.award_id
-) tas ON (tas.award_id = awards.id)
 LEFT OUTER JOIN
     global_temp.ref_country_code AS pop_country_lookup ON (
         pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
-        OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n)
+        OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c)
 )
 LEFT OUTER JOIN
    global_temp.ref_country_code AS rl_country_lookup on (
@@ -316,25 +304,25 @@ LEFT OUTER JOIN (
         pop_county_lookup.state_alpha = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
         AND pop_county_lookup.county_numeric = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
     )
-LEFT JOIN
+LEFT OUTER JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS POP_STATE_LOOKUP
  ON (POP_STATE_LOOKUP.code = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.legal_entity_state_code))
-LEFT JOIN
+LEFT OUTER JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS RL_STATE_LOOKUP
  ON (RL_STATE_LOOKUP.code = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code))
-LEFT JOIN global_temp.ref_population_county AS POP_STATE_POPULATION ON (
+LEFT OUTER JOIN global_temp.ref_population_county AS POP_STATE_POPULATION ON (
     POP_STATE_POPULATION.state_code = POP_STATE_LOOKUP.fips
     AND POP_STATE_POPULATION.county_number = '000'
 )
-LEFT JOIN global_temp.ref_population_county AS POP_COUNTY_POPULATION ON (
+LEFT OUTER JOIN global_temp.ref_population_county AS POP_COUNTY_POPULATION ON (
     POP_COUNTY_POPULATION.state_code = POP_STATE_LOOKUP.fips AND
     POP_COUNTY_POPULATION.county_number = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
 )
-LEFT JOIN global_temp.ref_population_county AS RL_STATE_POPULATION ON (
+LEFT OUTER JOIN global_temp.ref_population_county AS RL_STATE_POPULATION ON (
     RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips
     AND RL_STATE_POPULATION.county_number = '000'
 )
-LEFT JOIN
+LEFT OUTER JOIN
     global_temp.ref_population_county RL_COUNTY_POPULATION ON (
         RL_COUNTY_POPULATION.state_code = RL_STATE_LOOKUP.fips
         AND RL_COUNTY_POPULATION.county_number = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
@@ -344,7 +332,7 @@ LEFT OUTER JOIN
         POP_DISTRICT_POPULATION.state_code = POP_STATE_LOOKUP.fips
         AND POP_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
 )
-LEFT JOIN
+LEFT OUTER JOIN
     global_temp.ref_population_cong_district RL_DISTRICT_POPULATION ON (
          RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips
         AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
@@ -365,7 +353,7 @@ LEFT OUTER JOIN (
         )
         AND recipient_lookup.recipient_name IS NOT NULL
     )
-LEFT JOIN (
+LEFT OUTER JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
         COLLECT_SET(
@@ -403,35 +391,41 @@ LEFT JOIN (
     GROUP BY
         GROUPED_BY_DEFC.award_id
 ) DEFC on DEFC.award_id = awards.id
-LEFT JOIN (
+LEFT OUTER JOIN (
   SELECT
     faba.award_id,
     COLLECT_SET(
       DISTINCT CONCAT(
-        'agency=', agency.toptier_code,
-        'faaid=', fa.agency_identifier,
-        'famain=', fa.main_account_code,
-        'aid=', taa.agency_id,
-        'main=', taa.main_account_code,
-        'ata=', taa.allocation_transfer_agency_id,
-        'sub=', taa.sub_account_code,
-        'bpoa=', taa.beginning_period_of_availability,
-        'epoa=', taa.ending_period_of_availability,
-        'a=', taa.availability_type_code
+        'agency=', COALESCE(agency.toptier_code, ''),
+        'faaid=', COALESCE(fa.agency_identifier, ''),
+        'famain=', COALESCE(fa.main_account_code, ''),
+        'aid=', COALESCE(taa.agency_id, ''),
+        'main=', COALESCE(taa.main_account_code, ''),
+        'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
+        'sub=', COALESCE(taa.sub_account_code, ''),
+        'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
+        'epoa=', COALESCE(taa.ending_period_of_availability, ''),
+        'a=', COALESCE(taa.availability_type_code, '')
       )
-    ) tas_paths,
+    ) AS tas_paths,
     COLLECT_SET(
-      DISTINCT CONCAT(
-        'aid=', taa.agency_id,
-        'main=', taa.main_account_code,
-        'ata=', taa.allocation_transfer_agency_id,
-        'sub=', taa.sub_account_code,
-        'bpoa=', taa.beginning_period_of_availability,
-        'epoa=', taa.ending_period_of_availability,
-        'a=', taa.availability_type_code
+      CONCAT(
+        'aid=', COALESCE(taa.agency_id, ''),
+        'main=', COALESCE(taa.main_account_code, ''),
+        'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
+        'sub=', COALESCE(taa.sub_account_code, ''),
+        'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
+        'epoa=', COALESCE(taa.ending_period_of_availability, ''),
+        'a=', COALESCE(taa.availability_type_code, '')
       )
-    ) tas_components,
-    COLLECT_SET(DISTINCT faba.disaster_emergency_fund_code) FILTER (WHERE faba.disaster_emergency_fund_code IS NOT NULL) disaster_emergency_fund_codes
+    ) AS tas_components,
+    -- "CASE" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
+    CASE
+        WHEN SIZE(COLLECT_SET(faba.disaster_emergency_fund_code)) > 0
+            THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
+        ELSE NULL
+    END AS disaster_emergency_fund_codes,
+    COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN raw.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
