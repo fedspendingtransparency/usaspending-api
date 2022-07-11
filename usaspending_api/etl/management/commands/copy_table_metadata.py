@@ -31,14 +31,14 @@ class Command(BaseCommand):
             help="The source postgres table to copy the metadata to",
         )
         parser.add_argument(
-            "--copy-constraints",
+            "--skip-constraints",
             action="store_true",
-            help="If provided, copies over the constraints to the destination table.",
+            help="If provided, skips copying over the constraints to the destination table.",
         )
         parser.add_argument(
-            "--copy-indexes",
+            "--skip-indexes",
             action="store_true",
-            help="If provided, copies over the indexes to the destination table.",
+            help="If provided, skips copying over the indexes to the destination table.",
         )
         parser.add_argument(
             "--max-parallel-maintenance-workers",
@@ -65,8 +65,8 @@ class Command(BaseCommand):
         # Resolve Parameters
         source_table = options["source_table"]
         dest_table = options["dest_table"]
-        copy_constraints = options["copy_constraints"]
-        copy_indexes = options["copy_indexes"]
+        skip_constraints = options["skip_constraints"]
+        skip_indexes = options["skip_indexes"]
         max_parallel_maintenance_workers = options["max_parallel_maintenance_workers"]
         maintenance_work_mem = options["maintenance_work_mem"]
         index_concurrency = options["index_concurrency"]
@@ -75,14 +75,14 @@ class Command(BaseCommand):
 
         copy_index_sql = None
         with db.connection.cursor() as cursor:
-            if copy_constraints:
+            if not skip_constraints:
                 logger.info(f"Copying constraints over from {source_table}")
                 copy_constraint_sql = make_copy_constraints(cursor, source_table, dest_table, drop_foreign_keys=True)
                 if copy_constraint_sql:
                     cursor.execute("; ".join(copy_constraint_sql))
                 logger.info(f"Constraints from {source_table} copied over")
 
-            if copy_indexes:
+            if not skip_indexes:
                 # Ensuring we're using the max cores available when generating indexes
                 if max_parallel_maintenance_workers:
                     logger.info(f"Setting max_parallel_maintenance_workers to {max_parallel_maintenance_workers}")
