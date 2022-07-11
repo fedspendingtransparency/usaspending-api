@@ -64,6 +64,16 @@ RDS_REF_TABLES = [
 
 ]
 
+BROKER_PROXY_TABLES =[
+    sam_recipient,
+    subaward,
+    published_fabs,
+    detached_award_procurement,
+    submissions,
+    appropriation,
+    object_class_program_activity,
+    award_financial,
+]
 
 def get_active_spark_context() -> Optional[SparkContext]:
     """Returns the active ``SparkContext`` if there is one and it's not stopped, otherwise returns None"""
@@ -584,6 +594,7 @@ def create_ref_temp_views(spark: SparkSession):
     logger = get_jvm_logger(spark)
     jdbc_conn_props = get_jdbc_connection_properties()
     rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in RDS_REF_TABLES]
+    broker_proxy_tables =[broker_proxy_table._meta.db_table for broker_proxy_table in BROKER_PROXY_TABLES]
 
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
     for ref_rdf_table in rds_ref_tables:
@@ -599,3 +610,18 @@ def create_ref_temp_views(spark: SparkSession):
         """
         spark.sql(spark_sql)
     logger.info(f"Created the reference views in the global_temp database")
+    
+    logger.info(f"Creating the following tables under the global_temp database: {broker_proxy_tables}")
+    for broker_table in broker_proxy_tables:
+        spark_sql = f"""
+          CREATE OR REPLACE GLOBAL TEMPORARY VIEW {broker_table}
+          USING JDBC
+          OPTIONS (
+            driver '{jdbc_conn_props["driver"]}',
+            fetchsize '{jdbc_conn_props["fetchsize"]}',
+            url '{get_broker_jdbc_url()}',
+            dbtable '{broker_table}'
+          )
+          """
+        spark.sql(spark_sql)
+        logger.info(f"Created the broker proxy views in the global_temp database")
