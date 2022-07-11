@@ -2,6 +2,7 @@ import itertools
 import numpy as np
 from django import db
 from django.core.management.base import BaseCommand
+from django.core.management import call_command
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.helpers.spark_helpers import (
@@ -12,11 +13,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
-from usaspending_api.etl.management.commands.combine_transaction_search_chunks import Command as CTSC_Command
-from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_generator import (
-    make_copy_indexes,
-    make_copy_constraints,
-)
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
@@ -148,9 +144,6 @@ class Command(BaseCommand):
         recreate = options["recreate"]
         copy_constraints = options["copy_constraints"]
         copy_indexes = options["copy_indexes"]
-        max_parallel_maintenance_workers = options["max_parallel_maintenance_workers"]
-        maintenance_work_mem = options["maintenance_work_mem"]
-        index_concurrency = options["index_concurrency"]
 
         table_spec = TABLE_SPEC[delta_table]
         special_columns = {}
@@ -191,7 +184,7 @@ class Command(BaseCommand):
 
         # Checking if the temp destination table already exists
         temp_dest_table_exists_sql = f"""
-        SELECT EXISTS (
+            SELECT EXISTS (
                 SELECT 1
                 FROM information_schema.tables
                 WHERE table_schema = '{temp_schema}'
@@ -210,40 +203,29 @@ class Command(BaseCommand):
                 cursor.execute(clear_table_sql)
             logger.info(f"{temp_table} dropped.")
             temp_dest_table_exists = False
-
         make_new_table = not temp_dest_table_exists
-        # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
-        # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
-        # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
-        if make_new_table and (postgres_table or postgres_cols):
-            if postgres_table:
-                create_temp_sql = f"""
-                    CREATE TABLE {temp_table} (
-                        LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
-                    )
-                """
-            else:
-                create_temp_sql = f"""
-                    CREATE TABLE {temp_table} (
-                        {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
-                    )
-                """
-            with db.connection.cursor() as cursor:
-                logger.info(f"Creating {temp_table}")
-                cursor.execute(create_temp_sql)
-                logger.info(f"{temp_table} created.")
 
-                # Copy over the constraints before indexes
-                # Note: we could of included constraints above (`INCLUDING CONSTRAINTS`) but we need to drop the
-                #       foreign key ones
-                if postgres_table and copy_constraints:
-                    logger.info(f"Copying constraints over from {postgres_table}")
-                    copy_constraint_sql = make_copy_constraints(
-                        cursor, postgres_table, temp_table, drop_foreign_keys=True
-                    )
-                    if copy_constraint_sql:
-                        cursor.execute("; ".join(copy_constraint_sql))
-                    logger.info(f"Constraints from {postgres_table} copied over")
+        if postgres_table or postgres_cols:
+            # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
+            # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
+            # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
+            if make_new_table:
+                if postgres_table:
+                    create_temp_sql = f"""
+                        CREATE TABLE {temp_table} (
+                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
+                        )
+                    """
+                else:
+                    create_temp_sql = f"""
+                        CREATE TABLE {temp_table} (
+                            {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
+                        )
+                    """
+                with db.connection.cursor() as cursor:
+                    logger.info(f"Creating {temp_table}")
+                    cursor.execute(create_temp_sql)
+                    logger.info(f"{temp_table} created.")
 
             # Getting a list of the special columns that will need to be particularly handed
             if postgres_model:
@@ -284,26 +266,23 @@ class Command(BaseCommand):
             logger.info(f"LOAD: Part {i+1} of {split_df_count} loaded (note: unequal part sizes)")
         logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")
 
-        # Load indexes if applicable
-        if make_new_table and postgres_table and copy_indexes:
-            with db.connection.cursor() as cursor:
-                # Ensuring we're using the max cores available when generating indexes
-                if max_parallel_maintenance_workers:
-                    logger.info(f"Setting max_parallel_maintenance_workers to {max_parallel_maintenance_workers}")
-                    cursor.execute(f"SET max_parallel_maintenance_workers = {max_parallel_maintenance_workers}")
-                if maintenance_work_mem:
-                    logger.info(f"Setting maintenance_work_mem to '{maintenance_work_mem}GB'")
-                    cursor.execute(f"SET maintenance_work_mem = '{maintenance_work_mem}GB'")
-
-                # Copy over the indexes, preserving the names (mostly, includes "_temp")
-                # Note: We could of included indexes above (`INCLUDING INDEXES`) but that renames them,
-                #       which would run into issues with migrations that have specific names.
-                #       Additionally, we want to run this after we loaded in the data for performance.
-                copy_index_sql = make_copy_indexes(cursor, postgres_table, temp_table)
-            if copy_index_sql:
-                logger.info(f"Copying indexes over from {postgres_table}.")
-                CTSC_Command().create_indexes(copy_index_sql, index_concurrency)
-                logger.info(f"Indexes from {postgres_table} copied over.")
-
+        # We're done with spark at this point
         if spark_created_by_command:
             spark.stop()
+
+        # Load indexes and constraints if applicable
+        if make_new_table and postgres_table and (copy_indexes or copy_constraints):
+            copy_table_metadata_args = [
+                "--source-table",
+                postgres_table,
+                "--dest-table",
+                temp_table,
+            ]
+            if not copy_constraints:
+                copy_table_metadata_args.append("--skip-constraints")
+            if not copy_indexes:
+                copy_table_metadata_args.append("--skip-indexes")
+            for option in ["max_parallel_maintenance_workers", "maintenance_work_mem", "index_concurrency"]:
+                if options[option]:
+                    copy_table_metadata_args.extend([f'--{option.replace("_", "-")}', options[option]])
+            call_command("copy_table_metadata", *copy_table_metadata_args)
