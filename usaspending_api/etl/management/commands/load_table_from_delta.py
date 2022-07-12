@@ -2,7 +2,6 @@ import itertools
 import numpy as np
 from django import db
 from django.core.management.base import BaseCommand
-from django.core.management import call_command
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.helpers.spark_helpers import (
@@ -29,7 +28,9 @@ class Command(BaseCommand):
     help = """
     This command reads data from a Delta table and copies it into a corresponding Postgres database table (under a
     temp name). As of now, it only supports a full reload of a table. If the table with the chosen temp name already
-    exists, all existing data will be deleted before new data is written.
+    exists, all existing data will be deleted before new data is written. Note this only loads in the data
+    without accounting for the metadata, so make sure to run the command `copy_table_metadata` after this is complete
+    if a new table has been made.
     """
 
     def add_arguments(self, parser):
@@ -57,36 +58,6 @@ class Command(BaseCommand):
             action="store_true",
             help="Instead of truncating and reloading into an existing table, this forces the script to drop and"
             "rebuild the table from scratch.",
-        )
-        parser.add_argument(
-            "--copy-constraints",
-            action="store_true",
-            help="If provided and if based on a table, copies over the old constraints to the downloaded table.",
-        )
-        parser.add_argument(
-            "--copy-indexes",
-            action="store_true",
-            help="If provided and if based on a table, copies over the old indexes to the downloaded table.",
-        )
-        parser.add_argument(
-            "--max-parallel-maintenance-workers",
-            type=int,
-            required=False,
-            help="Postgres session setting for max parallel workers for creating indexes. Only applicable if"
-            " copy-indexes is provided.",
-        )
-        parser.add_argument(
-            "--maintenance-work-mem",
-            type=int,
-            required=False,
-            help="Postgres session setting for max memory to use for creating indexes (in GBs). Only applicable if"
-            " copy-indexes is provided.",
-        )
-        parser.add_argument(
-            "--index-concurrency",
-            type=int,
-            default=5,
-            help="Concurrency limit for index creation. Only applicable if copy-indexes is provided.",
         )
 
     # Unfortunately, pySpark with the JDBC doesn't handle UUIDs/JSON well.
@@ -142,8 +113,6 @@ class Command(BaseCommand):
         # Resolve Parameters
         delta_table = options["delta_table"]
         recreate = options["recreate"]
-        copy_constraints = options["copy_constraints"]
-        copy_indexes = options["copy_indexes"]
 
         table_spec = TABLE_SPEC[delta_table]
         special_columns = {}
@@ -270,19 +239,10 @@ class Command(BaseCommand):
         if spark_created_by_command:
             spark.stop()
 
-        # Load indexes and constraints if applicable
-        if postgres_table and (copy_indexes or copy_constraints):
-            copy_table_metadata_args = [
-                "--source-table",
-                postgres_table,
-                "--dest-table",
-                temp_table,
-            ]
-            if not copy_constraints:
-                copy_table_metadata_args.append("--skip-constraints")
-            if not copy_indexes:
-                copy_table_metadata_args.append("--skip-indexes")
-            for option in ["max_parallel_maintenance_workers", "maintenance_work_mem", "index_concurrency"]:
-                if options[option]:
-                    copy_table_metadata_args.extend([f'--{option.replace("_", "-")}', options[option]])
-            call_command("copy_table_metadata", *copy_table_metadata_args)
+        if postgres_table:
+            logger.info(
+                f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
+                f" metadata portion of the table download to a separate script. If not already done so,"
+                f" please run the following additional command to complete the process: "
+                f" 'copy_table_metadata --source-table {postgres_table} --dest-table {temp_table}'."
+            )
