@@ -414,7 +414,6 @@ def _verify_delta_table_loaded_from_delta(
     if alt_name:
         cmd_args += [f"--alt-delta-name={alt_name}"]
         expected_table_name = alt_name
-    cmd_args += ["--copy-constraints", "--copy-indexes"]
 
     # table already made, let's load it
     call_command(load_command, *cmd_args)
