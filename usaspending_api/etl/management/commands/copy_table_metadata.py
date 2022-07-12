@@ -1,16 +1,42 @@
 import logging
 import re
+import asyncio
 from django import db
 from django.core.management.base import BaseCommand
 
+from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
+from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.management.commands.combine_transaction_search_chunks import Command as CTSC_Command
 from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_generator import (
     make_read_constraints,
     make_read_indexes,
 )
 
 logger = logging.getLogger("script")
+
+
+def create_indexes(self, index_definitions, index_concurrency):
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(self.index_with_concurrency(index_definitions, index_concurrency))
+    loop.close()
+
+
+async def index_with_concurrency(self, index_definitions, index_concurrency):
+    semaphore = asyncio.Semaphore(index_concurrency)
+    tasks = []
+
+    async def create_with_sem(sql, index):
+        async with semaphore:
+            return await async_run_creates(
+                sql,
+                wrapper=Timer(f"Creating Index {index}"),
+            )
+
+    for i, sql in enumerate(index_definitions):
+        logger.info(f"Creating future for index: {i} - SQL: {sql}")
+        tasks.append(create_with_sem(sql, i))
+
+    return await asyncio.gather(*tasks)
 
 
 def make_copy_constraints(cursor, source_table, dest_table, drop_foreign_keys=False):
@@ -142,5 +168,5 @@ class Command(BaseCommand):
                 copy_index_sql = make_copy_indexes(cursor, source_table, dest_table)
         if copy_index_sql:
             logger.info(f"Copying indexes over from {source_table}.")
-            CTSC_Command().create_indexes(copy_index_sql, index_concurrency)
+            create_indexes(copy_index_sql, index_concurrency)
             logger.info(f"Indexes from {source_table} copied over.")
