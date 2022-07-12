@@ -154,7 +154,7 @@ query_paths = {
                 ("type_of_idc", "latest_transaction__contract_data__type_of_idc_description"),
                 ("type_of_contract_pricing_code", "latest_transaction__contract_data__type_of_contract_pricing"),
                 ("type_of_contract_pricing", "latest_transaction__contract_data__type_of_contract_pric_desc"),
-                ("award_description", "description"),
+                ("prime_award_base_transaction_description", "description"),
                 ("solicitation_identifier", "latest_transaction__contract_data__solicitation_identifier"),
                 ("number_of_actions", "latest_transaction__contract_data__number_of_actions"),
                 (
@@ -724,7 +724,7 @@ query_paths = {
                 ("funding_opportunity_goals_text", "latest_transaction__assistance_data__funding_opportunity_goals"),
                 ("assistance_type_code", "latest_transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "latest_transaction__assistance_data__assistance_type_desc"),
-                ("award_description", "description"),
+                ("prime_award_base_transaction_description", "description"),
                 (
                     "business_funds_indicator_code",
                     "latest_transaction__assistance_data__business_funds_indicator",
@@ -854,7 +854,8 @@ query_paths = {
                 ("type_of_idc", "transaction__contract_data__type_of_idc_description"),
                 ("type_of_contract_pricing_code", "transaction__contract_data__type_of_contract_pricing"),
                 ("type_of_contract_pricing", "transaction__contract_data__type_of_contract_pric_desc"),
-                ("award_description", "transaction__contract_data__award_description"),
+                ("transaction_description", "transaction__contract_data__award_description"),
+                ("prime_award_base_transaction_description", "transaction__award__description"),
                 ("action_type_code", "transaction__action_type"),
                 ("action_type", "transaction__action_type_description"),
                 ("solicitation_identifier", "transaction__contract_data__solicitation_identifier"),
@@ -1234,7 +1235,8 @@ query_paths = {
                 ("funding_opportunity_goals_text", "transaction__assistance_data__funding_opportunity_goals"),
                 ("assistance_type_code", "transaction__assistance_data__assistance_type"),
                 ("assistance_type_description", "transaction__assistance_data__assistance_type_desc"),
-                ("award_description", "transaction__assistance_data__award_description"),
+                ("transaction_description", "transaction__assistance_data__award_description"),
+                ("prime_award_base_transaction_description", "transaction__award__description"),
                 ("business_funds_indicator_code", "transaction__assistance_data__business_funds_indicator"),
                 ("business_funds_indicator_description", "transaction__assistance_data__business_funds_ind_desc"),
                 ("business_types_code", "transaction__assistance_data__business_types"),
@@ -1339,7 +1341,7 @@ query_paths = {
                     "prime_award_primary_place_of_performance_country_name",
                     "broker_subaward__place_of_perform_country_na",
                 ),
-                ("prime_award_description", "broker_subaward__award_description"),
+                ("prime_award_base_transaction_description", "broker_subaward__award_description"),
                 ("prime_award_project_title", "broker_subaward__program_title"),
                 ("prime_award_naics_code", "broker_subaward__naics"),
                 ("prime_award_naics_description", "broker_subaward__naics_description"),
@@ -1491,7 +1493,7 @@ query_paths = {
                     "prime_award_primary_place_of_performance_country_name",
                     "broker_subaward__place_of_perform_country_na",
                 ),
-                ("prime_award_description", "broker_subaward__award_description"),
+                ("prime_award_base_transaction_description", "broker_subaward__award_description"),
                 ("prime_award_cfda_numbers_and_titles", None),  # Annotation is used to create this column
                 ("subaward_type", "broker_subaward__subaward_type"),
                 ("subaward_fsrs_report_id", "broker_subaward__internal_id"),
@@ -2026,7 +2028,7 @@ query_paths = {
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
-                ("award_description", "award__description"),
+                ("prime_award_base_transaction_description", "award__description"),
                 ("awarding_agency_code", "awarding_agency_code"),  # Column is annotated in account_download.py
                 ("awarding_agency_name", "awarding_agency_name"),  # Column is annotated in account_download.py
                 ("awarding_subagency_code", "awarding_subagency_code"),  # Column is annotated in account_download.py
@@ -2142,7 +2144,7 @@ query_paths = {
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
                 ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
                 ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
-                ("award_description", "award__description"),
+                ("prime_award_base_transaction_description", "award__description"),
                 ("awarding_agency_code", "awarding_agency_code"),  # Column is annotated in account_download.py
                 ("awarding_agency_name", "awarding_agency_name"),  # Column is annotated in account_download.py
                 ("awarding_subagency_code", "awarding_subagency_code"),  # Column is annotated in account_download.py
