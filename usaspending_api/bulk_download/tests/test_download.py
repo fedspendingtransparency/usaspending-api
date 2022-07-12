@@ -612,7 +612,7 @@ def test_download_awards_with_foreign_scope(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 5
-    assert resp.json()["total_columns"] == 593
+    assert resp.json()["total_columns"] == 595
 
     # Place of Performance Scope
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
