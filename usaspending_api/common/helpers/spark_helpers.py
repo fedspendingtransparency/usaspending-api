@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 import sys
+from typing import Optional, Union
 
 from py4j.java_gateway import (
     JavaGateway,
@@ -36,7 +37,9 @@ from usaspending_api.references.models import (
     CityCountyStateCode,
     PopCounty,
     PopCongressionalDistrict,
+    DisasterEmergencyFundCode,
 )
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 RDS_REF_TABLES = [
     Cfda,
@@ -53,17 +56,20 @@ RDS_REF_TABLES = [
     StateData,
     FederalAccount,
     TreasuryAppropriationAccount,
+    DisasterEmergencyFundCode,
+    SubmissionAttributes,
+    DABSSubmissionWindowSchedule,
 ]
 
 
-def get_active_spark_context() -> SparkContext:
+def get_active_spark_context() -> Optional[SparkContext]:
     """Returns the active ``SparkContext`` if there is one and it's not stopped, otherwise returns None"""
     if is_spark_context_stopped():
         return None
     return SparkContext._active_spark_context
 
 
-def get_active_spark_session() -> SparkSession:
+def get_active_spark_session() -> Optional[SparkSession]:
     """Returns the active ``SparkSession`` if there is one and it's not stopped, otherwise returns None"""
     if is_spark_context_stopped():
         return None
@@ -97,7 +103,7 @@ def stop_spark_context() -> bool:
 
 def configure_spark_session(
     java_gateway: JavaGateway = None,
-    spark_context: SparkContext = None,
+    spark_context: Union[SparkContext, SparkSession] = None,
     master=None,
     app_name="Spark App",
     log_level: int = None,
