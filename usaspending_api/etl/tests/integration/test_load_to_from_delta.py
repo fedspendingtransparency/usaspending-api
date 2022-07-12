@@ -220,7 +220,12 @@ def populate_data_for_transaction_search():
     federal_account = baker.make(
         "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
     )
-    tas = baker.make("accounts.TreasuryAppropriationAccount", federal_account=federal_account, _fill_optional=True)
+    tas = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        federal_account=federal_account,
+        allocation_transfer_agency_id=None,
+        _fill_optional=True,
+    )
     dabs = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01")
     sa = baker.make("submissions.SubmissionAttributes", reporting_period_start="2020-04-02", submission_window=dabs)
 
