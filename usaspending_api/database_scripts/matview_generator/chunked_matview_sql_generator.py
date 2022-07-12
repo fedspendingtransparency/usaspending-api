@@ -17,7 +17,6 @@ from usaspending_api.database_scripts.matview_generator.shared_sql_generator imp
     TEMPLATE,
 )
 
-
 # Usage: python chunked_matview_sql_generator.py --file <file_name> (from usaspending_api/database_scripts/matview_generator)
 #        ^--- Will clobber files in usaspending_api/database_scripts/matviews
 
