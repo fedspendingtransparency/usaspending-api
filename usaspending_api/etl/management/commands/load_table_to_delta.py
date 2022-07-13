@@ -24,7 +24,7 @@ from usaspending_api.recipient.delta_models import (
     SAM_RECIPIENT_COLUMNS,
     sam_recipient_sql_string,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearchView
+from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
     TRANSACTION_FABS_COLUMNS,
     transaction_fabs_sql_string,
@@ -178,8 +178,8 @@ TABLE_SPEC = {
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
     "award_search_testing": {
-        "model": AwardSearchView,
-        "source_table": "vw_award_search",
+        "model": AwardSearch,
+        "source_table": "award_search",
         "source_database": None,
         "destination_database": "rpt",
         "swap_table": None,

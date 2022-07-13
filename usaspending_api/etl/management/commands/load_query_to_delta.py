@@ -12,7 +12,7 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearchView
+from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
@@ -34,12 +34,12 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
     },
     "award_search": {
-        "model": AwardSearchView,
+        "model": AwardSearch,
         "source_query": award_search_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": "vw_award_search",
+        "swap_table": "award_search",
         "swap_schema": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",
