@@ -147,4 +147,25 @@ class Migration(migrations.Migration):
         migrations.DeleteModel(
             name='AwardSearchView',
         ),
+        migrations.DeleteModel(
+            name='ContractAwardSearchMatview',
+        ),
+        migrations.DeleteModel(
+            name='DirectPaymentAwardSearchMatview',
+        ),
+        migrations.DeleteModel(
+            name='GrantAwardSearchMatview',
+        ),
+        migrations.DeleteModel(
+            name='IDVAwardSearchMatview',
+        ),
+        migrations.DeleteModel(
+            name='LoanAwardSearchMatview',
+        ),
+        migrations.DeleteModel(
+            name='OtherAwardSearchMatview',
+        ),
+        migrations.DeleteModel(
+            name='Pre2008AwardSearchMatview',
+        ),
     ]

@@ -28,62 +28,6 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
-            "mv_contract_award_search",
-            {
-                "model": mv.ContractAwardSearchMatview,
-                "json_filepath": str(JSON_DIR / "mv_contract_award_search.json"),
-                "sql_filename": "mv_contract_award_search.sql",
-            },
-        ),
-        (
-            "mv_directpayment_award_search",
-            {
-                "model": mv.DirectPaymentAwardSearchMatview,
-                "json_filepath": str(JSON_DIR / "mv_directpayment_award_search.json"),
-                "sql_filename": "mv_directpayment_award_search.sql",
-            },
-        ),
-        (
-            "mv_grant_award_search",
-            {
-                "model": mv.GrantAwardSearchMatview,
-                "json_filepath": str(JSON_DIR / "mv_grant_award_search.json"),
-                "sql_filename": "mv_grant_award_search.sql",
-            },
-        ),
-        (
-            "mv_idv_award_search",
-            {
-                "model": mv.IDVAwardSearchMatview,
-                "json_filepath": str(JSON_DIR / "mv_idv_award_search.json"),
-                "sql_filename": "mv_idv_award_search.sql",
-            },
-        ),
-        (
-            "mv_loan_award_search",
-            {
-                "model": mv.LoanAwardSearchMatview,
-                "json_filepath": str(JSON_DIR / "mv_loan_award_search.json"),
-                "sql_filename": "mv_loan_award_search.sql",
-            },
-        ),
-        (
-            "mv_other_award_search",
-            {
-                "model": mv.OtherAwardSearchMatview,
-                "json_filepath": str(JSON_DIR / "mv_other_award_search.json"),
-                "sql_filename": "mv_other_award_search.sql",
-            },
-        ),
-        (
-            "mv_pre2008_award_search",
-            {
-                "model": mv.Pre2008AwardSearchMatview,
-                "json_filepath": str(JSON_DIR / "mv_pre2008_award_search.json"),
-                "sql_filename": "mv_pre2008_award_search.sql",
-            },
-        ),
-        (
             "subaward_view",
             {
                 "model": mv.SubawardView,

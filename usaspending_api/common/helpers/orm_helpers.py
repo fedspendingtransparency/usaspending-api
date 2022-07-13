@@ -5,14 +5,7 @@ from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Aggregate, Case, CharField, Func, IntegerField, TextField, Value, When
 from django.db.models.functions import Concat, LPad, Cast
 
-from usaspending_api.search.models import (
-    ContractAwardSearchMatview,
-    DirectPaymentAwardSearchMatview,
-    GrantAwardSearchMatview,
-    IDVAwardSearchMatview,
-    LoanAwardSearchMatview,
-    OtherAwardSearchMatview,
-)
+from usaspending_api.search.models import AwardSearch
 
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
@@ -30,12 +23,12 @@ TYPES_TO_QUOTE_IN_SQL = (str, date)
 
 
 CATEGORY_TO_MODEL = {
-    "contracts": {"model": ContractAwardSearchMatview, "types": set(contract_type_mapping.keys())},
-    "direct_payments": {"model": DirectPaymentAwardSearchMatview, "types": set(direct_payment_type_mapping.keys())},
-    "grants": {"model": GrantAwardSearchMatview, "types": set(grant_type_mapping.keys())},
-    "idvs": {"model": IDVAwardSearchMatview, "types": set(idv_type_mapping.keys())},
-    "loans": {"model": LoanAwardSearchMatview, "types": set(loan_type_mapping.keys())},
-    "other": {"model": OtherAwardSearchMatview, "types": set(other_type_mapping.keys())},
+    "contracts": {"model": AwardSearch, "types": set(contract_type_mapping.keys())},
+    "direct_payments": {"model": AwardSearch, "types": set(direct_payment_type_mapping.keys())},
+    "grants": {"model": AwardSearch, "types": set(grant_type_mapping.keys())},
+    "idvs": {"model": AwardSearch, "types": set(idv_type_mapping.keys())},
+    "loans": {"model": AwardSearch, "types": set(loan_type_mapping.keys())},
+    "other": {"model": AwardSearch, "types": set(other_type_mapping.keys())},
 }
 
 
