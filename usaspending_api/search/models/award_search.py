@@ -30,7 +30,7 @@ class AwardSearch(models.Model):
     recipient_unique_id = models.TextField(null=True)
     parent_recipient_unique_id = models.TextField(null=True)
     recipient_uei = models.TextField(null=True, blank=True)
-    parent_recipient_uei = models.TextField(null=True, blank=True)
+    parent_uei = models.TextField(null=True, blank=True)
     business_categories = ArrayField(models.TextField(), default=list, null=True)
 
     action_date = models.DateField(null=True)

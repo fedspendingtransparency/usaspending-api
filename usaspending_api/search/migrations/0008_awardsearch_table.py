@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
                 ('recipient_unique_id', models.TextField(null=True)),
                 ('parent_recipient_unique_id', models.TextField(null=True)),
                 ('recipient_uei', models.TextField(blank=True, null=True)),
-                ('parent_recipient_uei', models.TextField(blank=True, null=True)),
+                ('parent_uei', models.TextField(blank=True, null=True)),
                 ('business_categories', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None)),
                 ('action_date', models.DateField(null=True)),
                 ('fiscal_year', models.IntegerField(null=True)),
