@@ -210,32 +210,62 @@ class Command(BaseCommand):
 
         logger.info("Verifying that the same number of constraints exist for the old and new table.")
         cursor.execute(
-            f"SELECT table_constraints.constraint_name, table_constraints.constraint_type, check_constraints.check_clause, referential_constraints.unique_constraint_name"
+            f"SELECT "
+            f"     table_constraints.constraint_name,"
+            f"     table_constraints.constraint_type,"
+            f"     check_constraints.check_clause,"
+            f"     referential_constraints.unique_constraint_name,"
+            f"     COALESCE(columns.is_nullable, 'YES')::BOOLEAN AS is_nullable"
             f" FROM information_schema.table_constraints"
-            f" LEFT OUTER JOIN information_schema.check_constraints ON (table_constraints.constraint_name = check_constraints.constraint_name)"
-            f" LEFT OUTER JOIN information_schema.referential_constraints ON (table_constraints.constraint_name = referential_constraints.constraint_name)"
-            f" WHERE table_name = '{self.temp_db_table_name}'"
+            f" LEFT OUTER JOIN information_schema.check_constraints ON ("
+            f"     table_constraints.constraint_name = check_constraints.constraint_name)"
+            f" LEFT OUTER JOIN information_schema.referential_constraints ON ("
+            f"     table_constraints.constraint_name = referential_constraints.constraint_name)"
+            f" LEFT OUTER JOIN information_schema.columns ON ("
+            f"     table_constraints.table_name = columns.table_name"
+            f"     AND check_constraints.check_clause = CONCAT(columns.column_name, ' IS NOT NULL'))"
+            f" WHERE table_constraints.table_name = '{self.temp_db_table_name}'"
         )
         temp_constraints = ordered_dictionary_fetcher(cursor)
-        self.query_result_lookup["temp_table_constraints"] = temp_constraints
         cursor.execute(
-            f"SELECT table_constraints.constraint_name, table_constraints.constraint_type, check_constraints.check_clause, referential_constraints.unique_constraint_name"
+            f"SELECT "
+            f"     table_constraints.constraint_name,"
+            f"     table_constraints.constraint_type,"
+            f"     check_constraints.check_clause,"
+            f"     referential_constraints.unique_constraint_name,"
+            f"     COALESCE(columns.is_nullable, 'YES')::BOOLEAN AS is_nullable"
             f" FROM information_schema.table_constraints"
-            f" LEFT OUTER JOIN information_schema.check_constraints ON (table_constraints.constraint_name = check_constraints.constraint_name)"
-            f" LEFT OUTER JOIN information_schema.referential_constraints ON (table_constraints.constraint_name = referential_constraints.constraint_name)"
-            f" WHERE table_name = '{self.db_table_name}'"
+            f" LEFT OUTER JOIN information_schema.check_constraints ON ("
+            f"     table_constraints.constraint_name = check_constraints.constraint_name)"
+            f" LEFT OUTER JOIN information_schema.referential_constraints ON ("
+            f"     table_constraints.constraint_name = referential_constraints.constraint_name)"
+            f" LEFT OUTER JOIN information_schema.columns ON ("
+            f"     table_constraints.table_name = columns.table_name"
+            f"     AND check_constraints.check_clause = CONCAT(columns.column_name, ' IS NOT NULL'))"
+            f" WHERE table_constraints.table_name = '{self.db_table_name}'"
         )
         curr_constraints = ordered_dictionary_fetcher(cursor)
-        self.query_result_lookup["curr_table_constraints"] = curr_constraints
+
         if len(temp_constraints) != len(curr_constraints):
             raise ValueError(
                 f"The number of constraints are different for the tables: {self.temp_db_table_name} and {self.db_table_name}."
             )
 
+        # NOT NULL constraints are created on a COLUMN not the TABLE, this means we do not control their name.
+        # As a result, we verify that the same NOT NULL constraints exist on the tables but do not handle the swap.
+        self.query_result_lookup["temp_table_constraints"] = list(
+            filter(lambda val: val["is_nullable"], temp_constraints)
+        )
+        self.query_result_lookup["curr_table_constraints"] = list(
+            filter(lambda val: val["is_nullable"], curr_constraints)
+        )
+
         logger.info("Verifying that the constraints are the same except for '_temp' in the name.")
         temp_constraints = [
             {
-                "constraint_name": val["constraint_name"].replace("_temp", ""),
+                "constraint_name": val["constraint_name"].replace("_temp", "")
+                if val["is_nullable"]
+                else val["check_clause"],
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
@@ -244,7 +274,7 @@ class Command(BaseCommand):
         ]
         curr_constraints = [
             {
-                "constraint_name": val["constraint_name"],
+                "constraint_name": val["constraint_name"] if val["is_nullable"] else val["check_clause"],
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
@@ -271,11 +301,17 @@ class Command(BaseCommand):
             "udt_name",
         ]
         cursor.execute(
-            f"SELECT {','.join(columns_to_compare)} FROM information_schema.columns WHERE table_name = '{self.temp_db_table_name}' ORDER BY column_name"
+            f"SELECT {','.join(columns_to_compare)}"
+            f" FROM information_schema.columns"
+            f" WHERE table_name = '{self.temp_db_table_name}'"
+            f" ORDER BY column_name"
         )
         temp_columns = ordered_dictionary_fetcher(cursor)
         cursor.execute(
-            f"SELECT {','.join(columns_to_compare)} FROM information_schema.columns WHERE table_name = '{self.db_table_name}' ORDER BY column_name"
+            f"SELECT {','.join(columns_to_compare)}"
+            f" FROM information_schema.columns"
+            f" WHERE table_name = '{self.db_table_name}'"
+            f" ORDER BY column_name"
         )
         curr_columns = ordered_dictionary_fetcher(cursor)
         if len(temp_columns) != len(curr_columns):

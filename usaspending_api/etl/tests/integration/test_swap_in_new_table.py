@@ -94,7 +94,7 @@ def test_constraint_validation():
         try:
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key")
         except Exception as e:
-            assert str(e) == ("The number of constraints are different for the tables: test_table_temp and test_table.")
+            assert str(e) == "The number of constraints are different for the tables: test_table_temp and test_table."
         else:
             assert False, "No exception was raised"
 
@@ -106,7 +106,7 @@ def test_constraint_validation():
         try:
             call_command("swap_in_new_table", "--table=test_table")
         except Exception as e:
-            assert str(e) == ("The number of constraints are different for the tables: test_table_temp and test_table.")
+            assert str(e) == "The number of constraints are different for the tables: test_table_temp and test_table."
         else:
             assert False, "No exception was raised"
 
@@ -133,6 +133,32 @@ def test_constraint_validation():
         except Exception as e:
             assert str(e) == (
                 "The constraint definitions are different for the tables: test_table_temp and test_table."
+            )
+        else:
+            assert False, "No exception was raised"
+
+        # Test that the same amount of NOT NULL constraints exist
+        cursor.execute(
+            "CREATE TABLE test_table_not_null (col1 TEXT, col2 INT NOT NULL);"
+            "CREATE TABLE test_table_not_null_temp (col1 TEXT, col2 INT);"
+        )
+        try:
+            call_command("swap_in_new_table", "--table=test_table_not_null")
+        except Exception as e:
+            assert (
+                str(e)
+                == "The number of constraints are different for the tables: test_table_not_null_temp and test_table_not_null."
+            )
+        else:
+            assert False, "No exception was raised"
+
+        # Test that the same columns must share a NOT NULL constraint
+        cursor.execute("ALTER TABLE test_table_not_null_temp ALTER COLUMN col1 SET NOT NULL")
+        try:
+            call_command("swap_in_new_table", "--table=test_table_not_null")
+        except Exception as e:
+            assert str(e) == (
+                "The constraint definitions are different for the tables: test_table_not_null_temp and test_table_not_null."
             )
         else:
             assert False, "No exception was raised"
@@ -178,8 +204,8 @@ def test_happy_path():
         with connection.cursor() as cursor:
             # Test without Foreign Keys
             cursor.execute(
-                "CREATE TABLE test_table (col1 TEXT, col2 INT);"
-                "CREATE TABLE test_table_temp (col1 TEXT, col2 INT);"
+                "CREATE TABLE test_table (col1 TEXT, col2 INT NOT NULL);"
+                "CREATE TABLE test_table_temp (col1 TEXT, col2 INT NOT NULL);"
                 "INSERT INTO test_table (col1, col2) VALUES ('goodbye', 1);"
                 "INSERT INTO test_table_temp (col1, col2) VALUES ('hello', 2), ('world', 3);"
                 "CREATE INDEX test_table_col1_index ON test_table(col1);"
@@ -200,7 +226,7 @@ def test_happy_path():
 
             # Test with "--allow-foreign-key" flag
             cursor.execute(
-                "CREATE TABLE test_table_temp (col1 TEXT, col2 INT);"
+                "CREATE TABLE test_table_temp (col1 TEXT, col2 INT NOT NULL);"
                 "INSERT INTO test_table_temp (col1, col2) VALUES ('foo', 4), ('bar', 5);"
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
@@ -220,7 +246,7 @@ def test_happy_path():
 
             # Test with "--keep-old-data" flag
             cursor.execute(
-                "CREATE TABLE test_table_temp (col1 TEXT, col2 INT);"
+                "CREATE TABLE test_table_temp (col1 TEXT, col2 INT NOT NULL);"
                 "INSERT INTO test_table_temp (col1, col2) VALUES ('the end', 6);"
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
