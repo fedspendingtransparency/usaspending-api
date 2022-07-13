@@ -69,7 +69,7 @@ SELECT
     (SELECT STRING_AGG(DISTINCT CONCAT(U0."cfda_number", ': ', U0."cfda_title"), '; '  ORDER BY  CONCAT(U0."cfda_number", ': ', U0."cfda_title")) AS "total" FROM "transaction_fabs" U0 INNER JOIN "transaction_normalized" U1 ON (U0."transaction_id" = U1."id") WHERE U1."award_id" = ("awards"."id") GROUP BY U1."award_id") AS "cfda_numbers_and_titles",
     "transaction_fabs"."assistance_type" AS "assistance_type_code",
     "transaction_fabs"."assistance_type_desc" AS "assistance_type_description",
-    "awards"."description" AS "award_description",
+    "awards"."description" AS "prime_award_base_transaction_description",
     "transaction_fabs"."business_funds_indicator" AS "business_funds_indicator_code",
     "transaction_fabs"."business_funds_ind_desc" AS "business_funds_indicator_description",
     "transaction_fabs"."business_types" AS "business_types_code",
