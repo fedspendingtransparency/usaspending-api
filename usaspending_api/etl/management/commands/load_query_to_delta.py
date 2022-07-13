@@ -13,20 +13,27 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
+    AWARD_SEARCH_POSTGRES_COLUMNS,
 )
 from usaspending_api.search.models import TransactionSearch, AwardSearchView
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
+    TRANSACTION_SEARCH_POSTGRES_COLUMNS,
 )
 
 TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
         "source_query": transaction_search_load_sql_string,
+        "source_database": None,
+        "source_table": None,
         "destination_database": "rpt",
+        "swap_table": "transaction_search",
+        "swap_schema": "rpt",
         "partition_column": "transaction_id",
         "delta_table_create_sql": transaction_search_create_sql_string,
+        "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "user_defined_functions": [
             {
@@ -39,10 +46,15 @@ TABLE_SPEC = {
     "award_search": {
         "model": AwardSearchView,
         "source_query": award_search_load_sql_string,
+        "source_database": None,
+        "source_table": None,
         "destination_database": "rpt",
+        "swap_table": "vw_award_search",
+        "swap_schema": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": award_search_create_sql_string,
+        "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "user_defined_functions": [
             {
