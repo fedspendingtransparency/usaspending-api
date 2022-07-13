@@ -204,8 +204,8 @@ def test_happy_path():
         with connection.cursor() as cursor:
             # Test without Foreign Keys
             cursor.execute(
-                "CREATE TABLE test_table (col1 TEXT, col2 INT NOT NULL);"
-                "CREATE TABLE test_table_temp (col1 TEXT, col2 INT NOT NULL);"
+                "CREATE TABLE rpt.test_table (col1 TEXT, col2 INT NOT NULL);"
+                "CREATE TABLE temp.test_table_temp (col1 TEXT, col2 INT NOT NULL);"
                 "INSERT INTO test_table (col1, col2) VALUES ('goodbye', 1);"
                 "INSERT INTO test_table_temp (col1, col2) VALUES ('hello', 2), ('world', 3);"
                 "CREATE INDEX test_table_col1_index ON test_table(col1);"
@@ -223,6 +223,10 @@ def test_happy_path():
             )
             result = cursor.fetchall()
             assert len(result) == 0
+
+            cursor.execute("SELECT table_schema FROM information_schema.tables WHERE table_name = 'test_table'")
+            result = cursor.fetchone()[0]
+            assert result == "rpt"
 
             # Test with "--allow-foreign-key" flag
             cursor.execute(

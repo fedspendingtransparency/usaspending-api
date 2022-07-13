@@ -30,8 +30,10 @@ class Command(BaseCommand):
     """
 
     # Values are set in the beginning of "handle()"
-    db_table_name: str
-    temp_db_table_name: str
+    curr_schema_name: str
+    curr_table_name: str
+    temp_schema_name: str
+    temp_table_name: str
 
     # Query values are populated as they are run during validation and saved for re-use
     query_result_lookup = {
@@ -63,10 +65,20 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.db_table_name = options["table"]
-        self.temp_db_table_name = f"{self.db_table_name}_temp"
+        self.curr_table_name = options["table"]
+        self.temp_table_name = f"{self.curr_table_name}_temp"
 
         with connection.cursor() as cursor:
+            # Go ahead and retrieve the schema for both table; used for some validation checks and the final swap
+            cursor.execute(
+                f"SELECT table_name, table_schema"
+                f" FROM information_schema.tables"
+                f" WHERE table_name = '{self.curr_table_name}' OR table_name = '{self.temp_table_name}'"
+            )
+            schemas_lookup = {table: schema for (table, schema) in cursor.fetchall()}
+            self.curr_schema_name = schemas_lookup.get(self.curr_table_name)
+            self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
+
             self.validate_state_of_tables(cursor, options)
             self.swap_index_sql(cursor)
             self.swap_constraints_sql(cursor)
@@ -104,7 +116,7 @@ class Command(BaseCommand):
             new_name = f"{old_name}_old"
             rename_sql.append(
                 sql_template.format(
-                    table_name=self.db_table_name, old_constraint_name=old_name, new_constraint_name=new_name
+                    table_name=self.curr_table_name, old_constraint_name=old_name, new_constraint_name=new_name
                 )
             )
         for val in temp_constraints:
@@ -112,7 +124,7 @@ class Command(BaseCommand):
             new_name = re.match("^(.*)_temp$", old_name, flags=re.I)[1]
             rename_sql.append(
                 sql_template.format(
-                    table_name=self.temp_db_table_name, old_constraint_name=old_name, new_constraint_name=new_name
+                    table_name=self.temp_table_name, old_constraint_name=old_name, new_constraint_name=new_name
                 )
             )
 
@@ -123,9 +135,11 @@ class Command(BaseCommand):
     def swap_table_sql(self, cursor):
         logging.info("Renaming the new and old tables")
         sql_template = "ALTER TABLE {old_table_name} RENAME TO {new_table_name};"
+
         rename_sql = [
-            sql_template.format(old_table_name=self.db_table_name, new_table_name=f"{self.db_table_name}_old"),
-            sql_template.format(old_table_name=self.temp_db_table_name, new_table_name=f"{self.db_table_name}"),
+            f"ALTER TABLE {self.temp_table_name} SET SCHEMA {self.curr_schema_name};",
+            sql_template.format(old_table_name=self.curr_table_name, new_table_name=f"{self.curr_table_name}_old"),
+            sql_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
         ]
         cursor.execute("\n".join(rename_sql))
 
@@ -140,38 +154,38 @@ class Command(BaseCommand):
             drop_sql.append(f"DROP INDEX {name};")
         for val in constraints:
             name = f"{val['constraint_name']}_old"
-            drop_sql.append(f"ALTER TABLE {self.db_table_name}_old DROP CONSTRAINT {name};")
-        drop_sql.append(f"DROP TABLE {self.db_table_name}_old;")
+            drop_sql.append(f"ALTER TABLE {self.curr_table_name}_old DROP CONSTRAINT {name};")
+        drop_sql.append(f"DROP TABLE {self.curr_table_name}_old;")
         cursor.execute("\n".join(drop_sql))
 
     def extra_sql(self, cursor):
-        cursor.execute(f"ANALYZE VERBOSE {self.db_table_name}")
-        cursor.execute(f"GRANT SELECT ON {self.db_table_name} TO readonly")
+        cursor.execute(f"ANALYZE VERBOSE {self.curr_table_name}")
+        cursor.execute(f"GRANT SELECT ON {self.curr_table_name} TO readonly")
 
     def validate_tables(self, cursor):
         logger.info("Verifying that the old table exists.")
-        cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.db_table_name}'")
+        cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.curr_table_name}'")
         temp_tables = cursor.fetchall()
         if len(temp_tables) == 0:
-            raise ValueError(f"There are no tables matching: {self.db_table_name}")
+            raise ValueError(f"There are no tables matching: {self.curr_table_name}")
 
         logger.info("Verifying that the new table exists.")
-        cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.temp_db_table_name}'")
+        cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.temp_table_name}'")
         temp_tables = cursor.fetchall()
         if len(temp_tables) == 0:
-            raise ValueError(f"There are no tables matching: {self.temp_db_table_name}")
+            raise ValueError(f"There are no tables matching: {self.temp_table_name}")
 
     def validate_indexes(self, cursor):
         logger.info("Verifying that the same number of indexes exist for the old and new table.")
-        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_db_table_name}'")
+        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_table_name}'")
         temp_indexes = ordered_dictionary_fetcher(cursor)
         self.query_result_lookup["temp_table_indexes"] = temp_indexes
-        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.db_table_name}'")
+        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.curr_table_name}'")
         curr_indexes = ordered_dictionary_fetcher(cursor)
         self.query_result_lookup["curr_table_indexes"] = curr_indexes
         if len(temp_indexes) != len(curr_indexes):
             raise ValueError(
-                f"The number of indexes are different for the tables: {self.temp_db_table_name} and {self.db_table_name}"
+                f"The number of indexes are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
             )
 
         logger.info("Verifying that the indexes are the same except for '_temp' in the index and table name.")
@@ -180,24 +194,27 @@ class Command(BaseCommand):
             for val in temp_indexes
         ]
         curr_index_names = [val["indexname"] for val in curr_indexes]
-        curr_index_defs = [val["indexdef"] for val in curr_indexes]
+        # Index Definition include the <schema_name>.<table_table> to compare these the schema names are normalized
+        curr_index_defs = [
+            val["indexdef"].replace(f"{self.curr_schema_name}.", f"{self.temp_schema_name}.") for val in curr_indexes
+        ]
         for index in temp_indexes:
             if index["indexname"] not in curr_index_names or index["indexdef"] not in curr_index_defs:
                 raise ValueError(
-                    f"The index definitions are different for the tables: {self.temp_db_table_name} and {self.db_table_name}"
+                    f"The index definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
                 )
 
     def validate_foreign_keys(self, cursor):
         logger.info("Verifying that Foreign Key constraints are not found.")
         cursor.execute(
             f"SELECT * FROM information_schema.table_constraints"
-            f" WHERE table_name IN ('{self.temp_db_table_name}', '{self.db_table_name}')"
+            f" WHERE table_name IN ('{self.temp_table_name}', '{self.curr_table_name}')"
             f" AND constraint_type = 'FOREIGN KEY'"
         )
         constraints = cursor.fetchall()
         if len(constraints) > 0:
             raise ValueError(
-                f"Foreign Key constraints are not allowed on '{self.temp_db_table_name}' or '{self.db_table_name}'."
+                f"Foreign Key constraints are not allowed on '{self.temp_table_name}' or '{self.curr_table_name}'."
                 " It is advised to not allow Foreign Key constraints on swapped tables to avoid potential deadlock."
                 " However, if needed they can be allowed with the `--allow-foreign-key` flag."
             )
@@ -224,7 +241,7 @@ class Command(BaseCommand):
             f" LEFT OUTER JOIN information_schema.columns ON ("
             f"     table_constraints.table_name = columns.table_name"
             f"     AND check_constraints.check_clause = CONCAT(columns.column_name, ' IS NOT NULL'))"
-            f" WHERE table_constraints.table_name = '{self.temp_db_table_name}'"
+            f" WHERE table_constraints.table_name = '{self.temp_table_name}'"
         )
         temp_constraints = ordered_dictionary_fetcher(cursor)
         cursor.execute(
@@ -242,13 +259,13 @@ class Command(BaseCommand):
             f" LEFT OUTER JOIN information_schema.columns ON ("
             f"     table_constraints.table_name = columns.table_name"
             f"     AND check_constraints.check_clause = CONCAT(columns.column_name, ' IS NOT NULL'))"
-            f" WHERE table_constraints.table_name = '{self.db_table_name}'"
+            f" WHERE table_constraints.table_name = '{self.curr_table_name}'"
         )
         curr_constraints = ordered_dictionary_fetcher(cursor)
 
         if len(temp_constraints) != len(curr_constraints):
             raise ValueError(
-                f"The number of constraints are different for the tables: {self.temp_db_table_name} and {self.db_table_name}."
+                f"The number of constraints are different for the tables: {self.temp_table_name} and {self.curr_table_name}."
             )
 
         # NOT NULL constraints are created on a COLUMN not the TABLE, this means we do not control their name.
@@ -283,7 +300,7 @@ class Command(BaseCommand):
         ]
         if sorted(temp_constraints, key=_sort_key) != sorted(curr_constraints, key=_sort_key):
             raise ValueError(
-                f"The constraint definitions are different for the tables: {self.temp_db_table_name} and {self.db_table_name}."
+                f"The constraint definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}."
             )
 
     def validate_columns(self, cursor):
@@ -303,30 +320,30 @@ class Command(BaseCommand):
         cursor.execute(
             f"SELECT {','.join(columns_to_compare)}"
             f" FROM information_schema.columns"
-            f" WHERE table_name = '{self.temp_db_table_name}'"
+            f" WHERE table_name = '{self.temp_table_name}'"
             f" ORDER BY column_name"
         )
         temp_columns = ordered_dictionary_fetcher(cursor)
         cursor.execute(
             f"SELECT {','.join(columns_to_compare)}"
             f" FROM information_schema.columns"
-            f" WHERE table_name = '{self.db_table_name}'"
+            f" WHERE table_name = '{self.curr_table_name}'"
             f" ORDER BY column_name"
         )
         curr_columns = ordered_dictionary_fetcher(cursor)
         if len(temp_columns) != len(curr_columns):
             raise ValueError(
-                f"The number of columns are different for the tables: {self.temp_db_table_name} and {self.db_table_name}."
+                f"The number of columns are different for the tables: {self.temp_table_name} and {self.curr_table_name}."
             )
 
         logger.info("Verifying that the columns are the same.")
         if temp_columns != curr_columns:
             raise ValueError(
-                f"The column definitions are different for the tables: {self.temp_db_table_name} and {self.db_table_name}."
+                f"The column definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}."
             )
 
     def validate_state_of_tables(self, cursor, options):
-        logger.info(f"Running validation to swap: {self.db_table_name} with {self.temp_db_table_name}.")
+        logger.info(f"Running validation to swap: {self.curr_table_name} with {self.temp_table_name}.")
 
         self.validate_tables(cursor)
         self.validate_indexes(cursor)
