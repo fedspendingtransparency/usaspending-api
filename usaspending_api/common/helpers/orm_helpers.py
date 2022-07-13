@@ -5,31 +5,14 @@ from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Aggregate, Case, CharField, Func, IntegerField, TextField, Value, When
 from django.db.models.functions import Concat, LPad, Cast
 
-from usaspending_api.search.models import AwardSearch
-
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
-    contract_type_mapping,
-    direct_payment_type_mapping,
-    grant_type_mapping,
-    idv_type_mapping,
-    loan_type_mapping,
-    other_type_mapping,
     procurement_type_mapping,
+    all_award_types_mappings,
 )
 
 
 TYPES_TO_QUOTE_IN_SQL = (str, date)
-
-
-CATEGORY_TO_MODEL = {
-    "contracts": {"model": AwardSearch, "types": set(contract_type_mapping.keys())},
-    "direct_payments": {"model": AwardSearch, "types": set(direct_payment_type_mapping.keys())},
-    "grants": {"model": AwardSearch, "types": set(grant_type_mapping.keys())},
-    "idvs": {"model": AwardSearch, "types": set(idv_type_mapping.keys())},
-    "loans": {"model": AwardSearch, "types": set(loan_type_mapping.keys())},
-    "other": {"model": AwardSearch, "types": set(other_type_mapping.keys())},
-}
 
 
 class AwardGroupsException(Exception):
@@ -183,14 +166,14 @@ def generate_raw_quoted_query(queryset):
     return sql % tuple(str_fix_params)
 
 
-def obtain_view_from_award_group(type_list):
+def obtain_category_from_award_group(type_list):
     if not type_list:
         raise AwardGroupsException("Invalid award type list: No types provided.")
 
     type_set = set(type_list)
-    for category, values in CATEGORY_TO_MODEL.items():
-        if type_set <= values["types"]:
-            return values["model"]
+    for category, category_types in all_award_types_mappings.items():
+        if type_set <= set(category_types):
+            return category
     else:
         raise AwardGroupsException("Invalid award type list: Types cross multiple categories.")
 
@@ -203,7 +186,7 @@ def award_types_are_valid_groups(type_list: list) -> bool:
     """
     is_valid = False
     try:
-        obtain_view_from_award_group(type_list)
+        obtain_category_from_award_group(type_list)
         is_valid = True
     except AwardGroupsException:
         # If this error was thrown, it means is_valid is still False.
