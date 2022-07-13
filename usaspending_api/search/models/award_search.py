@@ -29,6 +29,8 @@ class AwardSearch(models.Model):
     recipient_name = models.TextField()
     recipient_unique_id = models.TextField()
     parent_recipient_unique_id = models.TextField()
+    recipient_uei = models.TextField(null=True, blank=True)
+    parent_recipient_uei = models.TextField(null=True, blank=True)
     business_categories = ArrayField(models.TextField(), default=list)
 
     action_date = models.DateField()
@@ -88,6 +90,7 @@ class AwardSearch(models.Model):
 
     cfda_program_title = models.TextField()
     cfda_number = models.TextField()
+    cfdas = ArrayField(models.TextField(), default=list)
     sai_number = models.TextField()
     type_of_contract_pricing = models.TextField()
     extent_competed = models.TextField()
