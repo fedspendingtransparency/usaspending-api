@@ -144,4 +144,7 @@ class Migration(migrations.Migration):
             model_name='awardsearch',
             index=models.Index(django.db.models.expressions.OrderBy(django.db.models.expressions.F('action_date'), descending=True, nulls_last=True), condition=models.Q(('action_date__lt', '2007-10-01')), name='as_idx_action_date_pre2008'),
         ),
+        migrations.DeleteModel(
+            name='AwardSearchView',
+        ),
     ]

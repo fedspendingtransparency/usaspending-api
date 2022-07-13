@@ -14,7 +14,6 @@ CHUNKED_MATVIEW_GENERATOR_FILE = (
     settings.APP_DIR / "database_scripts" / "matview_generator" / "chunked_matview_sql_generator.py"
 )
 OVERLAY_VIEWS = [
-    settings.APP_DIR / "database_scripts" / "matviews" / "vw_award_search.sql",
     settings.APP_DIR / "database_scripts" / "matviews" / "vw_es_award_search.sql",
 ]
 DROP_OLD_MATVIEWS = settings.APP_DIR / "database_scripts" / "matviews" / "drop_old_matviews.sql"
