@@ -1,3 +1,5 @@
+from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
+
 AWARD_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "[INTEGER]"},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
@@ -43,8 +45,8 @@ AWARD_SEARCH_COLUMNS = {
     "funding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_subtier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
     "funding_subtier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
-    "funding_toptier_agency_id": {"delta": "INT", "postgres": "INT"},
-    "funding_subtier_agency_id": {"delta": "INT", "postgres": "INT"},
+    "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "funding_subtier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "recipient_location_country_code": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_state_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -145,8 +147,8 @@ award_search_load_sql_string = fr"""
     COALESCE(
         CASE WHEN awards.type IN('07', '08') THEN awards.total_loan_value
             ELSE 0 END, 0 ) AS NUMERIC(23, 2) ) AS total_loan_value,
-  FORMAT_AS_UUID(RECIPIENT_HASH_AND_LEVELS.recipient_hash) AS recipient_hash,
-  RECIPIENT_HASH_AND_LEVELS.recipient_levels AS recipient_levels,
+  RECIPIENT_HASH_AND_LEVELS.recipient_hash,
+  RECIPIENT_HASH_AND_LEVELS.recipient_levels,
   UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
   COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
@@ -175,7 +177,7 @@ award_search_load_sql_string = fr"""
   TFA.toptier_code AS funding_toptier_agency_code,
   SAA.subtier_code AS awarding_subtier_agency_code,
   SFA.subtier_code AS funding_subtier_agency_code,
-  (SELECT first(a.id) FROM global_temp.agency a WHERE a.toptier_agency_id = TFA.toptier_agency_id AND a.toptier_flag = TRUE) AS funding_toptier_agency_id,
+  FA_ID.id AS funding_toptier_agency_id,
   latest_transaction.funding_agency_id AS funding_subtier_agency_id,
 
   rl_country_lookup.country_code AS recipient_location_country_code,
@@ -249,11 +251,12 @@ LEFT OUTER JOIN
     duns,
     recipient_hash
   FROM raw.recipient_lookup AS rlv
-  ) recipient_lookup ON recipient_lookup.recipient_hash = FORMAT_AS_UUID(MD5(UPPER(
+  ) recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, '')) END)))
+       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
+    END)), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
 LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
@@ -283,6 +286,9 @@ LEFT OUTER JOIN
 LEFT OUTER JOIN
   global_temp.subtier_agency AS SFA
     ON (FA.subtier_agency_id = SFA.subtier_agency_id)
+LEFT OUTER JOIN
+  global_temp.agency AS FA_ID
+    ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND FA_ID.toptier_flag = TRUE)
 LEFT OUTER JOIN
     global_temp.ref_country_code AS pop_country_lookup ON (
         pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
@@ -439,5 +445,17 @@ LEFT OUTER JOIN (
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
 WHERE
-  latest_transaction.action_date >= '2007-10-01'
+    -- Make sure that the data matches the different Award Type matviews' current state
+    (
+        latest_transaction.action_date >= '2007-10-01'
+        AND (
+            awards.type IN ({str(list(all_awards_types_to_category)).replace("[", "").replace("]", "")})
+            OR awards.type LIKE 'IDV%'
+        )
+    )
+    -- Make sure that we also pick up the current state of Pre2008 matview
+    OR (
+        latest_transaction.action_date >= '2000-10-01'
+        AND latest_transaction.action_date < '2007-10-01'
+    )
 """
