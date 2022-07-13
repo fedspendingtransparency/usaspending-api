@@ -5,7 +5,6 @@ from usaspending_api.search.models.base_award_search import BaseAwardSearchModel
 
 
 class AwardSearch(BaseAwardSearchModel):
-    """ Initially this will be a blank table with the indexes to eventually store all the vw_award_search data """
 
     class Meta:
         db_table = 'rpt"."award_search'
