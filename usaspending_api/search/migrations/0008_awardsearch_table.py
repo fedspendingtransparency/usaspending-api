@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             name='AwardSearch',
             fields=[
                 ('treasury_account_identifiers', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), default=None, size=None)),
-                ('award', models.OneToOneField(on_delete=django.db.models.deletion.DO_NOTHING, primary_key=True, related_name='awardsearch', serialize=False, to='awards.award')),
+                ('award', models.BigIntegerField(primary_key=True, serialize=False, db_column="award_id")),
                 ('category', models.TextField()),
                 ('type', models.TextField()),
                 ('type_description', models.TextField()),
@@ -107,6 +107,25 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'rpt"."award_search',
             },
+        ),
+        # Trick Django into believing this is a foreign key for purposes of using the ORM,
+        # but avoid the headache that comes with foreign keys
+        migrations.RunSQL(
+            sql="",
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='awardsearch',
+                    name='award',
+                    field=models.OneToOneField(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        primary_key=True,
+                        related_name='awardsearch',
+                        serialize=False,
+                        to='awards.award'
+                    )
+                )
+            ]
         ),
         migrations.AddIndex(
             model_name='awardsearch',
