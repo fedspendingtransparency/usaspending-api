@@ -129,15 +129,33 @@ award_search_load_sql_string = fr"""
         CASE WHEN awards.type IN('07', '08') THEN 0
             ELSE awards.total_obligation END, 0) AS NUMERIC(23, 2) ) AS total_obligation,
   awards.description,
-  CASE WHEN COALESCE(awards.total_obligation, 0) = 500000000.0 THEN '500M'
-    WHEN COALESCE(awards.total_obligation, 0) = 100000000.0 THEN '100M'
-    WHEN COALESCE(awards.total_obligation, 0) = 1000000.0 THEN '1M'
-    WHEN COALESCE(awards.total_obligation, 0) = 25000000.0 THEN '25M'
-    WHEN COALESCE(awards.total_obligation, 0) > 500000000.0 THEN '>500M'
-    WHEN COALESCE(awards.total_obligation, 0) < 1000000.0 THEN '<1M'
-    WHEN COALESCE(awards.total_obligation, 0) < 25000000.0 THEN '1M..25M'
-    WHEN COALESCE(awards.total_obligation, 0) < 100000000.0 THEN '25M..100M'
-    WHEN COALESCE(awards.total_obligation, 0) < 500000000.0 THEN '100M..500M'
+  CASE WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 500000000.0 THEN '500M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 100000000.0 THEN '100M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 1000000.0 THEN '1M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 25000000.0 THEN '25M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) > 500000000.0 THEN '>500M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 1000000.0 THEN '<1M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 25000000.0 THEN '1M..25M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 100000000.0 THEN '25M..100M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 500000000.0 THEN '100M..500M'
     ELSE NULL END AS total_obl_bin,
   CAST(
     COALESCE(
@@ -348,13 +366,14 @@ LEFT OUTER JOIN
 LEFT OUTER JOIN (
         SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
         FROM raw.recipient_profile
+        WHERE recipient_level != 'P'
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (
-        COALESCE(recipient_lookup.recipient_hash, FORMAT_AS_UUID(MD5(UPPER(
+        COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, '')) END)))) = RECIPIENT_HASH_AND_LEVELS.recipient_hash
+       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, '')) END))) = RECIPIENT_HASH_AND_LEVELS.recipient_hash
         AND recipient_lookup.recipient_name NOT IN (
             'MULTIPLE RECIPIENTS',
             'REDACTED DUE TO PII',
@@ -363,7 +382,7 @@ LEFT OUTER JOIN (
             'INDIVIDUAL RECIPIENT',
             'MISCELLANEOUS FOREIGN AWARDEES'
         )
-        AND recipient_lookup.recipient_name IS NOT NULL AND recipient_level != 'P'
+        AND recipient_lookup.recipient_name IS NOT NULL
     )
 LEFT OUTER JOIN (
   SELECT
