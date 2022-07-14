@@ -221,15 +221,15 @@ transaction_search_load_sql_string = fr"""
 
         COALESCE(
             recipient_lookup.recipient_hash,
-            FORMAT_AS_UUID(MD5(UPPER(
+            REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
                         THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
                         THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-                    ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal))
+                    ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
                 END
-            )))
+            )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
         ) AS recipient_hash,
         RECIPIENT_HASH_AND_LEVELS.recipient_levels,
         UPPER(COALESCE(
@@ -260,10 +260,8 @@ transaction_search_load_sql_string = fr"""
             transaction_fabs.ultimate_parent_uei
         ) AS parent_uei,
 
-        (SELECT first(a.id) FROM global_temp.agency a WHERE a.toptier_agency_id = TAA.toptier_agency_id AND a.toptier_flag = TRUE)
-            AS awarding_toptier_agency_id,
-        (SELECT first(a.id) FROM global_temp.agency a WHERE a.toptier_agency_id = TFA.toptier_agency_id AND a.toptier_flag = TRUE)
-            AS funding_toptier_agency_id,
+        AA_ID.id AS awarding_toptier_agency_id,
+        FA_ID.id AS funding_toptier_agency_id,
         transaction_normalized.awarding_agency_id,
         transaction_normalized.funding_agency_id,
         TAA.name AS awarding_toptier_agency_name,
@@ -295,7 +293,7 @@ transaction_search_load_sql_string = fr"""
         global_temp.references_cfda ON (transaction_fabs.cfda_number = references_cfda.program_number)
     LEFT OUTER JOIN
         raw.recipient_lookup ON (
-            recipient_lookup.recipient_hash = FORMAT_AS_UUID(MD5(UPPER(
+            recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
                         THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
@@ -303,7 +301,7 @@ transaction_search_load_sql_string = fr"""
                         THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
                     ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
                 END
-            )))
+            )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
         )
     LEFT OUTER JOIN
         raw.awards ON (transaction_normalized.award_id = awards.id)
@@ -314,11 +312,15 @@ transaction_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         global_temp.subtier_agency AS SAA ON (AA.subtier_agency_id = SAA.subtier_agency_id)
     LEFT OUTER JOIN
+        global_temp.agency AS AA_ID ON (AA_ID.toptier_agency_id = TAA.toptier_agency_id AND AA_ID.toptier_flag = TRUE)
+    LEFT OUTER JOIN
         global_temp.agency AS FA ON (transaction_normalized.funding_agency_id = FA.id)
     LEFT OUTER JOIN
         global_temp.toptier_agency AS TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
     LEFT OUTER JOIN
         global_temp.subtier_agency AS SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
+   LEFT OUTER JOIN
+        global_temp.agency AS FA_ID ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND FA_ID.toptier_flag = TRUE)
     LEFT OUTER JOIN
         global_temp.naics ON (transaction_fpds.naics = naics.code)
     LEFT OUTER JOIN
@@ -351,7 +353,7 @@ transaction_search_load_sql_string = fr"""
         )
     LEFT OUTER JOIN
         raw.recipient_lookup PRL ON (
-            PRL.recipient_hash = FORMAT_AS_UUID(MD5(UPPER(
+            PRL.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) IS NOT NULL
                         THEN CONCAT('uei-', COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei))
@@ -359,7 +361,7 @@ transaction_search_load_sql_string = fr"""
                         THEN CONCAT('duns-', COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide))
                     ELSE CONCAT('name-', COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti, ''))
                 END
-            )))
+            )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
         )
     LEFT OUTER JOIN (
         SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels

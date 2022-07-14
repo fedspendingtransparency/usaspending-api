@@ -1,8 +1,5 @@
-import uuid
-
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StringType
 
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -35,13 +32,6 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_search_create_sql_string,
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
-        "user_defined_functions": [
-            {
-                "name": "format_as_uuid",
-                "f": lambda val: str(uuid.UUID(val)) if val else None,
-                "returnType": StringType(),
-            },
-        ],
     },
     "award_search": {
         "model": AwardSearchView,
@@ -56,13 +46,6 @@ TABLE_SPEC = {
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
-        "user_defined_functions": [
-            {
-                "name": "format_as_uuid",
-                "f": lambda val: str(uuid.UUID(val)) if val else None,
-                "returnType": StringType(),
-            },
-        ],
     },
 }
 
