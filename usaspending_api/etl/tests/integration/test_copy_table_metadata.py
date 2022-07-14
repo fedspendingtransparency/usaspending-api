@@ -5,11 +5,12 @@ NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/et
 from django.db import connection
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
-from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_generator import (
+from usaspending_api.etl.management.commands.copy_table_metadata import (
     make_read_constraints,
+    make_copy_constraints,
     make_read_indexes,
+    make_copy_indexes,
 )
-from usaspending_api.etl.management.commands.copy_table_metadata import make_copy_constraints, make_copy_indexes
 
 
 def test_make_copy_table_metadata(db):
