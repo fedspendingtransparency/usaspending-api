@@ -6,7 +6,7 @@ import hashlib
 import os
 import copy
 
-from usaspending_api.database_scripts.matview_generator.shared_sql_generator import (
+from shared_sql_generator import (
     COMPONENT_DIR,
     generate_uid,
     HERE,
