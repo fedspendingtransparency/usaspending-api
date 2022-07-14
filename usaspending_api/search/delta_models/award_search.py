@@ -115,7 +115,11 @@ award_search_load_sql_string = fr"""
   awards.type,
   awards.type_description,
   awards.generated_unique_award_id,
-  COALESCE(awards.piid, awards.fain, awards.uri) AS display_award_id,
+  CASE
+    WHEN awards.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND awards.fain IS NOT NULL THEN awards.fain
+    WHEN awards.piid IS NOT NULL THEN awards.piid  -- contracts. Did it this way to easily handle IDV contracts
+    ELSE awards.uri
+  END AS display_award_id,
   awards.update_date,
   awards.piid,
   awards.fain AS fain,
