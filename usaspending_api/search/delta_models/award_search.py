@@ -115,7 +115,11 @@ award_search_load_sql_string = fr"""
   awards.type,
   awards.type_description,
   awards.generated_unique_award_id,
-  awards.piid AS display_award_id,
+  CASE
+    WHEN awards.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND awards.fain IS NOT NULL THEN awards.fain
+    WHEN awards.piid IS NOT NULL THEN awards.piid  -- contracts. Did it this way to easily handle IDV contracts
+    ELSE awards.uri
+  END AS display_award_id,
   awards.update_date,
   awards.piid,
   awards.fain AS fain,
@@ -129,15 +133,33 @@ award_search_load_sql_string = fr"""
         CASE WHEN awards.type IN('07', '08') THEN 0
             ELSE awards.total_obligation END, 0) AS NUMERIC(23, 2) ) AS total_obligation,
   awards.description,
-  CASE WHEN awards.total_obligation = 500000000.0 THEN '500M'
-    WHEN awards.total_obligation = 100000000.0 THEN '100M'
-    WHEN awards.total_obligation = 1000000.0 THEN '1M'
-    WHEN awards.total_obligation = 25000000.0 THEN '25M'
-    WHEN awards.total_obligation > 500000000.0 THEN '>500M'
-    WHEN awards.total_obligation < 1000000.0 THEN '<1M'
-    WHEN awards.total_obligation < 25000000.0 THEN '1M..25M'
-    WHEN awards.total_obligation < 100000000.0 THEN '25M..100M'
-    WHEN awards.total_obligation < 500000000.0 THEN '100M..500M'
+  CASE WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 500000000.0 THEN '500M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 100000000.0 THEN '100M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 1000000.0 THEN '1M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 25000000.0 THEN '25M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) > 500000000.0 THEN '>500M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 1000000.0 THEN '<1M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 25000000.0 THEN '1M..25M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 100000000.0 THEN '25M..100M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 500000000.0 THEN '100M..500M'
     ELSE NULL END AS total_obl_bin,
   CAST(
     COALESCE(
@@ -314,7 +336,7 @@ LEFT OUTER JOIN (
     )
 LEFT OUTER JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS POP_STATE_LOOKUP
- ON (POP_STATE_LOOKUP.code = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.legal_entity_state_code))
+ ON (POP_STATE_LOOKUP.code = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code))
 LEFT OUTER JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS RL_STATE_LOOKUP
  ON (RL_STATE_LOOKUP.code = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code))
@@ -346,11 +368,16 @@ LEFT OUTER JOIN
         AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
 )
 LEFT OUTER JOIN (
-        SELECT recipient_hash, uei, COLLECT_SET(recipient_level) AS recipient_levels
+        SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
         FROM raw.recipient_profile
+        WHERE recipient_level != 'P'
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (
-        recipient_lookup.recipient_hash = RECIPIENT_HASH_AND_LEVELS.recipient_hash
+        COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
+     CASE
+       WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
+       WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
+       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, '')) END))) = RECIPIENT_HASH_AND_LEVELS.recipient_hash
         AND recipient_lookup.recipient_name NOT IN (
             'MULTIPLE RECIPIENTS',
             'REDACTED DUE TO PII',
