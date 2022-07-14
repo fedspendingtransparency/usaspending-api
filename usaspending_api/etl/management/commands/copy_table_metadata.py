@@ -7,21 +7,37 @@ from django.core.management.base import BaseCommand
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_generator import (
-    make_read_constraints,
-    make_read_indexes,
-)
 
 logger = logging.getLogger("script")
 
+# copied from usaspending_api/database_scripts/matview_generator/shared_sql_generator.py
+# since that script uses relative imports which do not work well with the rest of the repo code
+TEMPLATE = {
+    "read_indexes": "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = '{}' AND tablename = '{}';",
+    "read_constraints": "select conname, pg_get_constraintdef(oid) from pg_constraint where contype IN ('p', 'f') and conrelid = '{}'::regclass;",
+}
 
-def create_indexes(self, index_definitions, index_concurrency):
+
+def make_read_indexes(table_name):
+    if "." in table_name:
+        schema_name, table_name = table_name[: table_name.index(".")], table_name[table_name.index(".") + 1 :]
+    else:
+        schema_name = "public"
+
+    return [TEMPLATE["read_indexes"].format(schema_name, table_name)]
+
+
+def make_read_constraints(table_name):
+    return [TEMPLATE["read_constraints"].format(table_name)]
+
+
+def create_indexes(index_definitions, index_concurrency):
     loop = asyncio.new_event_loop()
-    loop.run_until_complete(self.index_with_concurrency(index_definitions, index_concurrency))
+    loop.run_until_complete(index_with_concurrency(index_definitions, index_concurrency))
     loop.close()
 
 
-async def index_with_concurrency(self, index_definitions, index_concurrency):
+async def index_with_concurrency(index_definitions, index_concurrency):
     semaphore = asyncio.Semaphore(index_concurrency)
     tasks = []
 
