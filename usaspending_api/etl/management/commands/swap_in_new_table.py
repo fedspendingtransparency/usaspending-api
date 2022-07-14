@@ -80,30 +80,12 @@ class Command(BaseCommand):
             self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
 
             self.validate_state_of_tables(cursor, options)
-            self.swap_index_sql(cursor)
             self.swap_constraints_sql(cursor)
+            self.swap_index_sql(cursor)
             self.swap_table_sql(cursor)
             if not options["keep_old_data"]:
                 self.drop_old_table_sql(cursor)
             self.extra_sql(cursor)
-
-    def swap_index_sql(self, cursor):
-        logging.info("Renaming indexes of the new and old tables.")
-        temp_indexes = self.query_result_lookup["temp_table_indexes"]
-        curr_indexes = self.query_result_lookup["curr_table_indexes"]
-        rename_sql = []
-        sql_template = "ALTER INDEX {old_index_name} RENAME TO {new_index_name};"
-        for val in curr_indexes:
-            old_name = val["indexname"]
-            new_name = f"{old_name}_old"
-            rename_sql.append(sql_template.format(old_index_name=old_name, new_index_name=new_name))
-        for val in temp_indexes:
-            old_name = val["indexname"]
-            new_name = re.match("^(.*)_temp$", old_name, flags=re.I)[1]
-            rename_sql.append(sql_template.format(old_index_name=old_name, new_index_name=new_name))
-
-        if rename_sql:
-            cursor.execute("\n".join(rename_sql))
 
     def swap_constraints_sql(self, cursor):
         logging.info("Renaming constraints of the new and old tables.")
@@ -131,6 +113,40 @@ class Command(BaseCommand):
         if rename_sql:
             cursor.execute("\n".join(rename_sql))
 
+    def swap_index_sql(self, cursor):
+        logging.info("Renaming indexes of the new and old tables.")
+
+        # Some Postgres constraints (UNIQUE, PRIMARY, and EXCLUDE) are updated along with the index which means
+        # there is no need to rename the index following the constraint
+        temp_constraint_names = [val["constraint_name"] for val in self.query_result_lookup["temp_table_constraints"]]
+        temp_indexes = [
+            val
+            for val in self.query_result_lookup["temp_table_indexes"]
+            if val["indexname"] not in temp_constraint_names
+        ]
+        curr_constraint_names = [val["constraint_name"] for val in self.query_result_lookup["curr_table_constraints"]]
+        curr_indexes = [
+            val
+            for val in self.query_result_lookup["curr_table_indexes"]
+            if val["indexname"] not in curr_constraint_names
+        ]
+        self.query_result_lookup["temp_table_indexes"] = temp_indexes
+        self.query_result_lookup["curr_table_indexes"] = curr_indexes
+
+        rename_sql = []
+        sql_template = "ALTER INDEX {old_index_name} RENAME TO {new_index_name};"
+        for val in curr_indexes:
+            old_name = val["indexname"]
+            new_name = f"{old_name}_old"
+            rename_sql.append(sql_template.format(old_index_name=old_name, new_index_name=new_name))
+        for val in temp_indexes:
+            old_name = val["indexname"]
+            new_name = re.match("^(.*)_temp$", old_name, flags=re.I)[1]
+            rename_sql.append(sql_template.format(old_index_name=old_name, new_index_name=new_name))
+
+        if rename_sql:
+            cursor.execute("\n".join(rename_sql))
+
     @transaction.atomic
     def swap_table_sql(self, cursor):
         logging.info("Renaming the new and old tables")
@@ -149,12 +165,12 @@ class Command(BaseCommand):
         drop_sql = []
         indexes = self.query_result_lookup["curr_table_indexes"]
         constraints = self.query_result_lookup["curr_table_constraints"]
-        for val in indexes:
-            name = f"{val['indexname']}_old"
-            drop_sql.append(f"DROP INDEX {name};")
         for val in constraints:
             name = f"{val['constraint_name']}_old"
             drop_sql.append(f"ALTER TABLE {self.curr_table_name}_old DROP CONSTRAINT {name};")
+        for val in indexes:
+            name = f"{val['indexname']}_old"
+            drop_sql.append(f"DROP INDEX {name};")
         drop_sql.append(f"DROP TABLE {self.curr_table_name}_old;")
         cursor.execute("\n".join(drop_sql))
 
@@ -346,8 +362,8 @@ class Command(BaseCommand):
         logger.info(f"Running validation to swap: {self.curr_table_name} with {self.temp_table_name}.")
 
         self.validate_tables(cursor)
-        self.validate_indexes(cursor)
         if not options["allow_foreign_key"]:
             self.validate_foreign_keys(cursor)
         self.validate_constraints(cursor)
+        self.validate_indexes(cursor)
         self.validate_columns(cursor)

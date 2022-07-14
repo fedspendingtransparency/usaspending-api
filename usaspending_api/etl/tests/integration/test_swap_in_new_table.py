@@ -210,7 +210,9 @@ def test_happy_path():
                 "INSERT INTO test_table_temp (col1, col2) VALUES ('hello', 2), ('world', 3);"
                 "CREATE INDEX test_table_col1_index ON test_table(col1);"
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
+                "ALTER TABLE test_table ADD CONSTRAINT test_table_col_1_unique UNIQUE(col1);"
                 "ALTER TABLE test_table ADD CONSTRAINT test_table_col_1_constraint CHECK (col1 != 'TEST');"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE (col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
             )
             call_command("swap_in_new_table", "--table=test_table")
@@ -233,6 +235,7 @@ def test_happy_path():
                 "CREATE TABLE test_table_temp (col1 TEXT, col2 INT NOT NULL);"
                 "INSERT INTO test_table_temp (col1, col2) VALUES ('foo', 4), ('bar', 5);"
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
                 "ALTER TABLE test_table ADD CONSTRAINT test_table_award_fk FOREIGN KEY (col2) REFERENCES awards (id);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
@@ -253,6 +256,7 @@ def test_happy_path():
                 "CREATE TABLE test_table_temp (col1 TEXT, col2 INT NOT NULL);"
                 "INSERT INTO test_table_temp (col1, col2) VALUES ('the end', 6);"
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
             )
