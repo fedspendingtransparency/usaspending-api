@@ -15,13 +15,13 @@ from usaspending_api.database_scripts.matview_generator.chunked_matview_sql_gene
 logger = logging.getLogger("script")
 
 
-def create_indexes(self, index_definitions, index_concurrency):
+def create_indexes(index_definitions, index_concurrency):
     loop = asyncio.new_event_loop()
-    loop.run_until_complete(self.index_with_concurrency(index_definitions, index_concurrency))
+    loop.run_until_complete(index_with_concurrency(index_definitions, index_concurrency))
     loop.close()
 
 
-async def index_with_concurrency(self, index_definitions, index_concurrency):
+async def index_with_concurrency(index_definitions, index_concurrency):
     semaphore = asyncio.Semaphore(index_concurrency)
     tasks = []
 
