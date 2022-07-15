@@ -61,12 +61,18 @@ RDS_REF_TABLES = [
     DisasterEmergencyFundCode,
     SubmissionAttributes,
     DABSSubmissionWindowSchedule,
-    sam_recipient,
-
 ]
 
 BROKER_PROXY_TABLES =[
     sam_recipient,
+    #subaward,
+    #published_fabs,
+    #detached_award_procurement,
+    #submissions,
+    #appropriation,
+    #object_class_program_activity,
+    #award_financial,
+
 ]
 
 def get_active_spark_context() -> Optional[SparkContext]:
@@ -418,8 +424,8 @@ def get_broker_jdbc_url():
     """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.DATA_BROKER_DATABASE_URL:
         raise ValueError("DATA_BROKER_DATABASE_URL config val must provided")
-
     return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
+
 
 
 
