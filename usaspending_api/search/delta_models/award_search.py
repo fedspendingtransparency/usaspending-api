@@ -391,9 +391,9 @@ LEFT OUTER JOIN (
 LEFT OUTER JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
-        COLLECT_SET(
+        TO_JSON(COLLECT_SET(
             TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS covid_spending_by_defc,
+        )) AS covid_spending_by_defc,
         sum(GROUPED_BY_DEFC.outlay) AS total_covid_outlay,
         sum(GROUPED_BY_DEFC.obligation) AS total_covid_obligation
     FROM (
