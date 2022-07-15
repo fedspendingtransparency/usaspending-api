@@ -25,7 +25,7 @@ from usaspending_api.config import CONFIG
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.config.utils import parse_pg_uri
 from usaspending_api.recipient.delta_models import sam_recipient
-from usaspending_api.recipient.models import StateData
+from usaspending_api.recipient.models import StateData, DUNS
 from usaspending_api.references.models import (
     Cfda,
     Agency,
