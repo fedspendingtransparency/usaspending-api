@@ -1,4 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
+from django_cte import CTEManager
 from django.db import models
 from django.db.models import Q, F
 
@@ -111,6 +112,7 @@ class AwardSearch(models.Model):
 
     class Meta:
         db_table = 'rpt"."award_search'
+        objects = CTEManager()
         indexes = [
             models.Index(fields=["award_id"], name="as_idx_award_id"),
             models.Index(
