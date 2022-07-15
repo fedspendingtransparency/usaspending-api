@@ -56,7 +56,9 @@ def delete_tables_for_tests():
     naming conflict, the unused Django managed table is deleted while testing.
     """
     try:
-        execute_sql_simple("DROP TABLE IF EXISTS transaction_search;")
+        tables = ["transaction_search", "award_search"]
+        for table in tables:
+            execute_sql_simple(f"DROP TABLE IF EXISTS {table};")
     except Exception:
         pass
 
