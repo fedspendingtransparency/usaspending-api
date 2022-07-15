@@ -60,19 +60,17 @@ RDS_REF_TABLES = [
     DisasterEmergencyFundCode,
     SubmissionAttributes,
     DABSSubmissionWindowSchedule,
-    sam_recipient,
-
 ]
 
 BROKER_PROXY_TABLES =[
     sam_recipient,
-    subaward,
-    published_fabs,
-    detached_award_procurement,
-    submissions,
-    appropriation,
-    object_class_program_activity,
-    award_financial,
+    #subaward,
+    #published_fabs,
+    #detached_award_procurement,
+    #submissions,
+    #appropriation,
+    #object_class_program_activity,
+    #award_financial,
 ]
 
 def get_active_spark_context() -> Optional[SparkContext]:
@@ -417,14 +415,9 @@ def get_jdbc_url():
 def get_broker_jdbc_url(databroker_uri: str)->str:
     """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.DATA_BROKER_DATABASE_URL:
-        raise ValueError("DATABASE_URL config val must provided")
-    url_parts, user, password = parse_pg_uri(databroker_uri)
-    if user is None or password is None:
-        raise ValueError("databroker_uri provided must have username and password with host or in query string")
-    # JDBC URLs only support postgresql://
-    databroker_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password={password}"
-
-    return f"jdbc:{databroker_uri}"
+        raise ValueError("DATA_BROKER_DATABASE_URL config val must provided")
+    
+    return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually
