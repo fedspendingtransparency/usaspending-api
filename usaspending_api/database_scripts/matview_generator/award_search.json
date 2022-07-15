@@ -263,7 +263,7 @@
     "         RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips",
     "        AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST((REGEXP_MATCH(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$'))[1] AS SMALLINT) AS TEXT), 2, '0')",
     ")",
-    "LEFT OUTER JOIN (",
+    "LEFT JOIN LATERAL (",
     "        SELECT recipient_hash, uei, ARRAY_AGG(recipient_level) AS recipient_levels",
     "        FROM rpt.recipient_profile",
     "        WHERE recipient_level != 'P'",
