@@ -142,7 +142,7 @@
     "  transaction_fpds.type_set_aside::TEXT,",
     "",
     "  transaction_fpds.product_or_service_code::TEXT,",
-    "  psc.description AS product_or_service_description::TEXT,",
+    "  psc.description::TEXT AS product_or_service_description,",
     "  transaction_fpds.naics AS naics_code::TEXT,",
     "  transaction_fpds.naics_description::TEXT,",
     "",
