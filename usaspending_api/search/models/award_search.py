@@ -110,9 +110,10 @@ class AwardSearch(models.Model):
     total_covid_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_covid_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
 
+    objects = CTEManager()
+
     class Meta:
         db_table = 'rpt"."award_search'
-        objects = CTEManager()
         indexes = [
             models.Index(fields=["award_id"], name="as_idx_award_id"),
             models.Index(
