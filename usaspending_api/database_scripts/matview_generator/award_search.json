@@ -179,7 +179,7 @@
     "  psc ON (transaction_fpds.product_or_service_code = psc.code)",
     "  LEFT OUTER JOIN",
     "    (SELECT",
-    "      award_id, ARRAY_AGG(DISTINCT JSONB_BUILD_OBJECT('cfda_number', cfda_number, 'cfda_program_title', cfda_title)) as cfdas",
+    "      award_id, ARRAY_AGG(DISTINCT JSONB_BUILD_OBJECT('cfda_number', cfda_number, 'cfda_program_title', cfda_title)::text) as cfdas",
     "      FROM",
     "         int.transaction_fabs tf",
     "       INNER JOIN int.transaction_normalized tn ON",
