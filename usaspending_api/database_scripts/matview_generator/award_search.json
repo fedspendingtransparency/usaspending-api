@@ -80,7 +80,7 @@
     "  awards.period_of_performance_start_date,",
     "  awards.period_of_performance_current_end_date,",
     "  awards.date_signed,",
-    "  transaction_fpds.ordering_period_end_date,",
+    "  transaction_fpds.ordering_period_end_date::date,",
     "",
     "  COALESCE(transaction_fabs.original_loan_subsidy_cost, 0) AS original_loan_subsidy_cost,",
     "  COALESCE(transaction_fabs.face_value_loan_guarantee, 0) AS face_value_loan_guarantee,",
