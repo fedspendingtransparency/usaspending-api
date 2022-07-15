@@ -350,7 +350,7 @@
     "        'a=', COALESCE(taa.availability_type_code, '')",
     "      )",
     "    ) AS tas_components,",
-    "    ARRAY_AGG(DISTINCT faba.disaster_emergency_fund_code) FILTER (WHERE faba.disaster_emergency_fund_code IS NOT NULL) AS disaster_emergency_fund_codes",
+    "    ARRAY_AGG(DISTINCT faba.disaster_emergency_fund_code) FILTER (WHERE faba.disaster_emergency_fund_code IS NOT NULL) AS disaster_emergency_fund_codes,",
     "    ARRAY_AGG(DISTINCT taa.treasury_account_identifier) AS treasury_account_identifiers",
     "  FROM",
     "    treasury_appropriation_account taa",
