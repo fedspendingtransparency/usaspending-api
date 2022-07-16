@@ -143,7 +143,7 @@
     "",
     "  transaction_fpds.product_or_service_code::TEXT,",
     "  psc.description::TEXT AS product_or_service_description,",
-    "  transaction_fpds.naics AS naics_code::TEXT,",
+    "  transaction_fpds.naics::TEXT AS naics_code,",
     "  transaction_fpds.naics_description::TEXT,",
     "",
     "  TREASURY_ACCT.tas_paths,",
