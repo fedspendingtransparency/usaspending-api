@@ -49,7 +49,7 @@ TABLE_SPEC = {
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
     },
-        "summary_state_view": {
+    "summary_state_view": {
         "model": SummaryStateView,
         "source_table": "summary_state_view",
         "destination_database": "rpt",
