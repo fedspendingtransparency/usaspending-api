@@ -34,8 +34,6 @@ from usaspending_api.transactions.delta_models import (
     transaction_normalized_sql_string,
     TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
-    SUMMARY_STATE_VIEW_COLUMNS,
-    summary_state_view_string,
 )
 from usaspending_api.search.delta_models.award_search import award_search_create_sql_string, AWARD_SEARCH_COLUMNS
 
@@ -105,16 +103,6 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_PROFILE_COLUMNS),
-    },
-    "summary_state_view": {
-        "model": SUMMARY_STATE_VIEW,
-        "source_table": "summary_state_view",
-        "destination_database": "rpt",
-        "partition_column": None,
-        "partition_column_type": None,
-        "delta_table_create_sql": summary_state_view_string,
-        "custom_schema": "summary_state_view STRING",
-        "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
     },
     "sam_recipient": {
         "model": DUNS,
