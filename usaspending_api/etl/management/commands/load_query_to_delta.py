@@ -12,11 +12,13 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearchView
+from usaspending_api.search.models import TransactionSearch, AwardSearchView, SummaryStateView
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
+    SUMMARY_STATE_VIEW_COLUMNS,
+    summary_state_view_string,
 )
 
 TABLE_SPEC = {
@@ -46,6 +48,16 @@ TABLE_SPEC = {
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+    },
+        "summary_state_view": {
+        "model": SummaryStateView,
+        "source_table": "summary_state_view",
+        "destination_database": "rpt",
+        "partition_column": None,
+        "partition_column_type": None,
+        "delta_table_create_sql": summary_state_view_string,
+        "custom_schema": "summary_state_view STRING",
+        "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
     },
 }
 
