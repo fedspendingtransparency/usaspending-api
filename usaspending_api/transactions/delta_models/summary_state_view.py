@@ -1,15 +1,15 @@
 SUMMARY_STATE_VIEW_COLUMNS = {
-"duh" : "STRING",
-"action_date" : "STRING",
-"fiscal_year" : "STRING",
-"type" : "STRING",
-"distinct_awards" : "STRING",
-"pop_country_code" : "STRING",
-"pop_state_code" : "STRING",
-"counts" : "STRING",
-"transaction_id" : "STRING",
-"compound_geo_pop" : "STRING",
-"ordered_action_date" : "STRING",
+    "duh": "STRING",
+    "action_date": "STRING",
+    "fiscal_year": "STRING",
+    "type": "STRING",
+    "distinct_awards": "STRING",
+    "pop_country_code": "STRING",
+    "pop_state_code": "STRING",
+    "counts": "STRING",
+    "transaction_id": "STRING",
+    "compound_geo_pop": "STRING",
+    "ordered_action_date": "STRING",
 }
 
 summary_state_view_string = rf"""
