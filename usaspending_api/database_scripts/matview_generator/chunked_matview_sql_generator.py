@@ -74,7 +74,12 @@ def make_temp_table_create(table_name, table_temp_name):
 
 
 def make_read_indexes(table_name):
-    return [TEMPLATE["read_indexes"].format(table_name)]
+    if "." in table_name:
+        schema_name, table_name = table_name[: table_name.index(".")], table_name[table_name.index(".") + 1 :]
+    else:
+        schema_name = "public"
+
+    return [TEMPLATE["read_indexes"].format(schema_name, table_name)]
 
 
 def make_read_constraints(table_name):

@@ -10,6 +10,7 @@ from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.matview_manager import DEFAULT_CHUNKED_MATIVEW_DIR
 from usaspending_api.search.models.transaction_search import TransactionSearch
+from usaspending_api.etl.management.commands.copy_table_metadata import create_indexes
 
 logger = logging.getLogger("script")
 
@@ -68,7 +69,7 @@ class Command(BaseCommand):
             self.insert_matview_data(chunk_count)
 
         with Timer("Creating table indexes"):
-            self.create_indexes(create_temp_indexes, index_concurrency)
+            create_indexes(create_temp_indexes, index_concurrency)
 
         with Timer("Swapping Tables/Indexes"):
             self.swap_tables(rename_indexes)
@@ -135,28 +136,6 @@ class Command(BaseCommand):
 
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
-
-    def create_indexes(self, index_definitions, index_concurrency):
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.index_with_concurrency(index_definitions, index_concurrency))
-        loop.close()
-
-    async def index_with_concurrency(self, index_definitions, index_concurrency):
-        semaphore = asyncio.Semaphore(index_concurrency)
-        tasks = []
-
-        async def create_with_sem(sql, index):
-            async with semaphore:
-                return await async_run_creates(
-                    sql,
-                    wrapper=Timer(f"Creating Index {index}"),
-                )
-
-        for i, sql in enumerate(index_definitions):
-            logger.info(f"Creating future for index: {i} - SQL: {sql}")
-            tasks.append(create_with_sem(sql, i))
-
-        return await asyncio.gather(*tasks)
 
     @transaction.atomic
     def swap_tables(self, rename_indexes):
