@@ -189,7 +189,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": None,
         "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
-        "STRING, federal_accounts STRING",
+        "STRING, federal_accounts STRING, cfdas ARRAY<STRING>, tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
     },
 }

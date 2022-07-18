@@ -45,7 +45,8 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
+        " tas_components ARRAY<STRING>",
     },
 }
 
