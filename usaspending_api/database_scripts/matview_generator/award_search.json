@@ -309,7 +309,7 @@
     "        FROM",
     "            financial_accounts_by_awards AS faba",
     "        INNER JOIN",
-    "            disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code::numeric = defc.code::TEXT AND defc.group_name = 'covid_19'::TEXT)",
+    "            disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code::TEXT = defc.code::TEXT AND defc.group_name = 'covid_19'::TEXT)",
     "        INNER JOIN",
     "            submission_attributes AS sa ON (faba.submission_id = sa.submission_id AND sa.reporting_period_start >= '2020-04-01'::DATE)",
     "        INNER JOIN",
