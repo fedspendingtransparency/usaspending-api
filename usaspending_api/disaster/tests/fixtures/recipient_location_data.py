@@ -495,6 +495,24 @@ def awards_and_transactions():
         recipient_hash="bf05f751-6841-efd6-8f1b-0144163eceae",
         duns="987654321",
     )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="RECIPIENT 2",
+        recipient_hash="3c92491a-f2cd-ec7d-294b-7daf91511866",
+        duns="456789123",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="RECIPIENT 1",
+        recipient_hash="5f572ec9-8b49-e5eb-22c7-f6ef316f7689",
+        duns=None,
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="MULTIPLE RECIPIENTS",
+        recipient_hash="5bf6217b-4a70-da67-1351-af6ab2e0a4b3",
+        duns="096354360",
+    )
 
     # Ref Country Code
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
