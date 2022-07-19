@@ -8,9 +8,9 @@ from usaspending_api.search.models.award_search import AwardSearch
 
 __all__ = [
     "AgencyAutocompleteMatview",
+    "AwardSearch",
     "SubawardView",
     "SummaryStateView",
     "TASAutocompleteMatview",
     "TransactionSearch",
-    "AwardSearch",
 ]
