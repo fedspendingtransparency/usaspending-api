@@ -10,7 +10,7 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_defc_closed_periods,
     filter_by_latest_closed_periods,
 )
-from usaspending_api.search.models import AwardSearchView
+from usaspending_api.search.models import AwardSearch
 
 
 def _disaster_recipient_aggregations() -> dict:
@@ -89,7 +89,7 @@ def disaster_filter_function(filters: dict, download_type: str, values: List[str
     )
 
     return (
-        cte.join(AwardSearchView, award_id=cte.col.award_id)
+        cte.join(AwardSearch, award_id=cte.col.award_id)
         .with_cte(cte)
         .annotate(total_obligation_by_award=cte.col.inner_obligation, total_outlay_by_award=cte.col.inner_outlay)
         .filter(*award_filters)
