@@ -51,9 +51,9 @@ def pytest_addoption(parser):
 
 def delete_tables_for_tests():
     """
-    Outside of testing, the transaction_search table is created by using a series of chunked matviews that are combined
-    into a Django managed table. When unit testing transaction_search is created as a single view. To prevent a
-    naming conflict, the unused Django managed table is deleted while testing.
+    The transaction_search/award_search tables are created from data coming from various based tables.
+    When unit testing these tables, we can easily account for that logic using a single view.
+    To prevent a naming conflict, the unused Django managed table is deleted while testing.
     """
     try:
         tables = ["transaction_search", "award_search"]
