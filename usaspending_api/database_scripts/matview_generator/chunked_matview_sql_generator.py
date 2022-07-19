@@ -158,7 +158,7 @@ def create_componentized_files(sql_json):
     sql_strings = make_matview_empty(matview_name, GLOBAL_ARGS.chunk_count)
     write_sql_file(sql_strings, filename_base + "__empty")
 
-    sql_strings = make_read_indexes(matview_name)
+    sql_strings = make_read_indexes(f"{table_schema}.{matview_name}")
     write_sql_file(sql_strings, filename_base + "__indexes")
 
     sql_strings = make_read_constraints(matview_name)
