@@ -1,6 +1,5 @@
 {
   "schema_name": "rpt",
-  "chunked_schema_name": "temp",
   "final_name": "award_search",
   "refresh": true,
   "matview_sql": [
