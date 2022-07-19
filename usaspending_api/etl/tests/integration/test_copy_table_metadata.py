@@ -2,18 +2,19 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+from pytest import mark
+from django.core.management import call_command
 from django.db import connection
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 from usaspending_api.etl.management.commands.copy_table_metadata import (
     make_read_constraints,
-    make_copy_constraints,
     make_read_indexes,
-    make_copy_indexes,
 )
 
 
-def test_make_copy_table_metadata(db):
+@mark.django_db(transaction=True)
+def test_make_copy_table_metadata():
     """
     Simply put, make a table, make a blank copy of said table, and ensure the two match in terms of metadata
     (asides from the names)
@@ -85,11 +86,21 @@ def test_make_copy_table_metadata(db):
                 "indexes": sorted(indexes, key=lambda index: index["indexname"]),
             }
 
+        def _copy_table_metadata_cmd(source_table, dest_table, drop_foreign_keys):
+            kwargs = [
+                "--source-table",
+                source_table,
+                "--dest-table",
+                dest_table,
+            ]
+            if not drop_foreign_keys:
+                kwargs.append("--keep-foreign-constraints")
+            call_command("copy_table_metadata", *kwargs)
+
         # make a copy with foreign keys
         dup_table_x_foreign = "x_temp_foreign_keys"
-        cursor.execute(f"CREATE TABLE {dup_table_x_foreign} (LIKE {table_x}" f" INCLUDING DEFAULTS INCLUDING IDENTITY)")
-        cursor.execute("; ".join(make_copy_constraints(cursor, table_x, dup_table_x_foreign, drop_foreign_keys=False)))
-        cursor.execute("; ".join(make_copy_indexes(cursor, table_x, dup_table_x_foreign)))
+        cursor.execute(f"CREATE TABLE {dup_table_x_foreign} (LIKE {table_x} INCLUDING DEFAULTS INCLUDING IDENTITY)")
+        _copy_table_metadata_cmd(source_table=table_x, dest_table=dup_table_x_foreign, drop_foreign_keys=False)
 
         # gather the metadata results and clean that temp table
         dup_foreign_metadata = _gather_table_metadata(dup_table_x_foreign, cursor)
@@ -101,13 +112,8 @@ def test_make_copy_table_metadata(db):
 
         # make a copy without foreign keys
         dup_table_x_not_foreign = "x_temp_drop_foreign_keys"
-        cursor.execute(
-            f"CREATE TABLE {dup_table_x_not_foreign} (LIKE {table_x}" f" INCLUDING DEFAULTS INCLUDING IDENTITY)"
-        )
-        cursor.execute(
-            "; ".join(make_copy_constraints(cursor, table_x, dup_table_x_not_foreign, drop_foreign_keys=True))
-        )
-        cursor.execute("; ".join(make_copy_indexes(cursor, table_x, dup_table_x_not_foreign)))
+        cursor.execute(f"CREATE TABLE {dup_table_x_not_foreign} (LIKE {table_x} INCLUDING DEFAULTS INCLUDING IDENTITY)")
+        _copy_table_metadata_cmd(source_table=table_x, dest_table=dup_table_x_not_foreign, drop_foreign_keys=True)
 
         # gather the metadata results and clean that temp table
         dup_not_foreign_metadata = _gather_table_metadata(dup_table_x_not_foreign, cursor)
