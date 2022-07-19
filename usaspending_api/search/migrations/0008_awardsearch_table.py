@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             name='AwardSearch',
             fields=[
                 ('treasury_account_identifiers', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), default=list, null=True, size=None)),
-                ('award', models.BigIntegerField(primary_key=True, serialize=False, db_column="award_id")),
+                ('award', models.BigIntegerField(unique=True, serialize=False, db_column="award_id")),
                 ('category', models.TextField(null=True)),
                 ('type', models.TextField(null=True)),
                 ('type_description', models.TextField(null=True)),
@@ -112,10 +112,10 @@ class Migration(migrations.Migration):
                 'db_table': 'rpt"."award_search',
             },
         ),
-        # Trick Django into believing this is a foreign key for purposes of using the ORM,
-        # but avoid the headache that comes with foreign keys
+        # Trick Django into believing this is a foreign primary key for purposes of using the ORM,
+        # but avoid the headache that comes with foreign keys and the primary key constraint
         migrations.RunSQL(
-            sql="",
+            sql="ALTER TABLE rpt.award_search DROP COLUMN id",
             reverse_sql="",
             state_operations=[
                 migrations.AlterField(
@@ -154,10 +154,6 @@ class Migration(migrations.Migration):
         ),
         migrations.DeleteModel(
             name='Pre2008AwardSearchMatview',
-        ),
-        migrations.AddIndex(
-            model_name='awardsearch',
-            index=models.Index(fields=['award_id'], name='as_idx_award_id'),
         ),
         migrations.AddIndex(
             model_name='awardsearch',
