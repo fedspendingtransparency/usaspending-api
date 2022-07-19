@@ -265,18 +265,44 @@ def populate_data_for_transaction_search():
     update_awards()
 
 
-def _handle_string_cast(val: str) -> Union[str, dict]:
+def _handle_string_cast(val: str) -> Union[str, dict, list]:
     """
-    JSON columns are represented as JSON formatted strings in the Spark data, but dictionaries in the Postgres data.
-    Both columns will have a "custom_schema" defined for "<FIELD_TYPE> STRING". To handle this comparison the casting of
-    values for "custom_schema" of STRING will attempt to convert a string to a dictionary in the case of a dictionary
-    and fallback to a simple string cast.
+    JSON nested element columns are represented as JSON formatted strings in the Spark data, but nested elements in the
+    Postgres data. Both columns will have a "custom_schema" defined for "<FIELD_TYPE> STRING". To handle this comparison
+    the casting of values for "custom_schema" of STRING will attempt to convert a string to a nested element in the case
+    of a nested element and fallback to a simple string cast.
     """
-    try:
-        return json.loads(val)
-    except TypeError:
-        pass
-    return str(val)
+    if isinstance(val, list):
+        try:
+            casted = [json.loads(element) if isinstance(element, str) else element for element in val]
+        except (TypeError, json.decoder.JSONDecodeError):
+            casted = [str(element) for element in val]
+    elif isinstance(val, dict):
+        try:
+            casted = {k: json.loads(element) if isinstance(element, str) else element for k, element in val.items()}
+        except (TypeError, json.decoder.JSONDecodeError):
+            casted = {k: str(element) for k, element in val.items()}
+    else:
+        try:
+            casted = json.loads(val)
+        except (TypeError, json.decoder.JSONDecodeError):
+            casted = str(val)
+    return casted
+
+
+def sorted_deep(d):
+    def make_tuple(v):
+        if isinstance(v, list):
+            return (*sorted_deep(v),)
+        if isinstance(v, dict):
+            return (*sorted_deep(list(v.items())),)
+        return (v,)
+
+    if isinstance(d, list):
+        return sorted(map(sorted_deep, d), key=make_tuple)
+    if isinstance(d, dict):
+        return {k: sorted_deep(d[k]) for k in sorted(d)}
+    return d
 
 
 def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, Any]], custom_schema: str):
@@ -285,10 +311,7 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
 
     # Parsing custom_schema to specify
     schema_changes = {}
-    schema_type_converters = {
-        "INT": int,
-        "STRING": _handle_string_cast,
-    }
+    schema_type_converters = {"INT": int, "STRING": _handle_string_cast, "ARRAY<STRING>": _handle_string_cast}
     if custom_schema:
         for schema_change in custom_schema.split(", "):
             col, new_col_type = schema_change.split()[0].strip(), schema_change.split()[1].strip()
@@ -297,7 +320,6 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     # Iterating through the values and finding any differences
     for i, psql_row in enumerate(psql_data):
         for k, psql_val in psql_row.items():
-            psql_val_type = type(psql_val)
             spark_val = spark_data[i][k]
             # Casting values based on the custom schema
             if (
@@ -305,13 +327,8 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
                 and schema_changes[k].strip() in schema_type_converters
                 and psql_val is not None
             ):
-                # To avoid issues with spaces in JSON strings all cases of a psql_val that is either
-                # a list of dictionaries or a dictionary result in the conversion of the spark_val to match
-                if psql_val_type == list and all([type(val) == dict for val in psql_val]) or psql_val_type == dict:
-                    spark_val = schema_type_converters[schema_changes[k].strip()](spark_val)
-                else:
-                    # For non JSON values the psql_val should be cast to match the spark_val
-                    psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
+                spark_val = schema_type_converters[schema_changes[k].strip()](spark_val)
+                psql_val = schema_type_converters[schema_changes[k].strip()](psql_val)
 
             # Equalize dates
             # - Postgres TIMESTAMPs may include time zones
@@ -331,21 +348,6 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
 
             # Make sure Postgres data is sorted in the case of a list since the Spark list data is sorted in ASC order
             if isinstance(psql_val, list):
-
-                def sorted_deep(d):
-                    def make_tuple(v):
-                        if isinstance(v, list):
-                            return (*sorted_deep(v),)
-                        if isinstance(v, dict):
-                            return (*sorted_deep(list(v.items())),)
-                        return (v,)
-
-                    if isinstance(d, list):
-                        return sorted(map(sorted_deep, d), key=make_tuple)
-                    if isinstance(d, dict):
-                        return {k: sorted_deep(d[k]) for k in sorted(d)}
-                    return d
-
                 psql_val = sorted_deep(psql_val)
                 if isinstance(spark_val, str):
                     spark_val = [json.loads(idx.replace("'", '"')) for idx in [spark_val]][0]
