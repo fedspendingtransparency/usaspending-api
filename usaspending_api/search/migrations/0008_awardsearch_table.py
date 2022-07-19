@@ -131,30 +131,6 @@ class Migration(migrations.Migration):
                 )
             ]
         ),
-        migrations.DeleteModel(
-            name='AwardSearchView',
-        ),
-        migrations.DeleteModel(
-            name='ContractAwardSearchMatview',
-        ),
-        migrations.DeleteModel(
-            name='DirectPaymentAwardSearchMatview',
-        ),
-        migrations.DeleteModel(
-            name='GrantAwardSearchMatview',
-        ),
-        migrations.DeleteModel(
-            name='IDVAwardSearchMatview',
-        ),
-        migrations.DeleteModel(
-            name='LoanAwardSearchMatview',
-        ),
-        migrations.DeleteModel(
-            name='OtherAwardSearchMatview',
-        ),
-        migrations.DeleteModel(
-            name='Pre2008AwardSearchMatview',
-        ),
         migrations.AddIndex(
             model_name='awardsearch',
             index=models.Index(condition=models.Q(('action_date__gte', '2007-10-01')), fields=['recipient_hash'], name='as_idx_recipient_hash'),
