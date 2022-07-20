@@ -122,6 +122,11 @@ class Command(BaseCommand):
             help="The source postgres table to copy the metadata to",
         )
         parser.add_argument(
+            "--keep-foreign-constraints",
+            action="store_true",
+            help="If provided, copies over the foreign constraints to the destination table.",
+        )
+        parser.add_argument(
             "--skip-constraints",
             action="store_true",
             help="If provided, skips copying over the constraints to the destination table.",
@@ -135,27 +140,26 @@ class Command(BaseCommand):
             "--max-parallel-maintenance-workers",
             type=int,
             required=False,
-            help="Postgres session setting for max parallel workers for creating indexes."
-            " Only applicable if copy-indexes is provided.",
+            help="Postgres session setting for max parallel workers for creating indexes.",
         )
         parser.add_argument(
             "--maintenance-work-mem",
             type=int,
             required=False,
-            help="Postgres session setting for max memory to use for creating indexes (in GBs)."
-            "Only applicable if copy-indexes is provided.",
+            help="Postgres session setting for max memory to use for creating indexes (in GBs).",
         )
         parser.add_argument(
             "--index-concurrency",
             type=int,
             default=5,
-            help="Concurrency limit for index creation. Only applicable if copy-indexes is provided.",
+            help="Concurrency limit for index creation.",
         )
 
     def handle(self, *args, **options):
         # Resolve Parameters
         source_table = options["source_table"]
         dest_table = options["dest_table"]
+        keep_foreign_constraints = options["keep_foreign_constraints"]
         skip_constraints = options["skip_constraints"]
         skip_indexes = options["skip_indexes"]
         max_parallel_maintenance_workers = options["max_parallel_maintenance_workers"]
@@ -168,7 +172,9 @@ class Command(BaseCommand):
         with db.connection.cursor() as cursor:
             if not skip_constraints:
                 logger.info(f"Copying constraints over from {source_table}")
-                copy_constraint_sql = make_copy_constraints(cursor, source_table, dest_table, drop_foreign_keys=True)
+                copy_constraint_sql = make_copy_constraints(
+                    cursor, source_table, dest_table, drop_foreign_keys=not keep_foreign_constraints
+                )
                 if copy_constraint_sql:
                     cursor.execute("; ".join(copy_constraint_sql))
                 logger.info(f"Constraints from {source_table} copied over")

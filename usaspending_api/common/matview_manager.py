@@ -120,5 +120,13 @@ CHUNKED_MATERIALIZED_VIEWS = OrderedDict(
                 "sql_filename": "transaction_search.sql",
             },
         ),
+        (
+            "award_search",
+            {
+                "model": mv.AwardSearch,
+                "json_filepath": str(JSON_DIR / "award_search.json"),
+                "sql_filename": "award_search.sql",
+            },
+        ),
     ]
 )
