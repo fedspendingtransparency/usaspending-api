@@ -183,13 +183,13 @@ class Command(BaseCommand):
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
-                        )
+                        ) WITH (autovacuum_enabled=FALSE)
                     """
                 else:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
-                        )
+                        ) WITH (autovacuum_enabled=FALSE)
                     """
                 with db.connection.cursor() as cursor:
                     logger.info(f"Creating {temp_table}")
