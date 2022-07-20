@@ -214,6 +214,7 @@ def test_happy_path(monkeypatch, tmp_path_factory):
         with connection.cursor() as cursor:
             # Test without Foreign Keys
             cursor.execute(
+                "CREATE TABLE rpt.test_table_old (col1 TEXT, col2 INT NOT NULL);"
                 "CREATE TABLE rpt.test_table (col1 TEXT, col2 INT NOT NULL);"
                 "CREATE TABLE temp.test_table_temp (col1 TEXT, col2 INT NOT NULL);"
                 "INSERT INTO test_table (col1, col2) VALUES ('goodbye', 1);"

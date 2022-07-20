@@ -88,12 +88,17 @@ class Command(BaseCommand):
             self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
 
             self.validate_state_of_tables(cursor, options)
+            self.cleanup_old_data(cursor)
             self.swap_constraints_sql(cursor)
             self.swap_index_sql(cursor)
             self.swap_table_sql(cursor)
             if not options["keep_old_data"]:
                 self.drop_old_table_sql(cursor)
             self.extra_sql(cursor)
+
+    def cleanup_old_data(self, cursor):
+        """Run SQL to clean up any old data that could conflict with the swap"""
+        cursor.execute(f"DROP TABLE IF EXISTS {self.curr_table_name}_old CASCADE;")
 
     def swap_constraints_sql(self, cursor):
         logging.info("Renaming constraints of the new and old tables.")
