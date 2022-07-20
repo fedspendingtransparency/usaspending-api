@@ -1,8 +1,9 @@
 from model_bakery import baker
+from pathlib import Path
+from pytest import mark
 
 from django.core.management import call_command
 from django.db import connection
-from pytest import mark
 
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 
@@ -195,10 +196,19 @@ def test_column_validation():
 
 
 @mark.django_db(transaction=True)
-def test_happy_path():
+def test_happy_path(monkeypatch, tmp_path_factory):
     # Create the Award records for testing with Foreign Keys
     for i in range(2, 7):
         baker.make("awards.Award", id=i, _fill_optional=True)
+
+    temp_dir = tmp_path_factory.mktemp("test_view")
+    with open(f"{temp_dir}/vw_test_table.sql", "w") as f:
+        f.write("CREATE OR REPLACE VIEW vw_test_table AS SELECT * FROM test_table;")
+
+    monkeypatch.setattr(
+        "usaspending_api.etl.management.commands.swap_in_new_table.VIEWS_TO_UPDATE",
+        {"test_table": [Path(f"{temp_dir}/vw_test_table.sql")]},
+    )
 
     try:
         with connection.cursor() as cursor:
@@ -217,6 +227,10 @@ def test_happy_path():
             )
             call_command("swap_in_new_table", "--table=test_table")
             cursor.execute("SELECT * FROM test_table ORDER BY col2")
+            result = ordered_dictionary_fetcher(cursor)
+            assert result == [{"col1": "hello", "col2": 2}, {"col1": "world", "col2": 3}]
+
+            cursor.execute("SELECT * FROM vw_test_table ORDER BY col2")
             result = ordered_dictionary_fetcher(cursor)
             assert result == [{"col1": "hello", "col2": 2}, {"col1": "world", "col2": 3}]
 

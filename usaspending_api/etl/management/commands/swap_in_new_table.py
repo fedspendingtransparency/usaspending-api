@@ -1,12 +1,20 @@
 import logging
 import re
 
+from django.conf import settings
 from django.core.management import BaseCommand
 from django.db import connection, transaction
 
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 
 logger = logging.getLogger("script")
+
+
+VIEWS_TO_UPDATE = {
+    "award_search": [
+        settings.APP_DIR / "database_scripts" / "matviews" / "vw_es_award_search.sql",
+    ]
+}
 
 
 class Command(BaseCommand):
@@ -158,6 +166,10 @@ class Command(BaseCommand):
             sql_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
         ]
         cursor.execute("\n".join(rename_sql))
+
+        # Update views to use the new "current" table following the swap
+        for view_sql in VIEWS_TO_UPDATE.get(self.curr_table_name, []):
+            cursor.execute(view_sql.read_text())
 
     def drop_old_table_sql(self, cursor):
         # Instead of using CASCADE, all old constraints and indexes are dropped manually
