@@ -1,12 +1,20 @@
 import logging
 import re
 
+from django.conf import settings
 from django.core.management import BaseCommand
 from django.db import connection, transaction
 
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 
 logger = logging.getLogger("script")
+
+
+VIEWS_TO_UPDATE = {
+    "award_search": [
+        settings.APP_DIR / "database_scripts" / "matviews" / "vw_es_award_search.sql",
+    ]
+}
 
 
 class Command(BaseCommand):
@@ -80,12 +88,17 @@ class Command(BaseCommand):
             self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
 
             self.validate_state_of_tables(cursor, options)
+            self.cleanup_old_data(cursor)
             self.swap_constraints_sql(cursor)
             self.swap_index_sql(cursor)
             self.swap_table_sql(cursor)
             if not options["keep_old_data"]:
                 self.drop_old_table_sql(cursor)
             self.extra_sql(cursor)
+
+    def cleanup_old_data(self, cursor):
+        """Run SQL to clean up any old data that could conflict with the swap"""
+        cursor.execute(f"DROP TABLE IF EXISTS {self.curr_table_name}_old CASCADE;")
 
     def swap_constraints_sql(self, cursor):
         logging.info("Renaming constraints of the new and old tables.")
@@ -158,6 +171,10 @@ class Command(BaseCommand):
             sql_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
         ]
         cursor.execute("\n".join(rename_sql))
+
+        # Update views to use the new "current" table following the swap
+        for view_sql in VIEWS_TO_UPDATE.get(self.curr_table_name, []):
+            cursor.execute(view_sql.read_text())
 
     def drop_old_table_sql(self, cursor):
         # Instead of using CASCADE, all old constraints and indexes are dropped manually
