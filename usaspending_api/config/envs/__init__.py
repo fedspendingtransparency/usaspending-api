@@ -22,10 +22,10 @@ ENVS = [
         "constructor": LocalConfig,
     },
     {
-        "env_type": "qat",
+        "env_type": "testing",
         "code": QATConfig.ENV_CODE,
         "long_name": "qat",
-        "description": "QAT Development Environment",
+        "description": "Quality Assurance Testing Environment",
         "constructor": QATConfig,
     },
     {
