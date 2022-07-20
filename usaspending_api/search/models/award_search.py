@@ -14,7 +14,7 @@ class AwardSearch(models.Model):
     type_description = models.TextField(null=True)
     generated_unique_award_id = models.TextField(null=True)
     display_award_id = models.TextField(null=True)
-    update_date = models.DateField(null=True)
+    update_date = models.DateTimeField(null=True)
     piid = models.TextField(null=True)
     fain = models.TextField(null=True)
     uri = models.TextField(null=True)
@@ -36,7 +36,7 @@ class AwardSearch(models.Model):
 
     action_date = models.DateField(null=True)
     fiscal_year = models.IntegerField(null=True)
-    last_modified_date = models.TextField(null=True)
+    last_modified_date = models.DateField(null=True)
 
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
