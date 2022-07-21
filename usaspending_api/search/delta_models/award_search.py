@@ -237,7 +237,7 @@ award_search_load_sql_string = fr"""
 
   transaction_fabs.cfda_title AS cfda_program_title,
   transaction_fabs.cfda_number AS cfda_number,
-  transaction_cfdas.cfdas AS cfdas,
+  CASE WHEN awards.is_fpds = FALSE THEN transaction_cfdas.cfdas ELSE NULL END AS cfdas,
 
 
   transaction_fabs.sai_number AS sai_number,
