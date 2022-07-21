@@ -5,10 +5,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.db.models.expressions
 
-additional_sql = [
-    'ALTER TABLE rpt.award_search DROP COLUMN id',
-    'CREATE UNIQUE INDEX as_idx_award_id ON rpt.award_search(award_id)'
-]
 
 class Migration(migrations.Migration):
 
@@ -119,7 +115,7 @@ class Migration(migrations.Migration):
         # Trick Django into believing this is a foreign primary key for purposes of using the ORM,
         # but avoid the headache that comes with foreign keys and the primary key constraint
         migrations.RunSQL(
-            sql=";".join(additional_sql),
+            sql='ALTER TABLE rpt.award_search DROP COLUMN id; CREATE UNIQUE INDEX as_idx_award_id ON rpt.award_search(award_id);',
             reverse_sql="",
             state_operations=[
                 migrations.AlterField(
