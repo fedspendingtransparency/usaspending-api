@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             name='AwardSearch',
             fields=[
                 ('treasury_account_identifiers', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), default=list, null=True, size=None)),
-                ('award', models.BigIntegerField(unique=True, serialize=False, db_column="award_id")),
+                ('award', models.BigIntegerField(serialize=False, db_column="award_id")),
                 ('category', models.TextField(null=True)),
                 ('type', models.TextField(null=True)),
                 ('type_description', models.TextField(null=True)),
@@ -115,7 +115,7 @@ class Migration(migrations.Migration):
         # Trick Django into believing this is a foreign primary key for purposes of using the ORM,
         # but avoid the headache that comes with foreign keys and the primary key constraint
         migrations.RunSQL(
-            sql="ALTER TABLE rpt.award_search DROP COLUMN id",
+            sql='ALTER TABLE rpt.award_search DROP COLUMN id; CREATE UNIQUE INDEX as_idx_award_id ON rpt.award_search(award_id);',
             reverse_sql="",
             state_operations=[
                 migrations.AlterField(
