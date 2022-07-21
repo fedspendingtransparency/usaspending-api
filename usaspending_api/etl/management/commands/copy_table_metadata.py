@@ -14,7 +14,7 @@ logger = logging.getLogger("script")
 # since that script uses relative imports which do not work well with the rest of the repo code
 TEMPLATE = {
     "read_indexes": "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = '{}' AND tablename = '{}';",
-    "read_constraints": "select conname, pg_get_constraintdef(oid) from pg_constraint where contype IN ('p', 'f') and conrelid = '{}'::regclass;",
+    "read_constraints": "select conname, pg_get_constraintdef(oid) from pg_constraint where conrelid = '{}'::regclass;",
 }
 
 
