@@ -199,7 +199,7 @@ award_search_load_sql_string = fr"""
   TFA.toptier_code AS funding_toptier_agency_code,
   SAA.subtier_code AS awarding_subtier_agency_code,
   SFA.subtier_code AS funding_subtier_agency_code,
-  FA_ID.toptier_agency_id AS funding_toptier_agency_id,
+  FA_ID.id AS funding_toptier_agency_id,
   latest_transaction.funding_agency_id AS funding_subtier_agency_id,
 
   rl_country_lookup.country_code AS recipient_location_country_code,
@@ -304,7 +304,7 @@ LEFT OUTER JOIN
   global_temp.subtier_agency AS SFA
     ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT OUTER JOIN
-  (SELECT toptier_agency_id FROM global_temp.agency a1 ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1) AS FA_ID
+  (SELECT a1.id, a1.toptier_agency_id FROM global_temp.agency a1 ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1) AS FA_ID
     ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id)
 LEFT OUTER JOIN
     global_temp.ref_country_code AS pop_country_lookup ON (
