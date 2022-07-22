@@ -320,7 +320,8 @@ transaction_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         global_temp.subtier_agency AS SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
    LEFT OUTER JOIN
-        global_temp.agency AS FA_ID ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND FA_ID.toptier_flag = TRUE)
+        (SELECT id, toptier_agency_id, ROW_NUMBER() OVER (PARTITION BY toptier_agency_id ORDER BY toptier_flag DESC, id ASC) AS row_num FROM global_temp.agency) AS FA_ID
+        ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND row_num = 1)
     LEFT OUTER JOIN
         global_temp.naics ON (transaction_fpds.naics = naics.code)
     LEFT OUTER JOIN
