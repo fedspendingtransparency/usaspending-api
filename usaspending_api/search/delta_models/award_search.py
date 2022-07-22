@@ -304,8 +304,8 @@ LEFT OUTER JOIN
   global_temp.subtier_agency AS SFA
     ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT OUTER JOIN
-  (SELECT a1.id, a1.toptier_agency_id FROM global_temp.agency a1 ORDER BY a1.toptier_flag DESC, a1.id LIMIT 1) AS FA_ID
-    ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id)
+  (SELECT id, toptier_agency_id, ROW_NUMBER() OVER (PARTITION BY toptier_agency_id ORDER BY toptier_flag DESC, id ASC) AS row_num FROM global_temp.agency) AS FA_ID
+    ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND row_num = 1)
 LEFT OUTER JOIN
     global_temp.ref_country_code AS pop_country_lookup ON (
         pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
