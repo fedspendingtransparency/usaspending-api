@@ -41,6 +41,7 @@ ENVS = [
         "code": ProductionConfig.ENV_CODE,
         "long_name": "production",
         "description": "Production Environment",
+        "constructor": ProductionConfig,
     },
     # {
     #     "env_type": "development",
