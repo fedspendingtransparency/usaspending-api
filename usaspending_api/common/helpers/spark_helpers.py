@@ -378,8 +378,15 @@ def attach_java_gateway(
     return gateway
 
 
-def get_jdbc_connection_properties() -> dict:
-    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
+def get_jdbc_connection_properties(fix_strings=True) -> dict:
+    jdbc_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
+    if fix_strings:
+        # This setting basically tells the JDBC driver how to process the strings, which could be a special type casted
+        # as a string (ex. UUID, JSONB). By default, it assumes they are actually strings. Setting this to "unspecified"
+        # tells the driver to not make that assumption and let the schema try to infer the type on insertion.
+        # See the `stringtype` param on https://jdbc.postgresql.org/documentation/94/connect.html for details.
+        jdbc_props["stringtype"] = "unspecified"
+    return jdbc_props
 
 
 def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
