@@ -28,7 +28,7 @@ from usaspending_api.config import CONFIG
 from usaspending_api.config.utils import parse_pg_uri
 
 from usaspending_api.recipient.delta_models import sam_recipient
-from usaspending_api.recipient.models import StateData, DUNS
+from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     Cfda,
     Agency,
@@ -44,6 +44,7 @@ from usaspending_api.references.models import (
     DisasterEmergencyFundCode,
 )
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
+
 
 RDS_REF_TABLES = [
     Cfda,
@@ -61,19 +62,13 @@ RDS_REF_TABLES = [
     DisasterEmergencyFundCode,
     SubmissionAttributes,
     DABSSubmissionWindowSchedule,
-]
-
-BROKER_PROXY_TABLES =[
     sam_recipient,
-    #subaward,
-    #published_fabs,
-    #detached_award_procurement,
-    #submissions,
-    #appropriation,
-    #object_class_program_activity,
-    #award_financial,
-
 ]
+
+BROKER_PROXY_TABLES = [
+    sam_recipient,
+]
+
 
 def get_active_spark_context() -> Optional[SparkContext]:
     """Returns the active ``SparkContext`` if there is one and it's not stopped, otherwise returns None"""
@@ -398,6 +393,7 @@ def get_jdbc_connection_properties(fix_strings=True) -> dict:
         # as a string (ex. UUID, JSONB). By default, it assumes they are actually strings. Setting this to "unspecified"
         # tells the driver to not make that assumption and let the schema try to infer the type on insertion.
         # See the `stringtype` param on https://jdbc.postgresql.org/documentation/94/connect.html for details.
+
         jdbc_props["stringtype"] = "unspecified"
     return jdbc_props
 
@@ -425,6 +421,7 @@ def get_broker_jdbc_url():
     if not CONFIG.DATA_BROKER_DATABASE_URL:
         raise ValueError("DATA_BROKER_DATABASE_URL config val must provided")
     return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
+
 
 
 
@@ -588,8 +585,7 @@ def create_ref_temp_views(spark: SparkSession):
     logger = get_jvm_logger(spark)
     jdbc_conn_props = get_jdbc_connection_properties()
     rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in RDS_REF_TABLES]
-    broker_proxy_tables =[broker_proxy_table._meta.db_table for broker_proxy_table in BROKER_PROXY_TABLES]
-
+    broker_proxy_tables = [broker_proxy_table._meta.db_table for broker_proxy_table in BROKER_PROXY_TABLES]
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
     for ref_rdf_table in rds_ref_tables:
         spark_sql = f"""
@@ -604,8 +600,6 @@ def create_ref_temp_views(spark: SparkSession):
         """
         spark.sql(spark_sql)
     logger.info(f"Created the reference views in the global_temp database")
-    
-    logger.info(f"Creating the following tables under the global_temp database: {broker_proxy_tables}")
     for broker_table in broker_proxy_tables:
         spark_sql = f"""
           CREATE OR REPLACE GLOBAL TEMPORARY VIEW {broker_table}
