@@ -408,6 +408,14 @@ def get_jdbc_url():
     return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
 
 
+def get_broker_jdbc_url():
+    """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
+    if not CONFIG.DATA_BROKER_DATABASE_URL:
+        raise ValueError("DATABASE_URL config val must provided")
+
+    return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
+
+
 def get_es_config():  # pragma: no cover -- will be used eventually
 
     """
