@@ -22,6 +22,7 @@ from usaspending_api.transactions.delta_models import (
 TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
+        "broker": False,
         "source_query": transaction_search_load_sql_string,
         "source_database": None,
         "source_table": None,
@@ -35,6 +36,7 @@ TABLE_SPEC = {
     },
     "award_search": {
         "model": AwardSearch,
+        "broker": False,
         "source_query": award_search_load_sql_string,
         "source_database": None,
         "source_table": None,
