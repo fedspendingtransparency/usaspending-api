@@ -25,7 +25,7 @@ from usaspending_api.config import CONFIG
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.config.utils import parse_pg_uri
 from usaspending_api.recipient.delta_models import sam_recipient
-from usaspending_api.recipient.models import StateData, DUNS
+from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     Cfda,
     Agency,
@@ -41,6 +41,7 @@ from usaspending_api.references.models import (
     DisasterEmergencyFundCode,
 )
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
+
 
 RDS_REF_TABLES = [
     Cfda,
@@ -60,18 +61,20 @@ RDS_REF_TABLES = [
     DisasterEmergencyFundCode,
     SubmissionAttributes,
     DABSSubmissionWindowSchedule,
+    sam_recipient,
 ]
 
-BROKER_PROXY_TABLES =[
+BROKER_PROXY_TABLES = [
     sam_recipient,
-    #subaward,
-    #published_fabs,
-    #detached_award_procurement,
-    #submissions,
-    #appropriation,
-    #object_class_program_activity,
-    #award_financial,
+    subaward,
+    published_fabs,
+    detached_award_procurement,
+    submissions,
+    appropriation,
+    object_class_program_activity,
+    award_financial,
 ]
+
 
 def get_active_spark_context() -> Optional[SparkContext]:
     """Returns the active ``SparkContext`` if there is one and it's not stopped, otherwise returns None"""
@@ -389,8 +392,11 @@ def attach_java_gateway(
     return gateway
 
 
-def get_jdbc_connection_properties() -> dict:
-    return {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
+def get_jdbc_connection_properties(fix_strings=True) -> dict:
+    jdbc_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
+    if fix_strings:
+        jdbc_props["stringtype"] = "unspecified"
+    return jdbc_props
 
 
 def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
@@ -412,12 +418,19 @@ def get_jdbc_url():
     return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
 
 
-def get_broker_jdbc_url(databroker_uri: str)->str:
+def get_broker_jdbc_url(databroker_uri: str) -> str:
     """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.DATA_BROKER_DATABASE_URL:
-        raise ValueError("DATA_BROKER_DATABASE_URL config val must provided")
-    
-    return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
+        raise ValueError("DATABASE_URL config val must provided")
+    url_parts, user, password = parse_pg_uri(databroker_uri)
+    if user is None or password is None:
+        raise ValueError("databroker_uri provided must have username and password with host or in query string")
+    # JDBC URLs only support postgresql://
+    databroker_uri = (
+        f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password={password}"
+    )
+
+    return f"jdbc:{databroker_uri}"
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually
@@ -587,8 +600,7 @@ def create_ref_temp_views(spark: SparkSession):
     logger = get_jvm_logger(spark)
     jdbc_conn_props = get_jdbc_connection_properties()
     rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in RDS_REF_TABLES]
-    broker_proxy_tables =[broker_proxy_table._meta.db_table for broker_proxy_table in BROKER_PROXY_TABLES]
-
+    broker_proxy_tables = [broker_proxy_table._meta.db_table for broker_proxy_table in BROKER_PROXY_TABLES]
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
     for ref_rdf_table in rds_ref_tables:
         spark_sql = f"""
@@ -603,8 +615,6 @@ def create_ref_temp_views(spark: SparkSession):
         """
         spark.sql(spark_sql)
     logger.info(f"Created the reference views in the global_temp database")
-    
-    logger.info(f"Creating the following tables under the global_temp database: {broker_proxy_tables}")
     for broker_table in broker_proxy_tables:
         spark_sql = f"""
           CREATE OR REPLACE GLOBAL TEMPORARY VIEW {broker_table}
