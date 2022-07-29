@@ -47,6 +47,12 @@ class DefaultConfig(BaseSettings):
         USASPENDING_DB_PASSWORD: Password for the user used to connect to the USAspending DB
         USASPENDING_DB_HOST: Host on which to to connect to the USAspending DB
         USASPENDING_DB_PORT: Port on which to connect to the USAspending DB
+        DATA_BROKER_DATABASE_URL: (optional) Full URL to Broker DB that can be used to override the URL-by-parts
+        BROKER_DB_NAME: The name of the Postgres DB that contains Broker data
+        BROKER_DB_USER: Authorized user used to connect to the Broker DB
+        BROKER_DB_PASSWORD: Password for the user used to connect to the Broker DB
+        BROKER_DB_HOST: Host on which to to connect to the Broker DB
+        BROKER_DB_PORT: Port on which to connect to the Broker DB
         ES_URL: (optional) Full URL to Elasticsearch cluster that can be used to override the URL-by-parts
         ES_SCHEME: "http" or "https". Defaults to "https:
         ES_HOST: Host on which to connect to the USAspending Elasticsearch cluster
@@ -74,6 +80,13 @@ class DefaultConfig(BaseSettings):
     USASPENDING_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
+
+    DATA_BROKER_DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See below root validator-factory
+    BROKER_DB_NAME: str = "data_broker"
+    BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
     @root_validator
     def _DATABASE_URL_and_parts_factory(cls, values):
@@ -192,6 +205,127 @@ class DefaultConfig(BaseSettings):
             )
             for k, v in pg_url_config_errors.items():
                 err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in DATABASE_URL: {v[1]}\n"
+            raise ValueError(err_msg)
+
+        return values
+
+    @root_validator
+    def _DATA_BROKER_DATABASE_URL_and_parts_factory(cls, values):
+        """A root validator to backfill DATA_BROKER_DATABASE_URL and BROKER_DB_* part config vars and validate that they are all
+        consistent.
+
+        - Serves as a factory function to fill out all places where we track the database URL as both one complete
+        connection string and as individual parts.
+        - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
+        be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
+        """
+
+        # First determine if DATABASE_URL was provided.
+        is_database_url_provided = values["DATA_BROKER_DATABASE_URL"] and values["DATA_BROKER_DATABASE_URL"] not in CONFIG_VAR_PLACEHOLDERS
+
+        # If DATA_BROKER_DATABASE_URL was provided
+        # - it should take precedence
+        # - its values will be used to backfill any missing POSTGRES DSN parts stored as separate config vars
+        if is_database_url_provided:
+            url_parts, username, password = parse_pg_uri(values["DATA_BROKER_DATABASE_URL"])
+
+            # Backfill only POSTGRES DSN CONFIG vars that are missing their value
+            if values.get("BROKER_DB_HOST", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "BROKER_DB_HOST", lambda: url_parts.hostname
+                )
+            if values.get("BROKER_DB_PORT", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "BROKER_DB_PORT", lambda: str(url_parts.port)
+                )
+            if values.get("BROKER_DB_NAME", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "BROKER_DB_NAME", lambda: url_parts.path.lstrip("/")
+                )
+            if values.get("BROKER_DB_USER", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(cls, values, "BROKER_DB_USER", lambda: username)
+            if unveil(values.get("BROKER_DB_PASSWORD", None)) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                values = eval_default_factory_from_root_validator(
+                    cls, values, "BROKER_DB_PASSWORD", lambda: SecretStr(password)
+                )
+
+        # If DATA_BROKER_DATABASE_URL is not provided, try to build-it-up from provided parts, then backfill it
+        if not is_database_url_provided:
+            # First validate that we have enough parts to provide it
+            required_pg_dsn_parts = [
+                "BROKER_DB_HOST",
+                "BROKER_DB_PORT",
+                "BROKER_DB_NAME",
+                "BROKER_DB_USER",
+                "BROKER_DB_PASSWORD",
+            ]
+            if not all(pg_dsn_part in values for pg_dsn_part in required_pg_dsn_parts):
+                raise ValueError(
+                    "PostgreSQL DATA_BROKER_DATABASE_URL was not provided and could not be built because one or more of these "
+                    "required parts were missing. Please check that the parts are completely configured, or provide a "
+                    f"DATA_BROKER_DATABASE_URL instead: {required_pg_dsn_parts}"
+                )
+
+            pg_dsn = PostgresDsn(
+                url=None,
+                scheme="postgres",
+                user=values["BROKER_DB_USER"],
+                password=values["BROKER_DB_PASSWORD"].get_secret_value(),
+                host=values["BROKER_DB_HOST"],
+                port=values["BROKER_DB_PORT"],
+                path="/" + values["BROKER_DB_NAME"] if values["BROKER_DB_NAME"] else None,
+            )
+            values = eval_default_factory_from_root_validator(cls, values, "DATA_BROKER_DATABASE_URL", lambda: str(pg_dsn))
+
+        # Now validate the provided and/or built values are consistent between DATA_BROKER_DATABASE_URL and BROKER_DB_* parts
+        pg_url_config_errors = {}
+        pg_url_parts, pg_username, pg_password = parse_pg_uri(values["DATA_BROKER_DATABASE_URL"])
+
+        # Validate host
+        if pg_url_parts.hostname != values["BROKER_DB_HOST"]:
+            pg_url_config_errors["BROKER_DB_HOST"] = (values["BROKER_DB_HOST"], pg_url_parts.hostname)
+
+        # Validate port
+        if (
+                (pg_url_parts.port is not None and str(pg_url_parts.port) != values["BROKER_DB_PORT"])
+                or pg_url_parts.port is None
+                and values["BROKER_DB_PORT"] is not None
+        ):
+            pg_url_config_errors["BROKER_DB_PORT"] = (values["BROKER_DB_PORT"], pg_url_parts.port)
+
+        # Validate DB name (path)
+        if (
+                (pg_url_parts.path is not None and pg_url_parts.path.lstrip("/") != values["BROKER_DB_NAME"])
+                or pg_url_parts.path is None
+                and values["BROKER_DB_NAME"] is not None
+        ):
+            pg_url_config_errors["BROKER_DB_NAME"] = (
+                values["BROKER_DB_NAME"],
+                pg_url_parts.path.lstrip("/") if pg_url_parts.path is not None and pg_url_parts.path != "/" else None,
+            )
+
+        # Validate username
+        if pg_username != values["BROKER_DB_USER"]:
+            pg_url_config_errors["BROKER_DB_USER"] = (values["BROKER_DB_USER"], pg_username)
+
+        # Validate password
+        if pg_password != unveil(values["BROKER_DB_PASSWORD"]):
+            # NOTE: Keeping password text obfuscated in the error output
+            pg_url_config_errors["BROKER_DB_PASSWORD"] = (
+                values["BROKER_DB_PASSWORD"],
+                "*" * len(pg_password) if pg_password is not None else None,
+            )
+
+        if len(pg_url_config_errors) > 0:
+            err_msg = (
+                "The DATA_BROKER_DATABASE_URL config var value was provided along with one or more BROKER_DB_* config var "
+                "values, however they were not consistent. Differing configuration sources that should match "
+                "will cause confusion. Either provide all values consistently, or only provide a complete "
+                "DATA_BROKER_DATABASE_URL and leave the others as None or unset, or leave the DATA_BROKER_DATABASE_URL None or unset "
+                "and provide only the required POSTGRES DSN parts. Parts not matching:\n"
+            )
+            for k, v in pg_url_config_errors.items():
+                err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in DATA_BROKER_DATABASE_URL: {v[1]}\n"
             raise ValueError(err_msg)
 
         return values
