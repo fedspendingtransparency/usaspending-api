@@ -1,99 +1,103 @@
-_award_search_types = {
-    "treasury_account_identifiers": "ARRAY<INTEGER>",
-    "award_id": "LONG NOT NULL",
-    "category": "STRING",
-    "type": "STRING",
-    "type_description": "STRING",
-    "generated_unique_award_id": "STRING",
-    "display_award_id": "STRING",
-    "update_date": "TIMESTAMP",
-    "piid": "STRING",
-    "fain": "STRING",
-    "uri": "STRING",
-    "award_amount": "NUMERIC(23, 2)",
-    "total_obligation": "NUMERIC(23, 2)",
-    "description": "STRING",
-    "total_obl_bin": "STRING",
-    "total_subsidy_cost": "NUMERIC(23, 2)",
-    "total_loan_value": "NUMERIC(23, 2)",
-    "recipient_hash": "STRING",
-    "recipient_levels": "ARRAY<STRING>",
-    "recipient_name": "STRING",
-    "recipient_unique_id": "STRING",
-    "parent_recipient_unique_id": "STRING",
-    "recipient_uei": "STRING",
-    "parent_uei": "STRING",
-    "business_categories": "ARRAY<STRING>",
-    "action_date": "DATE",
-    "fiscal_year": "INTEGER",
-    "last_modified_date": "DATE",
-    "period_of_performance_start_date": "DATE",
-    "period_of_performance_current_end_date": "DATE",
-    "date_signed": "DATE",
-    "ordering_period_end_date": "DATE",
-    "original_loan_subsidy_cost": "NUMERIC(23, 2)",
-    "face_value_loan_guarantee": "NUMERIC(23, 2)",
-    "awarding_agency_id": "INTEGER",
-    "funding_agency_id": "INTEGER",
-    "awarding_toptier_agency_name": "STRING",
-    "funding_toptier_agency_name": "STRING",
-    "awarding_subtier_agency_name": " STRING",
-    "funding_subtier_agency_name": "STRING",
-    "awarding_toptier_agency_code": "STRING",
-    "funding_toptier_agency_code": "STRING",
-    "awarding_subtier_agency_code": "STRING",
-    "funding_subtier_agency_code": "STRING",
-    "funding_toptier_agency_id": "INT",
-    "funding_subtier_agency_id": "INT",
-    "recipient_location_country_code": "STRING",
-    "recipient_location_country_name": "STRING",
-    "recipient_location_state_code": "STRING",
-    "recipient_location_county_code": "STRING",
-    "recipient_location_county_name": "STRING",
-    "recipient_location_congressional_code": "STRING",
-    "recipient_location_zip5": "STRING",
-    "recipient_location_city_name": "STRING",
-    "recipient_location_state_name": "STRING",
-    "recipient_location_state_fips": "STRING",
-    "recipient_location_state_population": "INTEGER",
-    "recipient_location_county_population": "INTEGER",
-    "recipient_location_congressional_population": "INTEGER",
-    "pop_country_name": "STRING",
-    "pop_country_code": "STRING",
-    "pop_state_code": "STRING",
-    "pop_county_code": "STRING",
-    "pop_county_name": "STRING",
-    "pop_city_code": "STRING",
-    "pop_zip5": "STRING",
-    "pop_congressional_code": "STRING",
-    "pop_city_name": "STRING",
-    "pop_state_name": "STRING",
-    "pop_state_fips": "STRING",
-    "pop_state_population": "INTEGER",
-    "pop_county_population": "INTEGER",
-    "pop_congressional_population": "INTEGER",
-    "cfda_program_title": "STRING",
-    "cfda_number": "STRING",
-    "cfdas": "ARRAY<STRING>",
-    "sai_number": "STRING",
-    "type_of_contract_pricing": "STRING",
-    "extent_competed": "STRING",
-    "type_set_aside": "STRING",
-    "product_or_service_code": "STRING",
-    "product_or_service_description": "STRING",
-    "naics_code": "STRING",
-    "naics_description": "STRING",
-    "tas_paths": "ARRAY<STRING>",
-    "tas_components": "ARRAY<STRING>",
-    "disaster_emergency_fund_codes": "ARRAY<STRING>",
-    "covid_spending_by_defc": "STRING",
-    "total_covid_outlay": "NUMERIC(23, 2)",
-    "total_covid_obligation": "NUMERIC(23, 2)",
+from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
+
+AWARD_SEARCH_COLUMNS = {
+    "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "[INTEGER]"},
+    "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
+    "category": {"delta": "STRING", "postgres": "TEXT"},
+    "type": {"delta": "STRING", "postgres": "TEXT"},
+    "type_description": {"delta": "STRING", "postgres": "TEXT"},
+    "generated_unique_award_id": {"delta": "STRING", "postgres": "TEXT"},
+    "display_award_id": {"delta": "STRING", "postgres": "TEXT"},
+    "update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
+    "piid": {"delta": "STRING", "postgres": "TEXT"},
+    "fain": {"delta": "STRING", "postgres": "TEXT"},
+    "uri": {"delta": "STRING", "postgres": "TEXT"},
+    "award_amount": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
+    "total_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
+    "description": {"delta": "STRING", "postgres": "TEXT"},
+    "total_obl_bin": {"delta": "STRING", "postgres": "TEXT"},
+    "total_subsidy_cost": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
+    "total_loan_value": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
+    "recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "recipient_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_uei": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_uei": {"delta": "STRING", "postgres": "TEXT"},
+    "business_categories": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "action_date": {"delta": "DATE", "postgres": "DATE"},
+    "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "last_modified_date": {"delta": "DATE", "postgres": "DATE"},
+    "period_of_performance_start_date": {"delta": "DATE", "postgres": "DATE"},
+    "period_of_performance_current_end_date": {"delta": "DATE", "postgres": "DATE"},
+    "date_signed": {"delta": "DATE", "postgres": "DATE"},
+    "ordering_period_end_date": {"delta": "DATE", "postgres": "DATE"},
+    "original_loan_subsidy_cost": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
+    "face_value_loan_guarantee": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
+    "awarding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "funding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "awarding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_subtier_agency_name": {"delta": " STRING", "postgres": " STRING"},
+    "funding_subtier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_subtier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_subtier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "funding_subtier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "recipient_location_country_code": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_country_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_state_code": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_county_code": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_county_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_city_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_state_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_state_fips": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_state_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "pop_country_name": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_country_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_state_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_county_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_city_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_zip5": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_congressional_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_city_name": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_state_name": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_state_fips": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "cfda_program_title": {"delta": "STRING", "postgres": "TEXT"},
+    "cfda_number": {"delta": "STRING", "postgres": "TEXT"},
+    "cfdas": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "sai_number": {"delta": "STRING", "postgres": "TEXT"},
+    "type_of_contract_pricing": {"delta": "STRING", "postgres": "TEXT"},
+    "extent_competed": {"delta": "STRING", "postgres": "TEXT"},
+    "type_set_aside": {"delta": "STRING", "postgres": "TEXT"},
+    "product_or_service_code": {"delta": "STRING", "postgres": "TEXT"},
+    "product_or_service_description": {"delta": "STRING", "postgres": "TEXT"},
+    "naics_code": {"delta": "STRING", "postgres": "TEXT"},
+    "naics_description": {"delta": "STRING", "postgres": "TEXT"},
+    "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "tas_components": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "covid_spending_by_defc": {"delta": "STRING", "postgres": "TEXT"},
+    "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
+    "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
 }
+AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
+AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 
 award_search_create_sql_string = fr"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in _award_search_types.items()])}
+        {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
@@ -102,7 +106,7 @@ award_search_create_sql_string = fr"""
 award_search_load_sql_string = fr"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
-            {",".join([col for col in _award_search_types])}
+            {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
         )
     SELECT
   TREASURY_ACCT.treasury_account_identifiers,
@@ -111,7 +115,11 @@ award_search_load_sql_string = fr"""
   awards.type,
   awards.type_description,
   awards.generated_unique_award_id,
-  awards.piid AS display_award_id,
+  CASE
+    WHEN awards.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND awards.fain IS NOT NULL THEN awards.fain
+    WHEN awards.piid IS NOT NULL THEN awards.piid  -- contracts. Did it this way to easily handle IDV contracts
+    ELSE awards.uri
+  END AS display_award_id,
   awards.update_date,
   awards.piid,
   awards.fain AS fain,
@@ -125,15 +133,33 @@ award_search_load_sql_string = fr"""
         CASE WHEN awards.type IN('07', '08') THEN 0
             ELSE awards.total_obligation END, 0) AS NUMERIC(23, 2) ) AS total_obligation,
   awards.description,
-  CASE WHEN awards.total_obligation = 500000000.0 THEN '500M'
-    WHEN awards.total_obligation = 100000000.0 THEN '100M'
-    WHEN awards.total_obligation = 1000000.0 THEN '1M'
-    WHEN awards.total_obligation = 25000000.0 THEN '25M'
-    WHEN awards.total_obligation > 500000000.0 THEN '>500M'
-    WHEN awards.total_obligation < 1000000.0 THEN '<1M'
-    WHEN awards.total_obligation < 25000000.0 THEN '1M..25M'
-    WHEN awards.total_obligation < 100000000.0 THEN '25M..100M'
-    WHEN awards.total_obligation < 500000000.0 THEN '100M..500M'
+  CASE WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 500000000.0 THEN '500M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 100000000.0 THEN '100M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 1000000.0 THEN '1M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) = 25000000.0 THEN '25M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) > 500000000.0 THEN '>500M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 1000000.0 THEN '<1M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 25000000.0 THEN '1M..25M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 100000000.0 THEN '25M..100M'
+    WHEN COALESCE(
+        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation END, 0) < 500000000.0 THEN '100M..500M'
     ELSE NULL END AS total_obl_bin,
   CAST(
     COALESCE(
@@ -143,9 +169,9 @@ award_search_load_sql_string = fr"""
     COALESCE(
         CASE WHEN awards.type IN('07', '08') THEN awards.total_loan_value
             ELSE 0 END, 0 ) AS NUMERIC(23, 2) ) AS total_loan_value,
-  FORMAT_AS_UUID(RECIPIENT_HASH_AND_LEVELS.recipient_hash) AS recipient_hash,
-  RECIPIENT_HASH_AND_LEVELS.recipient_levels AS recipient_levels,
-  UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
+  RECIPIENT_HASH_AND_LEVELS.recipient_hash,
+  RECIPIENT_HASH_AND_LEVELS.recipient_levels,
+  UPPER(COALESCE(recipient_lookup.legal_business_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
   COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
   COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) AS recipient_uei,
@@ -173,7 +199,7 @@ award_search_load_sql_string = fr"""
   TFA.toptier_code AS funding_toptier_agency_code,
   SAA.subtier_code AS awarding_subtier_agency_code,
   SFA.subtier_code AS funding_subtier_agency_code,
-  (SELECT first(a.id) FROM global_temp.agency a WHERE a.toptier_agency_id = TFA.toptier_agency_id AND a.toptier_flag = TRUE) AS funding_toptier_agency_id,
+  FA_ID.id AS funding_toptier_agency_id,
   latest_transaction.funding_agency_id AS funding_subtier_agency_id,
 
   rl_country_lookup.country_code AS recipient_location_country_code,
@@ -211,7 +237,7 @@ award_search_load_sql_string = fr"""
 
   transaction_fabs.cfda_title AS cfda_program_title,
   transaction_fabs.cfda_number AS cfda_number,
-  transaction_cfdas.cfdas AS cfdas,
+  CASE WHEN awards.is_fpds = FALSE THEN transaction_cfdas.cfdas ELSE NULL END AS cfdas,
 
 
   transaction_fabs.sai_number AS sai_number,
@@ -242,16 +268,12 @@ LEFT OUTER JOIN
   raw.transaction_fabs
     ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)
 LEFT OUTER JOIN
-  (SELECT
-    legal_business_name AS recipient_name,
-    duns,
-    recipient_hash
-  FROM raw.recipient_lookup AS rlv
-  ) recipient_lookup ON recipient_lookup.recipient_hash = FORMAT_AS_UUID(MD5(UPPER(
+  raw.recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, '')) END)))
+       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
+    END)), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
 LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
@@ -282,6 +304,9 @@ LEFT OUTER JOIN
   global_temp.subtier_agency AS SFA
     ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT OUTER JOIN
+  (SELECT id, toptier_agency_id, ROW_NUMBER() OVER (PARTITION BY toptier_agency_id ORDER BY toptier_flag DESC, id ASC) AS row_num FROM global_temp.agency) AS FA_ID
+    ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND row_num = 1)
+LEFT OUTER JOIN
     global_temp.ref_country_code AS pop_country_lookup ON (
         pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
         OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c)
@@ -306,7 +331,7 @@ LEFT OUTER JOIN (
     )
 LEFT OUTER JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS POP_STATE_LOOKUP
- ON (POP_STATE_LOOKUP.code = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.legal_entity_state_code))
+ ON (POP_STATE_LOOKUP.code = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code))
 LEFT OUTER JOIN
  (SELECT code, name, fips, MAX(id) FROM global_temp.state_data GROUP BY code, name, fips) AS RL_STATE_LOOKUP
  ON (RL_STATE_LOOKUP.code = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code))
@@ -338,12 +363,13 @@ LEFT OUTER JOIN
         AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
 )
 LEFT OUTER JOIN (
-        SELECT recipient_hash, uei, COLLECT_SET(recipient_level) AS recipient_levels
+        SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
         FROM raw.recipient_profile
+        WHERE recipient_level != 'P'
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (
         recipient_lookup.recipient_hash = RECIPIENT_HASH_AND_LEVELS.recipient_hash
-        AND recipient_lookup.recipient_name NOT IN (
+        AND recipient_lookup.legal_business_name NOT IN (
             'MULTIPLE RECIPIENTS',
             'REDACTED DUE TO PII',
             'MULTIPLE FOREIGN RECIPIENTS',
@@ -351,7 +377,7 @@ LEFT OUTER JOIN (
             'INDIVIDUAL RECIPIENT',
             'MISCELLANEOUS FOREIGN AWARDEES'
         )
-        AND recipient_lookup.recipient_name IS NOT NULL
+        AND recipient_lookup.legal_business_name IS NOT NULL
     )
 LEFT OUTER JOIN (
   SELECT
@@ -437,5 +463,17 @@ LEFT OUTER JOIN (
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
 WHERE
-  latest_transaction.action_date >= '2007-10-01'
+    -- Make sure that the data matches the different Award Type matviews' current state
+    (
+        latest_transaction.action_date >= '2007-10-01'
+        AND (
+            awards.type IN ({str(list(all_awards_types_to_category)).replace("[", "").replace("]", "")})
+            OR awards.type LIKE 'IDV%'
+        )
+    )
+    -- Make sure that we also pick up the current state of Pre2008 matview
+    OR (
+        latest_transaction.action_date >= '2000-10-01'
+        AND latest_transaction.action_date < '2007-10-01'
+    )
 """

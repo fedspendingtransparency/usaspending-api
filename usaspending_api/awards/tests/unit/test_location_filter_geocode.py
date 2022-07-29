@@ -1,7 +1,7 @@
 import pytest
 
 from model_bakery import baker
-from usaspending_api.search.models import ContractAwardSearchMatview
+from usaspending_api.search.models import AwardSearch
 from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_nested_object,
     geocode_filter_locations,
@@ -83,7 +83,7 @@ def award_data_fixture(db):
 
 def test_geocode_filter_locations(award_data_fixture):
 
-    to = ContractAwardSearchMatview.objects
+    to = AwardSearch.objects
 
     values = [
         {"city": "McCool Junction", "state": "TX", "country": "USA"},
