@@ -16,19 +16,18 @@ Ensure the following dependencies are installed and working prior to continuing:
 - `bash` or another Unix Shell equivalent
     - Bash is available on Windows as [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 - [`git`](https://git-scm.com/downloads)
-- [`make`](https://www.gnu.org/software/make/) for running common build/test/run targets in `Makefile`
-    - _TIP: Review handy short-hand `make` targets in `Makefile` after getting familiar with the below setup_
+- [`make`](https://www.gnu.org/software/make/) for running build/test/run targets in the `Makefile`. (Run `$ make` for a list of targets.)
 
-#### If not using Docker:
-> Using Docker is recommended since it provides a clean environment. Setting up your own local environment requires some technical abilities and experience with modern software tools.
+_**If not using Docker, you'll need to install app components on your machine:**_
+> _Using Docker is recommended since it provides a clean environment. Setting up your own local environment requires some technical abilities and experience with modern software tools._
 
 - Command line package manager
     - Windows' WSL bash uses `apt-get`
-    - MacOS users will use [`Homebrew`](https://brew.sh/)
-    - Linux users already know their package manager (yum, apt, pacman, etc.)
-- [`PostgreSQL`](https://www.postgresql.org/download/) version 10.x (with a dedicated `data_store_api` database)
+    - MacOS users can use [`Homebrew`](https://brew.sh/)
+    - Linux users already know their package manager (`yum`, `apt`, `pacman`, etc.)
+- [`PostgreSQL`](https://www.postgresql.org/download/) version 13.x (with a dedicated `data_store_api` database)
 - [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 7.1
-- Python 3.7 environment
+- `Python` version 3.7 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
   - See [Required Python Libraries](#required-python-libraries) for an example using `pyenv`
 
@@ -38,14 +37,37 @@ Now, navigate to the base file directory where you will store the USAspending re
     $ mkdir -p usaspending && cd usaspending
     $ git clone https://github.com/fedspendingtransparency/usaspending-api.git
     $ cd usaspending-api
+    
+### Environment Variables
 
-### Create Your `.env` File
-Copy the template `.env` file with comment local runtime environment variables defined. Change as needed for your environment. _This file is git-ignored and will not be committed by git if changed._
+#### Create Your `.env` File
+Copy the template `.env` file with local runtime environment variables defined. Change as needed for your environment. _This file is git-ignored and will not be committed by git if changed._
 
 ```shell
 $ cp .env.template .env
 ```
-    
+
+A `.env` file is a common way to manage environment variables in a declarative file. Certain tools, like `docker-compose`, will read and honor these variables.
+
+#### `.envrc` File
+_[direnv](https://direnv.net/) is a shell extension that automatically runs shell commands in a `.envrc` file (commonly env var `export` commands) when entering or exiting a folder with that file_
+
+Create a `.envrc` file in the repo root, which will be ignored by git. Change credentials and ports as-needed for your local dev environment.
+
+```bash
+export DATABASE_URL=postgres://usaspending:usaspender@localhost:5432/data_store_api
+export ES_HOSTNAME=http://localhost:9200
+export DATA_BROKER_DATABASE_URL=postgres://admin:root@localhost:5435/data_broker
+```
+
+If `direnv` does not pick this up after saving the file, type
+
+    $ direnv allow
+
+_Alternatively, you could skip using `direnv` and just export these variables in your shell environment._
+
+**Just make sure your env vars declared in the shell and in `.env` match for a consistent experience inside and outside of Docker**
+
 ### Build `usaspending-backend` Docker Image
 _This image is used as the basis for running application components and running containerized setup services._
 
@@ -73,7 +95,7 @@ $ docker-compose --profile usaspending up usaspending-db
 
 ##### Bring DB Schema Up-to-Date
 
-- `docker-compose run --rm usaspending-manage python3 -u manage.py migrate` will run Django migrations: [https://docs.djangoproject.com/en/2.2/topics/migrations/](https://docs.djangoproject.com/en/2.2/topics/migrations/).
+- `docker-compose run --rm usaspending-manage python3 -u manage.py migrate` will run [Django migrations](https://docs.djangoproject.com/en/2.2/topics/migrations/).
 
 - `docker-compose run --rm usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
 
@@ -82,7 +104,7 @@ _To just get essential reference data, you can run:_
 
 - `docker-compose run --rm usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
 
-_To download a full production snapshot of the database or a subset of the database and loading it into PostgreSQL, use the `pg_restore` tool as described here: [USAspending Database Download](https://files.usaspending.gov/database_download/)_
+_Alternatively, to download a fully populuated production snapshot of the database (full or a subset) and restore it into PostgreSQL, use the `pg_restore` tool as described here: [USAspending Database Download](https://files.usaspending.gov/database_download/)_
 
 - Recreate matviews with the command documented in the previous section if this is done
 
@@ -145,53 +167,32 @@ To run tests locally and not in the docker services, you need:
 
 1. **Postgres** A running PostgreSQL database server _(See [Database Setup above](#database-setup))_
 1. **Elasticsearch** A running Elasticsearch cluster _(See [Elasticsearch Setup above](#elasticsearch-setup))_
+1. **Environment Variables** Tell python where to connect to the various data stores _(See [Environmnet Variables](#environment-variables))_
 1. **Required Python Libraries** Python package dependencies downloaded and discoverable _(See below)_
-1. **Environment Variables** Tell python where to connect to the various data stores _(See below)_
 
 Once these are satisfied, run:
 
-    (usaspending-api) $ pytest
+```shell
+(usaspending-api) $ make tests
+```
+
+or, alternatively to skip using `make`
+
+```shell
+(usaspending-api) $ pytest
+```
 
 #### Required Python Libraries
-Create and activate the virtual environment using `venv`, and ensure the right version of Python 3.7.x is being used (the latest RHEL package available for `python36u`: _as of this writing_)
+Setup python, virtual environment, and pip dependencies, then check version info
 
-    $ pyenv install 3.7.2
-    $ pyenv local 3.7.2
-    $ python -m venv .venv/usaspending-api
-    $ source .venv/usaspending-api/bin/activate
-
+```shell
+$ make local-dev-setup
+$ source $(make activate) 
+```
 
 Your prompt should then look as below to show you are _in_ the virtual environment named `usaspending-api` (_to exit that virtual environment, simply type `deactivate` at the prompt_).
 
     (usaspending-api) $
-
-[`pip`](https://pip.pypa.io/en/stable/installing/) `install` application dependencies
-
-    (usaspending-api) $ pip install -r requirements/requirements.txt
-
-#### Environment Variables
-
-##### `.envrc` File
-_[direnv](https://direnv.net/) is a shell extension that automatically runs shell commands in a `.envrc` file (commonly env var `export` commands) when entering or exiting a folder with that file_
-
-Create a `.envrc` file in the repo root, which will be ignored by git. Change credentials and ports as-needed for your local dev environment.
-
-```bash
-export DATABASE_URL=postgres://usaspending:usaspender@localhost:5432/data_store_api
-export ES_HOSTNAME=http://localhost:9200
-export DATA_BROKER_DATABASE_URL=postgres://admin:root@localhost:5435/data_broker
-```
-
-If `direnv` does not pick this up after saving the file, type
-
-    $ direnv allow
-
-_Alternatively, you could skip using `direnv` and just export these variables in your shell environment._
-
-##### `.env` File
-Declaring `NAME=VALUE` variables in a git-ignored `.env` file is a common way to manage environment variables in a declarative file. Certain tools, like `docker-compose`, will read and honor these variables.
-
-If you copied `.env.template` to `.env`, then review any variables you want to change to be consistent with your local runtime environment.
 
 ### Including Broker Integration Tests
 Some automated integration tests run against a [Broker](https://github.com/fedspendingtransparency/data-act-broker-backend) database. If certain dependencies to run such integration tests are not satisfied, those tests will bail out and be marked as _Skipped_.
