@@ -22,7 +22,7 @@ from usaspending_api.common.sqs.sqs_handler import (
     _FakeUnitTestFileBackedSQSQueue,
 )
 from usaspending_api.common.helpers.generic_helper import generate_matviews
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
 # Compose other supporting conftest_*.py files
 from usaspending_api.conftest_helpers import (
@@ -136,9 +136,13 @@ def django_db_setup(
             old_db_url = CONFIG.DATABASE_URL
             old_ps_db = CONFIG.USASPENDING_DB_NAME
 
-            test_db_name = f"test_{CONFIG.USASPENDING_DB_NAME}"
+            test_usas_db_name = f"test_{CONFIG.USASPENDING_DB_NAME}"
             CONFIG.DATABASE_URL = get_database_dsn_string()
-            CONFIG.USASPENDING_DB_NAME = test_db_name
+            CONFIG.USASPENDING_DB_NAME = test_usas_db_name
+
+            test_broker_db = f"test_{CONFIG.BROKER_DB_NAME}"
+            CONFIG.DATA_BROKER_DATABASE_URL = get_broker_dsn_string()
+            CONFIG.BROKER_DB_NAME = test_broker_db
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down
     def reset_postgres_dsn():
@@ -322,10 +326,14 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};         \
     """
 
+    broker_host = settings.DATABASES["data_broker"]["HOST"]
+    if broker_host in ('localhost', '120.0.0.1', '0.0.0.0'):
+        broker_host = 'host.docker.internal'
+
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
     # This will ensure that when the broker script is run, it uses the same test broker DB
     broker_db_config_cmds = rf"""                                                                 \
-        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES["data_broker"]["HOST"]}/"             \
+        sed -i.bak -E "s/host:.*$/host: {broker_host}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
         sed -i.bak -E "s/port:.*$/port: {settings.DATABASES["data_broker"]["PORT"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
