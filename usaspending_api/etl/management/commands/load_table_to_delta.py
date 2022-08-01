@@ -6,24 +6,21 @@ from usaspending_api.awards.delta_models import (
     awards_sql_string,
     FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
     financial_accounts_by_awards_sql_string,
-    BROKER_SUBAWARDS_COLUMNS,
-    broker_subawards_sql_string,
 )
 from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
-    get_usas_jdbc_url,
-    get_broker_jdbc_url,
+    get_jdbc_url,
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_COLUMNS,
-    RECIPIENT_PROFILE_COLUMNS,
-    recipient_profile_load_sql_strings,
-    recipient_lookup_create_sql_string,
+    recipient_lookup_sql_string,
+    SAM_RECIPIENT_COLUMNS,
+    sam_recipient_sql_string,
 )
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
@@ -51,7 +48,6 @@ from usaspending_api.awards.models import (
 TABLE_SPEC = {
     "awards": {
         "model": Award,
-        "is_from_broker": False,
         "source_table": "awards",
         "source_database": "rpt",
         "destination_database": "raw",
@@ -66,7 +62,6 @@ TABLE_SPEC = {
     },
     "financial_accounts_by_awards": {
         "model": FinancialAccountsByAwards,
-        "is_from_broker": False,
         "source_table": "financial_accounts_by_awards",
         "source_database": "public",
         "destination_database": "raw",
@@ -81,7 +76,6 @@ TABLE_SPEC = {
     },
     "recipient_lookup": {
         "model": RecipientLookup,
-        "is_from_broker": False,
         "source_table": "recipient_lookup",
         "source_database": "rpt",
         "destination_database": "raw",
@@ -89,29 +83,13 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "delta_table_create_sql": recipient_lookup_create_sql_string,
+        "delta_table_create_sql": recipient_lookup_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
     },
-    "recipient_profile": {
-        "model": RecipientProfile,
-        "is_from_broker": False,
-        "source_table": "recipient_profile",
-        "source_database": "rpt",
-        "destination_database": "raw",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": recipient_profile_load_sql_strings,
-        "source_schema": None,
-        "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_PROFILE_COLUMNS),
-    },
     "sam_recipient": {
         "model": DUNS,
-        "is_from_broker": False,
         "source_table": "duns",
         "source_database": "raw",
         "destination_database": "raw",
@@ -119,15 +97,13 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": None,
         "partition_column_type": None,
-        "is_partition_column_unique": False,
-        "delta_table_create_sql": None,
+        "delta_table_create_sql": sam_recipient_sql_string,
         "source_schema": None,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
-        "column_names": list(None),
+        "column_names": list(SAM_RECIPIENT_COLUMNS),
     },
     "transaction_fabs": {
         "model": TransactionFABS,
-        "is_from_broker": False,
         "source_table": "transaction_fabs",
         "source_database": "int",
         "destination_database": "raw",
@@ -142,7 +118,6 @@ TABLE_SPEC = {
     },
     "transaction_fpds": {
         "model": TransactionFPDS,
-        "is_from_broker": False,
         "source_table": "transaction_fpds",
         "source_database": "int",
         "destination_database": "raw",
@@ -157,7 +132,6 @@ TABLE_SPEC = {
     },
     "transaction_normalized": {
         "model": TransactionNormalized,
-        "is_from_broker": False,
         "source_table": "transaction_normalized",
         "source_database": "int",
         "destination_database": "raw",
@@ -175,7 +149,6 @@ TABLE_SPEC = {
     # data comparison between current Postgres data and the data transformed via Spark.
     "transaction_search_testing": {
         "model": TransactionSearch,
-        "is_from_broker": False,
         "source_table": "transaction_search",
         "source_database": None,
         "destination_database": "test",
@@ -190,7 +163,6 @@ TABLE_SPEC = {
     },
     "award_search_testing": {
         "model": AwardSearch,
-        "is_from_broker": False,
         "source_table": "award_search",
         "source_database": None,
         "destination_database": "rpt",
@@ -203,22 +175,6 @@ TABLE_SPEC = {
         "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
         "STRING, federal_accounts STRING, cfdas ARRAY<STRING>, tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
-    },
-    # Tables loaded in from the Broker
-    "broker_subaward": {
-        "model": None,
-        "is_from_broker": True,
-        "source_table": "subaward",
-        "source_database": None,
-        "destination_database": "raw",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": broker_subawards_sql_string,
-        "source_schema": None,
-        "custom_schema": "",
-        "column_names": list(BROKER_SUBAWARDS_COLUMNS),
     },
 }
 
@@ -280,7 +236,6 @@ class Command(BaseCommand):
         destination_table = options["destination_table"]
 
         table_spec = TABLE_SPEC[destination_table]
-        is_from_broker = table_spec["is_from_broker"]
         destination_database = options["alt_db"] or table_spec["destination_database"]
         destination_table_name = options["alt_name"] or destination_table
         source_table = table_spec["source_table"]
@@ -293,7 +248,7 @@ class Command(BaseCommand):
         spark.sql(f"use {destination_database};")
 
         # Resolve JDBC URL for Source Database
-        jdbc_url = get_usas_jdbc_url() if not is_from_broker else get_broker_jdbc_url()
+        jdbc_url = get_jdbc_url()
         if not jdbc_url:
             raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):

@@ -137,11 +137,17 @@ class Command(BaseCommand):
                 spark.udf.register(**udf_args)
 
         create_ref_temp_views(spark)
-        spark.sql(
-            TABLE_SPEC[destination_table]
-            .get("source_query")
-            .format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
-        )
+        if type(TABLE_SPEC[destination_table].get("source_query")) == list:
+            for x in TABLE_SPEC[destination_table].get("source_query"):
+                spark.sql(
+                    x.format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
+                )
+        else:
+            spark.sql(
+                TABLE_SPEC[destination_table]
+                .get("source_query")
+                .format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
+            )
 
         if spark_created_by_command:
             spark.stop()
