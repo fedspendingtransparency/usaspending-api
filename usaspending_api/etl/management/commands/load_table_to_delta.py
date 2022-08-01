@@ -211,7 +211,7 @@ TABLE_SPEC = {
         "broker": True,
         "source_table": "subaward",
         "source_database": None,
-        "destination_database": "rpt",
+        "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,
         "partition_column": "id",
