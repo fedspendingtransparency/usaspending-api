@@ -220,7 +220,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "",
         "column_names": list(BROKER_SUBAWARDS_COLUMNS),
-    }
+    },
 }
 
 
@@ -281,7 +281,7 @@ class Command(BaseCommand):
         destination_table = options["destination_table"]
 
         table_spec = TABLE_SPEC[destination_table]
-        broker_table = table_spec['broker']
+        broker_table = table_spec["broker"]
         destination_database = options["alt_db"] or table_spec["destination_database"]
         destination_table_name = options["alt_name"] or destination_table
         source_table = table_spec["source_table"]

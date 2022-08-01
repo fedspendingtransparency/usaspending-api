@@ -2,7 +2,6 @@ BROKER_SUBAWARDS_COLUMNS = {
     "created_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "updated_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
-
     # Prime Award Data
     "unique_award_key": {"delta": "STRING", "postgres": "TEXT"},
     "award_id": {"delta": "STRING", "postgres": "TEXT"},
@@ -51,7 +50,6 @@ BROKER_SUBAWARDS_COLUMNS = {
     "naics_description": {"delta": "STRING", "postgres": "TEXT"},
     "cfda_numbers": {"delta": "STRING", "postgres": "TEXT"},
     "cfda_titles": {"delta": "STRING", "postgres": "TEXT"},
-
     # Subaward Data
     "subaward_type": {"delta": "STRING", "postgres": "TEXT"},
     "subaward_report_year": {"delta": "STRING", "postgres": "TEXT"},
@@ -94,7 +92,6 @@ BROKER_SUBAWARDS_COLUMNS = {
     "sub_high_comp_officer4_amount": {"delta": "STRING", "postgres": "TEXT"},
     "sub_high_comp_officer5_full_na": {"delta": "STRING", "postgres": "TEXT"},
     "sub_high_comp_officer5_amount": {"delta": "STRING", "postgres": "TEXT"},
-
     # Additional Prime Award Data
     "prime_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "internal_id": {"delta": "STRING", "postgres": "TEXT"},
@@ -124,7 +121,6 @@ BROKER_SUBAWARDS_COLUMNS = {
     "high_comp_officer5_full_na": {"delta": "STRING", "postgres": "TEXT"},
     "high_comp_officer5_amount": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perform_street": {"delta": "STRING", "postgres": "TEXT"},
-
     # Additional Subaward Data
     "sub_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "sub_parent_id": {"delta": "INTEGER", "postgres": "INTEGER"},

@@ -327,8 +327,8 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
     """
 
     broker_host = settings.DATABASES["data_broker"]["HOST"]
-    if broker_host in ('localhost', '120.0.0.1', '0.0.0.0'):
-        broker_host = 'host.docker.internal'
+    if broker_host in ("localhost", "120.0.0.1", "0.0.0.0"):
+        broker_host = "host.docker.internal"
 
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
     # This will ensure that when the broker script is run, it uses the same test broker DB

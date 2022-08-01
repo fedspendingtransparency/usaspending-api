@@ -6,8 +6,7 @@ import json
 import psycopg2
 import pytz
 
-from datetime import date, datetime
-from decimal import Decimal
+from datetime import datetime
 from pathlib import Path
 from psycopg2.extensions import AsIs
 from typing import Any, Dict, List, Union

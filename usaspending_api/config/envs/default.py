@@ -221,7 +221,9 @@ class DefaultConfig(BaseSettings):
         """
 
         # First determine if DATABASE_URL was provided.
-        is_database_url_provided = values["DATA_BROKER_DATABASE_URL"] and values["DATA_BROKER_DATABASE_URL"] not in CONFIG_VAR_PLACEHOLDERS
+        is_database_url_provided = (
+            values["DATA_BROKER_DATABASE_URL"] and values["DATA_BROKER_DATABASE_URL"] not in CONFIG_VAR_PLACEHOLDERS
+        )
 
         # If DATA_BROKER_DATABASE_URL was provided
         # - it should take precedence
@@ -275,7 +277,9 @@ class DefaultConfig(BaseSettings):
                 port=values["BROKER_DB_PORT"],
                 path="/" + values["BROKER_DB_NAME"] if values["BROKER_DB_NAME"] else None,
             )
-            values = eval_default_factory_from_root_validator(cls, values, "DATA_BROKER_DATABASE_URL", lambda: str(pg_dsn))
+            values = eval_default_factory_from_root_validator(
+                cls, values, "DATA_BROKER_DATABASE_URL", lambda: str(pg_dsn)
+            )
 
         # Now validate the provided and/or built values are consistent between DATA_BROKER_DATABASE_URL and BROKER_DB_* parts
         pg_url_config_errors = {}
@@ -287,17 +291,17 @@ class DefaultConfig(BaseSettings):
 
         # Validate port
         if (
-                (pg_url_parts.port is not None and str(pg_url_parts.port) != values["BROKER_DB_PORT"])
-                or pg_url_parts.port is None
-                and values["BROKER_DB_PORT"] is not None
+            (pg_url_parts.port is not None and str(pg_url_parts.port) != values["BROKER_DB_PORT"])
+            or pg_url_parts.port is None
+            and values["BROKER_DB_PORT"] is not None
         ):
             pg_url_config_errors["BROKER_DB_PORT"] = (values["BROKER_DB_PORT"], pg_url_parts.port)
 
         # Validate DB name (path)
         if (
-                (pg_url_parts.path is not None and pg_url_parts.path.lstrip("/") != values["BROKER_DB_NAME"])
-                or pg_url_parts.path is None
-                and values["BROKER_DB_NAME"] is not None
+            (pg_url_parts.path is not None and pg_url_parts.path.lstrip("/") != values["BROKER_DB_NAME"])
+            or pg_url_parts.path is None
+            and values["BROKER_DB_NAME"] is not None
         ):
             pg_url_config_errors["BROKER_DB_NAME"] = (
                 values["BROKER_DB_NAME"],
@@ -325,7 +329,9 @@ class DefaultConfig(BaseSettings):
                 "and provide only the required POSTGRES DSN parts. Parts not matching:\n"
             )
             for k, v in pg_url_config_errors.items():
-                err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in DATA_BROKER_DATABASE_URL: {v[1]}\n"
+                err_msg += (
+                    f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in DATA_BROKER_DATABASE_URL: {v[1]}\n"
+                )
             raise ValueError(err_msg)
 
         return values
