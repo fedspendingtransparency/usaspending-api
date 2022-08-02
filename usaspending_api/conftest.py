@@ -2,12 +2,11 @@ import docker
 import logging
 import os
 import pytest
-import sys
 import tempfile
 
 from django.conf import settings
 from django.core.management import call_command
-from django.db import connections, DEFAULT_DB_ALIAS
+from django.db import connections
 from django.test import override_settings
 from pathlib import Path
 
@@ -336,7 +335,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
     # This will ensure that when the broker script is run, it uses the same test broker DB
     broker_db_config_cmds = rf"""                                                                 \
-        sed -i.bak -E "s/host:.*$/host: {broker_host}/"             \
+        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES["data_broker"]["HOST"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
         sed -i.bak -E "s/port:.*$/port: {settings.DATABASES["data_broker"]["PORT"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \

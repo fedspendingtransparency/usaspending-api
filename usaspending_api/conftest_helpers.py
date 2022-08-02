@@ -1,5 +1,3 @@
-import sys
-
 from builtins import Exception
 from datetime import datetime, timezone
 from django.conf import settings
