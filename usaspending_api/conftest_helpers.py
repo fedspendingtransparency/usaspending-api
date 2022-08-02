@@ -212,11 +212,6 @@ def ensure_broker_server_dblink_exists():
         # Ensure foreign server setup to point to the broker DB for dblink to work
         broker_server_script_template = Template(broker_server_script)
 
-        # If running in a docker and the Broker is hosted outside of it, update the host
-        local_hosts = ("localhost", "120.0.0.1", "0.0.0.0")
-        if settings.DATABASES["data_broker"]["HOST"] in local_hosts and not sys.platform == "linux":
-            db_conn_tokens_dict["BROKER_DB_HOST"] = "host.docker.internal"
-
         cursor.execute(broker_server_script_template.substitute(**db_conn_tokens_dict))
 
 
