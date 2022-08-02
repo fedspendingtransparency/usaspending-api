@@ -6,7 +6,7 @@ import tempfile
 
 from django.conf import settings
 from django.core.management import call_command
-from django.db import connections
+from django.db import connections, DEFAULT_DB_ALIAS
 from django.test import override_settings
 from pathlib import Path
 
@@ -333,7 +333,9 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
     """
 
     broker_host = settings.DATABASES["data_broker"]["HOST"]
-    if broker_host in ("localhost", "120.0.0.1", "0.0.0.0"):
+    usas_host = settings.DATABASES[DEFAULT_DB_ALIAS]["HOST"]
+    local_hosts = ("localhost", "120.0.0.1", "0.0.0.0")
+    if broker_host in local_hosts and usas_host not in local_hosts:
         broker_host = "host.docker.internal"
 
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
