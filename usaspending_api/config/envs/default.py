@@ -99,28 +99,17 @@ class DefaultConfig(BaseSettings):
         # - its values will be used to backfill any missing POSTGRES DSN parts stored as separate config vars
         if is_database_url_provided:
             url_parts, username, password = parse_pg_uri(values[db_url_conf_name])
-
+            backfill_configs = {
+                f"{db_conf_prefix}_HOST": lambda: url_parts.hostname,
+                f"{db_conf_prefix}_PORT": lambda: str(url_parts.port),
+                f"{db_conf_prefix}_NAME": lambda: url_parts.path.lstrip("/"),
+                f"{db_conf_prefix}_USER": lambda: username,
+                f"{db_conf_prefix}_PASSWORD": lambda: SecretStr(password),
+            }
             # Backfill only POSTGRES DSN CONFIG vars that are missing their value
-            if values.get(f"{db_conf_prefix}_HOST", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, f"{db_conf_prefix}_HOST", lambda: url_parts.hostname
-                )
-            if values.get(f"{db_conf_prefix}_PORT", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, f"{db_conf_prefix}_PORT", lambda: str(url_parts.port)
-                )
-            if values.get(f"{db_conf_prefix}_NAME", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, f"{db_conf_prefix}_NAME", lambda: url_parts.path.lstrip("/")
-                )
-            if values.get(f"{db_conf_prefix}_USER", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, f"{db_conf_prefix}_USER", lambda: username
-                )
-            if unveil(values.get(f"{db_conf_prefix}_PASSWORD", None)) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, f"{db_conf_prefix}_PASSWORD", lambda: SecretStr(password)
-                )
+            for config_name, transformation in backfill_configs.items():
+                if values.get(config_name, None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                    values = eval_default_factory_from_root_validator(cls, values, config_name, transformation)
 
         # If the DB URL config is not provided, try to build-it-up from provided parts, then backfill it
         if not is_database_url_provided:
