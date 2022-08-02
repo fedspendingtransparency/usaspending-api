@@ -17,7 +17,7 @@ from django.core.management import call_command
 from django.db import connection, transaction
 from django.db.models import sql
 
-from usaspending_api.common.helpers.spark_helpers import create_ref_temp_views
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_awards

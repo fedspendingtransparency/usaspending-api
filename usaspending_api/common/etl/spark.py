@@ -1,12 +1,54 @@
+"""
+Spark utility functions that could be used as stages or steps of an ETL job (aka "data pipeline")
+
+NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helpers module, which holds mostly boilerplate
+functions for setup and configuration of the spark environment
+"""
 from itertools import chain
-from pyspark.sql.functions import to_date, lit, expr
-from pyspark.sql.types import StructType
+from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col
+from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
 
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.config import CONFIG
-from usaspending_api.common.helpers.spark_helpers import get_jvm_logger
+from usaspending_api.common.helpers.spark_helpers import get_jvm_logger, get_jdbc_connection_properties, get_jdbc_url
+from usaspending_api.recipient.models import StateData
+from usaspending_api.references.models import (
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+    DisasterEmergencyFundCode,
+)
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
+_RDS_REF_TABLES = [
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+    StateData,
+    FederalAccount,
+    TreasuryAppropriationAccount,
+    DisasterEmergencyFundCode,
+    SubmissionAttributes,
+    DABSSubmissionWindowSchedule,
+]
 
 
 def extract_db_data_frame(
@@ -359,3 +401,67 @@ def diff(
     if not include_unchanged_rows:
         differences = differences.where("diff != 'N'")
     return differences
+
+
+def convert_decimal_cols_to_string(df: DataFrame) -> DataFrame:
+    df_no_decimal = df
+    for f in df.schema.fields:
+        if not isinstance(f.dataType, DecimalType):
+            continue
+        df_no_decimal = df_no_decimal.withColumn(f.name, df_no_decimal[f.name].cast(StringType()))
+    return df_no_decimal
+
+
+def convert_array_cols_to_string(df: DataFrame, is_postgres_array_format = False) -> DataFrame:
+    """For each column that is an Array of ANYTHING, cast its values to strings and rewrite it as a
+    Postgres-compatible array in string format, e.g. {val1, val2}. The result with bet the column that was an array
+    type is replaced with a string column with the stringified array values.
+
+    This is necessary in one case because CSV data source does not support Array<String> data type, and those types
+    must be coverted or cast to a String representation before data can be written to CSV format.
+    """
+    arr_open_bracket = "["
+    arr_close_bracket = "]"
+    if is_postgres_array_format:
+        arr_open_bracket = "{"
+        arr_close_bracket = "}"
+    # TODO: Test the cast below with this strongly typed spark type, and if it works, paremeterize whether nulls are
+    #  allowed or not
+    array_of_string_type = type(ArrayType(StringType(), False))  # Assuming no NULL values allowed in Arrays
+    df_no_arrays = df
+    for f in df.schema.fields:
+        if not isinstance(f.dataType, ArrayType):
+            continue
+        df_no_arrays = df_no_arrays.withColumn(
+          f.name,
+          concat(
+            lit(arr_open_bracket),
+            concat_ws(", ", col(f.name).cast("array<string>")),
+            lit(arr_close_bracket)
+          )
+        )
+    return df_no_arrays
+
+
+def create_ref_temp_views(spark: SparkSession):
+    """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
+    Note: They will all be listed under global_temp.{table_name}
+    """
+    logger = get_jvm_logger(spark)
+    jdbc_conn_props = get_jdbc_connection_properties()
+    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in _RDS_REF_TABLES]
+
+    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
+    for ref_rdf_table in rds_ref_tables:
+        spark_sql = f"""
+        CREATE OR REPLACE GLOBAL TEMPORARY VIEW {ref_rdf_table}
+        USING JDBC
+        OPTIONS (
+          driver '{jdbc_conn_props["driver"]}',
+          fetchsize '{jdbc_conn_props["fetchsize"]}',
+          url '{get_jdbc_url()}',
+          dbtable '{ref_rdf_table}'
+        )
+        """
+        spark.sql(spark_sql)
+    logger.info(f"Created the reference views in the global_temp database")

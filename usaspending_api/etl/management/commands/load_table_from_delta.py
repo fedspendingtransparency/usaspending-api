@@ -1,9 +1,16 @@
 import itertools
+
+import boto3
 import numpy as np
 from django import db
 from django.core.management.base import BaseCommand
-from pyspark.sql import SparkSession
+from django.db.models import Model
+from pyspark.sql import SparkSession, DataFrame
+from typing import Dict, Optional
+from datetime import datetime
 
+from usaspending_api.common.csv_helpers import copy_csv_from_s3_to_pg
+from usaspending_api.common.etl.spark import convert_array_cols_to_string
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -11,6 +18,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_url,
     get_jvm_logger,
 )
+from usaspending_api.config import CONFIG
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
@@ -54,18 +62,28 @@ class Command(BaseCommand):
             help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table" "name",
         )
         parser.add_argument(
+            "--jdbc-inserts",
+            action="store_true",
+            help="If present, use DataFrame.write.jdbc(...) to write the Delta-table-wrapping DataFrame "
+                 "directly to the Postgres table using JDBC INSERT statements. Otherwise, the faster strategy using "
+                 "SQL bulk COPY command will be used, with the Delta table transformed to CSV files first.",
+        )
+        parser.add_argument(
             "--recreate",
             action="store_true",
             help="Instead of truncating and reloading into an existing table, this forces the script to drop and"
             "rebuild the table from scratch.",
         )
 
-    # Unfortunately, pySpark with the JDBC doesn't handle UUIDs/JSON well.
-    # In addition to using "stringype": "unspecified", it can't handle null values in the UUID columns
-    # The only way to get around this is to split the dataframe into smaller chunks filtering out the null values.
-    # In said smaller chunks, where it would be null, we simply drop the column entirely from the insert,
-    # resorting to the default null values.
     def _split_dfs(self, df, special_columns):
+        """Split a DataFrame into DataFrame subsets based on presence of NULL values in certain special columns
+
+        Unfortunately, pySpark with the JDBC doesn't handle UUIDs/JSON well.
+        In addition to using "stringype": "unspecified", it can't handle null values in the UUID columns
+        The only way to get around this is to split the dataframe into smaller chunks filtering out the null values.
+        In said smaller chunks, where it would be null, we simply drop the column entirely from the insert,
+        resorting to the default null values.
+        """
         if not special_columns:
             return [df]
 
@@ -96,7 +114,7 @@ class Command(BaseCommand):
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
             "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-            # See comment below about old date and time values cannot parsed without these
+            # See comment below about old date and time values cannot be parsed without these
             "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
@@ -116,7 +134,6 @@ class Command(BaseCommand):
         recreate = options["recreate"]
 
         table_spec = TABLE_SPEC[delta_table]
-        special_columns = {}
 
         # Delta side
         destination_database = options["alt_delta_db"] or table_spec["destination_database"]
@@ -144,13 +161,6 @@ class Command(BaseCommand):
         if postgres_table:
             summary_msg = f"{summary_msg} The temp table will be based on the postgres table {postgres_table}"
         logger.info(summary_msg)
-
-        # Resolve JDBC URL for Source Database
-        jdbc_url = get_jdbc_url()
-        if not jdbc_url:
-            raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
-        if not jdbc_url.startswith("jdbc:postgresql://"):
-            raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
         # Checking if the temp destination table already exists
         temp_dest_table_exists_sql = f"""
@@ -186,7 +196,7 @@ class Command(BaseCommand):
                             LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
                         ) WITH (autovacuum_enabled=FALSE)
                     """
-                else:
+                elif postgres_cols:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
@@ -196,15 +206,6 @@ class Command(BaseCommand):
                     logger.info(f"Creating {temp_table}")
                     cursor.execute(create_temp_sql)
                     logger.info(f"{temp_table} created.")
-
-            # Getting a list of the special columns that will need to be particularly handed
-            if postgres_model:
-                postgres_cols = [(column.name, type(column)) for column in postgres_model._meta.get_fields()]
-            else:
-                postgres_cols = list(postgres_cols.items())
-            for column_name, column_type in postgres_cols:
-                if column_type in SPECIAL_TYPES_MAPPING:
-                    special_columns[column_name] = column_type
 
         # Read from Delta
         df = spark.table(delta_table)
@@ -221,20 +222,28 @@ class Command(BaseCommand):
                 cursor.execute(f"TRUNCATE {temp_table}")
 
         # Write to Postgres
-        logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table}")
-        split_dfs = self._split_dfs(df, list(special_columns))
-        split_df_count = len(split_dfs)
-        for i, split_df in enumerate(split_dfs):
-            # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
-            logger.info(f"LOAD: Loading part {i+1} of {split_df_count} (note: unequal part sizes)")
-            split_df.write.jdbc(
-                url=jdbc_url,
-                table=temp_table,
-                mode="append",
-                properties=get_jdbc_connection_properties(),
+        use_jdbc_inserts = options["jdbc_inserts"]
+        strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
+        logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} "
+                    f"strategy")
+
+        if use_jdbc_inserts:
+            self._write_with_jdbc_inserts(
+                spark,
+                df,
+                temp_table,
+                split_df_by_special_cols=True,
+                postgres_model=postgres_model,
+                postgres_cols=postgres_cols,
+                overwrite=False,
             )
-            logger.info(f"LOAD: Part {i+1} of {split_df_count} loaded (note: unequal part sizes)")
-        logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table}")
+        else:
+            self._write_with_sql_bulk_copy_csv(
+
+            )
+
+        logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} "
+                    f"strategy")
 
         # We're done with spark at this point
         if spark_created_by_command:
@@ -246,4 +255,91 @@ class Command(BaseCommand):
                 f" metadata portion of the table download to a separate script. If not already done so,"
                 f" please run the following additional command to complete the process: "
                 f" 'copy_table_metadata --source-table {postgres_table} --dest-table {temp_table}'."
+            )
+
+    def _write_with_sql_bulk_copy_csv(
+        self,
+        spark: SparkSession,
+        df: DataFrame,
+        delta_db: str,
+        delta_table: str,
+        temp_table: str,
+    ):
+        logger = get_jvm_logger(spark)
+        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table}/{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
+        s3_bucket_with_csv_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{csv_path}"
+        logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
+        df_no_arrays = convert_array_cols_to_string(df)
+        df_no_arrays.write.options(
+            compression="gzip",
+            nullValue=None,
+            escape='"',
+        ).csv(s3_bucket_with_csv_path)
+
+        s3_resource = boto3.resource("s3", region_name=CONFIG.AWS_REGION)
+        s3_bucket = s3_resource.Bucket(CONFIG.SPARK_S3_BUCKET)
+        gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
+        file_count = len(gzipped_csv_files)
+        logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
+
+        logger.info(f"LOAD: Starting bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        rdd = spark.sparkContext.parallelize(gzipped_csv_files)
+        results = rdd.map(
+            lambda s3_obj_key: copy_csv_from_s3_to_pg(
+                s3_bucket=s3_bucket,
+                s3_obj_key=s3_obj_key,
+                target_pg_table=temp_table,
+                gzipped=True,
+                logger=logger,
+            )
+        ).collect()
+        logger.info(f"LOAD: Finished bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+
+    def _write_with_jdbc_inserts(
+        self,
+        spark: SparkSession,
+        df: DataFrame,
+        temp_table: str,
+        split_df_by_special_cols: bool = False,
+        postgres_model: Optional[Model] = None,
+        postgres_cols: Optional[Dict[str, str]] = None,
+        overwrite: bool = False,
+    ):
+        logger = get_jvm_logger(spark)
+        special_columns = {}
+        save_mode = "overwrite" if overwrite else "append"
+
+        # If we are taking control of destination table creation, and not letting Spark auto-create it based
+        # on inference from the source DataFrame's schema, there could be incompatible col data types that need
+        # special handling. Get those columns and handle each.
+        if split_df_by_special_cols:
+            if postgres_model:
+                col_type_mapping = [(column.name, type(column)) for column in postgres_model._meta.get_fields()]
+            else:
+                col_type_mapping = list(postgres_cols.items())
+            for column_name, column_type in col_type_mapping:
+                if column_type in SPECIAL_TYPES_MAPPING:
+                    special_columns[column_name] = column_type
+            split_dfs = self._split_dfs(df, list(special_columns))
+            split_df_count = len(split_dfs)
+            if split_df_count > 1 and save_mode != "append":
+                raise RuntimeError("Multiple DataFrame subsets need to be appended to the destination "
+                                   "table back-to-back but the write was set to overwrite, which is incorrect.")
+            for i, split_df in enumerate(split_dfs):
+                # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
+                logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
+                split_df.write.jdbc(
+                    url=get_jdbc_url(),
+                    table=temp_table,
+                    mode=save_mode,
+                    properties=get_jdbc_connection_properties(),
+                )
+                logger.info(f"LOAD: Part {i + 1} of {split_df_count} loaded (note: unequal part sizes)")
+        else:
+            # Do it in one shot
+            df.write.jdbc(
+                url=get_jdbc_url(),
+                table=temp_table,
+                mode=save_mode,
+                properties=get_jdbc_connection_properties(),
             )

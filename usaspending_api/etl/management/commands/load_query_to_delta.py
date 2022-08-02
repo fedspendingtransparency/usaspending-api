@@ -5,8 +5,8 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jvm_logger,
-    create_ref_temp_views,
 )
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
