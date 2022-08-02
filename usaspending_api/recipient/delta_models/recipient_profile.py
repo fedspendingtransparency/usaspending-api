@@ -12,7 +12,7 @@ RECIPIENT_PROFILE_COLUMNS = {
     "last_12_loans": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
     "last_12_months_count": {"delta": "INTEGER NOT NULL", "postgres": "numeric(23,2"},
     "last_12_other": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
-    "award_types": {"delta": "ARRAY<STRING> NOT NULL", "postgres": "numeric(23,2"},
+    "award_types": {"delta": "ARRAY<STRING> NOT NULL", "postgres": "TEXT[]"},
     "uei": {"delta": "STRING", "postgres": "text"},
     "parent_uei": {"delta": "STRING", "postgres": "text"},
 }
@@ -67,7 +67,7 @@ recipient_profile_load_sql_string = [
             ELSE tn.federal_action_obligation
         END, 0) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation
     FROM
-        raw.transaction_normalized tn
+        raw.transaction_normalized as tn
     LEFT OUTER JOIN raw.transaction_fpds as fpds ON tn.id = fpds.transaction_id
     LEFT OUTER JOIN raw.transaction_fabs as fabs ON tn.id = fabs.transaction_id
     WHERE
@@ -78,62 +78,85 @@ recipient_profile_load_sql_string = [
     # --------------------------------------------------------------------------------
     # -- Step 2, Create the new table and populate with 100% of combinations
     # --------------------------------------------------------------------------------
-    """CREATE TABLE temporary_restock_recipient_profile (
+    """CREATE OR REPLACE TABLE temporary_restock_recipient_profile (
         recipient_level character(1) NOT NULL,
-        recipient_hash UUID,
-        recipient_unique_id TEXT,
-        uei TEXT,
-        parent_uei TEXT,
-        recipient_name TEXT,
-        unused BOOLEAN DEFAULT true,
-        recipient_affiliations TEXT[] DEFAULT '{}',
-        award_types TEXT[] DEFAULT '{}',
-        last_12_months NUMERIC(23,2) DEFAULT 0.00,
-        last_12_contracts NUMERIC(23,2) DEFAULT 0.00,
-        last_12_grants NUMERIC(23,2) DEFAULT 0.00,
-        last_12_direct_payments NUMERIC(23,2) DEFAULT 0.00,
-        last_12_loans NUMERIC(23,2) DEFAULT 0.00,
-        last_12_other NUMERIC(23,2) DEFAULT 0.00,
-        last_12_months_count INT DEFAULT 0,
-    CHECK (award_types <@ ARRAY['contract', 'loans', 'grant', 'direct payment', 'other'])
-    );
-    INSERT INTO temporary_restock_recipient_profile (
-        recipient_level,
-        recipient_hash,
-        recipient_unique_id,
-        recipient_name,
-        uei,
-        parent_uei
-    )
+        recipient_hash STRING,
+        recipient_unique_id STRING,
+        uei STRING,
+        parent_uei STRING,
+        recipient_name STRING,
+        unused BOOLEAN,
+        recipient_affiliations ARRAY<STRING>,
+        award_types ARRAY<STRING>,
+        last_12_months NUMERIC(23,2),
+        last_12_contracts NUMERIC(23,2),
+        last_12_grants NUMERIC(23,2),
+        last_12_direct_payments NUMERIC(23,2),
+        last_12_loans NUMERIC(23,2),
+        last_12_other NUMERIC(23,2),
+        last_12_months_count INT
+    ) USING DELTA;
+    """,
+    """INSERT INTO temporary_restock_recipient_profile (
     SELECT
         'P' as recipient_level,
-        recipient_hash,
+        recipient_hash AS recipient_hash,
         duns AS recipient_unique_id,
         legal_business_name AS recipient_name,
-        uei,
-        parent_uei
+        uei AS uei,
+        parent_uei AS parent_uei,
+        true AS unused,
+        ARRAY() AS recipient_affiliations,
+        ARRAY() AS award_types,
+        0.00 AS last_12_months,
+        0.00 AS last_12_contracts,
+        0.00 AS last_12_grants,
+        0.00 AS last_12_direct_payments,
+        0.00 AS last_12_loans,
+        0.00 AS last_12_other,
+        0 AS last_12_months_count
     FROM
     rpt.recipient_lookup
     UNION ALL
         SELECT
             'C' as recipient_level,
-            recipient_hash,
+            recipient_hash AS recipient_hash,
             duns AS recipient_unique_id,
             legal_business_name AS recipient_name,
-            uei,
-            parent_uei
+            uei AS uei,
+            parent_uei AS parent_uei,
+            true AS unused,
+            ARRAY() AS recipient_affiliations,
+            ARRAY() AS award_types,
+            0.00 AS last_12_months,
+            0.00 AS last_12_contracts,
+            0.00 AS last_12_grants,
+            0.00 AS last_12_direct_payments,
+            0.00 AS last_12_loans,
+            0.00 AS last_12_other,
+            0 AS last_12_months_count
         FROM
         rpt.recipient_lookup
     UNION ALL
         SELECT
             'R' as recipient_level,
-            recipient_hash,
+            recipient_hash AS recipient_hash,
             duns AS recipient_unique_id,
             legal_business_name AS recipient_name,
-            uei,
-            parent_uei
+            uei AS uei,
+            parent_uei AS parent_uei,
+            true AS unused,
+            ARRAY() AS recipient_affiliations,
+            ARRAY() AS award_types,
+            0.00 AS last_12_months,
+            0.00 AS last_12_contracts,
+            0.00 AS last_12_grants,
+            0.00 AS last_12_direct_payments,
+            0.00 AS last_12_loans,
+            0.00 AS last_12_other,
+            0 AS last_12_months_count
         FROM
-        rpt.recipient_lookup;""",
+        rpt.recipient_lookup);""",
     # --------------------------------------------------------------------------------
     # -- Step 3, Obligation for past 12 months
     # --------------------------------------------------------------------------------
@@ -146,11 +169,11 @@ recipient_profile_load_sql_string = [
                     WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
                     THEN 'other' ELSE award_category
                 END AS award_category,
-                CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_contracts,
-                CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_grants,
-                CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_direct_payments,
-                CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_loans,
-                CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_other,
+                CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
+                CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
+                CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
+                CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0  END AS NUMERIC(23,2)) AS inner_loans,
+                CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
                 SUM(generated_pragmatic_obligation) AS inner_amount,
                 COUNT(*) AS inner_count
             FROM
@@ -159,23 +182,26 @@ recipient_profile_load_sql_string = [
                 trft.action_date >= now() - INTERVAL '1 year'
             GROUP BY recipient_hash, recipient_level, award_category
         )
-    SELECT
-        recipient_hash,
-        recipient_level,
-        array_agg(award_category) AS award_types,
-        SUM(inner_contracts) AS last_12_contracts,
-        SUM(inner_grants) AS last_12_grants,
-        SUM(inner_direct_payments) AS last_12_direct_payments,
-        SUM(inner_loans) AS last_12_loans,
-        SUM(inner_other) AS last_12_other,
-        SUM(inner_amount) AS amount,
-        SUM(inner_count) AS count
-    FROM
-        grouped_by_category_inner AS gbci
-    GROUP BY recipient_hash, recipient_level
+        SELECT
+            recipient_hash,
+            recipient_level,
+            COLLECT_SET(award_category) AS award_types,
+            SUM(inner_contracts) AS last_12_contracts,
+            SUM(inner_grants) AS last_12_grants,
+            SUM(inner_direct_payments) AS last_12_direct_payments,
+            SUM(inner_loans) AS last_12_loans,
+            SUM(inner_other) AS last_12_other,
+            SUM(inner_amount) AS amount,
+            SUM(inner_count) AS count
+        FROM
+            grouped_by_category_inner AS gbci
+        GROUP BY recipient_hash, recipient_level
     )
-    UPDATE temporary_restock_recipient_profile AS rpv
-    SET
+    MERGE INTO temporary_restock_recipient_profile AS rpv 
+    USING grouped_by_category AS gbc
+    ON gbc.recipient_hash = rpv.recipient_hash AND
+        gbc.recipient_level = rpv.recipient_level
+    WHEN MATCHED THEN UPDATE SET
         award_types = gbc.award_types || rpv.award_types,
         last_12_months = rpv.last_12_months + gbc.amount,
         last_12_contracts = rpv.last_12_contracts + gbc.last_12_contracts,
@@ -184,12 +210,7 @@ recipient_profile_load_sql_string = [
         last_12_loans = rpv.last_12_loans + gbc.last_12_loans,
         last_12_other = rpv.last_12_other + gbc.last_12_other,
         last_12_months_count = rpv.last_12_months_count + gbc.count,
-        unused = false
-    FROM
-        grouped_by_category AS gbc
-    WHERE
-        gbc.recipient_hash = rpv.recipient_hash AND
-        gbc.recipient_level = rpv.recipient_level;""",
+        unused = false;""",
     # --------------------------------------------------------------------------------
     # -- Step 4, Populate the Parent Obligation for past 12 months
     # --------------------------------------------------------------------------------
@@ -201,11 +222,11 @@ recipient_profile_load_sql_string = [
                     WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
                     THEN 'other' ELSE award_category
                 END AS award_category,
-                CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_contracts,
-                CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_grants,
-                CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_direct_payments,
-                CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_loans,
-                CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0::NUMERIC(23,2) END AS inner_other,
+                CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
+                CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
+                CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
+                CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_loans,
+                CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
                 SUM(generated_pragmatic_obligation) AS inner_amount,
                 COUNT(*) AS inner_count
             FROM
@@ -217,7 +238,7 @@ recipient_profile_load_sql_string = [
         )
         SELECT
             parent_uei AS uei,
-            array_agg(award_category) AS award_types,
+            COLLECT_SET(award_category) AS award_types,
             SUM(inner_contracts) AS last_12_contracts,
             SUM(inner_grants) AS last_12_grants,
             SUM(inner_direct_payments) AS last_12_direct_payments,
@@ -229,8 +250,10 @@ recipient_profile_load_sql_string = [
             grouped_by_parent_inner AS gbpi
         GROUP BY parent_uei
     )
-    UPDATE temporary_restock_recipient_profile AS rpv
-    SET
+    MERGE INTO temporary_restock_recipient_profile AS rpv USING  grouped_by_parent AS gbp
+    ON rpv.uei = gbp.uei AND
+        rpv.recipient_level = 'P'
+    WHEN MATCHED THEN UPDATE SET 
         award_types = gbp.award_types || rpv.award_types,
         last_12_months = rpv.last_12_months + gbp.amount,
         last_12_contracts = rpv.last_12_contracts + gbp.last_12_contracts,
@@ -239,19 +262,14 @@ recipient_profile_load_sql_string = [
         last_12_loans = rpv.last_12_loans + gbp.last_12_loans,
         last_12_other = rpv.last_12_other + gbp.last_12_other,
         last_12_months_count = rpv.last_12_months_count + gbp.count,
-        unused = false
-    FROM
-        grouped_by_parent AS gbp
-    WHERE
-        rpv.uei = gbp.uei AND
-        rpv.recipient_level = 'P';""",
+        unused = false;""",
     # --------------------------------------------------------------------------------
     # -- Step 5, Populating child recipient list in parents
     # --------------------------------------------------------------------------------
     """WITH parent_recipients AS (
         SELECT
             parent_uei,
-            array_agg(DISTINCT uei) AS uei_list
+            COLLECT_SET(DISTINCT uei) AS uei_list
         FROM
             temporary_recipients_from_transactions_view
         WHERE
@@ -259,19 +277,19 @@ recipient_profile_load_sql_string = [
         GROUP BY
             parent_uei
     )
-    UPDATE temporary_restock_recipient_profile AS rpv
-    SET
+    MERGE INTO temporary_restock_recipient_profile AS rpv
+    USING parent_recipients AS pr
+    ON rpv.uei = pr.parent_uei and rpv.recipient_level = 'P'
+    WHEN MATCHED THEN UPDATE SET
         recipient_affiliations = pr.uei_list,
-        unused = false
-    FROM parent_recipients AS pr
-    WHERE rpv.uei = pr.parent_uei and rpv.recipient_level = 'P';""",
+        unused = false;""",
     # --------------------------------------------------------------------------------
     # -- Step 6, Populate parent recipient list in children
     # --------------------------------------------------------------------------------
     """WITH all_recipients AS (
         SELECT
             uei,
-            array_agg(DISTINCT parent_uei) AS parent_uei_list
+            COLLECT_SET(DISTINCT parent_uei) AS parent_uei_list
         FROM
             temporary_recipients_from_transactions_view
         WHERE
@@ -279,14 +297,13 @@ recipient_profile_load_sql_string = [
             parent_uei IS NOT NULL
         GROUP BY uei
     )
-    UPDATE temporary_restock_recipient_profile AS rpv
-    SET
+    MERGE INTO temporary_restock_recipient_profile AS rpv 
+    USING all_recipients AS ar
+    ON rpv.uei = ar.uei AND
+        rpv.recipient_level = 'C'
+    WHEN MATCHED THEN UPDATE SET
         recipient_affiliations = ar.parent_uei_list,
-        unused = false
-    FROM all_recipients AS ar
-    WHERE
-        rpv.uei = ar.uei AND
-        rpv.recipient_level = 'C';""",
+        unused = false;""",
     # --------------------------------------------------------------------------------
     # -- Step 7, Mark recipient profile rows older than 12 months  as valid
     # --------------------------------------------------------------------------------
@@ -299,15 +316,13 @@ recipient_profile_load_sql_string = [
         GROUP BY recipient_hash, recipient_level
     )
 
-    UPDATE temporary_restock_recipient_profile AS rpv
-    SET
-        unused = false
-    FROM
-        grouped_by_old_recipients AS gbc
-    WHERE
-        gbc.recipient_hash = rpv.recipient_hash AND
+    MERGE INTO temporary_restock_recipient_profile AS rpv
+    USING grouped_by_old_recipients AS gbc
+    ON gbc.recipient_hash = rpv.recipient_hash AND
         gbc.recipient_level = rpv.recipient_level AND
-        rpv.unused = true;""",
+        rpv.unused = true
+    WHEN MATCHED THEN UPDATE SET
+        unused = false;""",
     # --------------------------------------------------------------------------------
     # -- Step 8, Mark Parent recipient profile rows older than 12 months  as valid
     # --------------------------------------------------------------------------------
@@ -320,16 +335,14 @@ recipient_profile_load_sql_string = [
             parent_uei IS NOT NULL
         GROUP BY parent_uei
     )
-    UPDATE temporary_restock_recipient_profile AS rpv
-    SET
-        unused = false
-    FROM
-        grouped_by_parent_old AS gbp
-    WHERE
-        rpv.uei = gbp.parent_uei AND
+    MERGE INTO temporary_restock_recipient_profile AS rpv
+    USING grouped_by_parent_old AS gbp
+    ON rpv.uei = gbp.parent_uei AND
         rpv.recipient_level = 'P' AND
-        rpv.unused = true;""",
-    #
+        rpv.unused = true
+    WHEN MATCHED THEN UPDATE SET
+        unused = false;""",
+
     # --------------------------------------------------------------------------------
     # -- Step 9, Finalize new table
     # --------------------------------------------------------------------------------
@@ -337,58 +350,67 @@ recipient_profile_load_sql_string = [
     # --------------------------------------------------------------------------------
     # -- Step 10, Drop unnecessary relations and standup new table as final
     # --------------------------------------------------------------------------------
-    """DELETE FROM rpt.recipient_profile rp
-    WHERE NOT EXISTS (
-        SELECT FROM temporary_restock_recipient_profile temp_p
-        WHERE rp.recipient_hash = temp_p.recipient_hash
+    # """
+    #     DELETE FROM rpt.recipient_profile rp
+    #     WHERE id NOT IN (
+    #     SELECT id FROM temporary_restock_recipient_profile temp_p
+    #         WHERE rp.recipient_hash = temp_p.recipient_hash
+    #         AND rp.recipient_level = temp_p.recipient_level
+    #     );
+    # """,
+    """
+        MERGE INTO rpt.recipient_profile rp
+        USING temporary_restock_recipient_profile temp_p
+        ON rp.recipient_hash = temp_p.recipient_hash
             AND rp.recipient_level = temp_p.recipient_level
-    );""",
-    """UPDATE rpt.recipient_profile rp
-    SET
-        recipient_unique_id = temp_p.recipient_unique_id,
-        uei = temp_p.uei,
-        recipient_name = temp_p.recipient_name,
-        recipient_affiliations = temp_p.recipient_affiliations,
-        award_types = temp_p.award_types,
-        last_12_months = temp_p.last_12_months,
-        last_12_contracts = temp_p.last_12_contracts,
-        last_12_loans = temp_p.last_12_loans,
-        last_12_grants = temp_p.last_12_grants,
-        last_12_direct_payments = temp_p.last_12_direct_payments,
-        last_12_other = temp_p.last_12_other,
-        last_12_months_count = temp_p.last_12_months_count,
-        parent_uei = temp_p.parent_uei
-    FROM temporary_restock_recipient_profile temp_p
-    WHERE
-        rp.recipient_hash = temp_p.recipient_hash
-        AND rp.recipient_level = temp_p.recipient_level
-        AND (
-            rp.recipient_unique_id IS DISTINCT FROM temp_p.recipient_unique_id
-            OR rp.recipient_name IS DISTINCT FROM temp_p.recipient_name
-            OR rp.recipient_affiliations IS DISTINCT FROM temp_p.recipient_affiliations
-            OR rp.award_types IS DISTINCT FROM temp_p.award_types
-            OR rp.last_12_months IS DISTINCT FROM temp_p.last_12_months
-            OR rp.last_12_contracts IS DISTINCT FROM temp_p.last_12_contracts
-            OR rp.last_12_loans IS DISTINCT FROM temp_p.last_12_loans
-            OR rp.last_12_grants IS DISTINCT FROM temp_p.last_12_grants
-            OR rp.last_12_direct_payments IS DISTINCT FROM temp_p.last_12_direct_payments
-            OR rp.last_12_other IS DISTINCT FROM temp_p.last_12_other
-            OR rp.last_12_months_count IS DISTINCT FROM temp_p.last_12_months_count
-            OR rp.uei IS DISTINCT FROM temp_p.uei
-            OR rp.parent_uei IS DISTINCT FROM temp_p.parent_uei
-    );""",
-    """"INSERT INTO rpt.recipient_profile (
-        recipient_level, recipient_hash, recipient_unique_id, uei, parent_uei,
-        recipient_name, recipient_affiliations, award_types, last_12_months,
-        last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
-        last_12_months_count
-    )
-    SELECT recipient_level, recipient_hash, recipient_unique_id, uei, parent_uei,
-        recipient_name, recipient_affiliations, award_types, last_12_months,
-        last_12_contracts, last_12_loans, last_12_grants, last_12_direct_payments, last_12_other,
-        last_12_months_count
-    FROM temporary_restock_recipient_profile
-    ON CONFLICT (recipient_hash, recipient_level) DO NOTHING;
-    )
-""",
+            AND (
+                rp.recipient_unique_id IS DISTINCT FROM temp_p.recipient_unique_id
+                OR rp.recipient_name IS DISTINCT FROM temp_p.recipient_name
+                OR rp.recipient_affiliations IS DISTINCT FROM temp_p.recipient_affiliations
+                OR rp.award_types IS DISTINCT FROM temp_p.award_types
+                OR rp.last_12_months IS DISTINCT FROM temp_p.last_12_months
+                OR rp.last_12_contracts IS DISTINCT FROM temp_p.last_12_contracts
+                OR rp.last_12_loans IS DISTINCT FROM temp_p.last_12_loans
+                OR rp.last_12_grants IS DISTINCT FROM temp_p.last_12_grants
+                OR rp.last_12_direct_payments IS DISTINCT FROM temp_p.last_12_direct_payments
+                OR rp.last_12_other IS DISTINCT FROM temp_p.last_12_other
+                OR rp.last_12_months_count IS DISTINCT FROM temp_p.last_12_months_count
+                OR rp.uei IS DISTINCT FROM temp_p.uei
+                OR rp.parent_uei IS DISTINCT FROM temp_p.parent_uei)
+        WHEN MATCHED THEN UPDATE SET
+            recipient_unique_id = temp_p.recipient_unique_id,
+            uei = temp_p.uei,
+            recipient_name = temp_p.recipient_name,
+            recipient_affiliations = temp_p.recipient_affiliations,
+            award_types = temp_p.award_types,
+            last_12_months = temp_p.last_12_months,
+            last_12_contracts = temp_p.last_12_contracts,
+            last_12_loans = temp_p.last_12_loans,
+            last_12_grants = temp_p.last_12_grants,
+            last_12_direct_payments = temp_p.last_12_direct_payments,
+            last_12_other = temp_p.last_12_other,
+            last_12_months_count = temp_p.last_12_months_count,
+            parent_uei = temp_p.parent_uei;
+    """,
+    """
+        INSERT INTO rpt.recipient_profile
+        (SELECT
+            0 AS id,
+            recipient_level AS recipient_level,
+            recipient_hash AS recipient_hash,
+            recipient_unique_id AS recipient_unique_id, 
+            uei AS uei,
+            parent_uei AS parent_uei,
+            recipient_name AS recipient_name,
+            recipient_affiliations AS recipient_affiliations,
+            award_types AS award_types,
+            last_12_months AS last_12_months,
+            last_12_contracts AS last_12_contracts,
+            last_12_loans AS last_12_loans,
+            last_12_grants AS last_12_grants,
+            last_12_direct_payments AS last_12_payments,
+            last_12_other AS last_12_other,
+            last_12_months_count AS last_12_months_count
+        FROM temporary_restock_recipient_profile)
+    """,
 ]
