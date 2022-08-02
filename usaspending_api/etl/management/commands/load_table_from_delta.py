@@ -65,8 +65,8 @@ class Command(BaseCommand):
             "--jdbc-inserts",
             action="store_true",
             help="If present, use DataFrame.write.jdbc(...) to write the Delta-table-wrapping DataFrame "
-                 "directly to the Postgres table using JDBC INSERT statements. Otherwise, the faster strategy using "
-                 "SQL bulk COPY command will be used, with the Delta table transformed to CSV files first.",
+            "directly to the Postgres table using JDBC INSERT statements. Otherwise, the faster strategy using "
+            "SQL bulk COPY command will be used, with the Delta table transformed to CSV files first.",
         )
         parser.add_argument(
             "--recreate",
@@ -224,8 +224,9 @@ class Command(BaseCommand):
         # Write to Postgres
         use_jdbc_inserts = options["jdbc_inserts"]
         strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
-        logger.info(f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} "
-                    f"strategy")
+        logger.info(
+            f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
+        )
 
         if use_jdbc_inserts:
             self._write_with_jdbc_inserts(
@@ -239,11 +240,16 @@ class Command(BaseCommand):
             )
         else:
             self._write_with_sql_bulk_copy_csv(
-
+                spark,
+                df,
+                delta_db=destination_database,
+                delta_table_name=delta_table_name,
+                temp_table=temp_table,
             )
 
-        logger.info(f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} "
-                    f"strategy")
+        logger.info(
+            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
+        )
 
         # We're done with spark at this point
         if spark_created_by_command:
@@ -257,16 +263,16 @@ class Command(BaseCommand):
                 f" 'copy_table_metadata --source-table {postgres_table} --dest-table {temp_table}'."
             )
 
+    @staticmethod
     def _write_with_sql_bulk_copy_csv(
-        self,
         spark: SparkSession,
         df: DataFrame,
         delta_db: str,
-        delta_table: str,
+        delta_table_name: str,
         temp_table: str,
     ):
         logger = get_jvm_logger(spark)
-        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table}/{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
+        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
         s3_bucket_with_csv_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{csv_path}"
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df)
@@ -323,8 +329,10 @@ class Command(BaseCommand):
             split_dfs = self._split_dfs(df, list(special_columns))
             split_df_count = len(split_dfs)
             if split_df_count > 1 and save_mode != "append":
-                raise RuntimeError("Multiple DataFrame subsets need to be appended to the destination "
-                                   "table back-to-back but the write was set to overwrite, which is incorrect.")
+                raise RuntimeError(
+                    "Multiple DataFrame subsets need to be appended to the destination "
+                    "table back-to-back but the write was set to overwrite, which is incorrect."
+                )
             for i, split_df in enumerate(split_dfs):
                 # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
                 logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")

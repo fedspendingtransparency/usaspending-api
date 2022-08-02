@@ -412,7 +412,7 @@ def convert_decimal_cols_to_string(df: DataFrame) -> DataFrame:
     return df_no_decimal
 
 
-def convert_array_cols_to_string(df: DataFrame, is_postgres_array_format = False) -> DataFrame:
+def convert_array_cols_to_string(df: DataFrame, is_postgres_array_format=False) -> DataFrame:
     """For each column that is an Array of ANYTHING, cast its values to strings and rewrite it as a
     Postgres-compatible array in string format, e.g. {val1, val2}. The result with bet the column that was an array
     type is replaced with a string column with the stringified array values.
@@ -433,12 +433,8 @@ def convert_array_cols_to_string(df: DataFrame, is_postgres_array_format = False
         if not isinstance(f.dataType, ArrayType):
             continue
         df_no_arrays = df_no_arrays.withColumn(
-          f.name,
-          concat(
-            lit(arr_open_bracket),
-            concat_ws(", ", col(f.name).cast("array<string>")),
-            lit(arr_close_bracket)
-          )
+            f.name,
+            concat(lit(arr_open_bracket), concat_ws(", ", col(f.name).cast("array<string>")), lit(arr_close_bracket)),
         )
     return df_no_arrays
 
