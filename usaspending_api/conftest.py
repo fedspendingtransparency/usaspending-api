@@ -2,6 +2,7 @@ import docker
 import logging
 import os
 import pytest
+import sys
 import tempfile
 
 from django.conf import settings
@@ -332,10 +333,10 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
            {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};         \
     """
 
+    # If running in a docker and the Broker is hosted outside of it, update the host
     broker_host = settings.DATABASES["data_broker"]["HOST"]
-    usas_host = settings.DATABASES[DEFAULT_DB_ALIAS]["HOST"]
     local_hosts = ("localhost", "120.0.0.1", "0.0.0.0")
-    if broker_host in local_hosts and usas_host not in local_hosts:
+    if broker_host in local_hosts and not sys.platform == "linux":
         broker_host = "host.docker.internal"
 
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
