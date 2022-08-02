@@ -274,6 +274,7 @@ class Command(BaseCommand):
         logger = get_jvm_logger(spark)
         csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
         s3_bucket_with_csv_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{csv_path}"
+
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df)
         df_no_arrays.write.options(
@@ -288,7 +289,7 @@ class Command(BaseCommand):
         file_count = len(gzipped_csv_files)
         logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
 
-        logger.info(f"LOAD: Starting bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
         rdd = spark.sparkContext.parallelize(gzipped_csv_files)
         results = rdd.map(
             lambda s3_obj_key: copy_csv_from_s3_to_pg(
@@ -299,7 +300,7 @@ class Command(BaseCommand):
                 logger=logger,
             )
         ).collect()
-        logger.info(f"LOAD: Finished bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
     def _write_with_jdbc_inserts(
         self,
