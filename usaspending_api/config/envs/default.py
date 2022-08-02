@@ -108,7 +108,10 @@ class DefaultConfig(BaseSettings):
             }
             # Backfill only POSTGRES DSN CONFIG vars that are missing their value
             for config_name, transformation in backfill_configs.items():
-                if values.get(config_name, None) in [None] + CONFIG_VAR_PLACEHOLDERS:
+                value = values.get(config_name, None)
+                if config_name == f"{db_conf_prefix}_PASSWORD":
+                    value = unveil(value)
+                if value in [None] + CONFIG_VAR_PLACEHOLDERS:
                     values = eval_default_factory_from_root_validator(cls, values, config_name, transformation)
 
         # If the DB URL config is not provided, try to build-it-up from provided parts, then backfill it
@@ -199,7 +202,7 @@ class DefaultConfig(BaseSettings):
             if len(pg_url_config_errors) > 0:
                 err_msg = (
                     f"The {db_url_conf_name} config var value was provided along with one or more {db_conf_prefix}_*"
-                    "config var values, however they were not consistent. Differing configuration sources that should"
+                    "config var values, however they were not consistent. Differing configuration sources that should "
                     "match will cause confusion. Either provide all values consistently, or only provide a complete "
                     f"{db_url_conf_name} and leave the others as None or unset, or leave "
                     f"the {db_url_conf_name} None or unset and provide only the required POSTGRES DSN parts. "
