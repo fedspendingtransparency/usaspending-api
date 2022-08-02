@@ -74,7 +74,12 @@ def make_temp_table_create(table_name, table_temp_name):
 
 
 def make_read_indexes(table_name):
-    return [TEMPLATE["read_indexes"].format(table_name)]
+    if "." in table_name:
+        schema_name, table_name = table_name[: table_name.index(".")], table_name[table_name.index(".") + 1 :]
+    else:
+        schema_name = "public"
+
+    return [TEMPLATE["read_indexes"].format(schema_name, table_name)]
 
 
 def make_read_constraints(table_name):
@@ -153,7 +158,7 @@ def create_componentized_files(sql_json):
     sql_strings = make_matview_empty(matview_name, GLOBAL_ARGS.chunk_count)
     write_sql_file(sql_strings, filename_base + "__empty")
 
-    sql_strings = make_read_indexes(matview_name)
+    sql_strings = make_read_indexes(f"{table_schema}.{matview_name}")
     write_sql_file(sql_strings, filename_base + "__indexes")
 
     sql_strings = make_read_constraints(matview_name)

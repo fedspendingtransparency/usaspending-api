@@ -54,7 +54,7 @@ SELECT
     "broker_subaward"."place_of_perform_congressio" AS "prime_award_primary_place_of_performance_congressional_district",
     "broker_subaward"."place_of_perform_country_co" AS "prime_award_primary_place_of_performance_country_code",
     "broker_subaward"."place_of_perform_country_na" AS "prime_award_primary_place_of_performance_country_name",
-    "broker_subaward"."award_description" AS "prime_award_description",
+    "broker_subaward"."award_description" AS "prime_award_base_transaction_description",
     "broker_subaward"."program_title" AS "prime_award_project_title",
     "broker_subaward"."naics" AS "prime_award_naics_code",
     "broker_subaward"."naics_description" AS "prime_award_naics_description",

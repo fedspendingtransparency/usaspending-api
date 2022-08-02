@@ -78,7 +78,7 @@ SELECT
     "transaction_fpds"."type_of_idc_description" AS "type_of_idc",
     "transaction_fpds"."type_of_contract_pricing" AS "type_of_contract_pricing_code",
     "transaction_fpds"."type_of_contract_pric_desc" AS "type_of_contract_pricing",
-    "awards"."description" AS "award_description",
+    "awards"."description" AS "prime_award_base_transaction_description",
     "transaction_fpds"."solicitation_identifier" AS "solicitation_identifier",
     "transaction_fpds"."number_of_actions" AS "number_of_actions",
     "transaction_fpds"."inherently_government_func" AS "inherently_governmental_functions",

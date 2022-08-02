@@ -22,7 +22,7 @@ from usaspending_api.download.models import (
     FinancialAccountsByProgramActivityObjectClassDownloadView,
 )
 from usaspending_api.references.models import GTASSF133Balances
-from usaspending_api.search.models import AwardSearchView, SubawardView, TransactionSearch
+from usaspending_api.search.models import AwardSearch, SubawardView, TransactionSearch
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,
@@ -231,7 +231,7 @@ VALUE_MAPPINGS = {
     },
     "disaster_recipient": {
         "source_type": "disaster",
-        "table": AwardSearchView,
+        "table": AwardSearch,
         "table_name": "recipient",
         "download_name": "COVID-19_Recipients_{award_category}_{timestamp}",
         "filter_function": disaster_filter_function,
