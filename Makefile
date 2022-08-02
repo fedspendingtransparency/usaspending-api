@@ -113,17 +113,27 @@ tests:  ## Run automated unit/integration tests
 
 .PHONY: confirm-clean-all
 no-prompt := 'false'
+dry-run := 'false'
 confirm-clean-all:  ## Guard to prompt for confirmation before aggressive clean
 ifeq ($(strip ${no-prompt}),'false')
-	@echo -n "This will remove any untracked/uncommitted source files. Continue? [y/N] " && read ans && [ $${ans:-N} = y ]
+ifeq ($(strip ${dry-run}),'false')
+	@echo -n "This will remove any untracked/uncommitted source files or files in the working directory. Consider backing up any files in your custom setup. To see what files would be removed, re-run with dry-run=true. Continue? [y/N] " && read ans && [ $${ans:-N} = y ]
+endif
 endif
 
 .PHONY: clean-all
-clean-all: confirm-clean-all  ## Remove all tmp artifacts and artifacts created as part of local dev env setup. To avoid prompt (e.g. in script) call like: make clean-all no-prompt=true
+dry-run := 'false'
+clean-all: confirm-clean-all  ## Remove all tmp artifacts and artifacts created as part of local dev env setup. To avoid prompt (e.g. in script) call like: make clean-all no-prompt=true. To only see what WOULD be deleted, include dry-run=true
+ifeq ($(strip ${dry-run}),'false')
 	rm -f .python-version
 	rm -rf .venv
-	@git clean -xfd --exclude='\.env'
+	@git clean -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'
 	if command -v deactivate &> /dev/null; then deactivate; fi;
+else  # this is a dry-run, spit out what would be removed
+	@printf "Would remove .python-version\nWould remove .venv\n"
+	@git clean --dry-run -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'
+endif
+
 
 .PHONY: docker-compose
 docker-compose: ## Run an arbitrary docker-compose command by passing in the Docker Compose profiles in the "profiles" variable, and args in the "args" variable
