@@ -105,6 +105,20 @@ TABLE_SPEC = {
         "column_names": list(SAM_RECIPIENT_COLUMNS),
 
     },
+    "sam_recipient": {
+        "model": DUNS,
+        "source_table": "duns",
+        "source_database": "raw",
+        "destination_database": "raw",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": None,
+        "partition_column_type": None,
+        "delta_table_create_sql": sam_recipient_sql_string,
+        "source_schema": None,
+        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
+        "column_names": list(SAM_RECIPIENT_COLUMNS),
+    },
     "transaction_fabs": {
         "model": TransactionFABS,
         "source_table": "transaction_fabs",
