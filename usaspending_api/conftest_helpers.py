@@ -211,8 +211,10 @@ def ensure_broker_server_dblink_exists():
         broker_server_script_template = Template(broker_server_script)
 
         local_hosts = ("localhost", "120.0.0.1", "0.0.0.0")
-        if (settings.DATABASES["data_broker"]["HOST"] in local_hosts
-                and settings.DATABASES[DEFAULT_DB_ALIAS]["HOST"] not in local_hosts):
+        if (
+            settings.DATABASES["data_broker"]["HOST"] in local_hosts
+            and settings.DATABASES[DEFAULT_DB_ALIAS]["HOST"] not in local_hosts
+        ):
             db_conn_tokens_dict["BROKER_DB_HOST"] = "host.docker.internal"
 
         cursor.execute(broker_server_script_template.substitute(**db_conn_tokens_dict))
