@@ -139,9 +139,7 @@ class Command(BaseCommand):
         create_ref_temp_views(spark)
         if type(TABLE_SPEC[destination_table].get("source_query")) == list:
             for x in TABLE_SPEC[destination_table].get("source_query"):
-                spark.sql(
-                    x.format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
-                )
+                spark.sql(x)
         else:
             spark.sql(
                 TABLE_SPEC[destination_table]
