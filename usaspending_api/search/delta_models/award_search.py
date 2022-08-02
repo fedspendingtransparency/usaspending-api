@@ -88,7 +88,7 @@ AWARD_SEARCH_COLUMNS = {
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
     "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
-    "covid_spending_by_defc": {"delta": "STRING", "postgres": "TEXT"},
+    "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB"},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
     "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
 }
