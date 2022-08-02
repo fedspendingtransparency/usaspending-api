@@ -41,6 +41,7 @@ if __name__ == "__main__":
         python_requires="==3.7.*",
         license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
         packages=find_packages(),
+        include_package_data=True,  # see MANIFEST.in for what is included
         install_requires=_INSTALL_REQUIRES,
         extras_require=_EXTRAS,
         classifiers=[
