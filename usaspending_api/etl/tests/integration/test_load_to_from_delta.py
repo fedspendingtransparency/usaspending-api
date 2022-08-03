@@ -660,6 +660,15 @@ def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_
     _verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_normalized")
 
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_recipient_profile(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded_to_delta(
+        spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
+    # _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
@@ -758,14 +767,3 @@ def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
         alt_db="my_alt_db",
         alt_name="award_search_alt_name",
     )
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_profile(
-    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
-):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-    _verify_delta_table_loaded_to_delta(
-        spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
-    )
-    # _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
