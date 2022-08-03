@@ -1,3 +1,5 @@
+from usaspending_api.config import CONFIG
+
 RECIPIENT_PROFILE_COLUMNS = {
     "recipient_level": {"delta": "STRING NOT NULL", "postgres": "character varying(1) NOT NULL"},
     "recipient_hash": {"delta": "STRING", "postgres": "UUID"},
@@ -26,10 +28,10 @@ recipient_profile_create_sql_string = f"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
 recipient_profile_load_sql_string = [
+    #   --------------------------------------------------------------------------------
+    #     -- Step 1, create the temporary matview of recipients from transactions
+    #   --------------------------------------------------------------------------------
     """
-    --------------------------------------------------------------------------------
-    -- Step 1, create the temporary matview of recipients from transactions
-    --------------------------------------------------------------------------------
     CREATE OR REPLACE TEMPORARY VIEW temporary_recipients_from_transactions_view AS (
     SELECT
         MD5(UPPER(
@@ -71,7 +73,7 @@ recipient_profile_load_sql_string = [
     # --------------------------------------------------------------------------------
     # -- Step 2, Create the new table and populate with 100% of combinations
     # --------------------------------------------------------------------------------
-    """CREATE OR REPLACE TABLE temporary_restock_recipient_profile (
+    f"""CREATE OR REPLACE TABLE temporary_restock_recipient_profile (
         id BIGINT,
         recipient_level character(1) NOT NULL,
         recipient_hash STRING,
@@ -89,7 +91,8 @@ recipient_profile_load_sql_string = [
         last_12_loans NUMERIC(23,2),
         last_12_other NUMERIC(23,2),
         last_12_months_count INT
-    ) USING DELTA;
+    ) USING DELTA
+    LOCATION 's3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{{DESTINATION_DATABASE}}/temporary_restock_recipient_profile';
     """,
     """INSERT INTO temporary_restock_recipient_profile (
     SELECT
@@ -354,7 +357,7 @@ recipient_profile_load_sql_string = [
                 FROM temporary_restock_recipient_profile temp_p
             );
     """,
-    """
+    f"""
         MERGE INTO rpt.recipient_profile rp
         USING temporary_restock_recipient_profile temp_p
         ON rp.recipient_hash = temp_p.recipient_hash
@@ -425,5 +428,5 @@ recipient_profile_load_sql_string = [
         );
     """,
     """DROP TABLE temporary_restock_recipient_profile;""",
-    """DROP VIEW temporary_recipients_from_transactions_view;""",
+    f"""DROP VIEW {{DESTINATION_DB}}.temporary_recipients_from_transactions_view;""",
 ]
