@@ -12,7 +12,7 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearchView
+from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
@@ -36,18 +36,19 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
     },
     "award_search": {
-        "model": AwardSearchView,
+        "model": AwardSearch,
         "source_query": award_search_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": "vw_award_search",
+        "swap_table": "award_search",
         "swap_schema": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
+        " tas_components ARRAY<STRING>",
     },
     "summary_state_view": {
         "model": SummaryStateView,
@@ -100,6 +101,7 @@ class Command(BaseCommand):
             # See comment below about old date and time values cannot parsed without these
             "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+            "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
         spark = get_active_spark_session()

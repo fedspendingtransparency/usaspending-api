@@ -99,6 +99,7 @@ class Command(BaseCommand):
             # See comment below about old date and time values cannot parsed without these
             "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+            "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
         spark = get_active_spark_session()
@@ -183,13 +184,13 @@ class Command(BaseCommand):
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
-                        )
+                        ) WITH (autovacuum_enabled=FALSE)
                     """
                 else:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
-                        )
+                        ) WITH (autovacuum_enabled=FALSE)
                     """
                 with db.connection.cursor() as cursor:
                     logger.info(f"Creating {temp_table}")

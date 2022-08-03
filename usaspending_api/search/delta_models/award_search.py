@@ -88,7 +88,7 @@ AWARD_SEARCH_COLUMNS = {
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
     "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
-    "covid_spending_by_defc": {"delta": "STRING", "postgres": "TEXT"},
+    "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB"},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
     "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
 }
@@ -171,7 +171,7 @@ award_search_load_sql_string = fr"""
             ELSE 0 END, 0 ) AS NUMERIC(23, 2) ) AS total_loan_value,
   RECIPIENT_HASH_AND_LEVELS.recipient_hash,
   RECIPIENT_HASH_AND_LEVELS.recipient_levels,
-  UPPER(COALESCE(recipient_lookup.recipient_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
+  UPPER(COALESCE(recipient_lookup.legal_business_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
   COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
   COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) AS recipient_uei,
@@ -237,7 +237,7 @@ award_search_load_sql_string = fr"""
 
   transaction_fabs.cfda_title AS cfda_program_title,
   transaction_fabs.cfda_number AS cfda_number,
-  transaction_cfdas.cfdas AS cfdas,
+  CASE WHEN awards.is_fpds = FALSE THEN transaction_cfdas.cfdas ELSE NULL END AS cfdas,
 
 
   transaction_fabs.sai_number AS sai_number,
@@ -268,12 +268,7 @@ LEFT OUTER JOIN
   raw.transaction_fabs
     ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)
 LEFT OUTER JOIN
-  (SELECT
-    legal_business_name AS recipient_name,
-    duns,
-    recipient_hash
-  FROM raw.recipient_lookup AS rlv
-  ) recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
+  raw.recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
@@ -309,8 +304,8 @@ LEFT OUTER JOIN
   global_temp.subtier_agency AS SFA
     ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT OUTER JOIN
-  global_temp.agency AS FA_ID
-    ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND FA_ID.toptier_flag = TRUE)
+  (SELECT id, toptier_agency_id, ROW_NUMBER() OVER (PARTITION BY toptier_agency_id ORDER BY toptier_flag DESC, id ASC) AS row_num FROM global_temp.agency) AS FA_ID
+    ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND row_num = 1)
 LEFT OUTER JOIN
     global_temp.ref_country_code AS pop_country_lookup ON (
         pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
@@ -373,12 +368,8 @@ LEFT OUTER JOIN (
         WHERE recipient_level != 'P'
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (
-        COALESCE(recipient_lookup.recipient_hash, MD5(UPPER(
-     CASE
-       WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
-       WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-       ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, '')) END))) = RECIPIENT_HASH_AND_LEVELS.recipient_hash
-        AND recipient_lookup.recipient_name NOT IN (
+        recipient_lookup.recipient_hash = RECIPIENT_HASH_AND_LEVELS.recipient_hash
+        AND recipient_lookup.legal_business_name NOT IN (
             'MULTIPLE RECIPIENTS',
             'REDACTED DUE TO PII',
             'MULTIPLE FOREIGN RECIPIENTS',
@@ -386,7 +377,7 @@ LEFT OUTER JOIN (
             'INDIVIDUAL RECIPIENT',
             'MISCELLANEOUS FOREIGN AWARDEES'
         )
-        AND recipient_lookup.recipient_name IS NOT NULL
+        AND recipient_lookup.legal_business_name IS NOT NULL
     )
 LEFT OUTER JOIN (
   SELECT
