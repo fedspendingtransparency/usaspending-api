@@ -25,13 +25,6 @@ recipient_profile_create_sql_string = f"""
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
-# recipient_profile_load_sql_string = f"""
-#     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
-#         (
-#             {",".join([col for col in RECIPIENT_PROFILE_DELTA_COLUMNS])}
-#         )
-#     SELECT * from raw.recipient_profile;
-# """
 recipient_profile_load_sql_string = [
     """
     --------------------------------------------------------------------------------
