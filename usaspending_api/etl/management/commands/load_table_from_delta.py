@@ -9,7 +9,7 @@ from pyspark.sql import SparkSession, DataFrame
 from typing import Dict, Optional
 from datetime import datetime
 
-from usaspending_api.common.csv_stream_s3_to_pg import copy_csv_from_s3_to_pg
+from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
 from usaspending_api.common.etl.spark import convert_array_cols_to_string
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -311,25 +311,27 @@ class Command(BaseCommand):
         db_dsn = get_database_dsn_string()
 
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
-        rdd = spark.sparkContext.parallelize(gzipped_csv_files)
+
+        # Repartition into CONFIG.SPARK_MAX_JDBC_WRITER_CONNECTIONS so that there will only be this many concurrent
+        # connections writing to Postgres at once, to not overtax it nor oversaturate the number of allowed connections
+        rdd = spark.sparkContext.parallelize(gzipped_csv_files, CONFIG.SPARK_MAX_JDBC_WRITER_CONNECTIONS)
+
         # WARNING: rdd.map needs to use cloudpickle to pickle the mapped function, its arguments, and in-turn any
         # imported dependencies from either of those two. If at any point a new transitive dependency is introduced
         # into the mapped function or an arg of it that is not pickle-able, this will throw an error.
         # One way to ensure this is to resolve all arguments to primitive types (int, string) that can be passed
         # to the mapped function
-        rdd.map(
-            lambda s3_obj_key: copy_csv_from_s3_to_pg(
+        rdd.mapPartitionsWithIndex(
+            lambda partition_idx, s3_obj_keys: copy_csvs_from_s3_to_pg(
+                batch_num=partition_idx,
                 s3_bucket_name=s3_bucket_name,
-                s3_obj_key=s3_obj_key,
+                s3_obj_keys=s3_obj_keys,
                 db_dsn=db_dsn,
                 target_pg_table=temp_table,
                 gzipped=True,
             ),
-            # preservesPartitioning=True: if there are 212 CSV files, there will be 212 partitions and
-            #   therefore 212 tasks in the stage for executors to consume. Otherwise, it sets partitions = cluster
-            #   cores and one task might have to COPY multiple CSV files->PG before completing.
-            preservesPartitioning=True,
         ).collect()
+        
         logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
     def _write_with_jdbc_inserts(

@@ -240,6 +240,12 @@ class DefaultConfig(BaseSettings):
     SPARK_PARTITION_ROWS: int = 10000
     SPARK_MAX_PARTITIONS: int = 100000
 
+    # This should be calibrated to the ``max_parallel_workers`` setting in the target Postgres DB (which should in
+    # turn be set to the number of cores available on that DB.
+    # You don't HAVE to abide by this setting when writing from a Spark cluster to Postgres, but you may find that
+    # using more concurrent connections than this simply results in throttled writes (specifically on AWS)
+    SPARK_MAX_JDBC_WRITER_CONNECTIONS: int = ENV_SPECIFIC_OVERRIDE
+
     # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
     # `partition_rows` above is how many data items come out of the JDBC side, and are handled by one Executor
