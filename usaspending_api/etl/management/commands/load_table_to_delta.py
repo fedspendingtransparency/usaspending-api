@@ -78,7 +78,7 @@ TABLE_SPEC = {
         "model": RecipientLookup,
         "source_table": "recipient_lookup",
         "source_database": "rpt",
-        "destination_database": "rpt",
+        "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,
         "partition_column": "id",
