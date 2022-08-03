@@ -79,6 +79,7 @@ recipient_profile_load_sql_string = [
     # -- Step 2, Create the new table and populate with 100% of combinations
     # --------------------------------------------------------------------------------
     """CREATE OR REPLACE TABLE temporary_restock_recipient_profile (
+        id BIGINT,
         recipient_level character(1) NOT NULL,
         recipient_hash STRING,
         recipient_unique_id STRING,
@@ -99,12 +100,13 @@ recipient_profile_load_sql_string = [
     """,
     """INSERT INTO temporary_restock_recipient_profile (
     SELECT
+        monotonically_increasing_id() AS id,
         'P' as recipient_level,
         recipient_hash AS recipient_hash,
         duns AS recipient_unique_id,
-        legal_business_name AS recipient_name,
         uei AS uei,
         parent_uei AS parent_uei,
+        legal_business_name AS recipient_name,
         true AS unused,
         ARRAY() AS recipient_affiliations,
         ARRAY() AS award_types,
@@ -119,12 +121,13 @@ recipient_profile_load_sql_string = [
     rpt.recipient_lookup
     UNION ALL
         SELECT
+            monotonically_increasing_id() AS id,
             'C' as recipient_level,
             recipient_hash AS recipient_hash,
             duns AS recipient_unique_id,
-            legal_business_name AS recipient_name,
             uei AS uei,
             parent_uei AS parent_uei,
+            legal_business_name AS recipient_name,
             true AS unused,
             ARRAY() AS recipient_affiliations,
             ARRAY() AS award_types,
@@ -139,12 +142,13 @@ recipient_profile_load_sql_string = [
         rpt.recipient_lookup
     UNION ALL
         SELECT
+            monotonically_increasing_id() AS id,
             'R' as recipient_level,
             recipient_hash AS recipient_hash,
             duns AS recipient_unique_id,
-            legal_business_name AS recipient_name,
             uei AS uei,
             parent_uei AS parent_uei,
+            legal_business_name AS recipient_name,
             true AS unused,
             ARRAY() AS recipient_affiliations,
             ARRAY() AS award_types,
@@ -197,7 +201,7 @@ recipient_profile_load_sql_string = [
             grouped_by_category_inner AS gbci
         GROUP BY recipient_hash, recipient_level
     )
-    MERGE INTO temporary_restock_recipient_profile AS rpv 
+    MERGE INTO temporary_restock_recipient_profile AS rpv
     USING grouped_by_category AS gbc
     ON gbc.recipient_hash = rpv.recipient_hash AND
         gbc.recipient_level = rpv.recipient_level
@@ -253,7 +257,7 @@ recipient_profile_load_sql_string = [
     MERGE INTO temporary_restock_recipient_profile AS rpv USING  grouped_by_parent AS gbp
     ON rpv.uei = gbp.uei AND
         rpv.recipient_level = 'P'
-    WHEN MATCHED THEN UPDATE SET 
+    WHEN MATCHED THEN UPDATE SET
         award_types = gbp.award_types || rpv.award_types,
         last_12_months = rpv.last_12_months + gbp.amount,
         last_12_contracts = rpv.last_12_contracts + gbp.last_12_contracts,
@@ -297,7 +301,7 @@ recipient_profile_load_sql_string = [
             parent_uei IS NOT NULL
         GROUP BY uei
     )
-    MERGE INTO temporary_restock_recipient_profile AS rpv 
+    MERGE INTO temporary_restock_recipient_profile AS rpv
     USING all_recipients AS ar
     ON rpv.uei = ar.uei AND
         rpv.recipient_level = 'C'
@@ -342,7 +346,6 @@ recipient_profile_load_sql_string = [
         rpv.unused = true
     WHEN MATCHED THEN UPDATE SET
         unused = false;""",
-
     # --------------------------------------------------------------------------------
     # -- Step 9, Finalize new table
     # --------------------------------------------------------------------------------
@@ -350,14 +353,14 @@ recipient_profile_load_sql_string = [
     # --------------------------------------------------------------------------------
     # -- Step 10, Drop unnecessary relations and standup new table as final
     # --------------------------------------------------------------------------------
-    # """
-    #     DELETE FROM rpt.recipient_profile rp
-    #     WHERE id NOT IN (
-    #     SELECT id FROM temporary_restock_recipient_profile temp_p
-    #         WHERE rp.recipient_hash = temp_p.recipient_hash
-    #         AND rp.recipient_level = temp_p.recipient_level
-    #     );
-    # """,
+    """
+        DELETE FROM rpt.recipient_profile rp
+        WHERE id NOT IN (
+        SELECT id FROM temporary_restock_recipient_profile temp_p
+            WHERE rp.recipient_hash = temp_p.recipient_hash
+            AND rp.recipient_level = temp_p.recipient_level
+        );
+    """,
     """
         MERGE INTO rpt.recipient_profile rp
         USING temporary_restock_recipient_profile temp_p
@@ -390,27 +393,42 @@ recipient_profile_load_sql_string = [
             last_12_direct_payments = temp_p.last_12_direct_payments,
             last_12_other = temp_p.last_12_other,
             last_12_months_count = temp_p.last_12_months_count,
-            parent_uei = temp_p.parent_uei;
-    """,
-    """
-        INSERT INTO rpt.recipient_profile
-        (SELECT
-            0 AS id,
-            recipient_level AS recipient_level,
-            recipient_hash AS recipient_hash,
-            recipient_unique_id AS recipient_unique_id, 
-            uei AS uei,
-            parent_uei AS parent_uei,
-            recipient_name AS recipient_name,
-            recipient_affiliations AS recipient_affiliations,
-            award_types AS award_types,
-            last_12_months AS last_12_months,
-            last_12_contracts AS last_12_contracts,
-            last_12_loans AS last_12_loans,
-            last_12_grants AS last_12_grants,
-            last_12_direct_payments AS last_12_payments,
-            last_12_other AS last_12_other,
-            last_12_months_count AS last_12_months_count
-        FROM temporary_restock_recipient_profile)
+            parent_uei = temp_p.parent_uei
+        WHEN NOT MATCHED THEN
+        INSERT (
+            id,
+            recipient_level,
+            recipient_hash,
+            recipient_unique_id,
+            uei,
+            parent_uei,
+            recipient_name,
+            recipient_affiliations,
+            award_types,
+            last_12_months,
+            last_12_contracts,
+            last_12_loans,
+            last_12_grants,
+            last_12_direct_payments,
+            last_12_other,
+            last_12_months_count
+        ) VALUES (
+            temp_p.id + 1,
+            temp_p.recipient_level,
+            temp_p.recipient_hash,
+            temp_p.recipient_unique_id,
+            temp_p.uei,
+            temp_p.parent_uei,
+            temp_p.recipient_name,
+            temp_p.recipient_affiliations,
+            temp_p.award_types,
+            temp_p.last_12_months,
+            temp_p.last_12_contracts,
+            temp_p.last_12_loans,
+            temp_p.last_12_grants,
+            temp_p.last_12_direct_payments,
+            temp_p.last_12_other,
+            temp_p.last_12_months_count
+        );
     """,
 ]
