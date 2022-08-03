@@ -35,7 +35,7 @@ from usaspending_api.transactions.delta_models import (
 )
 from usaspending_api.search.delta_models.award_search import award_search_create_sql_string, AWARD_SEARCH_COLUMNS
 
-from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
+from usaspending_api.recipient.models import DUNS, RecipientLookup
 from usaspending_api.awards.models import (
     Award,
     FinancialAccountsByAwards,

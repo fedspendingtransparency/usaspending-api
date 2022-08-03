@@ -32,6 +32,7 @@ def populate_data_for_transaction_search():
         "recipient.RecipientLookup",
         recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
         uei="FABSUEI12345",
+        duns="123456789",
         legal_business_name="FABS TEST RECIPIENT",
         _fill_optional=True,
     )
@@ -42,6 +43,7 @@ def populate_data_for_transaction_search():
         recipient_level="R",
         recipient_name="FABS TEST RECIPIENT",
         _fill_optional=True,
+        recipient_unique_id="123456789",
     )
     baker.make(
         "recipient.DUNS",
@@ -504,14 +506,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_b
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_profile(spark, s3_unittest_data_bucket):
-    baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
-    baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
-
-
-@mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket):
     # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
     baker.make("awards.TransactionFABS", published_fabs_id="1", indirect_federal_sharing=1.0, _fill_optional=True)
@@ -764,3 +758,14 @@ def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
         alt_db="my_alt_db",
         alt_name="award_search_alt_name",
     )
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_recipient_profile(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded_to_delta(
+        spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
+    _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
