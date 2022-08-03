@@ -51,16 +51,6 @@ TABLE_SPEC = {
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
     },
-    "sam_recipient": {
-        "model": DUNS,
-        "source_table": "duns",
-        "destination_database": "raw",
-        "partition_column": None,
-        "partition_column_type": None,
-        "delta_table_create_sql": sam_recipient_sql_string,
-        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
-        "column_names": list(SAM_RECIPIENT_COLUMNS),
-    },
     "summary_state_view": {
         "model": SummaryStateView,
         "source_table": "summary_state_view",
