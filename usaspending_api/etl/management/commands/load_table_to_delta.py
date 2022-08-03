@@ -53,7 +53,7 @@ from usaspending_api.awards.models import (
 TABLE_SPEC = {
     "awards": {
         "model": Award,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "awards",
         "source_database": "rpt",
         "destination_database": "raw",
@@ -68,7 +68,7 @@ TABLE_SPEC = {
     },
     "financial_accounts_by_awards": {
         "model": FinancialAccountsByAwards,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "financial_accounts_by_awards",
         "source_database": "public",
         "destination_database": "raw",
@@ -83,7 +83,7 @@ TABLE_SPEC = {
     },
     "recipient_lookup": {
         "model": RecipientLookup,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "recipient_lookup",
         "source_database": "rpt",
         "destination_database": "raw",
@@ -98,7 +98,7 @@ TABLE_SPEC = {
     },
     "recipient_profile": {
         "model": RecipientProfile,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "recipient_profile",
         "source_database": "rpt",
         "destination_database": "raw",
@@ -113,7 +113,7 @@ TABLE_SPEC = {
     },
     "sam_recipient": {
         "model": DUNS,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "duns",
         "source_database": "raw",
         "destination_database": "raw",
@@ -128,7 +128,7 @@ TABLE_SPEC = {
     },
     "transaction_fabs": {
         "model": TransactionFABS,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "transaction_fabs",
         "source_database": "int",
         "destination_database": "raw",
@@ -143,7 +143,7 @@ TABLE_SPEC = {
     },
     "transaction_fpds": {
         "model": TransactionFPDS,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "transaction_fpds",
         "source_database": "int",
         "destination_database": "raw",
@@ -158,7 +158,7 @@ TABLE_SPEC = {
     },
     "transaction_normalized": {
         "model": TransactionNormalized,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "transaction_normalized",
         "source_database": "int",
         "destination_database": "raw",
@@ -176,7 +176,7 @@ TABLE_SPEC = {
     # data comparison between current Postgres data and the data transformed via Spark.
     "transaction_search_testing": {
         "model": TransactionSearch,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "transaction_search",
         "source_database": None,
         "destination_database": "test",
@@ -191,7 +191,7 @@ TABLE_SPEC = {
     },
     "award_search_testing": {
         "model": AwardSearch,
-        "broker": False,
+        "is_from_broker": False,
         "source_table": "award_search",
         "source_database": None,
         "destination_database": "rpt",
@@ -208,7 +208,7 @@ TABLE_SPEC = {
     # Tables loaded in from the Broker
     "broker_subaward": {
         "model": None,
-        "broker": True,
+        "is_from_broker": True,
         "source_table": "subaward",
         "source_database": None,
         "destination_database": "raw",
@@ -281,7 +281,7 @@ class Command(BaseCommand):
         destination_table = options["destination_table"]
 
         table_spec = TABLE_SPEC[destination_table]
-        broker_table = table_spec["broker"]
+        is_from_broker = table_spec["is_from_broker"]
         destination_database = options["alt_db"] or table_spec["destination_database"]
         destination_table_name = options["alt_name"] or destination_table
         source_table = table_spec["source_table"]
@@ -294,7 +294,7 @@ class Command(BaseCommand):
         spark.sql(f"use {destination_database};")
 
         # Resolve JDBC URL for Source Database
-        jdbc_url = get_usas_jdbc_url() if not broker_table else get_broker_jdbc_url()
+        jdbc_url = get_usas_jdbc_url() if not is_from_broker else get_broker_jdbc_url()
         if not jdbc_url:
             raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
