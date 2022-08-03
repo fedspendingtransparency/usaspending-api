@@ -669,7 +669,28 @@ def test_load_table_to_from_delta_for_recipient_profile(
     _verify_delta_table_loaded_to_delta(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
-    # _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
+    _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_recipient_profile_alt_db_and_name(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+):
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    _verify_delta_table_loaded_to_delta(
+        spark,
+        "recipient_profile",
+        s3_unittest_data_bucket,
+        alt_db="my_alt_db",
+        alt_name="recipient_profile_alt_name",
+        load_command="load_query_to_delta",
+    )
+    _verify_delta_table_loaded_from_delta(
+        spark,
+        "recipient_profile",
+        alt_db="my_alt_db",
+        alt_name="recipient_profile_alt_name",
+    )
 
 
 @mark.django_db(transaction=True)
