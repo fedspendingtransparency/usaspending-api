@@ -355,11 +355,11 @@ recipient_profile_load_sql_string = [
     # --------------------------------------------------------------------------------
     """
         DELETE FROM rpt.recipient_profile rp
-        WHERE id NOT IN (
-        SELECT id FROM temporary_restock_recipient_profile temp_p
-            WHERE rp.recipient_hash = temp_p.recipient_hash
-            AND rp.recipient_level = temp_p.recipient_level
-        );
+        WHERE CONCAT(rp.recipient_hash, rp.recipient_level)
+            NOT IN (
+                SELECT CONCAT(temp_p.recipient_hash, temp_p.recipient_level)
+                FROM temporary_restock_recipient_profile temp_p
+            );
     """,
     """
         MERGE INTO rpt.recipient_profile rp
