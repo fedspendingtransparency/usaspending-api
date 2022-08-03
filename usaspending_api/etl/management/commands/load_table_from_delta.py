@@ -324,7 +324,11 @@ class Command(BaseCommand):
                 db_dsn=db_dsn,
                 target_pg_table=temp_table,
                 gzipped=True,
-            )
+            ),
+            # preservesPartitioning=True: if there are 212 CSV files, there will be 212 partitions and
+            #   therefore 212 tasks in the stage for executors to consume. Otherwise, it sets partitions = cluster
+            #   cores and one task might have to COPY multiple CSV files->PG before completing.
+            preservesPartitioning=True,
         ).collect()
         logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
