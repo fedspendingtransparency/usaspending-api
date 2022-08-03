@@ -12,7 +12,7 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearchView, SummaryStateView
+from usaspending_api.search.models import TransactionSearch, AwardSearchView
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
