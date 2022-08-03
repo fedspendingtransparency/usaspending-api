@@ -431,4 +431,6 @@ recipient_profile_load_sql_string = [
             temp_p.last_12_months_count
         );
     """,
+    """DROP TABLE temporary_restock_recipient_profile;""",
+    """DROP VIEW temporary_recipients_from_transactions_view;"""
 ]
