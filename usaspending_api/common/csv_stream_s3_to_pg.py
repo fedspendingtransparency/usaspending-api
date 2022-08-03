@@ -59,7 +59,9 @@ def copy_csv_from_s3_to_pg(
                     )
                 else:
                     s3_client = boto3.client(
-                        service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=CONFIG.AWS_S3_ENDPOINT
+                        service_name="s3",
+                        region_name=CONFIG.AWS_REGION,
+                        endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}",
                     )
                 s3_obj = s3_client.get_object(Bucket=s3_bucket_name, Key=s3_obj_key)
                 # Getting Body gives a botocore.response.StreamingBody object back to allow "streaming" its contents

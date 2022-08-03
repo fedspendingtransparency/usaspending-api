@@ -299,7 +299,7 @@ class Command(BaseCommand):
             )
         else:
             s3_resource = boto3.resource(
-                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=CONFIG.AWS_S3_ENDPOINT
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
             )
         s3_bucket_name = CONFIG.SPARK_S3_BUCKET
         s3_bucket = s3_resource.Bucket(CONFIG.SPARK_S3_BUCKET)
