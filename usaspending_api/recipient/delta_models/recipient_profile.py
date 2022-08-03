@@ -118,7 +118,7 @@ recipient_profile_load_sql_string = [
         0.00 AS last_12_other,
         0 AS last_12_months_count
     FROM
-    rpt.recipient_lookup
+    raw.recipient_lookup
     UNION ALL
         SELECT
             monotonically_increasing_id() AS id,
@@ -139,7 +139,7 @@ recipient_profile_load_sql_string = [
             0.00 AS last_12_other,
             0 AS last_12_months_count
         FROM
-        rpt.recipient_lookup
+        raw.recipient_lookup
     UNION ALL
         SELECT
             monotonically_increasing_id() AS id,
@@ -160,7 +160,7 @@ recipient_profile_load_sql_string = [
             0.00 AS last_12_other,
             0 AS last_12_months_count
         FROM
-        rpt.recipient_lookup);""",
+        raw.recipient_lookup);""",
     # --------------------------------------------------------------------------------
     # -- Step 3, Obligation for past 12 months
     # --------------------------------------------------------------------------------
