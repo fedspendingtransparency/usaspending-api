@@ -195,7 +195,7 @@ docker-compose-build-spark: ## See: docker-compose-build rule. This builds just 
 	docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
 .PHONY: docker-compose-spark-submit
-docker-compose-spark-submit:
+docker-compose-spark-submit: ## Run spark-submit from within local docker containerized infrastructure (which must be running first). Set params with django_command="..."
 	docker-compose --profile=spark --project-directory . --file ${docker_compose_file} run \
 		-e MINIO_HOST=minio \
 		-e COMPONENT_NAME='${django_command}${python_script}' \
@@ -207,7 +207,7 @@ docker-compose-spark-submit:
 	}
 
 .PHONY: localhost-spark-submit
-localhost-spark-submit:
+localhost-spark-submit: ## Run spark-submit from with localhost as the driver and worker (single node). Set params with django_command="..."
 	SPARK_LOCAL_IP=127.0.0.1 \
 	spark-submit --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
 	${if ${python_script}, \

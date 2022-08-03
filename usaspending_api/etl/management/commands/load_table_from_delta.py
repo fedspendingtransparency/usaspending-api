@@ -1,7 +1,7 @@
 import itertools
-
 import boto3
 import numpy as np
+
 from django import db
 from django.core.management.base import BaseCommand
 from django.db.models import Model
@@ -9,7 +9,7 @@ from pyspark.sql import SparkSession, DataFrame
 from typing import Dict, Optional
 from datetime import datetime
 
-from usaspending_api.common.csv_helpers import copy_csv_from_s3_to_pg
+from usaspending_api.common.csv_stream_s3_to_pg import copy_csv_from_s3_to_pg
 from usaspending_api.common.etl.spark import convert_array_cols_to_string
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -276,28 +276,54 @@ class Command(BaseCommand):
         s3_bucket_with_csv_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{csv_path}"
 
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
-        df_no_arrays = convert_array_cols_to_string(df)
+        df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True)
         df_no_arrays.write.options(
             compression="gzip",
             nullValue=None,
             escape='"',
         ).csv(s3_bucket_with_csv_path)
 
-        s3_resource = boto3.resource("s3", region_name=CONFIG.AWS_REGION)
+        logger.info(
+            f"Connecting to S3 at endpoint_url={CONFIG.AWS_S3_ENDPOINT}, region_name={CONFIG.AWS_REGION} to "
+            f"get listing of contents of Bucket={CONFIG.SPARK_S3_BUCKET} with Prefix={csv_path}"
+        )
+
+        if not CONFIG.USE_AWS:
+            boto3_session = boto3.session.Session(
+                region_name=CONFIG.AWS_REGION,
+                aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+                aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+            )
+            s3_resource = boto3_session.resource(
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
+            )
+        else:
+            s3_resource = boto3.resource(
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=CONFIG.AWS_S3_ENDPOINT
+            )
+        s3_bucket_name = CONFIG.SPARK_S3_BUCKET
         s3_bucket = s3_resource.Bucket(CONFIG.SPARK_S3_BUCKET)
         gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
         file_count = len(gzipped_csv_files)
         logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
+        from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+
+        db_dsn = get_database_dsn_string()
 
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
         rdd = spark.sparkContext.parallelize(gzipped_csv_files)
-        results = rdd.map(
+        # WARNING: rdd.map needs to use cloudpickle to pickle the mapped function, its arguments, and in-turn any
+        # imported dependencies from either of those two. If at any point a new transitive dependency is introduced
+        # into the mapped function or an arg of it that is not pickle-able, this will throw an error.
+        # One way to ensure this is to resolve all arguments to primitive types (int, string) that can be passed
+        # to the mapped function
+        rdd.map(
             lambda s3_obj_key: copy_csv_from_s3_to_pg(
-                s3_bucket=s3_bucket,
+                s3_bucket_name=s3_bucket_name,
                 s3_obj_key=s3_obj_key,
+                db_dsn=db_dsn,
                 target_pg_table=temp_table,
                 gzipped=True,
-                logger=logger,
             )
         ).collect()
         logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")

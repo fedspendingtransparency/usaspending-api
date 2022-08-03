@@ -425,16 +425,23 @@ def convert_array_cols_to_string(df: DataFrame, is_postgres_array_format=False) 
     if is_postgres_array_format:
         arr_open_bracket = "{"
         arr_close_bracket = "}"
-    # TODO: Test the cast below with this strongly typed spark type, and if it works, paremeterize whether nulls are
-    #  allowed or not
-    array_of_string_type = type(ArrayType(StringType(), False))  # Assuming no NULL values allowed in Arrays
     df_no_arrays = df
     for f in df.schema.fields:
         if not isinstance(f.dataType, ArrayType):
             continue
         df_no_arrays = df_no_arrays.withColumn(
             f.name,
-            concat(lit(arr_open_bracket), concat_ws(", ", col(f.name).cast("array<string>")), lit(arr_close_bracket)),
+            # TODO: using strong types below doesn't seem to work IF you try to change from default containsNull=True
+            #  to containsNull=False
+            #  Says: pyspark.sql.utils.AnalysisException: cannot resolve 'spark_catalog.raw.sam_recipient.business_types_codes' due to data type mismatch: cannot cast array<string> to array<string>;
+            #  If we need to enforce either non-null on the array (use empty insted of null) or non-null on values,
+            #  we may need to look at transforming the values with a when(col(f.name).isNotNull,
+            #  col(f.name)) and no otherwise? Or throw an error if a value is found null?
+            concat(
+                lit(arr_open_bracket),
+                concat_ws(", ", col(f.name).cast(ArrayType(StringType()))),
+                lit(arr_close_bracket),
+            ),
         )
     return df_no_arrays
 

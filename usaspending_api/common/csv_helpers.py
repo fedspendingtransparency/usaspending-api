@@ -1,16 +1,7 @@
 import codecs
 import csv
-import logging
 import os
-import boto3
-import gzip
-import psycopg2
-import time
 
-from contextlib import closing
-
-from usaspending_api.config import CONFIG
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 
@@ -102,39 +93,3 @@ def read_csv_file_as_list_of_dictionaries(file_path):
     """
     with RetrieveFileFromUri(file_path).get_file_object(True) as f:
         return list(csv.DictReader(f))
-
-
-def copy_csv_from_s3_to_pg(s3_bucket: str, s3_obj_key: str, target_pg_table: str, gzipped: bool = True, logger=None):
-    """Stream a CSV file from S3 into a Postgres table using the SQL bulk COPY command
-
-    NOTE: ``logger`` could be a JVM logger passed in to use, if this is running from Spark (so that logs are written to
-    the log4j configured log file)
-    """
-    if not logger:
-        logger = logging.getLogger(__name__)
-    start = time.time()
-    logger.info(f"Starting write of: {s3_obj_key}")
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-        connection.autocommit = True
-        with connection.cursor() as cursor:
-            s3_client = boto3.client("s3", region_name=CONFIG.AWS_REGION)
-            s3_obj = s3_client.get_object(Bucket=s3_bucket, Key=s3_obj_key)
-            # Getting Body gives a botocore.response.StreamingBody object back to allow "streaming" its contents
-            s3_obj_body = s3_obj["Body"]
-            with closing(s3_obj_body):  # make sure to close the stream when done
-                if gzipped:
-                    with gzip.open(s3_obj_body, "rb") as csv_binary:
-                        cursor.copy_expert(
-                            sql=f"COPY {target_pg_table} FROM STDIN (FORMAT CSV)",
-                            file=csv_binary,
-                        )
-                else:
-                    with codecs.getreader("utf-8")(s3_obj_body) as csv_stream_reader:
-                        cursor.copy_expert(
-                            sql=f"COPY {target_pg_table} FROM STDIN (FORMAT CSV)",
-                            file=csv_stream_reader,
-                        )
-            elapsed = time.time() - start
-            rows_copied = cursor.rowcount
-            logger.info(f"Finished writing {s3_obj_key} with {rows_copied} row(s) in {elapsed:.3f}s")
-            return rows_copied
