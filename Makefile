@@ -22,7 +22,7 @@ endif
 #### Variables used in this Makefile.
 #### Uppercased are environment vars, or make-specific vars. All others should be lower-snake-case
 ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
-python_version := 3.7.13
+PYTHON_VERSION ?= 3.7.13  # default version if not set in .env or an env var
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_spark := Dockerfile.spark
@@ -51,15 +51,15 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 
 .python-version: ## Attempt to setup python using pyenv
 	@if ! command -v pyenv &> /dev/null; then \
-		echo "WARNING: pyenv could not be found. Install pyenv to get a virtual env running with the compatible python version: ${python_version}. Will fallback to using system python3."; \
+		echo "WARNING: pyenv could not be found. Install pyenv to get a virtual env running with the compatible python version: ${PYTHON_VERSION}. Will fallback to using system python3."; \
 	else \
 	  	set -x; \
-	  	echo "pyenv setting python version to ${python_version}"; \
-  		pyenv install -s ${python_version}; \
-  		pyenv local ${python_version}; \
+	  	echo "pyenv setting python version to ${PYTHON_VERSION}"; \
+  		pyenv install -s ${PYTHON_VERSION}; \
+  		pyenv local ${PYTHON_VERSION}; \
   		python3 -V; \
-  		if [ "$$(python3 -V)" != "Python ${python_version}" ]; then \
-  			echo "ERROR: pyenv was not able to set local python version to ${python_version}"; \
+  		if [ "$$(python3 -V)" != "Python ${PYTHON_VERSION}" ]; then \
+  			echo "ERROR: pyenv was not able to set local python version to ${PYTHON_VERSION}"; \
   			exit 1; \
   		fi; \
 	fi;

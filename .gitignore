@@ -32,6 +32,7 @@ coverage.xml
 # pip files
 *\.egg-info/
 pip-selfcheck.json
+build/
 
 # for a project-local (rather than home-dir based) virtual environment directory
 \.venv/
