@@ -432,5 +432,5 @@ recipient_profile_load_sql_string = [
         );
     """,
     """DROP TABLE temporary_restock_recipient_profile;""",
-    """DROP VIEW temporary_recipients_from_transactions_view;"""
+    """DROP VIEW temporary_recipients_from_transactions_view;""",
 ]
