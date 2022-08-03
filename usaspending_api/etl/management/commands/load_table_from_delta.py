@@ -8,7 +8,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
-    get_jdbc_url,
+    get_usas_jdbc_url,
     get_jvm_logger,
 )
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
@@ -146,7 +146,7 @@ class Command(BaseCommand):
         logger.info(summary_msg)
 
         # Resolve JDBC URL for Source Database
-        jdbc_url = get_jdbc_url()
+        jdbc_url = get_usas_jdbc_url()
         if not jdbc_url:
             raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
