@@ -1,7 +1,7 @@
 from usaspending_api.config import CONFIG
 
 RECIPIENT_PROFILE_COLUMNS = {
-    "recipient_level": {"delta": "STRING NOT NULL", "postgres": "character varying(1) NOT NULL"},
+    "recipient_level": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL"},
     "recipient_hash": {"delta": "STRING", "postgres": "UUID"},
     "recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_name": {"delta": "STRING", "postgres": "TEXT"},
@@ -428,5 +428,5 @@ recipient_profile_load_sql_string = [
         );
     """,
     """DROP TABLE temporary_restock_recipient_profile;""",
-    f"""DROP VIEW {{DESTINATION_DB}}.temporary_recipients_from_transactions_view;""",
+    f"""DROP VIEW {{DESTINATION_DATABASE}}.temporary_recipients_from_transactions_view;""",
 ]
