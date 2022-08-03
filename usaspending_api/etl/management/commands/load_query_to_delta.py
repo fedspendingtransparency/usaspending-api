@@ -8,8 +8,8 @@ from usaspending_api.common.helpers.spark_helpers import (
     create_ref_temp_views,
 )
 from usaspending_api.recipient.delta_models.recipient_profile import (
-    recipient_profile_load_sql_string,
     recipient_profile_create_sql_string,
+    recipient_profile_load_sql_string,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientProfile
@@ -139,7 +139,7 @@ class Command(BaseCommand):
         create_ref_temp_views(spark)
         if type(TABLE_SPEC[destination_table].get("source_query")) == list:
             for x in TABLE_SPEC[destination_table].get("source_query"):
-                spark.sql(x)
+                spark.sql(x.format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name))
         else:
             spark.sql(
                 TABLE_SPEC[destination_table]

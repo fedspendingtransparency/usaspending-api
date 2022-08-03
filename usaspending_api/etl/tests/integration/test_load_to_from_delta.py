@@ -660,6 +660,7 @@ def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_
     _verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_normalized")
 
+
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
@@ -669,6 +670,7 @@ def test_load_table_to_from_delta_for_recipient_profile(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
     # _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
+
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
