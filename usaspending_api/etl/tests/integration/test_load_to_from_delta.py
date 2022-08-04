@@ -7,6 +7,8 @@ import psycopg2
 import pytz
 
 from datetime import datetime
+from pathlib import Path
+from psycopg2.extensions import AsIs
 from typing import Any, Dict, List, Union
 
 from model_bakery import baker
@@ -14,7 +16,7 @@ from pyspark.sql import SparkSession
 from pytest import fixture, mark
 
 from django.core.management import call_command
-from django.db import connection, transaction
+from django.db import connection, connections, transaction
 from django.db.models import sql
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
@@ -389,10 +391,21 @@ def _verify_delta_table_loaded_to_delta(
     # get the postgres data to compare
     model = TABLE_SPEC[delta_table_name]["model"]
     partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
-    dummy_query = model.objects
-    if partition_col is not None:
-        dummy_query = dummy_query.order_by(partition_col)
-    dummy_data = list(dummy_query.all().values())
+    if model:
+        dummy_query = model.objects
+        if partition_col is not None:
+            dummy_query = dummy_query.order_by(partition_col)
+        dummy_data = list(dummy_query.all().values())
+    else:
+        # model can be None if loading from the Broker
+        broker_connection = connections["data_broker"]
+        source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
+        with broker_connection.cursor() as cursor:
+            dummy_query = f"SELECT * from {source_broker_name}"
+            if partition_col is not None:
+                dummy_query = f"{dummy_query} ORDER BY {partition_col}"
+            cursor.execute(dummy_query)
+            dummy_data = dictfetchall(cursor)
 
     # get the spark data to compare
     # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again
@@ -509,6 +522,25 @@ def test_load_table_to_from_delta_for_recipient_profile(spark, s3_unittest_data_
     baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_broker_subaward(spark, s3_unittest_data_bucket, broker_server_dblink_setup):
+    dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
+
+    connection = connections["data_broker"]
+    with connection.cursor() as cursor:
+        # nuke any previous data just in case
+        cursor.execute("truncate table subaward restart identity cascade;")
+
+        insert_statement = "insert into subaward (%s) values %s"
+        for record in dummy_broker_subaward_data:
+            columns = record.keys()
+            values = tuple(record[column] for column in columns)
+            sql = cursor.cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
+            cursor.execute(sql)
+
+    _verify_delta_table_loaded_to_delta(spark, "broker_subaward", s3_unittest_data_bucket)
 
 
 @mark.django_db(transaction=True)

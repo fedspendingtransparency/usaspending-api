@@ -265,7 +265,7 @@ def configure_spark_session(
         es_auth = f"{es_config['es.net.http.auth.user']}:********@"
     logger.info(
         f"Running Job with:\n"
-        f"\tDB = {get_jdbc_url().rsplit('=', 1)[0] + '=********'}"
+        f"\tDB = {get_usas_jdbc_url().rsplit('=', 1)[0] + '=********'}"
         f"\n\tES = {'https' if (es_config['es.net.ssl'] and es_config['es.net.ssl'].lower() != 'false') else 'http'}://"
         f"{es_auth}{es_config['es.nodes']}:{es_config['es.port']}"
         f"\n\tS3 = {conf.get('spark.hadoop.fs.s3a.endpoint')} with "
@@ -366,12 +366,20 @@ def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
     return f"jdbc:{pg_uri}"
 
 
-def get_jdbc_url():
+def get_usas_jdbc_url():
     """Getting a JDBC-compliant Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.DATABASE_URL:
         raise ValueError("DATABASE_URL config val must provided")
 
     return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
+
+
+def get_broker_jdbc_url():
+    """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
+    if not CONFIG.DATA_BROKER_DATABASE_URL:
+        raise ValueError("DATA_BROKER_DATABASE_URL config val must provided")
+
+    return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually

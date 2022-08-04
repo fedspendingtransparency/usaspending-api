@@ -18,7 +18,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
-    get_jdbc_url,
+    get_usas_jdbc_url,
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
@@ -433,7 +433,7 @@ class Command(BaseCommand):
                 # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
                 logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
                 split_df.write.jdbc(
-                    url=get_jdbc_url(),
+                    url=get_usas_jdbc_url(),
                     table=temp_table,
                     mode=save_mode,
                     properties=get_jdbc_connection_properties(),
@@ -442,7 +442,7 @@ class Command(BaseCommand):
         else:
             # Do it in one shot
             df.write.jdbc(
-                url=get_jdbc_url(),
+                url=get_usas_jdbc_url(),
                 table=temp_table,
                 mode=save_mode,
                 properties=get_jdbc_connection_properties(),
