@@ -7,7 +7,7 @@ from django import db
 from django.core.management.base import BaseCommand
 from django.db.models import Model
 from pyspark.sql import SparkSession, DataFrame
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from datetime import datetime
 
 from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
@@ -194,16 +194,21 @@ class Command(BaseCommand):
             if make_new_table:
                 if postgres_table:
                     create_temp_sql = f"""
-                        CREATE UNLOGGED TABLE {temp_table} (
+                        CREATE TABLE {temp_table} (
                             LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
                         ) WITH (autovacuum_enabled=FALSE)
                     """
                 elif postgres_cols:
                     create_temp_sql = f"""
-                        CREATE UNLOGGED TABLE {temp_table} (
+                        CREATE TABLE {temp_table} (
                             {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
                         ) WITH (autovacuum_enabled=FALSE)
                     """
+                else:
+                    raise RuntimeError(
+                        "make_new_table=True but neither a postgres_table or postgres_cols are "
+                        "populated for the target delta table in the TABLE_SPEC"
+                    )
                 with db.connection.cursor() as cursor:
                     logger.info(f"Creating {temp_table}")
                     cursor.execute(create_temp_sql)
@@ -241,12 +246,15 @@ class Command(BaseCommand):
                 overwrite=False,
             )
         else:
+            if not postgres_cols:
+                raise RuntimeError("postgres_cols None or empty, but are required to map CSV cols to table cols")
             self._write_with_sql_bulk_copy_csv(
                 spark,
                 df,
                 delta_db=destination_database,
                 delta_table_name=delta_table_name,
                 temp_table=temp_table,
+                ordered_col_names=list(postgres_cols),
             )
 
         logger.info(
@@ -272,6 +280,7 @@ class Command(BaseCommand):
         delta_db: str,
         delta_table_name: str,
         temp_table: str,
+        ordered_col_names: List[str],
     ):
         logger = get_jvm_logger(spark)
         csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
@@ -340,6 +349,7 @@ class Command(BaseCommand):
                 s3_obj_keys=s3_obj_keys,
                 db_dsn=db_dsn,
                 target_pg_table=temp_table,
+                ordered_col_names=ordered_col_names,
                 gzipped=True,
                 work_mem_override=work_mem_for_large_csv_copy,
             ),

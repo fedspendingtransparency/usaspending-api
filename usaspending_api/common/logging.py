@@ -190,7 +190,7 @@ def ensure_logging(
         logger_to_use = logging.getLogger(log_record_name)
     logger_to_use.setLevel(logging_config_dict["loggers"][cfg_logger_name]["level"])
     if logger_to_use.handlers:
-        logger_to_use.info("Logging already configured with handlers. Will continue using as configured.")
+        logger_to_use.debug("Logging already configured with handlers. Will continue using as configured.")
     else:
         handler = logging.StreamHandler(sys.stderr)
         handler.setLevel(logging_config_dict["handlers"][cfg_handler_name]["level"])
@@ -199,7 +199,7 @@ def ensure_logging(
             formatter.datefmt = logging_config_dict["formatters"][cfg_formatter_name]["datefmt"]
         handler.setFormatter(formatter)
         logger_to_use.addHandler(handler)
-        logger_to_use.info(
+        logger_to_use.debug(
             f"Found no handler configured on logger, so added: handler={cfg_handler_name}, "
             f"logger={cfg_logger_name}, formatter={cfg_formatter_name}, formatter_class={str(formatter_class)})"
         )

@@ -20,7 +20,9 @@ import gzip
 import logging
 
 from contextlib import closing
-from typing import Iterable
+from typing import Iterable, List
+
+from botocore.client import BaseClient
 
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
@@ -29,7 +31,7 @@ from usaspending_api.settings import LOGGING
 logger = logging.getLogger(__name__)
 
 
-def _get_boto3_s3_client():
+def _get_boto3_s3_client() -> BaseClient:
     if not CONFIG.USE_AWS:
         boto3_session = boto3.session.Session(
             region_name=CONFIG.AWS_REGION,
@@ -51,7 +53,15 @@ def _get_boto3_s3_client():
 
 
 def _stream_and_copy(
-    partition_prefix, configured_logger, cursor, s3_client, s3_bucket_name, s3_obj_key, target_pg_table, gzipped
+    configured_logger: logging.Logger,
+    cursor: psycopg2._psycopg.cursor,
+    s3_client: BaseClient,
+    s3_bucket_name: str,
+    s3_obj_key: str,
+    target_pg_table: str,
+    ordered_col_names: List[str],
+    gzipped: bool,
+    partition_prefix: str = "",
 ):
     start = time.time()
     configured_logger.info(f"{partition_prefix}Starting write of {s3_obj_key}")
@@ -63,13 +73,13 @@ def _stream_and_copy(
             if gzipped:
                 with gzip.open(s3_obj_body, "rb") as csv_binary:
                     cursor.copy_expert(
-                        sql=f"COPY {target_pg_table} FROM STDIN (FORMAT CSV)",
+                        sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
                         file=csv_binary,
                     )
             else:
                 with codecs.getreader("utf-8")(s3_obj_body) as csv_stream_reader:
                     cursor.copy_expert(
-                        sql=f"COPY {target_pg_table} FROM STDIN (FORMAT CSV)",
+                        sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
                         file=csv_stream_reader,
                     )
         elapsed = time.time() - start
@@ -89,6 +99,7 @@ def copy_csv_from_s3_to_pg(
     s3_obj_key: str,
     db_dsn: str,
     target_pg_table: str,
+    ordered_col_names: List[str],
     gzipped: bool = True,
     work_mem_override: int = None,
 ):
@@ -106,7 +117,6 @@ def copy_csv_from_s3_to_pg(
                     cursor.execute("SET work_mem TO %s", (work_mem_override,))
                 s3_client = _get_boto3_s3_client()
                 results_generator = _stream_and_copy(
-                    partition_prefix="",
                     configured_logger=logger,
                     cursor=cursor,
                     s3_client=s3_client,
@@ -114,6 +124,7 @@ def copy_csv_from_s3_to_pg(
                     s3_obj_key=s3_obj_key,
                     target_pg_table=target_pg_table,
                     gzipped=gzipped,
+                    ordered_col_names=ordered_col_names,
                 )
                 return list(results_generator)[0]
     except Exception as exc:
@@ -128,6 +139,7 @@ def copy_csvs_from_s3_to_pg(
     s3_obj_keys: Iterable[str],
     db_dsn: str,
     target_pg_table: str,
+    ordered_col_names: List[str],
     gzipped: bool = True,
     work_mem_override: int = None,
 ):
@@ -149,14 +161,15 @@ def copy_csvs_from_s3_to_pg(
                 s3_client = _get_boto3_s3_client()
                 for s3_obj_key in s3_obj_keys:
                     yield from _stream_and_copy(
-                        partition_prefix=partition_prefix,
                         configured_logger=logger,
                         cursor=cursor,
                         s3_client=s3_client,
                         s3_bucket_name=s3_bucket_name,
                         s3_obj_key=s3_obj_key,
                         target_pg_table=target_pg_table,
+                        ordered_col_names=ordered_col_names,
                         gzipped=gzipped,
+                        partition_prefix=partition_prefix,
                     )
                 batch_elapsed = time.time() - batch_start
                 logger.info(
