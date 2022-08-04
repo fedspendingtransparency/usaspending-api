@@ -38,12 +38,12 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
     },
     "award_search": {
-        "model": AwardSearchView,
+        "model": AwardSearch,
         "source_query": award_search_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": "vw_award_search",
+        "swap_table": "award_search",
         "swap_schema": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",
@@ -102,6 +102,7 @@ class Command(BaseCommand):
             # See comment below about old date and time values cannot parsed without these
             "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+            "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
         spark = get_active_spark_session()
