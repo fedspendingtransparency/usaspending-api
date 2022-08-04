@@ -519,14 +519,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_b
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_profile(spark, s3_unittest_data_bucket):
-    baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
-    baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
-
-
-@mark.django_db(transaction=True)
 def test_load_table_to_delta_for_broker_subaward(spark, s3_unittest_data_bucket, broker_server_dblink_setup):
     dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
 
