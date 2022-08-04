@@ -349,8 +349,8 @@ recipient_profile_load_sql_string = [
     # --------------------------------------------------------------------------------
     # -- Step 10, Drop unnecessary relations and standup new table as final
     # --------------------------------------------------------------------------------
-    """
-        DELETE FROM rpt.recipient_profile rp
+    f"""
+        DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp
         WHERE CONCAT(rp.recipient_hash, rp.recipient_level)
             NOT IN (
                 SELECT CONCAT(temp_p.recipient_hash, temp_p.recipient_level)
@@ -358,7 +358,7 @@ recipient_profile_load_sql_string = [
             );
     """,
     f"""
-        MERGE INTO rpt.recipient_profile rp
+        MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp
         USING temporary_restock_recipient_profile temp_p
         ON rp.recipient_hash = temp_p.recipient_hash
             AND rp.recipient_level = temp_p.recipient_level
@@ -426,7 +426,5 @@ recipient_profile_load_sql_string = [
             temp_p.last_12_other,
             temp_p.last_12_months_count
         );
-    """,
-    """DROP TABLE temporary_restock_recipient_profile;""",
-    f"""DROP VIEW {{DESTINATION_DATABASE}}.temporary_recipients_from_transactions_view;""",
+    """
 ]
