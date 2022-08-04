@@ -31,15 +31,15 @@ recipient_profile_load_sql_string = [
     #   --------------------------------------------------------------------------------
     #     -- Step 1, create the temporary matview of recipients from transactions
     #   --------------------------------------------------------------------------------
-    """
+    r"""
     CREATE OR REPLACE TEMPORARY VIEW temporary_recipients_from_transactions_view AS (
     SELECT
-        MD5(UPPER(
+        REGEXP_REPLACE(MD5(UPPER(
         CASE
             WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, fabs.uei))
             WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
             ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal, '')) END
-        )) AS recipient_hash,
+        )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5') AS recipient_hash,
         COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
         COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
         COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) AS uei,
