@@ -153,7 +153,7 @@ class DefaultConfig(BaseSettings):
                 )
                 values = eval_default_factory_from_root_validator(cls, values, db_url_conf_name, lambda: str(pg_dsn))
 
-        # the broker config values are less required than the usas db values. if available, check for consistency.
+        # if the DB URL is now available, check for consistency with the db config values
         if values.get(db_url_conf_name, None):
             # Now validate the provided and/or built values are consistent between DB URL and db config parts
             pg_url_config_errors = {}
