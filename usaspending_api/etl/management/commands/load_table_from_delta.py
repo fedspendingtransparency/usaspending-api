@@ -294,7 +294,7 @@ class Command(BaseCommand):
             escape='"',
         ).csv(s3_bucket_with_csv_path)
 
-        logger.info(
+        logger.debug(
             f"Connecting to S3 at endpoint_url={CONFIG.AWS_S3_ENDPOINT}, region_name={CONFIG.AWS_REGION} to "
             f"get listing of contents of Bucket={CONFIG.SPARK_S3_BUCKET} with Prefix={csv_path}"
         )
