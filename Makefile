@@ -214,3 +214,18 @@ localhost-spark-submit: ## Run spark-submit from with localhost as the driver an
 		${python_script}, \
 		manage.py ${django_command} \
 	}
+
+.PHONY: pyspark-shell
+pyspark-shell: ## Launch a local pyspark REPL shell with all of the packages and spark config pre-set
+	SPARK_LOCAL_IP=127.0.0.1 pyspark \
+	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1 \
+	--conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
+	--conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
+	--conf spark.hadoop.fs.s3a.endpoint=localhost:${MINIO_PORT} \
+	--conf spark.hadoop.fs.s3a.access.key=usaspending \
+	--conf spark.hadoop.fs.s3a.secret.key=usaspender \
+	--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
+	--conf spark.hadoop.fs.s3a.path.style.access=true \
+	--conf spark.sql.catalogImplementation=hive \
+	--conf spark.sql.warehouse.dir='$(PWD)/spark-warehouse' \
+	--conf spark.hadoop.javax.jdo.option.ConnectionURL='jdbc:derby:;databaseName=$(PWD)/spark-warehouse/metastore_db;create=true'
