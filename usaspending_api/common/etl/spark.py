@@ -11,7 +11,11 @@ from pyspark.sql import DataFrame, SparkSession
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.config import CONFIG
-from usaspending_api.common.helpers.spark_helpers import get_jvm_logger, get_jdbc_connection_properties, get_jdbc_url
+from usaspending_api.common.helpers.spark_helpers import (
+    get_jvm_logger,
+    get_jdbc_connection_properties,
+    get_usas_jdbc_url,
+)
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     Cfda,
@@ -462,7 +466,7 @@ def create_ref_temp_views(spark: SparkSession):
         OPTIONS (
           driver '{jdbc_conn_props["driver"]}',
           fetchsize '{jdbc_conn_props["fetchsize"]}',
-          url '{get_jdbc_url()}',
+          url '{get_usas_jdbc_url()}',
           dbtable '{ref_rdf_table}'
         )
         """
