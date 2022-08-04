@@ -1,6 +1,7 @@
 import itertools
 import boto3
 import numpy as np
+import psycopg2
 
 from django import db
 from django.core.management.base import BaseCommand
@@ -11,6 +12,7 @@ from datetime import datetime
 
 from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
 from usaspending_api.common.etl.spark import convert_array_cols_to_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -306,15 +308,22 @@ class Command(BaseCommand):
         gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
         file_count = len(gzipped_csv_files)
         logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
-        from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
-
-        db_dsn = get_database_dsn_string()
 
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
-        # Repartition into CONFIG.SPARK_MAX_JDBC_WRITER_CONNECTIONS so that there will only be this many concurrent
+        db_dsn = get_database_dsn_string()
+        partitions = 8
+        with psycopg2.connect(dsn=db_dsn) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SHOW max_parallel_workers")
+                max_parallel_workers = int(cursor.fetchone()[0])
+                partitions = max(max_parallel_workers, partitions)
+
+        # Repartition based on DB's configured max_parallel_workers so that there will only be this many concurrent
         # connections writing to Postgres at once, to not overtax it nor oversaturate the number of allowed connections
-        rdd = spark.sparkContext.parallelize(gzipped_csv_files, CONFIG.SPARK_MAX_JDBC_WRITER_CONNECTIONS)
+        # Observations have shown that in production infrastructure, more concurrent connections just lead to I/O
+        # throttling
+        rdd = spark.sparkContext.parallelize(gzipped_csv_files, partitions)
 
         # WARNING: rdd.map needs to use cloudpickle to pickle the mapped function, its arguments, and in-turn any
         # imported dependencies from either of those two. If at any point a new transitive dependency is introduced

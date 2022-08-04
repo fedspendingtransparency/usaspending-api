@@ -26,6 +26,3 @@ class ProductionConfig(DefaultConfig):
     # ==== [AWS] ====
     AWS_PROFILE: str = None
     SPARK_S3_BUCKET = "dti-da-usaspending-spark-prod"
-
-    # ==== [Spark] ====
-    SPARK_MAX_JDBC_WRITER_CONNECTIONS: int = 16

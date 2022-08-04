@@ -33,6 +33,3 @@ class QATConfig(DefaultConfig):
     #   .env file)
     AWS_PROFILE: str = None
     SPARK_S3_BUCKET = "dti-da-usaspending-spark-qat"
-
-    # ==== [Spark] ====
-    SPARK_MAX_JDBC_WRITER_CONNECTIONS: int = 8
