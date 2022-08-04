@@ -313,11 +313,11 @@ class Command(BaseCommand):
 
         db_dsn = get_database_dsn_string()
         partitions = 8
-        with psycopg2.connect(dsn=db_dsn) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute("SHOW max_parallel_workers")
-                max_parallel_workers = int(cursor.fetchone()[0])
-                partitions = max(max_parallel_workers, partitions)
+        # with psycopg2.connect(dsn=db_dsn) as connection:
+        #     with connection.cursor() as cursor:
+        #         cursor.execute("SHOW max_parallel_workers")
+        #         max_parallel_workers = int(cursor.fetchone()[0])
+        #         partitions = max(max_parallel_workers, partitions)
 
         # Repartition based on DB's configured max_parallel_workers so that there will only be this many concurrent
         # connections writing to Postgres at once, to not overtax it nor oversaturate the number of allowed connections
