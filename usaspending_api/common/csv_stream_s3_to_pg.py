@@ -37,7 +37,8 @@ def copy_csvs_from_s3_to_pg(
     gzipped: bool = True,
 ):
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
-    batch_size = sum(1 for _ in s3_obj_keys)
+    s3_obj_keys = list(s3_obj_keys)  # convert from Iterator (generator) to a concrete List
+    batch_size = len(s3_obj_keys)
     batch_rows = 0
     batch_start = time.time()
     logger.info(f"Partition#{batch_num}: Starting write of a batch of {batch_size} on partition {batch_num}")
@@ -64,7 +65,7 @@ def copy_csvs_from_s3_to_pg(
                     )
                 for s3_obj_key in s3_obj_keys:
                     start = time.time()
-                    logger.info(f"Starting write of: {s3_obj_key}")
+                    logger.info(f"Partition#{batch_num}: Starting write of: {s3_obj_key}")
                     try:
                         s3_obj = s3_client.get_object(Bucket=s3_bucket_name, Key=s3_obj_key)
                         # Getting Body gives a botocore.response.StreamingBody object back to allow "streaming" its contents
@@ -84,16 +85,18 @@ def copy_csvs_from_s3_to_pg(
                                     )
                         elapsed = time.time() - start
                         rows_copied = cursor.rowcount
-                        logger.info(f"Finished writing {s3_obj_key} with {rows_copied} row(s) in {elapsed:.3f}s")
+                        logger.info(f"Partition#{batch_num}: Finished writing {s3_obj_key} with {rows_copied} row(s) in"
+                                    f" {elapsed:.3f}s")
                         batch_rows += rows_copied
                         yield rows_copied
                     except Exception as exc:
-                        logger.error(f"ERROR writing {s3_obj_key}")
+                        logger.error(f"Partition#{batch_num}: ERROR writing {s3_obj_key}")
                         logger.exception(exc)
                         raise exc
                 batch_elapsed = time.time() - batch_start
                 logger.info(
-                    f"Partition#{batch_num}: Finished writing batch of {batch_size} on partition {batch_num} "
+                    f"Partition#{batch_num}: Finished writing batch of {batch_size} "
+                    f"{'file' if batch_size == 1 else 'files'} on partition {batch_num} "
                     f"with {batch_rows} row(s) in batch in {batch_elapsed:.3f}s"
                 )
     except Exception as exc_batch:

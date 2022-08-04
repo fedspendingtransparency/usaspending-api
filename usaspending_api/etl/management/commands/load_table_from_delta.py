@@ -331,7 +331,7 @@ class Command(BaseCommand):
                 gzipped=True,
             ),
         ).collect()
-        
+
         logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
     def _write_with_jdbc_inserts(
