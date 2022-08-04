@@ -321,12 +321,12 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
         db_dsn = get_database_dsn_string()
-        partitions = 8
-        with psycopg2.connect(dsn=db_dsn) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute("SHOW max_parallel_workers")
-                max_parallel_workers = int(cursor.fetchone()[0])
-                partitions = max(max_parallel_workers, partitions)
+        partitions = 4
+        # with psycopg2.connect(dsn=db_dsn) as connection:
+        #     with connection.cursor() as cursor:
+        #         cursor.execute("SHOW max_parallel_workers")
+        #         max_parallel_workers = int(cursor.fetchone()[0])
+        #         partitions = max(max_parallel_workers, partitions)
 
         # Give more memory to each connection during the COPY operation of large files to avoid spillage to disk
         work_mem_for_large_csv_copy = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
@@ -338,9 +338,10 @@ class Command(BaseCommand):
         rdd = spark.sparkContext.parallelize(gzipped_csv_files, partitions)
 
         # WARNING: rdd.map needs to use cloudpickle to pickle the mapped function, its arguments, and in-turn any
-        # imported dependencies from either of those two. If at any point a new transitive dependency is introduced
-        # into the mapped function or an arg of it that is not pickle-able, this will throw an error.
-        # One way to ensure this is to resolve all arguments to primitive types (int, string) that can be passed
+        # imported dependencies from either of those two as well as from the module from which the function is
+        # imported. If at any point a new transitive dependency is introduced
+        # into the mapped function, its module, or an arg of it ... that is not pickle-able, this will throw an error.
+        # One way to help is to resolve all arguments to primitive types (int, string) that can be passed
         # to the mapped function
         rdd.mapPartitionsWithIndex(
             lambda partition_idx, s3_obj_keys: copy_csvs_from_s3_to_pg(
