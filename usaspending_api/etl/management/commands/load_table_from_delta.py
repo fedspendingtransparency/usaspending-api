@@ -6,6 +6,7 @@ import psycopg2
 from django import db
 from django.core.management.base import BaseCommand
 from django.db.models import Model
+from math import ceil
 from pyspark.sql import SparkSession, DataFrame
 from typing import Dict, Optional, List
 from datetime import datetime
@@ -282,6 +283,31 @@ class Command(BaseCommand):
         temp_table: str,
         ordered_col_names: List[str],
     ):
+        """
+        Write-from-delta-to-postgres strategy that relies on SQL bulk COPY of CSV files to Postgres. It uses the SQL
+        COPY command on CSV files, which are created from the Delta table's underlying parquet files.
+
+        Since Spark DataFrameWriters for JDBC don't support the COPY command, we created a custom function to stream
+        the data from S3 and use psycopg2 to do the COPY. The file paths of S3 gzipped CSV files to process are
+        distributed across the cluster to executors, and the custom function is invoked by each executor,
+        using ``rdd.mapPartitionWithIndex``.
+
+        e.g. if there are 100,000 rows to write, across 100 parquet files, being written by a cluster
+        of 5 nodes each with 4 cores (yields 4*5 = 20 executors), writing to a DB with max_parallel_workers=16
+        - First, 20 executors will work through 100 tasks, where each task is to convert a parquet file to CSV and
+          store it back in S3
+        - Then for writing to Postgres, the number of connections to have open is calibrated based on the target DBs
+            max_parallel_workers.
+            - Currently it is one-half of the max_parallel_workers -> 8
+        - 8 concurrent JDBC connections will be open by 8 executors; the other 12 will sit idle
+        - 8 tasks will be processed by the 8 active executors
+        - each task may include a batch of multiple file paths from the RDD
+        - each active executor will pull 1 file path from its batch in its task, stream the CSV file from S3 to
+          Postgres using the SQL COPY command. Each COPY command copies ~1000 rows in this case
+        - once copied, it then moves on to the next file path in its task's batch.
+        - once the executor is done with its batch, its task is done, there are no more tasks, it will sit idle
+        - which means the DB could be processing 8 COPY commands concurrently
+        """
         logger = get_jvm_logger(spark)
         csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
         s3_bucket_with_csv_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{csv_path}"
@@ -321,12 +347,14 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
         db_dsn = get_database_dsn_string()
-        partitions = 4
-        # with psycopg2.connect(dsn=db_dsn) as connection:
-        #     with connection.cursor() as cursor:
-        #         cursor.execute("SHOW max_parallel_workers")
-        #         max_parallel_workers = int(cursor.fetchone()[0])
-        #         partitions = max(max_parallel_workers, partitions)
+        partitions = 8
+        with psycopg2.connect(dsn=db_dsn) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SHOW max_parallel_workers")
+                max_parallel_workers = int(cursor.fetchone()[0])
+                # For whatever reason, one-half of the max parallel workers seemed to be the sweet spot, but probably
+                # don't want to go below 8
+                partitions = max(ceil(max_parallel_workers / 2), partitions)
 
         # Give more memory to each connection during the COPY operation of large files to avoid spillage to disk
         work_mem_for_large_csv_copy = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
@@ -368,6 +396,17 @@ class Command(BaseCommand):
         postgres_cols: Optional[Dict[str, str]] = None,
         overwrite: bool = False,
     ):
+        """
+        Write-from-delta-to-postgres strategy that leverages the native Spark ``DataFrame.write.jdbc`` approach.
+        This will issue a series of individual INSERT statements over a JDBC connection-per-executor.
+        e.g. if there are 100,000 rows to write, across 100 parquet files, being written by a cluster
+        of 5 nodes each with 4 cores (yields 4*5 = 20 executors)
+        - 20 concurrent JDBC connections will be open for the 20 executors
+        - 100 tasks will be processed by the executors
+        - each executor will handle 1 task = 1 file = ~1000 rows in 1 file
+        - each executor will issue 1000 INSERT statements, and then move on to the next file
+        - which means the DB could be processing 20*1000 = 20,000 INSERT statements concurrently
+        """
         logger = get_jvm_logger(spark)
         special_columns = {}
         save_mode = "overwrite" if overwrite else "append"
