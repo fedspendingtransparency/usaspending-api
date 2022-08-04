@@ -90,6 +90,7 @@ def copy_csv_from_s3_to_pg(
     db_dsn: str,
     target_pg_table: str,
     gzipped: bool = True,
+    work_mem_override: int = None,
 ):
     """Stream a CSV file from S3 into a Postgres table using the SQL bulk COPY command
 
@@ -101,6 +102,8 @@ def copy_csv_from_s3_to_pg(
         with psycopg2.connect(dsn=db_dsn) as connection:
             connection.autocommit = True
             with connection.cursor() as cursor:
+                if work_mem_override:
+                    cursor.execute("SET work_mem TO %s", (work_mem_override,))
                 s3_client = _get_boto3_s3_client()
                 results_generator = _stream_and_copy(
                     partition_prefix="",
@@ -126,6 +129,7 @@ def copy_csvs_from_s3_to_pg(
     db_dsn: str,
     target_pg_table: str,
     gzipped: bool = True,
+    work_mem_override: int = None,
 ):
     """An optimized form of ``copy_csv_from_s3_to_pg`` that can save on runtime by instantiating the psycopg2 DB
     connection and s3_client only once per partition, where a partition could represent processing several files
@@ -140,6 +144,8 @@ def copy_csvs_from_s3_to_pg(
         with psycopg2.connect(dsn=db_dsn) as connection:
             connection.autocommit = True
             with connection.cursor() as cursor:
+                if work_mem_override:
+                    cursor.execute("SET work_mem TO %s", (work_mem_override,))
                 s3_client = _get_boto3_s3_client()
                 for s3_obj_key in s3_obj_keys:
                     yield from _stream_and_copy(

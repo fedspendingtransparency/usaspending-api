@@ -313,11 +313,14 @@ class Command(BaseCommand):
 
         db_dsn = get_database_dsn_string()
         partitions = 8
-        # with psycopg2.connect(dsn=db_dsn) as connection:
-        #     with connection.cursor() as cursor:
-        #         cursor.execute("SHOW max_parallel_workers")
-        #         max_parallel_workers = int(cursor.fetchone()[0])
-        #         partitions = max(max_parallel_workers, partitions)
+        with psycopg2.connect(dsn=db_dsn) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SHOW max_parallel_workers")
+                max_parallel_workers = int(cursor.fetchone()[0])
+                partitions = max(max_parallel_workers, partitions)
+
+        # Give more memory to each connection during the COPY operation of large files to avoid spillage to disk
+        work_mem_for_large_csv_copy = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
 
         # Repartition based on DB's configured max_parallel_workers so that there will only be this many concurrent
         # connections writing to Postgres at once, to not overtax it nor oversaturate the number of allowed connections
@@ -338,6 +341,7 @@ class Command(BaseCommand):
                 db_dsn=db_dsn,
                 target_pg_table=temp_table,
                 gzipped=True,
+                work_mem_override=work_mem_for_large_csv_copy,
             ),
         ).collect()
 
