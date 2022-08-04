@@ -18,7 +18,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_COLUMNS,
-    recipient_lookup_sql_string,
+    recipient_lookup_create_sql_string,
     RECIPIENT_PROFILE_COLUMNS,
     recipient_profile_sql_string,
     SAM_RECIPIENT_COLUMNS,
@@ -75,20 +75,6 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "award_id LONG",
         "column_names": list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS),
-    },
-    "recipient_lookup": {
-        "model": RecipientLookup,
-        "source_table": "recipient_lookup",
-        "source_database": "rpt",
-        "destination_database": "raw",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": recipient_lookup_sql_string,
-        "source_schema": None,
-        "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
     },
     "recipient_profile": {
         "model": RecipientProfile,
@@ -163,20 +149,6 @@ TABLE_SPEC = {
     # Additional definitions for use in testing;
     # These are copies of Views / Materialized Views / Tables from Postgres to Spark to aid in
     # data comparison between current Postgres data and the data transformed via Spark.
-    "transaction_search_testing": {
-        "model": TransactionSearch,
-        "source_table": "transaction_search",
-        "source_database": None,
-        "destination_database": "test",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "transaction_id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": transaction_search_create_sql_string,
-        "source_schema": None,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
-        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
-    },
     "award_search_testing": {
         "model": AwardSearch,
         "source_table": "award_search",
@@ -191,6 +163,34 @@ TABLE_SPEC = {
         "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
         "STRING, federal_accounts STRING, cfdas ARRAY<STRING>, tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+    },
+    "recipient_lookup_testing": {
+        "model": RecipientLookup,
+        "source_table": "recipient_lookup",
+        "source_database": "rpt",
+        "destination_database": "raw",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": recipient_lookup_create_sql_string,
+        "source_schema": None,
+        "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
+    },
+    "transaction_search_testing": {
+        "model": TransactionSearch,
+        "source_table": "transaction_search",
+        "source_database": None,
+        "destination_database": "test",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": transaction_search_create_sql_string,
+        "source_schema": None,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
 }
 
