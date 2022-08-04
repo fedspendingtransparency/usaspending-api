@@ -194,13 +194,13 @@ class Command(BaseCommand):
             if make_new_table:
                 if postgres_table:
                     create_temp_sql = f"""
-                        CREATE TABLE {temp_table} (
+                        CREATE UNLOGGED TABLE {temp_table} (
                             LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
                         ) WITH (autovacuum_enabled=FALSE)
                     """
                 elif postgres_cols:
                     create_temp_sql = f"""
-                        CREATE TABLE {temp_table} (
+                        CREATE UNLOGGED TABLE {temp_table} (
                             {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
                         ) WITH (autovacuum_enabled=FALSE)
                     """
