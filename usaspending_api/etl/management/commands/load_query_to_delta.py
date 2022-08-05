@@ -53,6 +53,7 @@ TABLE_SPEC = {
     },
     "sam_recipient": {
         "model": DUNS,
+        "source_query" : sam_recipient_sql_string,
         "source_table": "duns",
         "destination_database": "raw",
         "partition_column": None,
