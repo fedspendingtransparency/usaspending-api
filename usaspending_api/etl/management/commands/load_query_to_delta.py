@@ -7,14 +7,12 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     create_ref_temp_views,
 )
-from usaspending_api.recipient.delta_models import sam_recipient_sql_string, SAM_RECIPIENT_COLUMNS
-from usaspending_api.recipient.models import DUNS
 from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearch, AwardSearchView, SummaryStateView
+from usaspending_api.search.models import TransactionSearch, AwardSearch, SummaryStateView
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
