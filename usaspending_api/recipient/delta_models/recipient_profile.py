@@ -172,7 +172,7 @@ recipient_profile_load_sql_string = [
                 CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
                 CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
                 CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
-                CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0  END AS NUMERIC(23,2)) AS inner_loans,
+                CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_loans,
                 CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
                 SUM(generated_pragmatic_obligation) AS inner_amount,
                 COUNT(*) AS inner_count
@@ -351,11 +351,12 @@ recipient_profile_load_sql_string = [
     # --------------------------------------------------------------------------------
     f"""
         DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp
-        WHERE CONCAT(rp.recipient_hash, rp.recipient_level)
-            NOT IN (
-                SELECT CONCAT(temp_p.recipient_hash, temp_p.recipient_level)
-                FROM temporary_restock_recipient_profile temp_p
-            );
+        WHERE NOT EXISTS (
+            SELECT FROM temporary_restock_recipient_profile temp_p
+            WHERE rp.recipient_hash = temp_p.recipient_hash
+            AND rp.recipient_level = temp_p.recipient_level
+    )
+;
     """,
     f"""
         MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp
@@ -427,4 +428,6 @@ recipient_profile_load_sql_string = [
             temp_p.last_12_months_count
         );
     """,
+    """DROP TABLE temporary_restock_recipient_profile;""",
+    """DROP VIEW temporary_recipients_from_transactions_view;"""
 ]
