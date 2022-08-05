@@ -55,7 +55,7 @@ TABLE_SPEC = {
         "model": DUNS,
         "source_query" : sam_recipient_sql_string,
         "source_table": "duns",
-        "destination_database": "raw",
+        "destination_database": "int",
         "partition_column": None,
         "partition_column_type": None,
         "delta_table_create_sql": sam_recipient_sql_string,
