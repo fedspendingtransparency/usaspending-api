@@ -59,6 +59,7 @@ TABLE_SPEC = {
         "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
         "auto_increment_field": "id",
     },
+
     "transaction_search": {
         "model": TransactionSearch,
         "source_query": transaction_search_load_sql_string,
