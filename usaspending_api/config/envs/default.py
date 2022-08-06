@@ -74,20 +74,22 @@ class DefaultConfig(BaseSettings):
     PROJECT_LOG_DIR: str = str(_SRC_ROOT_DIR / "logs")
 
     # ==== [Postgres] ====
-    DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See below root validator-factory
+    DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     USASPENDING_DB_NAME: str = "data_store_api"
     USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
-    DATA_BROKER_DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See below root validator-factory
+    DATA_BROKER_DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     BROKER_DB_NAME: str = "data_broker"
     BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
     def _validate_database_url(cls, values, db_url_conf_name, db_conf_prefix, required=True):
         """ Helper function to validate both DATABASE_URLs and their parts """
 
@@ -212,18 +214,44 @@ class DefaultConfig(BaseSettings):
                     err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {db_url_conf_name}: {v[1]}\n"
                 raise ValueError(err_msg)
 
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
     @root_validator
-    def _DATABASE_URLs_and_parts_factory(cls, values):
+    def _DATABASE_URL_and_parts_factory(cls, values):
         """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are
-        all consistent. Similarly handles DATA_BROKER_DATABASE_URL and BROKER_DB_* part config vars.
+        all consistent.
 
         - Serves as a factory function to fill out all places where we track the database URL as both one complete
         connection string and as individual parts.
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
-        cls._validate_database_url(cls, values, "DATABASE_URL", "USASPENDING_DB", required=True)
-        cls._validate_database_url(cls, values, "DATA_BROKER_DATABASE_URL", "BROKER_DB", required=False)
+        # noinspection PyArgumentList
+        cls._validate_database_url(
+            cls=cls, values=values, db_url_conf_name="DATABASE_URL", db_conf_prefix="USASPENDING_DB", required=True
+        )
+        return values
+
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
+    @root_validator
+    def _DATA_BROKER_DATABASE_URL_and_parts_factory(cls, values):
+        """A root validator to backfill DATA_BROKER_DATABASE_URL and BROKER_DB_* part config vars and validate
+        that they are all consistent.
+
+        - Serves as a factory function to fill out all places where we track the database URL as both one complete
+        connection string and as individual parts.
+        - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
+        be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
+        """
+        # noinspection PyArgumentList
+        cls._validate_database_url(
+            cls=cls,
+            values=values,
+            db_url_conf_name="DATA_BROKER_DATABASE_URL",
+            db_conf_prefix="BROKER_DB",
+            required=False,
+        )
         return values
 
     # ==== [Elasticsearch] ====
@@ -235,6 +263,8 @@ class DefaultConfig(BaseSettings):
 
     ELASTICSEARCH_HOST: AnyHttpUrl = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
 
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
     @validator("ELASTICSEARCH_HOST")
     def _ELASTICSEARCH_HOST_factory(cls, v, values, field: ModelField):
         def factory_func() -> AnyHttpUrl:

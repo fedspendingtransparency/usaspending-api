@@ -6,16 +6,16 @@ from pydantic.fields import ModelField
 
 # Placeholder sentinel value indicating a config var that is expected to be overridden in a runtime-env-specific
 # config declaration. If this value emerges, it has not yet been set in the runtime env config and must be.
-ENV_SPECIFIC_OVERRIDE = "?ENV_SPECIFIC_OVERRIDE?"
+ENV_SPECIFIC_OVERRIDE = "__ENV_SPECIFIC_OVERRIDE__"
 
 # Placeholder sentinel value indicating a config var that is expected to be overridden from a runtime env to
 # accommodate a var value that is specific to an individual developer's local environment setup.
 # If this value emerges, it has not yet been set in the user's config (e.g. .env file) and and must be.
-USER_SPECIFIC_OVERRIDE = "?USER_SPECIFIC_OVERRIDE?"
+USER_SPECIFIC_OVERRIDE = "__USER_SPECIFIC_OVERRIDE__"
 
 # Placeholder sentinel value indicating that a default should NOT be provided for a field, because its default value
 # is provided by a factory function (likely one provided within a function annotated with @pydantic.validator)
-FACTORY_PROVIDED_VALUE = "?FACTORY_PROVIDED_VALUE?"
+FACTORY_PROVIDED_VALUE = "__FACTORY_PROVIDED_VALUE__"
 
 CONFIG_VAR_PLACEHOLDERS = [ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE, FACTORY_PROVIDED_VALUE]
 
@@ -151,13 +151,12 @@ def eval_default_factory_from_root_validator(
     configured_vars[config_var_name] = produced_value
     return configured_vars
 
-
 def parse_pg_uri(pg_uri) -> (ParseResult, str, str):
     """Use the urlparse lib to parse out parts of a PostgreSQL URI connection string
 
     Supports ``username:password`` format or if ``?username=...&password=...`` format
 
-    Returns: A a three-tuple of the URL Parts ParseResult, the username (or None), and the password (or None)
+    Returns: A three-tuple of the URL Parts ParseResult, the username (or None), and the password (or None)
     """
     url_parts = urlparse(pg_uri)
     user = (
