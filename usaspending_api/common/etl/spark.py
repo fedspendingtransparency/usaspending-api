@@ -476,7 +476,17 @@ def convert_array_cols_to_string(
                         # When creating CSVs, quote elements and escape inner quotes with backslash
                         else transform(
                             col(f.name).cast(ArrayType(StringType())),
-                            lambda c: concat(lit('"'), regexp_replace(c, '"', '\\\\"'), lit('"')),
+                            lambda c: concat(
+                                lit('"'),
+                                # Stupidly we have data that ALREADY has backslash-quote \" inside an array element
+                                # So first replace quote " with backslash-quote \"
+                                # Then, if that results in a string with \\", it will escape the escaping,
+                                # so replace that with \\\"
+                                # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
+                                #       FOUR backslashes to represent ONE
+                                regexp_replace(regexp_replace(c, '"', '\\\\"'), '\\\\\\\\"', '\\\\\\\\\\\\"'),
+                                lit('"'),
+                            ),
                         ),
                     ),
                     lit(arr_close_bracket),
