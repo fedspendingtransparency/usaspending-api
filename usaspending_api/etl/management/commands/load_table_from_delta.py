@@ -86,6 +86,13 @@ class Command(BaseCommand):
             "thrown). Defaults to False. If setting to True, be mindful of cleaning up these preserved files on "
             "occasion.",
         )
+        parser.add_argument(
+            "--spark-s3-bucket",
+            type=str,
+            required=False,
+            default=CONFIG.SPARK_S3_BUCKET,
+            help="The destination bucket in S3 to write the data",
+        )
 
     def _split_dfs(self, df, special_columns):
         """Split a DataFrame into DataFrame subsets based on presence of NULL values in certain special columns
@@ -259,6 +266,7 @@ class Command(BaseCommand):
         else:
             if not column_names:
                 raise RuntimeError("column_names None or empty, but are required to map CSV cols to table cols")
+            spark_s3_bucket_name = options["spark_s3_bucket"]
             self._write_with_sql_bulk_copy_csv(
                 spark,
                 df,
@@ -266,6 +274,7 @@ class Command(BaseCommand):
                 delta_table_name=delta_table_name,
                 temp_table=temp_table,
                 ordered_col_names=column_names,
+                spark_s3_bucket_name=spark_s3_bucket_name,
                 keep_csv_files=True if options["keep_csv_files"] else False,
             )
 
@@ -293,6 +302,7 @@ class Command(BaseCommand):
         delta_table_name: str,
         temp_table: str,
         ordered_col_names: List[str],
+        spark_s3_bucket_name: str,
         keep_csv_files=False,
     ):
         """
@@ -342,7 +352,7 @@ class Command(BaseCommand):
                 f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/"
                 f"{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
             )
-        s3_bucket_with_csv_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{csv_path}"
+        s3_bucket_with_csv_path = f"s3a://{spark_s3_bucket_name}/{csv_path}"
 
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
@@ -355,7 +365,7 @@ class Command(BaseCommand):
 
         logger.debug(
             f"Connecting to S3 at endpoint_url={CONFIG.AWS_S3_ENDPOINT}, region_name={CONFIG.AWS_REGION} to "
-            f"get listing of contents of Bucket={CONFIG.SPARK_S3_BUCKET} with Prefix={csv_path}"
+            f"get listing of contents of Bucket={spark_s3_bucket_name} with Prefix={csv_path}"
         )
 
         if not CONFIG.USE_AWS:
@@ -371,8 +381,8 @@ class Command(BaseCommand):
             s3_resource = boto3.resource(
                 service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
             )
-        s3_bucket_name = CONFIG.SPARK_S3_BUCKET
-        s3_bucket = s3_resource.Bucket(CONFIG.SPARK_S3_BUCKET)
+        s3_bucket_name = spark_s3_bucket_name
+        s3_bucket = s3_resource.Bucket(s3_bucket_name)
         gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
         file_count = len(gzipped_csv_files)
         logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
