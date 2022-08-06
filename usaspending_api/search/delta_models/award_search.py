@@ -76,7 +76,7 @@ AWARD_SEARCH_COLUMNS = {
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
     "cfda_program_title": {"delta": "STRING", "postgres": "TEXT"},
     "cfda_number": {"delta": "STRING", "postgres": "TEXT"},
-    "cfdas": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "cfdas": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},  # TODO: <---- these pg text array types valid? = TEXT[]
     "sai_number": {"delta": "STRING", "postgres": "TEXT"},
     "type_of_contract_pricing": {"delta": "STRING", "postgres": "TEXT"},
     "extent_competed": {"delta": "STRING", "postgres": "TEXT"},

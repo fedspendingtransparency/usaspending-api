@@ -423,6 +423,7 @@ def _verify_delta_table_loaded_from_delta(
     alt_db: str = None,
     alt_name: str = None,
     load_command="load_table_from_delta",
+    jdbc_inserts=False,
 ):
     """Generic function that uses the load_table_from_delta commands to load the given table and assert it was
     downloaded as expected
@@ -434,6 +435,8 @@ def _verify_delta_table_loaded_from_delta(
     if alt_name:
         cmd_args += [f"--alt-delta-name={alt_name}"]
         expected_table_name = alt_name
+    if jdbc_inserts:
+        cmd_args += [f"--jdbc-inserts"]
 
     # table already made, let's load it
     call_command(load_command, *cmd_args)
@@ -481,6 +484,7 @@ def test_load_table_to_from_delta_for_sam_recipient_and_reload(spark, s3_unittes
     baker.make("recipient.DUNS", broker_duns_id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "sam_recipient")
+    _verify_delta_table_loaded_from_delta(spark, "sam_recipient", jdbc_inserts=True)  # test alt write strategy
 
     # Getting count of the first load
     expected_exported_table = "duns_temp"
@@ -514,6 +518,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_b
     baker.make("recipient.RecipientLookup", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "recipient_lookup", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "recipient_lookup")
+    _verify_delta_table_loaded_from_delta(spark, "recipient_lookup", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -522,6 +527,7 @@ def test_load_table_to_from_delta_for_recipient_profile(spark, s3_unittest_data_
     baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
+    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -550,6 +556,7 @@ def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_b
     baker.make("awards.TransactionFABS", published_fabs_id="2", indirect_federal_sharing=1.0, _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_fabs")
+    _verify_delta_table_loaded_from_delta(spark, "transaction_fabs", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -689,6 +696,7 @@ def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_b
     baker.make("awards.TransactionFPDS", detached_award_procurement_id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_fpds")
+    _verify_delta_table_loaded_from_delta(spark, "transaction_fpds", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -697,6 +705,7 @@ def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_
     baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_normalized")
+    _verify_delta_table_loaded_from_delta(spark, "transaction_normalized", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -708,6 +717,7 @@ def test_load_table_to_from_delta_for_transaction_search(
         spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
     _verify_delta_table_loaded_from_delta(spark, "transaction_search")
+    _verify_delta_table_loaded_from_delta(spark, "transaction_search", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -716,6 +726,9 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
 ):
     _verify_delta_table_loaded_to_delta(spark, "transaction_search_testing", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_search_testing")
+    _verify_delta_table_loaded_from_delta(
+        spark, "transaction_search_testing", jdbc_inserts=True
+    )  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -767,6 +780,7 @@ def test_load_table_to_from_delta_for_award_search(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
     _verify_delta_table_loaded_from_delta(spark, "award_search")
+    _verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -775,6 +789,7 @@ def test_load_table_to_from_delta_for_award_search_testing(
 ):
     _verify_delta_table_loaded_to_delta(spark, "award_search_testing", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "award_search_testing")
+    _verify_delta_table_loaded_from_delta(spark, "award_search_testing", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)

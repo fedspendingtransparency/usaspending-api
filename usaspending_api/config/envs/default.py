@@ -262,6 +262,11 @@ class DefaultConfig(BaseSettings):
     # 01:58:26 INFO FairSchedulableBuilder: Created default pool: default, schedulingMode: FIFO, minShare: 0, weight: 1
     SPARK_SCHEDULER_MODE: str = "FIFO"  # the default Spark scheduler mode
 
+    # Our Postgres takes 6 digits of precision (to the microsecond), so show that here.
+    # The single [x] will conform to the ISO 8601 SQL standard (e.g. +00 for UTC, -04 for NY, +0530 for IST)
+    # More info: https://spark.apache.org/docs/latest/sql-ref-datetime-pattern.html
+    SPARK_CSV_TIMEZONE_FORMAT: str = "yyyy-MM-dd HH:mm:ss[.SSSSSS][x]"
+
     # Ideal partition size based on a single Executor's task execution, and what it can handle in memory: ~128MB
     # Given the density of this data, 128 MB bulk-index request to Elasticsearch is about 75,000 docs
     # However ES does not appear to be able too handle that when several Executors make that request in parallel

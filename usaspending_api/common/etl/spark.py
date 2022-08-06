@@ -5,7 +5,7 @@ NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helper
 functions for setup and configuration of the spark environment
 """
 from itertools import chain
-from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col
+from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
 from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
 
@@ -416,13 +416,39 @@ def convert_decimal_cols_to_string(df: DataFrame) -> DataFrame:
     return df_no_decimal
 
 
-def convert_array_cols_to_string(df: DataFrame, is_postgres_array_format=False) -> DataFrame:
-    """For each column that is an Array of ANYTHING, cast its values to strings and rewrite it as a
-    Postgres-compatible array in string format, e.g. {val1, val2}. The result with bet the column that was an array
-    type is replaced with a string column with the stringified array values.
+def convert_array_cols_to_string(
+    df: DataFrame,
+    is_postgres_array_format=False,
+    is_for_csv_export=False,
+) -> DataFrame:
+    """For each column that is an Array of ANYTHING, transfrom it to a string-ified representation of that Array.
 
-    This is necessary in one case because CSV data source does not support Array<String> data type, and those types
-    must be coverted or cast to a String representation before data can be written to CSV format.
+    This will:
+      1. cast each array element to a STRING representation
+      2. Concatenate array elements with ', ' as separator
+      3. Wrap the string-concatenation with either square or curly braces (curly if is_postgres_array_format=True)
+         - e.g. {"val1", "val2"}
+
+    This is necessary in one case because CSV data source does not support having a DataFrame written to
+    CSV if one of the columns of the DataFrame is of data type Array<String>. It will fail without trying. To get
+    around this, those column's types must be converted or cast to a String representation before data can be written
+    to CSV format.
+
+    Args:
+        df (DataFrame): The DataFrame whose Array cols will be string-ified
+        is_postgres_array_format (bool): If True, use curly braces to wrap the Array
+        is_for_csv_export (bool): Whether the data should be transformed in a way that writes a compatible format in
+            CSV files. If True, this has to do a extra handling on the Array in case array values have both/either
+            quote ('"') or delimiter (',') characters in their values. The over-cautious approach is to
+              1. Quote each element of the Array. This protects against seeing the delimiter character and treating
+                 it as a delimiter rather than part of the Array element's value. This is done even if it's destined
+                 for an integer[] DB field). Postgres will convert these to the right type upon upload/COPY of the
+                 CSV, but consider if this will be a problem for your use of the CSV data; e.g. {"123", "4920"},
+                 or {"individual", "business"}
+              2. Escape any quotes inside the array element with backslash.
+              - A case that involves all of this will yield CSV field value like this when viewed in a text editor,
+                assuming Spark CSV options are: quote='"', escape='"' (the default is for it to match quote)
+                ...,"{""{\""simple\"": \""elem1\"", \""other\"": \""elem1\""}"", ""{\""simple\"": \""elem2\"", \""other\"": \""elem2\""}""}",...
     """
     arr_open_bracket = "["
     arr_close_bracket = "]"
@@ -435,18 +461,29 @@ def convert_array_cols_to_string(df: DataFrame, is_postgres_array_format=False) 
             continue
         df_no_arrays = df_no_arrays.withColumn(
             f.name,
-            # TODO: using strong types below doesn't seem to work IF you try to change from default containsNull=True
-            #  to containsNull=False
-            #  Says: pyspark.sql.utils.AnalysisException: cannot resolve 'spark_catalog.raw.sam_recipient.business_types_codes' due to data type mismatch: cannot cast array<string> to array<string>;
-            #  If we need to enforce either non-null on the array (use empty insted of null) or non-null on values,
-            #  we may need to look at transforming the values with a when(col(f.name).isNotNull,
-            #  col(f.name)) and no otherwise? Or throw an error if a value is found null?
-            concat(
-                lit(arr_open_bracket),
-                concat_ws(", ", col(f.name).cast(ArrayType(StringType()))),
-                lit(arr_close_bracket),
+            # Only process NON-NULL values for this Array col. NULL values will be left as NULL
+            when(
+                col(f.name).isNotNull(),
+                # Wrap string-ified array content in brace or bracket
+                concat(
+                    lit(arr_open_bracket),
+                    # Re-join string-ified array elements together with ", "
+                    concat_ws(
+                        ", ",
+                        # NOTE: There does not seem to be a way to cast and enforce that array elements must be NON-NULL
+                        #  So NULL array elements would be allowed with this transformation
+                        col(f.name).cast(ArrayType(StringType())) if not is_for_csv_export
+                        # When creating CSVs, quote elements and escape inner quotes with backslash
+                        else transform(
+                            col(f.name).cast(ArrayType(StringType())),
+                            lambda c: concat(lit('"'), regexp_replace(c, '"', '\\\\"'), lit('"')),
+                        ),
+                    ),
+                    lit(arr_close_bracket),
+                ),
             ),
         )
+
     return df_no_arrays
 
 

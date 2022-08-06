@@ -77,6 +77,15 @@ class Command(BaseCommand):
             help="Instead of truncating and reloading into an existing table, this forces the script to drop and"
             "rebuild the table from scratch.",
         )
+        parser.add_argument(
+            "--keep-csv-files",
+            action="store_true",
+            help="Only valid/used when --jdbc-inserts is not provided. Whether to prevent overwriting of the temporary "
+            "CSV files by a subsequent write to the same output path. This will instead put them in a "
+            "timestamped sub-folder of that output path (which must not already exist or an error will be "
+            "thrown). Defaults to False. If setting to True, be mindful of cleaning up these preserved files on "
+            "occasion.",
+        )
 
     def _split_dfs(self, df, special_columns):
         """Split a DataFrame into DataFrame subsets based on presence of NULL values in certain special columns
@@ -149,6 +158,7 @@ class Command(BaseCommand):
         postgres_schema = table_spec["source_database"] or table_spec["swap_schema"]
         postgres_table_name = table_spec["source_table"] or table_spec["swap_table"]
         postgres_cols = table_spec["source_schema"]
+        column_names = table_spec.get("column_names")
         if postgres_table_name:
             postgres_table = f"{postgres_schema}.{postgres_table_name}" if postgres_schema else postgres_table_name
 
@@ -177,7 +187,7 @@ class Command(BaseCommand):
             cursor.execute(temp_dest_table_exists_sql)
             temp_dest_table_exists = cursor.fetchone()[0]
 
-        # If it does and we're recreating it, drop it first
+        # If it does, and we're recreating it, drop it first
         if temp_dest_table_exists and recreate:
             logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
@@ -221,8 +231,8 @@ class Command(BaseCommand):
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
         # always needed, this should help to prevent any future mismatch between the two.
-        if table_spec.get("column_names"):
-            df = df.select(table_spec.get("column_names"))
+        if column_names:
+            df = df.select(column_names)
 
         # If we're working off an existing table, truncate before loading in all the data
         if not make_new_table:
@@ -247,15 +257,16 @@ class Command(BaseCommand):
                 overwrite=False,
             )
         else:
-            if not postgres_cols:
-                raise RuntimeError("postgres_cols None or empty, but are required to map CSV cols to table cols")
+            if not column_names:
+                raise RuntimeError("column_names None or empty, but are required to map CSV cols to table cols")
             self._write_with_sql_bulk_copy_csv(
                 spark,
                 df,
                 delta_db=destination_database,
                 delta_table_name=delta_table_name,
                 temp_table=temp_table,
-                ordered_col_names=list(postgres_cols),
+                ordered_col_names=column_names,
+                keep_csv_files=True if options["keep_csv_files"] else False,
             )
 
         logger.info(
@@ -282,12 +293,13 @@ class Command(BaseCommand):
         delta_table_name: str,
         temp_table: str,
         ordered_col_names: List[str],
+        keep_csv_files=False,
     ):
         """
         Write-from-delta-to-postgres strategy that relies on SQL bulk COPY of CSV files to Postgres. It uses the SQL
         COPY command on CSV files, which are created from the Delta table's underlying parquet files.
 
-        Since Spark DataFrameWriters for JDBC don't support the COPY command, we created a custom function to stream
+        Since Spark DataFrameWriters for JDBC don't support the COPY command, this custom function streams
         the data from S3 and use psycopg2 to do the COPY. The file paths of S3 gzipped CSV files to process are
         distributed across the cluster to executors, and the custom function is invoked by each executor,
         using ``rdd.mapPartitionWithIndex``.
@@ -307,18 +319,39 @@ class Command(BaseCommand):
         - once copied, it then moves on to the next file path in its task's batch.
         - once the executor is done with its batch, its task is done, there are no more tasks, it will sit idle
         - which means the DB could be processing 8 COPY commands concurrently
+
+        Args:
+            spark (SparkSession): the active SparkSession to work within
+            df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
+            delta_db (str): the Delta Lake database in which to find the Delta table as source of the DataFrame
+            delta_table_name (str): the Delta table used as source of the DataFrame
+            temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
+                where the CSV data will be written to with COPY
+            ordered_col_names (List[str]): Ordered list of column names that must match the order of columns in the CSV
+                - The DataFrame should have its columns ordered by this
+                - And the COPY command should provide these cols so that COPY pulls the right data into the right cols
+            keep_csv_files (bool): Whether to prevent overwriting of these temporary CSV files by a subsequent write
+                to the same output path. This will instead put them in a timestamped sub-folder of that output path (
+                which must not already exist or an error will be thrown). Defaults to False. If setting to True,
+                be mindful of cleaning up these preserved files on occasion.
         """
         logger = get_jvm_logger(spark)
-        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
+        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_db}/{delta_table_name}/"
+        if keep_csv_files:
+            csv_path = (
+                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/"
+                f"{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
+            )
         s3_bucket_with_csv_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{csv_path}"
 
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
-        df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True)
+        df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
             compression="gzip",
             nullValue=None,
             escape='"',
-        ).csv(s3_bucket_with_csv_path)
+            timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
+        ).mode(saveMode="overwrite" if not keep_csv_files else "errorifexists").csv(s3_bucket_with_csv_path)
 
         logger.debug(
             f"Connecting to S3 at endpoint_url={CONFIG.AWS_S3_ENDPOINT}, region_name={CONFIG.AWS_REGION} to "
@@ -406,6 +439,20 @@ class Command(BaseCommand):
         - each executor will handle 1 task = 1 file = ~1000 rows in 1 file
         - each executor will issue 1000 INSERT statements, and then move on to the next file
         - which means the DB could be processing 20*1000 = 20,000 INSERT statements concurrently
+
+        Args:
+            spark (SparkSession): the active SparkSession to work within
+            df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
+            temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
+                where the CSV data will be written to with COPY
+            split_df_by_special_cols (bool): Whether the data provided in the DataFrame is known to have special
+                columns for which there is not a data type in Spark but there is in
+                Postgres (like JSON or UUID datatype), and so they need to be handled specially in disjoint subsets
+                of the DataFrame. Defaults to False
+            postgres_model (Optional[Model]): Django Model object for the target Postgres table
+            postgres_cols Optional[Dict[str, str]]): Mapping of target table col names to Postgres data type
+            overwrite (bool): Defaults to False. Controls whether the table should be truncated first before
+            INSERTing (if True), or if INSERTs should append on existing data in the table (if False).
         """
         logger = get_jvm_logger(spark)
         special_columns = {}
