@@ -151,6 +151,7 @@ def eval_default_factory_from_root_validator(
     configured_vars[config_var_name] = produced_value
     return configured_vars
 
+
 def parse_pg_uri(pg_uri) -> (ParseResult, str, str):
     """Use the urlparse lib to parse out parts of a PostgreSQL URI connection string
 
