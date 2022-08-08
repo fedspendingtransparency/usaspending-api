@@ -349,13 +349,16 @@ recipient_profile_load_sql_string = [
     # -- Step 10, Drop unnecessary relations and standup new table as final
     # --------------------------------------------------------------------------------
     f"""
-        DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp
-        WHERE NOT EXISTS (
-            SELECT recipient_hash, recipient_level FROM temporary_restock_recipient_profile temp_p
-            WHERE rp.recipient_hash = temp_p.recipient_hash
-            AND rp.recipient_level = temp_p.recipient_level
-    )
-;
+        WITH CTE AS (
+            SELECT recipient_hash, recipient_level from {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp WHERE NOT EXISTS (
+                SELECT recipient_hash, recipient_level FROM temporary_restock_recipient_profile temp_p
+                WHERE rp.recipient_hash = temp_p.recipient_hash
+                AND rp.recipient_level = temp_p.recipient_level
+            )   
+        )
+        MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp 
+        USING CTE ON CTE.recipient_hash = rp.recipient_hash AND CTE.recipient_level = rp.recipient_level
+        WHEN MATCHED THEN DELETE;
     """,
     f"""
         MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp
