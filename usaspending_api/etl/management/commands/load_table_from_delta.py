@@ -357,7 +357,7 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
-            maxRecordsPerFile="50000",  # TODO temp testing. remove or make a constant
+            maxRecordsPerFile=CONFIG.SPARK_PARTITION_ROWS,  # TODO temp testing. remove or make a constant
             compression="gzip",
             nullValue=None,
             escape='"',
@@ -463,7 +463,9 @@ class Command(BaseCommand):
             postgres_model (Optional[Model]): Django Model object for the target Postgres table
             postgres_cols Optional[Dict[str, str]]): Mapping of target table col names to Postgres data type
             overwrite (bool): Defaults to False. Controls whether the table should be truncated first before
-            INSERTing (if True), or if INSERTs should append on existing data in the table (if False).
+            INSERTing (if True), or if INSERTs should append on existing data in the table (if False). NOTE: The table
+            may already have been TRUNCATEd as part of the setup of this job before it gets to this step of writing
+            to it.
         """
         logger = get_jvm_logger(spark)
         special_columns = {}
