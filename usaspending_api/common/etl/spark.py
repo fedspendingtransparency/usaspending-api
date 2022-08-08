@@ -478,8 +478,8 @@ def convert_array_cols_to_string(
                             col(f.name).cast(ArrayType(StringType())),
                             lambda c: concat(
                                 lit('"'),
-                                # Stupidly we have data that ALREADY has backslash-quote \" inside an array element
-                                # So first replace quote " with backslash-quote \"
+                                # In case of data that ALREADY has backslash-quote \" inside an array element (observed)
+                                # First replace quote " with backslash-quote \"
                                 # Then, if that results in a string with \\", it will escape the escaping,
                                 # so replace that with \\\"
                                 # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
