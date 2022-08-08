@@ -92,7 +92,7 @@ sam_recipient_sql_string = rf"""
             uei text,
             ultimate_parent_uei text
           )
-);
+)
 
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
