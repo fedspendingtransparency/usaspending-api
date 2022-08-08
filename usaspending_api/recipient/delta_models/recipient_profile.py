@@ -352,7 +352,7 @@ recipient_profile_load_sql_string = [
     f"""
         DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp
         WHERE NOT EXISTS (
-            SELECT FROM temporary_restock_recipient_profile temp_p
+            SELECT recipient_hash, recipient_level FROM temporary_restock_recipient_profile temp_p
             WHERE rp.recipient_hash = temp_p.recipient_hash
             AND rp.recipient_level = temp_p.recipient_level
     )
@@ -429,5 +429,5 @@ recipient_profile_load_sql_string = [
         );
     """,
     """DROP TABLE temporary_restock_recipient_profile;""",
-    """DROP VIEW temporary_recipients_from_transactions_view;"""
+    """DROP VIEW temporary_recipients_from_transactions_view;""",
 ]
