@@ -22,6 +22,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
+
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
@@ -33,6 +34,11 @@ SPECIAL_TYPES_MAPPING = {
     "JSONB": {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
 }
 
+# 25k - 50k seems a good sweet spot from testing, but leaving it to this because expecting concurrent table writes
+_SPARK_CSV_TO_PG_MAX_RECORDS_PER_FILE = CONFIG.SPARK_PARTITION_ROWS
+
+# Give more memory to each connection during the COPY operation of large files to avoid spillage to disk
+_PG_WORK_MEM_FOR_LARGE_CSV_COPY = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
 
 class Command(BaseCommand):
 
@@ -310,22 +316,25 @@ class Command(BaseCommand):
         COPY command on CSV files, which are created from the Delta table's underlying parquet files.
 
         Since Spark DataFrameWriters for JDBC don't support the COPY command, this custom function streams
-        the data from S3 and use psycopg2 to do the COPY. The file paths of S3 gzipped CSV files to process are
+        the data from S3 and uses psycopg2 to do the COPY. The file paths of S3 gzipped CSV files to process are
         distributed across the cluster to executors, and the custom function is invoked by each executor,
-        using ``rdd.mapPartitionWithIndex``.
+        using ``rdd.mapPartitionWithIndex``, to then stream the file at that path and send it to Postgres.
 
         e.g. if there are 100,000 rows to write, across 100 parquet files, being written by a cluster
-        of 5 nodes each with 4 cores (yields 4*5 = 20 executors), writing to a DB with max_parallel_workers=16
-        - First, 20 executors will work through 100 tasks, where each task is to convert a parquet file to CSV and
-          store it back in S3
-        - Then for writing to Postgres, the number of connections to have open is calibrated based on the target DBs
-            max_parallel_workers.
+        of 5 nodes each with 4 cores (yields 4*5 = 20 executors), writing to a DB with max_parallel_workers=16, and the
+        ``CONFIG.SPARK_PARTITION_ROWS`` = 500
+        - First, 20 executors will work through 100 tasks, where each task is to convert a parquet file to one or
+          more CSV files and store it back in S3. 100k rows over 100 parquet files ~1000 rows per file.
+          - If maxRecordsPerFile (which is set to ``CONFIG.SPARK_PARTITION_ROWS``) = 500, that yields 2 CSV files for
+            every 1 parquet file => 200 CSV files to COPY to Postgres
+        - Then for writing to Postgres, the number of connections to have open is calibrated based on the target DB's
+          max_parallel_workers.
             - Currently it is one-half of the max_parallel_workers -> 8
         - 8 concurrent JDBC connections will be open by 8 executors; the other 12 will sit idle
         - 8 tasks will be processed by the 8 active executors
-        - each task may include a batch of multiple file paths from the RDD
+        - each task may include a batch of multiple file paths from the RDD (~200/8 = 25 file paths)
         - each active executor will pull 1 file path from its batch in its task, stream the CSV file from S3 to
-          Postgres using the SQL COPY command. Each COPY command copies ~1000 rows in this case
+          Postgres using the SQL COPY command. Each COPY command copies max of ~500 rows in this case
         - once copied, it then moves on to the next file path in its task's batch.
         - once the executor is done with its batch, its task is done, there are no more tasks, it will sit idle
         - which means the DB could be processing 8 COPY commands concurrently
@@ -341,9 +350,9 @@ class Command(BaseCommand):
                 - The DataFrame should have its columns ordered by this
                 - And the COPY command should provide these cols so that COPY pulls the right data into the right cols
             keep_csv_files (bool): Whether to prevent overwriting of these temporary CSV files by a subsequent write
-                to the same output path. This will instead put them in a timestamped sub-folder of that output path (
-                which must not already exist or an error will be thrown). Defaults to False. If setting to True,
-                be mindful of cleaning up these preserved files on occasion.
+                to the same output path. Defaults to False. If True, this will instead put them in a timestamped
+                sub-folder of a "temp" folder. Be mindful of cleaning these up if setting to True. If False,
+                the same output path is used for each write and nukes-and-paves the files in that output path.
         """
         logger = get_jvm_logger(spark)
         csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_db}/{delta_table_name}/"
@@ -357,7 +366,7 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
-            maxRecordsPerFile=CONFIG.SPARK_PARTITION_ROWS * 3,  # e.g. 25k - 50k seems a good sweet spot
+            maxRecordsPerFile=_SPARK_CSV_TO_PG_MAX_RECORDS_PER_FILE,
             compression="gzip",
             nullValue=None,
             escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
@@ -402,9 +411,6 @@ class Command(BaseCommand):
                 # don't want to go below 8
                 partitions = max(ceil(max_parallel_workers / 2), partitions)
 
-        # Give more memory to each connection during the COPY operation of large files to avoid spillage to disk
-        work_mem_for_large_csv_copy = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
-
         # Repartition based on DB's configured max_parallel_workers so that there will only be this many concurrent
         # connections writing to Postgres at once, to not overtax it nor oversaturate the number of allowed connections
         # Observations have shown that in production infrastructure, more concurrent connections just lead to I/O
@@ -426,7 +432,7 @@ class Command(BaseCommand):
                 target_pg_table=temp_table,
                 ordered_col_names=ordered_col_names,
                 gzipped=True,
-                work_mem_override=work_mem_for_large_csv_copy,
+                work_mem_override=_PG_WORK_MEM_FOR_LARGE_CSV_COPY,
             ),
         ).collect()
 
