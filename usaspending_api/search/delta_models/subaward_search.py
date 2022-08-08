@@ -187,9 +187,9 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_place_of_perform_zip5": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_city_code": {"delta": "STRING", "postgres": "TEXT"},
     # Vectors
-    "keyword_ts_vector": {"delta": "TSVECTOR", "postgres": "TSVECTOR"},
-    "award_ts_vector": {"delta": "TSVECTOR", "postgres": "TSVECTOR"},
-    "recipient_name_ts_vector": {"delta": "TSVECTOR", "postgres": "TSVECTOR"},
+    "keyword_ts_vector": {"delta": "STRING", "postgres": "TSVECTOR"},
+    "award_ts_vector": {"delta": "STRING", "postgres": "TSVECTOR"},
+    "recipient_name_ts_vector": {"delta": "STRING", "postgres": "TSVECTOR"},
 }
 SUBAWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
 SUBAWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
