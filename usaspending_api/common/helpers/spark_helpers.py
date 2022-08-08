@@ -66,13 +66,6 @@ RDS_REF_TABLES = [
 
 BROKER_PROXY_TABLES = [
     sam_recipient,
-    subaward,
-    published_fabs,
-    detached_award_procurement,
-    submissions,
-    appropriation,
-    object_class_program_activity,
-    award_financial,
 ]
 
 
