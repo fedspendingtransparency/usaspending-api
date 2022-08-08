@@ -697,7 +697,6 @@ def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_
 def test_load_table_to_from_delta_for_recipient_profile(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, monkeypatch
 ):
-    monkeypatch.setattr("usaspending_api.config.CONFIG.SPARK_S3_BUCKET", s3_unittest_data_bucket)
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"

@@ -91,8 +91,7 @@ recipient_profile_load_sql_string = [
         last_12_loans NUMERIC(23,2),
         last_12_other NUMERIC(23,2),
         last_12_months_count INT
-    ) USING DELTA
-    LOCATION 's3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{{DESTINATION_DATABASE}}/temporary_restock_recipient_profile';
+    ) USING DELTA;
     """,
     """INSERT INTO temporary_restock_recipient_profile (
     SELECT
