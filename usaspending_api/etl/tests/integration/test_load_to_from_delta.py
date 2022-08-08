@@ -37,6 +37,7 @@ def populate_data_for_transaction_search():
         duns="123456789",
         legal_business_name="FABS TEST RECIPIENT",
         _fill_optional=True,
+        parent_uei=None,
     )
     baker.make(
         "recipient.RecipientProfile",
@@ -46,6 +47,8 @@ def populate_data_for_transaction_search():
         recipient_name="FABS TEST RECIPIENT",
         _fill_optional=True,
         recipient_unique_id="123456789",
+        parent_uei=None,
+        recipient_affiliations=[],
     )
     baker.make(
         "recipient.DUNS",
@@ -167,6 +170,7 @@ def populate_data_for_transaction_search():
         cfda_number="12.456",
         action_date="2021-01-01",
         uei="FABSUEI12345",
+        ultimate_parent_uei=None,
         indirect_federal_sharing=1.0,
         legal_entity_state_code="VA",
         legal_entity_county_code="001",
@@ -186,6 +190,7 @@ def populate_data_for_transaction_search():
         cfda_number="12.456",
         action_date="2021-04-01",
         uei="FABSUEI12345",
+        ultimate_parent_uei=None,
         indirect_federal_sharing=1.0,
         legal_entity_state_code="VA",
         legal_entity_county_code="001",
@@ -206,6 +211,7 @@ def populate_data_for_transaction_search():
         product_or_service_code="12",
         action_date="2021-07-01",
         awardee_or_recipient_uei="FPDSUEI12345",
+        ultimate_parent_uei=None,
         _fill_optional=True,
         ordering_period_end_date="2020-07-01",
     )
@@ -216,6 +222,7 @@ def populate_data_for_transaction_search():
         product_or_service_code="12",
         action_date="2021-10-01",
         awardee_or_recipient_uei="FPDSUEI12345",
+        ultimate_parent_uei=None,
         _fill_optional=True,
         ordering_period_end_date="2020-07-01",
     )
