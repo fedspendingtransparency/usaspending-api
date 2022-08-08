@@ -12,6 +12,11 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
+from usaspending_api.search.delta_models.subaward_search import (
+    subaward_search_create_sql_string,
+    subaward_search_load_sql_string,
+    SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+)
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
@@ -49,6 +54,21 @@ TABLE_SPEC = {
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
+    },
+    "subaward_search": {
+        "model": None,
+        "broker": False,
+        "source_query": subaward_search_load_sql_string,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "broker_subaward_id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": subaward_search_create_sql_string,
+        "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+        "custom_schema": "",
     },
 }
 
