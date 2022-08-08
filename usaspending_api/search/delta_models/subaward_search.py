@@ -518,7 +518,7 @@ subaward_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         recipient_summary AS recipient_lookup
             ON (recipient_lookup.duns = bs.sub_awardee_or_recipient_uniqu
-                AND bs.sub_awardee_or_recipient_uniqu IS NOT NULL AND recipient_summary.row = 1)
+                AND bs.sub_awardee_or_recipient_uniqu IS NOT NULL AND recipient_lookup.row = 1)
     LEFT OUTER JOIN
         recipient_summary AS parent_recipient_lookup
             ON (parent_recipient_lookup.duns = bs.sub_ultimate_parent_unique_ide
