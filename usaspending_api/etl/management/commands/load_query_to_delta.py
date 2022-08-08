@@ -7,7 +7,11 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     create_ref_temp_views,
 )
-from usaspending_api.recipient.delta_models import sam_recipient_sql_string, SAM_RECIPIENT_COLUMNS
+from usaspending_api.recipient.delta_models.sam_recipient import (
+    sam_recipient_create_sql_string,
+    sam_recipient_load_sql_string,
+    SAM_RECIPIENT_COLUMNS,
+)
 from usaspending_api.recipient.models import DUNS
 
 from usaspending_api.search.delta_models.award_search import (
@@ -53,12 +57,12 @@ TABLE_SPEC = {
     },
     "sam_recipient": {
         "model": DUNS,
-        "source_query" : sam_recipient_sql_string,
+        "source_query": sam_recipient_load_sql_string,
         "source_table": "duns",
         "destination_database": "int",
         "partition_column": None,
         "partition_column_type": None,
-        "delta_table_create_sql": sam_recipient_sql_string,
+        "delta_table_create_sql": sam_recipient_create_sql_string,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
         "column_names": list(SAM_RECIPIENT_COLUMNS),
     },
