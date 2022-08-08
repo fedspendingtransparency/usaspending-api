@@ -357,12 +357,12 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
-            maxRecordsPerFile=CONFIG.SPARK_PARTITION_ROWS,  # TODO temp testing. remove or make a constant, like CONFIG.SPARK_PARTITION_ROWS
+            maxRecordsPerFile=CONFIG.SPARK_PARTITION_ROWS * 3,  # e.g. 25k - 50k seems a good sweet spot
             compression="gzip",
             nullValue=None,
-            #nullValue=u"\u0000",
-            escape='"',
-            #quoteAll=True,
+            escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
+            ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
+            ignoreTrailingWhiteSpace=False,  # must set for CSV write, as it defaults to true
             timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
         ).mode(saveMode="overwrite" if not keep_csv_files else "errorifexists").csv(s3_bucket_with_csv_path)
 
