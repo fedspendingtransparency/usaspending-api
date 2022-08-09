@@ -19,7 +19,6 @@ RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID = {
     "uei": {"delta": "STRING", "postgres": "TEXT"},
     "parent_uei": {"delta": "STRING", "postgres": "TEXT"},
 }
-
 RECIPIENT_LOOKUP_COLUMNS = {
     "id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
     **RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID,
@@ -533,152 +532,50 @@ recipient_lookup_load_sql_string_list = [
     WHERE alternate_names IS NULL
     """,
     # -----
-    # Delete any instances of a NULL recipient_hash and handle cleanup following alternate names generation
+    # Delete any cases of old recipients from where the recipient now has a UEI
     # -----
     r"""
-    DELETE FROM temp.temporary_restock_recipient_lookup
-    WHERE recipient_hash IS NULL OR row_num_union != 1
-    """,
-    # -----
-    # Merge the temporary_restock_recipient_lookup table into recipient_lookup
-    # -----
-    r"""
-    MERGE INTO {DESTINATION_DATABASE}.{DESTINATION_TABLE} AS rl
-    USING temp.temporary_restock_recipient_lookup AS temp_rl
-    ON rl.recipient_hash = temp_rl.recipient_hash
-    WHEN MATCHED
-    AND (
-        temp_rl.address_line_1                 IS DISTINCT FROM rl.address_line_1
-        OR temp_rl.address_line_2              IS DISTINCT FROM rl.address_line_2
-        OR temp_rl.business_types_codes        IS DISTINCT FROM rl.business_types_codes
-        OR temp_rl.city                        IS DISTINCT FROM rl.city
-        OR temp_rl.congressional_district      IS DISTINCT FROM rl.congressional_district
-        OR temp_rl.country_code                IS DISTINCT FROM rl.country_code
-        OR temp_rl.duns                        IS DISTINCT FROM rl.duns
-        OR temp_rl.uei                         IS DISTINCT FROM rl.uei
-        OR temp_rl.legal_business_name         IS DISTINCT FROM rl.legal_business_name
-        OR temp_rl.parent_duns                 IS DISTINCT FROM rl.parent_duns
-        OR temp_rl.parent_legal_business_name  IS DISTINCT FROM rl.parent_legal_business_name
-        OR temp_rl.parent_uei                  IS DISTINCT FROM rl.parent_uei
-        OR temp_rl.recipient_hash              IS DISTINCT FROM rl.recipient_hash
-        OR temp_rl.source                      IS DISTINCT FROM rl.source
-        OR temp_rl.state                       IS DISTINCT FROM rl.state
-        OR temp_rl.zip4                        IS DISTINCT FROM rl.zip4
-        OR temp_rl.zip5                        IS DISTINCT FROM rl.zip5
-        OR ARRAY_SORT(ARRAY_REMOVE(temp_rl.alternate_names, COALESCE(rl.legal_business_name, '')))
-                                         IS DISTINCT FROM rl.alternate_names
-    )
-    THEN UPDATE SET
-        rl.legal_business_name = temp_rl.legal_business_name,
-        rl.duns = temp_rl.duns,
-        rl.uei = temp_rl.uei,
-        rl.address_line_1 = temp_rl.address_line_1,
-        rl.address_line_2 = temp_rl.address_line_2,
-        rl.business_types_codes = temp_rl.business_types_codes,
-        rl.city = temp_rl.city,
-        rl.congressional_district = temp_rl.congressional_district,
-        rl.country_code = temp_rl.country_code,
-        rl.parent_duns = temp_rl.parent_duns,
-        rl.parent_legal_business_name = temp_rl.parent_legal_business_name,
-        rl.parent_uei = temp_rl.parent_uei,
-        rl.state = temp_rl.state,
-        rl.zip4 = temp_rl.zip4,
-        rl.zip5 = temp_rl.zip5,
-        rl.alternate_names = temp_rl.alternate_names,
-        rl.source = temp_rl.source,
-        rl.update_date = NOW()
-    WHEN NOT MATCHED THEN INSERT (
-        id,
-        recipient_hash,
-        legal_business_name,
-        duns,
-        uei,
-        address_line_1,
-        address_line_2,
-        business_types_codes,
-        city,
-        congressional_district,
-        country_code,
-        parent_duns,
-        parent_legal_business_name,
-        parent_uei,
-        state,
-        zip4,
-        zip5,
-        alternate_names,
-        source,
-        update_date
-    )
-    VALUES (
-        0,
-        recipient_hash,
-        legal_business_name,
-        duns,
-        uei,
-        address_line_1,
-        address_line_2,
-        business_types_codes,
-        city,
-        congressional_district,
-        country_code,
-        parent_duns,
-        parent_legal_business_name,
-        parent_uei,
-        state,
-        zip4,
-        zip5,
-        alternate_names,
-        source,
-        NOW()
-    )
-    """,
-    # -----
-    # Delete any cases of old recipients from recipient_lookup where the recipient now has a UEI
-    # -----
-    r"""
-    MERGE INTO {DESTINATION_DATABASE}.{DESTINATION_TABLE} AS rl
+    MERGE INTO temp.temporary_restock_recipient_lookup AS temp_rl
     USING (
         SELECT duns_recipient_hash
         FROM temp.temporary_restock_recipient_lookup
         WHERE
             uei IS NOT NULL
             AND duns IS NOT NULL
-    ) AS temp_rl
-    ON rl.recipient_hash = temp_rl.duns_recipient_hash AND rl.uei IS NULL
+    ) AS using_temp_rl
+    ON temp_rl.recipient_hash = using_temp_rl.duns_recipient_hash AND temp_rl.uei IS NULL
     WHEN MATCHED
     THEN DELETE
     """,
     # -----
-    # Populate recipient_lookup with incremented Primary Key fields
+    # Handle cleanup following alternate names generation
     # -----
     r"""
-    CREATE OR REPLACE TEMPORARY VIEW temp_recipient_lookup_view AS (
-        SELECT
-            {AUTO_INCREMENT_MAX_ID} + ROW_NUMBER() OVER (ORDER BY recipient_hash) AS new_id,
-            rl.*
-        FROM {DESTINATION_DATABASE}.{DESTINATION_TABLE} AS rl
-        WHERE rl.id = 0
+    DELETE FROM temp.temporary_restock_recipient_lookup
+    WHERE row_num_union != 1
+    """,
+    # -----
+    # Insert the temporary_restock_recipient_lookup table into recipient_lookup
+    # -----
+    fr"""
+    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+    (
+        {",".join([col for col in RECIPIENT_LOOKUP_COLUMNS])}
     )
-    """,
-    r"""
-    MERGE INTO {DESTINATION_DATABASE}.{DESTINATION_TABLE} AS rl
-    USING temp_recipient_lookup_view temp_rl
-    ON rl.recipient_hash = temp_rl.recipient_hash
-    WHEN MATCHED
-    THEN UPDATE SET
-        rl.id = temp_rl.new_id
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY recipient_hash) AS id,
+        {",".join([col for col in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID])}
+    FROM
+        temp.temporary_restock_recipient_lookup
     """,
     # -----
-    # Cleanup the temporary table
+    # Cleanup the temporary table and views
     # -----
     r"""
     DELETE FROM temp.temporary_restock_recipient_lookup
     """,
     r"""
     DROP TABLE temp.temporary_restock_recipient_lookup
-    """,
-    r"""
-    DROP VIEW temp_recipient_lookup_view
     """,
     r"""
     DROP VIEW temporary_transaction_recipients_view
