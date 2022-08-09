@@ -40,6 +40,7 @@ _SPARK_CSV_TO_PG_MAX_RECORDS_PER_FILE = CONFIG.SPARK_PARTITION_ROWS
 # Give more memory to each connection during the COPY operation of large files to avoid spillage to disk
 _PG_WORK_MEM_FOR_LARGE_CSV_COPY = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
 
+
 class Command(BaseCommand):
 
     help = """
