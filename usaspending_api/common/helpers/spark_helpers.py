@@ -424,8 +424,6 @@ def get_broker_jdbc_url():
 
 
 
-
-
 def get_es_config():  # pragma: no cover -- will be used eventually
 
     """
