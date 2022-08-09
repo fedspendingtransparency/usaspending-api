@@ -153,7 +153,7 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
-        logger = get_jvm_logger(spark)
+        logger = get_jvm_logger(spark, __name__)
 
         # Resolve Parameters
         delta_table = options["delta_table"]
@@ -355,7 +355,7 @@ class Command(BaseCommand):
                 sub-folder of a "temp" folder. Be mindful of cleaning these up if setting to True. If False,
                 the same output path is used for each write and nukes-and-paves the files in that output path.
         """
-        logger = get_jvm_logger(spark)
+        logger = get_jvm_logger(spark, __name__)
         csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_db}/{delta_table_name}/"
         if keep_csv_files:
             csv_path = (
@@ -482,7 +482,7 @@ class Command(BaseCommand):
             may already have been TRUNCATEd as part of the setup of this job before it gets to this step of writing
             to it.
         """
-        logger = get_jvm_logger(spark)
+        logger = get_jvm_logger(spark, __name__)
         special_columns = {}
         save_mode = "overwrite" if overwrite else "append"
 
