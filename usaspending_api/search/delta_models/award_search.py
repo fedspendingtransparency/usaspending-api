@@ -364,7 +364,7 @@ LEFT OUTER JOIN
 )
 LEFT OUTER JOIN (
         SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
-        FROM rpt.recipient_profile
+        FROM raw.recipient_profile
         WHERE recipient_level != 'P'
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (

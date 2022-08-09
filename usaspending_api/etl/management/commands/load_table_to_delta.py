@@ -21,6 +21,8 @@ from usaspending_api.recipient.delta_models import (
     recipient_lookup_sql_string,
     SAM_RECIPIENT_COLUMNS,
     sam_recipient_sql_string,
+    RECIPIENT_PROFILE_DELTA_COLUMNS,
+    recipient_profile_create_sql_string,
 )
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
@@ -35,7 +37,7 @@ from usaspending_api.transactions.delta_models import (
 )
 from usaspending_api.search.delta_models.award_search import award_search_create_sql_string, AWARD_SEARCH_COLUMNS
 
-from usaspending_api.recipient.models import DUNS, RecipientLookup
+from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
 from usaspending_api.awards.models import (
     Award,
     FinancialAccountsByAwards,
@@ -87,6 +89,21 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
+    },
+    "recipient_profile": {
+        "model": RecipientProfile,
+        "is_from_broker": False,
+        "source_table": "recipient_profile",
+        "source_database": "rpt",
+        "destination_database": "raw",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": recipient_profile_create_sql_string,
+        "source_schema": None,
+        "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),
     },
     "sam_recipient": {
         "model": DUNS,

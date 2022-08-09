@@ -366,8 +366,8 @@ recipient_profile_load_sql_string = [
             AND (
                 rp.recipient_unique_id IS DISTINCT FROM temp_p.recipient_unique_id
                 OR rp.recipient_name IS DISTINCT FROM temp_p.recipient_name
-                OR rp.recipient_affiliations IS DISTINCT FROM temp_p.recipient_affiliations
-                OR rp.award_types IS DISTINCT FROM temp_p.award_types
+                OR SORT_ARRAY(rp.recipient_affiliations) IS DISTINCT FROM SORT_ARRAY(temp_p.recipient_affiliations)
+                OR SORT_ARRAY(rp.award_types) IS DISTINCT FROM SORT_ARRAY(temp_p.award_types)
                 OR rp.last_12_months IS DISTINCT FROM temp_p.last_12_months
                 OR rp.last_12_contracts IS DISTINCT FROM temp_p.last_12_contracts
                 OR rp.last_12_loans IS DISTINCT FROM temp_p.last_12_loans
@@ -376,7 +376,8 @@ recipient_profile_load_sql_string = [
                 OR rp.last_12_other IS DISTINCT FROM temp_p.last_12_other
                 OR rp.last_12_months_count IS DISTINCT FROM temp_p.last_12_months_count
                 OR rp.uei IS DISTINCT FROM temp_p.uei
-                OR rp.parent_uei IS DISTINCT FROM temp_p.parent_uei)
+                OR rp.parent_uei IS DISTINCT FROM temp_p.parent_uei
+            )
         WHEN MATCHED THEN UPDATE SET
             recipient_unique_id = temp_p.recipient_unique_id,
             uei = temp_p.uei,
