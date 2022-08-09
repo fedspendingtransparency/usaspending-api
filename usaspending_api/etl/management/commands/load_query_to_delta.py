@@ -22,6 +22,7 @@ from usaspending_api.transactions.delta_models import (
 TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
+        "is_from_broker": False,
         "source_query": transaction_search_load_sql_string,
         "source_database": None,
         "source_table": None,
@@ -35,6 +36,7 @@ TABLE_SPEC = {
     },
     "award_search": {
         "model": AwardSearch,
+        "is_from_broker": False,
         "source_query": award_search_load_sql_string,
         "source_database": None,
         "source_table": None,
@@ -89,6 +91,7 @@ class Command(BaseCommand):
             # See comment below about old date and time values cannot parsed without these
             "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+            "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
         spark = get_active_spark_session()

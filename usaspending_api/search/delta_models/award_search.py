@@ -88,7 +88,7 @@ AWARD_SEARCH_COLUMNS = {
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
     "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
-    "covid_spending_by_defc": {"delta": "STRING", "postgres": "TEXT"},
+    "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB"},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
     "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
 }
@@ -237,7 +237,7 @@ award_search_load_sql_string = fr"""
 
   transaction_fabs.cfda_title AS cfda_program_title,
   transaction_fabs.cfda_number AS cfda_number,
-  transaction_cfdas.cfdas AS cfdas,
+  CASE WHEN awards.is_fpds = FALSE THEN transaction_cfdas.cfdas ELSE NULL END AS cfdas,
 
 
   transaction_fabs.sai_number AS sai_number,
@@ -304,8 +304,8 @@ LEFT OUTER JOIN
   global_temp.subtier_agency AS SFA
     ON (FA.subtier_agency_id = SFA.subtier_agency_id)
 LEFT OUTER JOIN
-  global_temp.agency AS FA_ID
-    ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND FA_ID.toptier_flag = TRUE)
+  (SELECT id, toptier_agency_id, ROW_NUMBER() OVER (PARTITION BY toptier_agency_id ORDER BY toptier_flag DESC, id ASC) AS row_num FROM global_temp.agency) AS FA_ID
+    ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND row_num = 1)
 LEFT OUTER JOIN
     global_temp.ref_country_code AS pop_country_lookup ON (
         pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')

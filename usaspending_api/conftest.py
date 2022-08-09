@@ -22,7 +22,7 @@ from usaspending_api.common.sqs.sqs_handler import (
     _FakeUnitTestFileBackedSQSQueue,
 )
 from usaspending_api.common.helpers.generic_helper import generate_matviews
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
 # Compose other supporting conftest_*.py files
 from usaspending_api.conftest_helpers import (
@@ -133,17 +133,27 @@ def django_db_setup(
             # This is necessary for any script/code run in a test that bases its database connection off the postgres
             # config. This resolves the issue by temporarily mocking the DATABASE_URL to accurately point to the test
             # database.
-            old_db_url = CONFIG.DATABASE_URL
-            old_ps_db = CONFIG.USASPENDING_DB_NAME
+            old_usas_db_url = CONFIG.DATABASE_URL
+            old_usas_ps_db = CONFIG.USASPENDING_DB_NAME
 
-            test_db_name = f"test_{CONFIG.USASPENDING_DB_NAME}"
+            test_usas_db_name = f"test_{CONFIG.USASPENDING_DB_NAME}"
             CONFIG.DATABASE_URL = get_database_dsn_string()
-            CONFIG.USASPENDING_DB_NAME = test_db_name
+            CONFIG.USASPENDING_DB_NAME = test_usas_db_name
+
+            old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
+            old_broker_ps_db = CONFIG.BROKER_DB_NAME
+
+            test_broker_db = f"test_{CONFIG.BROKER_DB_NAME}"
+            CONFIG.DATA_BROKER_DATABASE_URL = get_broker_dsn_string()
+            CONFIG.BROKER_DB_NAME = test_broker_db
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down
     def reset_postgres_dsn():
-        CONFIG.DATABASE_URL = old_db_url
-        CONFIG.USASPENDING_DB_NAME = old_ps_db
+        CONFIG.DATABASE_URL = old_usas_db_url
+        CONFIG.USASPENDING_DB_NAME = old_usas_ps_db
+
+        CONFIG.DATA_BROKER_DATABASE_URL = old_broker_db_url
+        CONFIG.BROKER_DB_NAME = old_broker_ps_db
 
     request.addfinalizer(reset_postgres_dsn)
 
