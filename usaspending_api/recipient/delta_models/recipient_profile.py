@@ -1,5 +1,3 @@
-from usaspending_api.config import CONFIG
-
 RECIPIENT_PROFILE_COLUMNS = {
     "recipient_level": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL"},
     "recipient_hash": {"delta": "STRING", "postgres": "UUID"},
@@ -31,7 +29,7 @@ recipient_profile_load_sql_string = [
     #   --------------------------------------------------------------------------------
     #     -- Step 1, create the temporary matview of recipients from transactions
     #   --------------------------------------------------------------------------------
-    """
+    r"""
     CREATE OR REPLACE TEMPORARY VIEW temporary_recipients_from_transactions_view AS (
     SELECT
         REGEXP_REPLACE(MD5(UPPER(
@@ -354,9 +352,9 @@ recipient_profile_load_sql_string = [
                 SELECT recipient_hash, recipient_level FROM temporary_restock_recipient_profile temp_p
                 WHERE rp.recipient_hash = temp_p.recipient_hash
                 AND rp.recipient_level = temp_p.recipient_level
-            )   
+            )
         )
-        MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp 
+        MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} rp
         USING CTE ON CTE.recipient_hash = rp.recipient_hash AND CTE.recipient_level = rp.recipient_level
         WHEN MATCHED THEN DELETE;
     """,
