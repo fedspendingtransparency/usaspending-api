@@ -42,7 +42,7 @@ recipient_lookup_create_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
 
-recipient_lookup_load_sql_string = [
+recipient_lookup_load_sql_string_list = [
     # -----
     # Creation of a temporary view used to reference recipient information from transactions
     # -----
@@ -438,7 +438,7 @@ recipient_lookup_load_sql_string = [
     union_all_priority AS (
         SELECT
             *,
-            ROW_NUMBER() OVER (PARTITION BY recipient_hash ORDER BY priority ASC) AS row_num_union
+            ROW_NUMBER() OVER (PARTITION BY recipient_hash ORDER BY priority ASC, update_date DESC) AS row_num_union
         FROM union_all
     )
     INSERT INTO temp.temporary_restock_recipient_lookup (
@@ -525,7 +525,15 @@ recipient_lookup_load_sql_string = [
     THEN UPDATE SET temp_rl.alternate_names = COALESCE(ARRAY_REMOVE(alt_names.all_names, COALESCE(temp_rl.legal_business_name, '')), ARRAY())
     """,
     # -----
-    # Delete any instances of a NULL recipient_hash
+    # Alternate names defaults to an empty list
+    # -----
+    """
+    UPDATE temp.temporary_restock_recipient_lookup
+    SET alternate_names = ARRAY()
+    WHERE alternate_names IS NULL
+    """,
+    # -----
+    # Delete any instances of a NULL recipient_hash and handle cleanup following alternate names generation
     # -----
     r"""
     DELETE FROM temp.temporary_restock_recipient_lookup
