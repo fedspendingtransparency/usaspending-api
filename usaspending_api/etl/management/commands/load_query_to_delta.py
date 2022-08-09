@@ -56,7 +56,7 @@ TABLE_SPEC = {
         " tas_components ARRAY<STRING>",
     },
     "sam_recipient": {
-        "model": DUNS,
+        "model": None,
         "source_query": sam_recipient_load_sql_string,
         "source_table": "duns",
         "destination_database": "int",
