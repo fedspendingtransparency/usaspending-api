@@ -35,7 +35,7 @@ SPECIAL_TYPES_MAPPING = {
 }
 
 # 25k - 50k seems a good sweet spot from testing, but leaving it to this because expecting concurrent table writes
-_SPARK_CSV_TO_PG_MAX_RECORDS_PER_FILE = CONFIG.SPARK_PARTITION_ROWS
+_SPARK_CSV_WRITE_TO_PG_MAX_RECORDS_PER_FILE = CONFIG.SPARK_PARTITION_ROWS
 
 # Give more memory to each connection during the COPY operation of large files to avoid spillage to disk
 _PG_WORK_MEM_FOR_LARGE_CSV_COPY = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
@@ -367,7 +367,7 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
-            maxRecordsPerFile=_SPARK_CSV_TO_PG_MAX_RECORDS_PER_FILE,
+            maxRecordsPerFile=_SPARK_CSV_WRITE_TO_PG_MAX_RECORDS_PER_FILE,
             compression="gzip",
             nullValue=None,
             escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
@@ -403,14 +403,20 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
         db_dsn = get_database_dsn_string()
-        partitions = 8
         with psycopg2.connect(dsn=db_dsn) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SHOW max_parallel_workers")
                 max_parallel_workers = int(cursor.fetchone()[0])
-                # For whatever reason, one-half of the max parallel workers seemed to be the sweet spot, but probably
-                # don't want to go below 8
-                partitions = max(ceil(max_parallel_workers / 2), partitions)
+                # Use the CONFIG.SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER and
+                # CONFIG.SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS config vars to derive the number of partitions to
+                # split/group batches of CSV files into, which need to be written via COPY to PG. This multiplier
+                # will be multiplied against the max_parallel_workers value of the target database. It can be a
+                # fraction less than 1.0. The final value will be the greater of that or
+                # SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS
+                partitions = max(
+                    ceil(max_parallel_workers * CONFIG.SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER),
+                    CONFIG.SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS,
+                )
 
         # Repartition based on DB's configured max_parallel_workers so that there will only be this many concurrent
         # connections writing to Postgres at once, to not overtax it nor oversaturate the number of allowed connections

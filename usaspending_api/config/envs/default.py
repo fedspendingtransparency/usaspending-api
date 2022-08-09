@@ -305,6 +305,16 @@ class DefaultConfig(BaseSettings):
     SPARK_PARTITION_ROWS: int = 10000
     SPARK_MAX_PARTITIONS: int = 100000
 
+    # Minimum number of partitions to split/group batches of CSV files into, which need to be written via COPY to PG
+    # i.e. maintain at least this many writers, and therefore this many concurrent open connections writing to the DB
+    SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS: int = 8
+
+    # Use this multiplier, in conjunction with the above ``SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS``, to derive the
+    # number of partitions to split/group batches of CSV files into, which need to be written via COPY to PG
+    # This multiplier will be multiplied against the max_parallel_workers value of the target database. It can be a
+    # fraction less than 1.0. The final value will be the greater of that or ``SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS``
+    SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER: float = 0.5
+
     # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
     # `partition_rows` above is how many data items come out of the JDBC side, and are handled by one Executor
