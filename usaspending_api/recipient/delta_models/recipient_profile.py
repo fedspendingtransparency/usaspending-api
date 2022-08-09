@@ -182,7 +182,7 @@ recipient_profile_load_sql_string = [
         SELECT
             recipient_hash,
             recipient_level,
-            COLLECT_SET(award_category) AS award_types,
+            SORT_ARRAY(COLLECT_SET(award_category)) AS award_types,
             SUM(inner_contracts) AS last_12_contracts,
             SUM(inner_grants) AS last_12_grants,
             SUM(inner_direct_payments) AS last_12_direct_payments,
