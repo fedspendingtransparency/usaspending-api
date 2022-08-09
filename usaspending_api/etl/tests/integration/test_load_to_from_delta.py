@@ -24,6 +24,7 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
 from usaspending_api.awards.models import TransactionFABS
 
 
@@ -479,6 +480,7 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str):
         for key, val in TABLE_SPEC.items()
         if val.get("source_table") is not None and key == val.get("source_table")
     }
+    non_aggregate_table_specs["recipient_profile"] = LOAD_TABLE_TABLE_SPEC["recipient_profile"]
     for dest_table in non_aggregate_table_specs:
         call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
         call_command("load_table_to_delta", f"--destination-table={dest_table}")
@@ -699,14 +701,6 @@ def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_
     baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_normalized")
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_raw_recipient_profile(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
-    baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
 
 
 @mark.django_db(transaction=True)
