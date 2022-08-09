@@ -466,7 +466,7 @@ subaward_search_load_sql_string = fr"""
         pcc.country_name AS sub_place_of_perform_country_name,
         LPAD(CAST(CAST(REGEXP_EXTRACT(pop.county_numeric, '^[A-Z]*(\d+)(?:\.\d+)?$', 1) AS SHORT) AS STRING), 3, '0') AS sub_place_of_perform_county_code,
         pop.county_name AS sub_place_of_perform_county_name,
-        LEFT(COALESCE(sub_place_of_performance_zip, ''), 5) sub_place_of_perform_zip5,
+        LEFT(COALESCE(sub_place_of_performance_zip, ''), 5) AS sub_place_of_perform_zip5,
         pop.census_code AS sub_place_of_perform_city_code,
         LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\d+)(?:\.\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio,
 
