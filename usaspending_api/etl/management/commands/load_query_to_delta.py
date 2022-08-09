@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -11,9 +9,9 @@ from usaspending_api.common.helpers.spark_helpers import (
     create_ref_temp_views,
 )
 from usaspending_api.recipient.delta_models import (
-    RECIPIENT_LOOKUP_COLUMNS,
     recipient_lookup_create_sql_string,
     recipient_lookup_load_sql_string_list,
+    RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.search.delta_models.award_search import (
@@ -56,10 +54,8 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "recipient_hash",
         "delta_table_create_sql": recipient_lookup_create_sql_string,
-        "source_schema": None,
+        "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
-        "auto_increment_field": "id",
     },
     "transaction_search": {
         "model": TransactionSearch,
@@ -87,11 +83,10 @@ class Command(BaseCommand):
     """
 
     # Values defined in the handler
-    auto_increment_max_id: Optional[int]
     destination_database: str
     destination_table_name: str
     spark: SparkSession
-    spark_s3_buket: str
+    spark_s3_bucket: str
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -144,7 +139,7 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         destination_table = options["destination_table"]
-        self.spark_s3_buket = options["spark_s3_bucket"]
+        self.spark_s3_bucket = options["spark_s3_bucket"]
 
         table_spec = TABLE_SPEC[destination_table]
         self.destination_database = options["alt_db"] or table_spec["destination_database"]
@@ -153,16 +148,6 @@ class Command(BaseCommand):
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {self.destination_database}")
         self.spark.sql(f"use {self.destination_database};")
-
-        if table_spec.get("auto_increment_field"):
-            self.auto_increment_max_id = (
-                self.spark.sql(
-                    f"SELECT MAX({table_spec['auto_increment_field']}) FROM {self.destination_database}.{self.destination_table_name}"
-                ).rdd.collect()[0][0]
-                or 0
-            )
-        else:
-            self.auto_increment_max_id = None
 
         # Create User Defined Functions if needed
         if table_spec.get("user_defined_functions"):
@@ -190,8 +175,7 @@ class Command(BaseCommand):
             query.format(
                 DESTINATION_DATABASE=self.destination_database,
                 DESTINATION_TABLE=self.destination_table_name,
-                SPARK_S3_BUCKET=self.spark_s3_buket,
+                SPARK_S3_BUCKET=self.spark_s3_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
-                AUTO_INCREMENT_MAX_ID=self.auto_increment_max_id,
             )
         )

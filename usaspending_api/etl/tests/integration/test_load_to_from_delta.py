@@ -7,7 +7,7 @@ import psycopg2
 import pytest
 import pytz
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from psycopg2.extensions import AsIs
 from typing import Any, Dict, List, Optional, Union
@@ -457,7 +457,7 @@ def equal_datasets(
     psql_data: List[Dict[str, Any]],
     spark_data: List[Dict[str, Any]],
     custom_schema: str,
-    auto_inc_col: Optional[str] = None,
+    ignore_fields: Optional[list] = None,
 ):
     """Helper function to compare the two datasets. Note the column types of ds1 will be used to cast columns in ds2."""
     datasets_match = True
@@ -473,8 +473,8 @@ def equal_datasets(
     # Iterating through the values and finding any differences
     for i, psql_row in enumerate(psql_data):
         for k, psql_val in psql_row.items():
-            # Move onto the next value since auto incremented columns will not match
-            if auto_inc_col and k == auto_inc_col:
+            # Move on to the next value to check; ignoring this field
+            if ignore_fields and k in ignore_fields:
                 continue
             spark_val = spark_data[i][k]
             # Casting values based on the custom schema
@@ -509,14 +509,7 @@ def equal_datasets(
                     spark_val = [json.loads(idx.replace("'", '"')) for idx in [spark_val]][0]
                 spark_val = sorted_deep(spark_val)
 
-            # Check that datetime fields are relative to each other within 5 minutes;
-            # handles the case of auto fields (e.g. models.DateTimeField(auto_now=True))
-            if isinstance(psql_val, datetime) and isinstance(spark_val, datetime):
-                pass_datatime_check = abs(psql_val - spark_val) < timedelta(minutes=5)
-            else:
-                pass_datatime_check = False
-
-            if not pass_datatime_check and psql_val != spark_val:
+            if psql_val != spark_val:
                 raise Exception(
                     f"Not equal: col:{k} "
                     f"left(psql):{psql_val} ({type(psql_val)}) "
@@ -531,7 +524,8 @@ def _verify_delta_table_loaded_to_delta(
     s3_bucket: str,
     alt_db: str = None,
     alt_name: str = None,
-    load_command="load_table_to_delta",
+    load_command: str = "load_table_to_delta",
+    ignore_fields: Optional[list] = None,
 ):
     """Generic function that uses the create_delta_table, load_table_to_delta, and load_query_to_delta commands to
     create and load the given table and assert it was created and loaded as expected
@@ -578,13 +572,7 @@ def _verify_delta_table_loaded_to_delta(
         received_query = f"{received_query} ORDER BY {partition_col}"
     received_data = [row.asDict() for row in spark.sql(received_query).collect()]
 
-    # need to pass over the auto incremented column since the value won't match Postgres
-    if TABLE_SPEC[delta_table_name].get("auto_increment_field"):
-        auto_inc_col = TABLE_SPEC[delta_table_name]["auto_increment_field"]
-    else:
-        auto_inc_col = None
-
-    assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"], auto_inc_col)
+    assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"], ignore_fields)
 
 
 def _verify_delta_table_loaded_from_delta(
@@ -682,13 +670,18 @@ def test_load_table_to_from_delta_for_sam_recipient_and_reload(
 def test_load_table_to_from_delta_for_rpt_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_data_for_recipient_lookup, hive_unittest_metastore_db
 ):
+    ignore_fields = ["id", "update_date"]
     tables_to_load = ["sam_recipient", "transaction_fabs", "transaction_fpds", "transaction_normalized"]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
 
     # Test initial load of Recipient Lookup
     call_command("update_recipient_lookup")
     _verify_delta_table_loaded_to_delta(
-        spark, "rpt.recipient_lookup", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark,
+        "rpt.recipient_lookup",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=ignore_fields,
     )
 
     # Create a new Transaction a transaction that represents a new name for a recipient
@@ -747,7 +740,11 @@ def test_load_table_to_from_delta_for_rpt_recipient_lookup(
     tables_to_load = ["transaction_fabs", "transaction_normalized"]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     _verify_delta_table_loaded_to_delta(
-        spark, "rpt.recipient_lookup", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark,
+        "rpt.recipient_lookup",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=ignore_fields,
     )
 
 
