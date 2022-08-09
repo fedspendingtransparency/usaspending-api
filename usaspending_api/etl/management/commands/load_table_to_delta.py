@@ -96,7 +96,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
     },
-    "recipient_profile": {
+    "recipient_profile_testing": {
         "model": RecipientProfile,
         "is_from_broker": False,
         "source_table": "recipient_profile",
