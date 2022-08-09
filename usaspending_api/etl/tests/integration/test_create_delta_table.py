@@ -63,6 +63,10 @@ def test_create_delta_table_for_recipient_lookup(spark, s3_unittest_data_bucket,
     _verify_delta_table_creation(spark, "recipient_lookup", s3_unittest_data_bucket)
 
 
+def test_create_delta_table_for_recipient_lookup_testing(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "recipient_lookup_testing", s3_unittest_data_bucket)
+
+
 def test_create_delta_table_for_recipient_profile(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     _verify_delta_table_creation(spark, "recipient_profile", s3_unittest_data_bucket)
 

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -50,11 +52,12 @@ TABLE_SPEC = {
         "destination_database": "rpt",
         "swap_table": None,
         "swap_schema": None,
-        "partition_column": "id",
+        "partition_column": "recipient_hash",
         "delta_table_create_sql": recipient_lookup_create_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
+        "auto_increment_field": "id",
     },
     "transaction_search": {
         "model": TransactionSearch,
@@ -81,6 +84,7 @@ class Command(BaseCommand):
     """
 
     # Values defined in the handler
+    auto_increment_max_id: Optional[int]
     destination_database: str
     destination_table_name: str
     spark: SparkSession
@@ -147,6 +151,16 @@ class Command(BaseCommand):
         logger.info(f"Using Spark Database: {self.destination_database}")
         self.spark.sql(f"use {self.destination_database};")
 
+        if table_spec.get("auto_increment_field"):
+            self.auto_increment_max_id = (
+                self.spark.sql(
+                    f"SELECT MAX({table_spec['auto_increment_field']}) FROM {self.destination_database}.{self.destination_table_name}"
+                ).rdd.collect()[0][0]
+                or 0
+            )
+        else:
+            self.auto_increment_max_id = None
+
         # Create User Defined Functions if needed
         if table_spec.get("user_defined_functions"):
             for udf_args in table_spec["user_defined_functions"]:
@@ -175,5 +189,6 @@ class Command(BaseCommand):
                 DESTINATION_TABLE=self.destination_table_name,
                 SPARK_S3_BUCKET=self.spark_s3_buket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                AUTO_INCREMENT_MAX_ID=self.auto_increment_max_id,
             )
         )

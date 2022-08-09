@@ -220,7 +220,7 @@ transaction_search_load_sql_string = rf"""
             AS recipient_location_city_name,
 
         COALESCE(
-            recipient_lookup.recipient_hash,
+            recipient_lookup_testing.recipient_hash,
             REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
@@ -233,12 +233,12 @@ transaction_search_load_sql_string = rf"""
         ) AS recipient_hash,
         RECIPIENT_HASH_AND_LEVELS.recipient_levels,
         UPPER(COALESCE(
-            recipient_lookup.legal_business_name,
+            recipient_lookup_testing.legal_business_name,
             transaction_fpds.awardee_or_recipient_legal,
             transaction_fabs.awardee_or_recipient_legal
         )) AS recipient_name,
         COALESCE(
-            recipient_lookup.duns,
+            recipient_lookup_testing.duns,
             transaction_fpds.awardee_or_recipient_uniqu,
             transaction_fabs.awardee_or_recipient_uniqu
         ) AS recipient_unique_id,
@@ -250,7 +250,7 @@ transaction_search_load_sql_string = rf"""
             transaction_fabs.ultimate_parent_unique_ide
         ) AS parent_recipient_unique_id,
         COALESCE(
-            recipient_lookup.uei,
+            recipient_lookup_testing.uei,
             transaction_fpds.awardee_or_recipient_uei,
             transaction_fabs.uei
         ) AS recipient_uei,
@@ -292,8 +292,8 @@ transaction_search_load_sql_string = rf"""
     LEFT OUTER JOIN
         global_temp.references_cfda ON (transaction_fabs.cfda_number = references_cfda.program_number)
     LEFT OUTER JOIN
-        raw.recipient_lookup ON (
-            recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
+        raw.recipient_lookup_testing ON (
+            recipient_lookup_testing.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
                         THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
@@ -353,7 +353,7 @@ transaction_search_load_sql_string = rf"""
             OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code)
         )
     LEFT OUTER JOIN
-        raw.recipient_lookup PRL ON (
+        raw.recipient_lookup_testing PRL ON (
             PRL.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) IS NOT NULL
@@ -369,8 +369,8 @@ transaction_search_load_sql_string = rf"""
         FROM rpt.recipient_profile
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (
-        recipient_lookup.recipient_hash = RECIPIENT_HASH_AND_LEVELS.recipient_hash
-        AND recipient_lookup.legal_business_name NOT IN (
+        recipient_lookup_testing.recipient_hash = RECIPIENT_HASH_AND_LEVELS.recipient_hash
+        AND recipient_lookup_testing.legal_business_name NOT IN (
             'MULTIPLE RECIPIENTS',
             'REDACTED DUE TO PII',
             'MULTIPLE FOREIGN RECIPIENTS',
@@ -378,7 +378,7 @@ transaction_search_load_sql_string = rf"""
             'INDIVIDUAL RECIPIENT',
             'MISCELLANEOUS FOREIGN AWARDEES'
         )
-        AND recipient_lookup.legal_business_name IS NOT NULL
+        AND recipient_lookup_testing.legal_business_name IS NOT NULL
     )
     LEFT OUTER JOIN (
         SELECT code, name, fips, MAX(id)

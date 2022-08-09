@@ -4,7 +4,7 @@ RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID = {
     "duns": {"delta": "STRING", "postgres": "TEXT"},
     "address_line_1": {"delta": "STRING", "postgres": "TEXT"},
     "address_line_2": {"delta": "STRING", "postgres": "TEXT"},
-    "business_types_codes": {"delta": "STRING", "postgres": "TEXT[]"},
+    "business_types_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "city": {"delta": "STRING", "postgres": "TEXT"},
     "congressional_district": {"delta": "STRING", "postgres": "TEXT"},
     "country_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -13,7 +13,7 @@ RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID = {
     "state": {"delta": "STRING", "postgres": "TEXT"},
     "zip4": {"delta": "STRING", "postgres": "TEXT"},
     "zip5": {"delta": "STRING", "postgres": "TEXT"},
-    "alternate_names": {"delta": "STRING", "postgres": "TEXT[]"},
+    "alternate_names": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "source": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL"},
     "update_date": {"delta": "TIMESTAMP NOT NULL", "postgres": "TIMESTAMP NOT NULL"},
     "uei": {"delta": "STRING", "postgres": "TEXT"},
@@ -30,6 +30,7 @@ RECIPIENT_LOOKUP_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in RECIPIENT_LOOK
 
 TEMP_RECIPIENT_LOOKUP_COLUMNS = {
     "duns_recipient_hash": "STRING",
+    "row_num_union": "INTEGER",
     **{k: v["delta"] for k, v in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID.items()},
 }
 
@@ -42,6 +43,9 @@ recipient_lookup_create_sql_string = rf"""
     """
 
 recipient_lookup_load_sql_string = [
+    # -----
+    # Creation of a temporary view used to reference recipient information from transactions
+    # -----
     r"""
     CREATE OR REPLACE TEMPORARY VIEW temporary_transaction_recipients_view AS (
         SELECT
@@ -111,6 +115,9 @@ recipient_lookup_load_sql_string = [
         ORDER BY tn.action_date DESC
     )
     """,
+    # -----
+    # Creation of the temporary table that is used to stage and merge updates to recipient_lookup
+    # -----
     rf"""
     CREATE OR REPLACE TABLE temp.temporary_restock_recipient_lookup (
         {", ".join([f'{key} {val}' for key, val in TEMP_RECIPIENT_LOOKUP_COLUMNS.items()])}
@@ -118,6 +125,9 @@ recipient_lookup_load_sql_string = [
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/temp/temporary_restock_recipient_lookup'
     """,
+    # -----
+    # Populate the temporary_restock_recipient_lookup table
+    # -----
     r"""
     WITH latest_duns_sam AS (
         SELECT
@@ -153,7 +163,7 @@ recipient_lookup_load_sql_string = [
             zip AS zip5,
             update_date,
             NULL AS alternate_names,
-            ROW_NUMBER() OVER (PARTITION BY uei, awardee_or_recipient_uniqu, UPPER(legal_business_name) ORDER BY update_date DESC NULLS LAST) AS row_num
+            ROW_NUMBER() OVER (PARTITION BY uei, awardee_or_recipient_uniqu ORDER BY update_date DESC NULLS LAST) AS row_num
         FROM raw.sam_recipient
         WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NOT NULL
     ),
@@ -283,7 +293,7 @@ recipient_lookup_load_sql_string = [
             zip AS zip5,
             update_date,
             NULL AS alternate_names,
-            ROW_NUMBER() OVER (PARTITION BY uei, awardee_or_recipient_uniqu, legal_business_name ORDER BY update_date DESC NULLS LAST) AS row_num
+            ROW_NUMBER() OVER (PARTITION BY uei, awardee_or_recipient_uniqu ORDER BY update_date DESC NULLS LAST) AS row_num
         FROM raw.sam_recipient
         WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NULL
     ),
@@ -451,7 +461,8 @@ recipient_lookup_load_sql_string = [
         zip5,
         alternate_names,
         source,
-        update_date
+        update_date,
+        row_num_union
     )
     SELECT
         recipient_hash,
@@ -473,13 +484,13 @@ recipient_lookup_load_sql_string = [
         zip5,
         alternate_names,
         source,
-        update_date
+        update_date,
+        row_num_union
     FROM union_all_priority
-    WHERE row_num_union = 1
     """,
-    r"""
-    DELETE FROM temp.temporary_restock_recipient_lookup WHERE recipient_hash IS NULL
-    """,
+    # -----
+    # Update the temporary_restock_recipient_lookup table to include any alternate names
+    # -----
     r"""
     MERGE INTO temp.temporary_restock_recipient_lookup temp_rl
     USING (
@@ -501,17 +512,30 @@ recipient_lookup_load_sql_string = [
         )
         SELECT
             COALESCE(an.recipient_hash, apn.recipient_hash) AS recipient_hash,
-            COALESCE(ARRAY_SORT(ARRAY_UNION(an.all_names, apn.all_names)), ARRAY()) AS alternate_names
+            COALESCE(
+                ARRAY_SORT(ARRAY_UNION(COALESCE(an.all_names, ARRAY()), COALESCE(apn.all_names, ARRAY()))),
+                ARRAY()
+             )AS all_names
         FROM alt_names AS an
         FULL OUTER JOIN alt_parent_names AS apn ON an.recipient_hash = apn.recipient_hash
     ) AS alt_names
-    ON temp_rl.recipient_hash = alt_names.recipient_hash
+    ON temp_rl.recipient_hash = alt_names.recipient_hash AND row_num_union = 1
     WHEN MATCHED
-    AND alt_names.alternate_names IS DISTINCT FROM temp_rl.alternate_names
-    THEN UPDATE SET temp_rl.alternate_names = alt_names.alternate_names
+    AND temp_rl.alternate_names IS DISTINCT FROM ARRAY_REMOVE(alt_names.all_names, COALESCE(temp_rl.legal_business_name, ''))
+    THEN UPDATE SET temp_rl.alternate_names = COALESCE(ARRAY_REMOVE(alt_names.all_names, COALESCE(temp_rl.legal_business_name, '')), ARRAY())
     """,
+    # -----
+    # Delete any instances of a NULL recipient_hash
+    # -----
     r"""
-    MERGE INTO recipient_lookup AS rl
+    DELETE FROM temp.temporary_restock_recipient_lookup
+    WHERE recipient_hash IS NULL OR row_num_union != 1
+    """,
+    # -----
+    # Merge the temporary_restock_recipient_lookup table into recipient_lookup
+    # -----
+    r"""
+    MERGE INTO {DESTINATION_DATABASE}.{DESTINATION_TABLE} AS rl
     USING temp.temporary_restock_recipient_lookup AS temp_rl
     ON rl.recipient_hash = temp_rl.recipient_hash
     WHEN MATCHED
@@ -554,8 +578,9 @@ recipient_lookup_load_sql_string = [
         rl.zip5 = temp_rl.zip5,
         rl.alternate_names = temp_rl.alternate_names,
         rl.source = temp_rl.source,
-        rl.update_date = temp_rl.update_date
+        rl.update_date = NOW()
     WHEN NOT MATCHED THEN INSERT (
+        id,
         recipient_hash,
         legal_business_name,
         duns,
@@ -577,6 +602,7 @@ recipient_lookup_load_sql_string = [
         update_date
     )
     VALUES (
+        0,
         recipient_hash,
         legal_business_name,
         duns,
@@ -595,9 +621,12 @@ recipient_lookup_load_sql_string = [
         zip5,
         alternate_names,
         source,
-        update_date
+        NOW()
     )
     """,
+    # -----
+    # Delete any cases of old recipients from recipient_lookup where the recipient now has a UEI
+    # -----
     r"""
     MERGE INTO {DESTINATION_DATABASE}.{DESTINATION_TABLE} AS rl
     USING (
@@ -611,7 +640,39 @@ recipient_lookup_load_sql_string = [
     WHEN MATCHED
     THEN DELETE
     """,
+    # -----
+    # Populate recipient_lookup with incremented Primary Key fields
+    # -----
+    r"""
+    CREATE OR REPLACE TEMPORARY VIEW temp_recipient_lookup_view AS (
+        SELECT
+            {AUTO_INCREMENT_MAX_ID} + ROW_NUMBER() OVER (ORDER BY recipient_hash) AS new_id,
+            rl.*
+        FROM {DESTINATION_DATABASE}.{DESTINATION_TABLE} AS rl
+        WHERE rl.id = 0
+    )
+    """,
+    r"""
+    MERGE INTO {DESTINATION_DATABASE}.{DESTINATION_TABLE} AS rl
+    USING temp_recipient_lookup_view temp_rl
+    ON rl.recipient_hash = temp_rl.recipient_hash
+    WHEN MATCHED
+    THEN UPDATE SET
+        rl.id = temp_rl.new_id
+    """,
+    # -----
+    # Cleanup the temporary table
+    # -----
+    r"""
+    DELETE FROM temp.temporary_restock_recipient_lookup
+    """,
     r"""
     DROP TABLE temp.temporary_restock_recipient_lookup
+    """,
+    r"""
+    DROP VIEW temp_recipient_lookup_view
+    """,
+    r"""
+    DROP VIEW temporary_transaction_recipients_view
     """,
 ]
