@@ -47,6 +47,12 @@ class DefaultConfig(BaseSettings):
         USASPENDING_DB_PASSWORD: Password for the user used to connect to the USAspending DB
         USASPENDING_DB_HOST: Host on which to to connect to the USAspending DB
         USASPENDING_DB_PORT: Port on which to connect to the USAspending DB
+        DATA_BROKER_DATABASE_URL: (optional) Full URL to Broker DB that can be used to override the URL-by-parts
+        BROKER_DB_NAME: The name of the Postgres DB that contains Broker data
+        BROKER_DB_USER: Authorized user used to connect to the Broker DB
+        BROKER_DB_PASSWORD: Password for the user used to connect to the Broker DB
+        BROKER_DB_HOST: Host on which to to connect to the Broker DB
+        BROKER_DB_PORT: Port on which to connect to the Broker DB
         ES_URL: (optional) Full URL to Elasticsearch cluster that can be used to override the URL-by-parts
         ES_SCHEME: "http" or "https". Defaults to "https:
         ES_HOST: Host on which to connect to the USAspending Elasticsearch cluster
@@ -75,125 +81,149 @@ class DefaultConfig(BaseSettings):
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
+    DATA_BROKER_DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See below root validator-factory
+    BROKER_DB_NAME: str = "data_broker"
+    BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
+
+    def _validate_database_url(cls, values, db_url_conf_name, db_conf_prefix, required=True):
+        """ Helper function to validate both DATABASE_URLs and their parts """
+
+        # First determine if DB URL config was provided.
+        is_database_url_provided = values[db_url_conf_name] and values[db_url_conf_name] not in CONFIG_VAR_PLACEHOLDERS
+
+        # If the DB URL config was was provided
+        # - it should take precedence
+        # - its values will be used to backfill any missing POSTGRES DSN parts stored as separate config vars
+        if is_database_url_provided:
+            url_parts, username, password = parse_pg_uri(values[db_url_conf_name])
+            backfill_configs = {
+                f"{db_conf_prefix}_HOST": lambda: url_parts.hostname,
+                f"{db_conf_prefix}_PORT": lambda: str(url_parts.port),
+                f"{db_conf_prefix}_NAME": lambda: url_parts.path.lstrip("/"),
+                f"{db_conf_prefix}_USER": lambda: username,
+                f"{db_conf_prefix}_PASSWORD": lambda: SecretStr(password),
+            }
+            # Backfill only POSTGRES DSN CONFIG vars that are missing their value
+            for config_name, transformation in backfill_configs.items():
+                value = values.get(config_name, None)
+                if config_name == f"{db_conf_prefix}_PASSWORD":
+                    value = unveil(value)
+                if value in [None] + CONFIG_VAR_PLACEHOLDERS:
+                    values = eval_default_factory_from_root_validator(cls, values, config_name, transformation)
+
+        # If the DB URL config is not provided, try to build-it-up from provided parts, then backfill it
+        if not is_database_url_provided:
+            # First validate that we have enough parts to provide it
+            required_pg_dsn_parts = [
+                f"{db_conf_prefix}_HOST",
+                f"{db_conf_prefix}_PORT",
+                f"{db_conf_prefix}_NAME",
+                f"{db_conf_prefix}_USER",
+                f"{db_conf_prefix}_PASSWORD",
+            ]
+            if not (
+                all(pg_dsn_part in values for pg_dsn_part in required_pg_dsn_parts)
+                and all(values[pg_dsn_part] is not None for pg_dsn_part in required_pg_dsn_parts)
+            ):
+                if required:
+                    raise ValueError(
+                        f"PostgreSQL {db_url_conf_name} was not provided and could not be built because one or more of"
+                        " these required parts were missing. Please check that the parts are completely configured, or"
+                        f" provide a {db_url_conf_name} instead: {required_pg_dsn_parts}"
+                    )
+                else:
+                    print(
+                        f"PostgreSQL {db_url_conf_name} was not provided and could not be built because one or more of"
+                        " these required parts were missing. Leaving blank for now. Please check that the parts are"
+                        f" completely configured, or provide a {db_url_conf_name} to use it:"
+                        f" {required_pg_dsn_parts}"
+                    )
+            else:
+                pg_dsn = PostgresDsn(
+                    url=None,
+                    scheme="postgres",
+                    user=values[f"{db_conf_prefix}_USER"],
+                    password=values[f"{db_conf_prefix}_PASSWORD"].get_secret_value(),
+                    host=values[f"{db_conf_prefix}_HOST"],
+                    port=values[f"{db_conf_prefix}_PORT"],
+                    path="/" + values[f"{db_conf_prefix}_NAME"] if values[f"{db_conf_prefix}_NAME"] else None,
+                )
+                values = eval_default_factory_from_root_validator(cls, values, db_url_conf_name, lambda: str(pg_dsn))
+
+        # if the DB URL is now available, check for consistency with the db config values
+        if values.get(db_url_conf_name, None):
+            # Now validate the provided and/or built values are consistent between DB URL and db config parts
+            pg_url_config_errors = {}
+            pg_url_parts, pg_username, pg_password = parse_pg_uri(values[db_url_conf_name])
+
+            # Validate host
+            if pg_url_parts.hostname != values[f"{db_conf_prefix}_HOST"]:
+                pg_url_config_errors[f"{db_conf_prefix}_HOST"] = (
+                    values[f"{db_conf_prefix}_HOST"],
+                    pg_url_parts.hostname,
+                )
+
+            # Validate port
+            if (
+                (pg_url_parts.port is not None and str(pg_url_parts.port) != values[f"{db_conf_prefix}_PORT"])
+                or pg_url_parts.port is None
+                and values[f"{db_conf_prefix}_PORT"] is not None
+            ):
+                pg_url_config_errors[f"{db_conf_prefix}_PORT"] = (values[f"{db_conf_prefix}_PORT"], pg_url_parts.port)
+
+            # Validate DB name (path)
+            if (
+                (pg_url_parts.path is not None and pg_url_parts.path.lstrip("/") != values[f"{db_conf_prefix}_NAME"])
+                or pg_url_parts.path is None
+                and values[f"{db_conf_prefix}_NAME"] is not None
+            ):
+                pg_url_config_errors[f"{db_conf_prefix}_NAME"] = (
+                    values[f"{db_conf_prefix}_NAME"],
+                    pg_url_parts.path.lstrip("/")
+                    if pg_url_parts.path is not None and pg_url_parts.path != "/"
+                    else None,
+                )
+
+            # Validate username
+            if pg_username != values[f"{db_conf_prefix}_USER"]:
+                pg_url_config_errors[f"{db_conf_prefix}_USER"] = (values[f"{db_conf_prefix}_USER"], pg_username)
+
+            # Validate password
+            if pg_password != unveil(values[f"{db_conf_prefix}_PASSWORD"]):
+                # NOTE: Keeping password text obfuscated in the error output
+                pg_url_config_errors[f"{db_conf_prefix}_PASSWORD"] = (
+                    values[f"{db_conf_prefix}_PASSWORD"],
+                    "*" * len(pg_password) if pg_password is not None else None,
+                )
+
+            if len(pg_url_config_errors) > 0:
+                err_msg = (
+                    f"The {db_url_conf_name} config var value was provided along with one or more {db_conf_prefix}_*"
+                    "config var values, however they were not consistent. Differing configuration sources that should "
+                    "match will cause confusion. Either provide all values consistently, or only provide a complete "
+                    f"{db_url_conf_name} and leave the others as None or unset, or leave "
+                    f"the {db_url_conf_name} None or unset and provide only the required POSTGRES DSN parts. "
+                    "Parts not matching:\n"
+                )
+                for k, v in pg_url_config_errors.items():
+                    err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {db_url_conf_name}: {v[1]}\n"
+                raise ValueError(err_msg)
+
     @root_validator
-    def _DATABASE_URL_and_parts_factory(cls, values):
-        """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are all
-        consistent.
+    def _DATABASE_URLs_and_parts_factory(cls, values):
+        """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are
+        all consistent. Similarly handles DATA_BROKER_DATABASE_URL and BROKER_DB_* part config vars.
 
         - Serves as a factory function to fill out all places where we track the database URL as both one complete
         connection string and as individual parts.
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
-
-        # First determine if DATABASE_URL was provided.
-        is_database_url_provided = values["DATABASE_URL"] and values["DATABASE_URL"] not in CONFIG_VAR_PLACEHOLDERS
-
-        # If DATABASE_URL was provided
-        # - it should take precedence
-        # - its values will be used to backfill any missing POSTGRES DSN parts stored as separate config vars
-        if is_database_url_provided:
-            url_parts, username, password = parse_pg_uri(values["DATABASE_URL"])
-
-            # Backfill only POSTGRES DSN CONFIG vars that are missing their value
-            if values.get("USASPENDING_DB_HOST", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, "USASPENDING_DB_HOST", lambda: url_parts.hostname
-                )
-            if values.get("USASPENDING_DB_PORT", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, "USASPENDING_DB_PORT", lambda: str(url_parts.port)
-                )
-            if values.get("USASPENDING_DB_NAME", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, "USASPENDING_DB_NAME", lambda: url_parts.path.lstrip("/")
-                )
-            if values.get("USASPENDING_DB_USER", None) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(cls, values, "USASPENDING_DB_USER", lambda: username)
-            if unveil(values.get("USASPENDING_DB_PASSWORD", None)) in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(
-                    cls, values, "USASPENDING_DB_PASSWORD", lambda: SecretStr(password)
-                )
-
-        # If DATABASE_URL is not provided, try to build-it-up from provided parts, then backfill it
-        if not is_database_url_provided:
-            # First validate that we have enough parts to provide it
-            required_pg_dsn_parts = [
-                "USASPENDING_DB_HOST",
-                "USASPENDING_DB_PORT",
-                "USASPENDING_DB_NAME",
-                "USASPENDING_DB_USER",
-                "USASPENDING_DB_PASSWORD",
-            ]
-            if not all(pg_dsn_part in values for pg_dsn_part in required_pg_dsn_parts):
-                raise ValueError(
-                    "PostgreSQL DATABASE_URL was not provided and could not be built because one or more of these "
-                    "required parts were missing. Please check that the parts are completely configured, or provide a "
-                    f"DATABASE_URL instead: {required_pg_dsn_parts}"
-                )
-
-            pg_dsn = PostgresDsn(
-                url=None,
-                scheme="postgres",
-                user=values["USASPENDING_DB_USER"],
-                password=values["USASPENDING_DB_PASSWORD"].get_secret_value(),
-                host=values["USASPENDING_DB_HOST"],
-                port=values["USASPENDING_DB_PORT"],
-                path="/" + values["USASPENDING_DB_NAME"] if values["USASPENDING_DB_NAME"] else None,
-            )
-            values = eval_default_factory_from_root_validator(cls, values, "DATABASE_URL", lambda: str(pg_dsn))
-
-        # Now validate the provided and/or built values are consistent between DATABASE_URL and USASPENDING_DB_* parts
-        pg_url_config_errors = {}
-        pg_url_parts, pg_username, pg_password = parse_pg_uri(values["DATABASE_URL"])
-
-        # Validate host
-        if pg_url_parts.hostname != values["USASPENDING_DB_HOST"]:
-            pg_url_config_errors["USASPENDING_DB_HOST"] = (values["USASPENDING_DB_HOST"], pg_url_parts.hostname)
-
-        # Validate port
-        if (
-            (pg_url_parts.port is not None and str(pg_url_parts.port) != values["USASPENDING_DB_PORT"])
-            or pg_url_parts.port is None
-            and values["USASPENDING_DB_PORT"] is not None
-        ):
-            pg_url_config_errors["USASPENDING_DB_PORT"] = (values["USASPENDING_DB_PORT"], pg_url_parts.port)
-
-        # Validate DB name (path)
-        if (
-            (pg_url_parts.path is not None and pg_url_parts.path.lstrip("/") != values["USASPENDING_DB_NAME"])
-            or pg_url_parts.path is None
-            and values["USASPENDING_DB_NAME"] is not None
-        ):
-            pg_url_config_errors["USASPENDING_DB_NAME"] = (
-                values["USASPENDING_DB_NAME"],
-                pg_url_parts.path.lstrip("/") if pg_url_parts.path is not None and pg_url_parts.path != "/" else None,
-            )
-
-        # Validate username
-        if pg_username != values["USASPENDING_DB_USER"]:
-            pg_url_config_errors["USASPENDING_DB_USER"] = (values["USASPENDING_DB_USER"], pg_username)
-
-        # Validate password
-        if pg_password != unveil(values["USASPENDING_DB_PASSWORD"]):
-            # NOTE: Keeping password text obfuscated in the error output
-            pg_url_config_errors["USASPENDING_DB_PASSWORD"] = (
-                values["USASPENDING_DB_PASSWORD"],
-                "*" * len(pg_password) if pg_password is not None else None,
-            )
-
-        if len(pg_url_config_errors) > 0:
-            err_msg = (
-                "The DATABASE_URL config var value was provided along with one or more USASPENDING_DB_* config var "
-                "values, however they were not consistent. Differing configuration sources that should match "
-                "will cause confusion. Either provide all values consistently, or only provide a complete "
-                "DATABASE_URL and leave the others as None or unset, or leave the DATABASE_URL None or unset "
-                "and provide only the required POSTGRES DSN parts. Parts not matching:\n"
-            )
-            for k, v in pg_url_config_errors.items():
-                err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in DATABASE_URL: {v[1]}\n"
-            raise ValueError(err_msg)
-
+        cls._validate_database_url(cls, values, "DATABASE_URL", "USASPENDING_DB", required=True)
+        cls._validate_database_url(cls, values, "DATA_BROKER_DATABASE_URL", "BROKER_DB", required=False)
         return values
 
     # ==== [Elasticsearch] ====

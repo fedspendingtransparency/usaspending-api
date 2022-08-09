@@ -88,7 +88,7 @@ AWARD_SEARCH_COLUMNS = {
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
     "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
-    "covid_spending_by_defc": {"delta": "STRING", "postgres": "TEXT"},
+    "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB"},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
     "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
 }
@@ -268,7 +268,7 @@ LEFT OUTER JOIN
   raw.transaction_fabs
     ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)
 LEFT OUTER JOIN
-  raw.recipient_lookup_testing ON recipient_lookup_testing.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
+  test.recipient_lookup_testing ON recipient_lookup_testing.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))

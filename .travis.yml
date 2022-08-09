@@ -65,7 +65,7 @@ before_install:
 install:
   # setuptools is pinned to version 60.8.2 due to an error occurring with built-in version
   - travis_retry pip install setuptools==60.8.2
-  - travis_retry pip install -r requirements/requirements.txt
+  - travis_retry pip install .[dev]
   - travis_retry pip install coveralls
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
   - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"

@@ -1,0 +1,7 @@
+# ======================================================================================#
+# Additional files that will be installed with the packaged python modules (.py files)  #
+# See also: https://packaging.python.org/en/latest/guides/using-manifest-in/
+# ======================================================================================#
+
+# By default, include ALL files in the code repository when pip installing
+global-include *
