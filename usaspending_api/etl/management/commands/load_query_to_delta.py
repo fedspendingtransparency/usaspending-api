@@ -9,7 +9,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.recipient.delta_models.recipient_profile import (
     recipient_profile_create_sql_string,
-    recipient_profile_load_sql_string,
+    recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientProfile
@@ -58,7 +58,7 @@ TABLE_SPEC = {
     },
     "recipient_profile": {
         "model": RecipientProfile,
-        "source_query": recipient_profile_load_sql_string,
+        "source_query": recipient_profile_load_sql_strings,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
