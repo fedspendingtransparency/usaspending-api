@@ -13,7 +13,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_COLUMNS,
     recipient_lookup_create_sql_string,
-    recipient_lookup_load_sql_string,
+    recipient_lookup_load_sql_string_list,
 )
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.search.delta_models.award_search import (
@@ -45,10 +45,10 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
     },
-    "recipient_lookup": {
+    "rpt.recipient_lookup": {
         "model": RecipientLookup,
         "is_from_broker": False,
-        "source_query": recipient_lookup_load_sql_string,
+        "source_query": recipient_lookup_load_sql_string_list,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -148,7 +148,7 @@ class Command(BaseCommand):
 
         table_spec = TABLE_SPEC[destination_table]
         self.destination_database = options["alt_db"] or table_spec["destination_database"]
-        self.destination_table_name = options["alt_name"] or destination_table
+        self.destination_table_name = options["alt_name"] or destination_table.split(".")[-1]
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {self.destination_database}")

@@ -533,14 +533,14 @@ def _verify_delta_table_loaded_to_delta(
     alt_name: str = None,
     load_command="load_table_to_delta",
 ):
-    """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the given
-    table and assert it was created and loaded as expected
+    """Generic function that uses the create_delta_table, load_table_to_delta, and load_query_to_delta commands to
+    create and load the given table and assert it was created and loaded as expected
     """
 
     cmd_args = [f"--destination-table={delta_table_name}"]
     if alt_db:
         cmd_args += [f"--alt-db={alt_db}"]
-    expected_table_name = delta_table_name
+    expected_table_name = delta_table_name.split(".")[-1]
     if alt_name:
         cmd_args += [f"--alt-name={alt_name}"]
         expected_table_name = alt_name
@@ -679,7 +679,7 @@ def test_load_table_to_from_delta_for_sam_recipient_and_reload(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_lookup(
+def test_load_table_to_from_delta_for_rpt_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_data_for_recipient_lookup, hive_unittest_metastore_db
 ):
     tables_to_load = ["sam_recipient", "transaction_fabs", "transaction_fpds", "transaction_normalized"]
@@ -688,7 +688,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     # Test initial load of Recipient Lookup
     call_command("update_recipient_lookup")
     _verify_delta_table_loaded_to_delta(
-        spark, "recipient_lookup", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark, "rpt.recipient_lookup", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
 
     # Create a new Transaction a transaction that represents a new name for a recipient
@@ -747,18 +747,16 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     tables_to_load = ["transaction_fabs", "transaction_normalized"]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     _verify_delta_table_loaded_to_delta(
-        spark, "recipient_lookup", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark, "rpt.recipient_lookup", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_lookup_testing(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
+def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make("recipient.RecipientLookup", id="1", _fill_optional=True)
     baker.make("recipient.RecipientLookup", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_lookup_testing", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_lookup_testing")
+    _verify_delta_table_loaded_to_delta(spark, "recipient_lookup", s3_unittest_data_bucket)
+    _verify_delta_table_loaded_from_delta(spark, "recipient_lookup")
 
 
 @mark.django_db(transaction=True)
@@ -936,7 +934,7 @@ def test_load_table_to_from_delta_for_transaction_search(
     tables_to_load = [
         "awards",
         "financial_accounts_by_awards",
-        "recipient_lookup_testing",
+        "recipient_lookup",
         "recipient_profile",
         "sam_recipient",
         "transaction_fabs",
@@ -986,7 +984,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     tables_to_load = [
         "awards",
         "financial_accounts_by_awards",
-        "recipient_lookup_testing",
+        "recipient_lookup",
         "recipient_profile",
         "sam_recipient",
         "transaction_fabs",
@@ -1017,7 +1015,7 @@ def test_load_table_to_from_delta_for_award_search(
     tables_to_load = [
         "awards",
         "financial_accounts_by_awards",
-        "recipient_lookup_testing",
+        "recipient_lookup",
         "recipient_profile",
         "sam_recipient",
         "transaction_fabs",
@@ -1046,7 +1044,7 @@ def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
     tables_to_load = [
         "awards",
         "financial_accounts_by_awards",
-        "recipient_lookup_testing",
+        "recipient_lookup",
         "recipient_profile",
         "sam_recipient",
         "transaction_fabs",
