@@ -2,7 +2,6 @@
 For more information on this file: https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values: https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
 import ddtrace
 import dj_database_url
 import os
@@ -383,6 +382,11 @@ LOGGING = {
             + "%(response_ms)d %(message)s %(request)s %(traceback)s %(error_msg)s",
         },
         "detailed": {"format": "[%(asctime)s] [%(levelname)s] - %(message)s", "datefmt": "%Y/%m/%d %H:%M:%S (%Z)"},
+        # tracing is used for some spark jobs' logs indirectly
+        "tracing": {
+            "format": "%(asctime)s.%(msecs)03dZ %(levelname)s %(name)s:%(lineno)s: %(message)s",
+            "datefmt": "%y/%m/%d %H:%M:%S",
+        },
     },
     "handlers": {
         "server": {
