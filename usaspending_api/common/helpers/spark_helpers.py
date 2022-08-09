@@ -415,19 +415,12 @@ def get_jdbc_url():
     return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
 
 
-def get_broker_jdbc_url(databroker_uri: str) -> str:
+def get_broker_jdbc_url():
     """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.DATA_BROKER_DATABASE_URL:
-        raise ValueError("DATABASE_URL config val must provided")
-    url_parts, user, password = parse_pg_uri(databroker_uri)
-    if user is None or password is None:
-        raise ValueError("databroker_uri provided must have username and password with host or in query string")
-    # JDBC URLs only support postgresql://
-    databroker_uri = (
-        f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password={password}"
-    )
+        raise ValueError("DATA_BROKER_DATABASE_URL config val must provided")
 
-    return f"jdbc:{databroker_uri}"
+    return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually
