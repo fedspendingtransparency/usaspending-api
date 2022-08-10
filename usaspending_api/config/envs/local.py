@@ -50,7 +50,7 @@ class LocalConfig(DefaultConfig):
 
     # ==== [Postgres Broker] ====
     BROKER_DB_USER: str = "admin"
-    BROKER_DB_PASSWORD: str = "root"
+    BROKER_DB_PASSWORD: SecretStr = "root"
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
