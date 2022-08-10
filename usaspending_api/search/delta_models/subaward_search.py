@@ -250,14 +250,14 @@ subaward_search_load_sql_string = fr"""
         -- Broker Subaward Table Meta
         bs.created_at AS broker_created_at,
         bs.updated_at AS broker_updated_at,
-        bs.id::LONG AS broker_subaward_id,
+        CAST(bs.id AS LONG) AS broker_subaward_id,
 
         -- Prime Award Fields (from Broker)
         bs.unique_award_key,
         bs.award_id AS award_piid_fain,
         bs.parent_award_id,
-        bs.award_amount::NUMERIC(23,2),
-        bs.action_date::DATE,
+        CAST(bs.award_amount AS NUMERIC(23,2)),
+        CAST(bs.action_date AS DATE),
         bs.fy,
         bs.awarding_agency_code,
         bs.awarding_agency_name,
@@ -304,11 +304,11 @@ subaward_search_load_sql_string = fr"""
 
         -- Subaward Fields (from Broker)
         bs.subaward_type,
-        bs.subaward_report_year::SHORT,
-        bs.subaward_report_month::SHORT,
+        CAST(bs.subaward_report_year AS SHORT),
+        CAST(bs.subaward_report_month AS SHORT),
         UPPER(bs.subaward_number) AS subaward_number,
-        COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00),
-        bs.sub_action_date::DATE,
+        COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00),
+        CAST(bs.sub_action_date AS DATE),
         UPPER(bs.sub_awardee_or_recipient_uniqu) AS sub_awardee_or_recipient_uniqu,
         UPPER(bs.sub_awardee_or_recipient_uei) AS sub_awardee_or_recipient_uei,
         UPPER(bs.sub_awardee_or_recipient_legal) AS sub_awardee_or_recipient_legal_raw,
@@ -336,20 +336,20 @@ subaward_search_load_sql_string = fr"""
         UPPER(bs.sub_place_of_perform_street) AS sub_place_of_perform_street,
         UPPER(bs.subaward_description) AS subaward_description,
         bs.sub_high_comp_officer1_full_na,
-        bs.sub_high_comp_officer1_amount::NUMERIC(23,2),
+        CAST(bs.sub_high_comp_officer1_amount AS NUMERIC(23,2)),
         bs.sub_high_comp_officer2_full_na,
-        bs.sub_high_comp_officer2_amount::NUMERIC(23,2),
+        CAST(bs.sub_high_comp_officer2_amount AS NUMERIC(23,2)),
         bs.sub_high_comp_officer3_full_na,
-        bs.sub_high_comp_officer3_amount::NUMERIC(23,2),
+        CAST(bs.sub_high_comp_officer3_amount AS NUMERIC(23,2)),
         bs.sub_high_comp_officer4_full_na,
-        bs.sub_high_comp_officer4_amount::NUMERIC(23,2),
+        CAST(bs.sub_high_comp_officer4_amount AS NUMERIC(23,2)),
         bs.sub_high_comp_officer5_full_na,
-        bs.sub_high_comp_officer5_amount::NUMERIC(23,2),
+        CAST(bs.sub_high_comp_officer5_amount AS NUMERIC(23,2)),
 
         -- Additional Prime Award Fields (from Broker)
         bs.prime_id,
         UPPER(bs.internal_id) AS internal_id,
-        bs.date_submitted::TIMESTAMP,
+        CAST(bs.date_submitted AS TIMESTAMP),
         bs.report_type,
         bs.transaction_type,
         bs.program_title,
@@ -360,20 +360,20 @@ subaward_search_load_sql_string = fr"""
         bs.federal_agency_name,
         bs.treasury_symbol,
         bs.dunsplus4,
-        bs.recovery_model_q1::BOOLEAN,
-        bs.recovery_model_q2::BOOLEAN,
-        bs.compensation_q1::BOOLEAN,
-        bs.compensation_q2::BOOLEAN,
+        CAST(bs.recovery_model_q1 AS BOOLEAN),
+        CAST(bs.recovery_model_q2 AS BOOLEAN),
+        CAST(bs.compensation_q1 AS BOOLEAN),
+        CAST(bs.compensation_q2 AS BOOLEAN),
         bs.high_comp_officer1_full_na,
-        bs.high_comp_officer1_amount::NUMERIC(23,2),
+        CAST(bs.high_comp_officer1_amount AS NUMERIC(23,2)),
         bs.high_comp_officer2_full_na,
-        bs.high_comp_officer2_amount::NUMERIC(23,2),
+        CAST(bs.high_comp_officer2_amount AS NUMERIC(23,2)),
         bs.high_comp_officer3_full_na,
-        bs.high_comp_officer3_amount::NUMERIC(23,2),
+        CAST(bs.high_comp_officer3_amount AS NUMERIC(23,2)),
         bs.high_comp_officer4_full_na,
-        bs.high_comp_officer4_amount::NUMERIC(23,2),
+        CAST(bs.high_comp_officer4_amount AS NUMERIC(23,2)),
         bs.high_comp_officer5_full_na,
-        bs.high_comp_officer5_amount::NUMERIC(23,2),
+        CAST(bs.high_comp_officer5_amount AS NUMERIC(23,2)),
 
         -- Additional Subaward Fields (from Broker)
         bs.sub_id,
@@ -388,10 +388,10 @@ subaward_search_load_sql_string = fr"""
         bs.sub_cfda_numbers,
         bs.sub_dunsplus4,
         bs.sub_recovery_subcontract_amt,
-        bs.sub_recovery_model_q1::BOOLEAN,
-        bs.sub_recovery_model_q2::BOOLEAN,
-        bs.sub_compensation_q1::BOOLEAN,
-        bs.sub_compensation_q2::BOOLEAN,
+        CAST(bs.sub_recovery_model_q1 AS BOOLEAN),
+        CAST(bs.sub_recovery_model_q2 AS BOOLEAN),
+        CAST(bs.sub_compensation_q1 AS BOOLEAN),
+        CAST(bs.sub_compensation_q2 AS BOOLEAN),
 
         -- USAS Links (and associated derivations)
         a.id AS award_id,
@@ -428,17 +428,17 @@ subaward_search_load_sql_string = fr"""
         cfda.program_title AS cfda_title,
 
         -- USAS Derived Fields
-        YEAR(bs.sub_action_date::DATE + interval '3 months') AS sub_fiscal_year,
+        YEAR(CAST(bs.sub_action_date AS DATE) + interval '3 months') AS sub_fiscal_year,
         CASE
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) IS NULL THEN NULL
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) < 1000000.0 THEN '<1M'         -- under $1 million
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) = 1000000.0 THEN '1M'          -- $1 million
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) < 25000000.0 THEN '1M..25M'     -- under $25 million
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) = 25000000.0 THEN '25M'         -- $25 million
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) < 100000000.0 THEN '25M..100M'   -- under $100 million
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) = 100000000.0 THEN '100M'        -- $100 million
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) < 500000000.0 THEN '100M..500M'  -- under $500 million
-              WHEN COALESCE(bs.subaward_amount::NUMERIC(23,2), 0.00) = 500000000.0 THEN '500M'        -- $500 million
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) IS NULL THEN NULL
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 1000000.0 THEN '<1M'         -- under $1 million
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 1000000.0 THEN '1M'          -- $1 million
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 25000000.0 THEN '1M..25M'     -- under $25 million
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 25000000.0 THEN '25M'         -- $25 million
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 100000000.0 THEN '25M..100M'   -- under $100 million
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 100000000.0 THEN '100M'        -- $100 million
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 500000000.0 THEN '100M..500M'  -- under $500 million
+              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 500000000.0 THEN '500M'        -- $500 million
               ELSE '>500M'                               --  over $500 million
         END AS sub_total_obl_bin,
         UPPER(COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal)) AS sub_awardee_or_recipient_legal,
