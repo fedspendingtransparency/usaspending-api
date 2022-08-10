@@ -28,6 +28,24 @@ from usaspending_api.awards.models import TransactionFABS
 
 
 @fixture
+def populate_broker_data_to_delta():
+    # Create broker data to be imported to delta
+    dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
+
+    connection = connections["data_broker"]
+    with connection.cursor() as cursor:
+        # nuke any previous data just in case
+        cursor.execute("truncate table subaward restart identity cascade;")
+
+        insert_statement = "insert into subaward (%s) values %s"
+        for record in dummy_broker_subaward_data:
+            columns = record.keys()
+            values = tuple(record[column] for column in columns)
+            sql = cursor.cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
+            cursor.execute(sql)
+
+
+@fixture
 def populate_data_for_transaction_search():
     # Create recipient data for two transactions; the other two will generate ad hoc
     baker.make(
@@ -307,7 +325,9 @@ def sorted_deep(d):
     return d
 
 
-def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, Any]], custom_schema: str):
+def equal_datasets(
+    psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, Any]], custom_schema: str, drop_cols: List[str] = None
+):
     """Helper function to compare the two datasets. Note the column types of ds1 will be used to cast columns in ds2."""
     datasets_match = True
 
@@ -323,6 +343,11 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     for i, psql_row in enumerate(psql_data):
         for k, psql_val in psql_row.items():
             spark_val = spark_data[i][k]
+
+            # for cases where now() columns wouldn't match
+            if drop_cols and k in drop_cols:
+                continue
+
             # Casting values based on the custom schema
             if (
                 k.strip() in schema_changes
@@ -364,13 +389,15 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     return datasets_match
 
 
-def _verify_delta_table_loaded_to_delta(
+def verify_delta_table_loaded_to_delta(
     spark: SparkSession,
     delta_table_name: str,
     s3_bucket: str,
     alt_db: str = None,
     alt_name: str = None,
     load_command="load_table_to_delta",
+    dummy_data: List[Dict[str, Any]] = None,
+    drop_cols: List[str] = None,
 ):
     """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the given
     table and assert it was created and loaded as expected
@@ -388,24 +415,25 @@ def _verify_delta_table_loaded_to_delta(
     call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
     call_command(load_command, *cmd_args)
 
-    # get the postgres data to compare
-    model = TABLE_SPEC[delta_table_name]["model"]
     partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
-    if model:
-        dummy_query = model.objects
-        if partition_col is not None:
-            dummy_query = dummy_query.order_by(partition_col)
-        dummy_data = list(dummy_query.all().values())
-    else:
-        # model can be None if loading from the Broker
-        broker_connection = connections["data_broker"]
-        source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
-        with broker_connection.cursor() as cursor:
-            dummy_query = f"SELECT * from {source_broker_name}"
+    if dummy_data is None:
+        # get the postgres data to compare
+        model = TABLE_SPEC[delta_table_name]["model"]
+        if model:
+            dummy_query = model.objects
             if partition_col is not None:
-                dummy_query = f"{dummy_query} ORDER BY {partition_col}"
-            cursor.execute(dummy_query)
-            dummy_data = dictfetchall(cursor)
+                dummy_query = dummy_query.order_by(partition_col)
+            dummy_data = list(dummy_query.all().values())
+        else:
+            # model can be None if loading from the Broker
+            broker_connection = connections["data_broker"]
+            source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
+            with broker_connection.cursor() as cursor:
+                dummy_query = f"SELECT * from {source_broker_name}"
+                if partition_col is not None:
+                    dummy_query = f"{dummy_query} ORDER BY {partition_col}"
+                cursor.execute(dummy_query)
+                dummy_data = dictfetchall(cursor)
 
     # get the spark data to compare
     # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again
@@ -414,10 +442,10 @@ def _verify_delta_table_loaded_to_delta(
         received_query = f"{received_query} ORDER BY {partition_col}"
     received_data = [row.asDict() for row in spark.sql(received_query).collect()]
 
-    assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"])
+    assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"], drop_cols=drop_cols)
 
 
-def _verify_delta_table_loaded_from_delta(
+def verify_delta_table_loaded_from_delta(
     spark: SparkSession,
     delta_table_name: str,
     alt_db: str = None,
@@ -479,8 +507,8 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str):
 def test_load_table_to_from_delta_for_sam_recipient_and_reload(spark, s3_unittest_data_bucket):
     baker.make("recipient.DUNS", broker_duns_id="1", _fill_optional=True)
     baker.make("recipient.DUNS", broker_duns_id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "sam_recipient")
+    verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient")
 
     # Getting count of the first load
     expected_exported_table = "duns_temp"
@@ -491,7 +519,7 @@ def test_load_table_to_from_delta_for_sam_recipient_and_reload(spark, s3_unittes
             expected_exported_table_count = dictfetchall(cursor)[0]["count"]
 
     # Rerunning again to see it working as intended
-    _verify_delta_table_loaded_from_delta(spark, "sam_recipient")
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient")
 
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
@@ -512,35 +540,16 @@ def test_load_table_to_from_delta_for_sam_recipient_and_reload(spark, s3_unittes
 def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_bucket):
     baker.make("recipient.RecipientLookup", id="1", _fill_optional=True)
     baker.make("recipient.RecipientLookup", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_lookup", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_lookup")
+    verify_delta_table_loaded_to_delta(spark, "recipient_lookup", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "recipient_lookup")
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(spark, s3_unittest_data_bucket):
     baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
     baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_delta_for_broker_subaward(spark, s3_unittest_data_bucket, broker_server_dblink_setup):
-    dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
-
-    connection = connections["data_broker"]
-    with connection.cursor() as cursor:
-        # nuke any previous data just in case
-        cursor.execute("truncate table subaward restart identity cascade;")
-
-        insert_statement = "insert into subaward (%s) values %s"
-        for record in dummy_broker_subaward_data:
-            columns = record.keys()
-            values = tuple(record[column] for column in columns)
-            sql = cursor.cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
-            cursor.execute(sql)
-
-    _verify_delta_table_loaded_to_delta(spark, "broker_subaward", s3_unittest_data_bucket)
+    verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "recipient_profile")
 
 
 @mark.django_db(transaction=True)
@@ -548,8 +557,8 @@ def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_b
     # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
     baker.make("awards.TransactionFABS", published_fabs_id="1", indirect_federal_sharing=1.0, _fill_optional=True)
     baker.make("awards.TransactionFABS", published_fabs_id="2", indirect_federal_sharing=1.0, _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "transaction_fabs")
+    verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "transaction_fabs")
 
 
 @mark.django_db(transaction=True)
@@ -677,8 +686,8 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(spark, s3_
         # and READ (e.g. from a Delta Table over that parquet into a DataFrame) under the SAME timezone
         original_spark_tz = spark.conf.get("spark.sql.session.timeZone")
         spark.conf.set("spark.sql.session.timeZone", "America/New_York")
-        _verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-        _verify_delta_table_loaded_from_delta(spark, "transaction_fabs")
+        verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
+        verify_delta_table_loaded_from_delta(spark, "transaction_fabs")
     finally:
         spark.conf.set("spark.sql.session.timeZone", original_spark_tz)
 
@@ -687,16 +696,16 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(spark, s3_
 def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket):
     baker.make("awards.TransactionFPDS", detached_award_procurement_id="1", _fill_optional=True)
     baker.make("awards.TransactionFPDS", detached_award_procurement_id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "transaction_fpds")
+    verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "transaction_fpds")
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_data_bucket):
     baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
     baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "transaction_normalized")
+    verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "transaction_normalized")
 
 
 @mark.django_db(transaction=True)
@@ -704,32 +713,32 @@ def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-    _verify_delta_table_loaded_to_delta(
+    verify_delta_table_loaded_to_delta(
         spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
-    _verify_delta_table_loaded_from_delta(spark, "transaction_search")
+    verify_delta_table_loaded_from_delta(spark, "transaction_search")
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search_testing(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
-    _verify_delta_table_loaded_to_delta(spark, "transaction_search_testing", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "transaction_search_testing")
+    verify_delta_table_loaded_to_delta(spark, "transaction_search_testing", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "transaction_search_testing")
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(spark, s3_unittest_data_bucket):
     baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
     baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(
+    verify_delta_table_loaded_to_delta(
         spark,
         "transaction_normalized",
         s3_unittest_data_bucket,
         alt_db="my_alt_db",
         alt_name="transaction_normalized_alt_name",
     )
-    _verify_delta_table_loaded_from_delta(
+    verify_delta_table_loaded_from_delta(
         spark,
         "transaction_normalized",
         alt_db="my_alt_db",
@@ -742,7 +751,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-    _verify_delta_table_loaded_to_delta(
+    verify_delta_table_loaded_to_delta(
         spark,
         "transaction_search",
         s3_unittest_data_bucket,
@@ -750,7 +759,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
         alt_name="transaction_search_alt_name",
         load_command="load_query_to_delta",
     )
-    _verify_delta_table_loaded_from_delta(
+    verify_delta_table_loaded_from_delta(
         spark,
         "transaction_search",
         alt_db="my_alt_db",
@@ -763,18 +772,18 @@ def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-    _verify_delta_table_loaded_to_delta(
+    verify_delta_table_loaded_to_delta(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
-    _verify_delta_table_loaded_from_delta(spark, "award_search")
+    verify_delta_table_loaded_from_delta(spark, "award_search")
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search_testing(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
-    _verify_delta_table_loaded_to_delta(spark, "award_search_testing", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "award_search_testing")
+    verify_delta_table_loaded_to_delta(spark, "award_search_testing", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "award_search_testing")
 
 
 @mark.django_db(transaction=True)
@@ -782,7 +791,7 @@ def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-    _verify_delta_table_loaded_to_delta(
+    verify_delta_table_loaded_to_delta(
         spark,
         "award_search",
         s3_unittest_data_bucket,
@@ -790,7 +799,7 @@ def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
         alt_name="award_search_alt_name",
         load_command="load_query_to_delta",
     )
-    _verify_delta_table_loaded_from_delta(
+    verify_delta_table_loaded_from_delta(
         spark,
         "award_search",
         alt_db="my_alt_db",
