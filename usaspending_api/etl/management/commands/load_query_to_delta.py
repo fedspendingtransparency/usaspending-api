@@ -7,11 +7,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.common.etl.spark import create_ref_temp_views
-from usaspending_api.recipient.delta_models.sam_recipient import (
-    sam_recipient_create_sql_string,
-    sam_recipient_load_sql_string,
-    SAM_RECIPIENT_COLUMNS,
-)
 from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
