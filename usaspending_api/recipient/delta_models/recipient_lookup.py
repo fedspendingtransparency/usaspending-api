@@ -524,6 +524,13 @@ recipient_lookup_load_sql_string_list = [
     THEN UPDATE SET temp_rl.alternate_names = COALESCE(ARRAY_REMOVE(alt_names.all_names, COALESCE(temp_rl.legal_business_name, '')), ARRAY())
     """,
     # -----
+    # Handle cleanup following alternate names generation
+    # -----
+    r"""
+    DELETE FROM temp.temporary_restock_recipient_lookup
+    WHERE row_num_union != 1 OR recipient_hash IS NULL
+    """,
+    # -----
     # Delete any cases of old recipients from where the recipient now has a UEI
     # -----
     r"""
@@ -540,13 +547,6 @@ recipient_lookup_load_sql_string_list = [
         AND temp_rl.uei IS NULL
     WHEN MATCHED
     THEN DELETE
-    """,
-    # -----
-    # Handle cleanup following alternate names generation
-    # -----
-    r"""
-    DELETE FROM temp.temporary_restock_recipient_lookup
-    WHERE row_num_union != 1 OR recipient_hash IS NULL
     """,
     # -----
     # Insert the temporary_restock_recipient_lookup table into recipient_lookup
