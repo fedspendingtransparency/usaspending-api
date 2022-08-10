@@ -486,6 +486,25 @@ recipient_lookup_load_sql_string_list = [
         update_date,
         row_num_union
     FROM union_all_priority
+    WHERE row_num_union = 1
+    """,
+    # -----
+    # Delete any cases of old recipients from where the recipient now has a UEI
+    # -----
+    r"""
+    MERGE INTO temp.temporary_restock_recipient_lookup AS temp_rl
+    USING (
+        SELECT duns_recipient_hash
+        FROM temp.temporary_restock_recipient_lookup
+        WHERE
+            uei IS NOT NULL
+            AND duns IS NOT NULL
+    ) AS using_temp_rl
+    ON
+        temp_rl.recipient_hash = using_temp_rl.duns_recipient_hash
+        AND temp_rl.uei IS NULL
+    WHEN MATCHED
+    THEN DELETE
     """,
     # -----
     # Update the temporary_restock_recipient_lookup table to include any alternate names
@@ -522,31 +541,6 @@ recipient_lookup_load_sql_string_list = [
     WHEN MATCHED
     AND temp_rl.alternate_names IS DISTINCT FROM ARRAY_REMOVE(alt_names.all_names, COALESCE(temp_rl.legal_business_name, ''))
     THEN UPDATE SET temp_rl.alternate_names = COALESCE(ARRAY_REMOVE(alt_names.all_names, COALESCE(temp_rl.legal_business_name, '')), ARRAY())
-    """,
-    # -----
-    # Handle cleanup following alternate names generation
-    # -----
-    r"""
-    DELETE FROM temp.temporary_restock_recipient_lookup
-    WHERE row_num_union != 1 OR recipient_hash IS NULL
-    """,
-    # -----
-    # Delete any cases of old recipients from where the recipient now has a UEI
-    # -----
-    r"""
-    MERGE INTO temp.temporary_restock_recipient_lookup AS temp_rl
-    USING (
-        SELECT duns_recipient_hash
-        FROM temp.temporary_restock_recipient_lookup
-        WHERE
-            uei IS NOT NULL
-            AND duns IS NOT NULL
-    ) AS using_temp_rl
-    ON
-        temp_rl.recipient_hash = using_temp_rl.duns_recipient_hash
-        AND temp_rl.uei IS NULL
-    WHEN MATCHED
-    THEN DELETE
     """,
     # -----
     # Insert the temporary_restock_recipient_lookup table into recipient_lookup
