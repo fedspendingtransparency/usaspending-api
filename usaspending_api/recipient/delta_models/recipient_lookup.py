@@ -161,7 +161,7 @@ recipient_lookup_load_sql_string_list = [
             zip4,
             zip AS zip5,
             update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY uei, awardee_or_recipient_uniqu ORDER BY update_date DESC NULLS LAST) AS row_num
         FROM raw.sam_recipient
         WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NOT NULL
@@ -188,7 +188,7 @@ recipient_lookup_load_sql_string_list = [
             zip4,
             zip5,
             action_date AS update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY recipient_hash ORDER BY action_date DESC, is_fpds, transaction_unique_id) AS row_num
         FROM temporary_transaction_recipients_view
         WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND awardee_or_recipient_legal IS NOT NULL
@@ -226,7 +226,7 @@ recipient_lookup_load_sql_string_list = [
             NULL AS zip4,
             NULL AS zip5,
             update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY ultimate_parent_uei, ultimate_parent_unique_ide ORDER BY update_date DESC NULLS LAST) AS row_num
         FROM raw.sam_recipient
         WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
@@ -253,7 +253,7 @@ recipient_lookup_load_sql_string_list = [
             NULL AS zip4,
             NULL AS zip5,
             action_date AS update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY parent_recipient_hash ORDER BY action_date DESC, is_fpds, transaction_unique_id) AS row_num
         FROM temporary_transaction_recipients_view
         WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
@@ -291,7 +291,7 @@ recipient_lookup_load_sql_string_list = [
             zip4,
             zip AS zip5,
             update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY uei, awardee_or_recipient_uniqu ORDER BY update_date DESC NULLS LAST) AS row_num
         FROM raw.sam_recipient
         WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NULL
@@ -318,7 +318,7 @@ recipient_lookup_load_sql_string_list = [
             zip4,
             zip5,
             action_date AS update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY recipient_hash ORDER BY action_date DESC, is_fpds, transaction_unique_id) AS row_num
         FROM temporary_transaction_recipients_view
         WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND awardee_or_recipient_legal IS NULL
@@ -356,7 +356,7 @@ recipient_lookup_load_sql_string_list = [
             NULL AS zip4,
             NULL AS zip5,
             update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY ultimate_parent_uei, ultimate_parent_unique_ide ORDER BY update_date DESC NULLS LAST) AS row_num
         FROM raw.sam_recipient
         WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NULL
@@ -383,7 +383,7 @@ recipient_lookup_load_sql_string_list = [
             NULL AS zip4,
             NULL AS zip5,
             action_date AS update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY parent_recipient_hash ORDER BY action_date DESC, is_fpds, transaction_unique_id) AS row_num
         FROM temporary_transaction_recipients_view
         WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NULL
@@ -410,7 +410,7 @@ recipient_lookup_load_sql_string_list = [
             zip4,
             zip5,
             action_date AS update_date,
-            NULL AS alternate_names,
+            ARRAY() AS alternate_names,
             ROW_NUMBER() OVER (PARTITION BY recipient_hash ORDER BY action_date DESC, is_fpds, transaction_unique_id) AS row_num
         FROM temporary_transaction_recipients_view
         WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NULL
@@ -524,14 +524,6 @@ recipient_lookup_load_sql_string_list = [
     THEN UPDATE SET temp_rl.alternate_names = COALESCE(ARRAY_REMOVE(alt_names.all_names, COALESCE(temp_rl.legal_business_name, '')), ARRAY())
     """,
     # -----
-    # Alternate names defaults to an empty list
-    # -----
-    """
-    UPDATE temp.temporary_restock_recipient_lookup
-    SET alternate_names = ARRAY()
-    WHERE alternate_names IS NULL
-    """,
-    # -----
     # Delete any cases of old recipients from where the recipient now has a UEI
     # -----
     r"""
@@ -546,7 +538,6 @@ recipient_lookup_load_sql_string_list = [
     ON
         temp_rl.recipient_hash = using_temp_rl.duns_recipient_hash
         AND temp_rl.uei IS NULL
-        AND temp_rl.recipient_hash != temp_rl.duns_recipient_hash
     WHEN MATCHED
     THEN DELETE
     """,
