@@ -431,15 +431,6 @@ def get_es_config():  # pragma: no cover -- will be used eventually
     return config
 
 
-def convert_decimal_cols_to_string(df: DataFrame) -> DataFrame:
-    df_no_decimal = df
-    for f in df.schema.fields:
-        if not isinstance(f.dataType, DecimalType):
-            continue
-        df_no_decimal = df_no_decimal.withColumn(f.name, df_no_decimal[f.name].cast(StringType()))
-    return df_no_decimal
-
-
 def get_jvm_logger(spark: SparkSession, logger_name=None):
     """
     Get a JVM log4j Logger object instance to log through Java
