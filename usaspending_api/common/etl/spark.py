@@ -484,7 +484,7 @@ def convert_array_cols_to_string(
                                 # Then replace any quote " character with \" (escaped quote, inside a quoted array elem)
                                 # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
                                 #       FOUR backslashes to represent ONE
-                                regexp_replace(regexp_replace(c, '\\\\', '\\\\\\\\'), '"', '\\\\"'),
+                                regexp_replace(regexp_replace(c, "\\\\", "\\\\\\\\"), '"', '\\\\"'),
                                 lit('"'),
                             ),
                         ),
