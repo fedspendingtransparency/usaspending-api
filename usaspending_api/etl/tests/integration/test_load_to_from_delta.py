@@ -24,7 +24,6 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
 from usaspending_api.awards.models import TransactionFABS
 
 
@@ -493,8 +492,15 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str):
     for dest_table in non_aggregate_table_specs:
         call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
         call_command("load_table_to_delta", f"--destination-table={dest_table}")
-    call_command("create_delta_table", f"--destination-table=recipient_profile_testing", "--alt-name=recipient_profile", f"--spark-s3-bucket={s3_bucket}")
-    call_command("load_table_to_delta", f"--destination-table=recipient_profile_testing", "--alt-name=recipient_profile")
+    call_command(
+        "create_delta_table",
+        f"--destination-table=recipient_profile_testing",
+        "--alt-name=recipient_profile",
+        f"--spark-s3-bucket={s3_bucket}",
+    )
+    call_command(
+        "load_table_to_delta", f"--destination-table=recipient_profile_testing", "--alt-name=recipient_profile"
+    )
     create_ref_temp_views(spark)
 
 
@@ -547,7 +553,9 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(spark, s3_unitte
     baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "recipient_profile_testing", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "recipient_profile_testing", spark_s3_bucket=s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile_testing", jdbc_inserts=True)  # test alt write strategy
+    _verify_delta_table_loaded_from_delta(
+        spark, "recipient_profile_testing", jdbc_inserts=True
+    )  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -737,27 +745,6 @@ def test_load_table_to_from_delta_for_recipient_profile(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
     _verify_delta_table_loaded_from_delta(spark, "recipient_profile")
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_profile_alt_db_and_name(
-    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
-):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
-    _verify_delta_table_loaded_to_delta(
-        spark,
-        "recipient_profile",
-        s3_unittest_data_bucket,
-        alt_db="my_alt_db",
-        alt_name="recipient_profile_alt_name",
-        load_command="load_query_to_delta",
-    )
-    _verify_delta_table_loaded_from_delta(
-        spark,
-        "recipient_profile",
-        alt_db="my_alt_db",
-        alt_name="recipient_profile_alt_name",
-    )
 
 
 @mark.django_db(transaction=True)
