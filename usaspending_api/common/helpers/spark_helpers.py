@@ -1,3 +1,9 @@
+"""
+Boilerplate helper functions for setup and configuration of the Spark environment
+
+NOTE: This is distinguished from the usaspending_api.common.etl.spark module, which holds Spark utility functions that
+could be used as stages or steps of an ETL job (aka "data pipeline")
+"""
 import inspect
 import logging
 import os
@@ -14,11 +20,8 @@ from pyspark.context import SparkContext
 from pyspark.find_spark_home import _find_spark_home
 from pyspark.java_gateway import launch_gateway
 from pyspark.serializers import read_int, UTF8Deserializer
-from pyspark.sql import DataFrame
 from pyspark.sql import SparkSession
 from pyspark.sql.conf import RuntimeConfig
-from pyspark.sql.types import DecimalType
-from pyspark.sql.types import StringType
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
 
