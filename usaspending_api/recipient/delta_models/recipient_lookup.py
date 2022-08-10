@@ -20,11 +20,11 @@ RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID = {
     "parent_uei": {"delta": "STRING", "postgres": "TEXT"},
 }
 RECIPIENT_LOOKUP_COLUMNS = {
-    "id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
+    "id": {"delta": "LONG", "postgres": "BIGINT NOT NULL"},
     **RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID,
 }
 
-RECIPIENT_LOOKUP_DELTA_COLUMNS = {k: v["delta"] for k, v in RECIPIENT_LOOKUP_COLUMNS.items()}
+RECIPIENT_LOOKUP_DELTA_COLUMNS = {k: v["delta"] for k, v in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID.items()}
 RECIPIENT_LOOKUP_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in RECIPIENT_LOOKUP_COLUMNS.items()}
 
 TEMP_RECIPIENT_LOOKUP_COLUMNS = {
@@ -543,7 +543,10 @@ recipient_lookup_load_sql_string_list = [
             uei IS NOT NULL
             AND duns IS NOT NULL
     ) AS using_temp_rl
-    ON temp_rl.recipient_hash = using_temp_rl.duns_recipient_hash AND temp_rl.uei IS NULL
+    ON
+        temp_rl.recipient_hash = using_temp_rl.duns_recipient_hash
+        AND temp_rl.uei IS NULL
+        AND temp_rl.recipient_hash != temp_rl.duns_recipient_hash
     WHEN MATCHED
     THEN DELETE
     """,
@@ -552,7 +555,7 @@ recipient_lookup_load_sql_string_list = [
     # -----
     r"""
     DELETE FROM temp.temporary_restock_recipient_lookup
-    WHERE row_num_union != 1
+    WHERE row_num_union != 1 OR recipient_hash IS NULL
     """,
     # -----
     # Insert the temporary_restock_recipient_lookup table into recipient_lookup
@@ -560,10 +563,9 @@ recipient_lookup_load_sql_string_list = [
     fr"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
-        {",".join([col for col in RECIPIENT_LOOKUP_COLUMNS])}
+        {",".join([col for col in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID])}
     )
     SELECT
-        ROW_NUMBER() OVER (ORDER BY recipient_hash) AS id,
         {",".join([col for col in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID])}
     FROM
         temp.temporary_restock_recipient_lookup
