@@ -49,7 +49,7 @@ DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
 @fixture(scope="session")
 def s3_unittest_data_bucket_setup_and_teardown():
-    """Create a test bucket named data so the tests can use it"""
+    """Create a test bucket so the tests can use it"""
     unittest_data_bucket = "unittest-data-{}".format(str(uuid.uuid4()))
 
     logging.warning(
@@ -155,6 +155,7 @@ def spark(tmp_path_factory) -> SparkSession:
         # For Spark SQL warehouse dir and Hive metastore_db
         "spark.sql.warehouse.dir": spark_sql_warehouse_dir,
         "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={spark_sql_warehouse_dir}/metastore_db;create=true",
+        "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
     }
     spark = configure_spark_session(
         app_name="Unit Test Session",

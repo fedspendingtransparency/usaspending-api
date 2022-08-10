@@ -209,6 +209,7 @@ def ensure_broker_server_dblink_exists():
 
         # Ensure foreign server setup to point to the broker DB for dblink to work
         broker_server_script_template = Template(broker_server_script)
+
         cursor.execute(broker_server_script_template.substitute(**db_conn_tokens_dict))
 
 

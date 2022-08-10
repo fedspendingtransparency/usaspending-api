@@ -1,109 +1,111 @@
 # The order of these fields should always match the order of the
 # SELECT statement in "transaction_search_load_sql_string"
 TRANSACTION_SEARCH_COLUMNS = {
-    "transaction_id": "LONG NOT NULL",
-    "award_id": "LONG NOT NULL",
-    "modification_number": "STRING",
-    "detached_award_proc_unique": "STRING",
-    "afa_generated_unique": "STRING",
-    "generated_unique_award_id": "STRING",
-    "fain": "STRING",
-    "uri": "STRING",
-    "piid": "STRING",
-    "action_date": "DATE",
-    "fiscal_action_date": "DATE",
-    "last_modified_date": "DATE",
-    "fiscal_year": "INTEGER",
-    "award_certified_date": "DATE",
-    "award_fiscal_year": "INTEGER",
-    "update_date": "TIMESTAMP",
-    "award_update_date": "TIMESTAMP",
-    "award_date_signed": "DATE",
-    "etl_update_date": "TIMESTAMP",
-    "period_of_performance_start_date": "DATE",
-    "period_of_performance_current_end_date": "DATE",
-    "type": "STRING",
-    "type_description": "STRING",
-    "award_category": "STRING",
-    "transaction_description": "STRING",
-    "award_amount": "NUMERIC(23,2)",
-    "generated_pragmatic_obligation": "NUMERIC(23,2)",
-    "federal_action_obligation": "NUMERIC(23,2)",
-    "original_loan_subsidy_cost": "NUMERIC(23,2)",
-    "face_value_loan_guarantee": "NUMERIC(23,2)",
-    "business_categories": "ARRAY<STRING>",
-    "naics_code": "STRING",
-    "naics_description": "STRING",
-    "product_or_service_code": "STRING",
-    "product_or_service_description": "STRING",
-    "type_of_contract_pricing": "STRING",
-    "type_set_aside": "STRING",
-    "extent_competed": "STRING",
-    "ordering_period_end_date": "STRING",
-    "cfda_number": "STRING",
-    "cfda_title": "STRING",
-    "cfda_id": "INTEGER",
-    "pop_country_name": "STRING",
-    "pop_country_code": "STRING",
-    "pop_state_name": "STRING",
-    "pop_state_code": "STRING",
-    "pop_county_code": "STRING",
-    "pop_county_name": "STRING",
-    "pop_zip5": "STRING",
-    "pop_congressional_code": "STRING",
-    "pop_congressional_population": "INTEGER",
-    "pop_county_population": "INTEGER",
-    "pop_state_fips": "STRING",
-    "pop_state_population": "INTEGER",
-    "pop_city_name": "STRING",
-    "recipient_location_country_code": "STRING",
-    "recipient_location_country_name": "STRING",
-    "recipient_location_state_name": "STRING",
-    "recipient_location_state_code": "STRING",
-    "recipient_location_state_fips": "STRING",
-    "recipient_location_state_population": "INTEGER",
-    "recipient_location_county_code": "STRING",
-    "recipient_location_county_name": "STRING",
-    "recipient_location_county_population": "INTEGER",
-    "recipient_location_congressional_code": "STRING",
-    "recipient_location_congressional_population": "INTEGER",
-    "recipient_location_zip5": "STRING",
-    "recipient_location_city_name": "STRING",
-    "recipient_hash": "STRING",
-    "recipient_levels": "ARRAY<STRING>",
-    "recipient_name": "STRING",
-    "recipient_unique_id": "STRING",
-    "parent_recipient_hash": "STRING",
-    "parent_recipient_name": "STRING",
-    "parent_recipient_unique_id": "STRING",
-    "recipient_uei": "STRING",
-    "parent_uei": "STRING",
-    "awarding_toptier_agency_id": "INTEGER",
-    "funding_toptier_agency_id": "INTEGER",
-    "awarding_agency_id": "INTEGER",
-    "funding_agency_id": "INTEGER",
-    "awarding_toptier_agency_name": "STRING",
-    "funding_toptier_agency_name": "STRING",
-    "awarding_subtier_agency_name": "STRING",
-    "funding_subtier_agency_name": "STRING",
-    "awarding_toptier_agency_abbreviation": "STRING",
-    "funding_toptier_agency_abbreviation": "STRING",
-    "awarding_subtier_agency_abbreviation": "STRING",
-    "funding_subtier_agency_abbreviation": "STRING",
-    "treasury_account_identifiers": "ARRAY<INTEGER>",
-    "tas_paths": "ARRAY<STRING>",
-    "tas_components": "ARRAY<STRING>",
-    "federal_accounts": "STRING",
-    "disaster_emergency_fund_codes": "ARRAY<STRING>",
-    "awarding_office_code": "STRING",
-    "awarding_office_name": "STRING",
-    "funding_office_code": "STRING",
-    "funding_office_name": "STRING",
+    "transaction_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
+    "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
+    "modification_number": {"delta": "STRING", "postgres": "TEXT"},
+    "detached_award_proc_unique": {"delta": "STRING", "postgres": "TEXT"},
+    "afa_generated_unique": {"delta": "STRING", "postgres": "TEXT"},
+    "generated_unique_award_id": {"delta": "STRING", "postgres": "TEXT"},
+    "fain": {"delta": "STRING", "postgres": "TEXT"},
+    "uri": {"delta": "STRING", "postgres": "TEXT"},
+    "piid": {"delta": "STRING", "postgres": "TEXT"},
+    "action_date": {"delta": "DATE", "postgres": "DATE"},
+    "fiscal_action_date": {"delta": "DATE", "postgres": "DATE"},
+    "last_modified_date": {"delta": "DATE", "postgres": "DATE"},
+    "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "award_certified_date": {"delta": "DATE", "postgres": "DATE"},
+    "award_fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
+    "award_update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
+    "award_date_signed": {"delta": "DATE", "postgres": "DATE"},
+    "etl_update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
+    "period_of_performance_start_date": {"delta": "DATE", "postgres": "DATE"},
+    "period_of_performance_current_end_date": {"delta": "DATE", "postgres": "DATE"},
+    "type": {"delta": "STRING", "postgres": "TEXT"},
+    "type_description": {"delta": "STRING", "postgres": "TEXT"},
+    "award_category": {"delta": "STRING", "postgres": "TEXT"},
+    "transaction_description": {"delta": "STRING", "postgres": "TEXT"},
+    "award_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "generated_pragmatic_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "federal_action_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "naics_code": {"delta": "STRING", "postgres": "TEXT"},
+    "naics_description": {"delta": "STRING", "postgres": "TEXT"},
+    "product_or_service_code": {"delta": "STRING", "postgres": "TEXT"},
+    "product_or_service_description": {"delta": "STRING", "postgres": "TEXT"},
+    "type_of_contract_pricing": {"delta": "STRING", "postgres": "TEXT"},
+    "type_set_aside": {"delta": "STRING", "postgres": "TEXT"},
+    "extent_competed": {"delta": "STRING", "postgres": "TEXT"},
+    "ordering_period_end_date": {"delta": "STRING", "postgres": "TEXT"},
+    "cfda_number": {"delta": "STRING", "postgres": "TEXT"},
+    "cfda_title": {"delta": "STRING", "postgres": "TEXT"},
+    "cfda_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "pop_country_name": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_country_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_state_name": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_state_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_county_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_zip5": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_congressional_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "pop_state_fips": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "pop_city_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_country_code": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_country_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_state_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_state_code": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_state_fips": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_state_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "recipient_location_county_code": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_county_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_city_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "recipient_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_recipient_name": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_uei": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_uei": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "awarding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "funding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "awarding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_subtier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_subtier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_toptier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_subtier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_subtier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
+    "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "TEXT[]"},
+    "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "tas_components": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "federal_accounts": {"delta": "STRING", "postgres": "JSONB"},
+    "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "awarding_office_code": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_office_name": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_office_code": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_office_name": {"delta": "STRING", "postgres": "TEXT"},
 }
+TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
+TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 
 transaction_search_create_sql_string = fr"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_COLUMNS.items()])}
+        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
@@ -112,7 +114,7 @@ transaction_search_create_sql_string = fr"""
 transaction_search_load_sql_string = fr"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
-        {",".join([col for col in TRANSACTION_SEARCH_COLUMNS])}
+        {",".join([col for col in TRANSACTION_SEARCH_DELTA_COLUMNS])}
     )
     SELECT
         transaction_normalized.id AS transaction_id,
@@ -219,15 +221,15 @@ transaction_search_load_sql_string = fr"""
 
         COALESCE(
             recipient_lookup.recipient_hash,
-            FORMAT_AS_UUID(MD5(UPPER(
+            REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
                         THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
                         THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-                    ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal))
+                    ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
                 END
-            )))
+            )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
         ) AS recipient_hash,
         RECIPIENT_HASH_AND_LEVELS.recipient_levels,
         UPPER(COALESCE(
@@ -258,10 +260,8 @@ transaction_search_load_sql_string = fr"""
             transaction_fabs.ultimate_parent_uei
         ) AS parent_uei,
 
-        (SELECT first(a.id) FROM global_temp.agency a WHERE a.toptier_agency_id = TAA.toptier_agency_id AND a.toptier_flag = TRUE)
-            AS awarding_toptier_agency_id,
-        (SELECT first(a.id) FROM global_temp.agency a WHERE a.toptier_agency_id = TFA.toptier_agency_id AND a.toptier_flag = TRUE)
-            AS funding_toptier_agency_id,
+        AA_ID.id AS awarding_toptier_agency_id,
+        FA_ID.id AS funding_toptier_agency_id,
         transaction_normalized.awarding_agency_id,
         transaction_normalized.funding_agency_id,
         TAA.name AS awarding_toptier_agency_name,
@@ -273,11 +273,12 @@ transaction_search_load_sql_string = fr"""
         SAA.abbreviation AS awarding_subtier_agency_abbreviation,
         SFA.abbreviation AS funding_subtier_agency_abbreviation,
 
-        tas.treasury_account_identifiers,
-        TREASURY_ACCT.tas_paths,
-        TREASURY_ACCT.tas_components,
-        FEDERAL_ACCT.federal_accounts,
-        FEDERAL_ACCT.defc AS disaster_emergency_fund_codes,
+        FED_AND_TRES_ACCT.treasury_account_identifiers,
+        FED_AND_TRES_ACCT.tas_paths,
+        FED_AND_TRES_ACCT.tas_components,
+        FED_AND_TRES_ACCT.federal_accounts,
+        FED_AND_TRES_ACCT.disaster_emergency_fund_codes,
+
         AO.office_code AS awarding_office_code,
         AO.office_name AS awarding_office_name,
         FO.office_code AS funding_office_code,
@@ -292,15 +293,15 @@ transaction_search_load_sql_string = fr"""
         global_temp.references_cfda ON (transaction_fabs.cfda_number = references_cfda.program_number)
     LEFT OUTER JOIN
         raw.recipient_lookup ON (
-            recipient_lookup.recipient_hash = FORMAT_AS_UUID(MD5(UPPER(
+            recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
                         THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
                         THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
-                    ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal))
+                    ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
                 END
-            )))
+            )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
         )
     LEFT OUTER JOIN
         raw.awards ON (transaction_normalized.award_id = awards.id)
@@ -311,27 +312,20 @@ transaction_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         global_temp.subtier_agency AS SAA ON (AA.subtier_agency_id = SAA.subtier_agency_id)
     LEFT OUTER JOIN
+        global_temp.agency AS AA_ID ON (AA_ID.toptier_agency_id = TAA.toptier_agency_id AND AA_ID.toptier_flag = TRUE)
+    LEFT OUTER JOIN
         global_temp.agency AS FA ON (transaction_normalized.funding_agency_id = FA.id)
     LEFT OUTER JOIN
         global_temp.toptier_agency AS TFA ON (FA.toptier_agency_id = TFA.toptier_agency_id)
     LEFT OUTER JOIN
         global_temp.subtier_agency AS SFA ON (FA.subtier_agency_id = SFA.subtier_agency_id)
+   LEFT OUTER JOIN
+        (SELECT id, toptier_agency_id, ROW_NUMBER() OVER (PARTITION BY toptier_agency_id ORDER BY toptier_flag DESC, id ASC) AS row_num FROM global_temp.agency) AS FA_ID
+        ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND row_num = 1)
     LEFT OUTER JOIN
         global_temp.naics ON (transaction_fpds.naics = naics.code)
     LEFT OUTER JOIN
         global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
-    LEFT OUTER JOIN (
-        SELECT
-            faba.award_id,
-            SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier), TRUE) treasury_account_identifiers
-        FROM
-            global_temp.treasury_appropriation_account taa
-        INNER JOIN raw.financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
-        WHERE
-            faba.award_id IS NOT NULL
-        GROUP BY
-            faba.award_id
-    ) tas ON (tas.award_id = transaction_normalized.award_id)
     LEFT OUTER JOIN (
         SELECT DISTINCT state_alpha, county_numeric, UPPER(county_name) AS county_name
         FROM global_temp.ref_city_county_state_code
@@ -346,30 +340,32 @@ transaction_search_load_sql_string = fr"""
         pop_county_lookup.state_alpha = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
         AND pop_county_lookup.county_numeric = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
     )
+    -- THIS JOIN HAPPENS ON "country_name" -> "country_code" intentionally to handle bad data
     LEFT OUTER JOIN
         global_temp.ref_country_code AS pop_country_lookup ON (
             pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
-            OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n)
+            OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c)
         )
+    -- THIS JOIN HAPPENS ON "country_name" -> "country_code" intentionally to handle bad data
     LEFT OUTER JOIN
         global_temp.ref_country_code AS rl_country_lookup ON (
             rl_country_lookup.country_code = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code, 'USA')
-            OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_name, transaction_fabs.legal_entity_country_name)
+            OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code)
         )
     LEFT OUTER JOIN
         raw.recipient_lookup PRL ON (
-            PRL.recipient_hash = FORMAT_AS_UUID(MD5(UPPER(
+            PRL.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) IS NOT NULL
                         THEN CONCAT('uei-', COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei))
                     WHEN COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) IS NOT NULL
                         THEN CONCAT('duns-', COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide))
-                    ELSE CONCAT('name-', COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti))
+                    ELSE CONCAT('name-', COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti, ''))
                 END
-            )))
+            )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
         )
     LEFT OUTER JOIN (
-        SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level), TRUE) AS recipient_levels
+        SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
         FROM raw.recipient_profile
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (
@@ -413,62 +409,22 @@ transaction_search_load_sql_string = fr"""
     ) RL_STATE_LOOKUP ON (
         RL_STATE_LOOKUP.code = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
     )
-    LEFT JOIN
+    LEFT OUTER JOIN
         global_temp.ref_population_county RL_STATE_POPULATION ON (
             RL_STATE_POPULATION.state_code = RL_STATE_LOOKUP.fips
             AND RL_STATE_POPULATION.county_number = '000'
         )
-    LEFT JOIN
+    LEFT OUTER JOIN
         global_temp.ref_population_county RL_COUNTY_POPULATION ON (
             RL_COUNTY_POPULATION.state_code = RL_STATE_LOOKUP.fips
             AND RL_COUNTY_POPULATION.county_number = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
         )
-    LEFT JOIN
+    LEFT OUTER JOIN
         global_temp.ref_population_cong_district RL_DISTRICT_POPULATION ON (
             RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips
             AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
         )
-    LEFT JOIN (
-        SELECT
-            faba.award_id,
-            SORT_ARRAY(
-                COLLECT_SET(
-                    CONCAT(
-                        'agency=', agency.toptier_code,
-                        'faaid=', fa.agency_identifier,
-                        'famain=', fa.main_account_code,
-                        'aid=', taa.agency_id,
-                        'main=', taa.main_account_code,
-                        'ata=', taa.allocation_transfer_agency_id,
-                        'sub=', taa.sub_account_code,
-                        'bpoa=', taa.beginning_period_of_availability,
-                        'epoa=', taa.ending_period_of_availability,
-                        'a=', taa.availability_type_code
-                    )
-                ), TRUE
-            ) tas_paths,
-            SORT_ARRAY(
-                COLLECT_SET(
-                    CONCAT(
-                        'aid=', taa.agency_id,
-                        'main=', taa.main_account_code,
-                        'ata=', taa.allocation_transfer_agency_id,
-                        'sub=', taa.sub_account_code,
-                        'bpoa=', taa.beginning_period_of_availability,
-                        'epoa=', taa.ending_period_of_availability,
-                        'a=', taa.availability_type_code
-                    )
-                ),
-                TRUE
-            ) tas_components
-        FROM global_temp.treasury_appropriation_account taa
-        INNER JOIN raw.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
-        INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
-        INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
-        WHERE faba.award_id IS NOT NULL
-        GROUP BY faba.award_id
-    ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = transaction_normalized.award_id)
-    LEFT JOIN (
+    LEFT OUTER JOIN (
         SELECT
             faba.award_id,
             TO_JSON(
@@ -479,19 +435,53 @@ transaction_search_load_sql_string = fr"""
                             'account_title', fa.account_title,
                             'federal_account_code', fa.federal_account_code
                         )
-                    ), TRUE
+                    )
                 )
-            ) federal_accounts,
+            ) AS federal_accounts,
+            -- "CASE" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
+            CASE
+                WHEN SIZE(COLLECT_SET(faba.disaster_emergency_fund_code)) > 0
+                    THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
+                ELSE NULL
+            END AS disaster_emergency_fund_codes,
+            SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) treasury_account_identifiers,
             SORT_ARRAY(
-                COLLECT_SET(disaster_emergency_fund_code) FILTER (WHERE disaster_emergency_fund_code IS NOT NULL),
+                COLLECT_SET(
+                    CONCAT(
+                        'agency=', COALESCE(agency.toptier_code, ''),
+                        'faaid=', COALESCE(fa.agency_identifier, ''),
+                        'famain=', COALESCE(fa.main_account_code, ''),
+                        'aid=', COALESCE(taa.agency_id, ''),
+                        'main=', COALESCE(taa.main_account_code, ''),
+                        'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
+                        'sub=', COALESCE(taa.sub_account_code, ''),
+                        'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
+                        'epoa=', COALESCE(taa.ending_period_of_availability, ''),
+                        'a=', COALESCE(taa.availability_type_code, '')
+                    )
+                )
+            ) AS tas_paths,
+            SORT_ARRAY(
+                COLLECT_SET(
+                    CONCAT(
+                        'aid=', COALESCE(taa.agency_id, ''),
+                        'main=', COALESCE(taa.main_account_code, ''),
+                        'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
+                        'sub=', COALESCE(taa.sub_account_code, ''),
+                        'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
+                        'epoa=', COALESCE(taa.ending_period_of_availability, ''),
+                        'a=', COALESCE(taa.availability_type_code, '')
+                    )
+                ),
                 TRUE
-            ) defc
-        FROM global_temp.federal_account fa
-        INNER JOIN global_temp.treasury_appropriation_account taa ON fa.id = taa.federal_account_id
-        INNER JOIN raw.financial_accounts_by_awards faba ON taa.treasury_account_identifier = faba.treasury_account_id
+            ) AS tas_components
+        FROM raw.financial_accounts_by_awards AS faba
+        INNER JOIN global_temp.treasury_appropriation_account AS taa ON taa.treasury_account_identifier = faba.treasury_account_id
+        INNER JOIN global_temp.federal_account AS fa ON fa.id = taa.federal_account_id
+        INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
-    ) FEDERAL_ACCT ON (FEDERAL_ACCT.award_id = transaction_normalized.award_id)
+    ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)
     LEFT OUTER JOIN
         global_temp.office AO ON COALESCE(transaction_fpds.awarding_office_code, transaction_fabs.awarding_office_code) = AO.office_code
     LEFT OUTER JOIN
