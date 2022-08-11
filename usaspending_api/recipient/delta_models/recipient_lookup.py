@@ -55,7 +55,7 @@ recipient_lookup_load_sql_string_list = [
                     CASE
                         WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, fabs.uei))
                         WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
-                        ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) END
+                        ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal, '')) END
                 )),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
@@ -64,7 +64,7 @@ recipient_lookup_load_sql_string_list = [
                 MD5(UPPER(
                     CASE
                         WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
-                        ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal)) END
+                        ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal, '')) END
                 )),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
@@ -74,7 +74,7 @@ recipient_lookup_load_sql_string_list = [
                     CASE
                         WHEN COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei))
                         WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT  NULL THEN CONCAT('duns-', COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide))
-                        ELSE CONCAT('name-', COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti)) END
+                        ELSE CONCAT('name-', COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti, '')) END
                 )),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
@@ -83,7 +83,7 @@ recipient_lookup_load_sql_string_list = [
                 MD5(UPPER(
                     CASE
                         WHEN COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide))
-                        ELSE CONCAT('name-', COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti)) END
+                        ELSE CONCAT('name-', COALESCE(fpds.ultimate_parent_legal_enti, fabs.ultimate_parent_legal_enti, '')) END
                 )),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
@@ -134,13 +134,13 @@ recipient_lookup_load_sql_string_list = [
             REGEXP_REPLACE(
                 MD5(UPPER(
                     CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
-                    ELSE CONCAT('duns-', awardee_or_recipient_uniqu) END
+                    ELSE CONCAT('duns-', COALESCE(awardee_or_recipient_uniqu, '')) END
                 )),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
             ) AS recipient_hash,
             REGEXP_REPLACE(
-                MD5(UPPER(CONCAT('duns-', awardee_or_recipient_uniqu))),
+                MD5(UPPER(CONCAT('duns-', COALESCE(awardee_or_recipient_uniqu, '')))),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
             ) AS duns_recipient_hash,
@@ -199,13 +199,13 @@ recipient_lookup_load_sql_string_list = [
             REGEXP_REPLACE(
                 MD5(UPPER(
                     CASE WHEN ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
-                    ELSE CONCAT('duns-', ultimate_parent_unique_ide) END
+                    ELSE CONCAT('duns-', COALESCE(ultimate_parent_unique_ide, '')) END
                 )),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
             ) AS recipient_hash,
             REGEXP_REPLACE(
-                MD5(UPPER(CONCAT('duns-', ultimate_parent_unique_ide))),
+                MD5(UPPER(CONCAT('duns-', COALESCE(ultimate_parent_unique_ide, '')))),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
             ) AS duns_recipient_hash,
@@ -264,13 +264,13 @@ recipient_lookup_load_sql_string_list = [
             REGEXP_REPLACE(
                 MD5(UPPER(
                     CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
-                    ELSE CONCAT('duns-', awardee_or_recipient_uniqu) END
+                    ELSE CONCAT('duns-', COALESCE(awardee_or_recipient_uniqu, '')) END
                 )),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
             ) AS recipient_hash,
             REGEXP_REPLACE(
-                MD5(UPPER(CONCAT('duns-', awardee_or_recipient_uniqu))),
+                MD5(UPPER(CONCAT('duns-', COALESCE(awardee_or_recipient_uniqu, '')))),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
             ) AS duns_recipient_hash,
@@ -329,13 +329,13 @@ recipient_lookup_load_sql_string_list = [
             REGEXP_REPLACE(
                 MD5(UPPER(
                     CASE WHEN ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
-                    ELSE CONCAT('duns-', ultimate_parent_unique_ide) END
+                    ELSE CONCAT('duns-', COALESCE(ultimate_parent_unique_ide, '')) END
                 )),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
             ) AS recipient_hash,
             REGEXP_REPLACE(
-                MD5(UPPER(CONCAT('duns-', ultimate_parent_unique_ide))),
+                MD5(UPPER(CONCAT('duns-', COALESCE(ultimate_parent_unique_ide, '')))),
                 '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$',
                 '\$1-\$2-\$3-\$4-\$5'
             ) AS duns_recipient_hash,
@@ -437,7 +437,10 @@ recipient_lookup_load_sql_string_list = [
     union_all_priority AS (
         SELECT
             *,
-            ROW_NUMBER() OVER (PARTITION BY recipient_hash ORDER BY priority ASC, update_date DESC) AS row_num_union
+            ROW_NUMBER() OVER (
+                PARTITION BY recipient_hash
+                ORDER BY priority ASC, uei ASC, duns ASC, update_date DESC
+            ) AS row_num_union
         FROM union_all
     )
     INSERT INTO temp.temporary_restock_recipient_lookup (
