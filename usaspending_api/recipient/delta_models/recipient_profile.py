@@ -70,9 +70,8 @@ recipient_profile_load_sql_strings = [
         tn.action_date >= '2007-10-01'
         AND tn.type IS NOT NULL
     );""",
-    #
     # --------------------------------------------------------------------------------
-    # -- Step 2, Create the new table and populate with 100% of combinations
+    # -- Step 2, Populate table with 100% of combinations
     # --------------------------------------------------------------------------------
     f"""
         INSERT INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
@@ -285,7 +284,7 @@ recipient_profile_load_sql_strings = [
         recipient_affiliations = ar.parent_uei_list,
         id = 1;""",
     # --------------------------------------------------------------------------------
-    # -- Step 7, Mark recipient profile rows older than 12 months  as valid
+    # -- Step 7, Mark recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
     f"""WITH grouped_by_old_recipients AS (
         SELECT
@@ -304,7 +303,7 @@ recipient_profile_load_sql_strings = [
     WHEN MATCHED THEN UPDATE SET
         id = 1;""",
     # --------------------------------------------------------------------------------
-    # -- Step 8, Mark Parent recipient profile rows older than 12 months  as valid
+    # -- Step 8, Mark Parent recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
     f"""WITH grouped_by_parent_old AS (
         SELECT
@@ -323,7 +322,7 @@ recipient_profile_load_sql_strings = [
     WHEN MATCHED THEN UPDATE SET
         id = 1;""",
     # --------------------------------------------------------------------------------
-    # -- Step 9, Finalize new table
+    # -- Step 9, Delete unused data from table
     # --------------------------------------------------------------------------------
     f"""DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} WHERE id = 0;""",
     """DROP VIEW temporary_recipients_from_transactions_view;""",

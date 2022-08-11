@@ -68,7 +68,7 @@ TABLE_SPEC = {
         "destination_database": "rpt",
         "swap_table": "recipient_profile",
         "swap_schema": "rpt",
-        "partition_column": "recipient_hash",
+        "partition_column": "recipient_hash",  # This isn't used for anything
         "partition_column_type": "string",
         "delta_table_create_sql": recipient_profile_create_sql_string,
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -145,6 +145,9 @@ class Command(BaseCommand):
         create_ref_temp_views(spark)
         if type(TABLE_SPEC[destination_table].get("source_query")) == list:
             for x in TABLE_SPEC[destination_table].get("source_query"):
+                logger.info(
+                    f"Running query {TABLE_SPEC[destination_table].get('source_query').index(x)} in list of queries for {destination_table_name}."
+                )
                 spark.sql(x.format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name))
         else:
             spark.sql(
