@@ -26,9 +26,9 @@ recipient_profile_create_sql_string = f"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
 recipient_profile_load_sql_strings = [
-    f"""
-        DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}};
-    """,
+    # f"""
+    #     TRUNCATE TABLE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}};
+    # """,
     #   --------------------------------------------------------------------------------
     #     -- Step 1, create the temporary matview of recipients from transactions
     #   --------------------------------------------------------------------------------
@@ -75,7 +75,8 @@ recipient_profile_load_sql_strings = [
     # -- Step 2, Create the new table and populate with 100% of combinations
     # --------------------------------------------------------------------------------
     f"""
-        INSERT INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
+        --INSERT INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
+        CREATE OR REPLACE TEMPORARY VIEW step2 AS (
             SELECT
                 'P' as recipient_level,
                 recipient_hash AS recipient_hash,
@@ -177,20 +178,41 @@ recipient_profile_load_sql_strings = [
             grouped_by_category_inner AS gbci
         GROUP BY recipient_hash, recipient_level
     )
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    USING grouped_by_category AS gbc
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING grouped_by_category AS gbc
+    CREATE TEMP VIEW step_3 AS (
+    SELECT
+        rpv.recipient_level,
+        rpv.recipient_hash,
+        rpv.recipient_unique_id,
+        rpv.recipient_name,
+        rpv.recipient_affiliations,
+        rpv.uei,
+        rpv.parent_uei,
+        rpv.award_types || COALESCE(gbc.award_types, ARRAY()) AS award_types,
+        rpv.last_12_months + COALESCE(gbc.amount, 0) AS last_12_months,
+        rpv.last_12_contracts + COALESCE(gbc.last_12_contracts, 0) AS last_12_contracts,
+        rpv.last_12_grants + COALESCE(gbc.last_12_grants, 0) AS last_12_grants,
+        rpv.last_12_direct_payments + COALESCE(gbc.last_12_direct_payments, 0) AS last_12_direct_payments,
+        rpv.last_12_loans + COALESCE(gbc.last_12_loans, 0) AS last_12_loans,
+        rpv.last_12_other + COALESCE(gbc.last_12_other, 0) AS last_12_other,
+        rpv.last_12_months_count + COALESCE(gbc.count, 0) AS last_12_months_count,
+        1 AS id,
+    FROM step_2 AS rpv
+    LEFT OUTER JOIN grouped_by_category AS gbc 
     ON gbc.recipient_hash = rpv.recipient_hash AND
         gbc.recipient_level = rpv.recipient_level
-    WHEN MATCHED THEN UPDATE SET
-        award_types = gbc.award_types || rpv.award_types,
-        last_12_months = rpv.last_12_months + gbc.amount,
-        last_12_contracts = rpv.last_12_contracts + gbc.last_12_contracts,
-        last_12_grants = rpv.last_12_grants + gbc.last_12_grants,
-        last_12_direct_payments = rpv.last_12_direct_payments + gbc.last_12_direct_payments,
-        last_12_loans = rpv.last_12_loans + gbc.last_12_loans,
-        last_12_other = rpv.last_12_other + gbc.last_12_other,
-        last_12_months_count = rpv.last_12_months_count + gbc.count,
-        id = 1;""",
+    --WHEN MATCHED THEN UPDATE SET
+    --    award_types = gbc.award_types || rpv.award_types,
+    --    last_12_months = rpv.last_12_months + gbc.amount,
+    --    last_12_contracts = rpv.last_12_contracts + gbc.last_12_contracts,
+    --    last_12_grants = rpv.last_12_grants + gbc.last_12_grants,
+    --    last_12_direct_payments = rpv.last_12_direct_payments + gbc.last_12_direct_payments,
+    --    last_12_loans = rpv.last_12_loans + gbc.last_12_loans,
+    --    last_12_other = rpv.last_12_other + gbc.last_12_other,
+    --    last_12_months_count = rpv.last_12_months_count + gbc.count,
+    --    id = 1
+    );""",
     # --------------------------------------------------------------------------------
     # -- Step 4, Populate the Parent Obligation for past 12 months
     # --------------------------------------------------------------------------------
@@ -230,19 +252,40 @@ recipient_profile_load_sql_strings = [
             grouped_by_parent_inner AS gbpi
         GROUP BY parent_uei
     )
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv USING  grouped_by_parent AS gbp
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv USING  grouped_by_parent AS gbp
+    CREATE TEMP VIEW step_4 AS (
+    SELECT
+        rpv.recipient_level,
+        rpv.recipient_hash,
+        rpv.recipient_unique_id,
+        rpv.recipient_name,
+        rpv.recipient_affiliations,
+        rpv.uei,
+        rpv.parent_uei,
+        rpv.award_types || COALESCE(gbp.award_types, ARRAY()) AS award_types,
+        rpv.last_12_months + COALESCE(gbp.amount, 0) AS last_12_months,
+        rpv.last_12_contracts + COALESCE(gbp.last_12_contracts, 0) AS last_12_contracts,
+        rpv.last_12_grants + COALESCE(gbp.last_12_grants, 0) AS last_12_grants,
+        rpv.last_12_direct_payments + COALESCE(gbp.last_12_direct_payments, 0) AS last_12_direct_payments,
+        rpv.last_12_loans + COALESCE(gbp.last_12_loans, 0) AS last_12_loans,
+        rpv.last_12_other + COALESCE(gbp.last_12_other, 0) AS last_12_other,
+        rpv.last_12_months_count + COALESCE(gbp.count, 0) AS last_12_months_count,
+        1 AS id 
+    FROM step_3 AS rpv
+    LEFT OUTER JOIN grouped_by_parent AS gbp 
     ON rpv.uei = gbp.uei AND
         rpv.recipient_level = 'P'
-    WHEN MATCHED THEN UPDATE SET
-        award_types = gbp.award_types || rpv.award_types,
-        last_12_months = rpv.last_12_months + gbp.amount,
-        last_12_contracts = rpv.last_12_contracts + gbp.last_12_contracts,
-        last_12_grants = rpv.last_12_grants + gbp.last_12_grants,
-        last_12_direct_payments = rpv.last_12_direct_payments + gbp.last_12_direct_payments,
-        last_12_loans = rpv.last_12_loans + gbp.last_12_loans,
-        last_12_other = rpv.last_12_other + gbp.last_12_other,
-        last_12_months_count = rpv.last_12_months_count + gbp.count,
-        id = 1;""",
+    --WHEN MATCHED THEN UPDATE SET
+    --    award_types = gbp.award_types || rpv.award_types,
+    --    last_12_months = rpv.last_12_months + gbp.amount,
+    --    last_12_contracts = rpv.last_12_contracts + gbp.last_12_contracts,
+    --    last_12_grants = rpv.last_12_grants + gbp.last_12_grants,
+    --    last_12_direct_payments = rpv.last_12_direct_payments + gbp.last_12_direct_payments,
+    --    last_12_loans = rpv.last_12_loans + gbp.last_12_loans,
+    --    last_12_other = rpv.last_12_other + gbp.last_12_other,
+    --    last_12_months_count = rpv.last_12_months_count + gbp.count,
+    --    id = 1
+    );""",
     # --------------------------------------------------------------------------------
     # -- Step 5, Populating child recipient list in parents
     # --------------------------------------------------------------------------------
@@ -257,12 +300,33 @@ recipient_profile_load_sql_strings = [
         GROUP BY
             parent_uei
     )
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    USING parent_recipients AS pr
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING parent_recipients AS pr
+    CREATE TEMP VIEW step_5 AS (
+    SELECT
+        rpv.recipient_level,
+        rpv.recipient_hash,
+        rpv.recipient_unique_id,
+        rpv.recipient_name,
+        rpv.uei,
+        rpv.parent_uei,
+        rpv.award_types,
+        rpv.last_12_months,
+        rpv.last_12_contracts,
+        rpv.last_12_grants,
+        rpv.last_12_direct_payments,
+        rpv.last_12_loans,
+        rpv.last_12_other,
+        rpv.last_12_months_count,
+        1 AS id,
+        COALESCE(pr.uei_list, rpv.recipient_affiliations) AS recipient_affiliations  
+    FROM step_4 AS rpv
+    LEFT OUTER JOIN parent_recipients AS pr 
     ON rpv.uei = pr.parent_uei and rpv.recipient_level = 'P'
-    WHEN MATCHED THEN UPDATE SET
-        recipient_affiliations = pr.uei_list,
-        id = 1;""",
+    --WHEN MATCHED THEN UPDATE SET
+    --    recipient_affiliations = pr.uei_list,
+    --    id = 1
+    );""",
     # --------------------------------------------------------------------------------
     # -- Step 6, Populate parent recipient list in children
     # --------------------------------------------------------------------------------
@@ -277,13 +341,34 @@ recipient_profile_load_sql_strings = [
             parent_uei IS NOT NULL
         GROUP BY uei
     )
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    USING all_recipients AS ar
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING all_recipients AS ar
+    CREATE TEMP VIEW step_6 AS (
+    SELECT
+        rpv.recipient_level,
+        rpv.recipient_hash,
+        rpv.recipient_unique_id,
+        rpv.recipient_name,
+        rpv.uei,
+        rpv.parent_uei,
+        rpv.award_types,
+        rpv.last_12_months,
+        rpv.last_12_contracts,
+        rpv.last_12_grants,
+        rpv.last_12_direct_payments,
+        rpv.last_12_loans,
+        rpv.last_12_other,
+        rpv.last_12_months_count,
+        1 AS id,
+        COALESCE(ar.parent_uei_list, rpv.recipient_affiliations) AS recipient_affiliations  
+    FROM step_5 AS rpv
+    LEFT OUTER JOIN all_recipients AS ar 
     ON rpv.uei = ar.uei AND
         rpv.recipient_level = 'C'
-    WHEN MATCHED THEN UPDATE SET
-        recipient_affiliations = ar.parent_uei_list,
-        id = 1;""",
+    --WHEN MATCHED THEN UPDATE SET
+    --    recipient_affiliations = ar.parent_uei_list,
+    --    id = 1
+    );""",
     # --------------------------------------------------------------------------------
     # -- Step 7, Mark recipient profile rows older than 12 months  as valid
     # --------------------------------------------------------------------------------
@@ -295,14 +380,37 @@ recipient_profile_load_sql_strings = [
             temporary_recipients_from_transactions_view AS trft
         GROUP BY recipient_hash, recipient_level
     )
-
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    USING grouped_by_old_recipients AS gbc
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING grouped_by_old_recipients AS gbc
+    CREATE TEMP VIEW step_7 AS (
+    SELECT
+        rpv.recipient_level,
+        rpv.recipient_hash,
+        rpv.recipient_unique_id,
+        rpv.recipient_name,
+        rpv.recipient_affiliations,
+        rpv.uei,
+        rpv.parent_uei,
+        rpv.award_types,
+        rpv.last_12_months,
+        rpv.last_12_contracts,
+        rpv.last_12_grants,
+        rpv.last_12_direct_payments,
+        rpv.last_12_loans,
+        rpv.last_12_other,
+        rpv.last_12_months_count,
+        CASE
+            WHEN gbc.recipient_hash IS NOT NULL THEN 1 -- WHEN "MATCHED"
+            ELSE rpv.id
+        END AS id
+    FROM step_6 AS rpv
+    LEFT OUTER JOIN grouped_by_old_recipients AS gbc 
     ON gbc.recipient_hash = rpv.recipient_hash AND
         gbc.recipient_level = rpv.recipient_level AND
         rpv.id = 0
-    WHEN MATCHED THEN UPDATE SET
-        id = 1;""",
+    --WHEN MATCHED THEN UPDATE SET
+    --    id = 1
+    );""",
     # --------------------------------------------------------------------------------
     # -- Step 8, Mark Parent recipient profile rows older than 12 months  as valid
     # --------------------------------------------------------------------------------
@@ -315,16 +423,51 @@ recipient_profile_load_sql_strings = [
             parent_uei IS NOT NULL
         GROUP BY parent_uei
     )
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    USING grouped_by_parent_old AS gbp
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING grouped_by_parent_old AS gbp
+    CREATE TEMP VIEW step_8 AS (
+    SELECT
+        rpv.recipient_level,
+        rpv.recipient_hash,
+        rpv.recipient_unique_id,
+        rpv.recipient_name,
+        rpv.recipient_affiliations,
+        rpv.uei,
+        rpv.parent_uei,
+        rpv.award_types,
+        rpv.last_12_months,
+        rpv.last_12_contracts,
+        rpv.last_12_grants,
+        rpv.last_12_direct_payments,
+        rpv.last_12_loans,
+        rpv.last_12_other,
+        rpv.last_12_months_count,
+        CASE
+            WHEN gbp.recipient_hash IS NOT NULL THEN 1 -- WHEN "MATCHED"
+            ELSE rpv.id
+        END AS id
+    FROM step_7 AS rpv
+    LEFT OUTER JOIN grouped_by_parent_old AS gbp 
     ON rpv.uei = gbp.parent_uei AND
         rpv.recipient_level = 'P' AND
         rpv.id = 0
-    WHEN MATCHED THEN UPDATE SET
-        id = 1;""",
+    --WHEN MATCHED THEN UPDATE SET
+    --    id = 1
+    );""",
     # --------------------------------------------------------------------------------
     # -- Step 9, Finalize new table
     # --------------------------------------------------------------------------------
-    f"""DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} WHERE id = 0;""",
+    #f"""DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} WHERE id = 0;""",
+    fr"""
+        INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+        (
+            {",".join(list(set(RECIPIENT_PROFILE_COLUMNS) - {'id'}))}
+        )
+        SELECT
+            {",".join(list(set(RECIPIENT_PROFILE_COLUMNS) - {'id'}))}
+        FROM
+            step_8 AS rpv
+        WHERE rpv.id != 0
+    """,
     """DROP VIEW temporary_recipients_from_transactions_view;""",
 ]
