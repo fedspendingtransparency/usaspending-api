@@ -26,9 +26,6 @@ recipient_profile_create_sql_string = f"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
 recipient_profile_load_sql_strings = [
-    # f"""
-    #     TRUNCATE TABLE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}};
-    # """,
     #   --------------------------------------------------------------------------------
     #     -- Step 1, create the temporary matview of recipients from transactions
     #   --------------------------------------------------------------------------------
