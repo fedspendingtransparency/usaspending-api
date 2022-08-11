@@ -199,7 +199,10 @@ recipient_profile_load_sql_strings = [
         rpv.last_12_loans + COALESCE(gbc.last_12_loans, 0) AS last_12_loans,
         rpv.last_12_other + COALESCE(gbc.last_12_other, 0) AS last_12_other,
         rpv.last_12_months_count + COALESCE(gbc.count, 0) AS last_12_months_count,
-        1 AS id
+        CASE
+            WHEN gbc.recipient_hash IS NOT NULL THEN 1 -- WHEN "MATCHED"
+            ELSE rpv.id
+        END AS id 
     FROM step_2 AS rpv
     LEFT OUTER JOIN grouped_by_category AS gbc 
     ON gbc.recipient_hash = rpv.recipient_hash AND
@@ -275,7 +278,10 @@ recipient_profile_load_sql_strings = [
         rpv.last_12_loans + COALESCE(gbp.last_12_loans, 0) AS last_12_loans,
         rpv.last_12_other + COALESCE(gbp.last_12_other, 0) AS last_12_other,
         rpv.last_12_months_count + COALESCE(gbp.count, 0) AS last_12_months_count,
-        1 AS id 
+        CASE
+            WHEN gbp.uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
+            ELSE rpv.id
+        END AS id 
     FROM step_3 AS rpv
     LEFT OUTER JOIN grouped_by_parent AS gbp 
     ON rpv.uei = gbp.uei AND
@@ -326,8 +332,11 @@ recipient_profile_load_sql_strings = [
         rpv.last_12_loans,
         rpv.last_12_other,
         rpv.last_12_months_count,
-        1 AS id,
-        COALESCE(pr.uei_list, rpv.recipient_affiliations) AS recipient_affiliations  
+        COALESCE(pr.uei_list, rpv.recipient_affiliations) AS recipient_affiliations,
+        CASE
+            WHEN pr.parent_uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
+            ELSE rpv.id
+        END AS id    
     FROM step_4 AS rpv
     LEFT OUTER JOIN parent_recipients AS pr 
     ON rpv.uei = pr.parent_uei and rpv.recipient_level = 'P'
@@ -370,8 +379,11 @@ recipient_profile_load_sql_strings = [
         rpv.last_12_loans,
         rpv.last_12_other,
         rpv.last_12_months_count,
-        1 AS id,
-        COALESCE(ar.parent_uei_list, rpv.recipient_affiliations) AS recipient_affiliations  
+        COALESCE(ar.parent_uei_list, rpv.recipient_affiliations) AS recipient_affiliations,
+        CASE
+            WHEN ar.uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
+            ELSE rpv.id
+        END AS id  
     FROM step_5 AS rpv
     LEFT OUTER JOIN all_recipients AS ar 
     ON rpv.uei = ar.uei AND
