@@ -75,7 +75,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     f"""
         --INSERT INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
-        CREATE OR REPLACE TEMPORARY VIEW step2 AS (
+        CREATE OR REPLACE TEMPORARY VIEW step_2 AS (
             SELECT
                 'P' as recipient_level,
                 recipient_hash AS recipient_hash,
