@@ -744,7 +744,7 @@ def test_load_table_to_from_delta_for_recipient_profile(
     _verify_delta_table_loaded_to_delta(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
-    _verify_delta_table_loaded_from_delta(spark, s3_unittest_data_bucket, "recipient_profile")
+    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", spark_s3_bucket=s3_unittest_data_bucket)
 
 
 @mark.django_db(transaction=True)
