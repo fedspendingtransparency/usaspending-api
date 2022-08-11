@@ -460,7 +460,7 @@ recipient_profile_load_sql_strings = [
         rpv.last_12_other,
         rpv.last_12_months_count,
         CASE
-            WHEN gbp.recipient_hash IS NOT NULL THEN 1 -- WHEN "MATCHED"
+            WHEN gbp.parent_uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
             ELSE rpv.id
         END AS id
     FROM step_7 AS rpv
@@ -478,10 +478,10 @@ recipient_profile_load_sql_strings = [
     fr"""
         INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
-            {",".join(list(set(RECIPIENT_PROFILE_COLUMNS) - {'id'}))}
+            {",".join(list(RECIPIENT_PROFILE_COLUMNS))}
         )
         SELECT
-            {",".join(list(set(RECIPIENT_PROFILE_COLUMNS) - {'id'}))}
+            {",".join(list(RECIPIENT_PROFILE_COLUMNS))}
         FROM
             step_8 AS rpv
         WHERE rpv.id != 0
