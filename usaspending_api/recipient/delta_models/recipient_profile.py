@@ -140,7 +140,12 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 3, Obligation for past 12 months
     # --------------------------------------------------------------------------------
-    f"""WITH grouped_by_category AS (
+    f"""
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING grouped_by_category AS gbc
+    CREATE TEMP VIEW step_3 AS (
+    
+    WITH grouped_by_category AS (
         WITH grouped_by_category_inner AS (
             SELECT
                 recipient_hash,
@@ -177,9 +182,7 @@ recipient_profile_load_sql_strings = [
             grouped_by_category_inner AS gbci
         GROUP BY recipient_hash, recipient_level
     )
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING grouped_by_category AS gbc
-    CREATE TEMP VIEW step_3 AS (
+    
     SELECT
         rpv.recipient_level,
         rpv.recipient_hash,
@@ -215,7 +218,11 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 4, Populate the Parent Obligation for past 12 months
     # --------------------------------------------------------------------------------
-    f"""WITH grouped_by_parent AS (
+    f"""
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv USING  grouped_by_parent AS gbp
+    CREATE TEMP VIEW step_4 AS (
+    
+    WITH grouped_by_parent AS (
         WITH grouped_by_parent_inner AS (
             SELECT
                 parent_uei,
@@ -251,8 +258,7 @@ recipient_profile_load_sql_strings = [
             grouped_by_parent_inner AS gbpi
         GROUP BY parent_uei
     )
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv USING  grouped_by_parent AS gbp
-    CREATE TEMP VIEW step_4 AS (
+    
     SELECT
         rpv.recipient_level,
         rpv.recipient_hash,
@@ -288,7 +294,12 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 5, Populating child recipient list in parents
     # --------------------------------------------------------------------------------
-    f"""WITH parent_recipients AS (
+    f"""
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING parent_recipients AS pr
+    CREATE TEMP VIEW step_5 AS (
+    
+    WITH parent_recipients AS (
         SELECT
             parent_uei,
             COLLECT_SET(DISTINCT uei) AS uei_list
@@ -299,9 +310,7 @@ recipient_profile_load_sql_strings = [
         GROUP BY
             parent_uei
     )
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING parent_recipients AS pr
-    CREATE TEMP VIEW step_5 AS (
+    
     SELECT
         rpv.recipient_level,
         rpv.recipient_hash,
@@ -329,7 +338,12 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 6, Populate parent recipient list in children
     # --------------------------------------------------------------------------------
-    f"""WITH all_recipients AS (
+    f"""
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING all_recipients AS ar
+    CREATE TEMP VIEW step_6 AS (
+    
+    WITH all_recipients AS (
         SELECT
             uei,
             COLLECT_SET(DISTINCT parent_uei) AS parent_uei_list
@@ -340,9 +354,7 @@ recipient_profile_load_sql_strings = [
             parent_uei IS NOT NULL
         GROUP BY uei
     )
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING all_recipients AS ar
-    CREATE TEMP VIEW step_6 AS (
+    
     SELECT
         rpv.recipient_level,
         rpv.recipient_hash,
@@ -371,7 +383,12 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 7, Mark recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
-    f"""WITH grouped_by_old_recipients AS (
+    f"""
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING grouped_by_old_recipients AS gbc
+    CREATE TEMP VIEW step_7 AS (
+    
+    WITH grouped_by_old_recipients AS (
         SELECT
             recipient_hash,
             recipient_level
@@ -379,9 +396,7 @@ recipient_profile_load_sql_strings = [
             temporary_recipients_from_transactions_view AS trft
         GROUP BY recipient_hash, recipient_level
     )
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING grouped_by_old_recipients AS gbc
-    CREATE TEMP VIEW step_7 AS (
+    
     SELECT
         rpv.recipient_level,
         rpv.recipient_hash,
@@ -413,7 +428,12 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 8, Mark Parent recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
-    f"""WITH grouped_by_parent_old AS (
+    f"""
+    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
+    --USING grouped_by_parent_old AS gbp
+    CREATE TEMP VIEW step_8 AS (
+    
+    WITH grouped_by_parent_old AS (
         SELECT
             parent_uei
         FROM
@@ -422,9 +442,7 @@ recipient_profile_load_sql_strings = [
             parent_uei IS NOT NULL
         GROUP BY parent_uei
     )
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING grouped_by_parent_old AS gbp
-    CREATE TEMP VIEW step_8 AS (
+    
     SELECT
         rpv.recipient_level,
         rpv.recipient_hash,
