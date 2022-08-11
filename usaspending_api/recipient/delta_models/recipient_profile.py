@@ -200,7 +200,7 @@ recipient_profile_load_sql_strings = [
         rpv.last_12_loans + COALESCE(gbc.last_12_loans, 0) AS last_12_loans,
         rpv.last_12_other + COALESCE(gbc.last_12_other, 0) AS last_12_other,
         rpv.last_12_months_count + COALESCE(gbc.count, 0) AS last_12_months_count,
-        1 AS id,
+        1 AS id
     FROM step_2 AS rpv
     LEFT OUTER JOIN grouped_by_category AS gbc 
     ON gbc.recipient_hash = rpv.recipient_hash AND
