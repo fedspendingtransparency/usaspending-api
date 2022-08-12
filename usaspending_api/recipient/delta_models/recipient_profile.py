@@ -138,347 +138,294 @@ recipient_profile_load_sql_strings = [
     # -- Step 3, Obligation for past 12 months
     # --------------------------------------------------------------------------------
     f"""
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING grouped_by_category AS gbc
     CREATE TEMP VIEW step_3 AS (
-    
-    WITH grouped_by_category AS (
-        WITH grouped_by_category_inner AS (
+        WITH grouped_by_category AS (
+            WITH grouped_by_category_inner AS (
+                SELECT
+                    recipient_hash,
+                    recipient_level,
+                    CASE
+                        WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
+                        THEN 'other' ELSE award_category
+                    END AS award_category,
+                    CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
+                    CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
+                    CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
+                    CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_loans,
+                    CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
+                    SUM(generated_pragmatic_obligation) AS inner_amount,
+                    COUNT(*) AS inner_count
+                FROM
+                    temporary_recipients_from_transactions_view AS trft
+                WHERE
+                    trft.action_date >= now() - INTERVAL '1 year'
+                GROUP BY recipient_hash, recipient_level, award_category
+            )
             SELECT
                 recipient_hash,
                 recipient_level,
-                CASE
-                    WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
-                    THEN 'other' ELSE award_category
-                END AS award_category,
-                CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
-                CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
-                CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
-                CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_loans,
-                CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
-                SUM(generated_pragmatic_obligation) AS inner_amount,
-                COUNT(*) AS inner_count
+                SORT_ARRAY(COLLECT_SET(award_category)) AS award_types,
+                SUM(inner_contracts) AS last_12_contracts,
+                SUM(inner_grants) AS last_12_grants,
+                SUM(inner_direct_payments) AS last_12_direct_payments,
+                SUM(inner_loans) AS last_12_loans,
+                SUM(inner_other) AS last_12_other,
+                SUM(inner_amount) AS amount,
+                SUM(inner_count) AS count
             FROM
-                temporary_recipients_from_transactions_view AS trft
-            WHERE
-                trft.action_date >= now() - INTERVAL '1 year'
-            GROUP BY recipient_hash, recipient_level, award_category
+                grouped_by_category_inner AS gbci
+            GROUP BY recipient_hash, recipient_level
         )
         SELECT
-            recipient_hash,
-            recipient_level,
-            SORT_ARRAY(COLLECT_SET(award_category)) AS award_types,
-            SUM(inner_contracts) AS last_12_contracts,
-            SUM(inner_grants) AS last_12_grants,
-            SUM(inner_direct_payments) AS last_12_direct_payments,
-            SUM(inner_loans) AS last_12_loans,
-            SUM(inner_other) AS last_12_other,
-            SUM(inner_amount) AS amount,
-            SUM(inner_count) AS count
-        FROM
-            grouped_by_category_inner AS gbci
-        GROUP BY recipient_hash, recipient_level
-    )
-    
-    SELECT
-        rpv.recipient_level,
-        rpv.recipient_hash,
-        rpv.recipient_unique_id,
-        rpv.recipient_name,
-        rpv.recipient_affiliations,
-        rpv.uei,
-        rpv.parent_uei,
-        rpv.award_types || COALESCE(gbc.award_types, ARRAY()) AS award_types,
-        rpv.last_12_months + COALESCE(gbc.amount, 0) AS last_12_months,
-        rpv.last_12_contracts + COALESCE(gbc.last_12_contracts, 0) AS last_12_contracts,
-        rpv.last_12_grants + COALESCE(gbc.last_12_grants, 0) AS last_12_grants,
-        rpv.last_12_direct_payments + COALESCE(gbc.last_12_direct_payments, 0) AS last_12_direct_payments,
-        rpv.last_12_loans + COALESCE(gbc.last_12_loans, 0) AS last_12_loans,
-        rpv.last_12_other + COALESCE(gbc.last_12_other, 0) AS last_12_other,
-        rpv.last_12_months_count + COALESCE(gbc.count, 0) AS last_12_months_count,
-        CASE
-            WHEN gbc.recipient_hash IS NOT NULL THEN 1 -- WHEN "MATCHED"
-            ELSE rpv.id
-        END AS id 
-    FROM step_2 AS rpv
-    LEFT OUTER JOIN grouped_by_category AS gbc 
-    ON gbc.recipient_hash = rpv.recipient_hash AND
-        gbc.recipient_level = rpv.recipient_level
-    --WHEN MATCHED THEN UPDATE SET
-    --    award_types = gbc.award_types || rpv.award_types,
-    --    last_12_months = rpv.last_12_months + gbc.amount,
-    --    last_12_contracts = rpv.last_12_contracts + gbc.last_12_contracts,
-    --    last_12_grants = rpv.last_12_grants + gbc.last_12_grants,
-    --    last_12_direct_payments = rpv.last_12_direct_payments + gbc.last_12_direct_payments,
-    --    last_12_loans = rpv.last_12_loans + gbc.last_12_loans,
-    --    last_12_other = rpv.last_12_other + gbc.last_12_other,
-    --    last_12_months_count = rpv.last_12_months_count + gbc.count,
-    --    id = 1
+            rpv.recipient_level,
+            rpv.recipient_hash,
+            rpv.recipient_unique_id,
+            rpv.recipient_name,
+            rpv.recipient_affiliations,
+            rpv.uei,
+            rpv.parent_uei,
+            rpv.award_types || COALESCE(gbc.award_types, ARRAY()) AS award_types,
+            rpv.last_12_months + COALESCE(gbc.amount, 0) AS last_12_months,
+            rpv.last_12_contracts + COALESCE(gbc.last_12_contracts, 0) AS last_12_contracts,
+            rpv.last_12_grants + COALESCE(gbc.last_12_grants, 0) AS last_12_grants,
+            rpv.last_12_direct_payments + COALESCE(gbc.last_12_direct_payments, 0) AS last_12_direct_payments,
+            rpv.last_12_loans + COALESCE(gbc.last_12_loans, 0) AS last_12_loans,
+            rpv.last_12_other + COALESCE(gbc.last_12_other, 0) AS last_12_other,
+            rpv.last_12_months_count + COALESCE(gbc.count, 0) AS last_12_months_count,
+            CASE
+                WHEN gbc.recipient_hash IS NOT NULL THEN 1 -- WHEN "MATCHED"
+                ELSE rpv.id
+            END AS id
+        FROM step_2 AS rpv
+        LEFT OUTER JOIN grouped_by_category AS gbc
+        ON gbc.recipient_hash = rpv.recipient_hash AND
+            gbc.recipient_level = rpv.recipient_level
     );""",
     # --------------------------------------------------------------------------------
     # -- Step 4, Populate the Parent Obligation for past 12 months
     # --------------------------------------------------------------------------------
     f"""
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv USING  grouped_by_parent AS gbp
     CREATE TEMP VIEW step_4 AS (
-    
-    WITH grouped_by_parent AS (
-        WITH grouped_by_parent_inner AS (
+        WITH grouped_by_parent AS (
+            WITH grouped_by_parent_inner AS (
+                SELECT
+                    parent_uei,
+                    CASE
+                        WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
+                        THEN 'other' ELSE award_category
+                    END AS award_category,
+                    CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
+                    CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
+                    CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
+                    CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_loans,
+                    CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
+                    SUM(generated_pragmatic_obligation) AS inner_amount,
+                    COUNT(*) AS inner_count
+                FROM
+                    temporary_recipients_from_transactions_view AS trft
+                WHERE
+                    trft.action_date >= now() - INTERVAL '1 year' AND
+                    parent_uei IS NOT NULL
+                GROUP BY parent_uei, award_category
+            )
             SELECT
-                parent_uei,
-                CASE
-                    WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
-                    THEN 'other' ELSE award_category
-                END AS award_category,
-                CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
-                CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
-                CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
-                CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_loans,
-                CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
-                SUM(generated_pragmatic_obligation) AS inner_amount,
-                COUNT(*) AS inner_count
+                parent_uei AS uei,
+                COLLECT_SET(award_category) AS award_types,
+                SUM(inner_contracts) AS last_12_contracts,
+                SUM(inner_grants) AS last_12_grants,
+                SUM(inner_direct_payments) AS last_12_direct_payments,
+                SUM(inner_loans) AS last_12_loans,
+                SUM(inner_other) AS last_12_other,
+                SUM(inner_amount) AS amount,
+                SUM(inner_count) AS count
             FROM
-                temporary_recipients_from_transactions_view AS trft
-            WHERE
-                trft.action_date >= now() - INTERVAL '1 year' AND
-                parent_uei IS NOT NULL
-            GROUP BY parent_uei, award_category
+                grouped_by_parent_inner AS gbpi
+            GROUP BY parent_uei
         )
         SELECT
-            parent_uei AS uei,
-            COLLECT_SET(award_category) AS award_types,
-            SUM(inner_contracts) AS last_12_contracts,
-            SUM(inner_grants) AS last_12_grants,
-            SUM(inner_direct_payments) AS last_12_direct_payments,
-            SUM(inner_loans) AS last_12_loans,
-            SUM(inner_other) AS last_12_other,
-            SUM(inner_amount) AS amount,
-            SUM(inner_count) AS count
-        FROM
-            grouped_by_parent_inner AS gbpi
-        GROUP BY parent_uei
-    )
-    
-    SELECT
-        rpv.recipient_level,
-        rpv.recipient_hash,
-        rpv.recipient_unique_id,
-        rpv.recipient_name,
-        rpv.recipient_affiliations,
-        rpv.uei,
-        rpv.parent_uei,
-        rpv.award_types || COALESCE(gbp.award_types, ARRAY()) AS award_types,
-        rpv.last_12_months + COALESCE(gbp.amount, 0) AS last_12_months,
-        rpv.last_12_contracts + COALESCE(gbp.last_12_contracts, 0) AS last_12_contracts,
-        rpv.last_12_grants + COALESCE(gbp.last_12_grants, 0) AS last_12_grants,
-        rpv.last_12_direct_payments + COALESCE(gbp.last_12_direct_payments, 0) AS last_12_direct_payments,
-        rpv.last_12_loans + COALESCE(gbp.last_12_loans, 0) AS last_12_loans,
-        rpv.last_12_other + COALESCE(gbp.last_12_other, 0) AS last_12_other,
-        rpv.last_12_months_count + COALESCE(gbp.count, 0) AS last_12_months_count,
-        CASE
-            WHEN gbp.uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
-            ELSE rpv.id
-        END AS id 
-    FROM step_3 AS rpv
-    LEFT OUTER JOIN grouped_by_parent AS gbp 
-    ON rpv.uei = gbp.uei AND
-        rpv.recipient_level = 'P'
-    --WHEN MATCHED THEN UPDATE SET
-    --    award_types = gbp.award_types || rpv.award_types,
-    --    last_12_months = rpv.last_12_months + gbp.amount,
-    --    last_12_contracts = rpv.last_12_contracts + gbp.last_12_contracts,
-    --    last_12_grants = rpv.last_12_grants + gbp.last_12_grants,
-    --    last_12_direct_payments = rpv.last_12_direct_payments + gbp.last_12_direct_payments,
-    --    last_12_loans = rpv.last_12_loans + gbp.last_12_loans,
-    --    last_12_other = rpv.last_12_other + gbp.last_12_other,
-    --    last_12_months_count = rpv.last_12_months_count + gbp.count,
-    --    id = 1
+            rpv.recipient_level,
+            rpv.recipient_hash,
+            rpv.recipient_unique_id,
+            rpv.recipient_name,
+            rpv.recipient_affiliations,
+            rpv.uei,
+            rpv.parent_uei,
+            rpv.award_types || COALESCE(gbp.award_types, ARRAY()) AS award_types,
+            rpv.last_12_months + COALESCE(gbp.amount, 0) AS last_12_months,
+            rpv.last_12_contracts + COALESCE(gbp.last_12_contracts, 0) AS last_12_contracts,
+            rpv.last_12_grants + COALESCE(gbp.last_12_grants, 0) AS last_12_grants,
+            rpv.last_12_direct_payments + COALESCE(gbp.last_12_direct_payments, 0) AS last_12_direct_payments,
+            rpv.last_12_loans + COALESCE(gbp.last_12_loans, 0) AS last_12_loans,
+            rpv.last_12_other + COALESCE(gbp.last_12_other, 0) AS last_12_other,
+            rpv.last_12_months_count + COALESCE(gbp.count, 0) AS last_12_months_count,
+            CASE
+                WHEN gbp.uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
+                ELSE rpv.id
+            END AS id
+        FROM step_3 AS rpv
+        LEFT OUTER JOIN grouped_by_parent AS gbp
+        ON rpv.uei = gbp.uei AND
+            rpv.recipient_level = 'P'
     );""",
     # --------------------------------------------------------------------------------
     # -- Step 5, Populating child recipient list in parents
     # --------------------------------------------------------------------------------
     f"""
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING parent_recipients AS pr
     CREATE TEMP VIEW step_5 AS (
-    
-    WITH parent_recipients AS (
+        WITH parent_recipients AS (
+            SELECT
+                parent_uei,
+                COLLECT_SET(DISTINCT uei) AS uei_list
+            FROM
+                temporary_recipients_from_transactions_view
+            WHERE
+                parent_uei IS NOT NULL
+            GROUP BY
+                parent_uei
+        )
         SELECT
-            parent_uei,
-            COLLECT_SET(DISTINCT uei) AS uei_list
-        FROM
-            temporary_recipients_from_transactions_view
-        WHERE
-            parent_uei IS NOT NULL
-        GROUP BY
-            parent_uei
-    )
-    
-    SELECT
-        rpv.recipient_level,
-        rpv.recipient_hash,
-        rpv.recipient_unique_id,
-        rpv.recipient_name,
-        rpv.uei,
-        rpv.parent_uei,
-        rpv.award_types,
-        rpv.last_12_months,
-        rpv.last_12_contracts,
-        rpv.last_12_grants,
-        rpv.last_12_direct_payments,
-        rpv.last_12_loans,
-        rpv.last_12_other,
-        rpv.last_12_months_count,
-        COALESCE(pr.uei_list, rpv.recipient_affiliations) AS recipient_affiliations,
-        CASE
-            WHEN pr.parent_uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
-            ELSE rpv.id
-        END AS id    
-    FROM step_4 AS rpv
-    LEFT OUTER JOIN parent_recipients AS pr 
-    ON rpv.uei = pr.parent_uei and rpv.recipient_level = 'P'
-    --WHEN MATCHED THEN UPDATE SET
-    --    recipient_affiliations = pr.uei_list,
-    --    id = 1
+            rpv.recipient_level,
+            rpv.recipient_hash,
+            rpv.recipient_unique_id,
+            rpv.recipient_name,
+            rpv.uei,
+            rpv.parent_uei,
+            rpv.award_types,
+            rpv.last_12_months,
+            rpv.last_12_contracts,
+            rpv.last_12_grants,
+            rpv.last_12_direct_payments,
+            rpv.last_12_loans,
+            rpv.last_12_other,
+            rpv.last_12_months_count,
+            COALESCE(pr.uei_list, rpv.recipient_affiliations) AS recipient_affiliations,
+            CASE
+                WHEN pr.parent_uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
+                ELSE rpv.id
+            END AS id
+        FROM step_4 AS rpv
+        LEFT OUTER JOIN parent_recipients AS pr
+        ON rpv.uei = pr.parent_uei and rpv.recipient_level = 'P'
     );""",
     # --------------------------------------------------------------------------------
     # -- Step 6, Populate parent recipient list in children
     # --------------------------------------------------------------------------------
     f"""
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING all_recipients AS ar
     CREATE TEMP VIEW step_6 AS (
-    
-    WITH all_recipients AS (
+        WITH all_recipients AS (
+            SELECT
+                uei,
+                COLLECT_SET(DISTINCT parent_uei) AS parent_uei_list
+            FROM
+                temporary_recipients_from_transactions_view
+            WHERE
+                uei IS NOT NULL AND
+                parent_uei IS NOT NULL
+            GROUP BY uei
+        )
         SELECT
-            uei,
-            COLLECT_SET(DISTINCT parent_uei) AS parent_uei_list
-        FROM
-            temporary_recipients_from_transactions_view
-        WHERE
-            uei IS NOT NULL AND
-            parent_uei IS NOT NULL
-        GROUP BY uei
-    )
-    
-    SELECT
-        rpv.recipient_level,
-        rpv.recipient_hash,
-        rpv.recipient_unique_id,
-        rpv.recipient_name,
-        rpv.uei,
-        rpv.parent_uei,
-        rpv.award_types,
-        rpv.last_12_months,
-        rpv.last_12_contracts,
-        rpv.last_12_grants,
-        rpv.last_12_direct_payments,
-        rpv.last_12_loans,
-        rpv.last_12_other,
-        rpv.last_12_months_count,
-        COALESCE(ar.parent_uei_list, rpv.recipient_affiliations) AS recipient_affiliations,
-        CASE
-            WHEN ar.uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
-            ELSE rpv.id
-        END AS id  
-    FROM step_5 AS rpv
-    LEFT OUTER JOIN all_recipients AS ar 
-    ON rpv.uei = ar.uei AND
-        rpv.recipient_level = 'C'
-    --WHEN MATCHED THEN UPDATE SET
-    --    recipient_affiliations = ar.parent_uei_list,
-    --    id = 1
+            rpv.recipient_level,
+            rpv.recipient_hash,
+            rpv.recipient_unique_id,
+            rpv.recipient_name,
+            rpv.uei,
+            rpv.parent_uei,
+            rpv.award_types,
+            rpv.last_12_months,
+            rpv.last_12_contracts,
+            rpv.last_12_grants,
+            rpv.last_12_direct_payments,
+            rpv.last_12_loans,
+            rpv.last_12_other,
+            rpv.last_12_months_count,
+            COALESCE(ar.parent_uei_list, rpv.recipient_affiliations) AS recipient_affiliations,
+            CASE
+                WHEN ar.uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
+                ELSE rpv.id
+            END AS id
+        FROM step_5 AS rpv
+        LEFT OUTER JOIN all_recipients AS ar
+        ON rpv.uei = ar.uei AND
+            rpv.recipient_level = 'C'
     );""",
     # --------------------------------------------------------------------------------
     # -- Step 7, Mark recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
     f"""
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING grouped_by_old_recipients AS gbc
     CREATE TEMP VIEW step_7 AS (
-    
-    WITH grouped_by_old_recipients AS (
+        WITH grouped_by_old_recipients AS (
+            SELECT
+                recipient_hash,
+                recipient_level
+            FROM
+                temporary_recipients_from_transactions_view AS trft
+            GROUP BY recipient_hash, recipient_level
+        )
         SELECT
-            recipient_hash,
-            recipient_level
-        FROM
-            temporary_recipients_from_transactions_view AS trft
-        GROUP BY recipient_hash, recipient_level
-    )
-    
-    SELECT
-        rpv.recipient_level,
-        rpv.recipient_hash,
-        rpv.recipient_unique_id,
-        rpv.recipient_name,
-        rpv.recipient_affiliations,
-        rpv.uei,
-        rpv.parent_uei,
-        rpv.award_types,
-        rpv.last_12_months,
-        rpv.last_12_contracts,
-        rpv.last_12_grants,
-        rpv.last_12_direct_payments,
-        rpv.last_12_loans,
-        rpv.last_12_other,
-        rpv.last_12_months_count,
-        CASE
-            WHEN gbc.recipient_hash IS NOT NULL THEN 1 -- WHEN "MATCHED"
-            ELSE rpv.id
-        END AS id
-    FROM step_6 AS rpv
-    LEFT OUTER JOIN grouped_by_old_recipients AS gbc 
-    ON gbc.recipient_hash = rpv.recipient_hash AND
-        gbc.recipient_level = rpv.recipient_level AND
-        rpv.id = 0
-    --WHEN MATCHED THEN UPDATE SET
-    --    id = 1
+            rpv.recipient_level,
+            rpv.recipient_hash,
+            rpv.recipient_unique_id,
+            rpv.recipient_name,
+            rpv.recipient_affiliations,
+            rpv.uei,
+            rpv.parent_uei,
+            rpv.award_types,
+            rpv.last_12_months,
+            rpv.last_12_contracts,
+            rpv.last_12_grants,
+            rpv.last_12_direct_payments,
+            rpv.last_12_loans,
+            rpv.last_12_other,
+            rpv.last_12_months_count,
+            CASE
+                WHEN gbc.recipient_hash IS NOT NULL THEN 1 -- WHEN "MATCHED"
+                ELSE rpv.id
+            END AS id
+        FROM step_6 AS rpv
+        LEFT OUTER JOIN grouped_by_old_recipients AS gbc
+        ON gbc.recipient_hash = rpv.recipient_hash AND
+            gbc.recipient_level = rpv.recipient_level AND
+            rpv.id = 0
     );""",
     # --------------------------------------------------------------------------------
     # -- Step 8, Mark Parent recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
     f"""
-    --MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS rpv
-    --USING grouped_by_parent_old AS gbp
     CREATE TEMP VIEW step_8 AS (
-    
-    WITH grouped_by_parent_old AS (
+        WITH grouped_by_parent_old AS (
+            SELECT
+                parent_uei
+            FROM
+                temporary_recipients_from_transactions_view AS trft
+            WHERE
+                parent_uei IS NOT NULL
+            GROUP BY parent_uei
+        )
         SELECT
-            parent_uei
-        FROM
-            temporary_recipients_from_transactions_view AS trft
-        WHERE
-            parent_uei IS NOT NULL
-        GROUP BY parent_uei
-    )
-    
-    SELECT
-        rpv.recipient_level,
-        rpv.recipient_hash,
-        rpv.recipient_unique_id,
-        rpv.recipient_name,
-        rpv.recipient_affiliations,
-        rpv.uei,
-        rpv.parent_uei,
-        rpv.award_types,
-        rpv.last_12_months,
-        rpv.last_12_contracts,
-        rpv.last_12_grants,
-        rpv.last_12_direct_payments,
-        rpv.last_12_loans,
-        rpv.last_12_other,
-        rpv.last_12_months_count,
-        CASE
-            WHEN gbp.parent_uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
-            ELSE rpv.id
-        END AS id
-    FROM step_7 AS rpv
-    LEFT OUTER JOIN grouped_by_parent_old AS gbp 
-    ON rpv.uei = gbp.parent_uei AND
-        rpv.recipient_level = 'P' AND
-        rpv.id = 0
-    --WHEN MATCHED THEN UPDATE SET
-    --    id = 1
+            rpv.recipient_level,
+            rpv.recipient_hash,
+            rpv.recipient_unique_id,
+            rpv.recipient_name,
+            rpv.recipient_affiliations,
+            rpv.uei,
+            rpv.parent_uei,
+            rpv.award_types,
+            rpv.last_12_months,
+            rpv.last_12_contracts,
+            rpv.last_12_grants,
+            rpv.last_12_direct_payments,
+            rpv.last_12_loans,
+            rpv.last_12_other,
+            rpv.last_12_months_count,
+            CASE
+                WHEN gbp.parent_uei IS NOT NULL THEN 1 -- WHEN "MATCHED"
+                ELSE rpv.id
+            END AS id
+        FROM step_7 AS rpv
+        LEFT OUTER JOIN grouped_by_parent_old AS gbp
+        ON rpv.uei = gbp.parent_uei AND
+            rpv.recipient_level = 'P' AND
+            rpv.id = 0
     );""",
     # --------------------------------------------------------------------------------
     # -- Step 9, Delete unused data from table
@@ -495,4 +442,12 @@ recipient_profile_load_sql_strings = [
         WHERE rpv.id != 0
     """,
     """DROP VIEW temporary_recipients_from_transactions_view;""",
+    """DROP VIEW step_1;"""
+    """DROP VIEW step_2;"""
+    """DROP VIEW step_3;"""
+    """DROP VIEW step_4;"""
+    """DROP VIEW step_5;"""
+    """DROP VIEW step_6;"""
+    """DROP VIEW step_7;"""
+    """DROP VIEW step_8;""",
 ]
