@@ -31,6 +31,10 @@ sam_recipient_create_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
 sam_recipient_load_sql_string = rf"""
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0c6200e8089a78fa2373b3669e63cc6db00c4072
 
 INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS (
   SELECT
@@ -80,7 +84,11 @@ INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS (
         global_temp.sam_recipient as broker_sam_recipient
       ORDER BY
         broker_sam_recipient.awardee_or_recipient_uniqu,
+<<<<<<< HEAD
         broker_sam_recipient.activation_date DESC NULLS LAST AS broker_duns
+=======
+        broker_sam_recipient.activation_date DESC NULLS LAST)') AS broker_duns
+>>>>>>> 0c6200e8089a78fa2373b3669e63cc6db00c4072
           (
             awardee_or_recipient_uniqu text,
             legal_business_name text,
