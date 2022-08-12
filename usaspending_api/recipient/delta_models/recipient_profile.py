@@ -71,7 +71,6 @@ recipient_profile_load_sql_strings = [
     # -- Step 2, Populate table with 100% of combinations
     # --------------------------------------------------------------------------------
     f"""
-        --INSERT INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
         CREATE OR REPLACE TEMPORARY VIEW step_2 AS (
             SELECT
                 'P' as recipient_level,
@@ -138,7 +137,7 @@ recipient_profile_load_sql_strings = [
     # -- Step 3, Obligation for past 12 months
     # --------------------------------------------------------------------------------
     f"""
-    CREATE TEMP VIEW step_3 AS (
+    CREATE OR REPLACE TEMPORARY VIEW step_3 AS (
         WITH grouped_by_category AS (
             WITH grouped_by_category_inner AS (
                 SELECT
@@ -205,7 +204,7 @@ recipient_profile_load_sql_strings = [
     # -- Step 4, Populate the Parent Obligation for past 12 months
     # --------------------------------------------------------------------------------
     f"""
-    CREATE TEMP VIEW step_4 AS (
+    CREATE OR REPLACE TEMPORARY VIEW step_4 AS (
         WITH grouped_by_parent AS (
             WITH grouped_by_parent_inner AS (
                 SELECT
@@ -271,7 +270,7 @@ recipient_profile_load_sql_strings = [
     # -- Step 5, Populating child recipient list in parents
     # --------------------------------------------------------------------------------
     f"""
-    CREATE TEMP VIEW step_5 AS (
+    CREATE OR REPLACE TEMPORARY VIEW step_5 AS (
         WITH parent_recipients AS (
             SELECT
                 parent_uei,
@@ -311,7 +310,7 @@ recipient_profile_load_sql_strings = [
     # -- Step 6, Populate parent recipient list in children
     # --------------------------------------------------------------------------------
     f"""
-    CREATE TEMP VIEW step_6 AS (
+    CREATE OR REPLACE TEMPORARY VIEW step_6 AS (
         WITH all_recipients AS (
             SELECT
                 uei,
@@ -352,7 +351,7 @@ recipient_profile_load_sql_strings = [
     # -- Step 7, Mark recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
     f"""
-    CREATE TEMP VIEW step_7 AS (
+    CREATE OR REPLACE TEMPORARY VIEW step_7 AS (
         WITH grouped_by_old_recipients AS (
             SELECT
                 recipient_hash,
@@ -391,7 +390,7 @@ recipient_profile_load_sql_strings = [
     # -- Step 8, Mark Parent recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
     f"""
-    CREATE TEMP VIEW step_8 AS (
+    CREATE OR REPLACE TEMPORARY VIEW step_8 AS (
         WITH grouped_by_parent_old AS (
             SELECT
                 parent_uei
