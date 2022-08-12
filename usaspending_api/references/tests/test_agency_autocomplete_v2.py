@@ -178,7 +178,7 @@ def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
 
 @pytest.mark.django_db
 def test_for_bogus_agencies(client, agency_data):
-    """ Ensure our bogus agencies do not show up in results. """
+    """Ensure our bogus agencies do not show up in results."""
 
     resp = client.post(
         "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "Results"}

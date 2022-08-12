@@ -40,7 +40,7 @@ def create_fiscal_year_list(start_year=2000, end_year=None):
 
 
 def generate_fiscal_year(date):
-    """ Generate fiscal year based on the date provided """
+    """Generate fiscal year based on the date provided"""
     validate_date(date)
 
     year = date.year
@@ -50,7 +50,7 @@ def generate_fiscal_year(date):
 
 
 def generate_fiscal_month(date):
-    """ Generate fiscal period based on the date provided """
+    """Generate fiscal period based on the date provided"""
     validate_date(date)
 
     if date.month in [10, 11, 12]:
@@ -59,7 +59,7 @@ def generate_fiscal_month(date):
 
 
 def generate_fiscal_quarter(date):
-    """ Generate fiscal quarter based on the date provided """
+    """Generate fiscal quarter based on the date provided"""
     validate_date(date)
     return FiscalDate(date.year, date.month, date.day).quarter
 
@@ -79,7 +79,7 @@ def generate_fiscal_year_and_quarter(date):
 
 
 def dates_are_fiscal_year_bookends(start, end):
-    """ Returns true if the start and end dates fall on fiscal year(s) start and end date """
+    """Returns true if the start and end dates fall on fiscal year(s) start and end date"""
     try:
         if start.month == 10 and start.day == 1 and end.month == 9 and end.day == 30 and start.year < end.year:
             return True
@@ -198,7 +198,7 @@ def calculate_last_completed_fiscal_quarter(fiscal_year):
 
 
 def is_valid_period(period: int) -> bool:
-    """ There is no period 1. """
+    """There is no period 1."""
     return isinstance(period, int) and 2 <= period <= 12
 
 
@@ -227,7 +227,7 @@ def get_final_period_of_quarter(quarter: int) -> Optional[int]:
 
 
 def get_periods_in_quarter(quarter: int) -> Optional[Tuple[int]]:
-    """ There is no period 1. """
+    """There is no period 1."""
     return {1: (2, 3), 2: (4, 5, 6), 3: (7, 8, 9), 4: (10, 11, 12)}[quarter] if is_valid_quarter(quarter) else None
 
 

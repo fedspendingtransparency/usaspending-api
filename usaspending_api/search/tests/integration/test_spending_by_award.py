@@ -1003,7 +1003,7 @@ def _test_correct_response_for_psc_code_object(client):
 
 
 def _test_correct_response_for_psc_code_list_subawards(client):
-    """ As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both. """
+    """As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both."""
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -1037,7 +1037,7 @@ def _test_correct_response_for_psc_code_list_subawards(client):
 
 
 def _test_correct_response_for_psc_code_object_subawards(client):
-    """ As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both. """
+    """As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both."""
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",

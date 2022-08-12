@@ -71,7 +71,7 @@ def test_no_file_provided():
 
 @pytest.mark.django_db
 def test_create_agency(disable_vacuuming, monkeypatch):
-    """ Let's add an agency record to the "raw" file and see what happens. """
+    """Let's add an agency record to the "raw" file and see what happens."""
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)
@@ -119,7 +119,7 @@ def test_create_agency(disable_vacuuming, monkeypatch):
 
 @pytest.mark.django_db
 def test_update_agency(disable_vacuuming):
-    """ Also confirm agency data is updated in place instead of being recreated as a new record. """
+    """Also confirm agency data is updated in place instead of being recreated as a new record."""
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)
@@ -157,7 +157,7 @@ def test_update_agency(disable_vacuuming):
 
 @pytest.mark.django_db
 def test_delete_agency(disable_vacuuming, monkeypatch):
-    """ Let's remove an entire toptier agency and see what happens. """
+    """Let's remove an entire toptier agency and see what happens."""
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)
@@ -228,7 +228,7 @@ def test_update_treasury_appropriation_account(disable_vacuuming):
 
 @pytest.mark.django_db
 def test_update_transactions_awards_subawards(disable_vacuuming):
-    """ Test all three together since they're so tightly intertwined. """
+    """Test all three together since they're so tightly intertwined."""
 
     # Create some test data.
     a = baker.make("awards.Award", generated_unique_award_id="AWARD_1")

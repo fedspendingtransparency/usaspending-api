@@ -47,7 +47,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 raise
 
     def _perform_load(self):
-        """ Grab the Broker subaward table and use it to update ours. """
+        """Grab the Broker subaward table and use it to update ours."""
 
         broker_subaward = ETLTable("broker_subaward", schema_name="raw")
         subaward = ETLTable("subaward", schema_name="int")

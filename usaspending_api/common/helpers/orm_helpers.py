@@ -38,7 +38,7 @@ class FiscalYear(Func):
 
 
 class FiscalYearAndQuarter(Func):
-    """ Generates a fiscal year and quarter string along the lines of FY2019Q1. """
+    """Generates a fiscal year and quarter string along the lines of FY2019Q1."""
 
     function = "EXTRACT"
     template = (

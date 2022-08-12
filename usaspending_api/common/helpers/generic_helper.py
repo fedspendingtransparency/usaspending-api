@@ -57,13 +57,13 @@ def validate_date(date):
 
 
 def check_valid_toptier_agency(agency_id):
-    """ Check if the ID provided (corresponding to Agency.id) is a valid toptier agency """
+    """Check if the ID provided (corresponding to Agency.id) is a valid toptier agency"""
     agency = Agency.objects.filter(id=agency_id, toptier_flag=True).first()
     return agency is not None
 
 
 def generate_date_from_string(date_str):
-    """ Expects a string with format YYYY-MM-DD. returns datetime.date """
+    """Expects a string with format YYYY-MM-DD. returns datetime.date"""
     try:
         return datetime.date(*[int(x) for x in date_str.split("-")])
     except Exception as e:
@@ -88,7 +88,7 @@ def min_and_max_from_date_ranges(filter_time_periods: list) -> tuple:
 
 
 def within_one_year(d1, d2):
-    """ includes leap years """
+    """includes leap years"""
     year_range = list(range(d1.year, d2.year + 1))
     if len(year_range) > 2:
         return False

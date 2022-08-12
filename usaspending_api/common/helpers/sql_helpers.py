@@ -166,7 +166,7 @@ def convert_composable_query_to_string(sql, model=Award, cursor=None):
 
 
 def cursor_fetcher(cursor):
-    """ Fetcher that simply returns the cursor. """
+    """Fetcher that simply returns the cursor."""
     return cursor
 
 
@@ -215,12 +215,12 @@ def ordered_dictionary_fetcher(cursor):
 
 
 def rowcount_fetcher(cursor):
-    """ Return the rowcount returned by the cursor. """
+    """Return the rowcount returned by the cursor."""
     return cursor.rowcount
 
 
 def single_value_fetcher(cursor):
-    """ Return the first value in the first row of the cursor. """
+    """Return the first value in the first row of the cursor."""
     return cursor.fetchall()[0][0]
 
 
@@ -264,17 +264,17 @@ def execute_dml_sql(sql, model=Award):
 
 
 def execute_sql_to_ordered_dictionary(sql, model=Award, read_only=True):
-    """ Convenience function to return execute_sql results as a list of ordered dictionaries. """
+    """Convenience function to return execute_sql results as a list of ordered dictionaries."""
     return execute_sql(sql, model=model, fetcher=ordered_dictionary_fetcher, read_only=read_only)
 
 
 def execute_sql_to_named_tuple(sql, model=Award, read_only=True):
-    """ Convenience function to return execute_sql results as a list of named tuples. """
+    """Convenience function to return execute_sql results as a list of named tuples."""
     return execute_sql(sql, model=model, fetcher=named_tuple_fetcher, read_only=read_only)
 
 
 def execute_sql_return_single_value(sql, model=Award, read_only=True):
-    """ Convenience function to return execute_sql results as a list of named tuples. """
+    """Convenience function to return execute_sql results as a list of named tuples."""
     return execute_sql(sql, model=model, fetcher=single_value_fetcher, read_only=read_only)
 
 

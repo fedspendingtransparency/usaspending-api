@@ -151,7 +151,7 @@ broker_subawards_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-broker_subawards_load_sql_string = fr"""
+broker_subawards_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {", ".join([key for key in BROKER_SUBAWARDS_DELTA_COLUMNS])}

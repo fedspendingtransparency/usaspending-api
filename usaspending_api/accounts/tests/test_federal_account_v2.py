@@ -127,7 +127,7 @@ def fixture_data(db):
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_exists(client, fixture_data):
-    """ Verify the federal accounts endpoint returns a status of 200 """
+    """Verify the federal accounts endpoint returns a status of 200"""
     resp = client.post(
         "/api/v2/federal_accounts/", content_type="application/json", data=json.dumps({"filters": {"fy": "2017"}})
     )
@@ -136,7 +136,7 @@ def test_federal_accounts_endpoint_exists(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_correct_form(client, fixture_data):
-    """ Verify the correct keys exist within the response """
+    """Verify the correct keys exist within the response"""
     resp = client.post(
         "/api/v2/federal_accounts/", content_type="application/json", data=json.dumps({"filters": {"fy": "2017"}})
     )
@@ -151,7 +151,7 @@ def test_federal_accounts_endpoint_correct_form(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_correct_data(client, fixture_data):
-    """ Verify federal accounts endpoint returns the correct data """
+    """Verify federal accounts endpoint returns the correct data"""
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
@@ -320,7 +320,7 @@ def test_federal_accounts_uses_corrected_cgac(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_account_content(client, fixture_data):
-    """ Verify the correct Federal Account is returned with the correct contents"""
+    """Verify the correct Federal Account is returned with the correct contents"""
     resp = client.get("/api/v2/federal_accounts/001-0005/")
 
     response_data = resp.json()
@@ -334,7 +334,7 @@ def test_federal_account_content(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_account_invalid_param(client, fixture_data):
-    """ Verify the an invalid federal account code will return as a 400 """
+    """Verify the an invalid federal account code will return as a 400"""
     resp = client.get("/api/v2/federal_accounts/001-0006/")
 
     assert resp.status_code == 400
@@ -342,7 +342,7 @@ def test_federal_account_invalid_param(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_account_dod_cgac(client, fixture_data):
-    """ Verify DOD CGAC query returns CGAC code for all DOD departments in addition to DOD's '097' """
+    """Verify DOD CGAC query returns CGAC code for all DOD departments in addition to DOD's '097'"""
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",

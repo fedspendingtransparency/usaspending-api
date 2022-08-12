@@ -78,7 +78,7 @@ class ListMonthlyDownloadsViewSet(APIView):
         return Response({"monthly_files": downloads})
 
     def create_download_response_obj(self, filename, fiscal_year, type_param, agency, is_delta=False):
-        """Return a """
+        """Return a"""
         regex = r"(.*)_(.*)_Delta_(.*)\.zip" if is_delta else r"(.*)_(.*)_(.*)_Full_(.*)\.zip"
         filename_data = re.findall(regex, filename)[0]
 

@@ -146,7 +146,7 @@ def get_file_b(submission_attributes, db_cursor):
 
 
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
-    """ Process and load file B broker data (aka TAS balances by program activity and object class). """
+    """Process and load file B broker data (aka TAS balances by program activity and object class)."""
     reverse = re.compile(r"(_(cpe|fyb)$)|^transaction_obligated_amount$")
     skipped_tas = defaultdict(int)  # tracks count of rows skipped due to "missing" TAS
     bulk_treasury_appropriation_account_tas_lookup(prg_act_obj_cls_data, db_cursor)

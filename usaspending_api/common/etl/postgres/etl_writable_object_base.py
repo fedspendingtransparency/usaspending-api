@@ -53,11 +53,11 @@ class ETLWritableObjectBase(ETLObjectBase, metaclass=ABCMeta):
 
     @abstractmethod
     def _get_data_types(self) -> DataTypes:
-        """ Returns a mapping of columns names to database data types. """
+        """Returns a mapping of columns names to database data types."""
         raise NotImplementedError("Must be implemented in subclasses of ETLWritableObjectBase.")
 
     def _get_key_columns(self) -> KeyColumns:
-        """ Returns caller supplied or primary key columns (if caller did not supply keys). """
+        """Returns caller supplied or primary key columns (if caller did not supply keys)."""
         if self._key_overrides:
             if not all(c in self.columns for c in self._key_overrides):
                 raise RuntimeError("All columns listed in key_overrides must exist in database object.")
@@ -73,7 +73,7 @@ class ETLWritableObjectBase(ETLObjectBase, metaclass=ABCMeta):
 
     @abstractmethod
     def _get_primary_key_columns(self) -> List[str]:
-        """ Returns caller supplied or primary key columns (if caller did not supply keys). """
+        """Returns caller supplied or primary key columns (if caller did not supply keys)."""
         raise NotImplementedError("Must be implemented in subclasses of ETLWritableObjectBase.")
 
 

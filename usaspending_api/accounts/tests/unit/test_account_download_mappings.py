@@ -13,7 +13,7 @@ from usaspending_api.download.v2.download_column_historical_lookups import query
 
 @pytest.mark.django_db
 def test_account_balances_treasury_account_mapping():
-    """ Ensure the account_balances column-level mappings retrieve data from valid DB columns. """
+    """Ensure the account_balances column-level mappings retrieve data from valid DB columns."""
     try:
         query_values = query_paths["account_balances"]["treasury_account"].values()
         account_download_filter(
@@ -25,7 +25,7 @@ def test_account_balances_treasury_account_mapping():
 
 @pytest.mark.django_db
 def test_account_balances_federal_account_mapping():
-    """ Ensure the account_balances column-level mappings retrieve data from valid DB columns. """
+    """Ensure the account_balances column-level mappings retrieve data from valid DB columns."""
     try:
         query_values = query_paths["account_balances"]["federal_account"].values()
         account_download_filter(
@@ -37,7 +37,7 @@ def test_account_balances_federal_account_mapping():
 
 @pytest.mark.django_db
 def test_object_class_program_activity_treasury_account_mapping():
-    """ Ensure the object_class_program_activity column-level mappings retrieve data from valid DB columns. """
+    """Ensure the object_class_program_activity column-level mappings retrieve data from valid DB columns."""
     try:
         query_values = query_paths["object_class_program_activity"]["treasury_account"].values()
         account_download_filter(
@@ -52,7 +52,7 @@ def test_object_class_program_activity_treasury_account_mapping():
 
 @pytest.mark.django_db
 def test_object_class_program_activity_federal_account_mapping():
-    """ Ensure the object_class_program_activity column-level mappings retrieve data from valid DB columns. """
+    """Ensure the object_class_program_activity column-level mappings retrieve data from valid DB columns."""
     try:
         query_values = query_paths["object_class_program_activity"]["federal_account"].values()
         account_download_filter(
@@ -67,7 +67,7 @@ def test_object_class_program_activity_federal_account_mapping():
 
 @pytest.mark.django_db
 def test_award_financial_treasury_account_mapping():
-    """ Ensure the award_financial column-level mappings retrieve data from valid DB columns. """
+    """Ensure the award_financial column-level mappings retrieve data from valid DB columns."""
     try:
         query_values = query_paths["award_financial"]["treasury_account"].values()
         account_download_filter(
@@ -79,7 +79,7 @@ def test_award_financial_treasury_account_mapping():
 
 @pytest.mark.django_db
 def test_award_financial_federal_account_mapping():
-    """ Ensure the award_financial column-level mappings retrieve data from valid DB columns. """
+    """Ensure the award_financial column-level mappings retrieve data from valid DB columns."""
     try:
         query_values = query_paths["award_financial"]["federal_account"].values()
         account_download_filter(

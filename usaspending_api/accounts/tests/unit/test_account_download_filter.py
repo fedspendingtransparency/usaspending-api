@@ -189,7 +189,7 @@ def test_federal_account_filter(submissions):
 
 
 def test_tas_account_filter_later_qtr_treasury(submissions):
-    """ Ensure the fiscal year and quarter filter is working, later quarter - treasury_account"""
+    """Ensure the fiscal year and quarter filter is working, later quarter - treasury_account"""
     # Create TAS models
     tas1 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="1")
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="2")
@@ -206,7 +206,7 @@ def test_tas_account_filter_later_qtr_treasury(submissions):
 
 @pytest.mark.django_db
 def test_tas_account_filter_later_qtr_award_financial(submissions):
-    """ Ensure the fiscal year and quarter filter is working, later quarter - award_financial"""
+    """Ensure the fiscal year and quarter filter is working, later quarter - award_financial"""
     # Create FederalAccount models
     fed_acct1 = baker.make("accounts.FederalAccount")
     fed_acct2 = baker.make("accounts.FederalAccount")
@@ -248,7 +248,7 @@ def test_tas_account_filter_later_qtr_award_financial(submissions):
 
 
 def test_tas_account_filter_later_qtr_federal(submissions):
-    """ Ensure the fiscal year and quarter filter is working, later quarter - federal account"""
+    """Ensure the fiscal year and quarter filter is working, later quarter - federal account"""
     # Create FederalAccount models
     fed_acct1 = baker.make("accounts.FederalAccount")
     fed_acct2 = baker.make("accounts.FederalAccount")
@@ -270,7 +270,7 @@ def test_tas_account_filter_later_qtr_federal(submissions):
 
 
 def test_tas_account_filter_duplicate_tas_account_balances(submissions):
-    """ Ensure the fiscal year and quarter filter is working, duplicate tas for account balances """
+    """Ensure the fiscal year and quarter filter is working, duplicate tas for account balances"""
     # Create FederalAccount models
     fed_acct1 = baker.make("accounts.FederalAccount")
 
@@ -288,7 +288,7 @@ def test_tas_account_filter_duplicate_tas_account_balances(submissions):
 
 
 def test_tas_account_filter_duplicate_tas_financial_accounts_program_object(submissions):
-    """ Ensure the fiscal year and quarter filter is working, duplicate tas for financial accounts """
+    """Ensure the fiscal year and quarter filter is working, duplicate tas for financial accounts"""
     # Create FederalAccount models
     fed_acct1 = baker.make("accounts.FederalAccount")
 
@@ -316,7 +316,7 @@ def test_tas_account_filter_duplicate_tas_financial_accounts_program_object(subm
 
 
 def test_budget_function_filter(submissions):
-    """ Ensure the Budget Function filter is working """
+    """Ensure the Budget Function filter is working"""
     # Create TAS models
     tas1 = baker.make("accounts.TreasuryAppropriationAccount", budget_function_code="BUD")
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", budget_function_code="NOT")
@@ -342,7 +342,7 @@ def test_budget_function_filter(submissions):
 
 
 def test_budget_subfunction_filter(submissions):
-    """ Ensure the Budget Subfunction filter is working """
+    """Ensure the Budget Subfunction filter is working"""
     # Create TAS models
     tas1 = baker.make("accounts.TreasuryAppropriationAccount", budget_subfunction_code="SUB")
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", budget_subfunction_code="NOT")
@@ -370,7 +370,7 @@ def test_budget_subfunction_filter(submissions):
 
 
 def test_cgac_agency_filter(submissions):
-    """ Ensure the CGAC agency filter is working """
+    """Ensure the CGAC agency filter is working"""
     ta1 = baker.make("references.ToptierAgency", toptier_agency_id=-9999, toptier_code="CGC")
     ta2 = baker.make("references.ToptierAgency", toptier_agency_id=-9998, toptier_code="NOT")
 
@@ -395,7 +395,7 @@ def test_cgac_agency_filter(submissions):
 
 
 def test_frec_agency_filter(submissions):
-    """ Ensure the FREC agency filter is working """
+    """Ensure the FREC agency filter is working"""
     ta1 = baker.make("references.ToptierAgency", toptier_agency_id=-9998, toptier_code="FAKE")
     ta2 = baker.make("references.ToptierAgency", toptier_agency_id=-9999, toptier_code="FREC")
 

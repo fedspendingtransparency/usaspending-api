@@ -4,7 +4,7 @@ FROM centos:7
 # Forcing back to python 3.7 to be in sync with local dev env.
 # Can't run driver and worker on different Python versions when driver is local dev machine and not spark-submit container
 #ARG PYTHON_VERSION=3.8.10
-ARG PYTHON_VERSION=3.7.13
+ARG PYTHON_VERSION=3.7.2
 ARG HADOOP_VERSION=3.3.1
 ARG SPARK_VERSION=3.2.1
 ARG PROJECT_LOG_DIR=/logs

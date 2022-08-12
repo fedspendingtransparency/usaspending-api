@@ -25,7 +25,7 @@ class DownloadTransactionCountViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        """Returns boolean of whether a download request is greater than the max limit. """
+        """Returns boolean of whether a download request is greater than the max limit."""
         models = [{"name": "subawards", "key": "subawards", "type": "boolean", "default": False}]
         models.extend(copy.deepcopy(AWARD_FILTER))
         self.original_filters = request.data.get("filters")

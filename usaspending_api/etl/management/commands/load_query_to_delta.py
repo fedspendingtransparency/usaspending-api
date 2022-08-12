@@ -13,6 +13,11 @@ from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_COLUMNS,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
+from usaspending_api.recipient.delta_models.sam_recipient import (
+    SAM_RECIPIENT_COLUMNS,
+    sam_recipient_create_sql_string,
+    sam_recipient_load_sql_string,
+)
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
@@ -61,6 +66,7 @@ TABLE_SPEC = {
         "destination_database": "int",
         "partition_column": None,
         "partition_column_type": None,
+        "is_partition_column_unique": False,
         "delta_table_create_sql": sam_recipient_create_sql_string,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
         "column_names": list(SAM_RECIPIENT_COLUMNS),
