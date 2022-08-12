@@ -21,7 +21,7 @@ endif
 #### VARS ##############################################################################################################
 #### Variables used in this Makefile.
 #### Uppercased are environment vars, or make-specific vars. All others should be lower-snake-case
-ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
+ENV_CODE ?= 3.7.13  # default ENV_CODE to lcl if not set
 PYTHON_VERSION ?= 3.7.13  # default version if not set in .env or an env var
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml

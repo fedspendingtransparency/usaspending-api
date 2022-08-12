@@ -157,7 +157,7 @@ def get_all_period_start_end_dates(fiscal_year):
 
 
 def get_clone_periods(fiscal_quarter):
-    """ These are all of the periods in a quarter that are not the quarter end period. """
+    """These are all of the periods in a quarter that are not the quarter end period."""
     return {1: [2], 2: [4, 5], 3: [7, 8], 4: [10, 11]}[fiscal_quarter]
 
 
@@ -175,7 +175,7 @@ def get_period_start_end_dates(fiscal_year, fiscal_period):
 
 
 def get_quarter_start_date_from_period(fiscal_year, fiscal_period):
-    """ Quirky little function to find the quarter start date for the quarter the period falls in. """
+    """Quirky little function to find the quarter start date for the quarter the period falls in."""
     fiscal_quarter = get_fiscal_quarter_from_period(fiscal_period)
     first_period = get_clone_periods(fiscal_quarter)[0]
     period_starts, _ = get_all_period_start_end_dates(fiscal_year)
@@ -187,7 +187,7 @@ def is_quarter_final_period(fiscal_period):
 
 
 def is_rds():
-    """ Not foolproof, but will hopefully prevent a few accidents between now and the end of CARES Act. """
+    """Not foolproof, but will hopefully prevent a few accidents between now and the end of CARES Act."""
     return "rdsdbdata" in execute_sql_return_single_value("show data_directory")
 
 
@@ -280,7 +280,7 @@ def vacuum_tables():
 
 
 def validate_destination_has_no_data(nuclear_option, destination_fiscal_year, destination_fiscal_period):
-    """ Really just a warning, not a hard validation. """
+    """Really just a warning, not a hard validation."""
     if not nuclear_option and period_has_submissions(destination_fiscal_year, destination_fiscal_period):
         logger.warning(
             "WARNING:  The destination period has submissions and the "
@@ -308,7 +308,7 @@ def validate_not_monthly_to_quarterly(source_fiscal_period, destination_fiscal_p
 
 
 def validate_not_quarterly_to_monthly(source_fiscal_period, destination_fiscal_period):
-    """ Really just a warning, not a hard validation. """
+    """Really just a warning, not a hard validation."""
     if is_quarter_final_period(source_fiscal_period) and not is_quarter_final_period(destination_fiscal_period):
         logger.warning(
             "WARNING:  You are attempting to copy quarterly data into a monthly period.  This is "

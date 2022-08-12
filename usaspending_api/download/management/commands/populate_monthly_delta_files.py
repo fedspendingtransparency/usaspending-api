@@ -72,7 +72,7 @@ AWARD_MAPPINGS = {
 
 class Command(BaseCommand):
     def download(self, award_type, agency="all", generate_since=None):
-        """ Create a delta file based on award_type, and agency_code (or all agencies) """
+        """Create a delta file based on award_type, and agency_code (or all agencies)"""
         logger.info(
             "Starting generation. {}, Agency: {}".format(award_type, agency if agency == "all" else agency["name"])
         )
@@ -151,7 +151,7 @@ class Command(BaseCommand):
         )
 
     def create_local_file(self, award_type, source, agency_code, generate_since):
-        """ Generate complete file from SQL query and S3 bucket deletion files, then zip it locally """
+        """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
         logger.info("Generating CSV file with creations and modifications")
 
         # Create file paths and working directory
@@ -278,7 +278,7 @@ class Command(BaseCommand):
             self.add_deletions_to_file(all_deletions, award_type, source_path)
 
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
-        """ Ensure that the dataframe has all necessary columns in the correct order """
+        """Ensure that the dataframe has all necessary columns in the correct order"""
         ordered_columns = source.columns(None)
         if "correction_delete_ind" not in ordered_columns:
             ordered_columns = ["correction_delete_ind"] + ordered_columns
@@ -296,7 +296,7 @@ class Command(BaseCommand):
         return dataframe[ordered_columns]
 
     def add_deletions_to_file(self, df, award_type, source_path):
-        """ Append the deletion records to the end of the CSV file """
+        """Append the deletion records to the end of the CSV file"""
         logger.info("Removing duplicates from deletion records")
         df = df.sort_values(["last_modified_date"] + list(AWARD_MAPPINGS[award_type]["column_headers"].values()))
         deduped_df = df.drop_duplicates(subset=list(AWARD_MAPPINGS[award_type]["column_headers"].values()), keep="last")
@@ -306,7 +306,7 @@ class Command(BaseCommand):
         deduped_df.to_csv(source_path, mode="a", header=False, index=False)
 
     def check_regex_match(self, award_type, file_name, generate_since):
-        """ Create a date object from a regular expression match """
+        """Create a date object from a regular expression match"""
         re_match = re.match(AWARD_MAPPINGS[award_type]["match"], file_name)
         if not re_match:
             return False
@@ -337,7 +337,7 @@ class Command(BaseCommand):
         return "{}-{}-{}".format(year, month, day)
 
     def parse_filters(self, award_types, agency):
-        """ Convert readable filters to a filter object usable for the matview filter """
+        """Convert readable filters to a filter object usable for the matview filter"""
         filters = {
             "award_type_codes": [award_type for sublist in award_types for award_type in all_ats_mappings[sublist]]
         }
@@ -350,7 +350,7 @@ class Command(BaseCommand):
         return filters, agency_code
 
     def add_arguments(self, parser):
-        """ Add arguments to the parser """
+        """Add arguments to the parser"""
         parser.add_argument(
             "--agencies",
             dest="agencies",
@@ -390,7 +390,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        """ Run the application. """
+        """Run the application."""
         agencies = options["agencies"]
         award_types = options["award_types"]
         last_date = options["last_date"]

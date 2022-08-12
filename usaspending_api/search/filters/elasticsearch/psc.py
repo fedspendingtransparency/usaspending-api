@@ -23,7 +23,7 @@ class PSCCodes(PSCCodesMixin, _Filter, HierarchicalFilter):
 class PSCNode(Node):
     def _basic_search_unit(self):
         def build_search_pattern(code):
-            """ All PSC leaf codes are four digits.  Anything shorter than that is a prefix. """
+            """All PSC leaf codes are four digits.  Anything shorter than that is a prefix."""
             return (code + "*") if len(code) < 4 else code
 
         patterns = [build_search_pattern(code) for code in self.ancestors] + [build_search_pattern(self.code)]

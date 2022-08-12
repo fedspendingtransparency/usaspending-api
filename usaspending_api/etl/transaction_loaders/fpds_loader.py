@@ -195,7 +195,7 @@ def _load_transactions(load_objects):
 
 
 def _matching_award(cursor, load_object):
-    """ Try to find an award for this transaction to belong to by unique_award_key"""
+    """Try to find an award for this transaction to belong to by unique_award_key"""
     find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
         load_object["transaction_fpds"]["unique_award_key"]
     )

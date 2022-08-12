@@ -264,7 +264,7 @@ def create_recipient_lookup_test_data(*recipient_lookup_list):
 
 @pytest.mark.django_db
 def test_validate_recipient_id_success():
-    """ Testing a run of a valid recipient id """
+    """Testing a run of a valid recipient id"""
     recipient_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-P"
     baker.make("recipient.RecipientProfile", **TEST_RECIPIENT_PROFILES[recipient_id])
 
@@ -280,7 +280,7 @@ def test_validate_recipient_id_success():
 
 @pytest.mark.django_db
 def test_validate_recipient_id_failures():
-    """ Testing a run of invalid recipient ids """
+    """Testing a run of invalid recipient ids"""
     recipient_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-P"
     baker.make("recipient.RecipientProfile", **TEST_RECIPIENT_PROFILES[recipient_id])
 
@@ -310,7 +310,7 @@ def test_validate_recipient_id_failures():
 
 @pytest.mark.django_db
 def test_extract_duns_uei_name_from_hash():
-    """ Testing extracting name and duns from the recipient hash """
+    """Testing extracting name and duns from the recipient hash"""
     recipient_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     baker.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[recipient_hash])
 
@@ -325,7 +325,7 @@ def test_extract_duns_uei_name_from_hash():
 
 @pytest.mark.django_db
 def test_extract_parent_from_hash():
-    """ Testing extracting parent duns/name from recipient hash"""
+    """Testing extracting parent duns/name from recipient hash"""
     # This one specifically has to be a child
     recipient_id = "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5-C"
     recipient_hash = TEST_RECIPIENT_PROFILES[recipient_id]["recipient_hash"]
@@ -364,7 +364,7 @@ def test_extract_parent_from_hash_failure():
 
 @pytest.mark.django_db
 def test_extract_location_success():
-    """ Testing extracting location data from recipient hash using the DUNS table """
+    """Testing extracting location data from recipient hash using the DUNS table"""
     recipient_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     baker.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[recipient_hash])
     country_code = TEST_RECIPIENT_LOCATIONS[recipient_hash]["country_code"]
@@ -384,7 +384,7 @@ def test_extract_location_success():
 
 @pytest.mark.django_db
 def test_cleanup_location():
-    """ Testing cleaning up the location data """
+    """Testing cleaning up the location data"""
 
     # Test United States fix
     test_location = {"country_code": "UNITED STATES"}
@@ -404,7 +404,7 @@ def test_cleanup_location():
 
 @pytest.mark.django_db
 def test_extract_business_categories(monkeypatch):
-    """ Testing extracting business categories from the recipient name/duns """
+    """Testing extracting business categories from the recipient name/duns"""
     recipient_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     recipient_name = TEST_RECIPIENT_LOOKUPS[recipient_hash]["legal_business_name"]
     recipient_uei = TEST_RECIPIENT_LOOKUPS[recipient_hash]["uei"]
@@ -428,7 +428,7 @@ def test_extract_business_categories(monkeypatch):
 
 @pytest.mark.django_db
 def test_extract_business_categories_special():
-    """ Testing extracting the business categories for a special case  """
+    """Testing extracting the business categories for a special case"""
     recipient_name = "MULTIPLE RECIPIENTS"
     recipient_uei = None
     recipient_hash = ""
@@ -438,7 +438,7 @@ def test_extract_business_categories_special():
 
 @pytest.mark.django_db
 def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_index):
-    """ Testing recipient totals with different year values """
+    """Testing recipient totals with different year values"""
     # Testing with specific child
     recipient_id = "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5-C"
     recipient_hash = recipient_id[:-2]
@@ -487,7 +487,7 @@ def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_ind
 
 @pytest.mark.django_db
 def test_obtain_recipient_totals_parent(monkeypatch, elasticsearch_transaction_index):
-    """ Testing recipient totals with parent child relationships """
+    """Testing recipient totals with parent child relationships"""
     # Testing with specific parent/child ids
     parent_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-P"
 
@@ -519,7 +519,7 @@ def recipient_overview_endpoint(id, year="latest"):
 
 @pytest.mark.django_db
 def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index):
-    """ Testing a simple example of the endpoint as a whole """
+    """Testing a simple example of the endpoint as a whole"""
     r_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-C"
 
     # Mock Transactions
@@ -594,7 +594,7 @@ def test_recipient_overview(client, monkeypatch, elasticsearch_transaction_index
 
 @pytest.mark.django_db
 def test_extract_hash_from_duns_or_uei_via_duns():
-    """ Testing extracting the hash/name from a DUNS """
+    """Testing extracting the hash/name from a DUNS"""
     example_duns = "000000001"
     expected_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     baker.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[expected_hash])
@@ -605,7 +605,7 @@ def test_extract_hash_from_duns_or_uei_via_duns():
 
 @pytest.mark.django_db
 def test_extract_hash_from_duns_or_uei_via_uei():
-    """ Testing extracting the hash/name from a DUNS """
+    """Testing extracting the hash/name from a DUNS"""
     example_uei = "AAAAAAAAAAAA"
     expected_hash = "a52a7544-829b-c925-e1ba-d04d3171c09a"
     baker.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[expected_hash])
@@ -623,7 +623,7 @@ def recipient_children_endpoint(duns, year="latest"):
 
 @pytest.mark.django_db
 def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_index):
-    """ Testing successful child recipient calls """
+    """Testing successful child recipient calls"""
     child1_id = "a52a7544-829b-c925-e1ba-d04d3171c09a-C"
     parent_child1_duns = "000000001"
     child2_id = "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5-C"
@@ -666,7 +666,7 @@ def test_child_recipient_success(client, monkeypatch, elasticsearch_transaction_
 
 @pytest.mark.django_db
 def test_child_recipient_failures(client):
-    """ Testing failed child recipient calls """
+    """Testing failed child recipient calls"""
     # Mock Recipient Profiles
     create_recipient_profile_test_data(*TEST_RECIPIENT_PROFILES.values())
 

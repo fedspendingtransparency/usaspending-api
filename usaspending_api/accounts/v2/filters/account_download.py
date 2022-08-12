@@ -263,7 +263,7 @@ def generate_gross_outlay_amount_derived_field(account_type, submission_queryset
 
 
 def generate_treasury_account_query(queryset, account_type):
-    """ Derive necessary fields for a treasury account-grouped query """
+    """Derive necessary fields for a treasury account-grouped query"""
     derived_fields = {
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(account_type),
@@ -300,7 +300,7 @@ def generate_treasury_account_query(queryset, account_type):
 
 
 def generate_federal_account_query(queryset, account_type, tas_id, filters):
-    """ Group by federal account (and budget function/subfunction) and SUM all other fields """
+    """Group by federal account (and budget function/subfunction) and SUM all other fields"""
     # Submission Queryset is only built for Federal Account downloads since the TAS are rolled up into
     # the Federal Account. For cases such as Treasury Account download where there is no GROUP BY in
     # the resulting SQL query this is not needed.

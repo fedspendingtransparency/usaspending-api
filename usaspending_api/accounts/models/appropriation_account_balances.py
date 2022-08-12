@@ -47,7 +47,7 @@ class AbstractAppropriationAccountBalances(DataSourceTrackedModel):
 
 class AppropriationAccountBalancesManager(models.Manager):
     def get_queryset(self):
-        """ Get only records from the last submission per TAS per fiscal year. """
+        """Get only records from the last submission per TAS per fiscal year."""
         return super(AppropriationAccountBalancesManager, self).get_queryset().filter(final_of_fy=True)
 
 

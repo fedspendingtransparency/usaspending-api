@@ -103,7 +103,7 @@ TRANSACTION_SEARCH_COLUMNS = {
 TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 
-transaction_search_create_sql_string = fr"""
+transaction_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_DELTA_COLUMNS.items()])}
     )
@@ -111,7 +111,7 @@ transaction_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-transaction_search_load_sql_string = fr"""
+transaction_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in TRANSACTION_SEARCH_DELTA_COLUMNS])}

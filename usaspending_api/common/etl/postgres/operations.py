@@ -9,7 +9,7 @@ from usaspending_api.common.helpers import sql_helpers
 
 
 def _get_shared_columns(source_columns: List[str], destination_columns: List[str]) -> List[str]:
-    """ Return the list of columns contained in both lists. """
+    """Return the list of columns contained in both lists."""
 
     shared_columns = [c for c in destination_columns if c in source_columns]
     if not shared_columns:
@@ -18,7 +18,7 @@ def _get_shared_columns(source_columns: List[str], destination_columns: List[str
 
 
 def _get_changeable_columns(source: ETLObjectBase, destination: ETLWritableObjectBase):
-    """ Destination columns that are in source that are not overridden and are not keys. """
+    """Destination columns that are in source that are not overridden and are not keys."""
     changeable_columns = [
         c
         for c in destination.columns
@@ -30,7 +30,7 @@ def _get_changeable_columns(source: ETLObjectBase, destination: ETLWritableObjec
 
 
 def _get_settable_columns(source: ETLObjectBase, destination: ETLWritableObjectBase):
-    """ Destination columns that are in source or are overridden but are not keys. """
+    """Destination columns that are in source or are overridden but are not keys."""
     settable_columns = [
         c
         for c in destination.columns
@@ -42,7 +42,7 @@ def _get_settable_columns(source: ETLObjectBase, destination: ETLWritableObjectB
 
 
 def delete_obsolete_rows(source: ETLObjectBase, destination: ETLWritableObjectBase) -> int:
-    """ Delete rows from destination that do not exist in source and return the number of rows deleted. """
+    """Delete rows from destination that do not exist in source and return the number of rows deleted."""
 
     sql = """
         delete from {destination_object_representation}
@@ -93,7 +93,7 @@ def identify_new_or_updated(
 
 
 def insert_missing_rows(source: ETLObjectBase, destination: ETLWritableObjectBase) -> int:
-    """ Insert rows from source that do not exist in destination and return the number of rows inserted. """
+    """Insert rows from source that do not exist in destination and return the number of rows inserted."""
 
     # Destination columns that are in source or are overridden.
     insertable_columns = _get_shared_columns(source.columns + list(destination.insert_overrides), destination.columns)
@@ -119,7 +119,7 @@ def insert_missing_rows(source: ETLObjectBase, destination: ETLWritableObjectBas
 
 
 def stage_table(source: ETLObjectBase, destination: ETLWritableObjectBase, staging: ETLTemporaryTable) -> int:
-    """ Copy source table contents to staging table and return the number of rows copied. """
+    """Copy source table contents to staging table and return the number of rows copied."""
 
     shared_columns = _get_shared_columns(source.columns, destination.columns)
 
@@ -139,7 +139,7 @@ def stage_table(source: ETLObjectBase, destination: ETLWritableObjectBase, stagi
 
 
 def update_changed_rows(source: ETLObjectBase, destination: ETLWritableObjectBase) -> int:
-    """ Update rows in destination that have changed in source and return the number of rows updated. """
+    """Update rows in destination that have changed in source and return the number of rows updated."""
 
     # Destination columns that are in source or are overridden but are not keys.
     settable_columns = _get_settable_columns(source, destination)

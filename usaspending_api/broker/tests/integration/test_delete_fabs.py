@@ -10,7 +10,7 @@ from usaspending_api.transactions.models import SourceAssistanceTransaction
 
 @pytest.mark.django_db(transaction=True)
 def test_delete_fabs_success():
-    """ Testing delete fabs works properly """
+    """Testing delete fabs works properly"""
 
     # Award/Transaction deleted based on 1-1 transaction
     baker.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")

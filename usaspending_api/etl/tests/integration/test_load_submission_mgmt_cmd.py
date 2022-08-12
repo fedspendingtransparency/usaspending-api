@@ -78,7 +78,7 @@ class TestWithMultipleDatabases(TestCase):
                     cursor.execute(insert_sql)
 
     def test_load_submission_transaction_obligated_amount(self):
-        """ Test load submission management command for File C transaction_obligated_amount NaNs """
+        """Test load submission management command for File C transaction_obligated_amount NaNs"""
         call_command("load_submission", "-9999")
 
         expected_results = 0

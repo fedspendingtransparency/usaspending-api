@@ -91,7 +91,7 @@ class DefaultConfig(BaseSettings):
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     def _validate_database_url(cls, values, db_url_conf_name, db_conf_prefix, required=True):
-        """ Helper function to validate both DATABASE_URLs and their parts """
+        """Helper function to validate both DATABASE_URLs and their parts"""
 
         # First determine if DB URL config was provided.
         is_database_url_provided = values[db_url_conf_name] and values[db_url_conf_name] not in CONFIG_VAR_PLACEHOLDERS

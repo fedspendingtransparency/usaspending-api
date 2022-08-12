@@ -9,7 +9,7 @@ from usaspending_api.reporting.models import ReportingAgencyOverview
 
 @pytest.fixture
 def setup_test_data(db):
-    """ Insert data into DB for testing """
+    """Insert data into DB for testing"""
 
     dsws_dicts = [
         {
@@ -272,7 +272,7 @@ def setup_test_data(db):
 
 
 def test_run_script(setup_test_data):
-    """ Test that the populate_reporting_agency_tas script acts as expected """
+    """Test that the populate_reporting_agency_tas script acts as expected"""
     call_command("populate_reporting_agency_overview")
 
     results = ReportingAgencyOverview.objects.filter(fiscal_year=2019, fiscal_period=3, toptier_code="987").all()

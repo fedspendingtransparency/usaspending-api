@@ -34,7 +34,7 @@ def construct_response(results: list, pagination: Pagination):
 
 
 class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase, PaginationMixin):
-    """ Returns disaster spending by federal account. """
+    """Returns disaster spending by federal account."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
     agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key

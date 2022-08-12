@@ -249,7 +249,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return queryset
 
     def custom_queryset_order_by(self, queryset, sort_field_names, order):
-        """ Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
+        """Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
         if order == "desc":
             order_by_list = [F(field).desc(nulls_last=True) for field in sort_field_names]
         else:

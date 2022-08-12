@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def subaward_download(filters):
-    """ Used by the Custom download"""
+    """Used by the Custom download"""
     return subaward_filter(filters, for_downloads=True)
 
 

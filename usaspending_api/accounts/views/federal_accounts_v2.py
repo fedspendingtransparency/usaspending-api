@@ -467,7 +467,7 @@ class FederalAccountsViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts.md"
 
     def _parse_and_validate_request(self, request_dict):
-        """ Validate the Request object includes the required fields """
+        """Validate the Request object includes the required fields"""
         fy_range = [str(i) for i in range(2001, FiscalDateTime.today().year + 1)]
         last_fy = str(SubmissionAttributes.latest_available_fy()) or str(FiscalDateTime.today().year)
         request_settings = [
@@ -514,7 +514,7 @@ class FederalAccountsViewSet(APIView):
 
     @cache_response()
     def post(self, request, format=None):
-        """ Return all high-level Federal Account information """
+        """Return all high-level Federal Account information"""
         request_data = self._parse_and_validate_request(request.data)
         limit = request_data["limit"]
         page = request_data["page"]
