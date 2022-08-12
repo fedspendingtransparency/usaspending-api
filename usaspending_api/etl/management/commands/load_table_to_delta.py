@@ -110,7 +110,7 @@ TABLE_SPEC = {
         "partition_column": "id",
         "partition_column_type": "numeric",
         "delta_table_create_sql": recipient_profile_create_sql_string,
-        "is_partition_column_unique": True,
+        "is_partition_column_unique": False,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),

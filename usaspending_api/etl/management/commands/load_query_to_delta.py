@@ -73,6 +73,7 @@ TABLE_SPEC = {
         "swap_schema": "rpt",
         "partition_column": "recipient_hash",  # This isn't used for anything
         "partition_column_type": "string",
+        "is_partition_column_unique": False,
         "delta_table_create_sql": recipient_profile_create_sql_string,
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
