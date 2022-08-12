@@ -24,7 +24,8 @@ RECIPIENT_LOOKUP_COLUMNS = {
     **RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID,
 }
 
-RECIPIENT_LOOKUP_DELTA_COLUMNS = {k: v["delta"] for k, v in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID.items()}
+RECIPIENT_LOOKUP_DELTA_COLUMNS = {k: v["delta"] for k, v in RECIPIENT_LOOKUP_COLUMNS.items()}
+RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS = {k: v["delta"] for k, v in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID.items()}
 RECIPIENT_LOOKUP_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in RECIPIENT_LOOKUP_COLUMNS.items()}
 
 TEMP_RECIPIENT_LOOKUP_COLUMNS = {
@@ -36,6 +37,14 @@ TEMP_RECIPIENT_LOOKUP_COLUMNS = {
 recipient_lookup_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in RECIPIENT_LOOKUP_DELTA_COLUMNS.items()])}
+    )
+    USING DELTA
+    LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    """
+
+rpt_recipient_lookup_create_sql_string = rf"""
+    CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
+        {", ".join([f'{key} {val}' for key, val in RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

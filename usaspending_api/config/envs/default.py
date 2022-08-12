@@ -74,20 +74,22 @@ class DefaultConfig(BaseSettings):
     PROJECT_LOG_DIR: str = str(_SRC_ROOT_DIR / "logs")
 
     # ==== [Postgres] ====
-    DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See below root validator-factory
+    DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     USASPENDING_DB_NAME: str = "data_store_api"
     USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
-    DATA_BROKER_DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See below root validator-factory
+    DATA_BROKER_DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     BROKER_DB_NAME: str = "data_broker"
     BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
     def _validate_database_url(cls, values, db_url_conf_name, db_conf_prefix, required=True):
         """ Helper function to validate both DATABASE_URLs and their parts """
 
@@ -212,18 +214,44 @@ class DefaultConfig(BaseSettings):
                     err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {db_url_conf_name}: {v[1]}\n"
                 raise ValueError(err_msg)
 
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
     @root_validator
-    def _DATABASE_URLs_and_parts_factory(cls, values):
+    def _DATABASE_URL_and_parts_factory(cls, values):
         """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are
-        all consistent. Similarly handles DATA_BROKER_DATABASE_URL and BROKER_DB_* part config vars.
+        all consistent.
 
         - Serves as a factory function to fill out all places where we track the database URL as both one complete
         connection string and as individual parts.
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
-        cls._validate_database_url(cls, values, "DATABASE_URL", "USASPENDING_DB", required=True)
-        cls._validate_database_url(cls, values, "DATA_BROKER_DATABASE_URL", "BROKER_DB", required=False)
+        # noinspection PyArgumentList
+        cls._validate_database_url(
+            cls=cls, values=values, db_url_conf_name="DATABASE_URL", db_conf_prefix="USASPENDING_DB", required=True
+        )
+        return values
+
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
+    @root_validator
+    def _DATA_BROKER_DATABASE_URL_and_parts_factory(cls, values):
+        """A root validator to backfill DATA_BROKER_DATABASE_URL and BROKER_DB_* part config vars and validate
+        that they are all consistent.
+
+        - Serves as a factory function to fill out all places where we track the database URL as both one complete
+        connection string and as individual parts.
+        - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
+        be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
+        """
+        # noinspection PyArgumentList
+        cls._validate_database_url(
+            cls=cls,
+            values=values,
+            db_url_conf_name="DATA_BROKER_DATABASE_URL",
+            db_conf_prefix="BROKER_DB",
+            required=False,
+        )
         return values
 
     # ==== [Elasticsearch] ====
@@ -235,6 +263,8 @@ class DefaultConfig(BaseSettings):
 
     ELASTICSEARCH_HOST: AnyHttpUrl = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
 
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
     @validator("ELASTICSEARCH_HOST")
     def _ELASTICSEARCH_HOST_factory(cls, v, values, field: ModelField):
         def factory_func() -> AnyHttpUrl:
@@ -262,6 +292,11 @@ class DefaultConfig(BaseSettings):
     # 01:58:26 INFO FairSchedulableBuilder: Created default pool: default, schedulingMode: FIFO, minShare: 0, weight: 1
     SPARK_SCHEDULER_MODE: str = "FIFO"  # the default Spark scheduler mode
 
+    # Our Postgres takes 6 digits of precision (to the microsecond), so show that here.
+    # The single [x] will conform to the ISO 8601 SQL standard (e.g. +00 for UTC, -04 for NY, +0530 for IST)
+    # More info: https://spark.apache.org/docs/latest/sql-ref-datetime-pattern.html
+    SPARK_CSV_TIMEZONE_FORMAT: str = "yyyy-MM-dd HH:mm:ss[.SSSSSS][x]"
+
     # Ideal partition size based on a single Executor's task execution, and what it can handle in memory: ~128MB
     # Given the density of this data, 128 MB bulk-index request to Elasticsearch is about 75,000 docs
     # However ES does not appear to be able too handle that when several Executors make that request in parallel
@@ -269,6 +304,16 @@ class DefaultConfig(BaseSettings):
     # Reducing to 10,000 DB rows per bulk indexing operation
     SPARK_PARTITION_ROWS: int = 10000
     SPARK_MAX_PARTITIONS: int = 100000
+
+    # Minimum number of partitions to split/group batches of CSV files into, which need to be written via COPY to PG
+    # i.e. maintain at least this many writers, and therefore this many concurrent open connections writing to the DB
+    SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS: int = 8
+
+    # Use this multiplier, in conjunction with the above ``SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS``, to derive the
+    # number of partitions to split/group batches of CSV files into, which need to be written via COPY to PG
+    # This multiplier will be multiplied against the max_parallel_workers value of the target database. It can be a
+    # fraction less than 1.0. The final value will be the greater of that or ``SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS``
+    SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER: float = 0.5
 
     # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
@@ -302,7 +347,8 @@ class DefaultConfig(BaseSettings):
     # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
     AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
     SPARK_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
-    DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where output data will accumulate
+    DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where Delta output data will accumulate
+    SPARK_CSV_S3_PATH: str = "data/csv"  # path within SPARK_S3_BUCKET where CSV output data will accumulate
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
     AWS_STS_ENDPOINT: str = "sts.us-gov-west-1.amazonaws.com"
 
