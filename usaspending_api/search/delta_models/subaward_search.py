@@ -538,11 +538,13 @@ subaward_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         location_summary AS pop
             ON (pop.feature_name = bs.sub_place_of_perform_city_name
-                AND pop.state_alpha = bs.sub_place_of_perform_state_code)
+                AND pop.state_alpha = bs.sub_place_of_perform_state_code
+                AND pop.row_num = 1)
     LEFT OUTER JOIN
         location_summary AS rec
             ON (rec.feature_name = bs.sub_legal_entity_city_name
-                AND rec.state_alpha = bs.sub_legal_entity_state_code)
+                AND rec.state_alpha = bs.sub_legal_entity_state_code
+                AND rec.row_num = 1)
     LEFT OUTER JOIN
         global_temp.ref_country_code AS pcc
             ON pcc.country_code = bs.sub_place_of_perform_country_co
