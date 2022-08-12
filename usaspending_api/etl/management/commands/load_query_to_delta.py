@@ -92,7 +92,6 @@ class Command(BaseCommand):
     destination_database: str
     destination_table_name: str
     spark: SparkSession
-    spark_s3_bucket: str
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -101,13 +100,6 @@ class Command(BaseCommand):
             required=True,
             help="The destination Delta Table to write the data",
             choices=list(TABLE_SPEC),
-        )
-        parser.add_argument(
-            "--spark-s3-bucket",
-            type=str,
-            required=False,
-            default=CONFIG.SPARK_S3_BUCKET,
-            help="The destination bucket in S3 to write the data",
         )
         parser.add_argument(
             "--alt-db",
@@ -145,7 +137,6 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         destination_table = options["destination_table"]
-        self.spark_s3_bucket = options["spark_s3_bucket"]
 
         table_spec = TABLE_SPEC[destination_table]
         self.destination_database = options["alt_db"] or table_spec["destination_database"]
@@ -181,7 +172,6 @@ class Command(BaseCommand):
             query.format(
                 DESTINATION_DATABASE=self.destination_database,
                 DESTINATION_TABLE=self.destination_table_name,
-                SPARK_S3_BUCKET=self.spark_s3_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
             )
         )

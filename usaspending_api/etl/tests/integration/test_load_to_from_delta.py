@@ -541,10 +541,7 @@ def _verify_delta_table_loaded_to_delta(
 
     # make the table and load it
     call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
-    if load_command == "load_query_to_delta":
-        call_command(load_command, f"--spark-s3-bucket={s3_bucket}", *cmd_args)
-    else:
-        call_command(load_command, *cmd_args)
+    call_command(load_command, *cmd_args)
 
     # get the postgres data to compare
     model = TABLE_SPEC[delta_table_name]["model"]
