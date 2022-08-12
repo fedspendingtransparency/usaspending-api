@@ -54,7 +54,7 @@ TABLE_SPEC = {
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
     },
-    "sam_recipient": {
+    "int.sam_recipient": {
         "model": None,
         "source_query": sam_recipient_load_sql_string,
         "source_table": "duns",
