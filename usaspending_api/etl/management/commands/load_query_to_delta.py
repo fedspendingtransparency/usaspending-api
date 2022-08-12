@@ -32,6 +32,8 @@ TABLE_SPEC = {
         "swap_table": "transaction_search",
         "swap_schema": "rpt",
         "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_search_create_sql_string,
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
@@ -48,6 +50,7 @@ TABLE_SPEC = {
         "swap_schema": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"

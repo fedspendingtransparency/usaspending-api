@@ -61,6 +61,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": awards_sql_string,
         "source_schema": None,
         "custom_schema": "",
@@ -76,6 +77,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": financial_accounts_by_awards_sql_string,
         "source_schema": None,
         "custom_schema": "award_id LONG",
@@ -91,6 +93,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": recipient_lookup_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
@@ -106,6 +109,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": recipient_profile_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
@@ -121,6 +125,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": None,
         "partition_column_type": None,
+        "is_partition_column_unique": False,
         "delta_table_create_sql": sam_recipient_sql_string,
         "source_schema": None,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
@@ -134,8 +139,9 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,
-        "partition_column": "published_fabs_id",
+        "partition_column": "transaction_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_fabs_sql_string,
         "source_schema": None,
         "custom_schema": "",
@@ -149,8 +155,9 @@ TABLE_SPEC = {
         "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,
-        "partition_column": "detached_award_procurement_id",
+        "partition_column": "transaction_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_fpds_sql_string,
         "source_schema": None,
         "custom_schema": "",
@@ -166,6 +173,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_normalized_sql_string,
         "source_schema": None,
         "custom_schema": "",
@@ -184,6 +192,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "transaction_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_search_create_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
@@ -199,6 +208,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "award_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": None,
         "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
@@ -216,6 +226,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": broker_subawards_sql_string,
         "source_schema": None,
         "custom_schema": "",
@@ -287,6 +298,7 @@ class Command(BaseCommand):
         source_table = table_spec["source_table"]
         partition_column = table_spec["partition_column"]
         partition_column_type = table_spec["partition_column_type"]
+        is_partition_column_unique = table_spec["is_partition_column_unique"]
         custom_schema = table_spec["custom_schema"]
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
@@ -313,18 +325,18 @@ class Command(BaseCommand):
 
             # Read from table or view
             df = extract_db_data_frame(
-                spark,
-                get_jdbc_connection_properties(),
-                jdbc_url,
-                SPARK_PARTITION_ROWS,
-                get_partition_bounds_sql(
-                    source_table,
-                    partition_column,
-                    partition_column,
-                    is_partitioning_col_unique=False,
+                spark=spark,
+                conn_props=get_jdbc_connection_properties(),
+                jdbc_url=jdbc_url,
+                partition_rows=SPARK_PARTITION_ROWS,
+                min_max_sql=get_partition_bounds_sql(
+                    table_name=source_table,
+                    partitioning_col_name=partition_column,
+                    partitioning_col_alias=partition_column,
+                    is_partitioning_col_unique=is_partition_column_unique,
                 ),
-                source_table,
-                partition_column,
+                table=source_table,
+                partitioning_col=partition_column,
                 is_numeric_partitioning_col=is_numeric_partitioning_col,
                 is_date_partitioning_col=is_date_partitioning_col,
                 custom_schema=custom_schema,
