@@ -455,20 +455,20 @@ subaward_search_load_sql_string = fr"""
 
         COALESCE(UPPER(bs.sub_legal_entity_country_code), 'USA') AS sub_legal_entity_country_code,
         rcc.country_name AS sub_legal_entity_country_name,
-        LPAD(CAST(CAST(REGEXP_EXTRACT(rec.county_numeric, '^[A-Z]*(\d+)(?:\.\d+)?$', 1) AS SHORT) AS STRING), 3, '0') AS sub_legal_entity_county_code,
+        LPAD(CAST(CAST(REGEXP_EXTRACT(rec.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0') AS sub_legal_entity_county_code,
         rec.county_name AS sub_legal_entity_county_name,
         LEFT(COALESCE(bs.sub_legal_entity_zip, ''), 5) AS sub_legal_entity_zip5,
         rec.census_code AS sub_legal_entity_city_code,
-        LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_legal_entity_congressional), '^[A-Z]*(\d+)(?:\.\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_legal_entity_congressional,
+        LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_legal_entity_congressional,
 
         fabs.place_of_performance_scope AS place_of_perform_scope,
         COALESCE(UPPER(bs.sub_place_of_perform_country_co), 'USA') AS sub_place_of_perform_country_co,
         pcc.country_name AS sub_place_of_perform_country_name,
-        LPAD(CAST(CAST(REGEXP_EXTRACT(pop.county_numeric, '^[A-Z]*(\d+)(?:\.\d+)?$', 1) AS SHORT) AS STRING), 3, '0') AS sub_place_of_perform_county_code,
+        LPAD(CAST(CAST(REGEXP_EXTRACT(pop.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0') AS sub_place_of_perform_county_code,
         pop.county_name AS sub_place_of_perform_county_name,
         LEFT(COALESCE(sub_place_of_performance_zip, ''), 5) AS sub_place_of_perform_zip5,
         pop.census_code AS sub_place_of_perform_city_code,
-        LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\d+)(?:\.\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio,
+        LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio,
 
         -- USAS Vectors
         CONCAT_WS(' ',
