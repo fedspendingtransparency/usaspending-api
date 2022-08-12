@@ -442,12 +442,12 @@ recipient_profile_load_sql_strings = [
         WHERE rpv.id != 0
     """,
     """DROP VIEW temporary_recipients_from_transactions_view;""",
-    """DROP VIEW step_1;"""
-    """DROP VIEW step_2;"""
-    """DROP VIEW step_3;"""
-    """DROP VIEW step_4;"""
-    """DROP VIEW step_5;"""
-    """DROP VIEW step_6;"""
-    """DROP VIEW step_7;"""
+    """DROP VIEW step_1;""",
+    """DROP VIEW step_2;""",
+    """DROP VIEW step_3;""",
+    """DROP VIEW step_4;""",
+    """DROP VIEW step_5;""",
+    """DROP VIEW step_6;""",
+    """DROP VIEW step_7;""",
     """DROP VIEW step_8;""",
 ]
