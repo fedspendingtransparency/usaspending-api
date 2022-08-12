@@ -16,6 +16,7 @@ from usaspending_api.search.delta_models.award_search import (
 from usaspending_api.search.delta_models.subaward_search import (
     subaward_search_create_sql_string,
     subaward_search_load_sql_string,
+    SUBAWARD_SEARCH_COLUMNS,
     SUBAWARD_SEARCH_POSTGRES_COLUMNS,
 )
 from usaspending_api.search.models import TransactionSearch, AwardSearch, SubawardSearch
@@ -73,6 +74,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": subaward_search_create_sql_string,
         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "",
+        "column_names": list(SUBAWARD_SEARCH_COLUMNS),
     },
 }
 
