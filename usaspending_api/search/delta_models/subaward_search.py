@@ -529,28 +529,28 @@ subaward_search_load_sql_string = fr"""
             ON (tas.award_id = bs.award_id)
     LEFT OUTER JOIN
         recipient_summary AS recipient_lookup
-            ON (recipient_lookup.duns = bs.sub_awardee_or_recipient_uniqu
+            ON (recipient_lookup.duns = UPPER(bs.sub_awardee_or_recipient_uniqu)
                 AND bs.sub_awardee_or_recipient_uniqu IS NOT NULL AND recipient_lookup.row = 1)
     LEFT OUTER JOIN
         recipient_summary AS parent_recipient_lookup
-            ON (parent_recipient_lookup.duns = bs.sub_ultimate_parent_unique_ide
+            ON (parent_recipient_lookup.duns = UPPER(bs.sub_ultimate_parent_unique_ide)
                 AND bs.sub_ultimate_parent_unique_ide IS NOT NULL AND parent_recipient_lookup.row = 1)
     LEFT OUTER JOIN
         location_summary AS pop
-            ON (pop.feature_name = bs.sub_place_of_perform_city_name
-                AND pop.state_alpha = bs.sub_place_of_perform_state_code
+            ON (pop.feature_name = UPPER(bs.sub_place_of_perform_city_name)
+                AND pop.state_alpha = UPPER(bs.sub_place_of_perform_state_code)
                 AND pop.row_num = 1)
     LEFT OUTER JOIN
         location_summary AS rec
-            ON (rec.feature_name = bs.sub_legal_entity_city_name
-                AND rec.state_alpha = bs.sub_legal_entity_state_code
+            ON (rec.feature_name = UPPER(bs.sub_legal_entity_city_name)
+                AND rec.state_alpha = UPPER(bs.sub_legal_entity_state_code)
                 AND rec.row_num = 1)
     LEFT OUTER JOIN
         global_temp.ref_country_code AS pcc
-            ON pcc.country_code = bs.sub_place_of_perform_country_co
+            ON pcc.country_code = UPPER(bs.sub_place_of_perform_country_co)
     LEFT OUTER JOIN
         global_temp.ref_country_code AS rcc
-            ON rcc.country_code = bs.sub_legal_entity_country_code
+            ON rcc.country_code = UPPER(bs.sub_legal_entity_country_code)
     LEFT OUTER JOIN
         global_temp.psc
             ON fpds.product_or_service_code = psc.code
