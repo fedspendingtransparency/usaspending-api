@@ -156,8 +156,6 @@ def spark(tmp_path_factory) -> SparkSession:
         "spark.sql.warehouse.dir": spark_sql_warehouse_dir,
         "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={spark_sql_warehouse_dir}/metastore_db;create=true",
         "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
-        "spark.driver.memory": "2g",
-        "spark.worker.memory": "2g",
     }
     spark = configure_spark_session(
         app_name="Unit Test Session",
