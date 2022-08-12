@@ -153,13 +153,10 @@ class Command(BaseCommand):
 
         create_ref_temp_views(self.spark)
 
-        # Make sure that the "temp" database exists since this is used by some
-        # load queries to store temporary tables
-        self.spark.sql(f"CREATE DATABASE IF NOT EXISTS temp;")
-
         load_query = table_spec["source_query"]
         if isinstance(load_query, list):
-            for query in load_query:
+            for index, query in enumerate(load_query):
+                logger.info(f"Running query at position: {index}\n" f"Preview of query: {query[:100]}")
                 self.run_spark_sql(query)
         else:
             self.run_spark_sql(load_query)

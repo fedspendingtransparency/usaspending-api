@@ -119,7 +119,6 @@ recipient_lookup_load_sql_string_list = [
         LEFT OUTER JOIN raw.transaction_fpds AS fpds ON (tn.id = fpds.transaction_id)
         LEFT OUTER JOIN raw.transaction_fabs AS fabs ON (tn.id = fabs.transaction_id)
         WHERE tn.action_date >= '2007-10-01'
-        ORDER BY tn.action_date DESC
     )
     """,
     # -----
@@ -130,6 +129,8 @@ recipient_lookup_load_sql_string_list = [
         WITH latest_duns_sam AS (
             SELECT
                 1 AS priority,
+                -- This regex is used to create a UUID formatted STRING since Spark does not
+                -- have a UUID type; all UUIDs have the format of 8-4-4-4-12
                 REGEXP_REPLACE(
                     MD5(UPPER(
                         CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
