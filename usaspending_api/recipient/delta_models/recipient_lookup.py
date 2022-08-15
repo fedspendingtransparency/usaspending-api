@@ -155,7 +155,11 @@ recipient_lookup_load_sql_string_list = [
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
                     PARTITION BY uei, awardee_or_recipient_uniqu
-                    ORDER BY update_date DESC NULLS LAST, UPPER(legal_business_name) DESC
+                    -- Spark and Postgres handle NULL values in sorting different ways by default
+                    ORDER BY
+                        uei ASC NULLS LAST,
+                        awardee_or_recipient_uniqu ASC NULLS LAST,
+                        update_date DESC NULLS FIRST
                 ) AS row_num
             FROM raw.sam_recipient
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NOT NULL
@@ -185,7 +189,10 @@ recipient_lookup_load_sql_string_list = [
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
                     PARTITION BY recipient_hash
-                    ORDER BY action_date DESC NULLS LAST, awardee_or_recipient_legal DESC, is_fpds, transaction_unique_id
+                    ORDER BY
+                        action_date DESC NULLS FIRST,
+                        is_fpds ASC NULLS LAST,
+                        transaction_unique_id ASC NULLS LAST
                 ) AS row_num
             FROM temp_transaction_recipients_view
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND awardee_or_recipient_legal IS NOT NULL
@@ -225,8 +232,12 @@ recipient_lookup_load_sql_string_list = [
                 update_date,
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
-                    PARTITION BY ultimate_parent_uei, ultimate_parent_unique_ide
-                    ORDER BY update_date DESC NULLS LAST, UPPER(ultimate_parent_legal_enti) DESC
+                    -- TODO: This should be swapped; left in place temporarily to match current
+                    PARTITION BY ultimate_parent_unique_ide, ultimate_parent_uei
+                    ORDER BY
+                        ultimate_parent_unique_ide ASC NULLS LAST,
+                        ultimate_parent_uei ASC NULLS LAST,
+                        update_date DESC NULLS LAST
                 ) AS row_num
             FROM raw.sam_recipient
             WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
@@ -256,7 +267,10 @@ recipient_lookup_load_sql_string_list = [
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
                     PARTITION BY parent_recipient_hash
-                    ORDER BY action_date DESC NULLS LAST, ultimate_parent_legal_enti DESC, is_fpds, transaction_unique_id
+                    ORDER BY
+                        action_date DESC NULLS FIRST,
+                        is_fpds ASC NULLS LAST,
+                        transaction_unique_id ASC NULLS LAST
                 ) AS row_num
             FROM temp_transaction_recipients_view
             WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
@@ -297,7 +311,10 @@ recipient_lookup_load_sql_string_list = [
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
                     PARTITION BY uei, awardee_or_recipient_uniqu
-                    ORDER BY update_date DESC NULLS LAST, UPPER(legal_business_name) DESC
+                    ORDER BY
+                        uei ASC NULLS LAST,
+                        awardee_or_recipient_uniqu ASC NULLS LAST,
+                        update_date DESC NULLS FIRST
                 ) AS row_num
             FROM raw.sam_recipient
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NULL
@@ -327,7 +344,10 @@ recipient_lookup_load_sql_string_list = [
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
                     PARTITION BY recipient_hash
-                    ORDER BY action_date DESC NULLS LAST, is_fpds, transaction_unique_id
+                    ORDER BY
+                        action_date DESC NULLS FIRST,
+                        is_fpds ASC NULLS LAST,
+                        transaction_unique_id ASC NULLS LAST
                 ) AS row_num
             FROM temp_transaction_recipients_view
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND awardee_or_recipient_legal IS NULL
@@ -368,7 +388,10 @@ recipient_lookup_load_sql_string_list = [
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
                     PARTITION BY ultimate_parent_uei, ultimate_parent_unique_ide
-                    ORDER BY update_date DESC NULLS LAST
+                    ORDER BY
+                        ultimate_parent_uei ASC NULLS LAST,
+                        ultimate_parent_unique_ide ASC NULLS LAST,
+                        update_date DESC NULLS FIRST
                 ) AS row_num
             FROM raw.sam_recipient
             WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NULL
@@ -398,7 +421,10 @@ recipient_lookup_load_sql_string_list = [
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
                     PARTITION BY parent_recipient_hash
-                    ORDER BY action_date DESC NULLS LAST, is_fpds, transaction_unique_id
+                    ORDER BY
+                        action_date DESC NULLS FIRST,
+                        is_fpds ASC NULLS LAST,
+                        transaction_unique_id ASC NULLS LAST
                 ) AS row_num
             FROM temp_transaction_recipients_view
             WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NULL
@@ -428,7 +454,10 @@ recipient_lookup_load_sql_string_list = [
                 ARRAY() AS alternate_names,
                 ROW_NUMBER() OVER (
                     PARTITION BY recipient_hash
-                    ORDER BY action_date DESC NULLS LAST, is_fpds, transaction_unique_id
+                    ORDER BY
+                        action_date DESC NULLS FIRST,
+                        is_fpds ASC NULLS LAST,
+                        transaction_unique_id ASC NULLS LAST
                 ) AS row_num
             FROM temp_transaction_recipients_view
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NULL
@@ -459,8 +488,6 @@ recipient_lookup_load_sql_string_list = [
                     PARTITION BY recipient_hash
                     ORDER BY
                         priority ASC,
-                        uei ASC NULLS LAST,
-                        duns ASC,
                         update_date DESC NULLS LAST
                 ) AS row_num_union
             FROM union_all
