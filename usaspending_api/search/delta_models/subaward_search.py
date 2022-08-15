@@ -170,7 +170,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_ultimate_parent_legal_enti": {"delta": "STRING", "postgres": "TEXT"},
     "business_type_code": {"delta": "STRING", "postgres": "TEXT"},
     "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
-    "treasury_account_identifiers": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]"},
     "pulled_from": {"delta": "STRING", "postgres": "TEXT"},
     "type_of_contract_pricing": {"delta": "STRING", "postgres": "TEXT"},
     "type_set_aside": {"delta": "STRING", "postgres": "TEXT"},
@@ -522,7 +522,7 @@ subaward_search_load_sql_string = fr"""
         (
             SELECT
                 faba.award_id,
-                COLLECT_SET(DISTINCT taa.treasury_account_identifier) AS treasury_account_identifiers
+                COLLECT_SET(DISTINCT taa.treasury_account_identifier::INTEGER) AS treasury_account_identifiers
             FROM
                 global_temp.treasury_appropriation_account AS taa
             INNER JOIN
