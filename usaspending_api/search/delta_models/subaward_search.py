@@ -234,8 +234,9 @@ subaward_search_load_sql_string = fr"""
     recipient_summary AS (
         SELECT
           legal_business_name AS recipient_name,
+          uei,
           duns,
-          ROW_NUMBER() OVER(PARTITION BY duns ORDER BY id) AS row
+          ROW_NUMBER() OVER(PARTITION BY uei ORDER BY uei, duns NULLS LAST, legal_business_name NULLS LAST) AS row
         FROM
             raw.recipient_lookup AS rlv
     )
@@ -536,12 +537,12 @@ subaward_search_load_sql_string = fr"""
             ON (tas.award_id = bs.award_id)
     LEFT OUTER JOIN
         recipient_summary AS recipient_lookup
-            ON (recipient_lookup.duns = UPPER(bs.sub_awardee_or_recipient_uniqu)
-                AND bs.sub_awardee_or_recipient_uniqu IS NOT NULL AND recipient_lookup.row = 1)
+            ON (recipient_lookup.uei = UPPER(bs.sub_awardee_or_recipient_uei)
+                AND bs.sub_awardee_or_recipient_uei IS NOT NULL AND recipient_lookup.row = 1)
     LEFT OUTER JOIN
         recipient_summary AS parent_recipient_lookup
-            ON (parent_recipient_lookup.duns = UPPER(bs.sub_ultimate_parent_unique_ide)
-                AND bs.sub_ultimate_parent_unique_ide IS NOT NULL AND parent_recipient_lookup.row = 1)
+            ON (parent_recipient_lookup.uei = UPPER(bs.sub_ultimate_parent_uei)
+                AND bs.sub_ultimate_parent_uei AND parent_recipient_lookup.row = 1)
     LEFT OUTER JOIN
         location_summary AS pop
             ON (pop.feature_name = UPPER(bs.sub_place_of_perform_city_name)
