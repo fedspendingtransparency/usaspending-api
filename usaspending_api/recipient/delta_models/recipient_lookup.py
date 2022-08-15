@@ -417,21 +417,21 @@ recipient_lookup_load_sql_string_list = [
         ),
         union_all AS (
             SELECT * FROM latest_duns_sam WHERE row_num = 1
-            UNION ALL
+            UNION
             SELECT * FROM latest_tx WHERE row_num = 1
-            UNION ALL
+            UNION
             SELECT * FROM latest_duns_sam_parent WHERE row_num = 1
-            UNION ALL
+            UNION
             SELECT * FROM latest_tx_parent WHERE row_num = 1
-            UNION ALL
+            UNION
             SELECT * FROM latest_duns_sam_no_name WHERE row_num = 1
-            UNION ALL
+            UNION
             SELECT * FROM latest_tx_no_name WHERE row_num = 1
-            UNION ALL
+            UNION
             SELECT * FROM latest_duns_sam_parent_no_name WHERE row_num = 1
-            UNION ALL
+            UNION
             SELECT * FROM latest_tx_parent_no_name WHERE row_num = 1
-            UNION ALL
+            UNION
             SELECT * FROM latest_tx_no_fabs_fpds WHERE row_num = 1
         ),
         union_all_priority AS (
@@ -543,7 +543,8 @@ recipient_lookup_load_sql_string_list = [
         temp_recipients_with_alt_names_view
     """,
     # -----
-    # Cleanup the temporary table and views
+    # Cleanup the temporary views;
+    # this is mostly for test cases as the views are session based
     # -----
     "DROP VIEW temp_transaction_recipients_view",
     "DROP VIEW temp_collect_recipients_view",
