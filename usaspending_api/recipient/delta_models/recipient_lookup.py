@@ -459,7 +459,7 @@ recipient_lookup_load_sql_string_list = [
                     PARTITION BY recipient_hash
                     ORDER BY
                         priority ASC,
-                        uei ASC,
+                        uei ASC NULLS LAST,
                         duns ASC,
                         update_date DESC NULLS LAST
                 ) AS row_num_union
