@@ -20,6 +20,31 @@ SAM_RECIPIENT_COLUMNS = {
     "uei": "STRING",
     "parent_uei": "STRING",
 }
+
+
+SAM_RECIPIENT_COLUMNS = {
+    "id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
+    "recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
+    "legal_business_name": {"delta": "STRING", "postgres": "TEXT"},
+    "duns": {"delta": "STRING", "postgres": "TEXT"},
+    "address_line_1": {"delta": "STRING", "postgres": "TEXT"},
+    "address_line_2": {"delta": "STRING", "postgres": "TEXT"},
+    "business_types_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "city": {"delta": "STRING", "postgres": "TEXT"},
+    "congressional_district": {"delta": "STRING", "postgres": "TEXT"},
+    "country_code": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_duns": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_legal_business_name": {"delta": "STRING", "postgres": "TEXT"},
+    "state": {"delta": "STRING", "postgres": "TEXT"},
+    "zip4": {"delta": "STRING", "postgres": "TEXT"},
+    "zip5": {"delta": "STRING", "postgres": "TEXT"},
+    "alternate_names": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "source": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL"},
+    "update_date": {"delta": "TIMESTAMP NOT NULL", "postgres": "TIMESTAMP NOT NULL"},
+    "uei": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_uei": {"delta": "STRING", "postgres": "TEXT"},
+}
+
 SAM_RECIPIENT_DELTA_COLUMNS = {k: v["delta"] for k, v in SAM_RECIPIENT_COLUMNS.items()}
 SAM_RECIPIENT_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SAM_RECIPIENT_COLUMNS.items()}
 
@@ -31,10 +56,7 @@ sam_recipient_create_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
 sam_recipient_load_sql_string = rf"""
-<<<<<<< HEAD
-=======
 
->>>>>>> 0c6200e8089a78fa2373b3669e63cc6db00c4072
 
 INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS (
   SELECT
@@ -84,11 +106,7 @@ INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS (
         global_temp.sam_recipient as broker_sam_recipient
       ORDER BY
         broker_sam_recipient.awardee_or_recipient_uniqu,
-<<<<<<< HEAD
         broker_sam_recipient.activation_date DESC NULLS LAST AS broker_duns
-=======
-        broker_sam_recipient.activation_date DESC NULLS LAST)') AS broker_duns
->>>>>>> 0c6200e8089a78fa2373b3669e63cc6db00c4072
           (
             awardee_or_recipient_uniqu text,
             legal_business_name text,
