@@ -217,7 +217,7 @@ subaward_search_load_sql_string = fr"""
             county_numeric,
             UPPER(county_name) as county_name,
             census_code,
-            ROW_NUMBER() OVER (PARTITION BY UPPER(feature_name), state_alpha ORDER BY feature_name DESC, state_alpha DESC) as row_num
+            ROW_NUMBER() OVER (PARTITION BY UPPER(feature_name), state_alpha ORDER BY UPPER(feature_name), state_alpha, county_sequence, coalesce(date_edited, date_created) DESC, id DESC) as row_num
         FROM
             global_temp.ref_city_county_state_code
         WHERE
