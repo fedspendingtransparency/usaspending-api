@@ -471,48 +471,20 @@ subaward_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio,
 
         -- USAS Vectors
-        (SELECT CONCAT_WS(' ', COLLECT_LIST(ts)) AS ts_final
-         FROM (
-            SELECT CONCAT('\'', word, '\':', TRANSLATE(COLLECT_SET(real_i)::STRING, '[ ]', '')) AS ts
-            FROM (
-                SELECT i+1 AS real_i, posexplode(split(
-                    CONCAT_WS(
-                        ' ',
-                        COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal),
-                        psc.description,
-                        bs.subaward_description
-                    ), r'\W')) AS (i, word)
-                ORDER BY word, real_i
-            )
-            GROUP BY word ORDER BY word
-        )) AS keyword_ts_vector,
-        (SELECT CONCAT_WS(' ', COLLECT_LIST(ts)) AS ts_final
-         FROM (
-            SELECT CONCAT('\'', word, '\':', TRANSLATE(COLLECT_SET(real_i)::STRING, '[ ]', '')) AS ts
-            FROM (
-                SELECT i+1 AS real_i, posexplode(split(
-                    CONCAT_WS(
-                        ' ',
-                        bs.award_id,
-                        subaward_number
-                    ), r'\W')) AS (i, word)
-                ORDER BY word, real_i
-            )
-            GROUP BY word ORDER BY word
-        )) AS award_ts_vector,
-        (SELECT CONCAT_WS(' ', COLLECT_LIST(ts)) AS ts_final
-         FROM (
-            SELECT CONCAT('\'', word, '\':', TRANSLATE(COLLECT_SET(real_i)::STRING, '[ ]', '')) AS ts
-            FROM (
-                SELECT i+1 AS real_i, posexplode(split(
-                    CONCAT_WS(
-                        ' ',
-                        COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal, '')
-                    ), r'\W')) AS (i, word)
-                ORDER BY word, real_i
-            )
-            GROUP BY word ORDER BY word
-        )) AS recipient_name_ts_vector
+        CONCAT_WS(' ', TRANSFORM(SPLIT(CONCAT_WS(' ',
+            COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal),
+            psc.description,
+            bs.subaward_description
+        ), r'\W'), (x, i) -> CONCAT(x, ':', (i+1)::STRING))) AS keyword_ts_vector,
+        
+        CONCAT_WS(' ', TRANSFORM(SPLIT(CONCAT_WS(' ',
+            bs.award_id,
+            subaward_number
+        ), r'\W'), (x, i) -> CONCAT(x, ':', (i+1)::STRING))) AS award_ts_vector,
+        
+        CONCAT_WS(' ', TRANSFORM(SPLIT(CONCAT_WS(' ',
+            COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal, '')
+        ), r'\W'), (x, i) -> CONCAT(x, ':', (i+1)::STRING))) AS recipient_name_ts_vector
 
     FROM
         raw.broker_subaward AS bs
