@@ -6,6 +6,12 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_jvm_logger,
 )
+from usaspending_api.recipient.delta_models.recipient_profile import (
+    recipient_profile_create_sql_string,
+    recipient_profile_load_sql_strings,
+    RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+)
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
@@ -56,6 +62,21 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+    },
+    "recipient_profile": {
+        "model": RecipientProfile,
+        "source_query": recipient_profile_load_sql_strings,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": "recipient_profile",
+        "swap_schema": "rpt",
+        "partition_column": "recipient_hash",  # This isn't used for anything
+        "partition_column_type": "string",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": recipient_profile_create_sql_string,
+        "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+        "custom_schema": "recipient_hash STRING",
     },
 }
 
@@ -112,7 +133,6 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         destination_table = options["destination_table"]
-
         table_spec = TABLE_SPEC[destination_table]
         destination_database = options["alt_db"] or table_spec["destination_database"]
         destination_table_name = options["alt_name"] or destination_table
@@ -127,11 +147,18 @@ class Command(BaseCommand):
                 spark.udf.register(**udf_args)
 
         create_ref_temp_views(spark)
-        spark.sql(
-            TABLE_SPEC[destination_table]
-            .get("source_query")
-            .format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
-        )
+        if type(TABLE_SPEC[destination_table].get("source_query")) == list:
+            for x in TABLE_SPEC[destination_table].get("source_query"):
+                logger.info(
+                    f"Running query {TABLE_SPEC[destination_table].get('source_query').index(x)} in list of queries for {destination_table_name}."
+                )
+                spark.sql(x.format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name))
+        else:
+            spark.sql(
+                TABLE_SPEC[destination_table]
+                .get("source_query")
+                .format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
+            )
 
         if spark_created_by_command:
             spark.stop()
