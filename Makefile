@@ -22,7 +22,7 @@ endif
 #### Variables used in this Makefile.
 #### Uppercased are environment vars, or make-specific vars. All others should be lower-snake-case
 ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
-python_version := 3.7.13
+PYTHON_VERSION ?= 3.7.13  # default version if not set in .env or an env var
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_spark := Dockerfile.spark
@@ -51,15 +51,15 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 
 .python-version: ## Attempt to setup python using pyenv
 	@if ! command -v pyenv &> /dev/null; then \
-		echo "WARNING: pyenv could not be found. Install pyenv to get a virtual env running with the compatible python version: ${python_version}. Will fallback to using system python3."; \
+		echo "WARNING: pyenv could not be found. Install pyenv to get a virtual env running with the compatible python version: ${PYTHON_VERSION}. Will fallback to using system python3."; \
 	else \
 	  	set -x; \
-	  	echo "pyenv setting python version to ${python_version}"; \
-  		pyenv install -s ${python_version}; \
-  		pyenv local ${python_version}; \
+	  	echo "pyenv setting python version to ${PYTHON_VERSION}"; \
+  		pyenv install -s ${PYTHON_VERSION}; \
+  		pyenv local ${PYTHON_VERSION}; \
   		python3 -V; \
-  		if [ "$$(python3 -V)" != "Python ${python_version}" ]; then \
-  			echo "ERROR: pyenv was not able to set local python version to ${python_version}"; \
+  		if [ "$$(python3 -V)" != "Python ${PYTHON_VERSION}" ]; then \
+  			echo "ERROR: pyenv was not able to set local python version to ${PYTHON_VERSION}"; \
   			exit 1; \
   		fi; \
 	fi;
@@ -113,17 +113,27 @@ tests:  ## Run automated unit/integration tests
 
 .PHONY: confirm-clean-all
 no-prompt := 'false'
+dry-run := 'false'
 confirm-clean-all:  ## Guard to prompt for confirmation before aggressive clean
 ifeq ($(strip ${no-prompt}),'false')
-	@echo -n "This will remove any untracked/uncommitted source files. Continue? [y/N] " && read ans && [ $${ans:-N} = y ]
+ifeq ($(strip ${dry-run}),'false')
+	@echo -n "This will remove any untracked/uncommitted source files or files in the working directory. Consider backing up any files in your custom setup. To see what files would be removed, re-run with dry-run=true. Continue? [y/N] " && read ans && [ $${ans:-N} = y ]
+endif
 endif
 
 .PHONY: clean-all
-clean-all: confirm-clean-all  ## Remove all tmp artifacts and artifacts created as part of local dev env setup. To avoid prompt (e.g. in script) call like: make clean-all no-prompt=true
+dry-run := 'false'
+clean-all: confirm-clean-all  ## Remove all tmp artifacts and artifacts created as part of local dev env setup. To avoid prompt (e.g. in script) call like: make clean-all no-prompt=true. To only see what WOULD be deleted, include dry-run=true
+ifeq ($(strip ${dry-run}),'false')
 	rm -f .python-version
 	rm -rf .venv
-	@git clean -xfd --exclude='\.env'
+	@git clean -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'
 	if command -v deactivate &> /dev/null; then deactivate; fi;
+else  # this is a dry-run, spit out what would be removed
+	@printf "Would remove .python-version\nWould remove .venv\n"
+	@git clean --dry-run -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'
+endif
+
 
 .PHONY: docker-compose
 docker-compose: ## Run an arbitrary docker-compose command by passing in the Docker Compose profiles in the "profiles" variable, and args in the "args" variable
@@ -195,7 +205,7 @@ docker-compose-build-spark: ## See: docker-compose-build rule. This builds just 
 	docker-compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
 .PHONY: docker-compose-spark-submit
-docker-compose-spark-submit:
+docker-compose-spark-submit: ## Run spark-submit from within local docker containerized infrastructure (which must be running first). Set params with django_command="..."
 	docker-compose --profile=spark --project-directory . --file ${docker_compose_file} run \
 		-e MINIO_HOST=minio \
 		-e COMPONENT_NAME='${django_command}${python_script}' \
@@ -207,10 +217,25 @@ docker-compose-spark-submit:
 	}
 
 .PHONY: localhost-spark-submit
-localhost-spark-submit:
+localhost-spark-submit: ## Run spark-submit from with localhost as the driver and worker (single node). Set params with django_command="..."
 	SPARK_LOCAL_IP=127.0.0.1 \
 	spark-submit --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
 	${if ${python_script}, \
 		${python_script}, \
 		manage.py ${django_command} \
 	}
+
+.PHONY: pyspark-shell
+pyspark-shell: ## Launch a local pyspark REPL shell with all of the packages and spark config pre-set
+	SPARK_LOCAL_IP=127.0.0.1 pyspark \
+	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1 \
+	--conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
+	--conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
+	--conf spark.hadoop.fs.s3a.endpoint=localhost:${MINIO_PORT} \
+	--conf spark.hadoop.fs.s3a.access.key=usaspending \
+	--conf spark.hadoop.fs.s3a.secret.key=usaspender \
+	--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
+	--conf spark.hadoop.fs.s3a.path.style.access=true \
+	--conf spark.sql.catalogImplementation=hive \
+	--conf spark.sql.warehouse.dir='$(PWD)/spark-warehouse' \
+	--conf spark.hadoop.javax.jdo.option.ConnectionURL='jdbc:derby:;databaseName=$(PWD)/spark-warehouse/metastore_db;create=true'

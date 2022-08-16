@@ -1,12 +1,58 @@
+"""
+Spark utility functions that could be used as stages or steps of an ETL job (aka "data pipeline")
+
+NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helpers module, which holds mostly boilerplate
+functions for setup and configuration of the spark environment
+"""
 from itertools import chain
-from pyspark.sql.functions import to_date, lit, expr
-from pyspark.sql.types import StructType
+from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
+from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
 
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.config import CONFIG
-from usaspending_api.common.helpers.spark_helpers import get_jvm_logger
+from usaspending_api.common.helpers.spark_helpers import (
+    get_jvm_logger,
+    get_jdbc_connection_properties,
+    get_usas_jdbc_url,
+)
+from usaspending_api.recipient.models import StateData
+from usaspending_api.references.models import (
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+    DisasterEmergencyFundCode,
+)
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
+_RDS_REF_TABLES = [
+    Cfda,
+    Agency,
+    ToptierAgency,
+    SubtierAgency,
+    NAICS,
+    Office,
+    PSC,
+    RefCountryCode,
+    CityCountyStateCode,
+    PopCounty,
+    PopCongressionalDistrict,
+    StateData,
+    FederalAccount,
+    TreasuryAppropriationAccount,
+    DisasterEmergencyFundCode,
+    SubmissionAttributes,
+    DABSSubmissionWindowSchedule,
+]
 
 
 def extract_db_data_frame(
@@ -359,3 +405,117 @@ def diff(
     if not include_unchanged_rows:
         differences = differences.where("diff != 'N'")
     return differences
+
+
+def convert_decimal_cols_to_string(df: DataFrame) -> DataFrame:
+    df_no_decimal = df
+    for f in df.schema.fields:
+        if not isinstance(f.dataType, DecimalType):
+            continue
+        df_no_decimal = df_no_decimal.withColumn(f.name, df_no_decimal[f.name].cast(StringType()))
+    return df_no_decimal
+
+
+def convert_array_cols_to_string(
+    df: DataFrame,
+    is_postgres_array_format=False,
+    is_for_csv_export=False,
+) -> DataFrame:
+    """For each column that is an Array of ANYTHING, transfrom it to a string-ified representation of that Array.
+
+    This will:
+      1. cast each array element to a STRING representation
+      2. Concatenate array elements with ', ' as separator
+      3. Wrap the string-concatenation with either square or curly braces (curly if is_postgres_array_format=True)
+         - e.g. {"val1", "val2"}
+
+    This is necessary in one case because CSV data source does not support having a DataFrame written to
+    CSV if one of the columns of the DataFrame is of data type Array<String>. It will fail without trying. To get
+    around this, those column's types must be converted or cast to a String representation before data can be written
+    to CSV format.
+
+    Args:
+        df (DataFrame): The DataFrame whose Array cols will be string-ified
+        is_postgres_array_format (bool): If True, use curly braces to wrap the Array
+        is_for_csv_export (bool): Whether the data should be transformed in a way that writes a compatible format in
+            CSV files. If True, this has to do a extra handling on the Array in case array values have both/either
+            quote ('"') or delimiter (',') characters in their values. The over-cautious approach is to
+              1. Quote each element of the Array. This protects against seeing the delimiter character and treating
+                 it as a delimiter rather than part of the Array element's value. This is done even if it's destined
+                 for an integer[] DB field). Postgres will convert these to the right type upon upload/COPY of the
+                 CSV, but consider if this will be a problem for your use of the CSV data; e.g. {"123", "4920"},
+                 or {"individual", "business"}
+              2. Escape any quotes inside the array element with backslash.
+              - A case that involves all of this will yield CSV field value like this when viewed in a text editor,
+                assuming Spark CSV options are: quote='"', escape='"' (the default is for it to match quote)
+                ...,"{""{\""simple\"": \""elem1\"", \""other\"": \""elem1\""}"", ""{\""simple\"": \""elem2\"", \""other\"": \""elem2\""}""}",...
+    """
+    arr_open_bracket = "["
+    arr_close_bracket = "]"
+    if is_postgres_array_format:
+        arr_open_bracket = "{"
+        arr_close_bracket = "}"
+    df_no_arrays = df
+    for f in df.schema.fields:
+        if not isinstance(f.dataType, ArrayType):
+            continue
+        df_no_arrays = df_no_arrays.withColumn(
+            f.name,
+            # Only process NON-NULL values for this Array col. NULL values will be left as NULL
+            when(
+                col(f.name).isNotNull(),
+                # Wrap string-ified array content in brace or bracket
+                concat(
+                    lit(arr_open_bracket),
+                    # Re-join string-ified array elements together with ", "
+                    concat_ws(
+                        ", ",
+                        # NOTE: There does not seem to be a way to cast and enforce that array elements must be NON-NULL
+                        #  So NULL array elements would be allowed with this transformation
+                        col(f.name).cast(ArrayType(StringType())) if not is_for_csv_export
+                        # When creating CSVs, quote elements and escape inner quotes with backslash
+                        else transform(
+                            col(f.name).cast(ArrayType(StringType())),
+                            lambda c: concat(
+                                lit('"'),
+                                # Special handling in case of data that already has either a quote " or backslash \
+                                # inside an array element
+                                # First replace any single backslash character \ with TWO \\ (an escaped backslash)
+                                # Then replace any quote " character with \" (escaped quote, inside a quoted array elem)
+                                # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
+                                #       FOUR backslashes to represent ONE
+                                regexp_replace(regexp_replace(c, "\\\\", "\\\\\\\\"), '"', '\\\\"'),
+                                lit('"'),
+                            ),
+                        ),
+                    ),
+                    lit(arr_close_bracket),
+                ),
+            ),
+        )
+
+    return df_no_arrays
+
+
+def create_ref_temp_views(spark: SparkSession):
+    """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
+    Note: They will all be listed under global_temp.{table_name}
+    """
+    logger = get_jvm_logger(spark)
+    jdbc_conn_props = get_jdbc_connection_properties()
+    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in _RDS_REF_TABLES]
+
+    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
+    for ref_rdf_table in rds_ref_tables:
+        spark_sql = f"""
+        CREATE OR REPLACE GLOBAL TEMPORARY VIEW {ref_rdf_table}
+        USING JDBC
+        OPTIONS (
+          driver '{jdbc_conn_props["driver"]}',
+          fetchsize '{jdbc_conn_props["fetchsize"]}',
+          url '{get_usas_jdbc_url()}',
+          dbtable '{ref_rdf_table}'
+        )
+        """
+        spark.sql(spark_sql)
+    logger.info(f"Created the reference views in the global_temp database")
