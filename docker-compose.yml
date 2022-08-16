@@ -44,7 +44,7 @@ services:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
-      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
+      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER__DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
 
   usaspending-test:
     profiles:
@@ -64,7 +64,7 @@ services:
     environment:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
-      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
+      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER__DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
       # Location in host machine where broker src code root can be found
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 
@@ -99,7 +99,7 @@ services:
     environment:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
-      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_USER}:${BROKER_PASSWORD}@${BROKER_HOST}:${BROKER_PORT}/data_broker
+      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER__DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
       # Location in host machine where broker src code root can be found
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
 

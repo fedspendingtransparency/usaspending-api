@@ -5,23 +5,26 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jvm_logger,
-    create_ref_temp_views,
 )
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
+    AWARD_SEARCH_COLUMNS,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
+    TRANSACTION_SEARCH_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
 )
 
 TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
+        "is_from_broker": False,
         "source_query": transaction_search_load_sql_string,
         "source_database": None,
         "source_table": None,
@@ -29,12 +32,16 @@ TABLE_SPEC = {
         "swap_table": "transaction_search",
         "swap_schema": "rpt",
         "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_search_create_sql_string,
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
     "award_search": {
         "model": AwardSearch,
+        "is_from_broker": False,
         "source_query": award_search_load_sql_string,
         "source_database": None,
         "source_table": None,
@@ -43,10 +50,12 @@ TABLE_SPEC = {
         "swap_schema": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
+        "column_names": list(AWARD_SEARCH_COLUMNS),
     },
 }
 

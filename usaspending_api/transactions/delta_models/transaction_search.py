@@ -93,7 +93,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "TEXT[]"},
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
-    "federal_accounts": {"delta": "STRING", "postgres": "TEXT"},
+    "federal_accounts": {"delta": "STRING", "postgres": "JSONB"},
     "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "awarding_office_code": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_office_name": {"delta": "STRING", "postgres": "TEXT"},
