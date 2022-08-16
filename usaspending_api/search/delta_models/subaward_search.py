@@ -476,16 +476,16 @@ subaward_search_load_sql_string = fr"""
             COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal),
             psc.description,
             bs.subaward_description
-        )), r'\W'), (x, i) -> CONCAT(x, ':', (i+1)::STRING))) AS keyword_ts_vector,
+        )), r'[\s&]'), (x, i) -> CONCAT(REGEXP_EXTRACT(x, r'\W*(\S+)\b\W*'), ':', (i+1)::STRING))) AS keyword_ts_vector,
         
         CONCAT_WS(' ', TRANSFORM(SPLIT(LOWER(CONCAT_WS(' ',
             bs.award_id,
             subaward_number
-        )), r'\W'), (x, i) -> CONCAT(x, ':', (i+1)::STRING))) AS award_ts_vector,
+        )), r'[\s&]'), (x, i) -> CONCAT(REGEXP_EXTRACT(x, r'\W*(\S+)\b\W*'), ':', (i+1)::STRING))) AS award_ts_vector,
         
         CONCAT_WS(' ', TRANSFORM(SPLIT(LOWER(CONCAT_WS(' ',
             COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal, '')
-        )), r'\W'), (x, i) -> CONCAT(x, ':', (i+1)::STRING))) AS recipient_name_ts_vector
+        )), r'[\s&]'), (x, i) -> CONCAT(REGEXP_EXTRACT(x, r'\W*(\S+)\b\W*'), ':', (i+1)::STRING))) AS recipient_name_ts_vector,
 
     FROM
         raw.broker_subaward AS bs
