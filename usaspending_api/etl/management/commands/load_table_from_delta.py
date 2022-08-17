@@ -249,7 +249,7 @@ class Command(BaseCommand):
                         tsvector_trigger_sql = f"""
                             CREATE TRIGGER tsvector_update_{tsvector_name} BEFORE INSERT OR UPDATE
                             ON {temp_table} FOR EACH ROW EXECUTE PROCEDURE
-                            tsvector_update_trigger({tsvector_name}, {DEFAULT_TEXT_SEARCH_CONFIG},
+                            tsvector_update_trigger({tsvector_name}, '{DEFAULT_TEXT_SEARCH_CONFIG}',
                                                     {derived_from_cols_str})
                         """
                         cursor.execute(tsvector_trigger_sql)
