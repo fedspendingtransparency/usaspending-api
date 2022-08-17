@@ -529,7 +529,7 @@ subaward_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         recipient_summary AS parent_recipient_lookup
             ON (parent_recipient_lookup.uei = UPPER(bs.sub_ultimate_parent_uei)
-                AND bs.sub_ultimate_parent_uei AND parent_recipient_lookup.row = 1)
+                AND bs.sub_ultimate_parent_uei IS NOT NULL AND parent_recipient_lookup.row = 1)
     LEFT OUTER JOIN
         location_summary AS pop
             ON (pop.feature_name = UPPER(bs.sub_place_of_perform_city_name)
