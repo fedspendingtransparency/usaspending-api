@@ -76,7 +76,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "delta_table_create_sql": subaward_search_create_sql_string,
         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "",
+        "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
         "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
     },
