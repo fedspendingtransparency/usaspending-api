@@ -192,13 +192,16 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_place_of_perform_zip5": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_city_code": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_congressio": {"delta": "STRING", "postgres": "TEXT"},
-    # Vectors
-    "keyword_ts_vector": {"delta": "STRING", "postgres": "TSVECTOR"},
-    "award_ts_vector": {"delta": "STRING", "postgres": "TSVECTOR"},
-    "recipient_name_ts_vector": {"delta": "STRING", "postgres": "TSVECTOR"},
 }
 SUBAWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
 SUBAWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
+
+SUBAWARD_SEARCH_POSTGRES_VECTORS = {
+    "keyword_ts_vector": ['sub_awardee_or_recipient_legal', 'product_or_service_description', 'subaward_description'],
+    "award_ts_vector": ['award_piid_fain', 'subaward_number'],
+    "recipient_name_ts_vector": ['sub_awardee_or_recipient_legal'],
+}
+SUBAWARD_SEARCH_POSTGRES_COLUMNS.update({col: "TSVECTOR" for col in SUBAWARD_SEARCH_POSTGRES_VECTORS})
 
 subaward_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
@@ -470,22 +473,6 @@ subaward_search_load_sql_string = fr"""
         LEFT(COALESCE(sub_place_of_performance_zip, ''), 5) AS sub_place_of_perform_zip5,
         pop.census_code AS sub_place_of_perform_city_code,
         LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio,
-
-        -- USAS Vectors
-        CONCAT_WS(' ', TRANSFORM(SPLIT(LOWER(CONCAT_WS(' ',
-            COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal),
-            psc.description,
-            bs.subaward_description
-        )), r'[\s&]'), (x, i) -> CONCAT(REGEXP_EXTRACT(x, r'\W*(\S+)\b\W*'), ':', (i+1)::STRING))) AS keyword_ts_vector,
-        
-        CONCAT_WS(' ', TRANSFORM(SPLIT(LOWER(CONCAT_WS(' ',
-            bs.award_id,
-            subaward_number
-        )), r'[\s&]'), (x, i) -> CONCAT(REGEXP_EXTRACT(x, r'\W*(\S+)\b\W*'), ':', (i+1)::STRING))) AS award_ts_vector,
-        
-        CONCAT_WS(' ', TRANSFORM(SPLIT(LOWER(CONCAT_WS(' ',
-            COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal, '')
-        )), r'[\s&]'), (x, i) -> CONCAT(REGEXP_EXTRACT(x, r'\W*(\S+)\b\W*'), ':', (i+1)::STRING))) AS recipient_name_ts_vector,
 
     FROM
         raw.broker_subaward AS bs
