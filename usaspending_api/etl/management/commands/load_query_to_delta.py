@@ -1,20 +1,23 @@
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
-from usaspending_api.config import CONFIG
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jvm_logger,
 )
+from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_DELTA_COLUMNS,
     recipient_lookup_load_sql_string_list,
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
+    recipient_profile_create_sql_string,
+    recipient_profile_load_sql_strings,
+    RECIPIENT_PROFILE_POSTGRES_COLUMNS,
     rpt_recipient_lookup_create_sql_string,
 )
-from usaspending_api.recipient.models import RecipientLookup
-from usaspending_api.common.etl.spark import create_ref_temp_views
+from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_COLUMNS,
     award_search_create_sql_string,
@@ -47,6 +50,21 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+    },
+    "rpt.recipient_profile": {
+        "model": RecipientProfile,
+        "source_query": recipient_profile_load_sql_strings,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": "recipient_profile",
+        "swap_schema": "rpt",
+        "partition_column": "recipient_hash",  # This isn't used for anything
+        "partition_column_type": "string",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": recipient_profile_create_sql_string,
+        "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+        "custom_schema": "recipient_hash STRING",
     },
     "rpt.recipient_lookup": {
         "model": RecipientLookup,
@@ -142,7 +160,6 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         destination_table = options["destination_table"]
-
         table_spec = TABLE_SPEC[destination_table]
         self.destination_database = options["alt_db"] or table_spec["destination_database"]
         self.destination_table_name = options["alt_name"] or destination_table.split(".")[-1]
@@ -161,7 +178,7 @@ class Command(BaseCommand):
         load_query = table_spec["source_query"]
         if isinstance(load_query, list):
             for index, query in enumerate(load_query):
-                logger.info(f"Running query at position: {index}\n" f"Preview of query: {query[:100]}")
+                logger.info(f"Running query at position: {index}\nPreview of query: {query[:100]}")
                 self.run_spark_sql(query)
         else:
             self.run_spark_sql(load_query)

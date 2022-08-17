@@ -36,16 +36,22 @@ def populate_data_for_transaction_search():
         "recipient.RecipientLookup",
         recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
         uei="FABSUEI12345",
+        duns="123456789",
         legal_business_name="FABS TEST RECIPIENT",
         _fill_optional=True,
+        parent_uei=None,
     )
     baker.make(
         "recipient.RecipientProfile",
         recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
         uei="FABSUEI12345",
+        id=1,
         recipient_level="R",
         recipient_name="FABS TEST RECIPIENT",
         _fill_optional=True,
+        recipient_unique_id="123456789",
+        parent_uei=None,
+        recipient_affiliations=[],
     )
     baker.make(
         "recipient.DUNS",
@@ -167,6 +173,7 @@ def populate_data_for_transaction_search():
         cfda_number="12.456",
         action_date="2021-01-01",
         uei="FABSUEI12345",
+        ultimate_parent_uei=None,
         indirect_federal_sharing=1.0,
         legal_entity_state_code="VA",
         legal_entity_county_code="001",
@@ -186,6 +193,7 @@ def populate_data_for_transaction_search():
         cfda_number="12.456",
         action_date="2021-04-01",
         uei="FABSUEI12345",
+        ultimate_parent_uei=None,
         indirect_federal_sharing=1.0,
         legal_entity_state_code="VA",
         legal_entity_county_code="001",
@@ -206,6 +214,7 @@ def populate_data_for_transaction_search():
         product_or_service_code="12",
         action_date="2021-07-01",
         awardee_or_recipient_uei="FPDSUEI12345",
+        ultimate_parent_uei=None,
         ordering_period_end_date="2020-07-01",
         _fill_optional=True,
     )
@@ -216,6 +225,7 @@ def populate_data_for_transaction_search():
         product_or_service_code="12",
         action_date="2021-10-01",
         awardee_or_recipient_uei="FPDSUEI12345",
+        ultimate_parent_uei=None,
         ordering_period_end_date="2020-07-01",
         _fill_optional=True,
     )
@@ -935,6 +945,22 @@ def test_load_table_to_from_delta_for_transaction_normalized(
     _verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_normalized", spark_s3_bucket=s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "transaction_normalized", jdbc_inserts=True)  # test alt write strategy
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_rpt_recipient_profile(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, monkeypatch, hive_unittest_metastore_db
+):
+    tables_to_load = [
+        "recipient_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    _verify_delta_table_loaded_to_delta(
+        spark, "rpt.recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
 
 
 @mark.django_db(transaction=True)

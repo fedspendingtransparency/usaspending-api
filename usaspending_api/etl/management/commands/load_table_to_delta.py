@@ -22,8 +22,8 @@ from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_COLUMNS,
     recipient_lookup_create_sql_string,
-    RECIPIENT_PROFILE_COLUMNS,
-    recipient_profile_sql_string,
+    recipient_profile_create_sql_string,
+    RECIPIENT_PROFILE_DELTA_COLUMNS,
     SAM_RECIPIENT_COLUMNS,
     sam_recipient_sql_string,
 )
@@ -109,11 +109,11 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "delta_table_create_sql": recipient_profile_create_sql_string,
         "is_partition_column_unique": True,
-        "delta_table_create_sql": recipient_profile_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_PROFILE_COLUMNS),
+        "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),
     },
     "sam_recipient": {
         "model": DUNS,
