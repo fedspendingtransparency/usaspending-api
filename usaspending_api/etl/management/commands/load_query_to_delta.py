@@ -18,6 +18,7 @@ from usaspending_api.search.delta_models.subaward_search import (
     subaward_search_load_sql_string,
     SUBAWARD_SEARCH_COLUMNS,
     SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+    SUBAWARD_SEARCH_POSTGRES_VECTORS,
 )
 from usaspending_api.search.models import TransactionSearch, AwardSearch, SubawardSearch
 from usaspending_api.transactions.delta_models import (
@@ -42,6 +43,7 @@ TABLE_SPEC = {
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+        "tsvectors": None,
     },
     "award_search": {
         "model": AwardSearch,
@@ -59,6 +61,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+        "tsvectors": None,
     },
     "subaward_search": {
         "model": SubawardSearch,
@@ -75,6 +78,7 @@ TABLE_SPEC = {
         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "",
         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
+        "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
     },
 }
 
