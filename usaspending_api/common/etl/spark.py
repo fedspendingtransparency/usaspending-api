@@ -31,6 +31,9 @@ from usaspending_api.references.models import (
     PopCongressionalDistrict,
     DisasterEmergencyFundCode,
 )
+from usaspending_api.recipient.models import (
+    DUNS,
+)
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -52,6 +55,7 @@ _RDS_REF_TABLES = [
     DisasterEmergencyFundCode,
     SubmissionAttributes,
     DABSSubmissionWindowSchedule,
+    DUNS,
 ]
 
 

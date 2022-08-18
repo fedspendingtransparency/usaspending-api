@@ -80,7 +80,7 @@ INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS (
     broker_sam_recipient.uei AS uei,
     broker_sam_recipient.ultimate_parent_uei AS ultimate_parent_uei
   FROM
-    global_temp.broker_sam_recipient as broker_sam_recipient
+    global_temp.sam_recipient as broker_sam_recipient
       SELECT
         DISTINCT ON (broker_sam_recipient.awardee_or_recipient_uniqu)
         broker_sam_recipient.awardee_or_recipient_uniqu,
