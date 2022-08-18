@@ -510,7 +510,7 @@ subaward_search_load_sql_string = fr"""
         (
             SELECT
                 faba.award_id,
-                COLLECT_SET(DISTINCT taa.treasury_account_identifier::INTEGER) AS treasury_account_identifiers
+                SORT_ARRAY(COLLECT_SET(DISTINCT taa.treasury_account_identifier::INTEGER)) AS treasury_account_identifiers
             FROM
                 global_temp.treasury_appropriation_account AS taa
             INNER JOIN
