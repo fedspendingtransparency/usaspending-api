@@ -521,7 +521,7 @@ subaward_search_load_sql_string = fr"""
             GROUP BY
                 faba.award_id
         ) AS tas
-            ON (tas.award_id = bs.award_id)
+            ON (tas.award_id = a.id)
     LEFT OUTER JOIN
         recipient_summary AS recipient_lookup
             ON (recipient_lookup.uei = UPPER(bs.sub_awardee_or_recipient_uei)
