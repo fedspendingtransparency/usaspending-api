@@ -90,7 +90,7 @@ recipient_profile_load_sql_strings = [
                 uei AS uei,
                 parent_uei AS parent_uei
             FROM
-                raw.recipient_lookup
+                rpt.recipient_lookup
             UNION ALL
                 SELECT
                     'C' as recipient_level,
@@ -110,7 +110,7 @@ recipient_profile_load_sql_strings = [
                     uei AS uei,
                     parent_uei AS parent_uei
                 FROM
-                    raw.recipient_lookup
+                    rpt.recipient_lookup
             UNION ALL
                 SELECT
                     'R' as recipient_level,
@@ -130,7 +130,7 @@ recipient_profile_load_sql_strings = [
                     uei AS uei,
                     parent_uei AS parent_uei
                 FROM
-                    raw.recipient_lookup
+                    rpt.recipient_lookup
         );
     """,
     # --------------------------------------------------------------------------------
