@@ -9,7 +9,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
-    RECIPIENT_LOOKUP_DELTA_COLUMNS,
+    RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS,
     recipient_lookup_load_sql_string_list,
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     recipient_profile_create_sql_string,
@@ -66,7 +66,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": rpt_recipient_lookup_create_sql_string,
         "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
+        "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
     },
     "rpt.recipient_profile": {
         "model": RecipientProfile,

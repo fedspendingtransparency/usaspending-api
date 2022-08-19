@@ -613,6 +613,7 @@ def _verify_delta_table_loaded_from_delta(
     load_command="load_table_from_delta",
     jdbc_inserts: bool = False,
     spark_s3_bucket: str = None,
+    ignore_fields: Optional[list] = None,
 ):
     """Generic function that uses the load_table_from_delta commands to load the given table and assert it was
     downloaded as expected
@@ -658,7 +659,9 @@ def _verify_delta_table_loaded_from_delta(
         delta_query = f"{delta_query} ORDER BY {partition_col}"
     delta_data = [row.asDict() for row in spark.sql(delta_query).collect()]
 
-    assert equal_datasets(postgres_data, delta_data, TABLE_SPEC[delta_table_name]["custom_schema"])
+    assert equal_datasets(
+        postgres_data, delta_data, TABLE_SPEC[delta_table_name]["custom_schema"], ignore_fields=ignore_fields
+    )
 
 
 def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
@@ -792,6 +795,12 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         load_command="load_query_to_delta",
         ignore_fields=ignore_fields,
     )
+    _verify_delta_table_loaded_from_delta(
+        spark, "recipient_lookup", spark_s3_bucket=s3_unittest_data_bucket, ignore_fields=ignore_fields
+    )
+    _verify_delta_table_loaded_from_delta(
+        spark, "recipient_lookup", jdbc_inserts=True, ignore_fields=ignore_fields
+    )  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
