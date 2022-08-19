@@ -170,6 +170,8 @@ To run tests locally and not in the docker services, you need:
 1. **Environment Variables** Tell python where to connect to the various data stores _(See [Environmnet Variables](#environment-variables))_
 1. **Required Python Libraries** Python package dependencies downloaded and discoverable _(See below)_
 
+_NOTE: Running test locally might require you to run `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`. As discussed [here](https://github.com/rails/rails/issues/38560), there is an issue than can cause some of the Spark tests to fail without this environment variable set._
+
 Once these are satisfied, run:
 
 ```shell
