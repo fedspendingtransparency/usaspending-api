@@ -4,12 +4,13 @@ NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/et
 """
 import json
 import psycopg2
+import pytest
 import pytz
 
 from datetime import datetime
 from pathlib import Path
 from psycopg2.extensions import AsIs
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
@@ -19,12 +20,13 @@ from django.core.management import call_command
 from django.db import connection, connections, transaction
 from django.db.models import sql
 
+from usaspending_api.awards.models import TransactionFABS
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
-from usaspending_api.awards.models import TransactionFABS
+from usaspending_api.recipient.models import RecipientLookup
 
 
 @fixture
@@ -88,8 +90,8 @@ def populate_data_for_transaction_search():
         "references.CityCountyStateCode",
         state_alpha="VA",
         county_numeric="001",
-        _fill_optional=True,
         county_name="County Name",
+        _fill_optional=True,
     )
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
     baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
@@ -128,8 +130,8 @@ def populate_data_for_transaction_search():
         type="07",
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
-        _fill_optional=True,
         last_modified_date="2021-01-01",
+        _fill_optional=True,
     )
     asst_trx2 = baker.make(
         "awards.TransactionNormalized",
@@ -139,8 +141,8 @@ def populate_data_for_transaction_search():
         type="07",
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
-        _fill_optional=True,
         last_modified_date="2021-01-01",
+        _fill_optional=True,
     )
     cont_trx1 = baker.make(
         "awards.TransactionNormalized",
@@ -150,8 +152,8 @@ def populate_data_for_transaction_search():
         type="A",
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
-        _fill_optional=True,
         last_modified_date="2021-01-01",
+        _fill_optional=True,
     )
     cont_trx2 = baker.make(
         "awards.TransactionNormalized",
@@ -161,8 +163,8 @@ def populate_data_for_transaction_search():
         type="A",
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
-        _fill_optional=True,
         last_modified_date="2021-01-01",
+        _fill_optional=True,
     )
 
     baker.make(
@@ -213,8 +215,8 @@ def populate_data_for_transaction_search():
         action_date="2021-07-01",
         awardee_or_recipient_uei="FPDSUEI12345",
         ultimate_parent_uei=None,
-        _fill_optional=True,
         ordering_period_end_date="2020-07-01",
+        _fill_optional=True,
     )
     baker.make(
         "awards.TransactionFPDS",
@@ -224,8 +226,8 @@ def populate_data_for_transaction_search():
         action_date="2021-10-01",
         awardee_or_recipient_uei="FPDSUEI12345",
         ultimate_parent_uei=None,
-        _fill_optional=True,
         ordering_period_end_date="2020-07-01",
+        _fill_optional=True,
     )
 
     # Create account data
@@ -246,32 +248,176 @@ def populate_data_for_transaction_search():
         award=asst_award,
         treasury_account=tas,
         disaster_emergency_fund=defc_l,
-        _fill_optional=True,
         submission=sa,
+        _fill_optional=True,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
         award=asst_award,
         treasury_account=tas,
         disaster_emergency_fund=defc_m,
-        _fill_optional=True,
         submission=sa,
+        _fill_optional=True,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
         award=cont_award,
         treasury_account=tas,
         disaster_emergency_fund=defc_q,
-        _fill_optional=True,
         submission=sa,
+        _fill_optional=True,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
         award=cont_award,
         treasury_account=tas,
         disaster_emergency_fund=None,
-        _fill_optional=True,
         submission=sa,
+        _fill_optional=True,
+    )
+
+    update_awards()
+
+
+@pytest.fixture
+def populate_data_for_recipient_lookup():
+    baker.make(
+        "recipient.DUNS",
+        broker_duns_id="1",
+        uei="FABSUEI12345",
+        awardee_or_recipient_uniqu="FABSDUNS12345",
+        legal_business_name="FABS TEST RECIPIENT",
+    )
+
+    asst_award = baker.make(
+        "awards.Award",
+        type="07",
+        period_of_performance_start_date="2021-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2021-01-01",
+        total_obligation=100.00,
+        total_subsidy_cost=100.00,
+        type_description="Direct Loan",
+    )
+    cont_award = baker.make(
+        "awards.Award",
+        type="A",
+        period_of_performance_start_date="2021-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2021-01-01",
+        total_obligation=100.00,
+    )
+
+    asst_trx1 = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-01-01",
+        award=asst_award,
+        is_fpds=False,
+        type="07",
+        last_modified_date="2021-01-01",
+    )
+    asst_trx2 = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-04-01",
+        award=asst_award,
+        is_fpds=False,
+        type="07",
+        last_modified_date="2021-01-01",
+    )
+    cont_trx1 = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-07-01",
+        award=cont_award,
+        is_fpds=True,
+        type="A",
+        last_modified_date="2021-01-01",
+    )
+    cont_trx2 = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-10-01",
+        award=cont_award,
+        is_fpds=True,
+        type="A",
+        last_modified_date="2021-01-01",
+    )
+
+    baker.make(
+        "awards.TransactionFABS",
+        transaction=asst_trx1,
+        published_fabs_id=1,
+        cfda_number="12.456",
+        action_date="2021-01-01",
+        uei="FABSUEI12345",
+        awardee_or_recipient_uniqu="FABSDUNS12345",
+        awardee_or_recipient_legal="FABS RECIPIENT 12345",
+        ultimate_parent_uei="PARENTUEI12345",
+        ultimate_parent_unique_ide="PARENTDUNS12345",
+        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=1.0,
+        legal_entity_state_code="VA",
+        legal_entity_county_code="001",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        legal_entity_congressional="01",
+        place_of_perfor_state_code="VA",
+        place_of_perform_county_co="001",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+        place_of_performance_congr="01",
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction=asst_trx2,
+        published_fabs_id=2,
+        cfda_number="12.456",
+        action_date="2021-04-01",
+        uei="FABSUEI12345",
+        awardee_or_recipient_uniqu="FABSDUNS12345",
+        awardee_or_recipient_legal="FABS RECIPIENT 12345",
+        ultimate_parent_uei="PARENTUEI12345",
+        ultimate_parent_unique_ide="PARENTDUNS12345",
+        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=1.0,
+        legal_entity_state_code="VA",
+        legal_entity_county_code="001",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        legal_entity_congressional="01",
+        place_of_perfor_state_code="VA",
+        place_of_perform_county_co="001",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+        place_of_performance_congr="01",
+    )
+    baker.make(
+        "awards.TransactionFPDS",
+        transaction=cont_trx1,
+        detached_award_procurement_id=1,
+        naics="123456",
+        product_or_service_code="12",
+        action_date="2021-07-01",
+        awardee_or_recipient_uei="FPDSUEI12345",
+        awardee_or_recipient_uniqu="FPDSDUNS12345",
+        awardee_or_recipient_legal="FPDS RECIPIENT 12345",
+        ultimate_parent_uei="PARENTUEI12345",
+        ultimate_parent_unique_ide="PARENTDUNS12345",
+        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
+        ordering_period_end_date="2020-07-01",
+    )
+    baker.make(
+        "awards.TransactionFPDS",
+        transaction=cont_trx2,
+        detached_award_procurement_id=2,
+        naics="123456",
+        product_or_service_code="12",
+        action_date="2021-10-01",
+        awardee_or_recipient_uei="FPDSUEI12345",
+        awardee_or_recipient_uniqu="FPDSDUNS12345",
+        awardee_or_recipient_legal="FPDS RECIPIENT 12345",
+        ultimate_parent_uei="PARENTUEI12345",
+        ultimate_parent_unique_ide="PARENTDUNS12345",
+        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
+        ordering_period_end_date="2020-07-01",
     )
 
     update_awards()
@@ -317,7 +463,12 @@ def sorted_deep(d):
     return d
 
 
-def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, Any]], custom_schema: str):
+def equal_datasets(
+    psql_data: List[Dict[str, Any]],
+    spark_data: List[Dict[str, Any]],
+    custom_schema: str,
+    ignore_fields: Optional[list] = None,
+):
     """Helper function to compare the two datasets. Note the column types of ds1 will be used to cast columns in ds2."""
     datasets_match = True
 
@@ -332,6 +483,9 @@ def equal_datasets(psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, A
     # Iterating through the values and finding any differences
     for i, psql_row in enumerate(psql_data):
         for k, psql_val in psql_row.items():
+            # Move on to the next value to check; ignoring this field
+            if ignore_fields and k in ignore_fields:
+                continue
             spark_val = spark_data[i][k]
             # Casting values based on the custom schema
             if (
@@ -380,16 +534,17 @@ def _verify_delta_table_loaded_to_delta(
     s3_bucket: str,
     alt_db: str = None,
     alt_name: str = None,
-    load_command="load_table_to_delta",
+    load_command: str = "load_table_to_delta",
+    ignore_fields: Optional[list] = None,
 ):
-    """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the given
-    table and assert it was created and loaded as expected
+    """Generic function that uses the create_delta_table, load_table_to_delta, and load_query_to_delta commands to
+    create and load the given table and assert it was created and loaded as expected
     """
 
     cmd_args = [f"--destination-table={delta_table_name}"]
     if alt_db:
         cmd_args += [f"--alt-db={alt_db}"]
-    expected_table_name = delta_table_name
+    expected_table_name = delta_table_name.split(".")[-1]
     if alt_name:
         cmd_args += [f"--alt-name={alt_name}"]
         expected_table_name = alt_name
@@ -424,7 +579,7 @@ def _verify_delta_table_loaded_to_delta(
         received_query = f"{received_query} ORDER BY {partition_col}"
     received_data = [row.asDict() for row in spark.sql(received_query).collect()]
 
-    assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"])
+    assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"], ignore_fields)
 
 
 def _verify_delta_table_loaded_from_delta(
@@ -483,29 +638,20 @@ def _verify_delta_table_loaded_from_delta(
     assert equal_datasets(postgres_data, delta_data, TABLE_SPEC[delta_table_name]["custom_schema"])
 
 
-def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str):
+def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
     non_aggregate_table_specs = {
-        key: val
-        for key, val in TABLE_SPEC.items()
-        if val.get("source_table") is not None and key == val.get("source_table")
+        key: val for key, val in TABLE_SPEC.items() if val.get("source_table") is not None and key in tables_to_load
     }
     for dest_table in non_aggregate_table_specs:
         call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
         call_command("load_table_to_delta", f"--destination-table={dest_table}")
-    call_command(
-        "create_delta_table",
-        f"--destination-table=recipient_profile_testing",
-        "--alt-name=recipient_profile",
-        f"--spark-s3-bucket={s3_bucket}",
-    )
-    call_command(
-        "load_table_to_delta", f"--destination-table=recipient_profile_testing", "--alt-name=recipient_profile"
-    )
     create_ref_temp_views(spark)
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_sam_recipient_and_reload(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_sam_recipient_and_reload(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
     baker.make("recipient.DUNS", broker_duns_id="1", _fill_optional=True)
     baker.make("recipient.DUNS", broker_duns_id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
@@ -539,7 +685,89 @@ def test_load_table_to_from_delta_for_sam_recipient_and_reload(spark, s3_unittes
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_rpt_recipient_lookup(
+    spark, s3_unittest_data_bucket, populate_data_for_recipient_lookup, hive_unittest_metastore_db
+):
+    ignore_fields = ["id", "update_date"]
+    tables_to_load = ["sam_recipient", "transaction_fabs", "transaction_fpds", "transaction_normalized"]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+
+    # Test initial load of Recipient Lookup
+    call_command("update_recipient_lookup")
+    _verify_delta_table_loaded_to_delta(
+        spark,
+        "rpt.recipient_lookup",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=ignore_fields,
+    )
+
+    # Create a new Transaction a transaction that represents a new name for a recipient
+    new_award = baker.make(
+        "awards.Award",
+        type="07",
+        period_of_performance_start_date="2021-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2021-01-01",
+        total_obligation=100.00,
+        total_subsidy_cost=100.00,
+        type_description="Direct Loan",
+    )
+    new_trx = baker.make(
+        "awards.TransactionNormalized",
+        action_date="2021-01-01",
+        award=new_award,
+        is_fpds=False,
+        type="07",
+        last_modified_date="2021-01-01",
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction=new_trx,
+        published_fabs_id=1,
+        cfda_number="12.456",
+        action_date="2021-01-01",
+        uei="FABSUEI12345",
+        awardee_or_recipient_uniqu="FABSDUNS12345",
+        awardee_or_recipient_legal="ALTERNATE NAME RECIPIENT",
+        ultimate_parent_uei="PARENTUEI12345",
+        ultimate_parent_unique_ide="PARENTDUNS12345",
+        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=1.0,
+        legal_entity_state_code="VA",
+        legal_entity_county_code="001",
+        legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
+        legal_entity_congressional="01",
+        place_of_perfor_state_code="VA",
+        place_of_perform_county_co="001",
+        place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
+        place_of_performance_congr="01",
+    )
+
+    update_awards()
+
+    # Test that the following load correctly merges
+    call_command("update_recipient_lookup")
+
+    # Verify that the update alternate name exists
+    expected_result = ["ALTERNATE NAME RECIPIENT", "FABS RECIPIENT 12345"]
+    assert sorted(RecipientLookup.objects.filter(uei="FABSUEI12345").first().alternate_names) == expected_result
+
+    tables_to_load = ["transaction_fabs", "transaction_normalized"]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    _verify_delta_table_loaded_to_delta(
+        spark,
+        "rpt.recipient_lookup",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=ignore_fields,
+    )
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make("recipient.RecipientLookup", id="1", _fill_optional=True)
     baker.make("recipient.RecipientLookup", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "recipient_lookup", s3_unittest_data_bucket)
@@ -548,37 +776,16 @@ def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_b
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_profile_testing(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_recipient_profile(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
     baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_profile_testing", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile_testing", spark_s3_bucket=s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(
-        spark, "recipient_profile_testing", jdbc_inserts=True
-    )  # test alt write strategy
+    _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
+    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", spark_s3_bucket=s3_unittest_data_bucket)
+    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_broker_subaward(spark, s3_unittest_data_bucket, broker_server_dblink_setup):
-    dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
-
-    connection = connections["data_broker"]
-    with connection.cursor() as cursor:
-        # nuke any previous data just in case
-        cursor.execute("truncate table subaward restart identity cascade;")
-
-        insert_statement = "insert into subaward (%s) values %s"
-        for record in dummy_broker_subaward_data:
-            columns = record.keys()
-            values = tuple(record[column] for column in columns)
-            sql = cursor.cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
-            cursor.execute(sql)
-
-    _verify_delta_table_loaded_to_delta(spark, "broker_subaward", s3_unittest_data_bucket)
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
     baker.make("awards.TransactionFABS", published_fabs_id="1", indirect_federal_sharing=1.0, _fill_optional=True)
     baker.make("awards.TransactionFABS", published_fabs_id="2", indirect_federal_sharing=1.0, _fill_optional=True)
@@ -588,7 +795,9 @@ def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_b
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
     """Test that timestamps are not inadvertently shifted due to loss of timezone during reads and writes.
 
     The big takeaways from this are:
@@ -719,7 +928,7 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(spark, s3_
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make("awards.TransactionFPDS", detached_award_procurement_id="1", _fill_optional=True)
     baker.make("awards.TransactionFPDS", detached_award_procurement_id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
@@ -728,7 +937,9 @@ def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_b
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_transaction_normalized(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
     baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
     baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
@@ -737,21 +948,36 @@ def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_profile(
-    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, monkeypatch
+def test_load_table_to_from_delta_for_rpt_recipient_profile(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, monkeypatch, hive_unittest_metastore_db
 ):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    tables_to_load = [
+        "recipient_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     _verify_delta_table_loaded_to_delta(
-        spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark, "rpt.recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True)
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     _verify_delta_table_loaded_to_delta(
         spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
@@ -771,7 +997,9 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(spark, s3_unittest_data_bucket):
+def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
     baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
     baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
     _verify_delta_table_loaded_to_delta(
@@ -794,7 +1022,17 @@ def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(spa
 def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     _verify_delta_table_loaded_to_delta(
         spark,
         "transaction_search",
@@ -816,7 +1054,17 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
 def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     _verify_delta_table_loaded_to_delta(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
@@ -826,7 +1074,7 @@ def test_load_table_to_from_delta_for_award_search(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search_testing(
-    spark, s3_unittest_data_bucket, populate_data_for_transaction_search
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
     _verify_delta_table_loaded_to_delta(spark, "award_search_testing", s3_unittest_data_bucket)
     _verify_delta_table_loaded_from_delta(spark, "award_search_testing", spark_s3_bucket=s3_unittest_data_bucket)
@@ -837,7 +1085,17 @@ def test_load_table_to_from_delta_for_award_search_testing(
 def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     _verify_delta_table_loaded_to_delta(
         spark,
         "award_search",
@@ -853,3 +1111,24 @@ def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
         alt_name="award_search_alt_name",
         spark_s3_bucket=s3_unittest_data_bucket,
     )
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_delta_for_broker_subaward(
+    spark, s3_unittest_data_bucket, broker_server_dblink_setup, hive_unittest_metastore_db
+):
+    dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
+
+    connection = connections["data_broker"]
+    with connection.cursor() as cursor:
+        # nuke any previous data just in case
+        cursor.execute("truncate table subaward restart identity cascade;")
+
+        insert_statement = "insert into subaward (%s) values %s"
+        for record in dummy_broker_subaward_data:
+            columns = record.keys()
+            values = tuple(record[column] for column in columns)
+            sql = cursor.cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
+            cursor.execute(sql)
+
+    _verify_delta_table_loaded_to_delta(spark, "broker_subaward", s3_unittest_data_bucket)
