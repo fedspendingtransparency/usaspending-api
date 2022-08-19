@@ -366,7 +366,7 @@ transaction_search_load_sql_string = rf"""
         )
     LEFT OUTER JOIN (
         SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
-        FROM raw.recipient_profile
+        FROM rpt.recipient_profile
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (
         recipient_lookup.recipient_hash = RECIPIENT_HASH_AND_LEVELS.recipient_hash
