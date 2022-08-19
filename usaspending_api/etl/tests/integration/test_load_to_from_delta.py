@@ -504,6 +504,27 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str):
     create_ref_temp_views(spark)
 
 
+def create_and_load_intermediate_delta_tables(spark: SparkSession, s3_bucket: str):
+    # call_command(
+    #     "create_delta_table",
+    #     f"--destination-table=recipient_lookup",
+    #     f"--spark-s3-bucket={s3_bucket}",
+    # )
+    # call_command(
+    #     "load_query_to_delta", f"--destination-table=recipient_lookup"
+    # )
+    call_command(
+        "create_delta_table",
+        f"--destination-table=recipient_profile",
+        "--alt-name=recipient_profile",
+        f"--spark-s3-bucket={s3_bucket}",
+    )
+    call_command(
+        "load_query_to_delta",
+        f"--destination-table=recipient_profile",
+    )
+
+
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_sam_recipient_and_reload(spark, s3_unittest_data_bucket):
     baker.make("recipient.DUNS", broker_duns_id="1", _fill_optional=True)
@@ -738,7 +759,7 @@ def test_load_table_to_from_delta_for_transaction_normalized(spark, s3_unittest_
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
-    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, monkeypatch
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, monkeypatch, hive_unittest_metastore_db
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
@@ -752,6 +773,7 @@ def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    create_and_load_intermediate_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
@@ -795,6 +817,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    create_and_load_intermediate_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark,
         "transaction_search",
@@ -817,6 +840,7 @@ def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    create_and_load_intermediate_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
@@ -838,6 +862,7 @@ def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    create_and_load_intermediate_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark,
         "award_search",
