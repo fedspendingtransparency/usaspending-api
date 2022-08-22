@@ -551,6 +551,6 @@ subaward_search_load_sql_string = fr"""
             ON fpds.product_or_service_code = psc.code
     LEFT OUTER JOIN
         global_temp.references_cfda AS cfda
-            ON cfda.program_number = split(bs.cfda_numbers, ',')[0]\
+            ON cfda.program_number = split(bs.cfda_numbers, ',')[0]
     WHERE bs.subaward_number IS NOT NULL
 """
