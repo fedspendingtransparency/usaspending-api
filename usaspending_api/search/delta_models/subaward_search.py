@@ -197,9 +197,9 @@ SUBAWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in SUBAWARD_SEARCH_COLUM
 SUBAWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
 
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
-    "keyword_ts_vector": ['sub_awardee_or_recipient_legal', 'product_or_service_description', 'subaward_description'],
-    "award_ts_vector": ['award_piid_fain', 'subaward_number'],
-    "recipient_name_ts_vector": ['sub_awardee_or_recipient_legal'],
+    "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
+    "award_ts_vector": ["award_piid_fain", "subaward_number"],
+    "recipient_name_ts_vector": ["sub_awardee_or_recipient_legal"],
 }
 SUBAWARD_SEARCH_POSTGRES_COLUMNS.update({col: "TSVECTOR" for col in SUBAWARD_SEARCH_POSTGRES_VECTORS})
 

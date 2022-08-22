@@ -25,7 +25,7 @@ from usaspending_api.config import CONFIG
 
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
-DEFAULT_TEXT_SEARCH_CONFIG = 'pg_catalog.simple'
+DEFAULT_TEXT_SEARCH_CONFIG = "pg_catalog.simple"
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
@@ -245,7 +245,7 @@ class Command(BaseCommand):
                     # If there are vectors, add the triggers that will populate them based on other calls
                     logger.info(f"Adding tsvector triggers for the following columns: {list(tsvectors.keys())}")
                     for tsvector_name, derived_from_cols in tsvectors.items():
-                        derived_from_cols_str = ', '.join(derived_from_cols)
+                        derived_from_cols_str = ", ".join(derived_from_cols)
                         tsvector_trigger_sql = f"""
                             CREATE TRIGGER tsvector_update_{tsvector_name} BEFORE INSERT OR UPDATE
                             ON {temp_table} FOR EACH ROW EXECUTE PROCEDURE
@@ -254,7 +254,6 @@ class Command(BaseCommand):
                         """
                         cursor.execute(tsvector_trigger_sql)
                     logger.info("tsvector triggers added.")
-
 
         # Read from Delta
         df = spark.table(delta_table)
