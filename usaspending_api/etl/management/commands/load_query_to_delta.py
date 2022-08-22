@@ -83,7 +83,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": recipient_profile_create_sql_string,
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),
+        "column_names": [x for x in list(RECIPIENT_PROFILE_DELTA_COLUMNS) if x != "id"],
     },
     "transaction_search": {
         "model": TransactionSearch,
