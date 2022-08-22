@@ -116,6 +116,7 @@ recipient_lookup_load_sql_string_list = [
     # Populate the temporary_restock_recipient_lookup table
     # -----
     fr"""
+
     CREATE OR REPLACE TEMPORARY VIEW temp_collect_recipients_view AS (
         WITH latest_duns_sam AS (
             SELECT
@@ -529,6 +530,7 @@ recipient_lookup_load_sql_string_list = [
     # Update the temporary_restock_recipient_lookup table to include any alternate names
     # -----
     fr"""
+
     CREATE OR REPLACE TEMPORARY VIEW temp_recipients_with_alt_names_view AS (
         WITH recipient_names (
             WITH alt_names AS (
