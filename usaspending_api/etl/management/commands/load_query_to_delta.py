@@ -156,7 +156,7 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         # Setup Logger
-        logger = get_jvm_logger(self.spark)
+        logger = get_jvm_logger(self.spark, __name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]
@@ -178,7 +178,7 @@ class Command(BaseCommand):
         load_query = table_spec["source_query"]
         if isinstance(load_query, list):
             for index, query in enumerate(load_query):
-                logger.info(f"Running query at position: {index}\nPreview of query: {query[:100]}")
+                logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
                 self.run_spark_sql(query)
         else:
             self.run_spark_sql(load_query)
