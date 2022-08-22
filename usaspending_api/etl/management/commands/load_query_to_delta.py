@@ -51,7 +51,7 @@ TABLE_SPEC = {
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
     },
-    "rpt.recipient_profile": {
+    "recipient_profile": {
         "model": RecipientProfile,
         "source_query": recipient_profile_load_sql_strings,
         "source_database": None,

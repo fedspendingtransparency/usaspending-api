@@ -649,14 +649,6 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
 
 
 def create_and_load_intermediate_delta_tables(spark: SparkSession, s3_bucket: str):
-    # call_command(
-    #     "create_delta_table",
-    #     f"--destination-table=recipient_lookup",
-    #     f"--spark-s3-bucket={s3_bucket}",
-    # )
-    # call_command(
-    #     "load_query_to_delta", f"--destination-table=recipient_lookup"
-    # )
     call_command(
         "create_delta_table",
         f"--destination-table=recipient_profile",
@@ -797,12 +789,21 @@ def test_load_table_to_from_delta_for_recipient_lookup(spark, s3_unittest_data_b
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_profile(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
-    baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
+def test_load_table_to_from_delta_for_recipient_profile(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
+):
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "sam_recipient",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_bucket=s3_unittest_data_bucket, load_command="load_query_to_delta")
     _verify_delta_table_loaded_from_delta(spark, "recipient_profile", spark_s3_bucket=s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -969,7 +970,7 @@ def test_load_table_to_from_delta_for_transaction_normalized(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_rpt_recipient_profile(
+def test_load_table_to_from_delta_for_recipient_profile_testing(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, monkeypatch, hive_unittest_metastore_db
 ):
     tables_to_load = [
@@ -980,7 +981,7 @@ def test_load_table_to_from_delta_for_rpt_recipient_profile(
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     _verify_delta_table_loaded_to_delta(
-        spark, "rpt.recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark, "recipient_profile_testing", s3_unittest_data_bucket, load_command="load_table_to_delta"
     )
 
 
@@ -992,13 +993,13 @@ def test_load_table_to_from_delta_for_transaction_search(
         "awards",
         "financial_accounts_by_awards",
         "recipient_lookup",
-        "recipient_profile",
         "sam_recipient",
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    create_and_load_intermediate_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
@@ -1047,13 +1048,13 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
         "awards",
         "financial_accounts_by_awards",
         "recipient_lookup",
-        "recipient_profile",
         "sam_recipient",
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    create_and_load_intermediate_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark,
         "transaction_search",
@@ -1079,13 +1080,13 @@ def test_load_table_to_from_delta_for_award_search(
         "awards",
         "financial_accounts_by_awards",
         "recipient_lookup",
-        "recipient_profile",
         "sam_recipient",
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    create_and_load_intermediate_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
@@ -1110,13 +1111,13 @@ def test_load_table_to_from_delta_for_award_search_alt_db_and_name(
         "awards",
         "financial_accounts_by_awards",
         "recipient_lookup",
-        "recipient_profile",
         "sam_recipient",
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    create_and_load_intermediate_delta_tables(spark, s3_unittest_data_bucket)
     _verify_delta_table_loaded_to_delta(
         spark,
         "award_search",
