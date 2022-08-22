@@ -58,8 +58,8 @@ TABLE_SPEC = {
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": None,
-        "swap_schema": None,
+        "swap_table": "recipient_lookup",
+        "swap_schema": "rpt",
         "partition_column": "recipient_hash",
         "partition_column_type": "string",
         "is_partition_column_unique": True,
@@ -67,6 +67,7 @@ TABLE_SPEC = {
         "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
+        "postgres_seq_name": "recipient_lookup_id_seq",
     },
     "rpt.recipient_profile": {
         "model": RecipientProfile,
@@ -156,7 +157,7 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         # Setup Logger
-        logger = get_jvm_logger(self.spark)
+        logger = get_jvm_logger(self.spark, __name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]

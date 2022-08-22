@@ -1,4 +1,6 @@
 import itertools
+import logging
+
 import boto3
 import numpy as np
 import psycopg2
@@ -42,6 +44,8 @@ _PG_WORK_MEM_FOR_LARGE_CSV_COPY = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
 
 
 class Command(BaseCommand):
+
+    logger: logging.Logger
 
     help = """
     This command reads data from a Delta table and copies it into a corresponding Postgres database table (under a
@@ -100,6 +104,12 @@ class Command(BaseCommand):
             default=CONFIG.SPARK_S3_BUCKET,
             help="The destination bucket in S3 to write the data",
         )
+        parser.add_argument(
+            "--reset-sequence",
+            action="store_true",
+            help="In the case of a Postgres sequence for the provided 'delta-table' the sequence will be reset to 1. "
+            "If the job fails for some unexpected reason then the sequence will be reset to the previous value.",
+        )
 
     def _split_dfs(self, df, special_columns):
         """Split a DataFrame into DataFrame subsets based on presence of NULL values in certain special columns
@@ -153,7 +163,7 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
-        logger = get_jvm_logger(spark, __name__)
+        self.logger = get_jvm_logger(spark, __name__)
 
         # Resolve Parameters
         delta_table = options["delta_table"]
@@ -187,7 +197,7 @@ class Command(BaseCommand):
         summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
         if postgres_table:
             summary_msg = f"{summary_msg} The temp table will be based on the postgres table {postgres_table}"
-        logger.info(summary_msg)
+        self.logger.info(summary_msg)
 
         # Checking if the temp destination table already exists
         temp_dest_table_exists_sql = f"""
@@ -203,12 +213,12 @@ class Command(BaseCommand):
 
         # If it does, and we're recreating it, drop it first
         if temp_dest_table_exists and recreate:
-            logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
+            self.logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
             clear_table_sql = f"DROP TABLE {temp_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
-            logger.info(f"{temp_table} dropped.")
+            self.logger.info(f"{temp_table} dropped.")
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
@@ -220,7 +230,7 @@ class Command(BaseCommand):
                 if postgres_table:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
-                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
+                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
                         ) WITH (autovacuum_enabled=FALSE)
                     """
                 elif postgres_cols:
@@ -235,9 +245,9 @@ class Command(BaseCommand):
                         "populated for the target delta table in the TABLE_SPEC"
                     )
                 with db.connection.cursor() as cursor:
-                    logger.info(f"Creating {temp_table}")
+                    self.logger.info(f"Creating {temp_table}")
                     cursor.execute(create_temp_sql)
-                    logger.info(f"{temp_table} created.")
+                    self.logger.info(f"{temp_table} created.")
 
         # Read from Delta
         df = spark.table(delta_table)
@@ -253,39 +263,53 @@ class Command(BaseCommand):
             with db.connection.cursor() as cursor:
                 cursor.execute(f"TRUNCATE {temp_table}")
 
+        # Reset the sequence before load for a table if it exists
+        if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
+            postgres_seq_last_value = self._set_sequence_value(table_spec["postgres_seq_name"])
+        else:
+            postgres_seq_last_value = None
+
         # Write to Postgres
         use_jdbc_inserts = options["jdbc_inserts"]
         strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
-        logger.info(
+        self.logger.info(
             f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
         )
 
-        if use_jdbc_inserts:
-            self._write_with_jdbc_inserts(
-                spark,
-                df,
-                temp_table,
-                split_df_by_special_cols=True,
-                postgres_model=postgres_model,
-                postgres_cols=postgres_cols,
-                overwrite=False,
-            )
-        else:
-            if not column_names:
-                raise RuntimeError("column_names None or empty, but are required to map CSV cols to table cols")
-            spark_s3_bucket_name = options["spark_s3_bucket"]
-            self._write_with_sql_bulk_copy_csv(
-                spark,
-                df,
-                delta_db=destination_database,
-                delta_table_name=delta_table_name,
-                temp_table=temp_table,
-                ordered_col_names=column_names,
-                spark_s3_bucket_name=spark_s3_bucket_name,
-                keep_csv_files=True if options["keep_csv_files"] else False,
-            )
+        try:
+            if use_jdbc_inserts:
+                self._write_with_jdbc_inserts(
+                    spark,
+                    df,
+                    temp_table,
+                    split_df_by_special_cols=True,
+                    postgres_model=postgres_model,
+                    postgres_cols=postgres_cols,
+                    overwrite=False,
+                )
+            else:
+                if not column_names:
+                    raise RuntimeError("column_names None or empty, but are required to map CSV cols to table cols")
+                spark_s3_bucket_name = options["spark_s3_bucket"]
+                self._write_with_sql_bulk_copy_csv(
+                    spark,
+                    df,
+                    delta_db=destination_database,
+                    delta_table_name=delta_table_name,
+                    temp_table=temp_table,
+                    ordered_col_names=column_names,
+                    spark_s3_bucket_name=spark_s3_bucket_name,
+                    keep_csv_files=True if options["keep_csv_files"] else False,
+                )
+        except Exception as exc:
+            if postgres_seq_last_value:
+                self.logger.error(
+                    f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
+                )
+                self._set_sequence_value(table_spec["postgres_seq_name"], postgres_seq_last_value)
+            raise Exception(exc)
 
-        logger.info(
+        self.logger.info(
             f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
         )
 
@@ -294,15 +318,31 @@ class Command(BaseCommand):
             spark.stop()
 
         if postgres_table:
-            logger.info(
+            self.logger.info(
                 f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
                 f" metadata portion of the table download to a separate script. If not already done so,"
                 f" please run the following additional command to complete the process: "
                 f" 'copy_table_metadata --source-table {postgres_table} --dest-table {temp_table}'."
             )
 
-    @staticmethod
+    def _set_sequence_value(self, seq_name: str, val: Optional[int] = None) -> int:
+        """
+        Used to reset the value of a Postgres sequence. This function should be used for tables that utilize a
+        sequence to help ensure we don't cross the threshold of values for an ID field as we reload a table every day.
+        If the calling functions exits with an exception this will reset the sequence value to its previous next value.
+
+        Returns the previous value use by the sequence.
+        """
+        new_seq_val = val if val else 1
+        self.logger.info(f"Setting the Postgres sequence to {new_seq_val} for: {seq_name}")
+        with db.connection.cursor() as cursor:
+            cursor.execute(f"SELECT last_value FROM {seq_name}")
+            last_value = cursor.fetchone()[0]
+            cursor.execute(f"ALTER SEQUENCE IF EXISTS {seq_name} RESTART WITH {new_seq_val}")
+        return last_value
+
     def _write_with_sql_bulk_copy_csv(
+        self,
         spark: SparkSession,
         df: DataFrame,
         delta_db: str,
@@ -355,7 +395,6 @@ class Command(BaseCommand):
                 sub-folder of a "temp" folder. Be mindful of cleaning these up if setting to True. If False,
                 the same output path is used for each write and nukes-and-paves the files in that output path.
         """
-        logger = get_jvm_logger(spark, __name__)
         csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_db}/{delta_table_name}/"
         if keep_csv_files:
             csv_path = (
@@ -364,7 +403,7 @@ class Command(BaseCommand):
             )
         s3_bucket_with_csv_path = f"s3a://{spark_s3_bucket_name}/{csv_path}"
 
-        logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
+        self.logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
             maxRecordsPerFile=_SPARK_CSV_WRITE_TO_PG_MAX_RECORDS_PER_FILE,
@@ -376,7 +415,7 @@ class Command(BaseCommand):
             timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
         ).mode(saveMode="overwrite" if not keep_csv_files else "errorifexists").csv(s3_bucket_with_csv_path)
 
-        logger.debug(
+        self.logger.debug(
             f"Connecting to S3 at endpoint_url={CONFIG.AWS_S3_ENDPOINT}, region_name={CONFIG.AWS_REGION} to "
             f"get listing of contents of Bucket={spark_s3_bucket_name} with Prefix={csv_path}"
         )
@@ -398,9 +437,9 @@ class Command(BaseCommand):
         s3_bucket = s3_resource.Bucket(s3_bucket_name)
         gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
         file_count = len(gzipped_csv_files)
-        logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
+        self.logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
 
-        logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        self.logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
         db_dsn = get_database_dsn_string()
         with psycopg2.connect(dsn=db_dsn) as connection:
@@ -443,7 +482,7 @@ class Command(BaseCommand):
             ),
         ).collect()
 
-        logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        self.logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
     def _write_with_jdbc_inserts(
         self,
@@ -482,7 +521,6 @@ class Command(BaseCommand):
             may already have been TRUNCATEd as part of the setup of this job before it gets to this step of writing
             to it.
         """
-        logger = get_jvm_logger(spark, __name__)
         special_columns = {}
         save_mode = "overwrite" if overwrite else "append"
 
@@ -506,14 +544,14 @@ class Command(BaseCommand):
                 )
             for i, split_df in enumerate(split_dfs):
                 # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
-                logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
+                self.logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
                 split_df.write.jdbc(
                     url=get_usas_jdbc_url(),
                     table=temp_table,
                     mode=save_mode,
                     properties=get_jdbc_connection_properties(),
                 )
-                logger.info(f"LOAD: Part {i + 1} of {split_df_count} loaded (note: unequal part sizes)")
+                self.logger.info(f"LOAD: Part {i + 1} of {split_df_count} loaded (note: unequal part sizes)")
         else:
             # Do it in one shot
             df.write.jdbc(
