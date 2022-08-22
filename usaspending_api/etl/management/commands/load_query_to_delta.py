@@ -7,10 +7,21 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.common.etl.spark import create_ref_temp_views
+
+from usaspending_api.recipient.delta_models import (
+    RECIPIENT_LOOKUP_DELTA_COLUMNS,
+    recipient_lookup_load_sql_string_list,
+    RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
+    recipient_profile_create_sql_string,
+    recipient_profile_load_sql_strings,
+    RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+    rpt_recipient_lookup_create_sql_string,
+)
+from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.search.delta_models.award_search import (
+    AWARD_SEARCH_COLUMNS,
     award_search_create_sql_string,
     award_search_load_sql_string,
-    AWARD_SEARCH_COLUMNS,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
 from usaspending_api.recipient.delta_models.sam_recipient import (
@@ -58,6 +69,38 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+    },
+    "rpt.recipient_profile": {
+        "model": RecipientProfile,
+        "source_query": recipient_profile_load_sql_strings,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": "recipient_profile",
+        "swap_schema": "rpt",
+        "partition_column": "recipient_hash",  # This isn't used for anything
+        "partition_column_type": "string",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": recipient_profile_create_sql_string,
+        "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+        "custom_schema": "recipient_hash STRING",
+    },
+    "rpt.recipient_lookup": {
+        "model": RecipientLookup,
+        "is_from_broker": False,
+        "source_query": recipient_lookup_load_sql_string_list,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "recipient_hash",
+        "partition_column_type": "string",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": rpt_recipient_lookup_create_sql_string,
+        "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
+        "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
     },
     "int.sam_recipient": {
         "model": None,
