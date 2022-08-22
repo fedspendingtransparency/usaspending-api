@@ -342,11 +342,11 @@ def equal_datasets(
     # Iterating through the values and finding any differences
     for i, psql_row in enumerate(psql_data):
         for k, psql_val in psql_row.items():
-            spark_val = spark_data[i][k]
-
-            # for cases where now() columns wouldn't match
+            # for cases where certain columns shouldn't match
             if drop_cols and k in drop_cols:
                 continue
+
+            spark_val = spark_data[i][k]
 
             # Casting values based on the custom schema
             if (
@@ -453,6 +453,7 @@ def verify_delta_table_loaded_from_delta(
     load_command="load_table_from_delta",
     jdbc_inserts: bool = False,
     spark_s3_bucket: str = None,
+    drop_cols: List[str] = None,
 ):
     """Generic function that uses the load_table_from_delta commands to load the given table and assert it was
     downloaded as expected
@@ -498,7 +499,7 @@ def verify_delta_table_loaded_from_delta(
         delta_query = f"{delta_query} ORDER BY {partition_col}"
     delta_data = [row.asDict() for row in spark.sql(delta_query).collect()]
 
-    assert equal_datasets(postgres_data, delta_data, TABLE_SPEC[delta_table_name]["custom_schema"])
+    assert equal_datasets(postgres_data, delta_data, TABLE_SPEC[delta_table_name]["custom_schema"], drop_cols=drop_cols)
 
 
 def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str):

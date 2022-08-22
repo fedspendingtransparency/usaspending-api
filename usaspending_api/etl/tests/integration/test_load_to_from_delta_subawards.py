@@ -4,15 +4,14 @@ from decimal import Decimal
 from pytest import mark
 
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
-    populate_data_for_transaction_search,
-    populate_broker_data_to_delta,
     create_and_load_all_delta_tables,
+    verify_delta_table_loaded_from_delta,
     verify_delta_table_loaded_to_delta,
 )
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_subawards(
+def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,
     broker_server_dblink_setup,
@@ -388,7 +387,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_legal_entity_county_name": None,
             "sub_legal_entity_zip5": "50011",
             "sub_legal_entity_city_code": None,
-            "sub_legal_entity_congressional": None,
+            "sub_legal_entity_congressional": "04",
             "place_of_perform_scope": None,
             "sub_place_of_perform_country_co": "USA",
             "sub_place_of_perform_country_name": "UNITED STATES",
@@ -396,7 +395,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_place_of_perform_county_name": None,
             "sub_place_of_perform_zip5": "50011",
             "sub_place_of_perform_city_code": None,
-            "sub_place_of_perform_congressio": None,
+            "sub_place_of_perform_congressio": "04",
             "keyword_ts_vector": "over here FY17 AE E-Teacher Program AY18-19 Course Delivery (Using Educational Technology)",
             "award_ts_vector": "asdfasdfasdfs dasfasf",
             "recipient_name_ts_vector": "over here",
@@ -577,7 +576,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_legal_entity_county_name": None,
             "sub_legal_entity_zip5": "92124",
             "sub_legal_entity_city_code": None,
-            "sub_legal_entity_congressional": None,
+            "sub_legal_entity_congressional": "52",
             "place_of_perform_scope": None,
             "sub_place_of_perform_country_co": "USA",
             "sub_place_of_perform_country_name": "UNITED STATES",
@@ -585,7 +584,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_place_of_perform_county_name": None,
             "sub_place_of_perform_zip5": "93517",
             "sub_place_of_perform_city_code": None,
-            "sub_place_of_perform_congressio": None,
+            "sub_place_of_perform_congressio": "25",
             "keyword_ts_vector": "o hai Engineering consulting services",
             "award_ts_vector": "0000 32324",
             "recipient_name_ts_vector": "o hai",
@@ -766,7 +765,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_legal_entity_county_name": None,
             "sub_legal_entity_zip5": "90501",
             "sub_legal_entity_city_code": None,
-            "sub_legal_entity_congressional": None,
+            "sub_legal_entity_congressional": "36",
             "place_of_perform_scope": None,
             "sub_place_of_perform_country_co": "USA",
             "sub_place_of_perform_country_name": "UNITED STATES",
@@ -774,17 +773,25 @@ def test_load_table_to_delta_for_subawards(
             "sub_place_of_perform_county_name": None,
             "sub_place_of_perform_zip5": "90501",
             "sub_place_of_perform_city_code": None,
-            "sub_place_of_perform_congressio": None,
+            "sub_place_of_perform_congressio": "36",
             "keyword_ts_vector": "Hi Mom Materials in support of the RDS contract.",
             "award_ts_vector": "0725 SUBAWARDNUM1",
             "recipient_name_ts_vector": "Hi Mom",
         },
     ]
+
+    # dropping these cols as they wouldnt match based on the time generated and/or they aren't on the databricks
+    # side of things, so they can't really be compared here
+    drop_cols = ["created_at", "updated_at", "keyword_ts_vector", "award_ts_vector", "recipient_name_ts_vector"]
     verify_delta_table_loaded_to_delta(
         spark,
         "subaward_search",
         s3_unittest_data_bucket,
         load_command="load_query_to_delta",
         dummy_data=expected_dummy_data,
-        drop_cols=["created_at", "updated_at"],
+        drop_cols=drop_cols,
     )
+    verify_delta_table_loaded_from_delta(
+        spark, "subaward_search", spark_s3_bucket=s3_unittest_data_bucket, drop_cols=drop_cols
+    )
+    verify_delta_table_loaded_from_delta(spark, "subaward_search", jdbc_inserts=True, drop_cols=drop_cols)
