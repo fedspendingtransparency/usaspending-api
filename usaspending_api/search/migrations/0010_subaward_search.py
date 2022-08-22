@@ -3,6 +3,7 @@
 import django.contrib.postgres.fields
 import django.contrib.postgres.indexes
 import django.contrib.postgres.search
+from django.contrib.postgres.operations import CreateExtension
 from django.db import migrations, models
 import django.db.models.deletion
 import django.db.models.expressions
@@ -18,6 +19,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        CreateExtension('intarray'),
         migrations.CreateModel(
             name='SubawardSearch',
             fields=[
@@ -206,14 +208,77 @@ class Migration(migrations.Migration):
                 ('keyword_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('award_ts_vector', django.contrib.postgres.search.SearchVectorField()),
                 ('recipient_name_ts_vector', django.contrib.postgres.search.SearchVectorField()),
-                ('award', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='subawardsearch', to='awards.award')),
-                ('awarding_agency', models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='awarding_subawardsearch', to='references.agency')),
-                ('cfda', models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='related_subawardsearch', to='references.cfda')),
-                ('funding_agency', models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='funding_subawardsearch', to='references.agency')),
+                ('award', models.BigIntegerField(null=True, db_column="award_id")),
+                ('awarding_agency', models.IntegerField(null=True, db_column="awarding_agency_id")),
+                ('cfda', models.IntegerField(null=True, db_column="cfda_id")),
+                ('funding_agency', models.IntegerField(null=True, db_column="funding_agency_id")),
             ],
             options={
                 'db_table': 'rpt"."subaward_search',
             },
+        ),
+        # Trick Django into believing this is a foreign primary key for purposes of using the ORM,
+        # but avoid the headache that comes with foreign keys and the primary key constraint
+        migrations.RunSQL(
+            sql='',
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='subawardsearch',
+                    name='award',
+                    field=models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name='subawardsearch',
+                        to='awards.award'
+                    )
+                )
+            ]
+        ),
+        migrations.RunSQL(
+            sql='',
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='subawardsearch',
+                    name='awarding_agency',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name='awarding_subawardsearch',
+                        to='references.agency'
+                    )
+                )
+            ]
+        ),
+        migrations.RunSQL(
+            sql='',
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='subawardsearch',
+                    name='funding_agency',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name='funding_subawardsearch',
+                        to='references.agency'
+                    )
+                )
+            ]
+        ),
+        migrations.RunSQL(
+            sql='',
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='subawardsearch',
+                    name='cfda',
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name='cfda_subawardsearch',
+                        to='references.cfda'
+                    )
+                )
+            ]
         ),
         migrations.AddIndex(
             model_name='subawardsearch',
