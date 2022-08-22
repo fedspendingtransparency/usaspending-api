@@ -52,23 +52,7 @@ TABLE_SPEC = {
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
     },
-    "recipient_profile": {
-        "model": RecipientProfile,
-        "source_query": recipient_profile_load_sql_strings,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "recipient_profile",
-        "swap_schema": "rpt",
-        "partition_column": "recipient_hash",  # This isn't used for anything
-        "partition_column_type": "string",
-        "is_partition_column_unique": False,
-        "delta_table_create_sql": recipient_profile_create_sql_string,
-        "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),
-    },
-    "rpt.recipient_lookup": {
+    "recipient_lookup": {
         "model": RecipientLookup,
         "is_from_broker": False,
         "source_query": recipient_lookup_load_sql_string_list,
@@ -85,6 +69,22 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
     },
+    "recipient_profile": {
+        "model": RecipientProfile,
+        "source_query": recipient_profile_load_sql_strings,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": "recipient_profile",
+        "swap_schema": "rpt",
+        "partition_column": "recipient_hash",  # This isn't used for anything
+        "partition_column_type": "string",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": recipient_profile_create_sql_string,
+        "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+        "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),
+    },
     "transaction_search": {
         "model": TransactionSearch,
         "is_from_broker": False,
@@ -99,7 +99,7 @@ TABLE_SPEC = {
         "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_search_create_sql_string,
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
 }

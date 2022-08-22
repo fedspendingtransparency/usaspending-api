@@ -292,7 +292,7 @@ transaction_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         global_temp.references_cfda ON (transaction_fabs.cfda_number = references_cfda.program_number)
     LEFT OUTER JOIN
-        raw.recipient_lookup ON (
+        rpt.recipient_lookup ON (
             recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
@@ -353,7 +353,7 @@ transaction_search_load_sql_string = fr"""
             OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code)
         )
     LEFT OUTER JOIN
-        raw.recipient_lookup PRL ON (
+        rpt.recipient_lookup PRL ON (
             PRL.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
                     WHEN COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) IS NOT NULL
