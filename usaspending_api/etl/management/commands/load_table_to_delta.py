@@ -120,6 +120,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": None,
         "partition_column_type": None,
+        "is_partition_column_unique": False,
         "delta_table_create_sql": None,
         "source_schema": None,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
