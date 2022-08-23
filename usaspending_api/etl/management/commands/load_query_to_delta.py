@@ -16,6 +16,7 @@ from usaspending_api.recipient.delta_models import (
     recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
     rpt_recipient_lookup_create_sql_string,
+    RECIPIENT_PROFILE_DELTA_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.search.delta_models.award_search import (
@@ -69,7 +70,7 @@ TABLE_SPEC = {
         "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
         "postgres_seq_name": "recipient_lookup_id_seq",
     },
-    "rpt.recipient_profile": {
+    "recipient_profile": {
         "model": RecipientProfile,
         "source_query": recipient_profile_load_sql_strings,
         "source_database": None,
@@ -83,6 +84,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": recipient_profile_create_sql_string,
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
+        "column_names": [x for x in list(RECIPIENT_PROFILE_DELTA_COLUMNS) if x != "id"],
     },
     "transaction_search": {
         "model": TransactionSearch,
@@ -179,7 +181,7 @@ class Command(BaseCommand):
         load_query = table_spec["source_query"]
         if isinstance(load_query, list):
             for index, query in enumerate(load_query):
-                logger.info(f"Running query at position: {index}\nPreview of query: {query[:100]}")
+                logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
                 self.run_spark_sql(query)
         else:
             self.run_spark_sql(load_query)
