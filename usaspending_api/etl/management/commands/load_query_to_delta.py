@@ -133,7 +133,6 @@ TABLE_SPEC = {
 }
 
 
-
 class Command(BaseCommand):
 
     help = """

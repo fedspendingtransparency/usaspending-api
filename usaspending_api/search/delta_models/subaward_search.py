@@ -241,7 +241,7 @@ subaward_search_load_sql_string = fr"""
           duns,
           ROW_NUMBER() OVER(PARTITION BY uei ORDER BY uei, duns NULLS LAST, legal_business_name NULLS LAST) AS row
         FROM
-            raw.recipient_lookup AS rlv
+            rpt.recipient_lookup AS rlv
     )
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
