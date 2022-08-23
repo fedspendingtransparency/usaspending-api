@@ -11,11 +11,11 @@ services:
   - elasticsearch
 
 addons:
-  postgresql: '10'
+  postgresql: '13'
   apt:
     packages:
-    - postgresql-10
-    - postgresql-client-10
+    - postgresql-13
+    - postgresql-client-13
 
 env:
   global:
