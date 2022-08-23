@@ -274,11 +274,11 @@ def test_load_table_to_from_delta_for_subawards(
             "subaward_amount": Decimal("898.00"),
             "sub_action_date": date(2019, 3, 23),
             "sub_awardee_or_recipient_uniqu": "124243",
-            "sub_awardee_or_recipient_uei": None,
+            "sub_awardee_or_recipient_uei": "FABSUEI12345",
             "sub_awardee_or_recipient_legal_raw": "OVER HERE",
             "sub_dba_name": "OVER THERE",
             "sub_ultimate_parent_unique_ide": "3435",
-            "sub_ultimate_parent_uei": None,
+            "sub_ultimate_parent_uei": "FABSUEI12345",
             "sub_ultimate_parent_legal_enti_raw": "SOMETHING ELSE",
             "sub_legal_entity_country_code_raw": "USA",
             "sub_legal_entity_country_name_raw": "UNITED STATES",
@@ -374,8 +374,8 @@ def test_load_table_to_from_delta_for_subawards(
             "cfda_title": None,
             "sub_fiscal_year": 2019,
             "sub_total_obl_bin": "<1M",
-            "sub_awardee_or_recipient_legal": "OVER HERE",
-            "sub_ultimate_parent_legal_enti": "SOMETHING ELSE",
+            "sub_awardee_or_recipient_legal": "FABS TEST RECIPIENT",
+            "sub_ultimate_parent_legal_enti": "FABS TEST RECIPIENT",
             "business_type_code": None,
             "business_categories": [],
             "treasury_account_identifiers": None,
@@ -817,11 +817,11 @@ def test_load_table_to_from_delta_for_subawards(
             "recipient_name_ts_vector": "'yolo':1",
         },
         {
-            "keyword_ts_vector": "'-19':10 'ae':4 'ay18':9 'course':11 'delivery':12 'e':6 'e-teacher':5"
-            " 'educational':14 'fy17':3 'here':2 'over':1 'program':8 'teacher':7 'technology':15"
-            " 'using':13",
+            "keyword_ts_vector": "'-19':11 'ae':5 'ay18':10 'course':12 'delivery':13 'e':7 'e-teacher':6"
+            " 'educational':15 'fabs':1 'fy17':4 'program':9 'recipient':3 'teacher':8"
+            " 'technology':16 'test':2 'using':14",
             "award_ts_vector": "'asdfasdfasdfs':1 'dasfasf':2",
-            "recipient_name_ts_vector": "'here':2 'over':1",
+            "recipient_name_ts_vector": "'fabs':1 'recipient':3 'test':2",
         },
         {
             "keyword_ts_vector": "'consulting':4 'engineering':3 'hai':2 'o':1 'services':5",
