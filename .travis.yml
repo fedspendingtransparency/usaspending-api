@@ -20,7 +20,7 @@ env:
   global:
   - POSTGRES_HOST=localhost
   - USASPENDING_DB_HOST=localhost
-  - USASPENDING_DB_PORT=5433
+  - USASPENDING_DB_PORT=5432
   - USASPENDING_DB_USER=usaspending
   - USASPENDING_DB_PASSWORD=usaspender
   - USASPENDING_DB_NAME=data_store_api
@@ -29,7 +29,7 @@ env:
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
   - BROKER_DB_HOST=localhost
-  - BROKER_DB_PORT=5433
+  - BROKER_DB_PORT=5432
   - BROKER_DB_USER=admin
   - BROKER_DB_PASSWORD=root
   - BROKER_DB_NAME=data_broker
@@ -43,6 +43,12 @@ env:
   - MINIO_HOST=localhost
 
 before_install:
+  # Restart the postgres service and make sure to use port 5432
+  - sudo service postgresql stop
+  - sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
+  - sudo chown postgres postgresql.conf
+  - sudo mv postgresql.conf /etc/postgresql/13/main
+  - sudo service postgresql start 13
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
   # Re-install elasticsearch at the right version
@@ -76,9 +82,9 @@ before_script:
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
-  - psql -p 5433 -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
-  - psql -p 5433 -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
-  - psql -p 5433 -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
+  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
+  - psql -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
+  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   # Ensure MinIO can run as our s3 substitute
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
