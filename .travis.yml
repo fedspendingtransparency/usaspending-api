@@ -43,6 +43,7 @@ env:
   - MINIO_HOST=localhost
 
 before_install:
+  - sudo netstat -plunt
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
   # Re-install elasticsearch at the right version
