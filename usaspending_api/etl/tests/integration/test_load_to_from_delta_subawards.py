@@ -4,8 +4,6 @@ from decimal import Decimal
 from pytest import mark
 
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
-    populate_data_for_transaction_search,
-    populate_broker_data_to_delta,
     create_and_load_all_delta_tables,
     verify_delta_table_loaded_to_delta,
 )
@@ -19,7 +17,16 @@ def test_load_table_to_delta_for_subawards(
     populate_broker_data_to_delta,
     populate_data_for_transaction_search,
 ):
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket)
+    tables_to_load = [
+        "awards",
+        "sam_recipient",
+        "transaction_normalized",
+        "transaction_fabs",
+        "transaction_fpds",
+        "recipient_lookup",
+        "financial_accounts_by_awards",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(spark, "broker_subaward", s3_unittest_data_bucket)
 
     expected_dummy_data = [
@@ -208,9 +215,6 @@ def test_load_table_to_delta_for_subawards(
             "sub_place_of_perform_zip5": "",
             "sub_place_of_perform_city_code": None,
             "sub_place_of_perform_congressio": None,
-            "keyword_ts_vector": "yolo more stuff",
-            "award_ts_vector": "asfasfasfs sdafasfsdf",
-            "recipient_name_ts_vector": "yolo",
         },
         {
             "broker_created_at": datetime(2019, 6, 11, 18, 27, 37, 76916),
@@ -388,7 +392,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_legal_entity_county_name": None,
             "sub_legal_entity_zip5": "50011",
             "sub_legal_entity_city_code": None,
-            "sub_legal_entity_congressional": None,
+            "sub_legal_entity_congressional": "04",
             "place_of_perform_scope": None,
             "sub_place_of_perform_country_co": "USA",
             "sub_place_of_perform_country_name": "UNITED STATES",
@@ -396,10 +400,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_place_of_perform_county_name": None,
             "sub_place_of_perform_zip5": "50011",
             "sub_place_of_perform_city_code": None,
-            "sub_place_of_perform_congressio": None,
-            "keyword_ts_vector": "over here FY17 AE E-Teacher Program AY18-19 Course Delivery (Using Educational Technology)",
-            "award_ts_vector": "asdfasdfasdfs dasfasf",
-            "recipient_name_ts_vector": "over here",
+            "sub_place_of_perform_congressio": "04",
         },
         {
             "broker_created_at": datetime(2019, 6, 12, 12, 45, 58, 789296),
@@ -577,7 +578,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_legal_entity_county_name": None,
             "sub_legal_entity_zip5": "92124",
             "sub_legal_entity_city_code": None,
-            "sub_legal_entity_congressional": None,
+            "sub_legal_entity_congressional": "52",
             "place_of_perform_scope": None,
             "sub_place_of_perform_country_co": "USA",
             "sub_place_of_perform_country_name": "UNITED STATES",
@@ -585,10 +586,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_place_of_perform_county_name": None,
             "sub_place_of_perform_zip5": "93517",
             "sub_place_of_perform_city_code": None,
-            "sub_place_of_perform_congressio": None,
-            "keyword_ts_vector": "o hai Engineering consulting services",
-            "award_ts_vector": "0000 32324",
-            "recipient_name_ts_vector": "o hai",
+            "sub_place_of_perform_congressio": "25",
         },
         {
             "broker_created_at": datetime(2019, 6, 12, 12, 45, 58, 789296),
@@ -766,7 +764,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_legal_entity_county_name": None,
             "sub_legal_entity_zip5": "90501",
             "sub_legal_entity_city_code": None,
-            "sub_legal_entity_congressional": None,
+            "sub_legal_entity_congressional": "36",
             "place_of_perform_scope": None,
             "sub_place_of_perform_country_co": "USA",
             "sub_place_of_perform_country_name": "UNITED STATES",
@@ -774,10 +772,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_place_of_perform_county_name": None,
             "sub_place_of_perform_zip5": "90501",
             "sub_place_of_perform_city_code": None,
-            "sub_place_of_perform_congressio": None,
-            "keyword_ts_vector": "Hi Mom Materials in support of the RDS contract.",
-            "award_ts_vector": "0725 SUBAWARDNUM1",
-            "recipient_name_ts_vector": "Hi Mom",
+            "sub_place_of_perform_congressio": "36",
         },
     ]
     verify_delta_table_loaded_to_delta(
@@ -786,5 +781,5 @@ def test_load_table_to_delta_for_subawards(
         s3_unittest_data_bucket,
         load_command="load_query_to_delta",
         dummy_data=expected_dummy_data,
-        drop_cols=["created_at", "updated_at"],
+        ignore_fields=["created_at", "updated_at"],
     )
