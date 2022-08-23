@@ -1,16 +1,28 @@
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jvm_logger,
 )
-from usaspending_api.common.etl.spark import create_ref_temp_views
+from usaspending_api.config import CONFIG
+from usaspending_api.recipient.delta_models import (
+    RECIPIENT_LOOKUP_DELTA_COLUMNS,
+    recipient_lookup_load_sql_string_list,
+    RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
+    recipient_profile_create_sql_string,
+    recipient_profile_load_sql_strings,
+    RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+    rpt_recipient_lookup_create_sql_string,
+    RECIPIENT_PROFILE_DELTA_COLUMNS,
+)
+from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.search.delta_models.award_search import (
+    AWARD_SEARCH_COLUMNS,
     award_search_create_sql_string,
     award_search_load_sql_string,
-    AWARD_SEARCH_COLUMNS,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
 from usaspending_api.search.delta_models.subaward_search import (
@@ -22,29 +34,13 @@ from usaspending_api.search.delta_models.subaward_search import (
 )
 from usaspending_api.search.models import TransactionSearch, AwardSearch, SubawardSearch
 from usaspending_api.transactions.delta_models import (
+    TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
-    TRANSACTION_SEARCH_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
 )
 
 TABLE_SPEC = {
-    "transaction_search": {
-        "model": TransactionSearch,
-        "is_from_broker": False,
-        "source_query": transaction_search_load_sql_string,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "transaction_search",
-        "swap_schema": "rpt",
-        "partition_column": "transaction_id",
-        "delta_table_create_sql": transaction_search_create_sql_string,
-        "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
-        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
-        "tsvectors": None,
-    },
     "award_search": {
         "model": AwardSearch,
         "is_from_broker": False,
@@ -56,6 +52,7 @@ TABLE_SPEC = {
         "swap_schema": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
@@ -63,24 +60,78 @@ TABLE_SPEC = {
         "column_names": list(AWARD_SEARCH_COLUMNS),
         "tsvectors": None,
     },
-    "subaward_search": {
-        "model": SubawardSearch,
-        "broker": False,
-        "source_query": subaward_search_load_sql_string,
+    "recipient_lookup": {
+        "model": RecipientLookup,
+        "is_from_broker": False,
+        "source_query": recipient_lookup_load_sql_string_list,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
         "swap_table": None,
         "swap_schema": None,
-        "partition_column": "broker_subaward_id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": subaward_search_create_sql_string,
-        "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
-        "column_names": list(SUBAWARD_SEARCH_COLUMNS),
-        "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
+        "partition_column": "recipient_hash",
+        "partition_column_type": "string",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": rpt_recipient_lookup_create_sql_string,
+        "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
+        "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
+        "tsvectors": None,
+    },
+     "recipient_profile": {
+         "model": RecipientProfile,
+         "source_query": recipient_profile_load_sql_strings,
+         "source_database": None,
+         "source_table": None,
+         "destination_database": "rpt",
+         "swap_table": "recipient_profile",
+         "swap_schema": "rpt",
+         "partition_column": "recipient_hash",  # This isn't used for anything
+         "partition_column_type": "string",
+         "is_partition_column_unique": False,
+         "delta_table_create_sql": recipient_profile_create_sql_string,
+         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+         "custom_schema": "recipient_hash STRING",
+         "column_names": [x for x in list(RECIPIENT_PROFILE_DELTA_COLUMNS) if x != "id"],
+         "tsvectors": None,
+     },
+     "transaction_search": {
+         "model": TransactionSearch,
+         "is_from_broker": False,
+         "source_query": transaction_search_load_sql_string,
+         "source_database": None,
+         "source_table": None,
+         "destination_database": "rpt",
+         "swap_table": "transaction_search",
+         "swap_schema": "rpt",
+         "partition_column": "transaction_id",
+         "partition_column_type": "numeric",
+         "is_partition_column_unique": True,
+         "delta_table_create_sql": transaction_search_create_sql_string,
+         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
+         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
+         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+         "tsvectors": None,
+     },
+    "subaward_search": {
+         "model": SubawardSearch,
+         "broker": False,
+         "source_query": subaward_search_load_sql_string,
+         "source_database": None,
+         "source_table": None,
+         "destination_database": "rpt",
+         "swap_table": None,
+         "swap_schema": None,
+         "partition_column": "broker_subaward_id",
+         "partition_column_type": "numeric",
+         "delta_table_create_sql": subaward_search_create_sql_string,
+         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+         "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
+         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
+         "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
     },
 }
+
 
 
 class Command(BaseCommand):
@@ -90,6 +141,11 @@ class Command(BaseCommand):
     with temporary views of tables in a Postgres database. As of now, it only supports a full reload of a table.
     All existing data will be deleted before new data is written.
     """
+
+    # Values defined in the handler
+    destination_database: str
+    destination_table_name: str
+    spark: SparkSession
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -124,37 +180,48 @@ class Command(BaseCommand):
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
-        spark = get_active_spark_session()
+        self.spark = get_active_spark_session()
         spark_created_by_command = False
-        if not spark:
+        if not self.spark:
             spark_created_by_command = True
-            spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
+            self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         # Setup Logger
-        logger = get_jvm_logger(spark)
+        logger = get_jvm_logger(self.spark, __name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]
-
         table_spec = TABLE_SPEC[destination_table]
-        destination_database = options["alt_db"] or table_spec["destination_database"]
-        destination_table_name = options["alt_name"] or destination_table
+        self.destination_database = options["alt_db"] or table_spec["destination_database"]
+        self.destination_table_name = options["alt_name"] or destination_table.split(".")[-1]
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
-        logger.info(f"Using Spark Database: {destination_database}")
-        spark.sql(f"use {destination_database};")
+        logger.info(f"Using Spark Database: {self.destination_database}")
+        self.spark.sql(f"use {self.destination_database};")
 
         # Create User Defined Functions if needed
-        if TABLE_SPEC[destination_table].get("user_defined_functions"):
-            for udf_args in TABLE_SPEC[destination_table]["user_defined_functions"]:
-                spark.udf.register(**udf_args)
+        if table_spec.get("user_defined_functions"):
+            for udf_args in table_spec["user_defined_functions"]:
+                self.spark.udf.register(**udf_args)
 
-        create_ref_temp_views(spark)
-        spark.sql(
-            TABLE_SPEC[destination_table]
-            .get("source_query")
-            .format(DESTINATION_DATABASE=destination_database, DESTINATION_TABLE=destination_table_name)
-        )
+        create_ref_temp_views(self.spark)
+
+        load_query = table_spec["source_query"]
+        if isinstance(load_query, list):
+            for index, query in enumerate(load_query):
+                logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
+                self.run_spark_sql(query)
+        else:
+            self.run_spark_sql(load_query)
 
         if spark_created_by_command:
-            spark.stop()
+            self.spark.stop()
+
+    def run_spark_sql(self, query):
+        self.spark.sql(
+            query.format(
+                DESTINATION_DATABASE=self.destination_database,
+                DESTINATION_TABLE=self.destination_table_name,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
