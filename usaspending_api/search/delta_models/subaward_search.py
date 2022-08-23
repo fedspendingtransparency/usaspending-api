@@ -542,10 +542,12 @@ subaward_search_load_sql_string = fr"""
                 AND rec.row_num = 1)
     LEFT OUTER JOIN
         global_temp.ref_country_code AS pcc
-            ON pcc.country_code = UPPER(bs.sub_place_of_perform_country_co)
+            ON (pcc.country_code = UPPER(bs.sub_place_of_perform_country_co)
+                AND bs.sub_place_of_perform_country_co IS NOT NULL)
     LEFT OUTER JOIN
         global_temp.ref_country_code AS rcc
-            ON rcc.country_code = UPPER(bs.sub_legal_entity_country_code)
+            ON (rcc.country_code = UPPER(bs.sub_legal_entity_country_code)
+                AND bs.sub_legal_entity_country_code IS NOT NULL)
     LEFT OUTER JOIN
         global_temp.psc
             ON fpds.product_or_service_code = psc.code
