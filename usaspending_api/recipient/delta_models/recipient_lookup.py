@@ -537,7 +537,7 @@ recipient_lookup_load_sql_string_list = [
     # -----
     # Update the temporary_restock_recipient_lookup table to include any alternate names
     # -----
-    rf"""
+    fr"""
     CREATE OR REPLACE TEMPORARY VIEW temp_recipients_with_alt_names_view AS (
         WITH recipient_names (
             WITH alt_names AS (
