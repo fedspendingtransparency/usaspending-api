@@ -20,7 +20,7 @@ env:
   global:
   - POSTGRES_HOST=localhost
   - USASPENDING_DB_HOST=localhost
-  - USASPENDING_DB_PORT=5432
+  - USASPENDING_DB_PORT=5433
   - USASPENDING_DB_USER=usaspending
   - USASPENDING_DB_PASSWORD=usaspender
   - USASPENDING_DB_NAME=data_store_api
@@ -29,7 +29,7 @@ env:
   - DJANGO_SETTINGS_MODULE='usaspending_api.settings'
   - ES_HOSTNAME='http://localhost:9200'
   - BROKER_DB_HOST=localhost
-  - BROKER_DB_PORT=5432
+  - BROKER_DB_PORT=5433
   - BROKER_DB_USER=admin
   - BROKER_DB_PASSWORD=root
   - BROKER_DB_NAME=data_broker
@@ -43,7 +43,6 @@ env:
   - MINIO_HOST=localhost
 
 before_install:
-  - sudo netstat -plunt
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
   # Re-install elasticsearch at the right version
