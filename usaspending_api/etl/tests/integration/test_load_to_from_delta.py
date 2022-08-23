@@ -40,27 +40,69 @@ def populate_data_for_transaction_search():
         "recipient.RecipientLookup",
         recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
         uei="FABSUEI12345",
-        duns="123456789",
+        duns="FABSDUNS12345",
         legal_business_name="FABS TEST RECIPIENT",
-        parent_uei=None,
+        parent_uei="PARENTUEI12345",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        uei="PARENTUEI12345",
+        duns="PARENTDUNS12345",
+        legal_business_name="PARENT RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        uei="FPDSUEI12345",
+        duns="FPDSDUNS12345",
+        legal_business_name="FPDS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
         _fill_optional=True,
     )
     baker.make(
         "recipient.RecipientProfile",
         recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
         uei="FABSUEI12345",
-        id=1,
-        recipient_level="R",
+        recipient_level="C",
         recipient_name="FABS TEST RECIPIENT",
-        recipient_unique_id="123456789",
-        parent_uei=None,
-        recipient_affiliations=[],
+        recipient_unique_id="FABSDUNS12345",
+        parent_uei="PARENTUEI12345",
+        recipient_affiliations=["PARENTUEI12345"],
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
+        uei="PARENTUEI12345",
+        recipient_level="P",
+        recipient_name="PARENT RECIPIENT 12345",
+        recipient_unique_id="PARENTDUNS12345",
+        parent_uei="PARENTUEI12345",
+        recipient_affiliations=["FABSUEI12345", "FPDSUEI12345"],
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        uei="FPDSUEI12345",
+        recipient_level="C",
+        recipient_name="FPDS RECIPIENT 12345",
+        recipient_unique_id="FPDSDUNS12345",
+        parent_uei="PARENTUEI12345",
+        recipient_affiliations=["PARENTUEI12345"],
         _fill_optional=True,
     )
     baker.make(
         "recipient.DUNS",
         broker_duns_id="1",
         uei="FABSUEI12345",
+        ultimate_parent_uei="PARENTUEI12345",
+        ultimate_parent_unique_ide="PARENTDUNS12345",
+        awardee_or_recipient_uniqu="FABSDUNS12345",
+        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
         legal_business_name="FABS TEST RECIPIENT",
         _fill_optional=True,
     )
@@ -110,9 +152,9 @@ def populate_data_for_transaction_search():
     asst_award = baker.make(
         "awards.Award",
         type="07",
-        period_of_performance_start_date="2021-01-01",
+        period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
-        date_signed="2021-01-01",
+        date_signed="2020-01-01",
         total_obligation=100.00,
         total_subsidy_cost=100.00,
         type_description="Direct Loan",
@@ -120,55 +162,59 @@ def populate_data_for_transaction_search():
     cont_award = baker.make(
         "awards.Award",
         type="A",
-        period_of_performance_start_date="2021-01-01",
+        period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
-        date_signed="2021-01-01",
+        date_signed="2020-01-01",
         total_obligation=100.00,
     )
 
     asst_trx1 = baker.make(
         "awards.TransactionNormalized",
-        action_date="2021-01-01",
+        action_date="2020-01-01",
         award=asst_award,
         is_fpds=False,
         type="07",
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
-        last_modified_date="2021-01-01",
+        last_modified_date="2020-01-01",
         _fill_optional=True,
+        federal_action_obligation=0,
     )
     asst_trx2 = baker.make(
         "awards.TransactionNormalized",
-        action_date="2021-04-01",
+        action_date="2020-04-01",
         award=asst_award,
         is_fpds=False,
         type="07",
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
-        last_modified_date="2021-01-01",
+        last_modified_date="2020-01-01",
         _fill_optional=True,
+        federal_action_obligation=0,
     )
     cont_trx1 = baker.make(
         "awards.TransactionNormalized",
-        action_date="2021-07-01",
+        action_date="2020-07-01",
         award=cont_award,
         is_fpds=True,
         type="A",
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
-        last_modified_date="2021-01-01",
+        last_modified_date="2020-01-01",
         _fill_optional=True,
+        federal_action_obligation=0,
     )
     cont_trx2 = baker.make(
         "awards.TransactionNormalized",
-        action_date="2021-10-01",
+        action_date="2020-10-01",
         award=cont_award,
         is_fpds=True,
         type="A",
         awarding_agency=awarding_agency,
         funding_agency=funding_agency,
-        last_modified_date="2021-01-01",
+        last_modified_date="2020-01-01",
         _fill_optional=True,
+        federal_action_obligation=0,
     )
 
     baker.make(
@@ -176,7 +222,7 @@ def populate_data_for_transaction_search():
         transaction=asst_trx1,
         published_fabs_id=2,
         cfda_number="12.456",
-        action_date="2021-04-01",
+        action_date="2020-04-01",
         uei="FABSUEI12345",
         awardee_or_recipient_uniqu="FABSDUNS12345",
         awardee_or_recipient_legal="FABS RECIPIENT 12345",
@@ -195,13 +241,14 @@ def populate_data_for_transaction_search():
         place_of_perform_country_n="UNITED STATES",
         place_of_performance_congr="01",
         _fill_optional=True,
+        federal_action_obligation=0,
     )
     baker.make(
         "awards.TransactionFABS",
         transaction=asst_trx2,
         published_fabs_id=2,
         cfda_number="12.456",
-        action_date="2021-04-01",
+        action_date="2020-04-01",
         uei="FABSUEI12345",
         awardee_or_recipient_uniqu="FABSDUNS12345",
         awardee_or_recipient_legal="FABS RECIPIENT 12345",
@@ -220,6 +267,7 @@ def populate_data_for_transaction_search():
         place_of_perform_country_n="UNITED STATES",
         place_of_performance_congr="01",
         _fill_optional=True,
+        federal_action_obligation=0,
     )
     baker.make(
         "awards.TransactionFPDS",
@@ -227,7 +275,7 @@ def populate_data_for_transaction_search():
         detached_award_procurement_id=1,
         naics="123456",
         product_or_service_code="12",
-        action_date="2021-07-01",
+        action_date="2020-07-01",
         awardee_or_recipient_uei="FPDSUEI12345",
         awardee_or_recipient_uniqu="FPDSDUNS12345",
         awardee_or_recipient_legal="FPDS RECIPIENT 12345",
@@ -235,6 +283,7 @@ def populate_data_for_transaction_search():
         ultimate_parent_unique_ide="PARENTDUNS12345",
         ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
         ordering_period_end_date="2020-07-01",
+        federal_action_obligation=0,
     )
     baker.make(
         "awards.TransactionFPDS",
@@ -242,7 +291,7 @@ def populate_data_for_transaction_search():
         detached_award_procurement_id=2,
         naics="123456",
         product_or_service_code="12",
-        action_date="2021-10-01",
+        action_date="2020-10-01",
         awardee_or_recipient_uei="FPDSUEI12345",
         awardee_or_recipient_uniqu="FPDSDUNS12345",
         awardee_or_recipient_legal="FPDS RECIPIENT 12345",
@@ -251,6 +300,7 @@ def populate_data_for_transaction_search():
         ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
         ordering_period_end_date="2020-07-01",
         _fill_optional=True,
+        federal_action_obligation=0,
     )
 
     # Create account data
@@ -613,6 +663,7 @@ def _verify_delta_table_loaded_from_delta(
     load_command="load_table_from_delta",
     jdbc_inserts: bool = False,
     spark_s3_bucket: str = None,
+    ignore_fields: Optional[list] = None,
 ):
     """Generic function that uses the load_table_from_delta commands to load the given table and assert it was
     downloaded as expected
@@ -658,7 +709,7 @@ def _verify_delta_table_loaded_from_delta(
         delta_query = f"{delta_query} ORDER BY {partition_col}"
     delta_data = [row.asDict() for row in spark.sql(delta_query).collect()]
 
-    assert equal_datasets(postgres_data, delta_data, TABLE_SPEC[delta_table_name]["custom_schema"])
+    assert equal_datasets(postgres_data, delta_data, TABLE_SPEC[delta_table_name]["custom_schema"], ignore_fields)
 
 
 def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
@@ -806,12 +857,28 @@ def test_load_table_to_from_delta_for_recipient_testing(spark, s3_unittest_data_
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_profile(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
-    baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
-    _verify_delta_table_loaded_to_delta(spark, "recipient_profile", s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", spark_s3_bucket=s3_unittest_data_bucket)
-    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True)  # test alt write strategy
+def test_load_table_to_from_delta_for_recipient_profile(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
+):
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "sam_recipient",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+
+    # Run the old loaders in order to compare the results against the new
+    call_command("update_recipient_lookup")
+    execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
+
+    _verify_delta_table_loaded_to_delta(
+        spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta", ignore_fields=["id"]
+    )
+    _verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True, ignore_fields=["id"])
 
 
 @mark.django_db(transaction=True)
@@ -978,7 +1045,7 @@ def test_load_table_to_from_delta_for_transaction_normalized(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_rpt_recipient_profile(
+def test_load_table_to_from_delta_for_recipient_profile_testing(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, monkeypatch, hive_unittest_metastore_db
 ):
     tables_to_load = [
@@ -995,11 +1062,7 @@ def test_load_table_to_from_delta_for_rpt_recipient_profile(
     execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
 
     _verify_delta_table_loaded_to_delta(
-        spark,
-        "rpt.recipient_profile",
-        s3_unittest_data_bucket,
-        load_command="load_query_to_delta",
-        ignore_fields=["id"],
+        spark, "recipient_profile_testing", s3_unittest_data_bucket, load_command="load_table_to_delta"
     )
 
 
@@ -1022,7 +1085,6 @@ def test_load_table_to_from_delta_for_transaction_search(
     execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
 
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-
     _verify_delta_table_loaded_to_delta(
         spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
@@ -1082,7 +1144,6 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
 
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-
     _verify_delta_table_loaded_to_delta(
         spark,
         "transaction_search",
@@ -1119,7 +1180,6 @@ def test_load_table_to_from_delta_for_award_search(
     execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
 
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-
     _verify_delta_table_loaded_to_delta(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )

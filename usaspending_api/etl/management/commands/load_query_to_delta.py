@@ -16,6 +16,7 @@ from usaspending_api.recipient.delta_models import (
     recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
     rpt_recipient_lookup_create_sql_string,
+    RECIPIENT_PROFILE_DELTA_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.search.delta_models.award_search import (
@@ -68,7 +69,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
     },
-    "rpt.recipient_profile": {
+    "recipient_profile": {
         "model": RecipientProfile,
         "source_query": recipient_profile_load_sql_strings,
         "source_database": None,
@@ -82,6 +83,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": recipient_profile_create_sql_string,
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
+        "column_names": [x for x in list(RECIPIENT_PROFILE_DELTA_COLUMNS) if x != "id"],
     },
     "transaction_search": {
         "model": TransactionSearch,
