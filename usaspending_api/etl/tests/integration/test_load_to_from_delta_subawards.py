@@ -1,8 +1,12 @@
+import psycopg2
+
 from datetime import datetime, date
 from decimal import Decimal
 
 from pytest import mark
 
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
     create_and_load_all_delta_tables,
     verify_delta_table_loaded_from_delta,
@@ -795,3 +799,39 @@ def test_load_table_to_from_delta_for_subawards(
         spark, "subaward_search", spark_s3_bucket=s3_unittest_data_bucket, drop_cols=drop_cols
     )
     verify_delta_table_loaded_from_delta(spark, "subaward_search", jdbc_inserts=True, drop_cols=drop_cols)
+
+    # but to be safe, let's make sure those ts_vectors are populated correctly
+    postgres_query = f"""
+        SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector
+        FROM temp.subaward_search_temp
+        ORDER BY broker_subaward_id
+    """
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(postgres_query)
+            postgres_data = dictfetchall(cursor)
+    expected_results = [
+        {
+            "keyword_ts_vector": "'more':2 'stuff':3 'yolo':1",
+            "award_ts_vector": "'asfasfasfs':1 'sdafasfsdf':2",
+            "recipient_name_ts_vector": "'yolo':1",
+        },
+        {
+            "keyword_ts_vector": "'-19':10 'ae':4 'ay18':9 'course':11 'delivery':12 'e':6 'e-teacher':5"
+            " 'educational':14 'fy17':3 'here':2 'over':1 'program':8 'teacher':7 'technology':15"
+            " 'using':13",
+            "award_ts_vector": "'asdfasdfasdfs':1 'dasfasf':2",
+            "recipient_name_ts_vector": "'here':2 'over':1",
+        },
+        {
+            "keyword_ts_vector": "'consulting':4 'engineering':3 'hai':2 'o':1 'services':5",
+            "award_ts_vector": "'0000':1 '32324':2",
+            "recipient_name_ts_vector": "'hai':2 'o':1",
+        },
+        {
+            "keyword_ts_vector": "'contract':9 'hi':1 'in':4 'materials':3 'mom':2 'of':6 'rds':8 'support':5 'the':7",
+            "award_ts_vector": "'0725':1 'subawardnum1':2",
+            "recipient_name_ts_vector": "'hi':1 'mom':2",
+        },
+    ]
+    assert postgres_data == expected_results
