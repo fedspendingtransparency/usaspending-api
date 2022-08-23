@@ -429,7 +429,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 9, Delete unused data from table
     # --------------------------------------------------------------------------------
-    fr"""
+    rf"""
         INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
             {",".join(list(RECIPIENT_PROFILE_COLUMNS))}

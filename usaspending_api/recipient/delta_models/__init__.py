@@ -1,4 +1,5 @@
 from usaspending_api.recipient.delta_models.recipient_lookup import (
+    RECIPIENT_LOOKUP_COLUMNS,
     recipient_lookup_create_sql_string,
     RECIPIENT_LOOKUP_DELTA_COLUMNS,
     recipient_lookup_load_sql_string_list,
@@ -18,6 +19,7 @@ from usaspending_api.recipient.delta_models.sam_recipient import (
 )
 
 __all__ = [
+    "RECIPIENT_LOOKUP_COLUMNS",
     "recipient_lookup_create_sql_string",
     "recipient_lookup_load_sql_string_list",
     "RECIPIENT_LOOKUP_DELTA_COLUMNS",
