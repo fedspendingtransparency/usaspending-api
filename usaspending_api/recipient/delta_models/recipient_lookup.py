@@ -124,7 +124,7 @@ recipient_lookup_load_sql_string_list = [
     # -----
     # Populate the temporary_restock_recipient_lookup table
     # -----
-    rf"""
+    fr"""
     CREATE OR REPLACE TEMPORARY VIEW temp_collect_recipients_view AS (
         WITH latest_duns_sam AS (
             SELECT
@@ -512,7 +512,7 @@ recipient_lookup_load_sql_string_list = [
     # -----
     # Delete any cases of old recipients from where the recipient now has a UEI
     # -----
-    rf"""
+    fr"""
     CREATE OR REPLACE TEMPORARY VIEW temp_stale_recipients_removed_view AS (
         WITH uei_and_duns_recipients AS (
             SELECT duns_recipient_hash
