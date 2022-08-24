@@ -7,9 +7,6 @@ from django.db.models.functions import Upper
 
 
 class SubawardSearch(models.Model):
-    created_at = models.DateTimeField(blank=True, null=True)
-    updated_at = models.DateTimeField(blank=True, null=True)
-
     # Broker Subaward Table Meta
     broker_created_at = models.DateTimeField(null=True, blank=True, db_index=True)
     broker_updated_at = models.DateTimeField(null=True, blank=True, db_index=True)

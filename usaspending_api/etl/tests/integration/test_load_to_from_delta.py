@@ -47,7 +47,7 @@ def populate_broker_data_to_delta():
         for record in dummy_broker_subaward_data:
             columns = record.keys()
             values = tuple(record[column] for column in columns)
-            sql = cursor.cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
+            sql = cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
             cursor.execute(sql)
 
 
