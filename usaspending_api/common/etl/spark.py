@@ -15,6 +15,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
+    get_broker_jdbc_url,
 )
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
@@ -510,11 +511,11 @@ def create_ref_temp_views(spark: SparkSession):
     """
     logger = get_jvm_logger(spark)
     jdbc_conn_props = get_jdbc_connection_properties()
-    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in _RDS_REF_TABLES]
+    usas_rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in _RDS_REF_TABLES]
     broker_proxy_tables = [broker_proxy_table._meta.db_table for broker_proxy_table in _Broker_Proxy_tables]
 
-    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
-    for ref_rdf_table in rds_ref_tables:
+    logger.info(f"Creating the following tables under the global_temp database: {usas_rds_ref_tables}")
+    for ref_rdf_table in usas_rds_ref_tables:
         spark_sql = f"""
         CREATE OR REPLACE GLOBAL TEMPORARY VIEW {ref_rdf_table}
         USING JDBC
@@ -535,7 +536,7 @@ def create_ref_temp_views(spark: SparkSession):
         OPTIONS (
           driver '{jdbc_conn_props["driver"]}',
           fetchsize '{jdbc_conn_props["fetchsize"]}',
-          url '{get_usas_jdbc_url()}',
+          url '{get_broker_jdbc_url()}',
           dbtable '{broker_table}'
         )
         """
