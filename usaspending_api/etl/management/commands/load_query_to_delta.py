@@ -29,7 +29,6 @@ from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
     subaward_search_create_sql_string,
     subaward_search_load_sql_string,
-    SUBAWARD_SEARCH_COLUMNS,
     SUBAWARD_SEARCH_POSTGRES_COLUMNS,
     SUBAWARD_SEARCH_POSTGRES_VECTORS,
 )
