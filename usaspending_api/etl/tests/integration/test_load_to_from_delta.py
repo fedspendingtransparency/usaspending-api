@@ -281,7 +281,14 @@ def populate_data_for_transaction_search():
         _fill_optional=True,
         submission=sa,
     )
-
+    baker.make(
+        "sam_recipients",
+        award=cont_award,
+        treasury_account=tas,
+        disaster_emergency_fund=None,
+        _fill_optional=True,
+        submission=sa,
+    )
     update_awards()
 
 
@@ -573,6 +580,15 @@ def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_b
     verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "transaction_fabs", spark_s3_bucket=s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "transaction_fabs", jdbc_inserts=True)  # test alt write strategy
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_sam_recipient(spark, s3_unittest_data_bucket):
+    baker.make("recipient.RecipientProfile", id="1", _fill_optional=True)
+    baker.make("recipient.RecipientProfile", id="2", _fill_optional=True)
+    verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
