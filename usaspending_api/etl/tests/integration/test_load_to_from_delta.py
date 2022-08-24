@@ -650,12 +650,13 @@ def verify_delta_table_loaded_to_delta(
     if dummy_data is None:
         # get the postgres data to compare
         model = TABLE_SPEC[delta_table_name]["model"]
+        is_from_broker = TABLE_SPEC[delta_table_name]["is_from_broker"]
         if model:
             dummy_query = model.objects
             if partition_col is not None:
                 dummy_query = dummy_query.order_by(partition_col)
             dummy_data = list(dummy_query.all().values())
-        else:
+        elif is_from_broker:
             # model can be None if loading from the Broker
             broker_connection = connections["data_broker"]
             source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
@@ -665,6 +666,9 @@ def verify_delta_table_loaded_to_delta(
                     dummy_query = f"{dummy_query} ORDER BY {partition_col}"
                 cursor.execute(dummy_query)
                 dummy_data = dictfetchall(cursor)
+        else:
+            raise ValueError('No dummy data nor model provided and the table is not from the Broker. Please provide one'
+                             'of these for the test to compare the data.')
 
     # get the spark data to compare
     # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again

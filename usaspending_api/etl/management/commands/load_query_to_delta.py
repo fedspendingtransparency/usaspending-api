@@ -125,6 +125,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "broker_subaward_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": subaward_search_create_sql_string,
         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",

@@ -191,15 +191,17 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_place_of_perform_city_code": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_congressio": {"delta": "STRING", "postgres": "TEXT"},
 }
-SUBAWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
-SUBAWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
-
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
     "award_ts_vector": ["award_piid_fain", "subaward_number"],
     "recipient_name_ts_vector": ["sub_awardee_or_recipient_legal"],
 }
-SUBAWARD_SEARCH_POSTGRES_COLUMNS.update({col: "TSVECTOR" for col in SUBAWARD_SEARCH_POSTGRES_VECTORS})
+SUBAWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
+SUBAWARD_SEARCH_POSTGRES_COLUMNS = {
+    **{k: v["postgres"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()},
+    **{col: "TSVECTOR" for col in SUBAWARD_SEARCH_POSTGRES_VECTORS}
+}
+
 
 subaward_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
@@ -233,6 +235,20 @@ subaward_search_load_sql_string = fr"""
           ROW_NUMBER() OVER(PARTITION BY uei ORDER BY uei, duns NULLS LAST, legal_business_name NULLS LAST) AS row
         FROM
             rpt.recipient_lookup AS rlv
+    ),
+    tas_summary AS (
+        SELECT
+            faba.award_id,
+            SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers
+        FROM
+            global_temp.treasury_appropriation_account AS taa
+        INNER JOIN
+            raw.financial_accounts_by_awards AS faba
+                ON taa.treasury_account_identifier = faba.treasury_account_id
+        WHERE
+            faba.award_id IS NOT NULL
+        GROUP BY
+            faba.award_id
     )
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -422,7 +438,7 @@ subaward_search_load_sql_string = fr"""
         -- USAS Derived Fields
         YEAR(CAST(bs.sub_action_date AS DATE) + interval '3 months') AS sub_fiscal_year,
         CASE
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) IS NULL THEN NULL
+              WHEN CAST(bs.subaward_amount AS NUMERIC(23,2)) IS NULL THEN NULL
               WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 1000000.0 THEN '<1M'         -- under $1 million
               WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 1000000.0 THEN '1M'          -- $1 million
               WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 25000000.0 THEN '1M..25M'     -- under $25 million
@@ -495,21 +511,8 @@ subaward_search_load_sql_string = fr"""
         global_temp.subtier_agency AS sfa
             ON sfa.subtier_agency_id = fa.subtier_agency_id
     LEFT OUTER JOIN
-        (
-            SELECT
-                faba.award_id,
-                SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers
-            FROM
-                global_temp.treasury_appropriation_account AS taa
-            INNER JOIN
-                raw.financial_accounts_by_awards AS faba
-                    ON taa.treasury_account_identifier = faba.treasury_account_id
-            WHERE
-                faba.award_id IS NOT NULL
-            GROUP BY
-                faba.award_id
-        ) AS tas
-            ON (tas.award_id = a.id)
+        tas_summary AS tas
+            ON tas.award_id = a.id
     LEFT OUTER JOIN
         recipient_summary AS recipient_lookup
             ON (recipient_lookup.uei = UPPER(bs.sub_awardee_or_recipient_uei)
@@ -542,5 +545,6 @@ subaward_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         global_temp.references_cfda AS cfda
             ON cfda.program_number = split(bs.cfda_numbers, ',')[0]
+    -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
     WHERE bs.subaward_number IS NOT NULL
 """
