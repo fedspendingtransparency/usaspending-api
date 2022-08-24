@@ -22,7 +22,7 @@ from django.db.models import sql
 
 from usaspending_api.awards.models import TransactionFABS
 from usaspending_api.common.etl.spark import create_ref_temp_views
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, execute_sql
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string, execute_sql
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.commands.create_delta_table import (
@@ -38,17 +38,17 @@ def populate_broker_data_to_delta():
     # Create broker data to be imported to delta
     dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
 
-    connection = connections["data_broker"]
-    with connection.cursor() as cursor:
-        # nuke any previous data just in case
-        cursor.execute("truncate table subaward restart identity cascade;")
+    with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+        with connection.cursor() as cursor:
+            # nuke any previous data just in case
+            cursor.execute("truncate table subaward restart identity cascade;")
 
-        insert_statement = "insert into subaward (%s) values %s"
-        for record in dummy_broker_subaward_data:
-            columns = record.keys()
-            values = tuple(record[column] for column in columns)
-            sql = cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
-            cursor.execute(sql)
+            insert_statement = "insert into subaward (%s) values %s"
+            for record in dummy_broker_subaward_data:
+                columns = record.keys()
+                values = tuple(record[column] for column in columns)
+                sql = cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
+                cursor.execute(sql)
 
 
 @fixture
