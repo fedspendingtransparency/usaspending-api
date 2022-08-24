@@ -16,7 +16,7 @@ def test_load_table_to_delta_for_subawards(
     broker_server_dblink_setup,
     populate_broker_data_to_delta,
     populate_data_for_transaction_search,
-    hive_unittest_metastore_db
+    hive_unittest_metastore_db,
 ):
     tables_to_load = [
         "awards",

@@ -667,8 +667,10 @@ def verify_delta_table_loaded_to_delta(
                 cursor.execute(dummy_query)
                 dummy_data = dictfetchall(cursor)
         else:
-            raise ValueError('No dummy data nor model provided and the table is not from the Broker. Please provide one'
-                             'of these for the test to compare the data.')
+            raise ValueError(
+                "No dummy data nor model provided and the table is not from the Broker. Please provide one"
+                "of these for the test to compare the data."
+            )
 
     # get the spark data to compare
     # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again
