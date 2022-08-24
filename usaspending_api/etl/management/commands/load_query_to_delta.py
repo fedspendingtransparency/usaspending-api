@@ -84,6 +84,7 @@ TABLE_SPEC = {
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
         "column_names": [x for x in list(RECIPIENT_PROFILE_DELTA_COLUMNS) if x != "id"],
+        "postgres_seq_name": "recipient_profile_id_seq",
     },
     "transaction_search": {
         "model": TransactionSearch,
