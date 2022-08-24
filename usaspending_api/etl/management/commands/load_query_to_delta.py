@@ -80,6 +80,7 @@ TABLE_SPEC = {
     },
     "recipient_profile": {
         "model": RecipientProfile,
+        "is_from_broker": False,
         "source_query": recipient_profile_load_sql_strings,
         "source_database": None,
         "source_table": None,
