@@ -781,5 +781,4 @@ def test_load_table_to_delta_for_subawards(
         s3_unittest_data_bucket,
         load_command="load_query_to_delta",
         dummy_data=expected_dummy_data,
-        ignore_fields=["created_at", "updated_at"],
     )
