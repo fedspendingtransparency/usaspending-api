@@ -783,16 +783,14 @@ def test_load_table_to_from_delta_for_subawards(
 
     # dropping these cols as they wouldnt match based on the time generated and/or they aren't on the databricks
     # side of things, so they can't really be compared here
-    ignore_fields = ["created_at", "updated_at"]
     verify_delta_table_loaded_to_delta(
         spark,
         "subaward_search",
         s3_unittest_data_bucket,
         load_command="load_query_to_delta",
         dummy_data=expected_dummy_data,
-        ignore_fields=ignore_fields,
     )
-    ignore_fields += ["keyword_ts_vector", "award_ts_vector", "recipient_name_ts_vector"]
+    ignore_fields = ["keyword_ts_vector", "award_ts_vector", "recipient_name_ts_vector"]
     verify_delta_table_loaded_from_delta(
         spark, "subaward_search", spark_s3_bucket=s3_unittest_data_bucket, ignore_fields=ignore_fields
     )
