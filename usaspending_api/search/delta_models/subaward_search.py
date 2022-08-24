@@ -1,6 +1,4 @@
 SUBAWARD_SEARCH_COLUMNS = {
-    "created_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
-    "updated_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     # Broker Subaward Table Meta
     "broker_created_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "broker_updated_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
@@ -214,7 +212,6 @@ subaward_search_create_sql_string = rf"""
 subaward_search_load_sql_string = fr"""
     WITH location_summary AS (
         SELECT
-            -- DISTINCT ON (UPPER(feature_name), state_alpha)
             UPPER(feature_name) as feature_name,
             state_alpha,
             county_numeric,
@@ -242,9 +239,6 @@ subaward_search_load_sql_string = fr"""
         {", ".join([key for key in SUBAWARD_SEARCH_DELTA_COLUMNS])}
     )
     SELECT
-        NOW() AS created_at,
-        NOW() AS updated_at,
-
         -- Broker Subaward Table Meta
         bs.created_at AS broker_created_at,
         bs.updated_at AS broker_updated_at,
@@ -504,7 +498,7 @@ subaward_search_load_sql_string = fr"""
         (
             SELECT
                 faba.award_id,
-                SORT_ARRAY(COLLECT_SET(DISTINCT CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers
+                SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers
             FROM
                 global_temp.treasury_appropriation_account AS taa
             INNER JOIN
