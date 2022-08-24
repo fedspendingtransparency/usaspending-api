@@ -13,7 +13,7 @@ from usaspending_api.common.etl.postgres.operations import stage_table
 from usaspending_api.common.helpers.sql_helpers import get_connection
 
 
-SAMPLE_DATA = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
+SAMPLE_DATA = json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text())
 MIN_ID = min([r["id"] for r in SAMPLE_DATA])
 MAX_ID = max([r["id"] for r in SAMPLE_DATA])
 
