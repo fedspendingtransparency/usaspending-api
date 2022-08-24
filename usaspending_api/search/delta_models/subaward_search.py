@@ -227,12 +227,6 @@ subaward_search_load_sql_string = fr"""
             feature_class = 'Populated Place'
             AND COALESCE(feature_name, '') <>  ''
             AND COALESCE(state_alpha, '') <> ''
-        ORDER BY
-            UPPER(feature_name),
-            state_alpha,
-            county_sequence,
-            coalesce(date_edited, date_created) DESC,
-            id DESC
     ),
     recipient_summary AS (
         SELECT
