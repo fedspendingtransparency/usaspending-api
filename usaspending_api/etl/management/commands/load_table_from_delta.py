@@ -230,7 +230,7 @@ class Command(BaseCommand):
                 if postgres_table:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
-                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
+                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
                         ) WITH (autovacuum_enabled=FALSE)
                     """
                 elif postgres_cols:
