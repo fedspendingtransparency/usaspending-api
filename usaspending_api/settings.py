@@ -27,6 +27,8 @@ CONNECTION_MAX_SECONDS = 10
 
 # Default type for when a Primary Key is not specified
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+# Default text search config setting when dealing with tsvectors
+DEFAULT_TEXT_SEARCH_CONFIG = "pg_catalog.simple"
 
 # Value is set per environment using formula: ( TOTAL_MEMORY * 0.25 ) / MAX_CONNECTIONS;
 # MAX_CONNECTIONS in this case refers to those serving downloads
