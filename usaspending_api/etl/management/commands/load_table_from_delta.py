@@ -22,10 +22,9 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
+from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
-
-DEFAULT_TEXT_SEARCH_CONFIG = "pg_catalog.simple"
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
