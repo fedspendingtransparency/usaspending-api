@@ -588,7 +588,7 @@ def equal_datasets(
             spark_val = spark_data[i][k]
 
             # for cases where now() columns wouldn't match
-            if drop_cols and k in drop_cols:
+            if ignore_fields and k in ignore_fields:
                 continue
 
             # Casting values based on the custom schema
