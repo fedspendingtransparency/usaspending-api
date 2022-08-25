@@ -63,12 +63,12 @@ class Command(BaseCommand):
                         )
                 WHEN matched THEN
                     UPDATE SET
-                        a.update_date=CURRENT_DATE(),
+                        a.update_date=NOW(),
                         a.total_subaward_amount=st.total_subaward_amount,
                         a.subaward_count=COALESCE(st.subaward_count, 0)
         """
         logger.info(
-            f"Updating {award_table} columns (total_subaward_amount, subaward_count)" f" based on rpt.subaward_search."
+            f"Updating {award_table} columns (total_subaward_amount, subaward_count) based on rpt.subaward_search."
         )
         self.spark.sql(update_award_query)
         logger.info(f"{award_table} updated.")

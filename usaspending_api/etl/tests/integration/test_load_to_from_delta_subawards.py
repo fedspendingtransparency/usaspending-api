@@ -841,8 +841,6 @@ def test_load_table_to_from_delta_for_subawards(
     # set the update_date for these awards to be something old so that when the script runs we can confirm it updated
     old_date = "1970-01-01"
     spark.sql(f"UPDATE {award_table} SET update_date = '{old_date}'")
-    old_date = datetime.strptime(old_date, "%Y-%m-%d")
-    new_date = datetime.combine(spark.sql(f"SELECT CURRENT_DATE()").collect()[0][0], datetime.min.time())
 
     call_command("update_delta_award_with_subaward_counts")
 
@@ -850,9 +848,13 @@ def test_load_table_to_from_delta_for_subawards(
     delta_data = [row.asDict() for row in spark.sql(delta_query).collect()]
 
     expected_data = [
-        {"id": 1, "subaward_count": 0, "total_subaward_amount": None, "update_date": old_date},
-        {"id": 2, "subaward_count": 0, "total_subaward_amount": None, "update_date": old_date},
-        {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal("918.00"), "update_date": new_date},
+        {"id": 1, "subaward_count": 0, "total_subaward_amount": None},
+        {"id": 2, "subaward_count": 0, "total_subaward_amount": None},
+        {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal("918.00")},
     ]
 
-    assert delta_data == expected_data
+    assert [{k: v for k, v in row.items() if k != "update_date"} for row in delta_data] == expected_data
+
+    old_date = datetime.strptime(old_date, "%Y-%m-%d")
+    assert delta_data[0]["update_date"] == delta_data[1]["update_date"] == old_date
+    assert delta_data[2]["update_date"] != old_date
