@@ -836,11 +836,9 @@ def test_load_table_to_from_delta_for_subawards(
     # Let's also check if update_delta_award_with_subaward_counts is working as expected
     call_command("update_delta_award_with_subaward_counts")
 
-    # get the spark data to compare
     delta_query = f"SELECT id, total_subaward_amount, subaward_count FROM raw.awards ORDER BY id"
     delta_data = [row.asDict() for row in spark.sql(delta_query).collect()]
 
-    # expected data
     expected_data = [
         {"id": 1, "subaward_count": 0, "total_subaward_amount": None},
         {"id": 2, "subaward_count": 0, "total_subaward_amount": None},
