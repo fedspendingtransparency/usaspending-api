@@ -14,9 +14,9 @@ from usaspending_api.recipient.delta_models.recipient_profile import (
 )
 
 from usaspending_api.recipient.delta_models.sam_recipient import (
+    SAM_RECIPIENT_COLUMNS,
     sam_recipient_create_sql_string,
     sam_recipient_load_sql_string,
-    SAM_RECIPIENT_COLUMNS,
 )
 
 __all__ = [
@@ -33,4 +33,6 @@ __all__ = [
     "sam_recipient_load_sql_string",
     "sam_recipient_create_sql_string",
     "SAM_RECIPIENT_COLUMNS",
+    "sam_recipient_create_sql_string",
+    "sam_recipient_load_sql_string",
 ]
