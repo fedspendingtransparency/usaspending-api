@@ -22,10 +22,9 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
+from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
-
-DEFAULT_TEXT_SEARCH_CONFIG = "pg_catalog.simple"
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
@@ -175,7 +174,7 @@ class Command(BaseCommand):
         postgres_table_name = table_spec["source_table"] or table_spec["swap_table"]
         postgres_cols = table_spec["source_schema"]
         column_names = table_spec.get("column_names")
-        tsvectors = table_spec.get("tsvectors")
+        tsvectors = table_spec.get("tsvectors") or []
         if postgres_table_name:
             postgres_table = f"{postgres_schema}.{postgres_table_name}" if postgres_schema else postgres_table_name
 
@@ -243,8 +242,17 @@ class Command(BaseCommand):
                     logger.info(f"{temp_table} created.")
 
                     # If there are vectors, add the triggers that will populate them based on other calls
-                    logger.info(f"Adding tsvector triggers for the following columns: {list(tsvectors.keys())}")
                     for tsvector_name, derived_from_cols in tsvectors.items():
+                        logger.info(
+                            f"To prevent any confusion or duplicates, dropping the trigger"
+                            f" tsvector_update_{tsvector_name} if it exists before potentially recreating it."
+                        )
+                        cursor.execute(f"DROP TRIGGER IF EXISTS tsvector_update_{tsvector_name} ON {temp_table}")
+
+                        logger.info(
+                            f"Adding tsvector trigger for column {tsvector_name}"
+                            f" based on the following columns: {derived_from_cols}"
+                        )
                         derived_from_cols_str = ", ".join(derived_from_cols)
                         tsvector_trigger_sql = f"""
                             CREATE TRIGGER tsvector_update_{tsvector_name} BEFORE INSERT OR UPDATE
@@ -253,7 +261,7 @@ class Command(BaseCommand):
                                                     {derived_from_cols_str})
                         """
                         cursor.execute(tsvector_trigger_sql)
-                    logger.info("tsvector triggers added.")
+                        logger.info(f"tsvector trigger for column {tsvector_name} added.")
 
         # Read from Delta
         df = spark.table(delta_table)
