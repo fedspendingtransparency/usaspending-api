@@ -834,15 +834,25 @@ def test_load_table_to_from_delta_for_subawards(
     assert postgres_data == expected_results
 
     # Let's also check if update_delta_award_with_subaward_counts is working as expected
+
+    # TODO: Update award_table to "rpt.award_search" when it includes those columns
+    award_table = "raw.awards"
+
+    # set the update_date for these awards to be something old so that when the script runs we can confirm it updated
+    old_date = "1970-01-01"
+    spark.sql(f"UPDATE {award_table} SET update_date = '{old_date}'")
+    old_date = datetime.strptime(old_date, "%Y-%m-%d")
+    new_date = datetime.combine(spark.sql(f"SELECT CURRENT_DATE()").collect()[0][0], datetime.min.time())
+
     call_command("update_delta_award_with_subaward_counts")
 
-    delta_query = f"SELECT id, total_subaward_amount, subaward_count FROM raw.awards ORDER BY id"
+    delta_query = f"SELECT id, total_subaward_amount, subaward_count, update_date FROM {award_table} ORDER BY id"
     delta_data = [row.asDict() for row in spark.sql(delta_query).collect()]
 
     expected_data = [
-        {"id": 1, "subaward_count": 0, "total_subaward_amount": None},
-        {"id": 2, "subaward_count": 0, "total_subaward_amount": None},
-        {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal("918.00")},
+        {"id": 1, "subaward_count": 0, "total_subaward_amount": None, "update_date": old_date},
+        {"id": 2, "subaward_count": 0, "total_subaward_amount": None, "update_date": old_date},
+        {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal("918.00"), "update_date": new_date},
     ]
 
     assert delta_data == expected_data

@@ -11,7 +11,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 class Command(BaseCommand):
 
     help = """
-    This command simply updates the int.award table on databricks with subaward counts based on rpt.subaward_search
+    This command simply updates the awards data on delta lake with subaward counts based on rpt.subaward_search
     """
 
     # Values defined in the handler
@@ -39,8 +39,9 @@ class Command(BaseCommand):
         # Setup Logger
         logger = get_jvm_logger(self.spark, __name__)
 
-        # Resolve Parameters
-        update_award_query = """
+        # TODO: Update award_table to "rpt.award_search" when it includes those columns
+        award_table = "raw.awards"
+        update_award_query = f"""
             WITH subaward_totals AS (
                 SELECT
                     award_id,
@@ -52,17 +53,25 @@ class Command(BaseCommand):
                     award_id
             )
             MERGE INTO
-                raw.awards AS a
+                {award_table} AS a
                     USING subaward_totals st
-                        ON (a.id=st.award_id)
+                        ON (a.id = st.award_id
+                            AND (
+                                a.total_subaward_amount IS DISTINCT FROM st.total_subaward_amount
+                                OR a.subaward_count IS DISTINCT FROM COALESCE(st.subaward_count, 0)
+                            )
+                        )
                 WHEN matched THEN
                     UPDATE SET
+                        a.update_date=CURRENT_DATE(),
                         a.total_subaward_amount=st.total_subaward_amount,
                         a.subaward_count=COALESCE(st.subaward_count, 0)
         """
-        logger.info(f"Updating int.award columns () based on rpt.subaward_search.")
+        logger.info(
+            f"Updating {award_table} columns (total_subaward_amount, subaward_count)" f" based on rpt.subaward_search."
+        )
         self.spark.sql(update_award_query)
-        logger.info(f"int.award updated.")
+        logger.info(f"{award_table} updated.")
 
         if spark_created_by_command:
             self.spark.stop()
