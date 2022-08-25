@@ -2,7 +2,7 @@ import psycopg2
 
 from datetime import datetime, date
 from decimal import Decimal
-
+from django.core.management import call_command
 from pytest import mark
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -226,7 +226,7 @@ def test_load_table_to_from_delta_for_subawards(
             "broker_created_at": datetime(2019, 6, 11, 18, 27, 37, 76916),
             "broker_updated_at": datetime(2019, 6, 11, 18, 27, 37, 76916),
             "broker_subaward_id": 3241450,
-            "unique_award_key": "asdfasfasfsadfsad",
+            "unique_award_key": "UNIQUE AWARD KEY A",
             "award_piid_fain": "asdfasdfasdfs",
             "parent_award_id": None,
             "award_amount": Decimal("25000.00"),
@@ -359,23 +359,23 @@ def test_load_table_to_from_delta_for_subawards(
             "sub_recovery_model_q2": None,
             "sub_compensation_q1": False,
             "sub_compensation_q2": False,
-            "award_id": None,
+            "award_id": 3,
             "prime_award_group": "grant",
-            "prime_award_type": None,
+            "prime_award_type": "A",
             "piid": None,
             "fain": "asdfasdfasdfs",
-            "latest_transaction_id": None,
-            "last_modified_date": None,
-            "awarding_agency_id": None,
-            "awarding_toptier_agency_name": None,
-            "awarding_toptier_agency_abbreviation": None,
-            "awarding_subtier_agency_name": None,
-            "awarding_subtier_agency_abbreviation": None,
-            "funding_agency_id": None,
-            "funding_subtier_agency_abbreviation": None,
-            "funding_subtier_agency_name": None,
-            "funding_toptier_agency_abbreviation": None,
-            "funding_toptier_agency_name": None,
+            "latest_transaction_id": 434,
+            "last_modified_date": date(2020, 1, 1),
+            "awarding_agency_id": 32,
+            "awarding_toptier_agency_name": "toptier",
+            "awarding_toptier_agency_abbreviation": "tt",
+            "awarding_subtier_agency_name": "subtier",
+            "awarding_subtier_agency_abbreviation": "st",
+            "funding_agency_id": 32,
+            "funding_subtier_agency_abbreviation": "st",
+            "funding_subtier_agency_name": "subtier",
+            "funding_toptier_agency_abbreviation": "tt",
+            "funding_toptier_agency_name": "toptier",
             "cfda_id": None,
             "cfda_number": None,
             "cfda_title": None,
@@ -545,23 +545,23 @@ def test_load_table_to_from_delta_for_subawards(
             "sub_recovery_model_q2": False,
             "sub_compensation_q1": None,
             "sub_compensation_q2": None,
-            "award_id": None,
+            "award_id": 3,
             "prime_award_group": "procurement",
-            "prime_award_type": None,
+            "prime_award_type": "A",
             "piid": "0000",
             "fain": None,
-            "latest_transaction_id": None,
-            "last_modified_date": None,
-            "awarding_agency_id": None,
-            "awarding_toptier_agency_name": None,
-            "awarding_toptier_agency_abbreviation": None,
-            "awarding_subtier_agency_name": None,
-            "awarding_subtier_agency_abbreviation": None,
-            "funding_agency_id": None,
-            "funding_subtier_agency_abbreviation": None,
-            "funding_subtier_agency_name": None,
-            "funding_toptier_agency_abbreviation": None,
-            "funding_toptier_agency_name": None,
+            "latest_transaction_id": 434,
+            "last_modified_date": date(2020, 1, 1),
+            "awarding_agency_id": 32,
+            "awarding_toptier_agency_name": "toptier",
+            "awarding_toptier_agency_abbreviation": "tt",
+            "awarding_subtier_agency_name": "subtier",
+            "awarding_subtier_agency_abbreviation": "st",
+            "funding_agency_id": 32,
+            "funding_subtier_agency_abbreviation": "st",
+            "funding_subtier_agency_name": "subtier",
+            "funding_toptier_agency_abbreviation": "tt",
+            "funding_toptier_agency_name": "toptier",
             "cfda_id": None,
             "cfda_number": None,
             "cfda_title": None,
@@ -832,3 +832,19 @@ def test_load_table_to_from_delta_for_subawards(
         },
     ]
     assert postgres_data == expected_results
+
+    # Let's also check if update_delta_award_with_subaward_counts is working as expected
+    call_command("update_delta_award_with_subaward_counts")
+
+    # get the spark data to compare
+    delta_query = f"SELECT id, total_subaward_amount, subaward_count FROM raw.awards ORDER BY id"
+    delta_data = [row.asDict() for row in spark.sql(delta_query).collect()]
+
+    # expected data
+    expected_data = [
+        {"id": 1, "subaward_count": 0, "total_subaward_amount": None},
+        {"id": 2, "subaward_count": 0, "total_subaward_amount": None},
+        {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal("918.00")},
+    ]
+
+    assert delta_data == expected_data

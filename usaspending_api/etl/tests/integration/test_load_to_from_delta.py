@@ -136,6 +136,10 @@ def populate_data_for_transaction_search():
         _fill_optional=True,
     )
 
+    toptier = baker.make("references.ToptierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
+    subtier = baker.make("references.SubtierAgency", name="subtier", abbreviation="st", _fill_optional=True)
+    baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, toptier_flag=True, id=32)
+
     awarding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
     awarding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
     awarding_agency = baker.make(
@@ -169,6 +173,7 @@ def populate_data_for_transaction_search():
     # Create awards and transactions
     asst_award = baker.make(
         "awards.Award",
+        id=1,
         type="07",
         period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
@@ -179,11 +184,25 @@ def populate_data_for_transaction_search():
     )
     cont_award = baker.make(
         "awards.Award",
+        id=2,
         type="A",
         period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
         date_signed="2020-01-01",
         total_obligation=100.00,
+    )
+    cont_award2 = baker.make(
+        "awards.Award",
+        id=3,
+        generated_unique_award_id="UNIQUE AWARD KEY A",
+        type="A",
+        period_of_performance_start_date="2020-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2020-01-01",
+        total_obligation=100.00,
+        last_modified_date="2020-01-01",
+        awarding_agency_id=32,
+        funding_agency_id=32,
     )
 
     asst_trx1 = baker.make(
@@ -233,6 +252,15 @@ def populate_data_for_transaction_search():
         last_modified_date="2020-01-01",
         _fill_optional=True,
         federal_action_obligation=0,
+    )
+    baker.make(
+        "awards.TransactionNormalized",
+        id=434,
+        award=cont_award2,
+        type="A",
+        awarding_agency_id=32,
+        funding_agency_id=32,
+        last_modified_date="2020-01-01",
     )
 
     baker.make(
