@@ -21,10 +21,9 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_COLUMNS,
-    recipient_lookup_sql_string,
     RECIPIENT_PROFILE_COLUMNS,
-    recipient_profile_sql_string,
-    SAM_RECIPIENT_COLUMNS,
+    recipient_profile_load_sql_strings,
+    recipient_lookup_create_sql_string,
 )
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
@@ -90,7 +89,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "delta_table_create_sql": recipient_lookup_sql_string,
+        "delta_table_create_sql": recipient_lookup_create_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
@@ -105,7 +104,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
-        "delta_table_create_sql": recipient_profile_sql_string,
+        "delta_table_create_sql": recipient_profile_load_sql_strings,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_PROFILE_COLUMNS),
@@ -124,7 +123,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": None,
         "source_schema": None,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
-        "column_names": list(SAM_RECIPIENT_COLUMNS),
+        "column_names": list(None),
     },
     "transaction_fabs": {
         "model": TransactionFABS,

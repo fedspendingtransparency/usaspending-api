@@ -588,7 +588,7 @@ recipient_lookup_load_sql_string_list = [
     # -----
     # Insert the temporary_restock_recipient_lookup table into recipient_lookup
     # -----
-    rf"""
+    fr"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID])}

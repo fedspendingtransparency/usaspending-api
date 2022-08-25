@@ -9,7 +9,7 @@ import pytz
 from datetime import datetime
 from pathlib import Path
 from psycopg2.extensions import AsIs
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
@@ -333,7 +333,10 @@ def sorted_deep(d):
 
 
 def equal_datasets(
-    psql_data: List[Dict[str, Any]], spark_data: List[Dict[str, Any]], custom_schema: str, drop_cols: List[str] = None
+    psql_data: List[Dict[str, Any]],
+    spark_data: List[Dict[str, Any]],
+    custom_schema: str,
+    ignore_fields: Optional[list] = None,
 ):
     """Helper function to compare the two datasets. Note the column types of ds1 will be used to cast columns in ds2."""
     datasets_match = True
@@ -352,7 +355,7 @@ def equal_datasets(
             spark_val = spark_data[i][k]
 
             # for cases where now() columns wouldn't match
-            if drop_cols and k in drop_cols:
+            if ignore_fields and k in ignore_fields:
                 continue
 
             # Casting values based on the custom schema
