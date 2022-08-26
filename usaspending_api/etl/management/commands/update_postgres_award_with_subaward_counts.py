@@ -34,7 +34,7 @@ class Command(BaseCommand):
                 total_subaward_amount = st.total_subaward_amount,
                 subaward_count = COALESCE(st.subaward_count, 0)
             FROM
-                awards AS a
+                rpt.awards AS a
             LEFT OUTER JOIN
                 subaward_totals AS st
                     ON st.award_id = a.id
