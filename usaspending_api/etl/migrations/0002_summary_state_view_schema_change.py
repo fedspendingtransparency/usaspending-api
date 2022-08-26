@@ -11,8 +11,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            sql="ALTER TABLE public.summary_state_view SET SCHEMA rpt;",
-            reverse_sql="ALTER TABLE rpt.summary_state_view SET SCHEMA public;"
+            sql="ALTER TABLE IF EXISTS public.summary_state_view SET SCHEMA rpt;",
+            reverse_sql="ALTER TABLE IF EXISTS rpt.summary_state_view SET SCHEMA public;"
         ),
 
     ]
