@@ -89,6 +89,7 @@ TABLE_SPEC = {
     },
     "summary_state_view": {
         "model": SummaryStateView,
+        "is_from_broker": False,
         "source_query": None,
         "source_database": None,
         "source_table": None,
