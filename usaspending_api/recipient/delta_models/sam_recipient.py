@@ -1,8 +1,8 @@
 SAM_RECIPIENT_COLUMNS = {
     "awardee_or_recipient_uniqu": {"delta": "STRING", "postgres": "TEXT"},
     "legal_business_name": {"delta": "STRING", "postgres": "TEXT"},
-    "ultimate_parent_unique_ide": {"delta": "STRING", "postgres": "TEXT"},
-    "broker_duns_id": {"delta": "STRING", "postgres": "TEXT"},
+    "ultimate_parent_unique_ide": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "broker_duns_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "update_date": {"delta": "DATE", "postgres": "DATE"},
     "address_line_1": {"delta": "STRING", "postgres": "TEXT"},
     "address_line_2": {"delta": "STRING", "postgres": "TEXT"},
@@ -51,7 +51,7 @@ CREATE OR REPLACE TEMPORARY VIEW source_data AS (
         broker_sam_recipient.zip4,
         broker_sam_recipient.country_code,
         broker_sam_recipient.congressional_district,
-        COALESCE(broker_sam_recipient.business_types_codes, text[]) AS business_types_codes,
+        CAST(COALESCE(broker_sam_recipient.business_types_codes, 0), AS TEXT) AS business_types_codes,
         broker_sam_recipient.entity_structure,
         broker_sam_recipient.sam_recipient_id,
         COALESCE(broker_sam_recipient.activation_date, broker_sam_recipient.deactivation_date) as record_date,
@@ -66,28 +66,28 @@ CREATE OR REPLACE TEMPORARY VIEW source_data AS (
         {",".join([col for col in SAM_RECIPIENT_DELTA_COLUMNS])}
     )
   SELECT
-    source_data.awardee_or_recipient_uniqu AS awardee_or_recipient_uniqu,
-    source_data.legal_business_name AS legal_business_name,
-    source_data.ultimate_parent_unique_ide AS ultimate_parent_unique_ide,
-    source_data.ultimate_parent_legal_enti AS ultimate_parent_legal_enti,
-    source_data.sam_recipient_id AS broker_duns_id,
-    source_data.record_date AS update_date,
-    source_data.address_line_1 AS address_line_1,
-    source_data.address_line_2 AS address_line_2,
-    source_data.city AS city,
-    source_data.congressional_district AS congressional_district,
-    source_data.country_code AS country_code,
-    source_data.state AS state,
-    source_data.zip AS zip,
-    source_data.zip4 AS zip4,
-    source_data.business_types_codes AS business_types_codes,
-    source_data.dba_name as dba_name,
-    source_data.entity_structure as entity_structure,
-    source_data.uei AS uei,
-    source_data.ultimate_parent_uei AS ultimate_parent_uei
+    source_data.awardee_or_recipient_uniqu,
+    source_data.legal_business_name,
+    source_data.ultimate_parent_unique_ide,
+    source_data.ultimate_parent_legal_enti,
+    source_data.sam_recipient_id,
+    source_data.record_date,
+    source_data.address_line_1,
+    source_data.address_line_2,
+    source_data.city,
+    source_data.congressional_district,
+    source_data.country_code,
+    source_data.state,
+    source_data.zip,
+    source_data.zip4,
+    source_data.business_types_codes,
+    source_data.dba_name,
+    source_data.entity_structure,
+    source_data.uei,
+    source_data.ultimate_parent_uei
   FROM
     source_data
-  WHERE Source_data.row_num =1
+  WHERE source_data.row_num =1
 );
 
 """,
