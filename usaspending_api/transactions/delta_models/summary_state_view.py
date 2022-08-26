@@ -3,14 +3,14 @@ SUMMARY_STATE_VIEW_COLUMNS = {
     "action_date": "DATE",
     "fiscal_year": "INTEGER",
     "type": "STRING",
-    "distinct_awards": "ARRAY<STRING>",
+    "distinct_awards": "STRING",
     "pop_country_code": "STRING",
     "pop_state_code": "STRING",
     "generated_pragmatic_obligation": "NUMERIC(23,2)",
     "federal_action_obligation": "NUMERIC(23,2)",
     "original_loan_subsidy_cost": "NUMERIC(23,2)",
     "face_value_loan_guarantee": "NUMERIC(23,2)",
-    "counts": "INTEGER",
+    "counts": "LONG",
 }
 
 summary_state_view_create_sql_string = fr"""

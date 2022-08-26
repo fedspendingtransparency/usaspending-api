@@ -39,7 +39,7 @@ class LocalConfig(DefaultConfig):
     _USASPENDING_USER: str = "usaspending"
     _USASPENDING_PASSWORD: SecretStr = "usaspender"
 
-    # ==== [Postgres] ====
+    # ==== [Postgres USAS] ====
     USASPENDING_DB_USER: str = _USASPENDING_USER
     USASPENDING_DB_PASSWORD: SecretStr = _USASPENDING_PASSWORD
 
@@ -47,6 +47,15 @@ class LocalConfig(DefaultConfig):
     # Docker will use the Postgres created by Compose.
     USASPENDING_DB_HOST: str = "usaspending-db"
     USASPENDING_DB_PORT: str = "5432"
+
+    # ==== [Postgres Broker] ====
+    BROKER_DB_USER: str = "admin"
+    BROKER_DB_PASSWORD: SecretStr = "root"
+
+    # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
+    # Docker will use the Postgres created by Compose.
+    BROKER_DB_HOST: str = "dataact-broker-db"
+    BROKER_DB_PORT: str = "5432"
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.

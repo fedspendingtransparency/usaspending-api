@@ -312,6 +312,12 @@ class _UnitTestDbPartsNoneConfig(DefaultConfig):
     USASPENDING_DB_USER: str = None
     USASPENDING_DB_PASSWORD: SecretStr = None
 
+    BROKER_DB_HOST: str = None
+    BROKER_DB_PORT: str = None
+    BROKER_DB_NAME: str = None
+    BROKER_DB_USER: str = None
+    BROKER_DB_PASSWORD: SecretStr = None
+
 
 class _UnitTestDbPartsPlaceholderConfig(DefaultConfig):
     ENV_CODE = "utdbpp"
@@ -320,6 +326,12 @@ class _UnitTestDbPartsPlaceholderConfig(DefaultConfig):
     USASPENDING_DB_NAME: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
+
+    BROKER_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_NAME: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
 
 
 _UNITTEST_ENVS_DICTS = [
@@ -377,7 +389,8 @@ _UNITTEST_ENVS_DICTS = [
 
 def test_config_values():
     """Test that config values are picked up. Also convenient for eyeballing the parsed config vals when
-    pytest is configurd with flags to output printed statements"""
+    pytest is configurd with flags to output printed statements. Note: unlike DATABASE_URL, DATA_BROKER_DATABASE_URL
+    is not required, and so it is not included in this test as it can vary depending on the local settings."""
     config_values: dict = CONFIG.dict()
     assert len(config_values) > 0
     pprint(config_values)
@@ -396,8 +409,10 @@ def test_config_loading():
         pprint(cfg.dict())
 
 
-def test_database_url_and_parts_config_populated():
-    """Validate that DATABASE_URL and all USASPENDING_DB_* parts are populated after config is loaded"""
+def test_database_urls_and_parts_config_populated():
+    """Validate that DATABASE_URL and all USASPENDING_DB_* parts are populated after config is loaded.
+    Note: unlike DATABASE_URL, DATA_BROKER_DATABASE_URL is not required, and so it is not included in this test as it
+    can vary depending on the local settings."""
     assert CONFIG.DATABASE_URL is not None
     assert CONFIG.USASPENDING_DB_HOST is not None
     assert CONFIG.USASPENDING_DB_PORT is not None
@@ -406,20 +421,21 @@ def test_database_url_and_parts_config_populated():
     assert CONFIG.USASPENDING_DB_PASSWORD is not None
 
 
-def test_database_url_only_backfills_none_parts():
+def test_database_urls_only_backfills_none_parts():
     """Test that only providing a value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and keeps them
-    consistent
+    consistent. Similarly with DATA_BROKER_DATABASE_URL and CONFIG.BROKER_DB_* parts.
 
     - Use a FRESH (empty) set of environment variables
     - Use NO .env file
     - Build-out a new subclass of DefaultConfig, which overrides the part values to be defaulted to None (not set)
-    - Instantiate the config with a DATABASE_URL env var (ONLY) set
+    - Instantiate the config with a DATABASE_URL and DATA_BROKER_DATABASE_URL env vars (ONLY) set
     """
     with mock.patch.dict(
         os.environ,
         {
             ENV_CODE_VAR: _UnitTestDbPartsNoneConfig.ENV_CODE,
             "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+            "DATA_BROKER_DATABASE_URL": "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker",
         },
         clear=True,
     ):
@@ -437,22 +453,36 @@ def test_database_url_only_backfills_none_parts():
         assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
         assert cfg.USASPENDING_DB_USER == "dummy"
         assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+
+        assert cfg.DATA_BROKER_DATABASE_URL is not None
+        assert cfg.BROKER_DB_HOST is not None
+        assert cfg.BROKER_DB_PORT is not None
+        assert cfg.BROKER_DB_NAME is not None
+        assert cfg.BROKER_DB_USER is not None
+        assert cfg.BROKER_DB_PASSWORD is not None
+
+        assert cfg.BROKER_DB_HOST == "broker-foobar"
+        assert cfg.BROKER_DB_PORT == "54321"
+        assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
+        assert cfg.BROKER_DB_USER == "broker"
+        assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
 
 
 def test_database_url_only_backfills_placeholder_parts():
     """Test that only providing a value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and keeps them
-    consistent
+    consistent. Similarly with DATA_BROKER_DATABASE_URL and CONFIG.BROKER_DB_* parts.
 
     - Use a FRESH (empty) set of environment variables
     - Use NO .env file
     - Build-out a new subclass of DefaultConfig, which overrides the part values to ENV_SPECIFIC_PLACEHOLDERs
-    - Instantiate the config with a DATABASE_URL env var (ONLY) set
+    - Instantiate the config with a DATABASE_URL and DATA_BROKER_DATABASE_URL env vars (ONLY) set
     """
     with mock.patch.dict(
         os.environ,
         {
             ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
             "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+            "DATA_BROKER_DATABASE_URL": "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker",
         },
         clear=True,
     ):
@@ -470,16 +500,30 @@ def test_database_url_only_backfills_placeholder_parts():
         assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
         assert cfg.USASPENDING_DB_USER == "dummy"
         assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+
+        assert cfg.DATA_BROKER_DATABASE_URL is not None
+        assert cfg.BROKER_DB_HOST is not None
+        assert cfg.BROKER_DB_PORT is not None
+        assert cfg.BROKER_DB_NAME is not None
+        assert cfg.BROKER_DB_USER is not None
+        assert cfg.BROKER_DB_PASSWORD is not None
+
+        assert cfg.BROKER_DB_HOST == "broker-foobar"
+        assert cfg.BROKER_DB_PORT == "54321"
+        assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
+        assert cfg.BROKER_DB_USER == "broker"
+        assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
 
 
 def test_database_url_none_parts_will_build_database_url_with_only_parts_set():
     """Test that if only the CONFIG.USASPENDING_DB_* parts are provided, the DATABASE_URL will be built-up from
-    parts, set on the CONFIG object, and consistent with the parts
+    parts, set on the CONFIG object, and consistent with the parts. Similarly with DATA_BROKER_DATABASE_URL and
+    CONFIG.BROKER_DB_* parts.
 
     - Use a FRESH (empty) set of environment variables
     - Use NO .env file
     - Build-out a new subclass of DefaultConfig, which overrides the part values to be defaulted to None (not set)
-    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
+    - DefaultConfig leaves DATABASE_URL and DATA_BROKER_DATABASE_URL unset, and the subclass does not set it
     - Instantiate the config with a env vars for each part
     """
     with mock.patch.dict(
@@ -491,6 +535,11 @@ def test_database_url_none_parts_will_build_database_url_with_only_parts_set():
             "USASPENDING_DB_NAME": "fresh_new_db_name",
             "USASPENDING_DB_USER": "dummy",
             "USASPENDING_DB_PASSWORD": "pwd",
+            "BROKER_DB_HOST": "broker-foobar",
+            "BROKER_DB_PORT": "54321",
+            "BROKER_DB_NAME": "fresh_new_db_name_broker",
+            "BROKER_DB_USER": "broker",
+            "BROKER_DB_PASSWORD": "pass",
         },
         clear=True,
     ):
@@ -509,16 +558,31 @@ def test_database_url_none_parts_will_build_database_url_with_only_parts_set():
         assert cfg.USASPENDING_DB_USER == "dummy"
         assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
         assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
+
+        assert cfg.DATA_BROKER_DATABASE_URL is not None
+        assert cfg.BROKER_DB_HOST is not None
+        assert cfg.BROKER_DB_PORT is not None
+        assert cfg.BROKER_DB_NAME is not None
+        assert cfg.BROKER_DB_USER is not None
+        assert cfg.BROKER_DB_PASSWORD is not None
+
+        assert cfg.BROKER_DB_HOST == "broker-foobar"
+        assert cfg.BROKER_DB_PORT == "54321"
+        assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
+        assert cfg.BROKER_DB_USER == "broker"
+        assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
+        assert cfg.DATA_BROKER_DATABASE_URL == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
 
 
 def test_database_url_placeholder_parts_will_build_database_url_with_only_parts_set():
     """Test that if only the CONFIG.USASPENDING_DB_* parts are provided, the DATABASE_URL will be built-up from
-    parts, set on the CONFIG object, and consistent with the parts
+    parts, set on the CONFIG object, and consistent with the parts. Similarly with DATA_BROKER_DATABASE_URL and
+    CONFIG.BROKER_DB_* parts.
 
     - Use a FRESH (empty) set of environment variables
     - Use NO .env file
     - Build-out a new subclass of DefaultConfig, which overrides the part values to ENV_SPECIFIC_PLACEHOLDERs
-    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
+    - DefaultConfig leaves DATABASE_URL and DATA_BROKER_DATABASE_URL unset, and the subclass does not set it
     - Instantiate the config with a env vars for each part
     """
     with mock.patch.dict(
@@ -530,6 +594,11 @@ def test_database_url_placeholder_parts_will_build_database_url_with_only_parts_
             "USASPENDING_DB_NAME": "fresh_new_db_name",
             "USASPENDING_DB_USER": "dummy",
             "USASPENDING_DB_PASSWORD": "pwd",
+            "BROKER_DB_HOST": "broker-foobar",
+            "BROKER_DB_PORT": "54321",
+            "BROKER_DB_NAME": "fresh_new_db_name_broker",
+            "BROKER_DB_USER": "broker",
+            "BROKER_DB_PASSWORD": "pass",
         },
         clear=True,
     ):
@@ -549,16 +618,32 @@ def test_database_url_placeholder_parts_will_build_database_url_with_only_parts_
         assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
         assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
 
+        assert cfg.DATA_BROKER_DATABASE_URL is not None
+        assert cfg.BROKER_DB_HOST is not None
+        assert cfg.BROKER_DB_PORT is not None
+        assert cfg.BROKER_DB_NAME is not None
+        assert cfg.BROKER_DB_USER is not None
+        assert cfg.BROKER_DB_PASSWORD is not None
+
+        assert cfg.BROKER_DB_HOST == "broker-foobar"
+        assert cfg.BROKER_DB_PORT == "54321"
+        assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
+        assert cfg.BROKER_DB_USER == "broker"
+        assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
+        assert cfg.DATA_BROKER_DATABASE_URL == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
+
 
 def test_database_url_and_parts_defined_ok_if_consistent_none_parts():
     """Test that if BOTH the CONFIG.DATABASE_URL and the CONFIG.USASPENDING_DB_* parts are provided, neither is
-    built-up or backfilled, but they are validated to ensure they are equal. This should validate fine.
+    built-up or backfilled, but they are validated to ensure they are equal. This should validate fine. Similarly
+    with DATA_BROKER_DATABASE_URL and CONFIG.BROKER_DB_* parts.
 
     - Use a FRESH (empty) set of environment variables
     - Use NO .env file
     - Build-out a new subclass of DefaultConfig, which overrides the part values to be defaulted to None (not set)
-    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
-    - Instantiate the config with a env vars for each part and with a DATABASE_URL env var made up of those parts.
+    - DefaultConfig leaves DATABASE_URL and DATA_BROKER_DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part and with a DATABASE_URL and DATA_BROKER_DATABASE_URL env vars
+      made up of those parts.
     """
     with mock.patch.dict(
         os.environ,
@@ -570,6 +655,12 @@ def test_database_url_and_parts_defined_ok_if_consistent_none_parts():
             "USASPENDING_DB_NAME": "fresh_new_db_name",
             "USASPENDING_DB_USER": "dummy",
             "USASPENDING_DB_PASSWORD": "pwd",
+            "DATA_BROKER_DATABASE_URL": "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker",
+            "BROKER_DB_HOST": "broker-foobar",
+            "BROKER_DB_PORT": "54321",
+            "BROKER_DB_NAME": "fresh_new_db_name_broker",
+            "BROKER_DB_USER": "broker",
+            "BROKER_DB_PASSWORD": "pass",
         },
         clear=True,
     ):
@@ -589,16 +680,32 @@ def test_database_url_and_parts_defined_ok_if_consistent_none_parts():
         assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
         assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
 
+        assert cfg.DATA_BROKER_DATABASE_URL is not None
+        assert cfg.BROKER_DB_HOST is not None
+        assert cfg.BROKER_DB_PORT is not None
+        assert cfg.BROKER_DB_NAME is not None
+        assert cfg.BROKER_DB_USER is not None
+        assert cfg.BROKER_DB_PASSWORD is not None
+
+        assert cfg.BROKER_DB_HOST == "broker-foobar"
+        assert cfg.BROKER_DB_PORT == "54321"
+        assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
+        assert cfg.BROKER_DB_USER == "broker"
+        assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
+        assert cfg.DATA_BROKER_DATABASE_URL == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
+
 
 def test_database_url_and_parts_defined_ok_if_consistent_placeholder_parts():
     """Test that if BOTH the CONFIG.DATABASE_URL and the CONFIG.USASPENDING_DB_* parts are provided, neither is
-    built-up or backfilled, but they are validated to ensure they are equal. This should validate fine.
+    built-up or backfilled, but they are validated to ensure they are equal. This should validate fine. Similarly
+    with DATA_BROKER_DATABASE_URL and CONFIG.BROKER_DB_* parts.
 
     - Use a FRESH (empty) set of environment variables
     - Use NO .env file
     - Build-out a new subclass of DefaultConfig, which overrides the part values to ENV_SPECIFIC_PLACEHOLDERs
-    - DefaultConfig leaves DATABASE_URL unset, and the subclass does not set it
-    - Instantiate the config with a env vars for each part and with a DATABASE_URL env var made up of those parts.
+    - DefaultConfig leaves DATABASE_URL and DATA_BROKER_DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part and with a DATABASE_URL and DATA_BROKER_DATABASE_URL env vars
+      made up of those parts.
     """
     with mock.patch.dict(
         os.environ,
@@ -610,6 +717,12 @@ def test_database_url_and_parts_defined_ok_if_consistent_placeholder_parts():
             "USASPENDING_DB_NAME": "fresh_new_db_name",
             "USASPENDING_DB_USER": "dummy",
             "USASPENDING_DB_PASSWORD": "pwd",
+            "DATA_BROKER_DATABASE_URL": "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker",
+            "BROKER_DB_HOST": "broker-foobar",
+            "BROKER_DB_PORT": "54321",
+            "BROKER_DB_NAME": "fresh_new_db_name_broker",
+            "BROKER_DB_USER": "broker",
+            "BROKER_DB_PASSWORD": "pass",
         },
         clear=True,
     ):
@@ -628,6 +741,20 @@ def test_database_url_and_parts_defined_ok_if_consistent_placeholder_parts():
         assert cfg.USASPENDING_DB_USER == "dummy"
         assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
         assert cfg.DATABASE_URL == "postgres://dummy:pwd@foobar:12345/fresh_new_db_name"
+
+        assert cfg.DATA_BROKER_DATABASE_URL is not None
+        assert cfg.BROKER_DB_HOST is not None
+        assert cfg.BROKER_DB_PORT is not None
+        assert cfg.BROKER_DB_NAME is not None
+        assert cfg.BROKER_DB_USER is not None
+        assert cfg.BROKER_DB_PASSWORD is not None
+
+        assert cfg.BROKER_DB_HOST == "broker-foobar"
+        assert cfg.BROKER_DB_PORT == "54321"
+        assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
+        assert cfg.BROKER_DB_USER == "broker"
+        assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
+        assert cfg.DATA_BROKER_DATABASE_URL == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
 
 
 def test_database_url_and_parts_error_if_inconsistent_none_parts():
@@ -726,10 +853,123 @@ def test_database_url_and_parts_error_if_inconsistent_placeholder_parts():
             assert exc_info.match(re.escape(expected_error))
 
 
+def test_data_act_database_url_and_parts_error_if_inconsistent_none_parts():
+    """Test that if BOTH the CONFIG.DATA_BROKER_DATABASE_URL and the CONFIG.BROKER_DB_* parts are provided,
+    but their values are not consistent with each other, than the validation will catch that and throw an error
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to be defaulted to None (not set)
+    - DefaultConfig leaves DATA_BROKER_DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part and with a DATA_BROKER_DATABASE_URL env var made up of those
+      parts.
+    - Force the values to not match
+    - Iterate through each part and test it fails validation
+    """
+    consistent_dict = {
+        ENV_CODE_VAR: _UnitTestDbPartsNoneConfig.ENV_CODE,
+        "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+        "DATA_BROKER_DATABASE_URL": "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker",
+        "BROKER_DB_HOST": "broker-foobar",
+        "BROKER_DB_PORT": "54321",
+        "BROKER_DB_NAME": "fresh_new_db_name_broker",
+        "BROKER_DB_USER": "broker",
+        "BROKER_DB_PASSWORD": "pass",
+    }
+    mismatched_parts = {
+        "BROKER_DB_HOST": "bad_host",
+        "BROKER_DB_PORT": "990099",
+        "BROKER_DB_NAME": "misnamed_db",
+        "BROKER_DB_USER": "fake_user",
+        "BROKER_DB_PASSWORD": "not_your_secret",
+    }
+
+    for part, bad_val in mismatched_parts.items():
+        test_env = consistent_dict.copy()
+        test_env[part] = bad_val
+        with mock.patch.dict(os.environ, test_env, clear=True):
+            with pytest.raises(ValidationError) as exc_info:
+                _UnitTestDbPartsNoneConfig(_env_file=None)
+
+            provided = mismatched_parts[part]
+            expected = consistent_dict[part]
+            if part == "BROKER_DB_PASSWORD":
+                # The error keeps the provided password obfuscated as a SecretStr
+                provided = SecretStr(provided)
+                expected = "*" * len(expected) if expected else None
+            expected_error = (
+                f"Part: {part}, Part Value Provided: {provided}, "
+                f"Value found in DATA_BROKER_DATABASE_URL:"
+                f" {expected}"
+            )
+            assert exc_info.match(re.escape(expected_error))
+
+
+def test_data_act_database_url_and_parts_error_if_inconsistent_placeholder_parts():
+    """Test that if BOTH the CONFIG.DATA_BROKER_DATABASE_URL and the CONFIG.BROKER_DB_* parts are provided,
+    but their values are not consistent with each other, than the validation will catch that and throw an error
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values ENV_SPECIFIC_PLACEHOLDERs
+    - DefaultConfig leaves DATA_BROKER_DATABASE_URL unset, and the subclass does not set it
+    - Instantiate the config with a env vars for each part and with a DATA_BROKER_DATABASE_URL env var made up of those
+      parts.
+    - Force the values to not match
+    - Iterate through each part and test it fails validation
+    """
+    consistent_dict = {
+        ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+        "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
+        "DATA_BROKER_DATABASE_URL": "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker",
+        "BROKER_DB_HOST": "broker-foobar",
+        "BROKER_DB_PORT": "54321",
+        "BROKER_DB_NAME": "fresh_new_db_name_broker",
+        "BROKER_DB_USER": "broker",
+        "BROKER_DB_PASSWORD": "pass",
+    }
+    mismatched_parts = {
+        "BROKER_DB_HOST": "bad_host",
+        "BROKER_DB_PORT": "990099",
+        "BROKER_DB_NAME": "misnamed_db",
+        "BROKER_DB_USER": "fake_user",
+        "BROKER_DB_PASSWORD": "not_your_secret",
+    }
+
+    for part, bad_val in mismatched_parts.items():
+        test_env = consistent_dict.copy()
+        test_env[part] = bad_val
+        with mock.patch.dict(os.environ, test_env, clear=True):
+            with pytest.raises(ValidationError) as exc_info:
+                _UnitTestDbPartsPlaceholderConfig(_env_file=None)
+
+            provided = mismatched_parts[part]
+            expected = consistent_dict[part]
+            if part == "BROKER_DB_PASSWORD":
+                # The error keeps the provided password obfuscated as a SecretStr
+                provided = SecretStr(provided)
+                expected = "*" * len(expected) if expected else None
+            expected_error = (
+                f"Part: {part}, Part Value Provided: {provided}, "
+                f"Value found in DATA_BROKER_DATABASE_URL:"
+                f" {expected}"
+            )
+            assert exc_info.match(re.escape(expected_error))
+
+
 def test_postgres_dsn_constructed_with_only_url_leaves_none_parts():
     """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a URL.
     Assumption is that the DSN can be used as string, but the "parts" will all be ``None``"""
     pg_dsn = PostgresDsn(str(CONFIG.DATABASE_URL), scheme="postgres")
+
+    assert pg_dsn.host is None
+    assert pg_dsn.port is None
+    assert pg_dsn.user is None
+    assert pg_dsn.password is None
+    assert pg_dsn.path is None
+    assert pg_dsn.scheme is not None
+
+    pg_dsn = PostgresDsn(str(CONFIG.DATA_BROKER_DATABASE_URL), scheme="postgres")
 
     assert pg_dsn.host is None
     assert pg_dsn.port is None

@@ -49,7 +49,7 @@ DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
 @fixture(scope="session")
 def s3_unittest_data_bucket_setup_and_teardown():
-    """Create a test bucket named data so the tests can use it"""
+    """Create a test bucket so the tests can use it"""
     unittest_data_bucket = "unittest-data-{}".format(str(uuid.uuid4()))
 
     logging.warning(

@@ -32,5 +32,4 @@ class QATConfig(DefaultConfig):
     # - Then you MUST set your AWS creds (access/secret/token) by way of setting AWS_PROFILE env var (e.g. in your
     #   .env file)
     AWS_PROFILE: str = None
-    AWS_REGION = ""
     SPARK_S3_BUCKET = "dti-da-usaspending-spark-qat"

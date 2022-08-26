@@ -2,8 +2,11 @@ from django.utils.timezone import now
 from django.utils.deprecation import MiddlewareMixin
 
 import logging
+import sys
+import time  # time.perf_counter Matches response time browsers return more accurately than now()
 import traceback
-from time import perf_counter  # Matches response time browsers return more accurately than now()
+
+from typing import Optional, Callable
 
 
 def get_remote_addr(request):
@@ -58,7 +61,7 @@ class LoggingMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         """Func called when a request is called on server, function stores request fields for logging"""
-        self.start = perf_counter()
+        self.start = time.perf_counter()
 
         self.log = {
             "path": request.path,
@@ -141,5 +144,63 @@ class LoggingMiddleware(MiddlewareMixin):
 
     def get_response_ms(self):
         """Returns time elapsed from request to response/exception"""
-        duration = perf_counter() - self.start
+        duration = time.perf_counter() - self.start
         return int(duration * 1000)
+
+
+class AbbrevNamespaceUTCFormatter(logging.Formatter):
+    """Custom formatter that does two things:
+    1. Set time to UTC time
+    2. Compress or abbreviate package names in the python namespace given by name, so that only one or a few
+       characters are shown for parent packages in the namespace.
+       - e.g. usaspending_api.common.logging.some_func -> u.c.l.some_func
+    """
+
+    pkg_chars = 1
+    converter = time.gmtime
+
+    def format(self, record: logging.LogRecord) -> str:
+        saved_name = record.name  # save and restore for other formatters if desired
+        parts = saved_name.split(".")
+        if len(parts) > 1:
+            record.name = ".".join(p[: self.pkg_chars] for p in parts[:-1]) + "." + parts[-1]
+        result = super().format(record)
+        record.name = saved_name
+        return result
+
+
+def ensure_logging(
+    logging_config_dict: dict,
+    cfg_formatter_name: str = "tracing",
+    cfg_logger_name="usaspending_api",
+    cfg_handler_name="console",
+    formatter_class: Callable = logging.Formatter,
+    log_record_name: Optional[str] = None,
+    logger_to_use: Optional[logging.Logger] = None,
+):
+    """Ensure that logging is configured as specified by the params on either the ``logger_to_use`` given,
+    or on a new logger built wrapping the given ``log_record_name``"""
+    if not logger_to_use and not log_record_name:
+        raise RuntimeError("One of logger_to_use or log_record_name must be provided to build and configure a logger")
+    if logger_to_use and log_record_name:
+        raise RuntimeError(
+            "Either provide a logger with logger_to_use, or a name from which to build a logger, " "not both."
+        )
+    if not logger_to_use:
+        logger_to_use = logging.getLogger(log_record_name)
+    logger_to_use.setLevel(logging_config_dict["loggers"][cfg_logger_name]["level"])
+    if logger_to_use.handlers:
+        logger_to_use.debug("Logging already configured with handlers. Will continue using as configured.")
+    else:
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setLevel(logging_config_dict["handlers"][cfg_handler_name]["level"])
+        formatter = formatter_class(logging_config_dict["formatters"][cfg_formatter_name]["format"])
+        if logging_config_dict["formatters"][cfg_formatter_name].get("datefmt"):
+            formatter.datefmt = logging_config_dict["formatters"][cfg_formatter_name]["datefmt"]
+        handler.setFormatter(formatter)
+        logger_to_use.addHandler(handler)
+        logger_to_use.debug(
+            f"Found no handler configured on logger, so added: handler={cfg_handler_name}, "
+            f"logger={cfg_logger_name}, formatter={cfg_formatter_name}, formatter_class={str(formatter_class)})"
+        )
+    return logger_to_use

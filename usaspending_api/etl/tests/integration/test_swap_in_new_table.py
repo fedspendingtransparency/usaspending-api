@@ -1,3 +1,5 @@
+import logging
+
 from model_bakery import baker
 from pathlib import Path
 from pytest import mark
@@ -9,29 +11,80 @@ from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetche
 
 
 @mark.django_db()
-def test_old_table_exists_validation():
+def test_old_table_exists_validation(caplog, monkeypatch):
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     try:
         call_command("swap_in_new_table", "--table=test_table")
-    except Exception as e:
-        assert str(e) == "There are no tables matching: test_table"
+    except SystemExit:
+        assert caplog.records[-1].message == "There are no tables matching: test_table"
     else:
         assert False, "No exception was raised"
 
 
 @mark.django_db()
-def test_new_table_exists_validation():
+def test_new_table_exists_validation(caplog, monkeypatch):
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     with connection.cursor() as cursor:
         cursor.execute("CREATE TABLE test_table (col1 TEXT)")
     try:
         call_command("swap_in_new_table", "--table=test_table")
-    except Exception as e:
-        assert str(e) == "There are no tables matching: test_table_temp"
+    except SystemExit:
+        assert caplog.records[-1].message == "There are no tables matching: test_table_temp"
     else:
         assert False, "No exception was raised"
 
 
 @mark.django_db()
-def test_index_validation():
+def test_duplicate_table_validation(caplog, monkeypatch):
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
+    # Test the current table duplicate check
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "CREATE TABLE rpt.test_table (col1 TEXT);"
+            "CREATE TABLE temp.test_table_temp (col1 TEXT);"
+            "CREATE TABLE public.test_table (col1 TEXT);"
+        )
+    try:
+        call_command("swap_in_new_table", "--table=test_table")
+    except SystemExit:
+        assert caplog.records[-1].message == (
+            "There are currently duplicate tables for 'test_table' in different schemas"
+        )
+    else:
+        assert False, "No exception was raised"
+
+    # Test the temp table duplicate check
+    with connection.cursor() as cursor:
+        cursor.execute("DROP TABLE public.test_table;" "CREATE TABLE public.test_table_temp (col1 TEXT);")
+    try:
+        call_command("swap_in_new_table", "--table=test_table")
+    except SystemExit:
+        assert caplog.records[-1].message == (
+            "There are currently duplicate tables for 'test_table_temp' in different schemas"
+        )
+    else:
+        assert False, "No exception was raised"
+
+    # Test the old table duplicate check
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "DROP TABLE public.test_table_temp;"
+            "CREATE TABLE public.test_table_old (col1 TEXT);"
+            "CREATE TABLE rpt.test_table_old (col1 TEXT);"
+        )
+    try:
+        call_command("swap_in_new_table", "--table=test_table")
+    except SystemExit:
+        assert caplog.records[-1].message == (
+            "There are currently duplicate tables for 'test_table_old' in different schemas"
+        )
+    else:
+        assert False, "No exception was raised"
+
+
+@mark.django_db()
+def test_index_validation(caplog, monkeypatch):
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that the same number of indexes exist on the old and new table
         cursor.execute(
@@ -43,8 +96,10 @@ def test_index_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == "The number of indexes are different for the tables: test_table_temp and test_table"
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The number of indexes are different for the tables: test_table_temp and test_table"
+            )
         else:
             assert False, "No exception was raised"
 
@@ -52,8 +107,10 @@ def test_index_validation():
         cursor.execute("CREATE INDEX test_table_wrong_col2_index_temp ON test_table_temp(col2)")
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == "The index definitions are different for the tables: test_table_temp and test_table"
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The index definitions are different for the tables: test_table_temp and test_table"
+            )
         else:
             assert False, "No exception was raised"
 
@@ -64,14 +121,17 @@ def test_index_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == "The index definitions are different for the tables: test_table_temp and test_table"
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The index definitions are different for the tables: test_table_temp and test_table"
+            )
         else:
             assert False, "No exception was raised"
 
 
 @mark.django_db()
-def test_constraint_validation():
+def test_constraint_validation(caplog, monkeypatch):
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that Foreign Keys are not allowed by default
         cursor.execute(
@@ -81,8 +141,8 @@ def test_constraint_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == (
+        except SystemExit:
+            assert caplog.records[-1].message == (
                 "Foreign Key constraints are not allowed on 'test_table_temp' or 'test_table'."
                 " It is advised to not allow Foreign Key constraints on swapped tables to avoid potential deadlock."
                 " However, if needed they can be allowed with the `--allow-foreign-key` flag."
@@ -94,8 +154,10 @@ def test_constraint_validation():
         # This causes the next validation to fail expecting an even number of constraints
         try:
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key")
-        except Exception as e:
-            assert str(e) == "The number of constraints are different for the tables: test_table_temp and test_table."
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The number of constraints are different for the tables: test_table_temp and test_table"
+            )
         else:
             assert False, "No exception was raised"
 
@@ -106,8 +168,10 @@ def test_constraint_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == "The number of constraints are different for the tables: test_table_temp and test_table."
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The number of constraints are different for the tables: test_table_temp and test_table"
+            )
         else:
             assert False, "No exception was raised"
 
@@ -117,9 +181,9 @@ def test_constraint_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == (
-                "The constraint definitions are different for the tables: test_table_temp and test_table."
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The constraint definitions are different for the tables: test_table_temp and test_table"
             )
         else:
             assert False, "No exception was raised"
@@ -131,9 +195,9 @@ def test_constraint_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == (
-                "The constraint definitions are different for the tables: test_table_temp and test_table."
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The constraint definitions are different for the tables: test_table_temp and test_table"
             )
         else:
             assert False, "No exception was raised"
@@ -145,10 +209,10 @@ def test_constraint_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table_not_null")
-        except Exception as e:
-            assert (
-                str(e)
-                == "The number of constraints are different for the tables: test_table_not_null_temp and test_table_not_null."
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The number of constraints are different for the tables:"
+                " test_table_not_null_temp and test_table_not_null"
             )
         else:
             assert False, "No exception was raised"
@@ -157,16 +221,18 @@ def test_constraint_validation():
         cursor.execute("ALTER TABLE test_table_not_null_temp ALTER COLUMN col1 SET NOT NULL")
         try:
             call_command("swap_in_new_table", "--table=test_table_not_null")
-        except Exception as e:
-            assert str(e) == (
-                "The constraint definitions are different for the tables: test_table_not_null_temp and test_table_not_null."
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                "The constraint definitions are different for the tables:"
+                " test_table_not_null_temp and test_table_not_null"
             )
         else:
             assert False, "No exception was raised"
 
 
 @mark.django_db()
-def test_column_validation():
+def test_column_validation(caplog, monkeypatch):
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that two tables with different number of columns will fail
         cursor.execute(
@@ -175,8 +241,10 @@ def test_column_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == f"The number of columns are different for the tables: test_table_temp and test_table."
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                f"The number of columns are different for the tables: test_table_temp and test_table"
+            )
         else:
             assert False, "No exception was raised"
 
@@ -189,8 +257,10 @@ def test_column_validation():
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")
-        except Exception as e:
-            assert str(e) == (f"The column definitions are different for the tables: test_table_temp and test_table.")
+        except SystemExit:
+            assert caplog.records[-1].message == (
+                f"The column definitions are different for the tables: test_table_temp and test_table"
+            )
         else:
             assert False, "No exception was raised"
 

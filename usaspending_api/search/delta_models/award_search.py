@@ -1,7 +1,7 @@
 from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 
 AWARD_SEARCH_COLUMNS = {
-    "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "[INTEGER]"},
+    "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]"},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
     "category": {"delta": "STRING", "postgres": "TEXT"},
     "type": {"delta": "STRING", "postgres": "TEXT"},
@@ -19,13 +19,13 @@ AWARD_SEARCH_COLUMNS = {
     "total_subsidy_cost": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
     "total_loan_value": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
     "recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
-    "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "recipient_name": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
     "parent_recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_uei": {"delta": "STRING", "postgres": "TEXT"},
     "parent_uei": {"delta": "STRING", "postgres": "TEXT"},
-    "business_categories": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "action_date": {"delta": "DATE", "postgres": "DATE"},
     "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
     "last_modified_date": {"delta": "DATE", "postgres": "DATE"},
@@ -76,7 +76,7 @@ AWARD_SEARCH_COLUMNS = {
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
     "cfda_program_title": {"delta": "STRING", "postgres": "TEXT"},
     "cfda_number": {"delta": "STRING", "postgres": "TEXT"},
-    "cfdas": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "cfdas": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "sai_number": {"delta": "STRING", "postgres": "TEXT"},
     "type_of_contract_pricing": {"delta": "STRING", "postgres": "TEXT"},
     "extent_competed": {"delta": "STRING", "postgres": "TEXT"},
@@ -85,9 +85,9 @@ AWARD_SEARCH_COLUMNS = {
     "product_or_service_description": {"delta": "STRING", "postgres": "TEXT"},
     "naics_code": {"delta": "STRING", "postgres": "TEXT"},
     "naics_description": {"delta": "STRING", "postgres": "TEXT"},
-    "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
-    "tas_components": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
-    "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "[TEXT]"},
+    "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "tas_components": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB"},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
     "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
@@ -268,7 +268,7 @@ LEFT OUTER JOIN
   raw.transaction_fabs
     ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)
 LEFT OUTER JOIN
-  raw.recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
+  rpt.recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
@@ -364,7 +364,7 @@ LEFT OUTER JOIN
 )
 LEFT OUTER JOIN (
         SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
-        FROM raw.recipient_profile
+        FROM rpt.recipient_profile
         WHERE recipient_level != 'P'
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (

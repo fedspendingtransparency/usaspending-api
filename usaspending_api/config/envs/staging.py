@@ -25,5 +25,4 @@ class StagingConfig(DefaultConfig):
 
     # ==== [AWS] ====
     AWS_PROFILE: str = None
-    AWS_REGION = ""
     SPARK_S3_BUCKET = "dti-da-usaspending-spark-staging"

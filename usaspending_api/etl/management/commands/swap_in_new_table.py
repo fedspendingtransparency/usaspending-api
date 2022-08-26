@@ -55,7 +55,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--table",
             type=str,
-            help="The active Postgres Table to swap with another containing the same name with '_temp' appended",
+            help="The active Postgres table to swap with another containing the same name with '_temp' appended",
         )
         parser.add_argument(
             "--keep-old-data",
@@ -98,10 +98,11 @@ class Command(BaseCommand):
 
     def cleanup_old_data(self, cursor):
         """Run SQL to clean up any old data that could conflict with the swap"""
+        logger.info(f"Dropping {self.curr_table_name}_old if it exists")
         cursor.execute(f"DROP TABLE IF EXISTS {self.curr_table_name}_old CASCADE;")
 
     def swap_constraints_sql(self, cursor):
-        logging.info("Renaming constraints of the new and old tables.")
+        logger.info("Renaming constraints of the new and old tables")
         temp_constraints = self.query_result_lookup["temp_table_constraints"]
         curr_constraints = self.query_result_lookup["curr_table_constraints"]
         rename_sql = []
@@ -127,7 +128,7 @@ class Command(BaseCommand):
             cursor.execute("\n".join(rename_sql))
 
     def swap_index_sql(self, cursor):
-        logging.info("Renaming indexes of the new and old tables.")
+        logger.info("Renaming indexes of the new and old tables")
 
         # Some Postgres constraints (UNIQUE, PRIMARY, and EXCLUDE) are updated along with the index which means
         # there is no need to rename the index following the constraint
@@ -162,7 +163,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def swap_table_sql(self, cursor):
-        logging.info("Renaming the new and old tables")
+        logger.info("Renaming the new and old tables")
         sql_template = "ALTER TABLE {old_table_name} RENAME TO {new_table_name};"
 
         rename_sql = [
@@ -178,7 +179,7 @@ class Command(BaseCommand):
 
     def drop_old_table_sql(self, cursor):
         # Instead of using CASCADE, all old constraints and indexes are dropped manually
-        logging.info("Dropping the old table.")
+        logger.info("Dropping the old table")
         drop_sql = []
         indexes = self.query_result_lookup["curr_table_indexes"]
         constraints = self.query_result_lookup["curr_table_constraints"]
@@ -196,20 +197,35 @@ class Command(BaseCommand):
         cursor.execute(f"GRANT SELECT ON {self.curr_table_name} TO readonly")
 
     def validate_tables(self, cursor):
-        logger.info("Verifying that the old table exists.")
+        logger.info("Verifying that the current table exists")
         cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.curr_table_name}'")
-        temp_tables = cursor.fetchall()
-        if len(temp_tables) == 0:
-            raise ValueError(f"There are no tables matching: {self.curr_table_name}")
+        curr_tables = cursor.fetchall()
+        if len(curr_tables) == 0:
+            logger.error(f"There are no tables matching: {self.curr_table_name}")
+            raise SystemExit(1)
 
-        logger.info("Verifying that the new table exists.")
+        logger.info("Verifying that the temp table exists")
         cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.temp_table_name}'")
         temp_tables = cursor.fetchall()
         if len(temp_tables) == 0:
-            raise ValueError(f"There are no tables matching: {self.temp_table_name}")
+            logger.error(f"There are no tables matching: {self.temp_table_name}")
+            raise SystemExit(1)
+
+        logger.info("Verifying duplicate tables don't exist across schemas")
+        cursor.execute(
+            f"SELECT table_name, COUNT(*) AS schema_count"
+            f" FROM information_schema.tables"
+            f" WHERE table_name IN ('{self.curr_table_name}', '{self.temp_table_name}', '{self.curr_table_name}_old')"
+            f" GROUP BY table_name"
+        )
+        table_count = cursor.fetchall()
+        for table_name, count in table_count:
+            if count > 1:
+                logger.error(f"There are currently duplicate tables for '{table_name}' in different schemas")
+                raise SystemExit(1)
 
     def validate_indexes(self, cursor):
-        logger.info("Verifying that the same number of indexes exist for the old and new table.")
+        logger.info("Verifying that the same number of indexes exist for the old and new table")
         cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_table_name}'")
         temp_indexes = ordered_dictionary_fetcher(cursor)
         self.query_result_lookup["temp_table_indexes"] = temp_indexes
@@ -217,11 +233,12 @@ class Command(BaseCommand):
         curr_indexes = ordered_dictionary_fetcher(cursor)
         self.query_result_lookup["curr_table_indexes"] = curr_indexes
         if len(temp_indexes) != len(curr_indexes):
-            raise ValueError(
+            logger.error(
                 f"The number of indexes are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
             )
+            raise SystemExit(1)
 
-        logger.info("Verifying that the indexes are the same except for '_temp' in the index and table name.")
+        logger.info("Verifying that the indexes are the same except for '_temp' in the index and table name")
         temp_indexes = [
             {"indexname": val["indexname"].replace("_temp", ""), "indexdef": val["indexdef"].replace("_temp", "")}
             for val in temp_indexes
@@ -233,12 +250,13 @@ class Command(BaseCommand):
         ]
         for index in temp_indexes:
             if index["indexname"] not in curr_index_names or index["indexdef"] not in curr_index_defs:
-                raise ValueError(
+                logger.error(
                     f"The index definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
                 )
+                raise SystemExit(1)
 
     def validate_foreign_keys(self, cursor):
-        logger.info("Verifying that Foreign Key constraints are not found.")
+        logger.info("Verifying that Foreign Key constraints are not found")
         cursor.execute(
             f"SELECT * FROM information_schema.table_constraints"
             f" WHERE table_name IN ('{self.temp_table_name}', '{self.curr_table_name}')"
@@ -246,11 +264,12 @@ class Command(BaseCommand):
         )
         constraints = cursor.fetchall()
         if len(constraints) > 0:
-            raise ValueError(
+            logger.error(
                 f"Foreign Key constraints are not allowed on '{self.temp_table_name}' or '{self.curr_table_name}'."
                 " It is advised to not allow Foreign Key constraints on swapped tables to avoid potential deadlock."
                 " However, if needed they can be allowed with the `--allow-foreign-key` flag."
             )
+            raise SystemExit(1)
 
     def validate_constraints(self, cursor):
         # Used to sort constraints for comparison since sorting in the original SQL query that retrieves them
@@ -258,7 +277,7 @@ class Command(BaseCommand):
         def _sort_key(val):
             return val["constraint_name"]
 
-        logger.info("Verifying that the same number of constraints exist for the old and new table.")
+        logger.info("Verifying that the same number of constraints exist for the old and new table")
         cursor.execute(
             f"SELECT "
             f"     table_constraints.constraint_name,"
@@ -297,9 +316,10 @@ class Command(BaseCommand):
         curr_constraints = ordered_dictionary_fetcher(cursor)
 
         if len(temp_constraints) != len(curr_constraints):
-            raise ValueError(
-                f"The number of constraints are different for the tables: {self.temp_table_name} and {self.curr_table_name}."
+            logger.error(
+                f"The number of constraints are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
             )
+            raise SystemExit(1)
 
         # NOT NULL constraints are created on a COLUMN not the TABLE, this means we do not control their name.
         # As a result, we verify that the same NOT NULL constraints exist on the tables but do not handle the swap.
@@ -310,7 +330,7 @@ class Command(BaseCommand):
             filter(lambda val: val["is_nullable"], curr_constraints)
         )
 
-        logger.info("Verifying that the constraints are the same except for '_temp' in the name.")
+        logger.info("Verifying that the constraints are the same except for '_temp' in the name")
         temp_constraints = [
             {
                 "constraint_name": val["constraint_name"].replace("_temp", "")
@@ -332,12 +352,13 @@ class Command(BaseCommand):
             for val in curr_constraints
         ]
         if sorted(temp_constraints, key=_sort_key) != sorted(curr_constraints, key=_sort_key):
-            raise ValueError(
-                f"The constraint definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}."
+            logger.error(
+                f"The constraint definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
             )
+            raise SystemExit(1)
 
     def validate_columns(self, cursor):
-        logger.info("Verifying that the same number of columns exist for the old and new table.")
+        logger.info("Verifying that the same number of columns exist for the old and new table")
         columns_to_compare = [
             "column_name",
             "is_nullable",
@@ -365,18 +386,20 @@ class Command(BaseCommand):
         )
         curr_columns = ordered_dictionary_fetcher(cursor)
         if len(temp_columns) != len(curr_columns):
-            raise ValueError(
-                f"The number of columns are different for the tables: {self.temp_table_name} and {self.curr_table_name}."
+            logger.error(
+                f"The number of columns are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
             )
+            raise SystemExit(1)
 
-        logger.info("Verifying that the columns are the same.")
+        logger.info("Verifying that the columns are the same")
         if temp_columns != curr_columns:
-            raise ValueError(
-                f"The column definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}."
+            logger.error(
+                f"The column definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
             )
+            raise SystemExit(1)
 
     def validate_state_of_tables(self, cursor, options):
-        logger.info(f"Running validation to swap: {self.curr_table_name} with {self.temp_table_name}.")
+        logger.info(f"Running validation to swap: {self.curr_table_name} with {self.temp_table_name}")
 
         self.validate_tables(cursor)
         if not options["allow_foreign_key"]:

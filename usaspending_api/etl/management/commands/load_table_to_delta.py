@@ -6,21 +6,24 @@ from usaspending_api.awards.delta_models import (
     awards_sql_string,
     FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
     financial_accounts_by_awards_sql_string,
+    BROKER_SUBAWARDS_COLUMNS,
+    broker_subawards_sql_string,
 )
 from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
-    get_jdbc_url,
+    get_usas_jdbc_url,
+    get_broker_jdbc_url,
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_COLUMNS,
-    recipient_lookup_sql_string,
-    RECIPIENT_PROFILE_COLUMNS,
-    recipient_profile_sql_string,
+    recipient_lookup_create_sql_string,
+    recipient_profile_create_sql_string,
+    RECIPIENT_PROFILE_DELTA_COLUMNS,
     SAM_RECIPIENT_COLUMNS,
     sam_recipient_sql_string,
 )
@@ -50,6 +53,7 @@ from usaspending_api.awards.models import (
 TABLE_SPEC = {
     "awards": {
         "model": Award,
+        "is_from_broker": False,
         "source_table": "awards",
         "source_database": "rpt",
         "destination_database": "raw",
@@ -57,6 +61,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": awards_sql_string,
         "source_schema": None,
         "custom_schema": "",
@@ -64,6 +69,7 @@ TABLE_SPEC = {
     },
     "financial_accounts_by_awards": {
         "model": FinancialAccountsByAwards,
+        "is_from_broker": False,
         "source_table": "financial_accounts_by_awards",
         "source_database": "public",
         "destination_database": "raw",
@@ -71,41 +77,15 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": financial_accounts_by_awards_sql_string,
         "source_schema": None,
         "custom_schema": "award_id LONG",
         "column_names": list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS),
     },
-    "recipient_lookup": {
-        "model": RecipientLookup,
-        "source_table": "recipient_lookup",
-        "source_database": "rpt",
-        "destination_database": "raw",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": recipient_lookup_sql_string,
-        "source_schema": None,
-        "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
-    },
-    "recipient_profile": {
-        "model": RecipientProfile,
-        "source_table": "recipient_profile",
-        "source_database": "rpt",
-        "destination_database": "raw",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": recipient_profile_sql_string,
-        "source_schema": None,
-        "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_PROFILE_COLUMNS),
-    },
     "sam_recipient": {
         "model": DUNS,
+        "is_from_broker": False,
         "source_table": "duns",
         "source_database": "raw",
         "destination_database": "raw",
@@ -113,6 +93,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": None,
         "partition_column_type": None,
+        "is_partition_column_unique": False,
         "delta_table_create_sql": sam_recipient_sql_string,
         "source_schema": None,
         "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
@@ -120,13 +101,15 @@ TABLE_SPEC = {
     },
     "transaction_fabs": {
         "model": TransactionFABS,
+        "is_from_broker": False,
         "source_table": "transaction_fabs",
         "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,
-        "partition_column": "published_fabs_id",
+        "partition_column": "transaction_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_fabs_sql_string,
         "source_schema": None,
         "custom_schema": "",
@@ -134,13 +117,15 @@ TABLE_SPEC = {
     },
     "transaction_fpds": {
         "model": TransactionFPDS,
+        "is_from_broker": False,
         "source_table": "transaction_fpds",
         "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,
-        "partition_column": "detached_award_procurement_id",
+        "partition_column": "transaction_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_fpds_sql_string,
         "source_schema": None,
         "custom_schema": "",
@@ -148,6 +133,7 @@ TABLE_SPEC = {
     },
     "transaction_normalized": {
         "model": TransactionNormalized,
+        "is_from_broker": False,
         "source_table": "transaction_normalized",
         "source_database": "int",
         "destination_database": "raw",
@@ -155,30 +141,35 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_normalized_sql_string,
         "source_schema": None,
         "custom_schema": "",
         "column_names": list(TRANSACTION_NORMALIZED_COLUMNS),
     },
+    # Tables loaded in from the Broker
+    "broker_subaward": {
+        "model": None,
+        "is_from_broker": True,
+        "source_table": "subaward",
+        "source_database": None,
+        "destination_database": "raw",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": broker_subawards_sql_string,
+        "source_schema": None,
+        "custom_schema": "",
+        "column_names": list(BROKER_SUBAWARDS_COLUMNS),
+    },
     # Additional definitions for use in testing;
     # These are copies of Views / Materialized Views / Tables from Postgres to Spark to aid in
     # data comparison between current Postgres data and the data transformed via Spark.
-    "transaction_search_testing": {
-        "model": TransactionSearch,
-        "source_table": "transaction_search",
-        "source_database": None,
-        "destination_database": "test",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "transaction_id",
-        "partition_column_type": "numeric",
-        "delta_table_create_sql": transaction_search_create_sql_string,
-        "source_schema": None,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
-        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
-    },
     "award_search_testing": {
         "model": AwardSearch,
+        "is_from_broker": False,
         "source_table": "award_search",
         "source_database": None,
         "destination_database": "rpt",
@@ -186,11 +177,60 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "award_id",
         "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
         "delta_table_create_sql": award_search_create_sql_string,
         "source_schema": None,
         "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
         "STRING, federal_accounts STRING, cfdas ARRAY<STRING>, tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+    },
+    "recipient_lookup_testing": {
+        "model": RecipientLookup,
+        "is_from_broker": False,
+        "source_table": "recipient_lookup",
+        "source_database": "rpt",
+        "destination_database": "raw",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": recipient_lookup_create_sql_string,
+        "source_schema": None,
+        "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
+    },
+    "recipient_profile_testing": {
+        "model": RecipientProfile,
+        "is_from_broker": False,
+        "source_table": "recipient_profile",
+        "source_database": "rpt",
+        "destination_database": "raw",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "delta_table_create_sql": recipient_profile_create_sql_string,
+        "is_partition_column_unique": True,
+        "source_schema": None,
+        "custom_schema": "recipient_hash STRING",
+        "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),
+    },
+    "transaction_search_testing": {
+        "model": TransactionSearch,
+        "is_from_broker": False,
+        "source_table": "transaction_search",
+        "source_database": None,
+        "destination_database": "test",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": transaction_search_create_sql_string,
+        "source_schema": None,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING",
+        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
     },
 }
 
@@ -252,11 +292,13 @@ class Command(BaseCommand):
         destination_table = options["destination_table"]
 
         table_spec = TABLE_SPEC[destination_table]
+        is_from_broker = table_spec["is_from_broker"]
         destination_database = options["alt_db"] or table_spec["destination_database"]
         destination_table_name = options["alt_name"] or destination_table
         source_table = table_spec["source_table"]
         partition_column = table_spec["partition_column"]
         partition_column_type = table_spec["partition_column_type"]
+        is_partition_column_unique = table_spec["is_partition_column_unique"]
         custom_schema = table_spec["custom_schema"]
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
@@ -264,7 +306,7 @@ class Command(BaseCommand):
         spark.sql(f"use {destination_database};")
 
         # Resolve JDBC URL for Source Database
-        jdbc_url = get_jdbc_url()
+        jdbc_url = get_usas_jdbc_url() if not is_from_broker else get_broker_jdbc_url()
         if not jdbc_url:
             raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
@@ -283,18 +325,18 @@ class Command(BaseCommand):
 
             # Read from table or view
             df = extract_db_data_frame(
-                spark,
-                get_jdbc_connection_properties(),
-                jdbc_url,
-                SPARK_PARTITION_ROWS,
-                get_partition_bounds_sql(
-                    source_table,
-                    partition_column,
-                    partition_column,
-                    is_partitioning_col_unique=False,
+                spark=spark,
+                conn_props=get_jdbc_connection_properties(),
+                jdbc_url=jdbc_url,
+                partition_rows=SPARK_PARTITION_ROWS,
+                min_max_sql=get_partition_bounds_sql(
+                    table_name=source_table,
+                    partitioning_col_name=partition_column,
+                    partitioning_col_alias=partition_column,
+                    is_partitioning_col_unique=is_partition_column_unique,
                 ),
-                source_table,
-                partition_column,
+                table=source_table,
+                partitioning_col=partition_column,
                 is_numeric_partitioning_col=is_numeric_partitioning_col,
                 is_date_partitioning_col=is_date_partitioning_col,
                 custom_schema=custom_schema,
