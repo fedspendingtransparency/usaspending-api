@@ -31,10 +31,13 @@ from usaspending_api.references.models import (
     PopCongressionalDistrict,
     DisasterEmergencyFundCode,
 )
+from usaspending_api.recipient.delta_models import (
+    sam_recipient,
+)
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
-_RDS_REF_TABLES = [
+usas_RDS_REF_TABLES = [
     Cfda,
     Agency,
     ToptierAgency,
@@ -52,6 +55,10 @@ _RDS_REF_TABLES = [
     DisasterEmergencyFundCode,
     SubmissionAttributes,
     DABSSubmissionWindowSchedule,
+]
+
+_Broker_Proxy_tables = [
+    sam_recipient,
 ]
 
 
@@ -503,7 +510,7 @@ def create_ref_temp_views(spark: SparkSession):
     """
     logger = get_jvm_logger(spark)
     jdbc_conn_props = get_jdbc_connection_properties()
-    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in _RDS_REF_TABLES]
+    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in usas_RDS_REF_TABLES]
 
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
     for ref_rdf_table in rds_ref_tables:
