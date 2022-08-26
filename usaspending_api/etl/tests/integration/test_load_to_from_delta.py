@@ -1215,3 +1215,18 @@ def test_load_table_to_delta_for_broker_subaward(
             cursor.execute(sql)
 
     _verify_delta_table_loaded_to_delta(spark, "broker_subaward", s3_unittest_data_bucket)
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_summary_state_view(
+    spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
+):
+    tables_to_load = [
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    _verify_delta_table_loaded_to_delta(
+        spark, "summary_state_view", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
