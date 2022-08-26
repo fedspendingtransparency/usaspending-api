@@ -29,6 +29,12 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
+from usaspending_api.search.delta_models.subaward_search import (
+    SUBAWARD_SEARCH_COLUMNS,
+    subaward_search_create_sql_string,
+    subaward_search_load_sql_string,
+    SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+)
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
     TRANSACTION_SEARCH_COLUMNS,
@@ -75,6 +81,7 @@ TABLE_SPEC = {
     },
     "recipient_profile": {
         "model": RecipientProfile,
+        "is_from_broker": False,
         "source_query": recipient_profile_load_sql_strings,
         "source_database": None,
         "source_table": None,
@@ -122,6 +129,23 @@ TABLE_SPEC = {
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+    },
+    "subaward_search": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": subaward_search_load_sql_string,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "broker_subaward_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": subaward_search_create_sql_string,
+        "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+        "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
+        "column_names": list(SUBAWARD_SEARCH_COLUMNS),
     },
 }
 
