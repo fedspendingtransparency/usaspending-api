@@ -37,7 +37,7 @@ from usaspending_api.recipient.delta_models import (
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
-usas_RDS_REF_TABLES = [
+USAS_RDS_REF_TABLES = [
     Cfda,
     Agency,
     ToptierAgency,
@@ -57,7 +57,7 @@ usas_RDS_REF_TABLES = [
     DABSSubmissionWindowSchedule,
 ]
 
-_Broker_Proxy_tables = [
+_BROKER_PROXY_TABLES = [
     sam_recipient,
 ]
 
@@ -510,7 +510,7 @@ def create_ref_temp_views(spark: SparkSession):
     """
     logger = get_jvm_logger(spark)
     jdbc_conn_props = get_jdbc_connection_properties()
-    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in usas_RDS_REF_TABLES]
+    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in USAS_RDS_REF_TABLES]
 
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
     for ref_rdf_table in rds_ref_tables:
@@ -526,3 +526,19 @@ def create_ref_temp_views(spark: SparkSession):
         """
         spark.sql(spark_sql)
     logger.info(f"Created the reference views in the global_temp database")
+    broker_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in _BROKER_PROXY_TABLES]
+
+    logger.info(f"Creating the following tables under the global_temp database: {broker_ref_tables}")
+    for broker_rdf_table in broker_ref_tables:
+        spark_sql = f"""
+         CREATE OR REPLACE GLOBAL TEMPORARY VIEW {broker_rdf_table}
+         USING JDBC
+         OPTIONS (
+           driver '{jdbc_conn_props["driver"]}',
+           fetchsize '{jdbc_conn_props["fetchsize"]}',
+           url '{get_usas_jdbc_url()}',
+           dbtable '{broker_rdf_table}'
+         )
+         """
+        spark.sql(spark_sql)
+    logger.info(f"Created the broker reference views in the global_temp database")

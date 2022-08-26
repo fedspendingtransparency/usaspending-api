@@ -19,7 +19,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_url_from_pg_uri,
     get_jdbc_connection_properties,
 )
-from usaspending_api.common.etl.spark import _RDS_REF_TABLES, create_ref_temp_views
+from usaspending_api.common.etl.spark import USAS_RDS_REF_TABLES, _BROKER_PROXY_TABLES, create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 
@@ -241,7 +241,7 @@ def test_spark_write_to_s3_delta_from_db(
 @mark.django_db(transaction=True)
 def test_create_ref_temp_views(spark: SparkSession):
     # Add dummy data to each test views
-    for rds_ref_table in _RDS_REF_TABLES:
+    for rds_ref_table in USAS_RDS_REF_TABLES:
         baker.make(rds_ref_table)
         baker.make(rds_ref_table)
         baker.make(rds_ref_table)
@@ -250,6 +250,20 @@ def test_create_ref_temp_views(spark: SparkSession):
     create_ref_temp_views(spark)
 
     # verify the data in the temp view matches the dummy data
-    for rds_ref_table in _RDS_REF_TABLES:
+    for rds_ref_table in USAS_RDS_REF_TABLES:
+        spark_count = spark.sql(f"select count(*) from global_temp.{rds_ref_table._meta.db_table}").collect()[0][0]
+        assert rds_ref_table.objects.count() == spark_count
+
+
+def test_create_ref_broker_views(spark: SparkSession):
+    # Add dummy data to each test views
+    for rds_ref_table in _BROKER_PROXY_TABLES:
+        baker.make(rds_ref_table)
+
+    # make the temp views
+    create_ref_temp_views(spark)
+
+    # verify the data in the temp view matches the dummy data
+    for rds_ref_table in _BROKER_PROXY_TABLES:
         spark_count = spark.sql(f"select count(*) from global_temp.{rds_ref_table._meta.db_table}").collect()[0][0]
         assert rds_ref_table.objects.count() == spark_count
