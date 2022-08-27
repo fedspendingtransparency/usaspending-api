@@ -1,0 +1,22 @@
+[
+  {
+  "awardee_or_recipient_uniqu": "Recipient_id_1",
+    "legal_business_name": "First Recipient",
+    "ultimate_parent_unique_ide": 34567822,
+    "broker_duns_id": 34567822,
+    "update_date": "2019-06-12 12:45:58.789296",
+    "address_line_1": "ADDRESS_LINE_1",
+    "address_line_2": "ADDRESS_LINE_2",
+    "city": "CITY_NAME",
+    "congressional_district": "52" ,
+    "country_code": "USA",
+    "state": "DC",
+    "zip": "02214",
+    "zip4": "0987" ,
+    "business_types_codes": ["BTC_1","BTC_2"],
+    "dba_name": null,
+    "entity_structure": "A_Business" ,
+    "uei": "009-890-124256" ,
+    "ultimate_parent_uei": "009-890-124256"
+  }
+  ]

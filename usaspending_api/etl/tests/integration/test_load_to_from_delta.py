@@ -37,7 +37,6 @@ from usaspending_api.recipient.models import RecipientLookup
 def populate_broker_data_to_delta():
     # Create broker data to be imported to delta
     dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
-
     with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
         with connection.cursor() as cursor:
             # nuke any previous data just in case
@@ -45,6 +44,26 @@ def populate_broker_data_to_delta():
 
             insert_statement = "insert into subaward (%s) values %s"
             for record in dummy_broker_subaward_data:
+                columns = record.keys()
+                values = tuple(record[column] for column in columns)
+                sql = cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
+                cursor.execute(sql)
+
+
+@fixture
+def populate_broker_data_sam_recipient_to_delta():
+    # Create broker data to be imported to delta for sam_recipient
+    dummy_broker_sam_recipient_data = json.loads(
+        Path("usaspending_api/awards/tests/data/broker_sam_recipient.json").read_text()
+    )
+
+    with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+        with connection.cursor() as cursor:
+            # nuke any previous data just in case
+            cursor.execute("truncate table sam_recipient restart identity cascade;")
+
+            insert_statement = "insert into sam_recipient (%s) values %s"
+            for record in dummy_broker_sam_recipient_data:
                 columns = record.keys()
                 values = tuple(record[column] for column in columns)
                 sql = cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
@@ -758,36 +777,9 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
 def test_load_table_to_from_delta_for_sam_recipient_and_reload(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("recipient.DUNS", broker_duns_id="1", _fill_optional=True)
-    baker.make("recipient.DUNS", broker_duns_id="2", _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "sam_recipient", jdbc_inserts=True)  # test alt write strategy
-
-    # Getting count of the first load
-    expected_exported_table = "duns_temp"
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-        with connection.cursor() as cursor:
-            # get a list of tables
-            cursor.execute(f"SELECT COUNT(*) FROM {expected_exported_table}")
-            expected_exported_table_count = dictfetchall(cursor)[0]["count"]
-
-    # Rerunning again to see it working as intended
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
-
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-        with connection.cursor() as cursor:
-            # get a list of tables and ensure no other new tables got made
-            cursor.execute("SELECT * FROM pg_catalog.pg_tables;")
-            postgres_data = [
-                d["tablename"] for d in dictfetchall(cursor) if d["tablename"].startswith(expected_exported_table)
-            ]
-            assert len(postgres_data) == 1
-
-            # make sure the new table has been truncated and reloaded
-            cursor.execute(f"SELECT COUNT(*) FROM {expected_exported_table}")
-            expected_new_exported_table_count = dictfetchall(cursor)[0]["count"]
-            assert expected_exported_table_count == expected_new_exported_table_count
 
 
 @mark.django_db(transaction=True)
