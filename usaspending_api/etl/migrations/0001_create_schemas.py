@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
         # Move Bronze tables into the "raw" schema
         # -----
         migrations.RunSQL(
-            sql="ALTER TABLE public.broker_subaward SET SCHEMA raw;",
+            sql="ALTER TABLE IF EXISTS public.broker_subaward SET SCHEMA raw;",
             reverse_sql="ALTER TABLE raw.broker_subaward SET SCHEMA public;"
         ),
         migrations.RunSQL(
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
         # Move Silver tables into the "int" schema
         # -----
         migrations.RunSQL(
-            sql="ALTER TABLE public.subaward SET SCHEMA int;",
+            sql="ALTER TABLE IF EXISTS public.subaward SET SCHEMA int;",
             reverse_sql="ALTER TABLE int.subaward SET SCHEMA public;"
         ),
         migrations.RunSQL(
