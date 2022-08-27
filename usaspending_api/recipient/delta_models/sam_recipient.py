@@ -66,25 +66,7 @@ CREATE OR REPLACE TEMPORARY VIEW source_data AS (
         {",".join([col for col in SAM_RECIPIENT_DELTA_COLUMNS])}
     )
   SELECT
-    source_data.awardee_or_recipient_uniqu,
-    source_data.legal_business_name,
-    source_data.ultimate_parent_unique_ide,
-    source_data.ultimate_parent_legal_enti,
-    source_data.sam_recipient_id,
-    source_data.record_date,
-    source_data.address_line_1,
-    source_data.address_line_2,
-    source_data.city,
-    source_data.congressional_district,
-    source_data.country_code,
-    source_data.state,
-    source_data.zip,
-    source_data.zip4,
-    source_data.business_types_codes,
-    source_data.dba_name,
-    source_data.entity_structure,
-    source_data.uei,
-    source_data.ultimate_parent_uei
+        {",".join([col for col in SAM_RECIPIENT_DELTA_COLUMNS])}
   FROM
     source_data
   WHERE source_data.row_num =1
