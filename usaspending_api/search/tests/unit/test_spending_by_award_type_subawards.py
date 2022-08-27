@@ -39,36 +39,60 @@ def test_spending_by_award_subawards_fail(client):
 def test_spending_by_award_subawards(client):
 
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=1, sub_awardee_or_recipient_uniqu="DUNS A",
-        prime_award_type="IDV_A", prime_award_group="procurement"
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        sub_awardee_or_recipient_uniqu="DUNS A",
+        prime_award_type="IDV_A",
+        prime_award_group="procurement",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=2, sub_awardee_or_recipient_uniqu="DUNS B",
-        prime_award_type="IDV_B", prime_award_group="procurement"
+        "search.SubawardSearch",
+        broker_subaward_id=2,
+        sub_awardee_or_recipient_uniqu="DUNS B",
+        prime_award_type="IDV_B",
+        prime_award_group="procurement",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=3, sub_awardee_or_recipient_uniqu="DUNS C",
-        prime_award_type="IDV_C", prime_award_group="procurement"
+        "search.SubawardSearch",
+        broker_subaward_id=3,
+        sub_awardee_or_recipient_uniqu="DUNS C",
+        prime_award_type="IDV_C",
+        prime_award_group="procurement",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=4, sub_awardee_or_recipient_uniqu="DUNS D",
-        prime_award_type="IDV_D", prime_award_group="procurement"
+        "search.SubawardSearch",
+        broker_subaward_id=4,
+        sub_awardee_or_recipient_uniqu="DUNS D",
+        prime_award_type="IDV_D",
+        prime_award_group="procurement",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=5, sub_awardee_or_recipient_uniqu="DUNS E",
-        prime_award_type="IDV_E", prime_award_group="procurement"
+        "search.SubawardSearch",
+        broker_subaward_id=5,
+        sub_awardee_or_recipient_uniqu="DUNS E",
+        prime_award_type="IDV_E",
+        prime_award_group="procurement",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=6, sub_awardee_or_recipient_uniqu="DUNS B_A",
-        prime_award_type="IDV_B_A", prime_award_group="procurement"
+        "search.SubawardSearch",
+        broker_subaward_id=6,
+        sub_awardee_or_recipient_uniqu="DUNS B_A",
+        prime_award_type="IDV_B_A",
+        prime_award_group="procurement",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=7, sub_awardee_or_recipient_uniqu="DUNS B_B",
-        prime_award_type="IDV_B_B", prime_award_group="procurement"
+        "search.SubawardSearch",
+        broker_subaward_id=7,
+        sub_awardee_or_recipient_uniqu="DUNS B_B",
+        prime_award_type="IDV_B_B",
+        prime_award_group="procurement",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=8, sub_awardee_or_recipient_uniqu="DUNS B_C",
-        prime_award_type="IDV_B_C", prime_award_group="procurement"
+        "search.SubawardSearch",
+        broker_subaward_id=8,
+        sub_awardee_or_recipient_uniqu="DUNS B_C",
+        prime_award_type="IDV_B_C",
+        prime_award_group="procurement",
     )
 
     baker.make("recipient.RecipientLookup", duns="DUNS A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941")

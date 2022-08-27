@@ -37,12 +37,12 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
     # Yes, these are mostly the same, but congressional is different
     # and I'd rather have them all laid out here versus burying a extra couple lines for congressional
     location_mappings = {
-        'country_code': {'sub_legal_entity': 'country_code', 'sub_place_of_perform': 'country_code'},
-        'zip5': {'sub_legal_entity': 'zip5', 'sub_place_of_perform': 'zip5'},
-        'city_name': {'sub_legal_entity': 'city_name', 'sub_place_of_perform': 'city_name'},
-        'state_code': {'sub_legal_entity': 'state_code', 'sub_place_of_perform': 'state_code'},
-        'county_code': {'sub_legal_entity': 'county_code', 'sub_place_of_perform': 'county_code'},
-        'congressional': {'sub_legal_entity': 'congressional', 'sub_place_of_perform': 'congressio'},
+        "country_code": {"sub_legal_entity": "country_code", "sub_place_of_perform": "country_code"},
+        "zip5": {"sub_legal_entity": "zip5", "sub_place_of_perform": "zip5"},
+        "city_name": {"sub_legal_entity": "city_name", "sub_place_of_perform": "city_name"},
+        "state_code": {"sub_legal_entity": "state_code", "sub_place_of_perform": "state_code"},
+        "county_code": {"sub_legal_entity": "county_code", "sub_place_of_perform": "county_code"},
+        "congressional": {"sub_legal_entity": "congressional", "sub_place_of_perform": "congressio"},
     }
     location_mappings = {location_type: field_dict[scope] for location_type, field_dict in location_mappings.items()}
 
@@ -72,8 +72,9 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
                 if location_values["county"]:
                     county_qs = Q(**{f"{scope}_{location_mappings['county_code']}__in": location_values["county"]})
                 if location_values["district"]:
-                    district_qs = Q(**{f"{scope}_{location_mappings['congressional_code']}__in":
-                                           location_values["district"]})
+                    district_qs = Q(
+                        **{f"{scope}_{location_mappings['congressional_code']}__in": location_values["district"]}
+                    )
                 if location_values["city"]:
                     city_qs = Q(**{f"{scope}_{location_mappings['city_name']}__in": location_values["city"]})
                 state_inner_qs &= county_qs | district_qs | city_qs
@@ -158,7 +159,9 @@ def subaward_filter(filters, for_downloads=False):
             potential_ueis = list(filter((lambda x: len(x) == 12), value))
             potential_ueis = [uei.upper() for uei in potential_ueis]
             if len(potential_ueis) > 0:
-                filter_obj |= Q(sub_awardee_or_recipient_uei__in=potential_ueis) | Q(sub_ultimate_parent_uei__in=potential_ueis)
+                filter_obj |= Q(sub_awardee_or_recipient_uei__in=potential_ueis) | Q(
+                    sub_ultimate_parent_uei__in=potential_ueis
+                )
 
             queryset = queryset.filter(filter_obj)
 
@@ -172,7 +175,9 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(latest_transaction_id__isnull=False)
 
             # Prepare a SQL snippet to include in the predicate for searching an array of transaction IDs
-            sql_fragment = '"subaward_search"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'  # int[] -> int array type
+            sql_fragment = (
+                '"subaward_search"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'  # int[] -> int array type
+            )
             queryset = queryset.extra(where=[sql_fragment.format(",".join(transaction_ids))])
 
         elif key == "time_period":

@@ -103,12 +103,22 @@ def cfda_test_data(db):
     baker.make("awards.Award", id=2, latest_transaction_id=2)
 
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=1, award_id=1, subaward_amount=1, cfda_id=1, cfda_number="CFDA1234",
-        cfda_title="CFDA TITLE 1234"
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        award_id=1,
+        subaward_amount=1,
+        cfda_id=1,
+        cfda_number="CFDA1234",
+        cfda_title="CFDA TITLE 1234",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=2, award_id=2, subaward_amount=1, cfda_id=1, cfda_number="CFDA1234",
-        cfda_title="CFDA TITLE 1234"
+        "search.SubawardSearch",
+        broker_subaward_id=2,
+        award_id=2,
+        subaward_amount=1,
+        cfda_id=1,
+        cfda_number="CFDA1234",
+        cfda_title="CFDA TITLE 1234",
     )
 
     baker.make("awards.TransactionNormalized", id=1, award_id=1, federal_action_obligation=1, action_date="2020-01-01")
@@ -268,12 +278,20 @@ def recipient_test_data(db):
         sub_awardee_or_recipient_uniqu="00UOP00",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=3, award_id=3, subaward_amount=100,
-        sub_awardee_or_recipient_legal_raw="John Doe", sub_awardee_or_recipient_uniqu="1234JD4321"
+        "search.SubawardSearch",
+        broker_subaward_id=3,
+        award_id=3,
+        subaward_amount=100,
+        sub_awardee_or_recipient_legal_raw="John Doe",
+        sub_awardee_or_recipient_uniqu="1234JD4321",
     )
     baker.make(
-        "search.SubawardSearch", broker_subaward_id=4, award_id=4, subaward_amount=1000,
-        sub_awardee_or_recipient_legal_raw="John Doe", sub_awardee_or_recipient_uniqu="1234JD4321"
+        "search.SubawardSearch",
+        broker_subaward_id=4,
+        award_id=4,
+        subaward_amount=1000,
+        sub_awardee_or_recipient_legal_raw="John Doe",
+        sub_awardee_or_recipient_uniqu="1234JD4321",
     )
     baker.make(
         "search.SubawardSearch",
