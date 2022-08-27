@@ -188,8 +188,8 @@ class SubawardSearch(models.Model):
     sub_awardee_or_recipient_legal = models.TextField(null=True, blank=True)
     sub_ultimate_parent_legal_enti = models.TextField(null=True, blank=True)
     business_type_code = models.TextField(null=True, blank=True)
-    business_categories = ArrayField(models.TextField(), default=list)
-    treasury_account_identifiers = ArrayField(models.IntegerField(), default=None)
+    business_categories = ArrayField(models.TextField(), default=list, null=True)
+    treasury_account_identifiers = ArrayField(models.IntegerField(), default=None, null=True)
     pulled_from = models.TextField(null=True, blank=True)
     type_of_contract_pricing = models.TextField(null=True, blank=True)
     type_set_aside = models.TextField(null=True, blank=True)
@@ -215,9 +215,9 @@ class SubawardSearch(models.Model):
     sub_place_of_perform_congressio = models.TextField(null=True, blank=True)
 
     # USAS Vectors
-    keyword_ts_vector = SearchVectorField()
-    award_ts_vector = SearchVectorField()
-    recipient_name_ts_vector = SearchVectorField()
+    keyword_ts_vector = SearchVectorField(null=True)
+    award_ts_vector = SearchVectorField(null=True)
+    recipient_name_ts_vector = SearchVectorField(null=True)
 
     class Meta:
         db_table = 'rpt"."subaward_search'
