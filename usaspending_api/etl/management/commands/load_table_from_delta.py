@@ -174,7 +174,7 @@ class Command(BaseCommand):
         postgres_table_name = table_spec["source_table"] or table_spec["swap_table"]
         postgres_cols = table_spec["source_schema"]
         column_names = table_spec.get("column_names")
-        tsvectors = table_spec.get("tsvectors") or []
+        tsvectors = table_spec.get("tsvectors") or {}
         if postgres_table_name:
             postgres_table = f"{postgres_schema}.{postgres_table_name}" if postgres_schema else postgres_table_name
 
