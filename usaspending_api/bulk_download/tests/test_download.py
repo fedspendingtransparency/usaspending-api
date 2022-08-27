@@ -9,14 +9,13 @@ from usaspending_api.awards.models import (
     TransactionNormalized,
     TransactionFABS,
     TransactionFPDS,
-    Subaward,
-    BrokerSubaward,
 )
 from usaspending_api.awards.v2.lookups.lookups import all_subaward_types, award_type_mapping
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.search.models import SubawardSearch
 
 
 @pytest.fixture
@@ -281,146 +280,84 @@ def award_data(transactional_db):
         place_of_perform_country_n="CANADA",
     )
 
-    # Create Subaward
+    # Create SubawardSearch
     baker.make(
-        Subaward,
-        id=1,
+        SubawardSearch,
+        broker_subaward_id=1,
         award_id=4,
         latest_transaction_id=4,
-        action_date="2018-01-15",
-        award_type="procurement",
-        recipient_location_country_code="USA",
-        recipient_location_country_name="UNITED STATES",
-        pop_country_code="USA",
-        pop_country_name="UNITED STATES",
+        sub_action_date="2018-01-15",
+        prime_award_type="procurement",
+        sub_legal_entity_country_code_raw="USA",
+        sub_legal_entity_country_name="UNITED STATES",
+        sub_place_of_perform_country_co_raw="USA",
+        sub_place_of_perform_country_name="UNITED STATES",
+        subaward_type="sub-contract",
     )
     baker.make(
-        Subaward,
-        id=2,
+        SubawardSearch,
+        broker_subaward_id=2,
         award_id=5,
         latest_transaction_id=5,
-        action_date="2018-03-15",
-        award_type="grant",
-        recipient_location_country_code="USA",
-        recipient_location_country_name="UNITED STATES",
-        pop_country_code="USA",
-        pop_country_name="UNITED STATES",
+        sub_action_date="2018-03-15",
+        prime_award_type="grant",
+        sub_legal_entity_country_code_raw="USA",
+        sub_legal_entity_country_name="UNITED STATES",
+        sub_place_of_perform_country_co_raw="USA",
+        sub_place_of_perform_country_name="UNITED STATES",
+        subaward_type="sub-grant",
     )
     baker.make(
-        Subaward,
-        id=3,
+        SubawardSearch,
+        broker_subaward_id=3,
         award_id=6,
         latest_transaction_id=6,
-        action_date="2018-06-15",
-        award_type="grant",
-        recipient_location_country_code="USA",
-        recipient_location_country_name="UNITED STATES",
-        pop_country_code="USA",
-        pop_country_name="UNITED STATES",
+        sub_action_date="2018-06-15",
+        prime_award_type="grant",
+        sub_legal_entity_country_code_raw="USA",
+        sub_legal_entity_country_name="UNITED STATES",
+        sub_place_of_perform_country_co_raw="USA",
+        sub_place_of_perform_country_name="UNITED STATES",
+        subaward_type="sub-grant",
     )
     baker.make(
-        Subaward,
-        id=4,
+        SubawardSearch,
+        broker_subaward_id=4,
         award_id=7,
         latest_transaction_id=7,
-        action_date="2017-01-15",
-        award_type="procurement",
-        recipient_location_country_code="USA",
-        recipient_location_country_name="UNITED STATES",
-        pop_country_code="USA",
-        pop_country_name="UNITED STATES",
+        sub_action_date="2017-01-15",
+        prime_award_type="procurement",
+        sub_legal_entity_country_code_raw="USA",
+        sub_legal_entity_country_name="UNITED STATES",
+        sub_place_of_perform_country_co_raw="USA",
+        sub_place_of_perform_country_name="UNITED STATES",
+        subaward_type="sub-contract",
     )
     baker.make(
-        Subaward,
-        id=5,
+        SubawardSearch,
+        broker_subaward_id=5,
         award_id=8,
         latest_transaction_id=8,
-        action_date="2017-03-15",
-        award_type="grant",
-        recipient_location_country_code="CAN",
-        recipient_location_country_name="CANADA",
-        pop_country_code="CAN",
-        pop_country_name="CANADA",
+        sub_action_date="2017-03-15",
+        prime_award_type="grant",
+        sub_legal_entity_country_code_raw="CAN",
+        sub_legal_entity_country_name="CANADA",
+        sub_place_of_perform_country_co_raw="CAN",
+        sub_place_of_perform_country_name="CANADA",
+        subaward_type="sub-grant",
     )
     baker.make(
-        Subaward,
-        id=6,
+        SubawardSearch,
+        broker_subaward_id=6,
         award_id=9,
         latest_transaction_id=9,
-        action_date="2017-06-15",
-        award_type="grant",
-        recipient_location_country_code="CAN",
-        recipient_location_country_name="CANADA",
-        pop_country_code="CAN",
-        pop_country_name="CANADA",
-    )
-
-    # Create BrokerSubaward
-    baker.make(
-        BrokerSubaward,
-        id=1,
-        prime_id=4,
-        action_date="2018-01-15",
-        subaward_type="sub-contract",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_co="USA",
-        place_of_perform_country_na="UNITED STATES",
-    )
-    baker.make(
-        BrokerSubaward,
-        id=2,
-        prime_id=5,
-        action_date="2018-03-15",
+        sub_action_date="2017-06-15",
+        prime_award_type="grant",
+        sub_legal_entity_country_code_raw="CAN",
+        sub_legal_entity_country_name="CANADA",
+        sub_place_of_perform_country_co_raw="CAN",
+        sub_place_of_perform_country_name="CANADA",
         subaward_type="sub-grant",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_co="USA",
-        place_of_perform_country_na="UNITED STATES",
-    )
-    baker.make(
-        BrokerSubaward,
-        id=3,
-        prime_id=6,
-        action_date="2018-06-15",
-        subaward_type="sub-grant",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_co="USA",
-        place_of_perform_country_na="UNITED STATES",
-    )
-    baker.make(
-        BrokerSubaward,
-        id=4,
-        prime_id=7,
-        action_date="2017-01-15",
-        subaward_type="sub-contract",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_co="USA",
-        place_of_perform_country_na="UNITED STATES",
-    )
-    baker.make(
-        BrokerSubaward,
-        id=5,
-        prime_id=8,
-        action_date="2017-03-15",
-        subaward_type="sub-grant",
-        legal_entity_country_code="CAN",
-        legal_entity_country_name="CANADA",
-        place_of_perform_country_co="CAN",
-        place_of_perform_country_na="CANADA",
-    )
-    baker.make(
-        BrokerSubaward,
-        id=6,
-        prime_id=9,
-        action_date="2017-06-15",
-        subaward_type="sub-grant",
-        legal_entity_country_code="CAN",
-        legal_entity_country_name="CANADA",
-        place_of_perform_country_co="CAN",
-        place_of_perform_country_na="CANADA",
     )
 
     # Ref Country Code

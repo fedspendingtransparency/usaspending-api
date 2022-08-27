@@ -6,30 +6,30 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 @pytest.fixture
 def subaward_data(db):
     baker.make(
-        "awards.Subaward",
+        "search.SubawardSearch",
         id=1,
-        recipient_unique_id="111111111",
-        parent_recipient_unique_id="111111110",
-        recipient_uei="AAAAAAAAAAAA",
-        parent_recipient_uei="AAAAAAAAAAA0",
+        sub_awardee_or_recipient_uniqu="111111111",
+        sub_ultimate_parent_unique_ide="111111110",
+        sub_awardee_or_recipient_uei="AAAAAAAAAAAA",
+        sub_ultimate_parent_uei="AAAAAAAAAAA0",
     )
 
     baker.make(
-        "awards.Subaward",
+        "search.SubawardSearch",
         id=2,
-        recipient_unique_id="222222222",
-        parent_recipient_unique_id="222222220",
-        recipient_uei="BBBBBBBBBBBB",
-        parent_recipient_uei="BBBBBBBBBBB0",
+        sub_awardee_or_recipient_uniqu="222222222",
+        sub_ultimate_parent_unique_ide="222222220",
+        sub_awardee_or_recipient_uei="BBBBBBBBBBBB",
+        sub_ultimate_parent_uei="BBBBBBBBBBB0",
     )
 
     baker.make(
-        "awards.Subaward",
+        "search.SubawardSearch",
         id=3,
-        recipient_unique_id="333333333",
-        parent_recipient_unique_id="333333330",
-        recipient_uei="CCCCCCCCCCCC",
-        parent_recipient_uei="CCCCCCCCCCC0",
+        sub_awardee_or_recipient_uniqu="333333333",
+        sub_ultimate_parent_unique_ide="333333330",
+        sub_awardee_or_recipient_uei="CCCCCCCCCCCC",
+        sub_ultimate_parent_uei="CCCCCCCCCCC0",
     )
 
 

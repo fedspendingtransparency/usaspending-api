@@ -25,7 +25,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import PopCounty, PopCongressionalDistrict
-from usaspending_api.search.models import SubawardView
+from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_transactions,
@@ -96,28 +96,35 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             "district": "congressional_agg_key",
             "state": "state_agg_key",
         }
-        location_dict = {"county": "county_code", "district": "congressional_code", "state": "state_code"}
         model_dict = {
-            "place_of_performance": "pop",
-            "recipient_location": "recipient_location",
-            # 'subawards_place_of_performance': 'pop',
-            # 'subawards_recipient_location': 'recipient_location'
+            "place_of_performance": {'prime': "pop", "sub": 'sub_place_of_perform'},
+            "recipient_location": {'prime': "recipient_location", "sub": 'sub_legal_entity'},
+        }
+        # Most of these are the same but some of slightly off, so we can track all the nuances here
+        location_dict = {
+            "county": {'prime': {'pop': "county_code", 'recipient_location': "county_code"},
+                       'sub': {'sub_place_of_perform': 'county_code', 'sub_legal_entity': 'county_code'}},
+            "district": {'prime': {"pop": "congressional_code", "recipient_location": "congressional_code"},
+                         'sub': {'sub_place_of_perform': 'congressio', 'sub_legal_entity': 'congressional'}},
+            "state": {'prime': {'pop': "state_code", 'recipient_location': "state_code"},
+                      'sub': {'sub_place_of_perform': 'state_code', 'sub_legal_entity': 'state_code'}},
         }
 
-        self.scope_field_name = model_dict[json_request["scope"]]
+        self.subawards = json_request["subawards"]
+        award_or_sub_str = 'sub' if self.subawards else 'prime'
+        self.scope_field_name = model_dict[json_request["scope"]][award_or_sub_str]
         self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
         self.filters = json_request.get("filters")
         self.geo_layer = GeoLayer(json_request["geo_layer"])
         self.geo_layer_filters = json_request.get("geo_layer_filters")
-        self.loc_field_name = location_dict[self.geo_layer.value]
+        self.loc_field_name = (location_dict[self.geo_layer.value][award_or_sub_str][self.scope_field_name])
         self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
-        self.subawards = json_request["subawards"]
 
         if self.subawards:
             # We do not use matviews for Subaward filtering, just the Subaward download filters
-            self.model_name = SubawardView
+            self.model_name = SubawardSearch
             self.queryset = subaward_filter(self.filters)
-            self.obligation_column = "amount"
+            self.obligation_column = "subaward_amount"
             result = self.query_django()
         else:
             if self.scope_field_name == "pop":
@@ -196,7 +203,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         geo_queryset = self.queryset.filter(**filter_args).values(*lookup_fields)
 
         if self.subawards:
-            geo_queryset = geo_queryset.annotate(transaction_amount=Sum("amount"))
+            geo_queryset = geo_queryset.annotate(transaction_amount=Sum("subaward_amount"))
         else:
             geo_queryset = geo_queryset.annotate(transaction_amount=Sum("generated_pragmatic_obligation")).values(
                 "transaction_amount", *lookup_fields
@@ -254,7 +261,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         )
 
         if self.subawards:
-            geo_queryset = geo_queryset.annotate(transaction_amount=Sum("amount"))
+            geo_queryset = geo_queryset.annotate(transaction_amount=Sum("subaward_amount"))
         else:
             geo_queryset = geo_queryset.annotate(transaction_amount=Sum("generated_pragmatic_obligation")).values(
                 "transaction_amount", "code_as_float", *fields_list

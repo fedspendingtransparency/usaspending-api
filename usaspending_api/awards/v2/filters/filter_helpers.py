@@ -11,7 +11,7 @@ from usaspending_api.common.helpers.generic_helper import dates_are_month_booken
 from usaspending_api.common.helpers.generic_helper import generate_date_from_string
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
-from usaspending_api.search.models import SubawardView
+from usaspending_api.search.models import SubawardSearch
 
 
 logger = logging.getLogger(__name__)
@@ -102,8 +102,8 @@ def combine_date_range_queryset(date_dicts, table, min_start, max_end, dt_format
 def get_total_transaction_column(model):
     """Returns column name based on model"""
 
-    if model == SubawardView:
-        return "amount"
+    if model == SubawardSearch:
+        return "subaward_amount"
     else:
         return "award_amount"
 

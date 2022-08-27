@@ -97,30 +97,30 @@ def mock_tas_data(db):
     baker.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
 
     baker.make(
-        "awards.Subaward",
-        id=1,
+        "search.SubawardSearch",
+        broker_subaward_id=1,
         award_id=1,
-        amount=123.45,
+        subaward_amount=123.45,
         prime_award_type="A",
-        award_type="procurement",
+        prime_award_group="procurement",
         subaward_number="1A",
     )
     baker.make(
-        "awards.Subaward",
-        id=2,
+        "search.SubawardSearch",
+        broker_subaward_id=2,
         award_id=2,
-        amount=5000.00,
+        subaward_amount=5000.00,
         prime_award_type="A",
-        award_type="procurement",
+        prime_award_group="procurement",
         subaward_number="2A",
     )
     baker.make(
-        "awards.Subaward",
-        id=3,
+        "search.SubawardSearch",
+        broker_subaward_id=3,
         award_id=3,
-        amount=0.00,
+        subaward_amount=0.00,
         prime_award_type="A",
-        award_type="procurement",
+        prime_award_group="procurement",
         subaward_number="3A",
     )
 

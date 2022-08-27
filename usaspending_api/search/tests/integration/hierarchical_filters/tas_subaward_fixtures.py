@@ -47,14 +47,14 @@ def multiple_subawards_with_sibling_tas(db, multiple_awards_with_sibling_tas):
 
 def subaward(db, award_id):
     baker.make(
-        "awards.Subaward",
+        "search.SubawardSearch",
         funding_toptier_agency_name="test",
-        id=award_id,
+        broker_subaward_id=award_id,
         award_id=award_id,
         prime_award_type="D",
-        action_date=datetime(2017, 12, 1),
+        subaction_date=datetime(2017, 12, 1),
         latest_transaction_id=1,
         subaward_number=11111,
-        award_type="procurement",
-        amount=10000,
+        prime_award_group="procurement",
+        subaward_amount=10000,
     )
