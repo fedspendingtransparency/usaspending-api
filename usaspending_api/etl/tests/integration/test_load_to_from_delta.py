@@ -701,6 +701,68 @@ def verify_delta_table_loaded_to_delta(
     assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"], ignore_fields)
 
 
+def verify_delta_query_loaded_to_delta(
+    spark: SparkSession,
+    delta_table_name: str,
+    s3_bucket: str,
+    alt_db: str = None,
+    alt_name: str = None,
+    load_command: str = "load_query_to_delta",
+    dummy_data: List[Dict[str, Any]] = None,
+    ignore_fields: Optional[list] = None,
+):
+    """Generic function that uses the create_delta_table, load_table_to_delta, and load_query_to_delta commands to
+    create and load the given table and assert it was created and loaded as expected
+    """
+
+    cmd_args = [f"--destination-table={delta_table_name}"]
+    if alt_db:
+        cmd_args += [f"--alt-db={alt_db}"]
+    expected_table_name = delta_table_name.split(".")[-1]
+    if alt_name:
+        cmd_args += [f"--alt-name={alt_name}"]
+        expected_table_name = alt_name
+
+    # make the table and load it
+    call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
+    call_command(load_command, *cmd_args)
+
+    partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
+    if dummy_data is None:
+        # get the postgres data to compare
+        model = TABLE_SPEC[delta_table_name]["model"]
+        is_from_broker = TABLE_SPEC[delta_table_name]["is_from_broker"]
+        if model:
+            dummy_query = model.objects
+            if partition_col is not None:
+                dummy_query = dummy_query.order_by(partition_col)
+            dummy_data = list(dummy_query.all().values())
+        elif is_from_broker:
+            # model can be None if loading from the Broker
+            broker_connection = connections["data_broker"]
+            source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
+            with broker_connection.cursor() as cursor:
+                dummy_query = f"SELECT * from {source_broker_name}"
+                if partition_col is not None:
+                    dummy_query = f"{dummy_query} ORDER BY {partition_col}"
+                cursor.execute(dummy_query)
+                dummy_data = dictfetchall(cursor)
+        else:
+            raise ValueError(
+                "No dummy data nor model provided and the table is not from the Broker. Please provide one"
+                "of these for the test to compare the data."
+            )
+
+    # get the spark data to compare
+    # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again
+    received_query = f"SELECT * from {expected_table_name}"
+    if partition_col is not None:
+        received_query = f"{received_query} ORDER BY {partition_col}"
+    received_data = [row.asDict() for row in spark.sql(received_query).collect()]
+
+    assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"], ignore_fields)
+
+
 def verify_delta_table_loaded_from_delta(
     spark: SparkSession,
     delta_table_name: str,
@@ -774,12 +836,8 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_sam_recipient_and_reload(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
+def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -898,6 +956,15 @@ def test_load_table_to_from_delta_for_recipient_profile(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta", ignore_fields=["id"]
     )
     verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True, ignore_fields=["id"])
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_sam_recipient_testing(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    verify_delta_table_loaded_to_delta(spark, "recipient_lookup_testing", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "recipient_lookup_testing", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(
+        spark, "recipient_lookup_testing", jdbc_inserts=True
+    )  # test alt write strategy
 
 
 @mark.django_db(transaction=True)

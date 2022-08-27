@@ -3,6 +3,7 @@ from pytest import mark
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
     create_and_load_all_delta_tables,
     verify_delta_table_loaded_to_delta,
+    verify_delta_query_loaded_to_delta,
 )
 
 
@@ -25,7 +26,7 @@ def test_load_query_to_delta_for_sam_recipient(
         "financial_accounts_by_awards",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-    verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
+    verify_delta_query_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
 
     expected_dummy_data = [
         {
