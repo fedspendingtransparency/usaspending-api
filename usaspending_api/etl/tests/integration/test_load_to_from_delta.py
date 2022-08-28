@@ -836,11 +836,6 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
-
-
-@mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_data_for_transaction_search, hive_unittest_metastore_db
 ):
