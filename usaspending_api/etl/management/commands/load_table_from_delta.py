@@ -253,13 +253,13 @@ class Command(BaseCommand):
 
                     # If there are vectors, add the triggers that will populate them based on other calls
                     for tsvector_name, derived_from_cols in tsvectors.items():
-                        logger.info(
+                        self.logger.info(
                             f"To prevent any confusion or duplicates, dropping the trigger"
                             f" tsvector_update_{tsvector_name} if it exists before potentially recreating it."
                         )
                         cursor.execute(f"DROP TRIGGER IF EXISTS tsvector_update_{tsvector_name} ON {temp_table}")
 
-                        logger.info(
+                        self.logger.info(
                             f"Adding tsvector trigger for column {tsvector_name}"
                             f" based on the following columns: {derived_from_cols}"
                         )
@@ -271,7 +271,7 @@ class Command(BaseCommand):
                                                     {derived_from_cols_str})
                         """
                         cursor.execute(tsvector_trigger_sql)
-                        logger.info(f"tsvector trigger for column {tsvector_name} added.")
+                        self.logger.info(f"tsvector trigger for column {tsvector_name} added.")
 
         # Read from Delta
         df = spark.table(delta_table)
