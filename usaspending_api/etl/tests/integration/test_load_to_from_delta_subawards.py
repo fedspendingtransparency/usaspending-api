@@ -1,16 +1,21 @@
+import psycopg2
+
 from datetime import datetime, date
 from decimal import Decimal
 
 from pytest import mark
 
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
     create_and_load_all_delta_tables,
+    verify_delta_table_loaded_from_delta,
     verify_delta_table_loaded_to_delta,
 )
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_subawards(
+def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,
     broker_server_dblink_setup,
@@ -276,11 +281,11 @@ def test_load_table_to_delta_for_subawards(
             "subaward_amount": Decimal("898.00"),
             "sub_action_date": date(2019, 3, 23),
             "sub_awardee_or_recipient_uniqu": "124243",
-            "sub_awardee_or_recipient_uei": None,
+            "sub_awardee_or_recipient_uei": "FABSUEI12345",
             "sub_awardee_or_recipient_legal_raw": "OVER HERE",
             "sub_dba_name": "OVER THERE",
             "sub_ultimate_parent_unique_ide": "3435",
-            "sub_ultimate_parent_uei": None,
+            "sub_ultimate_parent_uei": "FABSUEI12345",
             "sub_ultimate_parent_legal_enti_raw": "SOMETHING ELSE",
             "sub_legal_entity_country_code_raw": "USA",
             "sub_legal_entity_country_name_raw": "UNITED STATES",
@@ -376,8 +381,8 @@ def test_load_table_to_delta_for_subawards(
             "cfda_title": None,
             "sub_fiscal_year": 2019,
             "sub_total_obl_bin": "<1M",
-            "sub_awardee_or_recipient_legal": "OVER HERE",
-            "sub_ultimate_parent_legal_enti": "SOMETHING ELSE",
+            "sub_awardee_or_recipient_legal": "FABS TEST RECIPIENT",
+            "sub_ultimate_parent_legal_enti": "FABS TEST RECIPIENT",
             "business_type_code": None,
             "business_categories": [],
             "treasury_account_identifiers": None,
@@ -776,6 +781,7 @@ def test_load_table_to_delta_for_subawards(
             "sub_place_of_perform_congressio": "36",
         },
     ]
+
     verify_delta_table_loaded_to_delta(
         spark,
         "subaward_search",
@@ -783,3 +789,46 @@ def test_load_table_to_delta_for_subawards(
         load_command="load_query_to_delta",
         dummy_data=expected_dummy_data,
     )
+    # dropping these cols as they wouldnt match as they aren't on the databricks side of things,
+    # so they can't really be compared here
+    ignore_fields = ["keyword_ts_vector", "award_ts_vector", "recipient_name_ts_vector"]
+    verify_delta_table_loaded_from_delta(
+        spark, "subaward_search", spark_s3_bucket=s3_unittest_data_bucket, ignore_fields=ignore_fields
+    )
+    verify_delta_table_loaded_from_delta(spark, "subaward_search", jdbc_inserts=True, ignore_fields=ignore_fields)
+
+    # but to be safe, let's make sure those ts_vectors are populated correctly
+    postgres_query = f"""
+        SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector
+        FROM temp.subaward_search_temp
+        ORDER BY broker_subaward_id
+    """
+    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(postgres_query)
+            postgres_data = dictfetchall(cursor)
+    expected_results = [
+        {
+            "keyword_ts_vector": "'more':2 'stuff':3 'yolo':1",
+            "award_ts_vector": "'asfasfasfs':1 'sdafasfsdf':2",
+            "recipient_name_ts_vector": "'yolo':1",
+        },
+        {
+            "keyword_ts_vector": "'-19':11 'ae':5 'ay18':10 'course':12 'delivery':13 'e':7 'e-teacher':6"
+            " 'educational':15 'fabs':1 'fy17':4 'program':9 'recipient':3 'teacher':8"
+            " 'technology':16 'test':2 'using':14",
+            "award_ts_vector": "'asdfasdfasdfs':1 'dasfasf':2",
+            "recipient_name_ts_vector": "'fabs':1 'recipient':3 'test':2",
+        },
+        {
+            "keyword_ts_vector": "'consulting':4 'engineering':3 'hai':2 'o':1 'services':5",
+            "award_ts_vector": "'0000':1 '32324':2",
+            "recipient_name_ts_vector": "'hai':2 'o':1",
+        },
+        {
+            "keyword_ts_vector": "'contract':9 'hi':1 'in':4 'materials':3 'mom':2 'of':6 'rds':8 'support':5 'the':7",
+            "award_ts_vector": "'0725':1 'subawardnum1':2",
+            "recipient_name_ts_vector": "'hi':1 'mom':2",
+        },
+    ]
+    assert postgres_data == expected_results
