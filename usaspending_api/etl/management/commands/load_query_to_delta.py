@@ -16,7 +16,7 @@ from usaspending_api.recipient.delta_models import (
     recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
     rpt_recipient_lookup_create_sql_string,
-    RECIPIENT_PROFILE_DELTA_COLUMNS,
+    RPT_RECIPIENT_PROFILE_DELTA_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.search.delta_models.award_search import (
@@ -25,7 +25,14 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearch
+from usaspending_api.search.delta_models.subaward_search import (
+    SUBAWARD_SEARCH_COLUMNS,
+    subaward_search_create_sql_string,
+    subaward_search_load_sql_string,
+    SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+    SUBAWARD_SEARCH_POSTGRES_VECTORS,
+)
+from usaspending_api.search.models import TransactionSearch, AwardSearch, SubawardSearch
 from usaspending_api.transactions.delta_models import (
     TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
@@ -51,6 +58,8 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
     },
     "recipient_lookup": {
         "model": RecipientLookup,
@@ -69,9 +78,11 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
         "postgres_seq_name": "recipient_lookup_id_seq",
+        "tsvectors": None,
     },
     "recipient_profile": {
         "model": RecipientProfile,
+        "is_from_broker": False,
         "source_query": recipient_profile_load_sql_strings,
         "source_database": None,
         "source_table": None,
@@ -84,7 +95,9 @@ TABLE_SPEC = {
         "delta_table_create_sql": recipient_profile_create_sql_string,
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
-        "column_names": [x for x in list(RECIPIENT_PROFILE_DELTA_COLUMNS) if x != "id"],
+        "column_names": list(RPT_RECIPIENT_PROFILE_DELTA_COLUMNS),
+        "postgres_seq_name": "recipient_profile_id_seq",
+        "tsvectors": None,
     },
     "transaction_search": {
         "model": TransactionSearch,
@@ -102,6 +115,27 @@ TABLE_SPEC = {
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+    },
+    "subaward_search": {
+        "model": SubawardSearch,
+        "is_from_broker": False,
+        "source_query": subaward_search_load_sql_string,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "broker_subaward_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": subaward_search_create_sql_string,
+        "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+        "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
+        "column_names": list(SUBAWARD_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
     },
 }
 
