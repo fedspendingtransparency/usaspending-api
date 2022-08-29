@@ -64,6 +64,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "",
         "column_names": list(AWARDS_COLUMNS),
+        "tsvectors": None,
     },
     "financial_accounts_by_awards": {
         "model": FinancialAccountsByAwards,
@@ -80,6 +81,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "award_id LONG",
         "column_names": list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS),
+        "tsvectors": None,
     },
     "transaction_fabs": {
         "model": TransactionFABS,
@@ -96,6 +98,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "",
         "column_names": list(TRANSACTION_FABS_COLUMNS),
+        "tsvectors": None,
     },
     "transaction_fpds": {
         "model": TransactionFPDS,
@@ -112,6 +115,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "",
         "column_names": list(TRANSACTION_FPDS_COLUMNS),
+        "tsvectors": None,
     },
     "transaction_normalized": {
         "model": TransactionNormalized,
@@ -128,6 +132,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "",
         "column_names": list(TRANSACTION_NORMALIZED_COLUMNS),
+        "tsvectors": None,
     },
     # Tables loaded in from the Broker
     "broker_subaward": {
@@ -145,6 +150,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "",
         "column_names": list(BROKER_SUBAWARDS_COLUMNS),
+        "tsvectors": None,
     },
     # Additional definitions for use in testing;
     # These are copies of Views / Materialized Views / Tables from Postgres to Spark to aid in
@@ -165,6 +171,7 @@ TABLE_SPEC = {
         "custom_schema": "total_covid_outlay NUMERIC(23,2), total_covid_obligation NUMERIC(23,2), recipient_hash "
         "STRING, federal_accounts STRING, cfdas ARRAY<STRING>, tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+        "tsvectors": None,
     },
     "recipient_lookup_testing": {
         "model": RecipientLookup,
@@ -181,6 +188,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
+        "tsvectors": None,
     },
     "recipient_profile_testing": {
         "model": RecipientProfile,
@@ -197,6 +205,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),
+        "tsvectors": None,
     },
     "transaction_search_testing": {
         "model": TransactionSearch,
@@ -213,6 +222,7 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+        "tsvectors": None,
     },
 }
 

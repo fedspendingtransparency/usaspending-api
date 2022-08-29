@@ -34,8 +34,9 @@ from usaspending_api.search.delta_models.subaward_search import (
     subaward_search_create_sql_string,
     subaward_search_load_sql_string,
     SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+    SUBAWARD_SEARCH_POSTGRES_VECTORS,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearch
+from usaspending_api.search.models import TransactionSearch, AwardSearch, SubawardSearch
 from usaspending_api.transactions.delta_models import (
     TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
@@ -61,6 +62,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+        "tsvectors": None,
     },
     "recipient_lookup": {
         "model": RecipientLookup,
@@ -78,6 +80,7 @@ TABLE_SPEC = {
         "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
+        "tsvectors": None,
     },
     "recipient_profile": {
         "model": RecipientProfile,
@@ -95,6 +98,7 @@ TABLE_SPEC = {
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
         "column_names": [x for x in list(RECIPIENT_PROFILE_DELTA_COLUMNS) if x != "id"],
+        "tsvectors": None,
     },
     "sam_recipient": {
         "model": None,
@@ -129,9 +133,10 @@ TABLE_SPEC = {
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+        "tsvectors": None,
     },
     "subaward_search": {
-        "model": None,
+        "model": SubawardSearch,
         "is_from_broker": False,
         "source_query": subaward_search_load_sql_string,
         "source_database": None,
@@ -146,6 +151,7 @@ TABLE_SPEC = {
         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
+        "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
     },
 }
 
