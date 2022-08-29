@@ -16,7 +16,7 @@ from usaspending_api.recipient.delta_models import (
     recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
     rpt_recipient_lookup_create_sql_string,
-    RECIPIENT_PROFILE_DELTA_COLUMNS,
+    RPT_RECIPIENT_PROFILE_DELTA_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.search.delta_models.award_search import (
@@ -58,6 +58,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": None,
     },
     "recipient_lookup": {
@@ -76,6 +77,7 @@ TABLE_SPEC = {
         "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": None,
     },
     "recipient_profile": {
@@ -93,7 +95,8 @@ TABLE_SPEC = {
         "delta_table_create_sql": recipient_profile_create_sql_string,
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
-        "column_names": [x for x in list(RECIPIENT_PROFILE_DELTA_COLUMNS) if x != "id"],
+        "column_names": list(RPT_RECIPIENT_PROFILE_DELTA_COLUMNS),
+        "postgres_seq_name": "recipient_profile_id_seq",
         "tsvectors": None,
     },
     "transaction_search": {
@@ -112,6 +115,7 @@ TABLE_SPEC = {
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": None,
     },
     "subaward_search": {
@@ -130,6 +134,7 @@ TABLE_SPEC = {
         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
     },
 }
