@@ -36,7 +36,7 @@ from usaspending_api.recipient.models import RecipientLookup
 @fixture
 def populate_broker_data_to_delta():
     # Create broker data to be imported to delta
-    dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text())
+    dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text())
 
     with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
         with connection.cursor() as cursor:
