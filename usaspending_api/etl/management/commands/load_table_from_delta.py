@@ -288,7 +288,7 @@ class Command(BaseCommand):
                 cursor.execute(f"TRUNCATE {temp_table}")
 
         # Reset the sequence before load for a table if it exists
-        if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
+        if options["reset_sequence"] and table_spec.get("postgres_seq_name") is not None:
             postgres_seq_last_value = self._set_sequence_value(table_spec["postgres_seq_name"])
         else:
             postgres_seq_last_value = None

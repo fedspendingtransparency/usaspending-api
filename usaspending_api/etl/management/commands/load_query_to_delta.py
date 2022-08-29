@@ -58,6 +58,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": None,
     },
     "recipient_lookup": {
@@ -76,6 +77,7 @@ TABLE_SPEC = {
         "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": None,
     },
     "recipient_profile": {
@@ -113,6 +115,7 @@ TABLE_SPEC = {
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": None,
     },
     "subaward_search": {
@@ -131,6 +134,7 @@ TABLE_SPEC = {
         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
     },
 }
