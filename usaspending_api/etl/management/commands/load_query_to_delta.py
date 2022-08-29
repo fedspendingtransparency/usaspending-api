@@ -16,7 +16,6 @@ from usaspending_api.recipient.delta_models import (
     recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
     rpt_recipient_lookup_create_sql_string,
-    RECIPIENT_PROFILE_DELTA_COLUMNS,
     RPT_RECIPIENT_PROFILE_DELTA_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
