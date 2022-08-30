@@ -83,7 +83,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
 
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
         django_filters = {}
-        django_values = ["sub_awardee_or_recipient_legal", "recipient_unique_id"]
+        django_values = ["sub_awardee_or_recipient_legal", "sub_awardee_or_recipient_uniqu"]
         annotations = {"name": F("sub_awardee_or_recipient_legal"), "code": F("sub_awardee_or_recipient_uniqu")}
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(**annotations)
         lower_limit = self.pagination.lower_limit

@@ -67,7 +67,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             LocationType.STATE_TERRITORY: "sub_place_of_perform_state_code",
             LocationType.COUNTRY: "sub_place_of_perform_country_co",
         }
-        django_filters = {f"{subaward_mappings[self.location_type.value]}__isnull": False}
+        django_filters = {f"{subaward_mappings[self.location_type]}__isnull": False}
 
         if self.location_type == LocationType.COUNTY:
             django_values = [
