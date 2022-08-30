@@ -41,6 +41,7 @@ from usaspending_api.transactions.delta_models import (
     SUMMARY_STATE_VIEW_COLUMNS,
     summary_state_view_create_sql_string,
     summary_state_view_load_sql_string,
+    SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
 )
 
 TABLE_SPEC = {
@@ -109,13 +110,13 @@ TABLE_SPEC = {
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": None,
-        "swap_schema": None,
+        "swap_table": "summary_state_view",
+        "swap_schema": "rpt",
         "partition_column": "duh",
         "partition_column_type": "string",
         "is_partition_column_unique": True,
         "delta_table_create_sql": summary_state_view_create_sql_string,
-        "source_schema": None,
+        "source_schema": SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
         "custom_schema": "duh STRING",
         "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
         "postgres_seq_name": None,

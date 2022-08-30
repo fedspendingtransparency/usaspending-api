@@ -1,21 +1,24 @@
 SUMMARY_STATE_VIEW_COLUMNS = {
-    "duh": "STRING",
-    "action_date": "DATE",
-    "fiscal_year": "INTEGER",
-    "type": "STRING",
-    "distinct_awards": "STRING",
-    "pop_country_code": "STRING",
-    "pop_state_code": "STRING",
-    "generated_pragmatic_obligation": "NUMERIC(23,2)",
-    "federal_action_obligation": "NUMERIC(23,2)",
-    "original_loan_subsidy_cost": "NUMERIC(23,2)",
-    "face_value_loan_guarantee": "NUMERIC(23,2)",
-    "counts": "LONG",
+    "duh": {"delta": "STRING", "postgres": "UUID"},
+    "action_date": {"delta": "DATE", "postgres": "DATE"},
+    "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "type": {"delta": "STRING", "postgres": "TEXT"},
+    "distinct_awards": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_country_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_state_code": {"delta": "STRING", "postgres": "TEXT"},
+    "generated_pragmatic_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "federal_action_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "counts": {"delta": "LONG", "postgres": "BIGINT"},
 }
+
+SUMMARY_STATE_VIEW_DELTA_COLUMNS = {k: v["delta"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
+SUMMARY_STATE_VIEW_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
 
 summary_state_view_create_sql_string = fr"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in SUMMARY_STATE_VIEW_COLUMNS.items()])}
+        {", ".join([f'{key} {val}' for key, val in SUMMARY_STATE_VIEW_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
