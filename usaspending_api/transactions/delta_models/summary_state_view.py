@@ -27,6 +27,7 @@ summary_state_view_load_sql_string = fr"""
         {",".join([col for col in SUMMARY_STATE_VIEW_COLUMNS])}
     )
     SELECT
+        -- TODO: Update the "duh" field to determine uniqueness by leveraging the GROUP BY fields
         REGEXP_REPLACE(
             MD5(
                 CONCAT_WS(
@@ -89,7 +90,7 @@ summary_state_view_load_sql_string = fr"""
     LEFT OUTER JOIN
         raw.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)
     LEFT OUTER JOIN
-         raw.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
+        raw.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
     WHERE
         transaction_normalized.action_date >= '2007-10-01'
         AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
