@@ -117,6 +117,8 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "duh STRING",
         "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
     },
     "transaction_search": {
         "model": TransactionSearch,
