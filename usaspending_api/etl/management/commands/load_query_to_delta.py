@@ -40,6 +40,7 @@ from usaspending_api.transactions.delta_models import (
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
     SUMMARY_STATE_VIEW_COLUMNS,
     summary_state_view_create_sql_string,
+    summary_state_view_load_sql_string,
 )
 
 TABLE_SPEC = {
@@ -104,7 +105,7 @@ TABLE_SPEC = {
     "summary_state_view": {
         "model": SummaryStateView,
         "is_from_broker": False,
-        "source_query": None,
+        "source_query": summary_state_view_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
