@@ -35,6 +35,8 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
             profile_filter = {"recipient_hash": row["recipient_hash"]}
         elif "recipient_unique_id" in row:
             profile_filter = {"recipient_unique_id": row["recipient_unique_id"]}
+        elif "sub_awardee_or_recipient_uniqu" in row:
+            profile_filter = {"recipient_unique_id": row["sub_awardee_or_recipient_uniqu"]}
         else:
             raise RuntimeError(
                 "Attempted to lookup recipient profile using a queryset that contains neither "
@@ -81,8 +83,8 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
 
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
         django_filters = {}
-        django_values = ["recipient_name", "recipient_unique_id"]
-        annotations = {"name": F("recipient_name"), "code": F("recipient_unique_id")}
+        django_values = ["sub_awardee_or_recipient_legal", "recipient_unique_id"]
+        annotations = {"name": F("sub_awardee_or_recipient_legal"), "code": F("sub_awardee_or_recipient_uniqu")}
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(**annotations)
         lower_limit = self.pagination.lower_limit
         upper_limit = self.pagination.upper_limit

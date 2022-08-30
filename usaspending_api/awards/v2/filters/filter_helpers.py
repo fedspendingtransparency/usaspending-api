@@ -108,7 +108,7 @@ def get_total_transaction_column(model):
         return "award_amount"
 
 
-def total_obligation_queryset(amount_obj, model, filters):
+def total_obligation_queryset(amount_obj, model, filters, is_subaward=False):
     if can_use_total_obligation_enum(amount_obj):
         bins = []
         for v in amount_obj:
@@ -118,7 +118,8 @@ def total_obligation_queryset(amount_obj, model, filters):
                 if lower_bound == values["lower"] and upper_bound == values["upper"]:
                     bins.extend(values["enums"])
                     break
-        or_queryset = model.objects.filter(total_obl_bin__in=set(bins))
+        obl_bin_filter = {f"{'sub_' if is_subaward else ''}total_obl_bin__in": set(bins)}
+        or_queryset = model.objects.filter(**obl_bin_filter)
     else:
         column = get_total_transaction_column(model)
         bound_filters = Q()

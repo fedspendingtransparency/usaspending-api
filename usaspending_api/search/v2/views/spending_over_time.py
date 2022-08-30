@@ -79,19 +79,19 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     def database_data_layer_for_subawards(self) -> tuple:
         queryset = subaward_filter(self.filters)
-        obligation_column = "amount"
+        obligation_column = "subaward_amount"
         values = ["fy"]
 
         if self.group == "month":
-            queryset = queryset.annotate(month=FiscalMonth("action_date"), fy=FiscalYear("action_date"))
+            queryset = queryset.annotate(month=FiscalMonth("sub_action_date"), fy=FiscalYear("sub_action_date"))
             values.append("month")
 
         elif self.group == "quarter":
-            queryset = queryset.annotate(quarter=FiscalQuarter("action_date"), fy=FiscalYear("action_date"))
+            queryset = queryset.annotate(quarter=FiscalQuarter("sub_action_date"), fy=FiscalYear("sub_action_date"))
             values.append("quarter")
 
         elif self.group == "fiscal_year":
-            queryset = queryset.annotate(fy=FiscalYear("action_date"))
+            queryset = queryset.annotate(fy=FiscalYear("sub_action_date"))
 
         queryset = (
             queryset.values(*values)

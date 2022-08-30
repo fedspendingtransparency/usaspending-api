@@ -52,7 +52,7 @@ def subaward(db, award_id):
         broker_subaward_id=award_id,
         award_id=award_id,
         prime_award_type="D",
-        subaction_date=datetime(2017, 12, 1),
+        sub_action_date=datetime(2017, 12, 1),
         latest_transaction_id=1,
         subaward_number=11111,
         prime_award_group="procurement",

@@ -7,7 +7,7 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 def subaward_data(db):
     baker.make(
         "search.SubawardSearch",
-        id=1,
+        broker_subaward_id=1,
         sub_awardee_or_recipient_uniqu="111111111",
         sub_ultimate_parent_unique_ide="111111110",
         sub_awardee_or_recipient_uei="AAAAAAAAAAAA",
@@ -16,7 +16,7 @@ def subaward_data(db):
 
     baker.make(
         "search.SubawardSearch",
-        id=2,
+        broker_subaward_id=2,
         sub_awardee_or_recipient_uniqu="222222222",
         sub_ultimate_parent_unique_ide="222222220",
         sub_awardee_or_recipient_uei="BBBBBBBBBBBB",
@@ -25,7 +25,7 @@ def subaward_data(db):
 
     baker.make(
         "search.SubawardSearch",
-        id=3,
+        broker_subaward_id=3,
         sub_awardee_or_recipient_uniqu="333333333",
         sub_ultimate_parent_unique_ide="333333330",
         sub_awardee_or_recipient_uei="CCCCCCCCCCCC",

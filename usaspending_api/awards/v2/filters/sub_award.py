@@ -291,7 +291,7 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(geocode_filter_subaward_locations("sub_place_of_perform", value))
 
         elif key == "award_amounts":
-            queryset &= total_obligation_queryset(value, SubawardSearch, filters)
+            queryset &= total_obligation_queryset(value, SubawardSearch, filters, is_subaward=True)
 
         elif key == "award_ids":
             queryset = build_award_ids_filter(queryset, value, ("piid", "fain"))

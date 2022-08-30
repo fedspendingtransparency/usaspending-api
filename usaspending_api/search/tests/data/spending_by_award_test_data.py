@@ -290,13 +290,13 @@ def spending_by_award_test_data():
 
     baker.make(
         "search.SubawardSearch",
-        id=1,
+        broker_subaward_id=1,
         award=award_1,
         latest_transaction_id=1,
         subaward_number=11111,
         prime_award_type="A",
         prime_award_group="procurement",
-        subaction_date="2020-04-02",
+        sub_action_date="2020-04-02",
         subaward_amount=10000,
         awardee_or_recipient_legal="recipient_name_for_award_1001",
         awardee_or_recipient_uniqu="duns_1001",
@@ -308,13 +308,13 @@ def spending_by_award_test_data():
     )
     baker.make(
         "search.SubawardSearch",
-        id=2,
+        broker_subaward_id=2,
         award=award_1,
         latest_transaction_id=2,
         subaward_number=22222,
         prime_award_type="A",
         prime_award_group="procurement",
-        subaction_date="2020-04-02",
+        sub_action_date="2020-04-02",
         subaward_amount=20000,
         awardee_or_recipient_legal="recipient_name_for_award_1001",
         awardee_or_recipient_uniqu="duns_1001",
@@ -325,13 +325,13 @@ def spending_by_award_test_data():
     )
     baker.make(
         "search.SubawardSearch",
-        id=3,
+        broker_subaward_id=3,
         award=award_2,
         latest_transaction_id=3,
         subaward_number=33333,
         prime_award_type="A",
         award_type="procurement",
-        subaction_date="2016-01-01",
+        sub_action_date="2016-01-01",
         subaward_amount=30000,
         awardee_or_recipient_legal="recipient_name_for_award_1002",
         awardee_or_recipient_uniqu="duns_1002",
@@ -342,7 +342,7 @@ def spending_by_award_test_data():
     )
     baker.make(
         "search.SubawardSearch",
-        id=4,
+        broker_subaward_id=4,
         award_id=award_3,
         subaward_number=44444,
         awardee_or_recipient_uniqu="duns_1003",
@@ -350,13 +350,13 @@ def spending_by_award_test_data():
     )
     baker.make(
         "search.SubawardSearch",
-        id=6,
+        broker_subaward_id=6,
         award=award_3,
         latest_transaction_id=6,
         subaward_number=66666,
         prime_award_type="A",
         award_type="procurement",
-        subaction_date="2019-01-01",
+        sub_action_date="2019-01-01",
         subaward_amount=60000,
         awardee_or_recipient_legal="recipient_name_for_award_1003",
         awardee_or_recipient_uniqu="duns_1003",
@@ -367,13 +367,13 @@ def spending_by_award_test_data():
     )
     baker.make(
         "search.SubawardSearch",
-        id=9,
+        broker_subaward_id=9,
         award=award_4,
         latest_transaction_id=6,
         subaward_number=99999,
         prime_award_type="02",
         award_type="procurement",
-        subaction_date="2019-01-01",
+        sub_action_date="2019-01-01",
         subaward_amount=60000,
         awardee_or_recipient_legal="recipient_name_for_award_1003",
         awardee_or_recipient_uniqu="duns_1003",
