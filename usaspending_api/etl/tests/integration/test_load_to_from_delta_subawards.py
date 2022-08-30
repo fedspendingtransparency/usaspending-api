@@ -20,7 +20,7 @@ def test_load_table_to_from_delta_for_subawards(
     s3_unittest_data_bucket,
     broker_server_dblink_setup,
     populate_broker_data_to_delta,
-    populate_data_for_transaction_search,
+    populate_data_for_usas,
     hive_unittest_metastore_db,
 ):
     tables_to_load = [

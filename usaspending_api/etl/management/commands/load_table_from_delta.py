@@ -232,7 +232,7 @@ class Command(BaseCommand):
                 if postgres_table:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
-                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING IDENTITY
+                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
                         ) WITH (autovacuum_enabled=FALSE)
                     """
                 elif postgres_cols:
@@ -288,7 +288,7 @@ class Command(BaseCommand):
                 cursor.execute(f"TRUNCATE {temp_table}")
 
         # Reset the sequence before load for a table if it exists
-        if options["reset_sequence"] and table_spec.get("postgres_seq_name") is not None:
+        if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
             postgres_seq_last_value = self._set_sequence_value(table_spec["postgres_seq_name"])
         else:
             postgres_seq_last_value = None

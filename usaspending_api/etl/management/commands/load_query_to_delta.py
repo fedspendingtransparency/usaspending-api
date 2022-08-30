@@ -9,7 +9,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
-    RECIPIENT_LOOKUP_DELTA_COLUMNS,
+    RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS,
     recipient_lookup_load_sql_string_list,
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     recipient_profile_create_sql_string,
@@ -32,12 +32,14 @@ from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_POSTGRES_COLUMNS,
     SUBAWARD_SEARCH_POSTGRES_VECTORS,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearch, SubawardSearch
+from usaspending_api.search.models import AwardSearch, SubawardSearch, SummaryStateView, TransactionSearch
 from usaspending_api.transactions.delta_models import (
     TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
+    SUMMARY_STATE_VIEW_COLUMNS,
+    summary_state_view_create_sql_string,
 )
 
 TABLE_SPEC = {
@@ -68,16 +70,16 @@ TABLE_SPEC = {
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": None,
-        "swap_schema": None,
+        "swap_table": "recipient_lookup",
+        "swap_schema": "rpt",
         "partition_column": "recipient_hash",
         "partition_column_type": "string",
         "is_partition_column_unique": True,
         "delta_table_create_sql": rpt_recipient_lookup_create_sql_string,
         "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
-        "postgres_seq_name": None,
+        "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
+        "postgres_seq_name": "recipient_lookup_id_seq",
         "tsvectors": None,
     },
     "recipient_profile": {
@@ -97,6 +99,25 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RPT_RECIPIENT_PROFILE_DELTA_COLUMNS),
         "postgres_seq_name": "recipient_profile_id_seq",
+        "tsvectors": None,
+    },
+    "summary_state_view": {
+        "model": SummaryStateView,
+        "is_from_broker": False,
+        "source_query": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "duh",
+        "partition_column_type": "string",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": summary_state_view_create_sql_string,
+        "source_schema": None,
+        "custom_schema": "duh STRING",
+        "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
+        "postgres_seq_name": None,
         "tsvectors": None,
     },
     "transaction_search": {
