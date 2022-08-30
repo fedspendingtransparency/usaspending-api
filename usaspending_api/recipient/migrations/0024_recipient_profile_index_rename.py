@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             state_operations=[
                 migrations.AddIndex(
                     model_name="recipientprofile",
-                    index=models.Index(name="rp_recipient_hash_recipient_level_ee7ecd55_uniq", fields=["recipient_hash","recipient_level"])
+                    index=models.Index(name="rp_recipient_hash_level_ee7ecd55_uniq", fields=["recipient_hash","recipient_level"])
                 ),
             ]
         ),
