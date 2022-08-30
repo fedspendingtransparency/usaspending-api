@@ -39,7 +39,9 @@ class Command(BaseCommand):
         # Setup Logger
         logger = get_jvm_logger(self.spark, __name__)
 
-        # TODO: Update award_table to "rpt.award_search" when it includes those columns
+        # TODO: Update award_table to "rpt.award_search" when it includes those columns,
+        #       OR remove entirely and update the award_search generation script/pipeline to perform after
+        #       subaward_search is updated and use that
         award_table = "raw.awards"
         update_award_query = f"""
             WITH subaward_totals AS (
