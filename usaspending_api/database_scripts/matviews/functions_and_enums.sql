@@ -1,8 +1,5 @@
 -- Postgres extensions, functions, and enums necessary for some views
 
-CREATE EXTENSION IF NOT EXISTS intarray;
-
-
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'total_obligation_bins') THEN
