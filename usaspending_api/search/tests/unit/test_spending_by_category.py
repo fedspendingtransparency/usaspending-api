@@ -266,8 +266,8 @@ def recipient_test_data(db):
         broker_subaward_id=1,
         award_id=1,
         subaward_amount=1,
-        sub_awardee_or_recipient_legal_raw="University of Pawnee",
-        sub_awardee_or_recipient_legal="University of Pawnee",
+        sub_awardee_or_recipient_legal_raw="UNIVERSITY OF PAWNEE",
+        sub_awardee_or_recipient_legal="UNIVERSITY OF PAWNEE",
         sub_awardee_or_recipient_uniqu="00UOP00",
     )
     baker.make(
@@ -275,8 +275,8 @@ def recipient_test_data(db):
         broker_subaward_id=2,
         award_id=2,
         subaward_amount=10,
-        sub_awardee_or_recipient_legal_raw="University of Pawnee",
-        sub_awardee_or_recipient_legal="University of Pawnee",
+        sub_awardee_or_recipient_legal_raw="UNIVERSITY OF PAWNEE",
+        sub_awardee_or_recipient_legal="UNIVERSITY OF PAWNEE",
         sub_awardee_or_recipient_uniqu="00UOP00",
     )
     baker.make(
@@ -284,8 +284,8 @@ def recipient_test_data(db):
         broker_subaward_id=3,
         award_id=3,
         subaward_amount=100,
-        sub_awardee_or_recipient_legal_raw="John Doe",
-        sub_awardee_or_recipient_legal="John Doe",
+        sub_awardee_or_recipient_legal_raw="JOHN DOE",
+        sub_awardee_or_recipient_legal="JOHN DOE",
         sub_awardee_or_recipient_uniqu="1234JD4321",
     )
     baker.make(
@@ -293,8 +293,8 @@ def recipient_test_data(db):
         broker_subaward_id=4,
         award_id=4,
         subaward_amount=1000,
-        sub_awardee_or_recipient_legal_raw="John Doe",
-        sub_awardee_or_recipient_legal="John Doe",
+        sub_awardee_or_recipient_legal_raw="JOHN DOE",
+        sub_awardee_or_recipient_legal="JOHN DOE",
         sub_awardee_or_recipient_uniqu="1234JD4321",
     )
     baker.make(
@@ -435,11 +435,13 @@ def geo_test_data(db):
         subaward_amount=1,
         sub_place_of_perform_country_na=None,
         sub_place_of_perform_country_co_raw="US",
+        sub_place_of_perform_country_co="US",
         sub_place_of_perform_state_code="XY",
-        sub_place_of_perform_county_code="04",
+        sub_place_of_perform_county_code="004",
         sub_place_of_perform_county_name="COUNTYSVILLE",
         sub_place_of_performance_zip="12345",
         sub_place_of_perform_congressio_raw="06",
+        sub_place_of_perform_congressio="06",
     )
     baker.make(
         "search.SubawardSearch",
@@ -448,11 +450,13 @@ def geo_test_data(db):
         subaward_amount=10,
         sub_place_of_perform_country_na=None,
         sub_place_of_perform_country_co_raw="US",
+        sub_place_of_perform_country_co="US",
         sub_place_of_perform_state_code="XY",
-        sub_place_of_perform_county_code="04",
+        sub_place_of_perform_county_code="004",
         sub_place_of_perform_county_name="COUNTYSVILLE",
         sub_place_of_performance_zip="12345",
         sub_place_of_perform_congressio_raw="06",
+        sub_place_of_perform_congressio="06",
     )
     baker.make(
         "search.SubawardSearch",
@@ -461,11 +465,13 @@ def geo_test_data(db):
         subaward_amount=100,
         sub_place_of_perform_country_na=None,
         sub_place_of_perform_country_co_raw="US",
+        sub_place_of_perform_country_co="US",
         sub_place_of_perform_state_code="XY",
-        sub_place_of_perform_county_code="01",
+        sub_place_of_perform_county_code="001",
         sub_place_of_perform_county_name="SOMEWHEREVILLE",
         sub_place_of_performance_zip="98765",
         sub_place_of_perform_congressio_raw="90",
+        sub_place_of_perform_congressio="90",
     )
     baker.make(
         "search.SubawardSearch",
@@ -474,11 +480,13 @@ def geo_test_data(db):
         subaward_amount=1000,
         sub_place_of_perform_country_na=None,
         sub_place_of_perform_country_co_raw="US",
+        sub_place_of_perform_country_co="US",
         sub_place_of_perform_state_code="XY",
-        sub_place_of_perform_county_code="01",
+        sub_place_of_perform_county_code="001",
         sub_place_of_perform_county_name="SOMEWHEREVILLE",
         sub_place_of_performance_zip="98765",
         sub_place_of_perform_congressio_raw="90",
+        sub_place_of_perform_congressio="90",
     )
 
     baker.make(
