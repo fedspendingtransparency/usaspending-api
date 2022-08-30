@@ -21,6 +21,7 @@ from usaspending_api.transactions.delta_models.transaction_search import (
 from usaspending_api.transactions.delta_models.summary_state_view import (
     SUMMARY_STATE_VIEW_COLUMNS,
     summary_state_view_create_sql_string,
+    summary_state_view_load_sql_string,
 )
 
 __all__ = [
@@ -37,4 +38,5 @@ __all__ = [
     "transaction_search_load_sql_string",
     "SUMMARY_STATE_VIEW_COLUMNS",
     "summary_state_view_create_sql_string",
+    "summary_state_view_load_sql_string",
 ]
