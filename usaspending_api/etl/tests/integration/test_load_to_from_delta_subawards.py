@@ -20,7 +20,7 @@ def test_load_table_to_from_delta_for_subawards(
     s3_unittest_data_bucket,
     broker_server_dblink_setup,
     populate_broker_data_to_delta,
-    populate_data_for_transaction_search,
+    populate_data_for_usas,
     hive_unittest_metastore_db,
 ):
     tables_to_load = [
@@ -33,7 +33,7 @@ def test_load_table_to_from_delta_for_subawards(
         "financial_accounts_by_awards",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-    verify_delta_table_loaded_to_delta(spark, "broker_subaward", s3_unittest_data_bucket)
+    verify_delta_table_loaded_to_delta(spark, "subaward", s3_unittest_data_bucket)
 
     expected_dummy_data = [
         {

@@ -1,11 +1,10 @@
-RECIPIENT_PROFILE_COLUMNS = {
+RECIPIENT_PROFILE_COLUMNS_WITHOUT_ID = {
     "recipient_level": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL"},
     "recipient_hash": {"delta": "STRING", "postgres": "UUID"},
     "recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_name": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_affiliations": {"delta": "ARRAY<STRING> NOT NULL", "postgres": "TEXT[]"},
     "last_12_months": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
-    "id": {"delta": "LONG NOT NULL", "postgres": "bigint"},
     "last_12_contracts": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
     "last_12_direct_payments": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
     "last_12_grants": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
@@ -16,8 +15,14 @@ RECIPIENT_PROFILE_COLUMNS = {
     "uei": {"delta": "STRING", "postgres": "text"},
     "parent_uei": {"delta": "STRING", "postgres": "text"},
 }
+RECIPIENT_PROFILE_COLUMNS = {
+    "id": {"delta": "LONG", "postgres": "BIGINT NOT NULL"},
+    **RECIPIENT_PROFILE_COLUMNS_WITHOUT_ID,
+}
 RECIPIENT_PROFILE_DELTA_COLUMNS = {k: v["delta"] for k, v in RECIPIENT_PROFILE_COLUMNS.items()}
-RECIPIENT_PROFILE_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in RECIPIENT_PROFILE_COLUMNS.items()}
+RPT_RECIPIENT_PROFILE_DELTA_COLUMNS = {k: v["postgres"] for k, v in RECIPIENT_PROFILE_COLUMNS_WITHOUT_ID.items()}
+RECIPIENT_PROFILE_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in RECIPIENT_PROFILE_COLUMNS_WITHOUT_ID.items()}
+
 recipient_profile_create_sql_string = f"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in RECIPIENT_PROFILE_DELTA_COLUMNS.items()])}

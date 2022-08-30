@@ -479,7 +479,7 @@ subaward_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio
 
     FROM
-        raw.broker_subaward AS bs
+        raw.subaward AS bs
     LEFT OUTER JOIN
         raw.awards AS a
             ON a.generated_unique_award_id = bs.unique_award_key

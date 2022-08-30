@@ -15,7 +15,7 @@ services:
       - manage
       - test
       - ci
-    image: postgres:10.13-alpine
+    image: postgres:13.8-alpine
     container_name: usaspending-db
     volumes:
       - type: volume
