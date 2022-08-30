@@ -6,7 +6,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 
 from django.conf import settings
-from django.db.models import Sum
+from django.db.models import Sum, F
 from elasticsearch_dsl import A
 from elasticsearch_dsl.response import AggResponse
 from rest_framework.request import Request
@@ -80,22 +80,28 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def database_data_layer_for_subawards(self) -> tuple:
         queryset = subaward_filter(self.filters)
         obligation_column = "subaward_amount"
-        values = ["fy"]
 
+        # Note: SubawardSearch already has an "fy" field that corresponds to the prime award's fiscal year.
+        #       This, however, needs "fy" to be the fiscal year of the sub_action_date (i.e. "sub_fiscal_year").
+        #       And so, Django gets confused simply aliasing it to "fy" as "fy" is already a field in the model.
+        #       To get around that, we're doing this little dance of annotate() and values().
+        queryset = queryset.annotate(primel_fy=F("fy"))
+
+        other_values = []
         if self.group == "month":
-            queryset = queryset.annotate(month=FiscalMonth("sub_action_date"), fy=FiscalYear("sub_action_date"))
-            values.append("month")
-
+            queryset = queryset.annotate(month=FiscalMonth("sub_action_date"))
+            other_values.append("month")
         elif self.group == "quarter":
-            queryset = queryset.annotate(quarter=FiscalQuarter("sub_action_date"), fy=FiscalYear("sub_action_date"))
-            values.append("quarter")
+            queryset = queryset.annotate(quarter=FiscalQuarter("sub_action_date"))
+            other_values.append("quarter")
 
-        elif self.group == "fiscal_year":
-            queryset = queryset.annotate(fy=FiscalYear("sub_action_date"))
-
+        first_values = ["primel_fy"] + other_values
+        values_dict = {"fy": F("sub_fiscal_year")}
+        values = ["fy"] + other_values
         queryset = (
-            queryset.values(*values)
+            queryset.values(*first_values)
             .annotate(aggregated_amount=Sum(obligation_column))
+            .values(*other_values, **values_dict)
             .order_by(*["{}".format(value) for value in values])
         )
 
