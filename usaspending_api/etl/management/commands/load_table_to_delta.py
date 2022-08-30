@@ -154,7 +154,7 @@ TABLE_SPEC = {
         "tsvectors": None,
     },
     # Tables loaded in from the Broker
-    "broker_subaward": {
+    "subaward": {
         "model": None,
         "is_from_broker": True,
         "source_table": "subaward",
