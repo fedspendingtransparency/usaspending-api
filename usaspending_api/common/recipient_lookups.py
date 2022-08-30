@@ -153,7 +153,7 @@ def annotate_prime_award_recipient_id(field_name, queryset):
                 inner join recipient_lookup rl on (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
                 inner join recipient_profile rp on rp.recipient_hash = rl.recipient_hash
             where
-                bs.id = {outer_table}.broker_subaward_id and
+                bs.broker_subaward_id = {outer_table}.broker_subaward_id and
                 rp.recipient_level = case
                     when bs.ultimate_parent_uei is null or bs.ultimate_parent_uei = '' then 'R'
                     else 'C'
