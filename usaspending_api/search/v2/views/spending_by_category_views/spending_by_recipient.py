@@ -40,7 +40,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
         else:
             raise RuntimeError(
                 "Attempted to lookup recipient profile using a queryset that contains neither "
-                "'recipient_hash' nor 'recipient_unique_id'"
+                "'recipient_hash' nor 'recipient_unique_id' nor 'sub_awardee_or_recipient_uniqu'"
             )
 
         profile = (

@@ -37,7 +37,7 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
     # Yes, these are mostly the same, but congressional is different
     # and I'd rather have them all laid out here versus burying a extra couple lines for congressional
     location_mappings = {
-        "country_code": {"sub_legal_entity": "country_code", "sub_place_of_perform": "country_code"},
+        "country_code": {"sub_legal_entity": "country_code", "sub_place_of_perform": "country_co"},
         "zip5": {"sub_legal_entity": "zip5", "sub_place_of_perform": "zip5"},
         "city_name": {"sub_legal_entity": "city_name", "sub_place_of_perform": "city_name"},
         "state_code": {"sub_legal_entity": "state_code", "sub_place_of_perform": "state_code"},

@@ -104,6 +104,7 @@ def mock_tas_data(db):
         prime_award_type="A",
         prime_award_group="procurement",
         subaward_number="1A",
+        treasury_account_identifiers=[1]
     )
     baker.make(
         "search.SubawardSearch",
@@ -113,6 +114,7 @@ def mock_tas_data(db):
         prime_award_type="A",
         prime_award_group="procurement",
         subaward_number="2A",
+        treasury_account_identifiers=[2]
     )
     baker.make(
         "search.SubawardSearch",
@@ -122,6 +124,7 @@ def mock_tas_data(db):
         prime_award_type="A",
         prime_award_group="procurement",
         subaward_number="3A",
+        treasury_account_identifiers=[3]
     )
 
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")

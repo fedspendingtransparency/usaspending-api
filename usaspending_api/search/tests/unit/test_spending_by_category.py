@@ -267,6 +267,7 @@ def recipient_test_data(db):
         award_id=1,
         subaward_amount=1,
         sub_awardee_or_recipient_legal_raw="University of Pawnee",
+        sub_awardee_or_recipient_legal="University of Pawnee",
         sub_awardee_or_recipient_uniqu="00UOP00",
     )
     baker.make(
@@ -275,6 +276,7 @@ def recipient_test_data(db):
         award_id=2,
         subaward_amount=10,
         sub_awardee_or_recipient_legal_raw="University of Pawnee",
+        sub_awardee_or_recipient_legal="University of Pawnee",
         sub_awardee_or_recipient_uniqu="00UOP00",
     )
     baker.make(
@@ -283,6 +285,7 @@ def recipient_test_data(db):
         award_id=3,
         subaward_amount=100,
         sub_awardee_or_recipient_legal_raw="John Doe",
+        sub_awardee_or_recipient_legal="John Doe",
         sub_awardee_or_recipient_uniqu="1234JD4321",
     )
     baker.make(
@@ -291,6 +294,7 @@ def recipient_test_data(db):
         award_id=4,
         subaward_amount=1000,
         sub_awardee_or_recipient_legal_raw="John Doe",
+        sub_awardee_or_recipient_legal="John Doe",
         sub_awardee_or_recipient_uniqu="1234JD4321",
     )
     baker.make(
@@ -299,6 +303,7 @@ def recipient_test_data(db):
         award_id=5,
         subaward_amount=10000,
         sub_awardee_or_recipient_legal_raw="MULTIPLE RECIPIENTS",
+        sub_awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         sub_awardee_or_recipient_uniqu=None,
     )
 

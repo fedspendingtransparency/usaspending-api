@@ -62,7 +62,7 @@ SELECT
     "subaward_number" AS "subaward_number",
     "subaward_amount" AS "subaward_amount",
     "sub_action_date" AS "subaward_action_date",
-    EXTRACT(YEAR FROM ("action_date") + INTERVAL '3 months') AS "subaward_action_date_fiscal_year",
+    EXTRACT(YEAR FROM ("sub_action_date") + INTERVAL '3 months') AS "subaward_action_date_fiscal_year",
     "sub_awardee_or_recipient_uniqu" AS "subawardee_duns",
     "sub_awardee_or_recipient_legal" AS "subawardee_name",
     "sub_dba_name" AS "subawardee_dba_name",

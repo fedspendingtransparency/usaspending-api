@@ -99,7 +99,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             subaward_filter(filters)
             .filter(award_id__isnull=False)
             .values("prime_award_group")
-            .annotate(count=Count("subaward_id"))
+            .annotate(count=Count("broker_subaward_id"))
         )
 
         results = {}
