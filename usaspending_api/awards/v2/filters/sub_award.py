@@ -192,7 +192,7 @@ def subaward_filter(filters, for_downloads=False):
         elif key == "prime_and_sub_award_types":
             award_types = value.get("sub_awards")
             if award_types:
-                queryset = queryset.filter(subaward_type__in=award_types)
+                queryset = queryset.filter(prime_award_group__in=award_types)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
