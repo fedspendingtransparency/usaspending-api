@@ -24,7 +24,7 @@ def award_data_fixture(db):
     )
     baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
     baker.make(
-        "awards.SubawardSearch",
+        "search.SubawardSearch",
         broker_subaward_id=1,
         award_id=1,
         subaward_amount=123.45,
