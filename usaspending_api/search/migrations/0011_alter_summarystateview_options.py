@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0009_awardsearch_view_drop'),
+        ('search', '0010_subaward_search'),
     ]
 
     operations = [
