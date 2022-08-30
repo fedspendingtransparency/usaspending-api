@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('awards', '0096_removing_subaward_models'),
         ('references', '0058_bureautitlelookup'),
-        ('search', '0010_subaward_search'),
+        ('search', '0011_alter_summarystateview_options'),
     ]
 
     operations = [
