@@ -28,10 +28,10 @@ def award_data_fixture(db):
         broker_subaward_id=1,
         award_id=1,
         subaward_amount=123.45,
-        sub_place_of_perform_country_co_raw="USA",
+        sub_place_of_perform_country_co="USA",
         sub_place_of_perform_state_code="TX",
         sub_place_of_perform_city_name="HOUSTON",
-        sub_legal_entity_country_code_raw="USA",
+        sub_legal_entity_country_code="USA",
         sub_legal_entity_state_code="CA",
     )
     baker.make("references.PopCounty", state_name="California", county_number="000", latest_population=2403)
