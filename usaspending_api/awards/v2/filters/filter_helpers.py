@@ -56,9 +56,9 @@ def date_list_to_queryset(date_list, table, is_subaward=False):
             # When searching subawards, use the subaward equivalent fields
             if is_subaward:
                 subaward_mappings = {
-                    'action_date': 'sub_action_date',
-                    'last_modified_date': 'last_modified_date',
-                    'date_signed': 'date_signed'
+                    "action_date": "sub_action_date",
+                    "last_modified_date": "last_modified_date",
+                    "date_signed": "date_signed",
                 }
                 date_type_dict[operand] = subaward_mappings[date_type]
 
