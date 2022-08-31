@@ -343,7 +343,7 @@ def spending_by_award_test_data():
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=4,
-        award_id=award_3,
+        award=award_3,
         subaward_number=44444,
         awardee_or_recipient_uniqu="duns_1003",
         sub_awardee_or_recipient_uei="UEI_10010003",
