@@ -220,7 +220,7 @@ class SubawardSearch(models.Model):
     recipient_name_ts_vector = SearchVectorField(null=True)
 
     class Meta:
-        db_table = 'rpt"."subaward_search'
+        db_table = "subaward_search"
         indexes = [
             models.Index(fields=["award_id"], name="ss_idx_award_id"),
             models.Index(
