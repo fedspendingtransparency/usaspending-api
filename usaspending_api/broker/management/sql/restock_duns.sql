@@ -75,7 +75,49 @@ CREATE TABLE raw.temporary_restock_duns AS (
 
 BEGIN;
 DELETE FROM raw.duns;
-INSERT INTO raw.duns SELECT * FROM raw.temporary_restock_duns;
+INSERT INTO raw.duns
+    (
+        awardee_or_recipient_uniqu,
+        legal_business_name,
+        ultimate_parent_unique_ide,
+        ultimate_parent_legal_enti,
+        broker_duns_id,
+        update_date,
+        address_line_1,
+        address_line_2,
+        city,
+        congressional_district,
+        country_code,
+        state,
+        zip,
+        zip4,
+        business_types_codes,
+        dba_name,
+        entity_structure,
+        uei,
+        ultimate_parent_uei
+    )
+SELECT
+    awardee_or_recipient_uniqu,
+    legal_business_name,
+    ultimate_parent_unique_ide,
+    ultimate_parent_legal_enti,
+    broker_duns_id,
+    update_date,
+    address_line_1,
+    address_line_2,
+    city,
+    congressional_district,
+    country_code,
+    state,
+    zip,
+    zip4,
+    business_types_codes,
+    dba_name,
+    entity_structure,
+    uei,
+    ultimate_parent_uei
+FROM raw.temporary_restock_duns;
 DROP TABLE raw.temporary_restock_duns;
 COMMIT;
 VACUUM ANALYZE raw.duns;

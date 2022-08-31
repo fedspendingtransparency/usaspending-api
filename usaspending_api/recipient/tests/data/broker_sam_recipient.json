@@ -1,0 +1,24 @@
+[
+    {
+        "activation_date": "2015-02-05",
+        "address_line_1": "CALLE 10 NO. 264, ENTRE 61 Y 63",
+        "address_line_2": "",
+        "awardee_or_recipient_uniqu": "812918241",
+        "business_types_codes": "{20,2U,GW,M8,V2}",
+        "city": "CAMPECHE",
+        "congressional_district": null,
+        "country_code": "MEX",
+        "dba_name": "RESEARCH CENTER",
+        "deactivation_date": "2016-06-21",
+        "entity_structure": "X6",
+        "legal_business_name": "EL COLEGIO DE LA FRONTERA SUR",
+        "sam_recipient_id": 1,
+        "state": "CAMPECHE",
+        "uei": "CTKJDNGYLM97",
+        "ultimate_parent_legal_enti": "GOBIERNO FEDERAL DE LOS ESTADOS UNIDOS MEXICANOS",
+        "ultimate_parent_uei": "KDULNMSMR7E6",
+        "ultimate_parent_unique_ide": "811979236",
+        "zip": "24000",
+        "zip4": null
+    }
+]

@@ -5,18 +5,20 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
+    get_broker_jdbc_url,
+    get_jdbc_connection_properties,
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
-    RECIPIENT_LOOKUP_DELTA_COLUMNS,
     recipient_lookup_load_sql_string_list,
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     recipient_profile_create_sql_string,
+    RECIPIENT_PROFILE_DELTA_COLUMNS,
     recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
     rpt_recipient_lookup_create_sql_string,
-    RECIPIENT_PROFILE_DELTA_COLUMNS,
+    RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS,
     SAM_RECIPIENT_COLUMNS,
     SAM_RECIPIENT_POSTGRES_COLUMNS,
     sam_recipient_create_sql_string,
@@ -71,15 +73,15 @@ TABLE_SPEC = {
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": None,
-        "swap_schema": None,
+        "swap_table": "recipient_lookup",
+        "swap_schema": "rpt",
         "partition_column": "recipient_hash",
         "partition_column_type": "string",
         "is_partition_column_unique": True,
         "delta_table_create_sql": rpt_recipient_lookup_create_sql_string,
         "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
-        "column_names": list(RECIPIENT_LOOKUP_DELTA_COLUMNS),
+        "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
         "tsvectors": None,
     },
     "recipient_profile": {
@@ -105,10 +107,10 @@ TABLE_SPEC = {
         "is_from_broker": True,
         "source_query": sam_recipient_load_sql_string,
         "source_database": None,
-        "source_table": None,
-        "destination_database": "raw",
+        "source_table": "sam_recipient",
+        "destination_database": "int",
         "swap_table": "sam_recipient",
-        "swap_schema": "raw",
+        "swap_schema": "int",
         "partition_column": "broker_duns_id",
         "partition_column_type": "string",
         "is_partition_column_unique": True,
@@ -240,10 +242,14 @@ class Command(BaseCommand):
             self.spark.stop()
 
     def run_spark_sql(self, query):
+        jdbc_conn_props = get_jdbc_connection_properties()
         self.spark.sql(
             query.format(
                 DESTINATION_DATABASE=self.destination_database,
                 DESTINATION_TABLE=self.destination_table_name,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                JDBC_DRIVER=jdbc_conn_props["driver"],
+                JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
+                JDBC_URL=get_broker_jdbc_url(),
             )
         )

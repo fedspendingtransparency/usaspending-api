@@ -170,7 +170,7 @@ recipient_lookup_load_sql_string_list = [
                         awardee_or_recipient_uniqu ASC NULLS LAST,
                         update_date DESC NULLS FIRST
                 ) AS row_num
-            FROM raw.sam_recipient
+            FROM int.sam_recipient
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NOT NULL
         ),
         latest_tx AS (
@@ -248,7 +248,7 @@ recipient_lookup_load_sql_string_list = [
                         ultimate_parent_uei ASC NULLS LAST,
                         update_date DESC NULLS LAST
                 ) AS row_num
-            FROM raw.sam_recipient
+            FROM int.sam_recipient
             WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
         ),
         latest_tx_parent AS (
@@ -325,7 +325,7 @@ recipient_lookup_load_sql_string_list = [
                         awardee_or_recipient_uniqu ASC NULLS LAST,
                         update_date DESC NULLS FIRST
                 ) AS row_num
-            FROM raw.sam_recipient
+            FROM int.sam_recipient
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NULL
         ),
         latest_tx_no_name AS (
@@ -402,7 +402,7 @@ recipient_lookup_load_sql_string_list = [
                         ultimate_parent_unique_ide ASC NULLS LAST,
                         update_date DESC NULLS FIRST
                 ) AS row_num
-            FROM raw.sam_recipient
+            FROM int.sam_recipient
             WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NULL
         ),
         latest_tx_parent_no_name AS (
