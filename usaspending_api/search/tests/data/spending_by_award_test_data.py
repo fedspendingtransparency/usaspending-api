@@ -320,7 +320,7 @@ def spending_by_award_test_data():
         awardee_or_recipient_legal="recipient_name_for_award_1001",
         sub_awardee_or_recipient_legal="RECIPIENT_NAME_FOR_AWARD_1001",
         awardee_or_recipient_uniqu="duns_1001",
-        sub_awardee_or_recipient_uei="UEI_10010001",
+        sub_awardee_or_recipient_uei="UEI_10010002",
         piid="PIID2001",
         awarding_toptier_agency_name="awarding toptier 8002",
         awarding_subtier_agency_name="awarding subtier 8002",
