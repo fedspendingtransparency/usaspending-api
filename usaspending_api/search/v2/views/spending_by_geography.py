@@ -101,29 +101,50 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             "recipient_location": {"prime": "recipient_location", "sub": "sub_legal_entity"},
         }
         # Most of these are the same but some of slightly off, so we can track all the nuances here
-        location_dict = {
-            "county": {
-                "prime": {"pop": "county_code", "recipient_location": "county_code"},
-                "sub": {"sub_place_of_perform": "county_code", "sub_legal_entity": "county_code"},
+        self.location_dict = {
+            "code": {
+                "country": {
+                    "prime": {"pop": "country_co", "recipient_location": "country_code"},
+                    "sub": {"sub_place_of_perform": "country_co", "sub_legal_entity": "country_code"},
+                },
+                "county": {
+                    "prime": {"pop": "county_code", "recipient_location": "county_code"},
+                    "sub": {"sub_place_of_perform": "county_code", "sub_legal_entity": "county_code"},
+                },
+                "district": {
+                    "prime": {"pop": "congressional", "recipient_location": "congressional"},
+                    "sub": {"sub_place_of_perform": "congressio", "sub_legal_entity": "congressional"},
+                },
+                "state": {
+                    "prime": {"pop": "state_code", "recipient_location": "state_code"},
+                    "sub": {"sub_place_of_perform": "state_code", "sub_legal_entity": "state_code"},
+                },
             },
-            "district": {
-                "prime": {"pop": "congressional_code", "recipient_location": "congressional_code"},
-                "sub": {"sub_place_of_perform": "congressio", "sub_legal_entity": "congressional"},
-            },
-            "state": {
-                "prime": {"pop": "state_code", "recipient_location": "state_code"},
-                "sub": {"sub_place_of_perform": "state_code", "sub_legal_entity": "state_code"},
+            "name": {
+                "country": {
+                    "prime": {"pop": "country_na", "recipient_location": "country_name"},
+                    "sub": {"sub_place_of_perform": "country_na", "sub_legal_entity": "country_name"},
+                },
+                "county": {
+                    "sub": {"sub_place_of_perform": "county_name", "sub_legal_entity": "county_name"},
+                },
+                "state": {
+                    "prime": {"pop": "state_name", "recipient_location": "state_name"},
+                    "sub": {"sub_place_of_perform": "state_name", "sub_legal_entity": "state_name"},
+                },
             },
         }
 
         self.subawards = json_request["subawards"]
-        award_or_sub_str = "sub" if self.subawards else "prime"
-        self.scope_field_name = model_dict[json_request["scope"]][award_or_sub_str]
+        self.award_or_sub_str = "sub" if self.subawards else "prime"
+        self.scope_field_name = model_dict[json_request["scope"]][self.award_or_sub_str]
         self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
         self.filters = json_request.get("filters")
         self.geo_layer = GeoLayer(json_request["geo_layer"])
         self.geo_layer_filters = json_request.get("geo_layer_filters")
-        self.loc_field_name = location_dict[self.geo_layer.value][award_or_sub_str][self.scope_field_name]
+        self.loc_field_name = self.location_dict["code"][self.geo_layer.value][self.award_or_sub_str][
+            self.scope_field_name
+        ]
         self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
 
         if self.subawards:
@@ -163,7 +184,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         if self.geo_layer == GeoLayer.STATE:
             # State will have one field (state_code) containing letter A-Z
             column_isnull = f"{self.obligation_column}__isnull"
-            kwargs = {f"{self.scope_field_name}_country_code": "USA", column_isnull: False}
+
+            cc_col = self.location_dict["code"]["country"][self.award_or_sub_str][self.scope_field_name]
+            kwargs = {f"{self.scope_field_name}_{cc_col}": "USA", column_isnull: False}
 
             # Only state scope will add its own state code
             # State codes are consistent in database i.e. AL, AK
@@ -174,7 +197,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:
             # County and district scope will need to select multiple fields
             # State code is needed for county/district aggregation
-            state_lookup = f"{self.scope_field_name}_state_code"
+            state_col = self.location_dict["code"]["state"][self.award_or_sub_str][self.scope_field_name]
+            state_lookup = f"{self.scope_field_name}_{state_col}"
             fields_list.append(state_lookup)
 
             # Adding regex to county/district codes to remove entries with letters since can't be surfaced by map
@@ -182,7 +206,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
             if self.geo_layer == GeoLayer.COUNTY:
                 # County name added to aggregation since consistent in db
-                county_name_lookup = f"{self.scope_field_name}_county_name"
+
+                county_col = self.location_dict["name"]["county"][self.award_or_sub_str][self.scope_field_name]
+                county_name_lookup = f"{self.scope_field_name}_{county_col}"
                 fields_list.append(county_name_lookup)
                 geo_queryset = self.county_district_queryset(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
