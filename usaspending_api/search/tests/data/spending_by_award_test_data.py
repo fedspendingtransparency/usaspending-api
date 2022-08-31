@@ -322,6 +322,7 @@ def spending_by_award_test_data():
         piid="PIID2001",
         awarding_toptier_agency_name="awarding toptier 8002",
         awarding_subtier_agency_name="awarding subtier 8002",
+        product_or_service_code='PSC0',
     )
     baker.make(
         "search.SubawardSearch",
@@ -339,6 +340,7 @@ def spending_by_award_test_data():
         piid="PIID3002",
         awarding_toptier_agency_name="awarding toptier 8003",
         awarding_subtier_agency_name="awarding subtier 8003",
+        product_or_service_code='PSC0',
     )
     baker.make(
         "search.SubawardSearch",
@@ -347,6 +349,7 @@ def spending_by_award_test_data():
         subaward_number=44444,
         awardee_or_recipient_uniqu="duns_1003",
         sub_awardee_or_recipient_uei="UEI_10010003",
+        product_or_service_code='PSC0',
     )
     baker.make(
         "search.SubawardSearch",
@@ -364,6 +367,7 @@ def spending_by_award_test_data():
         piid="PIID6003",
         awarding_toptier_agency_name="awarding toptier 8006",
         awarding_subtier_agency_name="awarding subtier 8006",
+        product_or_service_code='PSC0',
     )
     baker.make(
         "search.SubawardSearch",
@@ -380,6 +384,7 @@ def spending_by_award_test_data():
         piid="PIID6003",
         awarding_toptier_agency_name="awarding toptier 8006",
         awarding_subtier_agency_name="awarding subtier 8006",
+        product_or_service_code='PSC0',
     )
 
     # Ref Program Activity
