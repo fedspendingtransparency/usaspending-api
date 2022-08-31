@@ -63,5 +63,5 @@ def subaward(db, award_id, treasury_account_identifiers):
         subaward_number=11111,
         prime_award_group="procurement",
         subaward_amount=10000,
-        treasury_account_identifiers=treasury_account_identifiers
+        treasury_account_identifiers=treasury_account_identifiers,
     )

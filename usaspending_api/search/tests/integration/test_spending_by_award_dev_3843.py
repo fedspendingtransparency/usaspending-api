@@ -17,10 +17,10 @@ def award_id_search_data(spending_by_award_test_data):
     Award.objects.filter(id=2).update(piid="abc 111")
     Award.objects.filter(id=3).update(piid="abc       111")
 
-    SubawardSearch.objects.filter(broker_subaward_id=1).update(piid="abc111", award_ts_vector='abc111')
-    SubawardSearch.objects.filter(broker_subaward_id=2).update(piid="abc111", award_ts_vector='abc111')
-    SubawardSearch.objects.filter(broker_subaward_id=3).update(piid="abc 111", award_ts_vector='111')
-    SubawardSearch.objects.filter(broker_subaward_id=6).update(piid="abc       111", award_ts_vector='abc       111')
+    SubawardSearch.objects.filter(broker_subaward_id=1).update(piid="abc111", award_ts_vector="abc111")
+    SubawardSearch.objects.filter(broker_subaward_id=2).update(piid="abc111", award_ts_vector="abc111")
+    SubawardSearch.objects.filter(broker_subaward_id=3).update(piid="abc 111", award_ts_vector="111")
+    SubawardSearch.objects.filter(broker_subaward_id=6).update(piid="abc       111", award_ts_vector="abc       111")
 
 
 def build_request_data(award_ids, subawards):
