@@ -184,7 +184,7 @@ def subaward_filter(filters, for_downloads=False):
             min_date = API_SEARCH_MIN_DATE
             if for_downloads:
                 min_date = API_MIN_DATE
-            queryset &= combine_date_range_queryset(value, SubawardSearch, min_date, API_MAX_DATE)
+            queryset &= combine_date_range_queryset(value, SubawardSearch, min_date, API_MAX_DATE, is_subaward=True)
 
         elif key == "award_type_codes":
             queryset = queryset.filter(prime_award_type__in=value)
