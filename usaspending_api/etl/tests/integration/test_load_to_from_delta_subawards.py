@@ -18,8 +18,6 @@ from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
 def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,
-    broker_server_dblink_setup,
-    populate_broker_data,
     populate_usas_data,
     hive_unittest_metastore_db,
 ):
@@ -381,8 +379,8 @@ def test_load_table_to_from_delta_for_subawards(
             "cfda_title": None,
             "sub_fiscal_year": 2019,
             "sub_total_obl_bin": "<1M",
-            "sub_awardee_or_recipient_legal": "FABS TEST RECIPIENT",
-            "sub_ultimate_parent_legal_enti": "FABS TEST RECIPIENT",
+            "sub_awardee_or_recipient_legal": "FABS RECIPIENT 12345",
+            "sub_ultimate_parent_legal_enti": "FABS RECIPIENT 12345",
             "business_type_code": None,
             "business_categories": [],
             "treasury_account_identifiers": None,
@@ -814,11 +812,11 @@ def test_load_table_to_from_delta_for_subawards(
             "recipient_name_ts_vector": "'yolo':1",
         },
         {
-            "keyword_ts_vector": "'-19':11 'ae':5 'ay18':10 'course':12 'delivery':13 'e':7 'e-teacher':6"
-            " 'educational':15 'fabs':1 'fy17':4 'program':9 'recipient':3 'teacher':8"
-            " 'technology':16 'test':2 'using':14",
+            "keyword_ts_vector": "'-19':11 '12345':3 'ae':5 'ay18':10 'course':12 'delivery':13 'e':7 'e-teacher':6"
+            " 'educational':15 'fabs':1 'fy17':4 'program':9 'recipient':2 'teacher':8"
+            " 'technology':16 'using':14",
             "award_ts_vector": "'asdfasdfasdfs':1 'dasfasf':2",
-            "recipient_name_ts_vector": "'fabs':1 'recipient':3 'test':2",
+            "recipient_name_ts_vector": "'12345':3 'fabs':1 'recipient':2",
         },
         {
             "keyword_ts_vector": "'consulting':4 'engineering':3 'hai':2 'o':1 'services':5",

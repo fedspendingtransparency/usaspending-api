@@ -3,7 +3,7 @@ SAM_RECIPIENT_COLUMNS = {
     "legal_business_name": {"delta": "STRING", "postgres": "TEXT"},
     "ultimate_parent_unique_ide": {"delta": "STRING", "postgres": "TEXT"},
     "ultimate_parent_legal_enti": {"delta": "STRING", "postgres": "TEXT"},
-    "broker_duns_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "broker_duns_id": {"delta": "STRING", "postgres": "TEXT"},
     "update_date": {"delta": "DATE", "postgres": "DATE"},
     "address_line_1": {"delta": "STRING", "postgres": "TEXT"},
     "address_line_2": {"delta": "STRING", "postgres": "TEXT"},
@@ -71,7 +71,7 @@ sam_recipient_load_sql_string = [
             broker_sam_recipient.congressional_district,
             CAST(COALESCE(broker_sam_recipient.business_types_codes, ARRAY()) AS ARRAY<STRING>) AS business_types_codes,
             broker_sam_recipient.entity_structure,
-            broker_sam_recipient.sam_recipient_id AS broker_duns_id,
+            CAST(broker_sam_recipient.sam_recipient_id AS STRING) AS broker_duns_id,
             COALESCE(broker_sam_recipient.activation_date, broker_sam_recipient.deactivation_date) as update_date,
             broker_sam_recipient.uei,
             broker_sam_recipient.ultimate_parent_uei

@@ -137,7 +137,7 @@ TABLE_SPEC = {
         "tsvectors": None,
     },
     # Tables loaded in from the Broker
-    "broker_subaward": {
+    "subaward": {
         "model": None,
         "is_from_broker": True,
         "source_table": "subaward",
@@ -213,7 +213,7 @@ TABLE_SPEC = {
         "model": DUNS,
         "is_from_broker": False,
         "source_table": "duns",
-        "source_database": "raw",
+        "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,
@@ -222,7 +222,7 @@ TABLE_SPEC = {
         "is_partition_column_unique": False,
         "delta_table_create_sql": sam_recipient_create_sql_string,
         "source_schema": None,
-        "custom_schema": "broker_duns_id INT, business_types_codes ARRAY<STRING>",
+        "custom_schema": "broker_duns_id STRING, business_types_codes ARRAY<STRING>",
         "column_names": list(SAM_RECIPIENT_COLUMNS),
         "tsvectors": None,
     },

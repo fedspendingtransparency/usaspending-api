@@ -36,7 +36,7 @@ from usaspending_api.recipient.models import RecipientLookup
 def populate_broker_data(broker_server_dblink_setup):
     broker_data = {
         "sam_recipient": json.loads(Path("usaspending_api/recipient/tests/data/broker_sam_recipient.json").read_text()),
-        "subaward": json.loads(Path("usaspending_api/awards/tests/data/broker_subawards.json").read_text()),
+        "subaward": json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text()),
     }
     insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
     with connections["data_broker"].cursor() as cursor:
@@ -403,7 +403,7 @@ def populate_usas_data(populate_broker_data):
     # Run current Postgres ETLs to make sure data is populated_correctly
     update_awards()
     restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
-    execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE raw.duns;", ""))
+    execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
     call_command("update_recipient_lookup")
     execute_sql_simple(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
 
@@ -971,7 +971,7 @@ def test_load_table_to_from_delta_for_transaction_normalized(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile_testing(
-    spark, s3_unittest_data_bucket, populate_usas_data, monkeypatch, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "recipient_lookup",
@@ -1123,7 +1123,7 @@ def test_load_table_to_from_delta_for_sam_recipient(spark, s3_unittest_data_buck
             "congressional_district": None,
             "business_types_codes": ["20", "2U", "GW", "M8", "V2"],
             "entity_structure": "X6",
-            "broker_duns_id": 1,
+            "broker_duns_id": "1",
             "update_date": date(2015, 2, 5),
             "uei": "CTKJDNGYLM97",
             "ultimate_parent_uei": "KDULNMSMR7E6",
@@ -1134,3 +1134,20 @@ def test_load_table_to_from_delta_for_sam_recipient(spark, s3_unittest_data_buck
     )
     verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "sam_recipient", jdbc_inserts=True)  # test alt write strategy
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_summary_state_view(
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+):
+    tables_to_load = [
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    verify_delta_table_loaded_to_delta(
+        spark, "summary_state_view", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
+    verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "summary_state_view", jdbc_inserts=True)  # test alt write strategy

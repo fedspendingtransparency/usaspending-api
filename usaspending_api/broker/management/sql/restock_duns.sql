@@ -74,8 +74,8 @@ CREATE TABLE raw.temporary_restock_duns AS (
 );
 
 BEGIN;
-DELETE FROM raw.duns;
-INSERT INTO raw.duns
+DELETE FROM int.duns;
+INSERT INTO int.duns
     (
         awardee_or_recipient_uniqu,
         legal_business_name,
@@ -120,4 +120,4 @@ SELECT
 FROM raw.temporary_restock_duns;
 DROP TABLE raw.temporary_restock_duns;
 COMMIT;
-VACUUM ANALYZE raw.duns;
+VACUUM ANALYZE int.duns;
