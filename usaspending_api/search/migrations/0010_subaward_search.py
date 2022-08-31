@@ -212,7 +212,7 @@ class Migration(migrations.Migration):
                 ('funding_agency', models.IntegerField(null=True, db_column="funding_agency_id")),
             ],
             options={
-                'db_table': 'rpt"."subaward_search',
+                'db_table': 'subaward_search',
             },
         ),
         # Trick Django into believing this is a foreign primary key for purposes of using the ORM,
