@@ -409,6 +409,7 @@ class Command(BaseCommand):
             FROM pg_attribute
             INNER JOIN pg_class ON pg_attribute.attrelid = pg_class.oid
             WHERE pg_class.relname = '{self.temp_table_name}' AND pg_attribute.attnum > 0
+            AND pg_attribute.attisdropped = FALSE
             ORDER BY pg_attribute.attname
         """
         )
@@ -419,6 +420,7 @@ class Command(BaseCommand):
             FROM pg_attribute
             INNER JOIN pg_class ON pg_attribute.attrelid = pg_class.oid
             WHERE pg_class.relname = '{self.curr_table_name}' AND pg_attribute.attnum > 0
+            AND pg_attribute.attisdropped = FALSE
             ORDER BY pg_attribute.attname
         """
         )
