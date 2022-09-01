@@ -24,15 +24,15 @@ def award_data_fixture(db):
     )
     baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
     baker.make(
-        "awards.Subaward",
-        id=1,
+        "search.SubawardSearch",
+        broker_subaward_id=1,
         award_id=1,
-        amount=123.45,
-        pop_country_code="USA",
-        pop_state_code="TX",
-        pop_city_name="HOUSTON",
-        recipient_location_country_code="USA",
-        recipient_location_state_code="CA",
+        subaward_amount=123.45,
+        sub_place_of_perform_country_co="USA",
+        sub_place_of_perform_state_code="TX",
+        sub_place_of_perform_city_name="HOUSTON",
+        sub_legal_entity_country_code="USA",
+        sub_legal_entity_state_code="CA",
     )
     baker.make("references.PopCounty", state_name="California", county_number="000", latest_population=2403)
     baker.make("recipient.StateData", id="06-2020", fips="06", code="CA", name="California")

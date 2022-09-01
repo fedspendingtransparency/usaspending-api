@@ -5,14 +5,14 @@ from django.db.models import Q, Exists, OuterRef
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
-from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES, create_nested_object
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.search.filters.postgres.defc import DefCodes
 from usaspending_api.search.filters.postgres.psc import PSCCodes
 from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
-from usaspending_api.search.models import SubawardView
+from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
@@ -25,12 +25,74 @@ def subaward_download(filters):
     return subaward_filter(filters, for_downloads=True)
 
 
+def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
+    """
+    Function filter querysets for location data in subawards
+    scope- place of performance or recipient location mappings
+    values- array of location requests
+    returns queryset
+    """
+    or_queryset = Q()
+
+    # Yes, these are mostly the same, but congressional is different
+    # and I'd rather have them all laid out here versus burying a extra couple lines for congressional
+    location_mappings = {
+        "country_code": {"sub_legal_entity": "country_code", "sub_place_of_perform": "country_co"},
+        "zip5": {"sub_legal_entity": "zip5", "sub_place_of_perform": "zip5"},
+        "city_name": {"sub_legal_entity": "city_name", "sub_place_of_perform": "city_name"},
+        "state_code": {"sub_legal_entity": "state_code", "sub_place_of_perform": "state_code"},
+        "county_code": {"sub_legal_entity": "county_code", "sub_place_of_perform": "county_code"},
+        "congressional": {"sub_legal_entity": "congressional", "sub_place_of_perform": "congressio"},
+    }
+    location_mappings = {location_type: field_dict[scope] for location_type, field_dict in location_mappings.items()}
+
+    # creates a dictionary with all of the locations organized by country
+    # Counties and congressional districts are nested under state codes
+    nested_values = create_nested_object(values)
+
+    # In this for-loop a django Q filter object is created from the python dict
+    for country, state_zip in nested_values.items():
+        country_qs = None
+        if country != ALL_FOREIGN_COUNTRIES:
+            country_qs = Q(**{f"{scope}_{location_mappings['country_code']}__exact": country})
+        state_qs = Q()
+
+        for state_zip_key, location_values in state_zip.items():
+
+            if state_zip_key == "city":
+                state_inner_qs = Q(**{f"{scope}_{location_mappings['city_name']}__in": location_values})
+            elif state_zip_key == "zip":
+                state_inner_qs = Q(**{f"{scope}_{location_mappings['zip5']}__in": location_values})
+            else:
+                state_inner_qs = Q(**{f"{scope}_{location_mappings['state_code']}__exact": state_zip_key.upper()})
+                county_qs = Q()
+                district_qs = Q()
+                city_qs = Q()
+
+                if location_values["county"]:
+                    county_qs = Q(**{f"{scope}_{location_mappings['county_code']}__in": location_values["county"]})
+                if location_values["district"]:
+                    district_qs = Q(
+                        **{f"{scope}_{location_mappings['congressional_code']}__in": location_values["district"]}
+                    )
+                if location_values["city"]:
+                    city_qs = Q(**{f"{scope}_{location_mappings['city_name']}__in": location_values["city"]})
+                state_inner_qs &= county_qs | district_qs | city_qs
+
+            state_qs |= state_inner_qs
+        if country_qs:
+            or_queryset |= country_qs & state_qs
+        else:
+            or_queryset |= state_qs
+    return or_queryset
+
+
 # TODO: Performance when multiple false values are initially provided
 def subaward_filter(filters, for_downloads=False):
-    queryset = SubawardView.objects.all()
+    queryset = SubawardSearch.objects.all()
 
-    recipient_scope_q = Q(recipient_location_country_code="USA") | Q(recipient_location_country_name="UNITED STATES")
-    pop_scope_q = Q(pop_country_code="USA") | Q(pop_country_name="UNITED STATES")
+    recipient_scope_q = Q(sub_legal_entity_country_code="USA") | Q(sub_legal_entity_country_name="UNITED STATES")
+    pop_scope_q = Q(sub_place_of_perform_country_co="USA") | Q(sub_place_of_perform_country_name="UNITED STATES")
 
     for key, value in filters.items():
 
@@ -89,15 +151,17 @@ def subaward_filter(filters, for_downloads=False):
             # Search for DUNS
             potential_duns = list(filter((lambda x: len(x) == 9), value))
             if len(potential_duns) > 0:
-                filter_obj |= Q(recipient_unique_id__in=potential_duns) | Q(
-                    parent_recipient_unique_id__in=potential_duns
+                filter_obj |= Q(sub_awardee_or_recipient_uniqu__in=potential_duns) | Q(
+                    sub_ultimate_parent_unique_ide__in=potential_duns
                 )
 
             # Search for UEI
             potential_ueis = list(filter((lambda x: len(x) == 12), value))
             potential_ueis = [uei.upper() for uei in potential_ueis]
             if len(potential_ueis) > 0:
-                filter_obj |= Q(recipient_uei__in=potential_ueis) | Q(parent_recipient_uei__in=potential_ueis)
+                filter_obj |= Q(sub_awardee_or_recipient_uei__in=potential_ueis) | Q(
+                    sub_ultimate_parent_uei__in=potential_ueis
+                )
 
             queryset = queryset.filter(filter_obj)
 
@@ -111,14 +175,16 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(latest_transaction_id__isnull=False)
 
             # Prepare a SQL snippet to include in the predicate for searching an array of transaction IDs
-            sql_fragment = '"subaward_view"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'  # int[] -> int array type
+            sql_fragment = (
+                '"subaward_search"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'  # int[] -> int array type
+            )
             queryset = queryset.extra(where=[sql_fragment.format(",".join(transaction_ids))])
 
         elif key == "time_period":
             min_date = API_SEARCH_MIN_DATE
             if for_downloads:
                 min_date = API_MIN_DATE
-            queryset &= combine_date_range_queryset(value, SubawardView, min_date, API_MAX_DATE)
+            queryset &= combine_date_range_queryset(value, SubawardSearch, min_date, API_MAX_DATE, is_subaward=True)
 
         elif key == "award_type_codes":
             queryset = queryset.filter(prime_award_type__in=value)
@@ -126,7 +192,7 @@ def subaward_filter(filters, for_downloads=False):
         elif key == "prime_and_sub_award_types":
             award_types = value.get("sub_awards")
             if award_types:
-                queryset = queryset.filter(award_type__in=award_types)
+                queryset = queryset.filter(prime_award_group__in=award_types)
 
         elif key == "agencies":
             # TODO: Make function to match agencies in award filter throwing dupe error
@@ -188,9 +254,9 @@ def subaward_filter(filters, for_downloads=False):
                 # recipient_name_ts_vector is a postgres TS_Vector
                 filter_obj = Q(recipient_name_ts_vector=upper_recipient_string)
                 if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
-                    filter_obj |= Q(recipient_unique_id=upper_recipient_string)
+                    filter_obj |= Q(sub_awardee_or_recipient_uniqu=upper_recipient_string)
                 elif len(upper_recipient_string) == 12:
-                    filter_obj |= Q(recipient_uei=upper_recipient_string)
+                    filter_obj |= Q(sub_awardee_or_recipient_uei=upper_recipient_string)
                 return filter_obj
 
             filter_obj = Q()
@@ -207,7 +273,7 @@ def subaward_filter(filters, for_downloads=False):
                 raise InvalidParameterException("Invalid filter: recipient_scope type is invalid.")
 
         elif key == "recipient_locations":
-            queryset = queryset.filter(geocode_filter_locations("recipient_location", value))
+            queryset = queryset.filter(geocode_filter_subaward_locations("sub_legal_entity", value))
 
         elif key == "recipient_type_names":
             if len(value) != 0:
@@ -222,10 +288,10 @@ def subaward_filter(filters, for_downloads=False):
                 raise InvalidParameterException("Invalid filter: place_of_performance_scope is invalid.")
 
         elif key == "place_of_performance_locations":
-            queryset = queryset.filter(geocode_filter_locations("pop", value))
+            queryset = queryset.filter(geocode_filter_subaward_locations("sub_place_of_perform", value))
 
         elif key == "award_amounts":
-            queryset &= total_obligation_queryset(value, SubawardView, filters)
+            queryset &= total_obligation_queryset(value, SubawardSearch, filters, is_subaward=True)
 
         elif key == "award_ids":
             queryset = build_award_ids_filter(queryset, value, ("piid", "fain"))
@@ -237,7 +303,7 @@ def subaward_filter(filters, for_downloads=False):
         # add "naics_codes" (column naics) after NAICS are mapped to subawards
         elif key in ("contract_pricing_type_codes"):
             if len(value) != 0:
-                queryset &= SubawardView.objects.filter(type_of_contract_pricing__in=value)
+                queryset &= SubawardSearch.objects.filter(type_of_contract_pricing__in=value)
 
         elif key == "program_numbers":
             if len(value) != 0:
@@ -271,5 +337,5 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "def_codes":
             queryset = queryset.filter(DefCodes.build_def_codes_filter(queryset, value))
-            queryset = queryset.filter(action_date__gte="2020-04-01")
+            queryset = queryset.filter(sub_action_date__gte="2020-04-01")
     return queryset

@@ -132,7 +132,7 @@ def test_download_assistance_status(client, download_test_data):
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award_financial", "treasury_account"), ("assistance_transaction_history", "d2"), ("subaward", "d2")
+        ("award_financial", "treasury_account"), ("assistance_transaction_history", "d2"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -175,7 +175,7 @@ def test_download_awards_status(client, download_test_data, monkeypatch, elastic
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award", "d1"), ("award", "d2"), ("subaward", "d1"), ("subaward", "d2")
+        ("award", "d1"), ("award", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -216,7 +216,7 @@ def test_download_contract_status(client, download_test_data):
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award_financial", "treasury_account"), ("idv_transaction_history", "d1"), ("subaward", "d1")
+        ("award_financial", "treasury_account"), ("idv_transaction_history", "d1"), ("subaward_search", "d1")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -299,7 +299,7 @@ def test_download_transactions_status(client, download_test_data, monkeypatch, e
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("transaction", "d1"), ("transaction", "d2"), ("subaward", "d1"), ("subaward", "d2")
+        ("transaction", "d1"), ("transaction", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -341,7 +341,7 @@ def test_download_transactions_limit(client, download_test_data, monkeypatch, el
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("transaction", "d1"), ("transaction", "d2"), ("subaward", "d1"), ("subaward", "d2")
+        ("transaction", "d1"), ("transaction", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK

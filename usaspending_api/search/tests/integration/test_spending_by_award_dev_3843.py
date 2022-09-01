@@ -2,7 +2,8 @@ import json
 import pytest
 
 from rest_framework import status
-from usaspending_api.awards.models import Award, Subaward
+from usaspending_api.awards.models import Award
+from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -16,10 +17,10 @@ def award_id_search_data(spending_by_award_test_data):
     Award.objects.filter(id=2).update(piid="abc 111")
     Award.objects.filter(id=3).update(piid="abc       111")
 
-    Subaward.objects.filter(id=1).update(piid="abc111")
-    Subaward.objects.filter(id=2).update(piid="abc111")
-    Subaward.objects.filter(id=3).update(piid="abc 111")
-    Subaward.objects.filter(id=6).update(piid="abc       111")
+    SubawardSearch.objects.filter(broker_subaward_id=1).update(piid="abc111", award_ts_vector="abc111")
+    SubawardSearch.objects.filter(broker_subaward_id=2).update(piid="abc111", award_ts_vector="abc111")
+    SubawardSearch.objects.filter(broker_subaward_id=3).update(piid="abc 111", award_ts_vector="111")
+    SubawardSearch.objects.filter(broker_subaward_id=6).update(piid="abc       111", award_ts_vector="abc       111")
 
 
 def build_request_data(award_ids, subawards):
