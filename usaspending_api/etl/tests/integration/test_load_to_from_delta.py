@@ -6,7 +6,7 @@ import json
 import psycopg2
 import pytz
 
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from psycopg2.extensions import AsIs
 from typing import Any, Dict, List, Optional, Union
@@ -21,7 +21,7 @@ from django.db.models import sql
 
 from usaspending_api.awards.models import TransactionFABS
 from usaspending_api.common.etl.spark import create_ref_temp_views
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string, execute_sql
+from usaspending_api.common.helpers.sql_helpers import execute_sql_simple, get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.commands.create_delta_table import (
@@ -33,25 +33,31 @@ from usaspending_api.recipient.models import RecipientLookup
 
 
 @fixture
-def populate_broker_data_to_delta():
-    # Create broker data to be imported to delta
-    dummy_broker_subaward_data = json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text())
-
-    with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
-        with connection.cursor() as cursor:
-            # nuke any previous data just in case
-            cursor.execute("truncate table subaward restart identity cascade;")
-
-            insert_statement = "insert into subaward (%s) values %s"
-            for record in dummy_broker_subaward_data:
-                columns = record.keys()
-                values = tuple(record[column] for column in columns)
-                sql = cursor.mogrify(insert_statement, (AsIs(", ".join(columns)), values))
-                cursor.execute(sql)
+def populate_broker_data(broker_server_dblink_setup):
+    broker_data = {
+        "sam_recipient": json.loads(Path("usaspending_api/recipient/tests/data/broker_sam_recipient.json").read_text()),
+        "subaward": json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text()),
+    }
+    insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
+    with connections["data_broker"].cursor() as cursor:
+        for table_name, rows in broker_data.items():
+            # An assumption is made that each set of rows have the same columns in the same order
+            columns = list(rows[0])
+            values = [str(tuple(r.values())).replace("None", "null") for r in rows]
+            sql_string = cursor.mogrify(
+                insert_statement,
+                {"table_name": AsIs(table_name), "columns": AsIs(",".join(columns)), "values": AsIs(",".join(values))},
+            )
+            cursor.execute(sql_string)
+    yield
+    # Cleanup test data for each Broker test table
+    with connections["data_broker"].cursor() as cursor:
+        for table in broker_data:
+            cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE")
 
 
 @fixture
-def populate_data_for_usas():
+def populate_usas_data(populate_broker_data):
     # Create recipient data for two transactions; the other two will generate ad hoc
     baker.make(
         "recipient.RecipientLookup",
@@ -394,7 +400,12 @@ def populate_data_for_usas():
         _fill_optional=True,
     )
 
+    # Run current Postgres ETLs to make sure data is populated_correctly
     update_awards()
+    restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
+    execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
+    call_command("update_recipient_lookup")
+    execute_sql_simple(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
 
 
 def _handle_string_cast(val: str) -> Union[str, dict, list]:
@@ -640,14 +651,14 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_sam_recipient_and_reload(
+def test_load_table_to_from_delta_for_sam_recipient_testing_and_reload(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     baker.make("recipient.DUNS", broker_duns_id="1", _fill_optional=True)
     baker.make("recipient.DUNS", broker_duns_id="2", _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "sam_recipient", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient", jdbc_inserts=True)  # test alt write strategy
+    verify_delta_table_loaded_to_delta(spark, "sam_recipient_testing", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient_testing", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient_testing", jdbc_inserts=True)  # test alt write strategy
 
     # Getting count of the first load
     expected_exported_table = "duns_temp"
@@ -658,7 +669,7 @@ def test_load_table_to_from_delta_for_sam_recipient_and_reload(
             expected_exported_table_count = dictfetchall(cursor)[0]["count"]
 
     # Rerunning again to see it working as intended
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient_testing", spark_s3_bucket=s3_unittest_data_bucket)
 
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
@@ -677,7 +688,7 @@ def test_load_table_to_from_delta_for_sam_recipient_and_reload(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     ignore_fields = ["id", "update_date"]
     tables_to_load = ["sam_recipient", "transaction_fabs", "transaction_fpds", "transaction_normalized"]
@@ -696,6 +707,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     # Create a new Transaction a transaction that represents a new name for a recipient
     new_award = baker.make(
         "awards.Award",
+        id=1000,
         type="07",
         period_of_performance_start_date="2021-01-01",
         period_of_performance_current_end_date="2022-01-01",
@@ -743,7 +755,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     call_command("update_recipient_lookup")
 
     # Verify that the update alternate name exists
-    expected_result = ["ALTERNATE NAME RECIPIENT", "FABS RECIPIENT 12345"]
+    expected_result = ["FABS RECIPIENT 12345"]
     assert sorted(RecipientLookup.objects.filter(uei="FABSUEI12345").first().alternate_names) == expected_result
 
     tables_to_load = ["transaction_fabs", "transaction_normalized"]
@@ -776,7 +788,7 @@ def test_load_table_to_from_delta_for_recipient_testing(spark, s3_unittest_data_
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "awards",
@@ -788,11 +800,6 @@ def test_load_table_to_from_delta_for_recipient_profile(
         "transaction_normalized",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-
-    # Run the old loaders in order to compare the results against the new
-    call_command("update_recipient_lookup")
-    execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
-
     verify_delta_table_loaded_to_delta(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta", ignore_fields=["id"]
     )
@@ -964,7 +971,7 @@ def test_load_table_to_from_delta_for_transaction_normalized(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile_testing(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, monkeypatch, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "recipient_lookup",
@@ -974,11 +981,6 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
         "transaction_normalized",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-
-    # Run the old loaders in order to compare the results against the new
-    call_command("update_recipient_lookup")
-    execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
-
     verify_delta_table_loaded_to_delta(
         spark, "recipient_profile_testing", s3_unittest_data_bucket, load_command="load_table_to_delta"
     )
@@ -986,7 +988,7 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "awards",
@@ -998,10 +1000,6 @@ def test_load_table_to_from_delta_for_transaction_search(
         "transaction_fpds",
         "transaction_normalized",
     ]
-    # Run the old loaders in order to get accurate comparison between Spark and Postgres
-    call_command("update_recipient_lookup")
-    execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
-
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
         spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
@@ -1012,7 +1010,7 @@ def test_load_table_to_from_delta_for_transaction_search(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search_testing(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     verify_delta_table_loaded_to_delta(spark, "transaction_search_testing", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "transaction_search_testing", spark_s3_bucket=s3_unittest_data_bucket)
@@ -1045,7 +1043,7 @@ def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "awards",
@@ -1057,10 +1055,6 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
         "transaction_fpds",
         "transaction_normalized",
     ]
-    # Run the old loaders in order to compare the results against the new
-    call_command("update_recipient_lookup")
-    execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
-
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
         spark,
@@ -1081,7 +1075,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "awards",
@@ -1093,10 +1087,6 @@ def test_load_table_to_from_delta_for_award_search(
         "transaction_fpds",
         "transaction_normalized",
     ]
-    # Run the old loaders in order to get accurate comparison between Spark and Postgres
-    call_command("update_recipient_lookup")
-    execute_sql(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
-
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
@@ -1107,7 +1097,7 @@ def test_load_table_to_from_delta_for_award_search(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search_testing(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     verify_delta_table_loaded_to_delta(spark, "award_search_testing", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "award_search_testing", spark_s3_bucket=s3_unittest_data_bucket)
@@ -1115,8 +1105,40 @@ def test_load_table_to_from_delta_for_award_search_testing(
 
 
 @mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
+    expected_data = [
+        {
+            "awardee_or_recipient_uniqu": "812918241",
+            "legal_business_name": "EL COLEGIO DE LA FRONTERA SUR",
+            "dba_name": "RESEARCH CENTER",
+            "ultimate_parent_unique_ide": "811979236",
+            "ultimate_parent_legal_enti": "GOBIERNO FEDERAL DE LOS ESTADOS UNIDOS MEXICANOS",
+            "address_line_1": "CALLE 10 NO. 264, ENTRE 61 Y 63",
+            "address_line_2": "",
+            "city": "CAMPECHE",
+            "state": "CAMPECHE",
+            "zip": "24000",
+            "zip4": None,
+            "country_code": "MEX",
+            "congressional_district": None,
+            "business_types_codes": ["20", "2U", "GW", "M8", "V2"],
+            "entity_structure": "X6",
+            "broker_duns_id": "1",
+            "update_date": date(2015, 2, 5),
+            "uei": "CTKJDNGYLM97",
+            "ultimate_parent_uei": "KDULNMSMR7E6",
+        }
+    ]
+    verify_delta_table_loaded_to_delta(
+        spark, "sam_recipient", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=expected_data
+    )
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "sam_recipient", jdbc_inserts=True)  # test alt write strategy
+
+
+@mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_summary_state_view(
-    spark, s3_unittest_data_bucket, populate_data_for_usas, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "transaction_fabs",
