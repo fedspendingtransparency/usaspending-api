@@ -84,6 +84,7 @@ before_script:
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
+  - psql --dbname postgres -c "CREATE DATABASE ${USASPENDING_DB_NAME}"
   - psql --dbname ${USASPENDING_DB_NAME} -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - psql --dbname ${USASPENDING_DB_NAME} -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
   - psql --dbname ${USASPENDING_DB_NAME} -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
