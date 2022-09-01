@@ -85,7 +85,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         #       This, however, needs "fy" to be the fiscal year of the sub_action_date (i.e. "sub_fiscal_year").
         #       And so, Django gets confused simply aliasing it to "fy" as "fy" is already a field in the model.
         #       To get around that, we're doing this little dance of annotate() and values().
-        queryset = queryset.annotate(primel_fy=F("fy"))
+        queryset = queryset.annotate(prime_fy=F("fy"))
 
         other_values = []
         if self.group == "month":
@@ -95,7 +95,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             queryset = queryset.annotate(quarter=FiscalQuarter("sub_action_date"))
             other_values.append("quarter")
 
-        first_values = ["primel_fy"] + other_values
+        first_values = ["prime_fy"] + other_values
         values_dict = {"fy": F("sub_fiscal_year")}
         values = ["fy"] + other_values
         queryset = (
