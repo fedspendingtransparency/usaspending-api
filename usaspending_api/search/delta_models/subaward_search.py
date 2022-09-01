@@ -54,8 +54,8 @@ SUBAWARD_SEARCH_COLUMNS = {
     "cfda_titles": {"delta": "STRING", "postgres": "TEXT"},
     # Subaward Fields (from Broker)
     "subaward_type": {"delta": "STRING", "postgres": "TEXT"},
-    "subaward_report_year": {"delta": "SHORT", "postgres": "SMALLINT"},
-    "subaward_report_month": {"delta": "SHORT", "postgres": "SMALLINT"},
+    "subaward_report_year": {"delta": "SHORT NOT NULL", "postgres": "SMALLINT NOT NULL"},
+    "subaward_report_month": {"delta": "SHORT NOT NULL", "postgres": "SMALLINT NOT NULL"},
     "subaward_number": {"delta": "STRING", "postgres": "TEXT"},
     "subaward_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "sub_action_date": {"delta": "DATE", "postgres": "DATE"},
@@ -162,8 +162,8 @@ SUBAWARD_SEARCH_COLUMNS = {
     "cfda_number": {"delta": "STRING", "postgres": "TEXT"},
     "cfda_title": {"delta": "STRING", "postgres": "TEXT"},
     # USAS Derived Fields
-    "sub_fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "sub_total_obl_bin": {"delta": "STRING", "postgres": "TEXT"},
+    "sub_fiscal_year": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
+    "sub_total_obl_bin": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL"},
     "sub_awardee_or_recipient_legal": {"delta": "STRING", "postgres": "TEXT"},
     "sub_ultimate_parent_legal_enti": {"delta": "STRING", "postgres": "TEXT"},
     "business_type_code": {"delta": "STRING", "postgres": "TEXT"},
