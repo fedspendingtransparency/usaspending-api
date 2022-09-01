@@ -6,7 +6,7 @@ import logging
 
 from usaspending_api.accounts.v2.filters.account_download import generate_treasury_account_query
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.search.models import SubawardView
+from usaspending_api.search.models import SubawardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
@@ -39,4 +39,4 @@ def awards_treasury_account_funding_filter(account_type, download_table, filters
 
 def awards_subaward_filter(filters):
     award_id = _get_award_id(filters)
-    return SubawardView.objects.filter(award_id=award_id)
+    return SubawardSearch.objects.filter(award_id=award_id)

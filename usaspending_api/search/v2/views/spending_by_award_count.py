@@ -98,13 +98,13 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         queryset = (
             subaward_filter(filters)
             .filter(award_id__isnull=False)
-            .values("award_type")
-            .annotate(count=Count("subaward_id"))
+            .values("prime_award_group")
+            .annotate(count=Count("broker_subaward_id"))
         )
 
         results = {}
-        results["subgrants"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "grant"])
-        results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["award_type"] == "procurement"])
+        results["subgrants"] = sum([sub["count"] for sub in queryset if sub["prime_award_group"] == "grant"])
+        results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["prime_award_group"] == "procurement"])
 
         return results
 
