@@ -5,17 +5,23 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
+    get_broker_jdbc_url,
+    get_jdbc_connection_properties,
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
-    RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS,
     recipient_lookup_load_sql_string_list,
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     recipient_profile_create_sql_string,
     recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
     rpt_recipient_lookup_create_sql_string,
+    RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS,
+    SAM_RECIPIENT_COLUMNS,
+    SAM_RECIPIENT_POSTGRES_COLUMNS,
+    sam_recipient_create_sql_string,
+    sam_recipient_load_sql_string,
     RPT_RECIPIENT_PROFILE_DELTA_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
@@ -119,6 +125,25 @@ TABLE_SPEC = {
         "source_schema": SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
         "custom_schema": "duh STRING",
         "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+    },
+    "sam_recipient": {
+        "model": None,
+        "is_from_broker": True,
+        "source_query": sam_recipient_load_sql_string,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "int",
+        "swap_table": "duns",
+        "swap_schema": "int",
+        "partition_column": "broker_duns_id",
+        "partition_column_type": "string",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": sam_recipient_create_sql_string,
+        "source_schema": SAM_RECIPIENT_POSTGRES_COLUMNS,
+        "custom_schema": None,
+        "column_names": list(SAM_RECIPIENT_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
     },
@@ -247,10 +272,14 @@ class Command(BaseCommand):
             self.spark.stop()
 
     def run_spark_sql(self, query):
+        jdbc_conn_props = get_jdbc_connection_properties()
         self.spark.sql(
             query.format(
                 DESTINATION_DATABASE=self.destination_database,
                 DESTINATION_TABLE=self.destination_table_name,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                JDBC_DRIVER=jdbc_conn_props["driver"],
+                JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
+                JDBC_URL=get_broker_jdbc_url(),
             )
         )
