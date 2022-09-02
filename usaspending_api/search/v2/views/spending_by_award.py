@@ -62,9 +62,9 @@ GLOBAL_MAP = {
         },
     },
     "subaward": {
-        "minimum_db_fields": {"subaward_number", "piid", "fain", "award_type", "award_id"},
+        "minimum_db_fields": {"subaward_number", "piid", "fain", "prime_award_group", "award_id"},
         "api_to_db_mapping_list": [contract_subaward_mapping, grant_subaward_mapping],
-        "award_semaphore": "award_type",
+        "award_semaphore": "prime_award_group",
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_fields": {"internal_id": "subaward_number", "prime_award_internal_id": "award_id"},
         "generated_award_field": ("prime_award_generated_internal_id", "prime_award_internal_id"),

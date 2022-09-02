@@ -1,7 +1,7 @@
 -- subawards are linked to agencies when they're created.  This will fix any
 -- incorrect links caused by changes to agencies.
 update
-    subaward as s1
+    subaward_search as s1
 
 set
     awarding_agency_id = a.awarding_agency_id,
@@ -17,7 +17,7 @@ set
     funding_toptier_agency_name = fta.name
 
 from
-    subaward as s
+    subaward_search as s
     left outer join awards as a on a.id = s.award_id
 
     left outer join agency as aa on aa.id = a.awarding_agency_id
@@ -29,7 +29,7 @@ from
     left outer join toptier_agency as fta on fta.toptier_agency_id = fa.toptier_agency_id
 
 where
-    s.id = s1.id and (
+    s.broker_subaward_id = s1.broker_subaward_id and (
         s.awarding_agency_id is distinct from a.awarding_agency_id or
         s.awarding_subtier_agency_abbreviation is distinct from asa.abbreviation or
         s.awarding_subtier_agency_name is distinct from asa.name or

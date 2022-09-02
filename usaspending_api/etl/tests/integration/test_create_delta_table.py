@@ -25,7 +25,7 @@ def _verify_delta_table_creation(
     if alt_db:
         cmd_args += [f"--alt-db={alt_db}"]
         expected_db_name = alt_db
-    expected_table_name = delta_table_name
+    expected_table_name = delta_table_name.split(".")[-1]
     if alt_name:
         cmd_args += [f"--alt-name={alt_name}"]
         expected_table_name = alt_name
@@ -63,12 +63,20 @@ def test_create_delta_table_for_recipient_lookup(spark, s3_unittest_data_bucket,
     _verify_delta_table_creation(spark, "recipient_lookup", s3_unittest_data_bucket)
 
 
+def test_create_delta_table_for_recipient_lookup_testing(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "recipient_lookup_testing", s3_unittest_data_bucket)
+
+
 def test_create_delta_table_for_recipient_profile(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     _verify_delta_table_creation(spark, "recipient_profile", s3_unittest_data_bucket)
 
 
 def test_create_delta_table_for_sam_recipient(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     _verify_delta_table_creation(spark, "sam_recipient", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_summary_state_view(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "summary_state_view", s3_unittest_data_bucket)
 
 
 def test_create_delta_table_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
