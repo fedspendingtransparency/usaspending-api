@@ -50,14 +50,13 @@ before_install:
   - sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
   - sudo chown postgres postgresql.conf
   - sudo mv postgresql.conf /etc/postgresql/13/main
-  #- sudo service postgresql start 13
   # Use trust instead of peer authentication, to allow login with -U postgres and no password
   - >-
     sudo sed -i
     -e '/local.*peer/s/postgres/all/'
     -e 's/peer\|md5/trust/g'
     /etc/postgresql/13/main/pg_hba.conf
-  # Restart the PostgreSQL service using 13
+  # Restart the PostgreSQL service using PG 13
   - sudo service postgresql@13-main start
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
