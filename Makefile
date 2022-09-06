@@ -210,7 +210,9 @@ docker-compose-spark-submit: ## Run spark-submit from within local docker contai
 		-e MINIO_HOST=minio \
 		-e COMPONENT_NAME='${django_command}${python_script}' \
 		-e DATABASE_URL=${DATABASE_URL} \
-	spark-submit --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
+	spark-submit \
+	--driver-memory "2g" \
+	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
 	${if ${python_script}, \
 		${python_script}, \
 		/project/manage.py ${django_command} \
@@ -219,7 +221,9 @@ docker-compose-spark-submit: ## Run spark-submit from within local docker contai
 .PHONY: localhost-spark-submit
 localhost-spark-submit: ## Run spark-submit from with localhost as the driver and worker (single node). Set params with django_command="..."
 	SPARK_LOCAL_IP=127.0.0.1 \
-	spark-submit --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
+	spark-submit \
+	--driver-memory "2g" \
+	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
 	${if ${python_script}, \
 		${python_script}, \
 		manage.py ${django_command} \

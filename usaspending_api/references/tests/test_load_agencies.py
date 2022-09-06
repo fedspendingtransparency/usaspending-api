@@ -5,10 +5,11 @@ from django.core.management.base import CommandError
 from model_bakery import baker
 from pathlib import Path
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.awards.models import Award, Subaward, TransactionFPDS, TransactionNormalized
+from usaspending_api.awards.models import Award, TransactionFPDS, TransactionNormalized
 from usaspending_api.references.management.commands.load_agencies import Command, Agency as AgencyTuple
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
 from usaspending_api.references.models import CGAC, FREC
+from usaspending_api.search.models import SubawardSearch
 
 
 AGENCY_FILE = Path(__file__).resolve().parent / "data" / "test_load_agencies.csv"
@@ -236,7 +237,7 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
     a.latest_transaction = tn
     a.save()
     baker.make("awards.TransactionFPDS", transaction=tn, funding_sub_tier_agency_co="0901", unique_award_key="AWARD_1")
-    baker.make("awards.Subaward", award=a, unique_award_key="AWARD_1")
+    baker.make("search.SubawardSearch", award=a, unique_award_key="AWARD_1")
 
     # Load all the things.
     call_command("load_agencies", AGENCY_FILE)
@@ -245,7 +246,7 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
     agency_id = Agency.objects.get(subtier_agency__subtier_code="0901").id
     assert TransactionNormalized.objects.first().funding_agency_id == agency_id
     assert Award.objects.first().funding_agency_id == agency_id
-    assert Subaward.objects.first().funding_agency_id == agency_id
+    assert SubawardSearch.objects.first().funding_agency_id == agency_id
 
     # Set it to something else and reload to make sure it gets updated.
     TransactionFPDS.objects.update(funding_sub_tier_agency_co="0501")
@@ -265,7 +266,7 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
     agency_id = Agency.objects.get(subtier_agency__subtier_code="0501").id
     assert TransactionNormalized.objects.first().funding_agency_id == agency_id
     assert Award.objects.first().funding_agency_id == agency_id
-    assert Subaward.objects.first().funding_agency_id == agency_id
+    assert SubawardSearch.objects.first().funding_agency_id == agency_id
 
 
 @pytest.mark.django_db

@@ -28,14 +28,6 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
-            "subaward_view",
-            {
-                "model": mv.SubawardView,
-                "json_filepath": str(JSON_DIR / "subaward_view.json"),
-                "sql_filename": "subaward_view.sql",
-            },
-        ),
-        (
             "summary_state_view",
             {
                 "model": mv.SummaryStateView,

@@ -120,14 +120,14 @@ def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_aw
 def test_spending_by_award_subawards_no_intersection(client):
     baker.make("awards.Award", id=90)
     baker.make(
-        "awards.Subaward",
-        id=9999,
-        award_type="grant",
+        "search.SubawardSearch",
+        broker_subaward_id=9999,
+        prime_award_group="grant",
         prime_award_type="02",
         award_id=90,
         awarding_toptier_agency_name="Toptier Agency 1",
         awarding_toptier_agency_abbreviation="TA1",
-        amount=10,
+        subaward_amount=10,
     )
 
     request = {

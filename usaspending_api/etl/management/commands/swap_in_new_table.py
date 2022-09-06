@@ -3,7 +3,7 @@ import re
 
 from django.conf import settings
 from django.core.management import BaseCommand
-from django.db import connection, transaction
+from django.db import connection, ProgrammingError, transaction
 
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 
@@ -79,9 +79,15 @@ class Command(BaseCommand):
         with connection.cursor() as cursor:
             # Go ahead and retrieve the schema for both table; used for some validation checks and the final swap
             cursor.execute(
-                f"SELECT table_name, table_schema"
-                f" FROM information_schema.tables"
-                f" WHERE table_name = '{self.curr_table_name}' OR table_name = '{self.temp_table_name}'"
+                f"""
+                SELECT tablename, schemaname
+                FROM pg_tables
+                WHERE tablename = '{self.curr_table_name}' OR tablename = '{self.temp_table_name}'
+                UNION
+                SELECT matviewname AS tablename, schemaname
+                FROM pg_matviews
+                WHERE matviewname = '{self.curr_table_name}' OR matviewname = '{self.temp_table_name}'
+            """
             )
             schemas_lookup = {table: schema for (table, schema) in cursor.fetchall()}
             self.curr_schema_name = schemas_lookup.get(self.curr_table_name)
@@ -97,9 +103,23 @@ class Command(BaseCommand):
             self.extra_sql(cursor)
 
     def cleanup_old_data(self, cursor):
-        """Run SQL to clean up any old data that could conflict with the swap"""
+        """
+        Run SQL to clean up any old data that could conflict with the swap.
+        We first try to delete the "table" as though it is a table. In the event
+        that this fails we ignore the error and attempt to then drop the "table"
+        as though it is a Materialized View, displaying both the current and
+        previous errors if this should fail agin..
+        """
         logger.info(f"Dropping {self.curr_table_name}_old if it exists")
-        cursor.execute(f"DROP TABLE IF EXISTS {self.curr_table_name}_old CASCADE;")
+        try:
+            cursor.execute(f"DROP TABLE IF EXISTS {self.curr_table_name}_old CASCADE;")
+            return
+        except ProgrammingError as e:
+            error_log = str(e)
+        try:
+            cursor.execute(f"DROP MATERIALIZED VIEW IF EXISTS {self.curr_table_name}_old CASCADE;")
+        except ProgrammingError as e:
+            raise f"First Error:\n{error_log}\nSecond Error: {str(e)}"
 
     def swap_constraints_sql(self, cursor):
         logger.info("Renaming constraints of the new and old tables")
@@ -189,8 +209,9 @@ class Command(BaseCommand):
         for val in indexes:
             name = f"{val['indexname']}_old"
             drop_sql.append(f"DROP INDEX {name};")
-        drop_sql.append(f"DROP TABLE {self.curr_table_name}_old;")
+
         cursor.execute("\n".join(drop_sql))
+        self.cleanup_old_data(cursor)
 
     def extra_sql(self, cursor):
         cursor.execute(f"ANALYZE VERBOSE {self.curr_table_name}")
@@ -198,14 +219,26 @@ class Command(BaseCommand):
 
     def validate_tables(self, cursor):
         logger.info("Verifying that the current table exists")
-        cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.curr_table_name}'")
+        cursor.execute(
+            f"""
+            SELECT schemaname, tablename FROM pg_tables WHERE tablename = '{self.curr_table_name}'
+            UNION
+            SELECT schemaname, matviewname AS tablename FROM pg_matviews WHERE matviewname = '{self.curr_table_name}'
+        """
+        )
         curr_tables = cursor.fetchall()
         if len(curr_tables) == 0:
             logger.error(f"There are no tables matching: {self.curr_table_name}")
             raise SystemExit(1)
 
         logger.info("Verifying that the temp table exists")
-        cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{self.temp_table_name}'")
+        cursor.execute(
+            f"""
+            SELECT schemaname, tablename FROM pg_tables WHERE tablename = '{self.temp_table_name}'
+            UNION
+            SELECT schemaname, matviewname AS tablename FROM pg_matviews WHERE matviewname = '{self.temp_table_name}'
+        """
+        )
         temp_tables = cursor.fetchall()
         if len(temp_tables) == 0:
             logger.error(f"There are no tables matching: {self.temp_table_name}")
@@ -213,10 +246,16 @@ class Command(BaseCommand):
 
         logger.info("Verifying duplicate tables don't exist across schemas")
         cursor.execute(
-            f"SELECT table_name, COUNT(*) AS schema_count"
-            f" FROM information_schema.tables"
-            f" WHERE table_name IN ('{self.curr_table_name}', '{self.temp_table_name}', '{self.curr_table_name}_old')"
-            f" GROUP BY table_name"
+            f"""
+            WITH matched_tables AS (
+                SELECT schemaname, tablename FROM pg_tables WHERE tablename IN ('{self.curr_table_name}', '{self.temp_table_name}', '{self.curr_table_name}_old')
+                UNION
+                SELECT schemaname, matviewname AS tablename FROM pg_matviews WHERE matviewname IN ('{self.curr_table_name}', '{self.temp_table_name}', '{self.curr_table_name}_old')
+            )
+            SELECT tablename, COUNT(*) AS schema_count
+            FROM matched_tables
+            GROUP BY tablename
+        """
         )
         table_count = cursor.fetchall()
         for table_name, count in table_count:
@@ -360,29 +399,30 @@ class Command(BaseCommand):
     def validate_columns(self, cursor):
         logger.info("Verifying that the same number of columns exist for the old and new table")
         columns_to_compare = [
-            "column_name",
-            "is_nullable",
-            "data_type",
-            "character_maximum_length",
-            "character_octet_length",
-            "numeric_precision",
-            "numeric_precision_radix",
-            "numeric_scale",
-            "datetime_precision",
-            "udt_name",
+            "pg_attribute.attname",  # column name
+            "pg_attribute.atttypid",  # data type
+            "pg_attribute.atttypmod",  # type modifiers such as length of VARCHAR
         ]
         cursor.execute(
-            f"SELECT {','.join(columns_to_compare)}"
-            f" FROM information_schema.columns"
-            f" WHERE table_name = '{self.temp_table_name}'"
-            f" ORDER BY column_name"
+            f"""
+            SELECT {','.join(columns_to_compare)}
+            FROM pg_attribute
+            INNER JOIN pg_class ON pg_attribute.attrelid = pg_class.oid
+            WHERE pg_class.relname = '{self.temp_table_name}' AND pg_attribute.attnum > 0
+            AND pg_attribute.attisdropped = FALSE
+            ORDER BY pg_attribute.attname
+        """
         )
         temp_columns = ordered_dictionary_fetcher(cursor)
         cursor.execute(
-            f"SELECT {','.join(columns_to_compare)}"
-            f" FROM information_schema.columns"
-            f" WHERE table_name = '{self.curr_table_name}'"
-            f" ORDER BY column_name"
+            f"""
+            SELECT {','.join(columns_to_compare)}
+            FROM pg_attribute
+            INNER JOIN pg_class ON pg_attribute.attrelid = pg_class.oid
+            WHERE pg_class.relname = '{self.curr_table_name}' AND pg_attribute.attnum > 0
+            AND pg_attribute.attisdropped = FALSE
+            ORDER BY pg_attribute.attname
+        """
         )
         curr_columns = ordered_dictionary_fetcher(cursor)
         if len(temp_columns) != len(curr_columns):

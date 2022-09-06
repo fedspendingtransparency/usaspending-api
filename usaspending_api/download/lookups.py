@@ -22,7 +22,7 @@ from usaspending_api.download.models import (
     FinancialAccountsByProgramActivityObjectClassDownloadView,
 )
 from usaspending_api.references.models import GTASSF133Balances
-from usaspending_api.search.models import AwardSearch, SubawardView, TransactionSearch
+from usaspending_api.search.models import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.awards.v2.filters.idv_filters import (
     idv_order_filter,
     idv_transaction_filter,
@@ -102,8 +102,8 @@ VALUE_MAPPINGS = {
     # SubAward Level
     "sub_awards": {
         "source_type": "award",
-        "table": SubawardView,
-        "table_name": "subaward",
+        "table": SubawardSearch,
+        "table_name": "subaward_search",
         "type_name": "Subawards",
         "download_name": "{agency}{type}_Subawards_{timestamp}",
         "contract_data": "award__latest_transaction__contract_data",
@@ -191,8 +191,8 @@ VALUE_MAPPINGS = {
     },
     "sub_contracts": {
         "source_type": "award",
-        "table": SubawardView,
-        "table_name": "subaward",
+        "table": SubawardSearch,
+        "table_name": "subaward_search",
         "download_name": "Contract_{piid}_Sub-Awards",
         "contract_data": "award__latest_transaction__contract_data",
         "filter_function": awards_subaward_filter,
@@ -201,8 +201,8 @@ VALUE_MAPPINGS = {
     },
     "sub_grants": {
         "source_type": "award",
-        "table": SubawardView,
-        "table_name": "subaward",
+        "table": SubawardSearch,
+        "table_name": "subaward_search",
         "download_name": "Assistance_{assistance_id}_Sub-Awards",
         "assistance_data": "award__latest_transaction__assistance_data",
         "filter_function": awards_subaward_filter,
