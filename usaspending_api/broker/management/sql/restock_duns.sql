@@ -25,7 +25,7 @@ CREATE TABLE raw.temporary_restock_duns AS (
   FROM
     dblink ('broker_server', '(
       SELECT
-        DISTINCT ON (sam_recipient.awardee_or_recipient_uniqu)
+        DISTINCT ON (sam_recipient.uei)
         sam_recipient.awardee_or_recipient_uniqu,
         sam_recipient.legal_business_name,
         sam_recipient.dba_name,
@@ -48,7 +48,7 @@ CREATE TABLE raw.temporary_restock_duns AS (
       FROM
         sam_recipient
       ORDER BY
-        sam_recipient.awardee_or_recipient_uniqu,
+        sam_recipient.uei,
         sam_recipient.activation_date DESC NULLS LAST)') AS broker_duns
           (
             awardee_or_recipient_uniqu text,
