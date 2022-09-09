@@ -23,6 +23,7 @@ DERIVED_COLUMNS = {
     "spending_authority_from_offsetting_collections_amount": [1750, 1850],
     "total_budgetary_resources_cpe": [1910],
     "unobligated_balance_cpe": [2490],
+    "adjustment_to_unobligated_balance_brought_forward_oct_1": [1020],
 }
 
 INVERTED_DERIVED_COLUMNS = {
