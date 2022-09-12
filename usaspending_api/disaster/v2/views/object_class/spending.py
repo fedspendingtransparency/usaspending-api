@@ -96,7 +96,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                         When(
                             self.final_period_submission_query_filters,
                             then=F("obligations_incurred_by_program_object_class_cpe")
-                            + F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
+                            + F("deobligations_recoveries_refund_pri_program_object_class_cpe")
+                            - F("adjustment_to_unobligated_balance_brought_forward_oct_1"),
                         ),
                         default=Value(0),
                         output_field=DecimalField(max_digits=23, decimal_places=2),

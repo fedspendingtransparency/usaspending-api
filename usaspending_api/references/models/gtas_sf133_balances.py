@@ -37,7 +37,9 @@ class GTASSF133Balances(models.Model):
     update_date = models.DateTimeField(auto_now=True)
     anticipated_prior_year_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)
     prior_year_paid_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)
-    adjustment_to_unobligated_balance_brought_forward_oct_1 = models.DecimalField(max_digits=23, decimal_places=2)
+    adjustment_to_unobligated_balance_brought_forward_oct_1 = models.DecimalField(
+        max_digits=23, decimal_places=2, default=0.00
+    )
     objects = CTEManager()
 
     class Meta:
