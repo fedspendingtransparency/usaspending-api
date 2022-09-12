@@ -135,8 +135,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
                         When(
                             self.final_period_submission_query_filters,
                             then=F("obligations_incurred_by_program_object_class_cpe")
-                            + F("deobligations_recoveries_refund_pri_program_object_class_cpe")
-                            - F("adjustment_to_unobligated_balance_brought_forward_oct_1"),
+                            + F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
                         ),
                         default=Value(0),
                         output_field=DecimalField(max_digits=23, decimal_places=2),
@@ -197,7 +196,9 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
                         ),
                         deobligation=Func("deobligations_or_recoveries_or_refunds_from_prior_year_cpe", function="Sum"),
                         prior_year=Func("prior_year_paid_obligation_recoveries", function="Sum"),
-                        unobligated_adjustments=Func("adjustment_to_unobligated_balance_brought_forward_oct_1"),
+                        unobligated_adjustments=Func(
+                            "adjustment_to_unobligated_balance_brought_forward_oct_1", function="Sum"
+                        ),
                     )
                     .annotate(
                         total_budget_authority=F("amount")

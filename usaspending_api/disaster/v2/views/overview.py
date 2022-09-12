@@ -148,6 +148,7 @@ class OverviewViewSet(DisasterBase):
         obligation_values = [
             "obligations_incurred_total_cpe",
             "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
+            "adjustment_to_unobligated_balance_brought_forward_oct_1",
         ]
         outlay_values = ["gross_outlay_amount_by_tas_cpe", "anticipated_prior_year_obligation_recoveries"]
 
@@ -161,6 +162,7 @@ class OverviewViewSet(DisasterBase):
             "obligation_totals": (
                 Sum("obligations_incurred_total_cpe")
                 - Sum("deobligations_or_recoveries_or_refunds_from_prior_year_cpe")
+                - Sum("adjustment_to_unobligated_balance_brought_forward_oct_1")
             ),
             "outlay_totals": (
                 Sum("gross_outlay_amount_by_tas_cpe") - Sum("anticipated_prior_year_obligation_recoveries")
