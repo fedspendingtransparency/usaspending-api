@@ -141,15 +141,15 @@ TRANSACTION_SEARCH_COLUMNS = {
     "funding_office_code": {"delta": "STRING", "postgres": "TEXT"},
     "funding_office_name": {"delta": "STRING", "postgres": "TEXT"},
     "officer_1_name": {"delta": "STRING", "postgres": "TEXT"},
-    "officer_1_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_1_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "officer_2_name": {"delta": "STRING", "postgres": "TEXT"},
-    "officer_2_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_2_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "officer_3_name": {"delta": "STRING", "postgres": "TEXT"},
-    "officer_3_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_3_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "officer_4_name": {"delta": "STRING", "postgres": "TEXT"},
-    "officer_4_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_4_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "officer_5_name": {"delta": "STRING", "postgres": "TEXT"},
-    "officer_5_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_5_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
 }
 TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
