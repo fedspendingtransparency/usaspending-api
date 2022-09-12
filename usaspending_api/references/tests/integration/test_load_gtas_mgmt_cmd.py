@@ -36,6 +36,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 1600,
                 -1,
                 -11.00,
+                0,
                 -11.00,
                 -10.00,
                 -11.00,
@@ -54,6 +55,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 1600,
                 -2,
                 -12.00,
+                0,
                 -12.00,
                 -9.00,
                 -12.00,
@@ -72,6 +74,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 1601,
                 -1,
                 -13.00,
+                0,
                 -13.00,
                 -8.00,
                 -13.00,
@@ -109,6 +112,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 "total_budgetary_resources_cpe",
                 "anticipated_prior_year_obligation_recoveries",
                 "prior_year_paid_obligation_recoveries",
+                "adjustment_to_unobligated_balance_brought_forward_oct_1",
             ).order_by("-budget_authority_unobligated_balance_brought_forward_cpe")
         ),
     }
