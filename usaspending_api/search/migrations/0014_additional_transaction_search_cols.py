@@ -85,7 +85,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='officer_1_amount',
-            field=models.TextField(null=True),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='officer_2_amount',
-            field=models.TextField(null=True),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -105,7 +105,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='officer_3_amount',
-            field=models.TextField(null=True),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -115,7 +115,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='officer_4_amount',
-            field=models.TextField(null=True),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -125,7 +125,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='officer_5_amount',
-            field=models.TextField(null=True),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
