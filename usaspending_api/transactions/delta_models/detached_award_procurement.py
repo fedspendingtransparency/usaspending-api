@@ -29,7 +29,7 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
     "base_and_all_options_value": {"delta": "STRING", "postgres": "TEXT"},
     "base_exercised_options_val": {"delta": "STRING", "postgres": "TEXT"},
     "black_american_owned_busin": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
-    "business_categories": {"delta": "STRING", "postgres": "TEXT"},
+    "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "c1862_land_grant_college": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "c1890_land_grant_college": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "c1994_land_grant_college": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
