@@ -3,6 +3,8 @@
 TRANSACTION_SEARCH_COLUMNS = {
     "transaction_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
+    "transaction_unique_id": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL"},
+    "usaspending_unique_transaction_id": {"delta": "STRING", "postgres": "TEXT"},
     "modification_number": {"delta": "STRING", "postgres": "TEXT"},
     "detached_award_proc_unique": {"delta": "STRING", "postgres": "TEXT"},
     "afa_generated_unique": {"delta": "STRING", "postgres": "TEXT"},
@@ -16,14 +18,18 @@ TRANSACTION_SEARCH_COLUMNS = {
     "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
     "award_certified_date": {"delta": "DATE", "postgres": "DATE"},
     "award_fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "create_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "award_update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "award_date_signed": {"delta": "DATE", "postgres": "DATE"},
     "etl_update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "period_of_performance_start_date": {"delta": "DATE", "postgres": "DATE"},
     "period_of_performance_current_end_date": {"delta": "DATE", "postgres": "DATE"},
+    "is_fpds": {"delta": "BOOLEAN NOT NULL", "postgres": "BOOLEAN NOT NULL"},
     "type": {"delta": "STRING", "postgres": "TEXT"},
     "type_description": {"delta": "STRING", "postgres": "TEXT"},
+    "action_type": {"delta": "STRING", "postgres": "TEXT"},
+    "action_type_description": {"delta": "STRING", "postgres": "TEXT"},
     "award_category": {"delta": "STRING", "postgres": "TEXT"},
     "transaction_description": {"delta": "STRING", "postgres": "TEXT"},
     "award_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
@@ -31,6 +37,9 @@ TRANSACTION_SEARCH_COLUMNS = {
     "federal_action_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "total_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "non_federal_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "naics_code": {"delta": "STRING", "postgres": "TEXT"},
     "naics_description": {"delta": "STRING", "postgres": "TEXT"},
@@ -43,6 +52,8 @@ TRANSACTION_SEARCH_COLUMNS = {
     "cfda_number": {"delta": "STRING", "postgres": "TEXT"},
     "cfda_title": {"delta": "STRING", "postgres": "TEXT"},
     "cfda_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "pop_code": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_scope": {"delta": "STRING", "postgres": "TEXT"},
     "pop_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "pop_country_code": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_name": {"delta": "STRING", "postgres": "TEXT"},
@@ -50,12 +61,15 @@ TRANSACTION_SEARCH_COLUMNS = {
     "pop_county_code": {"delta": "STRING", "postgres": "TEXT"},
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
     "pop_zip5": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_zip4a": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_last4": {"delta": "STRING", "postgres": "TEXT"},
     "pop_congressional_code": {"delta": "STRING", "postgres": "TEXT"},
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
     "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER"},
     "pop_state_fips": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER"},
     "pop_city_name": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_forei": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_country_code": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_state_name": {"delta": "STRING", "postgres": "TEXT"},
@@ -68,7 +82,17 @@ TRANSACTION_SEARCH_COLUMNS = {
     "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
     "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_zip4": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_zip_last4": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_city_code": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_city_name": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_address_line_1": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_address_line_2": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_address_line_3": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_foreign_city": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_foreign_descr": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_foreign_posta": {"delta": "STRING", "postgres": "TEXT"},
+    "recipient_location_foreign_provi": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "recipient_name": {"delta": "STRING", "postgres": "TEXT"},
@@ -78,6 +102,14 @@ TRANSACTION_SEARCH_COLUMNS = {
     "parent_recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_uei": {"delta": "STRING", "postgres": "TEXT"},
     "parent_uei": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_agency_code": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_agency_code": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_sub_tier_agency_c": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_sub_tier_agency_n": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_sub_tier_agency_co": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_sub_tier_agency_na": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "awarding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
@@ -99,6 +131,16 @@ TRANSACTION_SEARCH_COLUMNS = {
     "awarding_office_name": {"delta": "STRING", "postgres": "TEXT"},
     "funding_office_code": {"delta": "STRING", "postgres": "TEXT"},
     "funding_office_name": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_1_name": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_1_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_2_name": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_2_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_3_name": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_3_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_4_name": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_4_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_5_name": {"delta": "STRING", "postgres": "TEXT"},
+    "officer_5_amount": {"delta": "STRING", "postgres": "TEXT"},
 }
 TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
@@ -119,6 +161,8 @@ transaction_search_load_sql_string = fr"""
     SELECT
         transaction_normalized.id AS transaction_id,
         transaction_normalized.award_id,
+        transaction_normalized.transaction_unique_id,
+        transaction_normalized.usaspending_unique_transaction_id,
         transaction_normalized.modification_number,
         transaction_fpds.detached_award_proc_unique,
         transaction_fabs.afa_generated_unique,
@@ -133,6 +177,7 @@ transaction_search_load_sql_string = fr"""
         transaction_normalized.fiscal_year,
         awards.certified_date AS award_certified_date,
         YEAR(awards.certified_date + interval '3 months') AS award_fiscal_year,
+        transaction_normalized.create_date,
         transaction_normalized.update_date,
         awards.update_date AS award_update_date,
         DATE(awards.date_signed) AS award_date_signed,
@@ -140,8 +185,11 @@ transaction_search_load_sql_string = fr"""
         awards.period_of_performance_start_date,
         awards.period_of_performance_current_end_date,
 
+        transaction_normalized.is_fpds,
         transaction_normalized.type,
         awards.type_description,
+        transaction_normalized.action_type,
+        transaction_normalized.action_type_description,
         awards.category AS award_category,
         transaction_normalized.description AS transaction_description,
 
@@ -165,6 +213,9 @@ transaction_search_load_sql_string = fr"""
             AS original_loan_subsidy_cost,
         CAST(COALESCE(transaction_normalized.face_value_loan_guarantee, 0) AS NUMERIC(23, 2))
             AS face_value_loan_guarantee,
+        transaction_normalized.funding_amount,
+        transaction_fabs.total_funding_amount,
+        transaction_normalized.non_federal_funding_amount,
 
         transaction_normalized.business_categories,
         transaction_fpds.naics AS naics_code,
@@ -179,6 +230,8 @@ transaction_search_load_sql_string = fr"""
         transaction_fabs.cfda_title,
         references_cfda.id AS cfda_id,
 
+        transaction_fabs.place_of_performance_code AS pop_code,
+        transaction_fabs.place_of_performance_scope AS pop_scope,
         pop_country_lookup.country_name AS pop_country_name,
         pop_country_lookup.country_code AS pop_country_code,
         POP_STATE_LOOKUP.name AS pop_state_name,
@@ -190,6 +243,10 @@ transaction_search_load_sql_string = fr"""
             AS pop_county_name,
         COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
             AS pop_zip5,
+        COALESCE(transaction_fpds.place_of_performance_zip4a, transaction_fabs.place_of_performance_zip4a)
+            AS pop_zip4a,
+        COALESCE(transaction_fpds.place_of_perform_zip_last4, transaction_fabs.place_of_perform_zip_last4)
+            AS pop_zip_last4,
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
@@ -198,6 +255,7 @@ transaction_search_load_sql_string = fr"""
         POP_STATE_POPULATION.latest_population AS pop_state_population,
         TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city))
             AS pop_city_name,
+        transaction_fabs.place_of_performance_forei AS pop_forei,
 
         rl_country_lookup.country_code AS recipient_location_country_code,
         rl_country_lookup.country_name AS recipient_location_country_name,
@@ -216,8 +274,22 @@ transaction_search_load_sql_string = fr"""
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
         COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
             AS recipient_location_zip5,
+        transaction_fpds.legal_entity_zip4 AS recipient_location_zip4,
+        COALESCE(transaction_fpds.legal_entity_zip_last4, transaction_fabs.legal_entity_zip_last4)
+            AS recipient_location_zip_last4,
+        transaction_fabs.legal_entity_city_code AS recipient_location_city_code,        
         TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name))
             AS recipient_location_city_name,
+        COALESCE(transaction_fpds.legal_entity_address_line1, transaction_fabs.legal_entity_address_line1)
+            AS recipient_location_address_line_1,
+        COALESCE(transaction_fpds.legal_entity_address_line2, transaction_fabs.legal_entity_address_line2)
+            AS recipient_location_address_line_2,
+        COALESCE(transaction_fpds.legal_entity_address_line3, transaction_fabs.legal_entity_address_line3)
+            AS recipient_location_address_line_3,
+        transaction_fabs.legal_entity_foreign_city AS recipient_location_foreign_city,
+        transaction_fabs.legal_entity_foreign_descr AS recipient_location_foreign_descr,
+        transaction_fabs.legal_entity_foreign_posta AS recipient_location_foreign_posta,
+        transaction_fabs.legal_entity_foreign_provi AS recipient_location_foreign_provi,
 
         COALESCE(
             recipient_lookup.recipient_hash,
@@ -260,6 +332,14 @@ transaction_search_load_sql_string = fr"""
             transaction_fabs.ultimate_parent_uei
         ) AS parent_uei,
 
+        COALESCE(transaction_fabs.awarding_agency_code, transaction_fpds.awarding_agency_code) AS awarding_agency_code,
+        COALESCE(transaction_fabs.awarding_agency_name, transaction_fpds.awarding_agency_name) AS awarding_agency_name,
+        COALESCE(transaction_fabs.funding_agency_code, transaction_fpds.funding_agency_code) AS funding_agency_code,
+        COALESCE(transaction_fabs.funding_agency_name, transaction_fpds.funding_agency_name) AS funding_agency_name,
+        COALESCE(transaction_fabs.awarding_sub_tier_agency_c, transaction_fpds.awarding_sub_tier_agency_c) AS awarding_sub_tier_agency_c,
+        COALESCE(transaction_fabs.awarding_sub_tier_agency_n, transaction_fpds.awarding_sub_tier_agency_n) AS awarding_sub_tier_agency_n,
+        COALESCE(transaction_fabs.funding_sub_tier_agency_co, transaction_fpds.funding_sub_tier_agency_co) AS funding_sub_tier_agency_co,
+        COALESCE(transaction_fabs.funding_sub_tier_agency_na, transaction_fpds.funding_sub_tier_agency_na) AS funding_sub_tier_agency_na,
         AA_ID.id AS awarding_toptier_agency_id,
         FA_ID.id AS funding_toptier_agency_id,
         transaction_normalized.awarding_agency_id,
@@ -282,7 +362,18 @@ transaction_search_load_sql_string = fr"""
         AO.office_code AS awarding_office_code,
         AO.office_name AS awarding_office_name,
         FO.office_code AS funding_office_code,
-        FO.office_name AS funding_office_name
+        FO.office_name AS funding_office_name,
+        
+        COALESCE(transaction_fabs.officer_1_name, transaction_fpds.officer_1_name) AS officer_1_name,
+        COALESCE(transaction_fabs.officer_1_amount, transaction_fpds.officer_1_amount) AS officer_1_amount,
+        COALESCE(transaction_fabs.officer_2_name, transaction_fpds.officer_2_name) AS officer_2_name,
+        COALESCE(transaction_fabs.officer_2_amount, transaction_fpds.officer_2_amount) AS officer_2_amount,
+        COALESCE(transaction_fabs.officer_3_name, transaction_fpds.officer_3_name) AS officer_3_name,
+        COALESCE(transaction_fabs.officer_3_amount, transaction_fpds.officer_3_amount) AS officer_3_amount,
+        COALESCE(transaction_fabs.officer_4_name, transaction_fpds.officer_4_name) AS officer_4_name,
+        COALESCE(transaction_fabs.officer_4_amount, transaction_fpds.officer_4_amount) AS officer_4_amount,
+        COALESCE(transaction_fabs.officer_5_name, transaction_fpds.officer_5_name) AS officer_5_name,
+        COALESCE(transaction_fabs.officer_5_amount, transaction_fpds.officer_5_amount) AS officer_5_amount,
     FROM
         raw.transaction_normalized
     LEFT OUTER JOIN
