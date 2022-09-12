@@ -75,7 +75,7 @@ TABLE_SPEC = {
         "model": SourceProcurementTransaction,
         "is_from_broker": True,
         "source_table": "detached_award_procurement",
-        "source_database": "raw",
+        "source_database": None,
         "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,

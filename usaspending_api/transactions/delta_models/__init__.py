@@ -49,4 +49,7 @@ __all__ = [
     "SUMMARY_STATE_VIEW_POSTGRES_COLUMNS",
     "summary_state_view_create_sql_string",
     "summary_state_view_load_sql_string",
+    "detached_award_procurement_load_sql_string",
+    "detached_award_procurement_create_sql_string",
+    "detached_award_procurement",
 ]
