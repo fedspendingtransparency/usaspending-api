@@ -287,27 +287,27 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='airport_authority',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='alaskan_native_owned_corpo',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='alaskan_native_servicing_i',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='american_indian_owned_busi',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='asian_pacific_american_own',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -322,27 +322,27 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='black_american_owned_busin',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='c1862_land_grant_college',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='c1890_land_grant_college',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='c1994_land_grant_college',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='c8a_program_participant',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -352,7 +352,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='city_local_government',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -387,12 +387,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='community_developed_corpor',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='community_development_corp',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -467,17 +467,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='contracts',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='corporate_entity_not_tax_e',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='corporate_entity_tax_exemp',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -502,7 +502,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='council_of_governments',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -532,27 +532,27 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='domestic_shelter',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='dot_certified_disadvantage',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='economically_disadvantaged',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='educational_institution',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='emerging_small_business',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -602,17 +602,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='federal_agency',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='federally_funded_research',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='for_profit_organization',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -627,17 +627,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='foreign_government',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='foreign_owned_and_located',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='foundation',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -652,37 +652,37 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='grants',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='hispanic_american_owned_bu',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='hispanic_servicing_institu',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='historically_black_college',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='historically_underutilized',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='hospital_flag',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='housing_authorities_public',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -697,7 +697,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='indian_tribe_federally_rec',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -722,7 +722,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='inter_municipal_local_gove',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -737,22 +737,22 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='international_organization',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='interstate_entity',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='joint_venture_economically',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='joint_venture_women_owned',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -767,12 +767,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='labor_surplus_area_firm',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='limited_liability_corporat',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -787,7 +787,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='local_government_owned',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -797,7 +797,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='manufacturer_of_goods',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -812,12 +812,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='minority_institution',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='minority_owned_business',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -842,7 +842,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='municipality_local_governm',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -857,22 +857,22 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='native_american_owned_busi',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='native_hawaiian_owned_busi',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='native_hawaiian_servicing',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='nonprofit_organization',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -892,12 +892,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='other_minority_owned_busin',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='other_not_for_profit_organ',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -922,7 +922,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='partnership_or_limited_lia',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -952,12 +952,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='planning_commission',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='port_authority',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -972,7 +972,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='private_university_or_coll',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1007,7 +1007,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='receives_contracts_and_gra',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1077,17 +1077,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='sba_certified_8_a_joint_ve',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='school_district_local_gove',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='school_of_forestry',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1102,32 +1102,32 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='self_certified_small_disad',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='service_disabled_veteran_o',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='small_agricultural_coopera',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='small_business_competitive',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='small_disadvantaged_busine',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='sole_proprietorship',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1152,17 +1152,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='state_controlled_instituti',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='subchapter_s_corporation',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='subcontinent_asian_asian_i',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1177,7 +1177,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='the_ability_one_program',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1187,7 +1187,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='township_local_government',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1197,17 +1197,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='transit_authority',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='tribal_college',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='tribally_owned_business',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1242,27 +1242,27 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='us_federal_government',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='us_government_entity',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='us_local_government',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='us_state_government',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='us_tribal_government',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1282,26 +1282,26 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='veteran_owned_business',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='veterinary_college',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='veterinary_hospital',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='woman_owned_business',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
             name='women_owned_small_business',
-            field=models.TextField(null=True),
+            field=models.BooleanField(null=True),
         ),
     ]
