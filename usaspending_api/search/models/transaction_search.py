@@ -54,8 +54,8 @@ class TransactionSearch(models.Model):
     funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-
     business_categories = ArrayField(models.TextField(), null=True)
+
     naics_code = models.TextField(null=True)
     naics_description = models.TextField(null=True)
     product_or_service_code = models.TextField(null=True)
@@ -64,9 +64,19 @@ class TransactionSearch(models.Model):
     type_set_aside = models.TextField(null=True)
     extent_competed = models.TextField(null=True)
     ordering_period_end_date = models.TextField(null=True)
+
+    business_funds_ind_desc = models.TextField(null=True)
+    business_funds_indicator = models.TextField(null=True)
+    business_types = models.TextField(null=True)
+    business_types_desc = models.TextField(null=True)
     cfda_number = models.TextField(null=True)
     cfda_title = models.TextField(null=True)
     cfda_id = models.IntegerField(null=True)
+    correction_delete_indicatr = models.TextField(null=True)
+    correction_delete_ind_desc = models.TextField(null=True)
+    record_type = models.IntegerField(null=True)
+    record_type_description = models.TextField(null=True)
+    sai_number = models.TextField(null=True)
 
     pop_code = models.TextField(null=True)
     pop_scope = models.TextField(null=True)

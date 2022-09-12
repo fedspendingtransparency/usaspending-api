@@ -223,4 +223,50 @@ class Migration(migrations.Migration):
             name='usaspending_unique_transaction_id',
             field=models.TextField(null=True),
         ),
+
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='business_funds_ind_desc',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='business_funds_indicator',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='business_types',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='business_types_desc',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='correction_delete_ind_desc',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='correction_delete_indicatr',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='record_type',
+            field=models.IntegerField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='record_type_description',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='sai_number',
+            field=models.TextField(null=True),
+        ),
     ]
