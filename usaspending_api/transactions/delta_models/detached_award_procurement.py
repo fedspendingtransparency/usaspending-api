@@ -58,7 +58,7 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
     "contract_financing_descrip": {"delta": "STRING", "postgres": "TEXT"},
     "contracting_officers_desc": {"delta": "STRING", "postgres": "TEXT"},
     "contracting_officers_deter": {"delta": "STRING", "postgres": "TEXT"},
-    "contracts": {"delta": "STRING", "postgres": "TEXT"},
+    "contracts": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "corporate_entity_not_tax_e": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "corporate_entity_tax_exemp": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "cost_accounting_stand_desc": {"delta": "STRING", "postgres": "TEXT"},
@@ -319,4 +319,5 @@ detached_award_procurement_create_sql_string = fr"""
 """
 
 detached_award_procurement_load_sql_string = fr"""
+
 """
