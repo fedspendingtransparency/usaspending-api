@@ -511,6 +511,21 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
+            name='country_of_product_or_serv',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='county_local_government',
+            field=models.BooleanField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='current_total_value_award',
+            field=models.TextField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
             name='dod_claimant_prog_cod_desc',
             field=models.TextField(null=True),
         ),
