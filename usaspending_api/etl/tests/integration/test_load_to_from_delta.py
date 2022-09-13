@@ -354,8 +354,12 @@ def populate_usas_data(populate_broker_data):
         federal_action_obligation=0,
     )
     baker.make(
-        "award.detached_award_procurement",
-        detached_award_procurement_id=1,
+        "transactions.detached_award_procurement",
+        detached_award_procurement_id=3,
+        naics="123456",
+        product_or_service_code="12",
+        action_date="2020-10-01",
+        awardee_or_recipient_uei="FPDSUEI12345",
         _fill_optional=True,
         federal_action_obligation=0,
     )
@@ -958,7 +962,7 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
 def test_load_table_to_from_delta_for_detached_award_procurement(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("awards.detached_award_procurement", id="1", _fill_optional=True)
+    baker.make("transactions.detached_award_procurement", id="3", _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "detached_award_procurement", spark_s3_bucket=s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(
