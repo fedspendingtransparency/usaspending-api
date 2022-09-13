@@ -38,7 +38,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
-    "total_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "total_funding_amount": {"delta": "STRING", "postgres": "TEXT"},
     "non_federal_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
     "naics_code": {"delta": "STRING", "postgres": "TEXT"},
