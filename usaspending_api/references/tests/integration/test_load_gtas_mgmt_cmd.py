@@ -36,7 +36,6 @@ def test_program_activity_fresh_load(monkeypatch):
                 1600,
                 -1,
                 -11.00,
-                0,
                 -11.00,
                 -10.00,
                 -11.00,
@@ -50,12 +49,12 @@ def test_program_activity_fresh_load(monkeypatch):
                 11,
                 -111,
                 -110,
+                0.00,
             ),
             (
                 1600,
                 -2,
                 -12.00,
-                0,
                 -12.00,
                 -9.00,
                 -12.00,
@@ -69,12 +68,12 @@ def test_program_activity_fresh_load(monkeypatch):
                 12,
                 -121,
                 -120,
+                0.00,
             ),
             (
                 1601,
                 -1,
                 -13.00,
-                0,
                 -13.00,
                 -8.00,
                 -13.00,
@@ -88,6 +87,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 13,
                 -131,
                 -130,
+                0.00,
             ),
         ],
     }
@@ -116,5 +116,5 @@ def test_program_activity_fresh_load(monkeypatch):
             ).order_by("-budget_authority_unobligated_balance_brought_forward_cpe")
         ),
     }
-
+    print(actual_results)
     assert expected_results == actual_results
