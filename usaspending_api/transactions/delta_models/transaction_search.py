@@ -428,7 +428,7 @@ transaction_search_load_sql_string = fr"""
         transaction_fabs.total_funding_amount,
         transaction_normalized.non_federal_funding_amount,
         transaction_normalized.business_categories,
-        
+
         transaction_fpds.a_76_fair_act_action,
         transaction_fpds.a_76_fair_act_action_desc,
         transaction_fpds.agency_id,
@@ -639,6 +639,7 @@ transaction_search_load_sql_string = fr"""
         transaction_fpds.veterinary_hospital,
         transaction_fpds.woman_owned_business,
         transaction_fpds.women_owned_small_business,
+
         transaction_fpds.naics AS naics_code,
         naics.description AS naics_description,
         transaction_fpds.product_or_service_code,
@@ -647,7 +648,7 @@ transaction_search_load_sql_string = fr"""
         transaction_fpds.type_set_aside,
         transaction_fpds.extent_competed,
         transaction_fpds.ordering_period_end_date,
-        
+
         transaction_fabs.business_funds_ind_desc,
         transaction_fabs.business_funds_indicator,
         transaction_fabs.business_types,
@@ -708,7 +709,7 @@ transaction_search_load_sql_string = fr"""
         transaction_fpds.legal_entity_zip4,
         COALESCE(transaction_fpds.legal_entity_zip_last4, transaction_fabs.legal_entity_zip_last4)
             AS legal_entity_zip_last4,
-        transaction_fabs.legal_entity_city_code,        
+        transaction_fabs.legal_entity_city_code,
         TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name))
             AS recipient_location_city_name,
         COALESCE(transaction_fpds.legal_entity_address_line1, transaction_fabs.legal_entity_address_line1)
@@ -786,7 +787,7 @@ transaction_search_load_sql_string = fr"""
         AO.office_name AS awarding_office_name,
         FO.office_code AS funding_office_code,
         FO.office_name AS funding_office_name,
-        
+
         COALESCE(transaction_fabs.officer_1_name, transaction_fpds.officer_1_name) AS officer_1_name,
         COALESCE(transaction_fabs.officer_1_amount, transaction_fpds.officer_1_amount) AS officer_1_amount,
         COALESCE(transaction_fabs.officer_2_name, transaction_fpds.officer_2_name) AS officer_2_name,
