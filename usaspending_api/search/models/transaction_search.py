@@ -111,7 +111,7 @@ class TransactionSearch(models.Model):
     dod_claimant_program_code = models.TextField(null=True)
     domestic_or_foreign_e_desc = models.TextField(null=True)
     domestic_or_foreign_entity = models.TextField(null=True)
-    domestic_shelter = models.BooleanField(null=True),
+    domestic_shelter = models.BooleanField(null=True)
     dot_certified_disadvantage = models.BooleanField(null=True)
     economically_disadvantaged = models.BooleanField(null=True)
     educational_institution = models.BooleanField(null=True)
