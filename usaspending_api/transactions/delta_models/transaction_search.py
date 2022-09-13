@@ -357,7 +357,7 @@ transaction_search_load_sql_string = fr"""
         COALESCE(transaction_fabs.officer_4_name, transaction_fpds.officer_4_name) AS officer_4_name,
         COALESCE(transaction_fabs.officer_4_amount, transaction_fpds.officer_4_amount) AS officer_4_amount,
         COALESCE(transaction_fabs.officer_5_name, transaction_fpds.officer_5_name) AS officer_5_name,
-        COALESCE(transaction_fabs.officer_5_amount, transaction_fpds.officer_5_amount) AS officer_5_amount,
+        COALESCE(transaction_fabs.officer_5_amount, transaction_fpds.officer_5_amount) AS officer_5_amount
     FROM
         raw.transaction_normalized
     LEFT OUTER JOIN
