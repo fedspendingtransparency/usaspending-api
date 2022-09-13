@@ -51,5 +51,5 @@ __all__ = [
     "summary_state_view_load_sql_string",
     "detached_award_procurement_load_sql_string",
     "detached_award_procurement_create_sql_string",
-    "detached_award_procurement",
+    "DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS",
 ]
