@@ -170,7 +170,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='total_funding_amount',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
+            field=models.TextField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',

@@ -52,7 +52,7 @@ class TransactionSearch(models.Model):
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_funding_amount = models.TextField(null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     business_categories = ArrayField(models.TextField(), null=True)
 
