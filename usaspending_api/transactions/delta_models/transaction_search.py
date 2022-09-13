@@ -218,7 +218,7 @@ transaction_search_load_sql_string = fr"""
         transaction_fabs.total_funding_amount,
         transaction_normalized.non_federal_funding_amount,
         transaction_normalized.business_categories,
-        
+
         transaction_fpds.naics AS naics_code,
         naics.description AS naics_description,
         transaction_fpds.product_or_service_code,
@@ -227,7 +227,7 @@ transaction_search_load_sql_string = fr"""
         transaction_fpds.type_set_aside,
         transaction_fpds.extent_competed,
         transaction_fpds.ordering_period_end_date,
-        
+
         transaction_fabs.business_funds_ind_desc,
         transaction_fabs.business_funds_indicator,
         transaction_fabs.business_types,
