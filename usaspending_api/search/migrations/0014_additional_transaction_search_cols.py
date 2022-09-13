@@ -23,53 +23,13 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='awarding_agency_code',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='awarding_agency_name',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='awarding_sub_tier_agency_c',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='awarding_sub_tier_agency_n',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='create_date',
             field=models.DateTimeField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='funding_agency_code',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='funding_agency_name',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='funding_amount',
             field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='funding_sub_tier_agency_co',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='funding_sub_tier_agency_na',
-            field=models.TextField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
