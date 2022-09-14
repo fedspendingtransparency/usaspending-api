@@ -116,5 +116,4 @@ def test_program_activity_fresh_load(monkeypatch):
             ).order_by("-budget_authority_unobligated_balance_brought_forward_cpe")
         ),
     }
-    print(actual_results)
     assert expected_results == actual_results
