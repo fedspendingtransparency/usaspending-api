@@ -99,7 +99,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 "fiscal_year",
                 "fiscal_period",
                 "budget_authority_unobligated_balance_brought_forward_cpe",
-                "adjustments_to_unobligated_balance_brought_forward_cpe",
+                "adjustments_to_unobligated_balance_cpe",
                 "obligations_incurred_total_cpe",
                 "budget_authority_appropriation_amount_cpe",
                 "borrowing_authority_amount",
@@ -112,7 +112,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 "total_budgetary_resources_cpe",
                 "anticipated_prior_year_obligation_recoveries",
                 "prior_year_paid_obligation_recoveries",
-                "adjustment_to_unobligated_balance_brought_forward_oct_1",
+                "adjustments_to_unobligated_balance_brought_forward_cpe",
             ).order_by("-budget_authority_unobligated_balance_brought_forward_cpe")
         ),
     }

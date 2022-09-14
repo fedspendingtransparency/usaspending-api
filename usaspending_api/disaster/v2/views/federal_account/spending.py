@@ -193,7 +193,7 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                         deobligation=Func("deobligations_or_recoveries_or_refunds_from_prior_year_cpe", function="Sum"),
                         prior_year=Func("prior_year_paid_obligation_recoveries", function="Sum"),
                         unobligated_adjustments=Func(
-                            "adjustment_to_unobligated_balance_brought_forward_oct_1", function="Sum"
+                            "adjustments_to_unobligated_balance_brought_forward_cpe", function="Sum"
                         ),
                     )
                     .annotate(

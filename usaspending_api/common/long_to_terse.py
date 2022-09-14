@@ -12,7 +12,7 @@ LONG_TO_TERSE_LABELS = {
     "main_account_code": "main_account_code",
     "sub_account_code": "sub_account_code",
     "budget_authority_unobligated_balance_brought_forward_fyb": "budget_authority_unobligat_fyb",
-    "adjustments_to_unobligated_balance_brought_forward_cpe": "adjustments_to_unobligated_cpe",
+    "adjustments_to_unobligated_balance_cpe": "adjustments_to_unobligated_cpe",
     "budget_authority_appropriated_amount_cpe": "budget_authority_appropria_cpe",
     "borrowing_authority_amount_total_cpe": "borrowing_authority_amount_cpe",
     "contract_authority_amount_total_cpe": "contract_authority_amount_cpe",
