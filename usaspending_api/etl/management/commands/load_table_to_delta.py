@@ -37,7 +37,10 @@ from usaspending_api.transactions.delta_models import (
     transaction_normalized_sql_string,
     TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
+    PUBLISHED_FABS_COLUMNS,
+    published_fabs_create_sql_string,
 )
+from usaspending_api.transactions.models import (SourceAssistanceTransaction)
 from usaspending_api.search.delta_models.award_search import award_search_create_sql_string, AWARD_SEARCH_COLUMNS
 
 from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
@@ -100,6 +103,23 @@ TABLE_SPEC = {
         "source_schema": None,
         "custom_schema": "",
         "column_names": list(TRANSACTION_FABS_COLUMNS),
+        "tsvectors": None,
+    },
+    "published_fabs": {
+        "model": SourceAssistanceTransaction,
+        "is_from_broker": False,
+        "source_table": "published_fabs",
+        "source_database": "raw",
+        "destination_database": "raw",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "detached_award_procurement_id",
+        "partition_column_type": "Integer",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": published_fabs_create_sql_string,
+        "source_schema": None,
+        "custom_schema": "",
+        "column_names": list(PUBLISHED_FABS_COLUMNS),
         "tsvectors": None,
     },
     "transaction_fpds": {
