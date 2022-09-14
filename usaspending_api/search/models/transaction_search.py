@@ -380,6 +380,23 @@ class TransactionSearch(models.Model):
         indexes = [
             models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
             models.Index(
+                fields=["generated_unique_award_id"], name="ts_idx_award_key_pre2008",
+                condition=Q(action_date__lt="2007-10-01")
+            ),
+            models.Index(
+                fields=["piid"], name="ts_idx_piid_pre2008", condition=Q(action_date__lt="2007-10-01")
+            ),
+            models.Index(
+                fields=["parent_award_id"], name="ts_idx_parent_award_id_pre2008",
+                condition=Q(action_date__lt="2007-10-01")
+            ),
+            models.Index(
+                fields=["fain"], name="ts_idx_fain_pre2008", condition=Q(action_date__lt="2007-10-01")
+            ),
+            models.Index(
+                fields=["uri"], name="ts_idx_uri_pre2008", condition=Q(action_date__lt="2007-10-01")
+            ),
+            models.Index(
                 fields=["-action_date"], name="ts_idx_action_date", condition=Q(action_date__gte="2007-10-01")
             ),
             models.Index(fields=["-last_modified_date"], name="ts_idx_last_modified_date"),
