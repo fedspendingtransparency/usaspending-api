@@ -353,16 +353,7 @@ def populate_usas_data(populate_broker_data):
         _fill_optional=True,
         federal_action_obligation=0,
     )
-    baker.make(
-        "transactions.SourceProcurementTransaction",
-        detached_award_procurement_id=3,
-        naics="123456",
-        product_or_service_code="12",
-        action_date="2020-10-01",
-        awardee_or_recipient_uei="FPDSUEI12345",
-        _fill_optional=True,
-        federal_action_obligation=0,
-    )
+
     # Create account data
     federal_account = baker.make(
         "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
