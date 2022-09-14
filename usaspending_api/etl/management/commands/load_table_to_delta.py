@@ -40,7 +40,7 @@ from usaspending_api.transactions.delta_models import (
     PUBLISHED_FABS_COLUMNS,
     published_fabs_create_sql_string,
 )
-from usaspending_api.transactions.models import (SourceAssistanceTransaction)
+from usaspending_api.transactions.models import SourceAssistanceTransaction
 from usaspending_api.search.delta_models.award_search import award_search_create_sql_string, AWARD_SEARCH_COLUMNS
 
 from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
