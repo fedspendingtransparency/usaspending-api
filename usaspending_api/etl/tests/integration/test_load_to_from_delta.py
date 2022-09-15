@@ -271,6 +271,7 @@ def populate_usas_data(populate_broker_data):
         detached_award_procurement_id=4,
         created_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
         _fill_optional=True,
     )
     baker.make(
@@ -278,6 +279,7 @@ def populate_usas_data(populate_broker_data):
         detached_award_procurement_id=5,
         created_at=datetime.datetime.fromtimestamp(0),
         updated_at=datetime.datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
         _fill_optional=True,
     )
     baker.make(
