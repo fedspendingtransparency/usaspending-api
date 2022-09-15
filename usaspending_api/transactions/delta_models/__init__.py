@@ -1,7 +1,6 @@
 from usaspending_api.transactions.delta_models.detached_award_procurement import (
     DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS,
     detached_award_procurement_create_sql_string,
-    detached_award_procurement_load_sql_string,
 )
 
 from usaspending_api.transactions.delta_models.transaction_fabs import (
@@ -49,7 +48,6 @@ __all__ = [
     "SUMMARY_STATE_VIEW_POSTGRES_COLUMNS",
     "summary_state_view_create_sql_string",
     "summary_state_view_load_sql_string",
-    "detached_award_procurement_load_sql_string",
     "detached_award_procurement_create_sql_string",
     "DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS",
 ]
