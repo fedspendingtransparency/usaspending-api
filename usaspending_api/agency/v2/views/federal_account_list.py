@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from typing import Any, List
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models import BureauTitleLookup
 from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
 
@@ -38,6 +38,8 @@ class FederalAccountList(PaginationMixin, AgencyBase):
                 distinct.add(account["code"])
                 accounts.append(account)
         for item in accounts:
+            bureau = BureauTitleLookup.objects.filter(federal_account_code=item['code']).values()
+            item['bureau_slug'] = bureau[0]['bureau_slug']
             item["children"] = [
                 {
                     "name": row["treasury_account__account_title"],
@@ -59,13 +61,11 @@ class FederalAccountList(PaginationMixin, AgencyBase):
         self.sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
         self.default_sort_column = "obligated_amount"
         results = self.format_results(self.get_federal_account_list())
-        page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
             {
                 "toptier_code": self.toptier_code,
                 "fiscal_year": self.fiscal_year,
-                "page_metadata": page_metadata,
-                "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
+                "results": results,
                 "messages": self.standard_response_messages,
             }
         )
