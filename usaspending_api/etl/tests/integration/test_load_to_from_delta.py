@@ -5,7 +5,6 @@ NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/et
 import json
 import psycopg2
 import pytz
-
 from datetime import date, datetime
 from pathlib import Path
 from psycopg2.extensions import AsIs
@@ -270,8 +269,8 @@ def populate_usas_data(populate_broker_data):
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id=4,
-        created_at=datetime.datetime.fromtimestamp(0),
-        updated_at=datetime.datetime.fromtimestamp(0),
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
         _fill_optional=True,
     )
     baker.make(
