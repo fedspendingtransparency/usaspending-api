@@ -270,14 +270,16 @@ def populate_usas_data(populate_broker_data):
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id=4,
+        created_at=datetime.datetime.fromtimestamp(0),
+        updated_at=datetime.datetime.fromtimestamp(0),
         _fill_optional=True,
-        federal_action_obligation=0,
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id=5,
+        created_at=datetime.datetime.fromtimestamp(0),
+        updated_at=datetime.datetime.fromtimestamp(0),
         _fill_optional=True,
-        federal_action_obligation=0,
     )
     baker.make(
         "awards.TransactionFABS",
