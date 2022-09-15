@@ -85,7 +85,7 @@ where
 insert into appropriation_account_balances (
     data_source,
     budget_authority_unobligated_balance_brought_forward_fyb,
-    adjustments_to_unobligated_balance_brought_forward_cpe,
+    adjustments_to_unobligated_balance_cpe,
     budget_authority_appropriated_amount_cpe,
     borrowing_authority_amount_total_cpe,
     contract_authority_amount_total_cpe,
@@ -108,7 +108,7 @@ insert into appropriation_account_balances (
 select
     abb.data_source,
     abb.budget_authority_unobligated_balance_brought_forward_fyb,
-    abb.adjustments_to_unobligated_balance_brought_forward_cpe,
+    abb.adjustments_to_unobligated_balance_cpe,
     abb.budget_authority_appropriated_amount_cpe,
     abb.borrowing_authority_amount_total_cpe,
     abb.contract_authority_amount_total_cpe,

@@ -49,6 +49,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 11,
                 -111,
                 -110,
+                0.00,
             ),
             (
                 1600,
@@ -67,6 +68,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 12,
                 -121,
                 -120,
+                0.00,
             ),
             (
                 1601,
@@ -85,6 +87,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 13,
                 -131,
                 -130,
+                0.00,
             ),
         ],
     }
@@ -96,7 +99,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 "fiscal_year",
                 "fiscal_period",
                 "budget_authority_unobligated_balance_brought_forward_cpe",
-                "adjustments_to_unobligated_balance_brought_forward_cpe",
+                "adjustments_to_unobligated_balance_cpe",
                 "obligations_incurred_total_cpe",
                 "budget_authority_appropriation_amount_cpe",
                 "borrowing_authority_amount",
@@ -109,8 +112,8 @@ def test_program_activity_fresh_load(monkeypatch):
                 "total_budgetary_resources_cpe",
                 "anticipated_prior_year_obligation_recoveries",
                 "prior_year_paid_obligation_recoveries",
+                "adjustments_to_unobligated_balance_brought_forward_cpe",
             ).order_by("-budget_authority_unobligated_balance_brought_forward_cpe")
         ),
     }
-
     assert expected_results == actual_results
