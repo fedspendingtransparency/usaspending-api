@@ -493,7 +493,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='funding_sub_funding_subtier_agency_name_rawtier_agency_na',
+            name='funding_subtier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
@@ -660,11 +660,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transactionsearch',
             name='legal_entity_city_code',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='legal_entity_congressional',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
@@ -1076,6 +1071,11 @@ class Migration(migrations.Migration):
             model_name='transactionsearch',
             name='receives_contracts_and_gra',
             field=models.BooleanField(null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='recipient_location_congressional_code_raw',
+            field=models.TextField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
