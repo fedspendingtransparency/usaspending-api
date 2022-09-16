@@ -97,7 +97,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
             unobligated=Sum("unobligated_balance_cpe"),
             balance_brought_forward=Sum(
                 F("budget_authority_unobligated_balance_brought_forward_fyb")
-                + F("adjustments_to_unobligated_balance_cpe")
+                + F("adjustments_to_unobligated_balance_brought_forward_cpe")
             ),
             other_budgetary_resources=Sum("other_budgetary_resources_amount_cpe"),
             appropriations=Sum("budget_authority_appropriated_amount_cpe"),

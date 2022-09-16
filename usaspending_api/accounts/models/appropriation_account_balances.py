@@ -14,7 +14,7 @@ class AbstractAppropriationAccountBalances(DataSourceTrackedModel):
     budget_authority_unobligated_balance_brought_forward_fyb = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
-    adjustments_to_unobligated_balance_cpe = models.DecimalField(max_digits=23, decimal_places=2)
+    adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     budget_authority_appropriated_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     borrowing_authority_amount_total_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     contract_authority_amount_total_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
