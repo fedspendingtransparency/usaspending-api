@@ -354,6 +354,24 @@ def populate_usas_data(populate_broker_data):
         federal_action_obligation=0,
     )
 
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        detached_award_procurement_id=6,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        detached_award_procurement_id=7,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
     # Create account data
     federal_account = baker.make(
         "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
@@ -781,6 +799,34 @@ def test_load_table_to_from_delta_for_recipient_testing(spark, s3_unittest_data_
     baker.make("recipient.RecipientLookup", id="2", _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "recipient_lookup_testing", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "recipient_lookup_testing", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(
+        spark, "recipient_lookup_testing", jdbc_inserts=True
+    )  # test alt write strategy
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        detached_award_procurement_id=7,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        detached_award_procurement_id=8,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+    verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "published_fabs", spark_s3_bucket=s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(
         spark, "recipient_lookup_testing", jdbc_inserts=True
     )  # test alt write strategy
