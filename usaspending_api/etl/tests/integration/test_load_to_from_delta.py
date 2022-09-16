@@ -360,6 +360,7 @@ def populate_usas_data(populate_broker_data):
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
+        is_active=True,
         federal_action_obligation=1000001,
         _fill_optional=True,
     )
@@ -369,6 +370,7 @@ def populate_usas_data(populate_broker_data):
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
+        is_active=True,
         federal_action_obligation=1000001,
         _fill_optional=True,
     )
@@ -812,6 +814,7 @@ def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_buc
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
+        is_active = True,
         federal_action_obligation=1000001,
         _fill_optional=True,
     )
@@ -822,6 +825,7 @@ def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_buc
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
+        is_active=True,
         federal_action_obligation=1000001,
         _fill_optional=True,
     )
