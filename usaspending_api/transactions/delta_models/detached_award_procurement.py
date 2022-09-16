@@ -93,7 +93,7 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
     "fair_opportunity_limited_s": {"delta": "STRING", "postgres": "TEXT"},
     "fed_biz_opps": {"delta": "STRING", "postgres": "TEXT"},
     "fed_biz_opps_description": {"delta": "STRING", "postgres": "TEXT"},
-    "federal_action_obligation": {"delta": "NUMERIC", "postgres": "NUMERIC"},
+    "federal_action_obligation": {"delta": "NUMERIC(38, 18)", "postgres": "NUMERIC(38,18"},
     "federal_agency": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "federally_funded_research": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "for_profit_organization": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
@@ -315,5 +315,8 @@ detached_award_procurement_create_sql_string = fr"""
         {", ".join([f'{key} {val}' for key, val in DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS.items()])}
     )
     USING DELTA
-    LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'\
+    
 """
+
+
