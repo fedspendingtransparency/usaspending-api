@@ -24,32 +24,24 @@ TRANSACTION_SEARCH_COLUMNS = {
     "period_of_performance_current_end_date": {"delta": "DATE", "postgres": "DATE"},
     # Agencies
     "awarding_agency_code": {"delta": "STRING", "postgres": "TEXT"},
-    "awarding_toptier_agency_name_raw": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "funding_agency_code": {"delta": "STRING", "postgres": "TEXT"},
-    "funding_toptier_agency_name_raw": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_sub_tier_agency_c": {"delta": "STRING", "postgres": "TEXT"},
-    "awarding_subtier_agency_name_raw": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_subtier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "funding_sub_tier_agency_co": {"delta": "STRING", "postgres": "TEXT"},
-    "funding_subtier_agency_name_raw": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_subtier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "awarding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "funding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "awarding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
-    "funding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
-    "awarding_subtier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
-    "funding_subtier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_toptier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_subtier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
     "funding_subtier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
-    "awarding_office_code_raw": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_office_code": {"delta": "STRING", "postgres": "TEXT"},
-    "awarding_office_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_office_name": {"delta": "STRING", "postgres": "TEXT"},
-    "funding_office_code_raw": {"delta": "STRING", "postgres": "TEXT"},
     "funding_office_code": {"delta": "STRING", "postgres": "TEXT"},
-    "funding_office_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "funding_office_name": {"delta": "STRING", "postgres": "TEXT"},
     # Typing
     "is_fpds": {"delta": "BOOLEAN NOT NULL", "postgres": "BOOLEAN NOT NULL"},
@@ -72,35 +64,25 @@ TRANSACTION_SEARCH_COLUMNS = {
     # Recipient
     "recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
-    "recipient_uei_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_uei": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_name": {"delta": "STRING", "postgres": "TEXT"},
-    "recipient_unique_id_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
     "parent_recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
-    "parent_uei_raw": {"delta": "STRING", "postgres": "TEXT"},
     "parent_uei": {"delta": "STRING", "postgres": "TEXT"},
     "parent_recipient_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "parent_recipient_name": {"delta": "STRING", "postgres": "TEXT"},
-    "parent_recipient_unique_id_raw": {"delta": "STRING", "postgres": "TEXT"},
     "parent_recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
     # Recipient Location
-    "recipient_location_country_code_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_country_code": {"delta": "STRING", "postgres": "TEXT"},
-    "recipient_location_country_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_state_code": {"delta": "STRING", "postgres": "TEXT"},
-    "recipient_location_state_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_state_name": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_state_fips": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_state_population": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "recipient_location_county_code_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_county_code": {"delta": "STRING", "postgres": "TEXT"},
-    "recipient_location_county_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_county_name": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "recipient_location_congressional_code_raw": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
     "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT"},
@@ -118,23 +100,17 @@ TRANSACTION_SEARCH_COLUMNS = {
     # Place of Performance
     "place_of_performance_code": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_performance_scope": {"delta": "STRING", "postgres": "TEXT"},
-    "pop_country_code_raw": {"delta": "STRING", "postgres": "TEXT"},
     "pop_country_code": {"delta": "STRING", "postgres": "TEXT"},
-    "pop_country_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perf_country_desc": {"delta": "STRING", "postgres": "TEXT"},
     "pop_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_code": {"delta": "STRING", "postgres": "TEXT"},
-    "pop_state_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perfor_state_desc": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_name": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_fips": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "pop_county_code_raw": {"delta": "STRING", "postgres": "TEXT"},
     "pop_county_code": {"delta": "STRING", "postgres": "TEXT"},
-    "pop_county_name_raw": {"delta": "STRING", "postgres": "TEXT"},
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
     "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "pop_congressional_code_raw": {"delta": "STRING", "postgres": "TEXT"},
     "pop_congressional_code": {"delta": "STRING", "postgres": "TEXT"},
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER"},
     "pop_zip5": {"delta": "STRING", "postgres": "TEXT"},
@@ -297,7 +273,6 @@ TRANSACTION_SEARCH_COLUMNS = {
     "multiple_or_single_award_i": {"delta": "STRING", "postgres": "TEXT"},
     "municipality_local_governm": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "naics_code": {"delta": "STRING", "postgres": "TEXT"},
-    "naics_description_raw": {"delta": "STRING", "postgres": "TEXT"},
     "naics_description": {"delta": "STRING", "postgres": "TEXT"},
     "national_interest_action": {"delta": "STRING", "postgres": "TEXT"},
     "national_interest_desc": {"delta": "STRING", "postgres": "TEXT"},
@@ -328,7 +303,6 @@ TRANSACTION_SEARCH_COLUMNS = {
     "price_evaluation_adjustmen": {"delta": "STRING", "postgres": "TEXT"},
     "private_university_or_coll": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "product_or_service_code": {"delta": "STRING", "postgres": "TEXT"},
-    "product_or_service_description_raw": {"delta": "STRING", "postgres": "TEXT"},
     "product_or_service_description": {"delta": "STRING", "postgres": "TEXT"},
     "program_acronym": {"delta": "STRING", "postgres": "TEXT"},
     "program_system_or_equ_desc": {"delta": "STRING", "postgres": "TEXT"},
@@ -441,33 +415,25 @@ transaction_search_load_sql_string = fr"""
 
         -- Agencies
         COALESCE(transaction_fabs.awarding_agency_code, transaction_fpds.awarding_agency_code) AS awarding_agency_code,
-        COALESCE(transaction_fabs.awarding_agency_name, transaction_fpds.awarding_agency_name) AS awarding_toptier_agency_name_raw,
+        COALESCE(transaction_fabs.awarding_agency_name, transaction_fpds.awarding_agency_name) AS awarding_toptier_agency_name,
         COALESCE(transaction_fabs.funding_agency_code, transaction_fpds.funding_agency_code) AS funding_agency_code,
-        COALESCE(transaction_fabs.funding_agency_name, transaction_fpds.funding_agency_name) AS funding_toptier_agency_name_raw,
+        COALESCE(transaction_fabs.funding_agency_name, transaction_fpds.funding_agency_name) AS funding_toptier_agency_name,
         COALESCE(transaction_fabs.awarding_sub_tier_agency_c, transaction_fpds.awarding_sub_tier_agency_c) AS awarding_sub_tier_agency_c,
-        COALESCE(transaction_fabs.awarding_sub_tier_agency_n, transaction_fpds.awarding_sub_tier_agency_n) AS awarding_subtier_agency_name_raw,
+        COALESCE(transaction_fabs.awarding_sub_tier_agency_n, transaction_fpds.awarding_sub_tier_agency_n) AS awarding_subtier_agency_name,
         COALESCE(transaction_fabs.funding_sub_tier_agency_co, transaction_fpds.funding_sub_tier_agency_co) AS funding_sub_tier_agency_co,
-        COALESCE(transaction_fabs.funding_sub_tier_agency_na, transaction_fpds.funding_sub_tier_agency_na) AS funding_subtier_agency_name_raw,
+        COALESCE(transaction_fabs.funding_sub_tier_agency_na, transaction_fpds.funding_sub_tier_agency_na) AS funding_subtier_agency_name,
         AA_ID.id AS awarding_toptier_agency_id,
         FA_ID.id AS funding_toptier_agency_id,
         transaction_normalized.awarding_agency_id,
         transaction_normalized.funding_agency_id,
-        TAA.name AS awarding_toptier_agency_name,
-        TFA.name AS funding_toptier_agency_name,
-        SAA.name AS awarding_subtier_agency_name,
-        SFA.name AS funding_subtier_agency_name,
         TAA.abbreviation AS awarding_toptier_agency_abbreviation,
         TFA.abbreviation AS funding_toptier_agency_abbreviation,
         SAA.abbreviation AS awarding_subtier_agency_abbreviation,
         SFA.abbreviation AS funding_subtier_agency_abbreviation,
-        COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code) AS awarding_office_code_raw,
-        AO.office_code AS awarding_office_code,
-        COALESCE(transaction_fabs.awarding_office_name, transaction_fpds.awarding_office_name) AS awarding_office_name_raw,
-        AO.office_name AS awarding_office_name,
-        COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code) AS funding_office_code_raw,
-        FO.office_code AS funding_office_code,
-        COALESCE(transaction_fabs.funding_office_name, transaction_fpds.funding_office_name) AS funding_office_name_raw,
-        FO.office_name AS funding_office_name,
+        COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code) AS awarding_office_code,
+        COALESCE(transaction_fabs.awarding_office_name, transaction_fpds.awarding_office_name) AS awarding_office_name,
+        COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code) AS funding_office_code,
+        COALESCE(transaction_fabs.funding_office_name, transaction_fpds.funding_office_name) AS funding_office_name,
 
         -- Typing
         transaction_normalized.is_fpds,
@@ -521,11 +487,6 @@ transaction_search_load_sql_string = fr"""
         COALESCE(
             transaction_fpds.awardee_or_recipient_uei,
             transaction_fabs.uei
-        ) AS recipient_uei_raw,
-        COALESCE(
-            recipient_lookup.uei,
-            transaction_fpds.awardee_or_recipient_uei,
-            transaction_fabs.uei
         ) AS recipient_uei,
         COALESCE(
             transaction_fpds.awardee_or_recipient_legal,
@@ -539,19 +500,9 @@ transaction_search_load_sql_string = fr"""
         COALESCE(
             transaction_fpds.awardee_or_recipient_uniqu,
             transaction_fabs.awardee_or_recipient_uniqu
-        ) AS recipient_unique_id_raw,
-        COALESCE(
-            recipient_lookup.duns,
-            transaction_fpds.awardee_or_recipient_uniqu,
-            transaction_fabs.awardee_or_recipient_uniqu
         ) AS recipient_unique_id,
         PRL.recipient_hash AS parent_recipient_hash,
         COALESCE(
-            transaction_fpds.ultimate_parent_uei,
-            transaction_fabs.ultimate_parent_uei
-        ) AS parent_uei_raw,
-        COALESCE(
-            PRL.uei,
             transaction_fpds.ultimate_parent_uei,
             transaction_fabs.ultimate_parent_uei
         ) AS parent_uei,
@@ -563,38 +514,24 @@ transaction_search_load_sql_string = fr"""
         COALESCE(
             transaction_fpds.ultimate_parent_unique_ide,
             transaction_fabs.ultimate_parent_unique_ide
-        ) AS parent_recipient_unique_id_raw,
-        COALESCE(
-            PRL.duns,
-            transaction_fpds.ultimate_parent_unique_ide,
-            transaction_fabs.ultimate_parent_unique_ide
         ) AS parent_recipient_unique_id,
 
         -- Recipient Location
         COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code)
-            AS recipient_location_country_code_raw,
-        rl_country_lookup.country_code AS recipient_location_country_code,
+            AS recipient_location_country_code,
         COALESCE(transaction_fpds.legal_entity_country_name, transaction_fabs.legal_entity_country_name)
-            AS recipient_location_country_name_raw,
-        rl_country_lookup.country_name AS recipient_location_country_name,
+            AS recipient_location_country_name,
         COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
             AS recipient_location_state_code,
         COALESCE(transaction_fpds.legal_entity_state_descrip, transaction_fabs.legal_entity_state_name)
-            AS recipient_location_state_name_raw,
-        RL_STATE_LOOKUP.name AS recipient_location_state_name,
+            AS recipient_location_state_name,
         RL_STATE_LOOKUP.fips AS recipient_location_state_fips,
         RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
-        COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
-            AS recipient_location_county_code_raw,
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AS recipient_location_county_code,
         COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name)
-            AS recipient_location_county_name_raw,
-        COALESCE(rl_county_lookup.county_name, transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name)
             AS recipient_location_county_name,
         RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
-        COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional)
-            AS recipient_location_congressional_code_raw,
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
@@ -621,31 +558,22 @@ transaction_search_load_sql_string = fr"""
         transaction_fabs.place_of_performance_code,
         transaction_fabs.place_of_performance_scope,
         COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c)
-            AS pop_country_code_raw,
-        pop_country_lookup.country_code AS pop_country_code,
+            AS pop_country_code,
         COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n)
-            AS pop_country_name_raw,
+            AS pop_country_name,
         transaction_fpds.place_of_perf_country_desc,
-        pop_country_lookup.country_name AS pop_country_name,
         COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
             AS pop_state_code,
         COALESCE(transaction_fpds.place_of_perform_state_nam, transaction_fabs.place_of_perform_state_nam)
-            AS pop_state_name_raw,
+            AS pop_state_name,
         transaction_fpds.place_of_perfor_state_desc,
-        POP_STATE_LOOKUP.name AS pop_state_name,
         POP_STATE_LOOKUP.fips AS pop_state_fips,
         POP_STATE_POPULATION.latest_population AS pop_state_population,
-        COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
-            AS pop_county_code_raw,
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AS pop_county_code,
         COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na)
-            AS pop_county_name_raw,
-        COALESCE(pop_county_lookup.county_name, transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na)
             AS pop_county_name,
         POP_COUNTY_POPULATION.latest_population AS pop_county_population,
-        COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr)
-            AS pop_congressional_code_raw,
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
@@ -817,8 +745,7 @@ transaction_search_load_sql_string = fr"""
         transaction_fpds.multiple_or_single_award_i,
         transaction_fpds.municipality_local_governm,
         transaction_fpds.naics AS naics_code,
-        transaction_fpds.naics_description AS naics_description_raw,
-        naics.description AS naics_description,
+        transaction_fpds.naics_description AS naics_description,
         transaction_fpds.national_interest_action,
         transaction_fpds.national_interest_desc,
         transaction_fpds.native_american_owned_busi,
@@ -848,8 +775,7 @@ transaction_search_load_sql_string = fr"""
         transaction_fpds.price_evaluation_adjustmen,
         transaction_fpds.private_university_or_coll,
         transaction_fpds.product_or_service_code,
-        transaction_fpds.product_or_service_co_desc AS product_or_service_description_raw,
-        psc.description AS product_or_service_description,
+        transaction_fpds.product_or_service_co_desc AS product_or_service_description,
         transaction_fpds.program_acronym,
         transaction_fpds.program_system_or_equ_desc,
         transaction_fpds.program_system_or_equipmen,
