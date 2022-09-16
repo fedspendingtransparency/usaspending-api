@@ -29,7 +29,7 @@ def financial_spending_data(db):
         obligations_incurred_total_by_tas_cpe=3000000,
         unobligated_balance_cpe=4000000,
         budget_authority_unobligated_balance_brought_forward_fyb=5000000,
-        adjustments_to_unobligated_balance_cpe=6000000,
+        adjustments_to_unobligated_balance_brought_forward_cpe=6000000,
         other_budgetary_resources_amount_cpe=7000000,
         budget_authority_appropriated_amount_cpe=8000000,
     )
