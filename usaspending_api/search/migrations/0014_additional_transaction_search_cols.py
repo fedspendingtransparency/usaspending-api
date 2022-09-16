@@ -68,27 +68,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='awarding_office_code_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='awarding_office_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='awarding_sub_tier_agency_c',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='awarding_subtier_agency_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='awarding_toptier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
@@ -483,27 +463,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='funding_office_code_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='funding_office_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='funding_subtier_agency_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='funding_sub_tier_agency_co',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='funding_toptier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
@@ -769,11 +729,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='naics_description_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='national_interest_action',
             field=models.TextField(null=True),
         ),
@@ -909,16 +864,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='parent_recipient_unique_id_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='parent_uei_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='partnership_or_limited_lia',
             field=models.BooleanField(null=True),
         ),
@@ -989,36 +934,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='pop_congressional_code_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='pop_country_code_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='pop_country_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='pop_county_code_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='pop_county_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='pop_state_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='port_authority',
             field=models.BooleanField(null=True),
         ),
@@ -1036,11 +951,6 @@ class Migration(migrations.Migration):
             model_name='transactionsearch',
             name='private_university_or_coll',
             field=models.BooleanField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='product_or_service_description_raw',
-            field=models.TextField(null=True),
         ),
         migrations.AddField(
             model_name='transactionsearch',
@@ -1079,47 +989,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='recipient_location_congressional_code_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_location_country_code_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_location_country_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_location_county_code_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_location_county_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_location_state_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='recipient_name_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_uei_raw',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_unique_id_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
