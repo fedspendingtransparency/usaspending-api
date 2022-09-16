@@ -967,8 +967,22 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
 def test_load_table_to_from_delta_for_detached_award_procurement(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("transactions.SourceProcurementTransaction", detached_award_procurement_id="4", _fill_optional=True)
-    baker.make("transactions.SourceProcurementTransaction", detached_award_procurement_id="5", _fill_optional=True)
+    baker.make(
+        "transactions.SourceProcurementTransaction",
+        detached_award_procurement_id="4",
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+    baker.make(
+        "transactions.SourceProcurementTransaction",
+        detached_award_procurement_id="5",
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
 
     verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "detached_award_procurement", spark_s3_bucket=s3_unittest_data_bucket)
