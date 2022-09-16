@@ -1637,7 +1637,7 @@ query_paths = {
                 ),
                 (
                     "adjustments_to_unobligated_balance_brought_forward",
-                    "adjustments_to_unobligated_balance_cpe",
+                    "adjustments_to_unobligated_balance_brought_forward_cpe",
                 ),
                 ("budget_authority_appropriated_amount", "budget_authority_appropriated_amount_cpe"),
                 ("borrowing_authority_amount", "borrowing_authority_amount_total_cpe"),
