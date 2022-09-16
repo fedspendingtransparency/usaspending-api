@@ -48,7 +48,7 @@ PUBLISHED_FABS_COLUMNS = {
     "high_comp_officer4_full_na": {"delta": "STRING", "postgres": "TEXT"},
     "high_comp_officer5_amount": {"delta": "STRING", "postgres": "TEXT"},
     "high_comp_officer5_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "indirect_federal_sharing": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "indirect_federal_sharing": {"delta": "NUMERIC", "postgres": "NUMERIC"},
     "is_active": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "is_historical": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "legal_entity_address_line1": {"delta": "STRING", "postgres": "TEXT"},
