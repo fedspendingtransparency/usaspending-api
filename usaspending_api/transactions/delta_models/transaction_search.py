@@ -881,36 +881,6 @@ transaction_search_load_sql_string = fr"""
         (SELECT id, toptier_agency_id, ROW_NUMBER() OVER (PARTITION BY toptier_agency_id ORDER BY toptier_flag DESC, id ASC) AS row_num FROM global_temp.agency) AS FA_ID
         ON (FA_ID.toptier_agency_id = TFA.toptier_agency_id AND row_num = 1)
     LEFT OUTER JOIN
-        global_temp.naics ON (transaction_fpds.naics = naics.code)
-    LEFT OUTER JOIN
-        global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
-    LEFT OUTER JOIN (
-        SELECT DISTINCT state_alpha, county_numeric, UPPER(county_name) AS county_name
-        FROM global_temp.ref_city_county_state_code
-    ) AS rl_county_lookup ON (
-        rl_county_lookup.state_alpha = COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
-        AND rl_county_lookup.county_numeric = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
-    )
-    LEFT OUTER JOIN (
-        SELECT DISTINCT state_alpha, county_numeric, UPPER(county_name) AS county_name
-        FROM global_temp.ref_city_county_state_code
-    ) AS pop_county_lookup ON (
-        pop_county_lookup.state_alpha = COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
-        AND pop_county_lookup.county_numeric = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
-    )
-    -- THIS JOIN HAPPENS ON "country_name" -> "country_code" intentionally to handle bad data
-    LEFT OUTER JOIN
-        global_temp.ref_country_code AS pop_country_lookup ON (
-            pop_country_lookup.country_code = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA')
-            OR pop_country_lookup.country_name = COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c)
-        )
-    -- THIS JOIN HAPPENS ON "country_name" -> "country_code" intentionally to handle bad data
-    LEFT OUTER JOIN
-        global_temp.ref_country_code AS rl_country_lookup ON (
-            rl_country_lookup.country_code = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code, 'USA')
-            OR rl_country_lookup.country_name = COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code)
-        )
-    LEFT OUTER JOIN
         rpt.recipient_lookup PRL ON (
             PRL.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
                 CASE
@@ -1040,10 +1010,6 @@ transaction_search_load_sql_string = fr"""
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
     ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)
-    LEFT OUTER JOIN
-        global_temp.office AO ON COALESCE(transaction_fpds.awarding_office_code, transaction_fabs.awarding_office_code) = AO.office_code
-    LEFT OUTER JOIN
-        global_temp.office FO ON COALESCE(transaction_fpds.funding_office_code, transaction_fabs.funding_office_code) = FO.office_code
     WHERE
         transaction_normalized.action_date >= '2000-10-01'
 """
