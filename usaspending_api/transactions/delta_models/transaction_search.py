@@ -103,7 +103,6 @@ TRANSACTION_SEARCH_COLUMNS = {
     "pop_country_code": {"delta": "STRING", "postgres": "TEXT"},
     "pop_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_code": {"delta": "STRING", "postgres": "TEXT"},
-    "place_of_perfor_state_desc": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_name": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_fips": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER"},
@@ -562,9 +561,8 @@ transaction_search_load_sql_string = fr"""
             AS pop_country_name,
         COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
             AS pop_state_code,
-        COALESCE(transaction_fpds.place_of_perform_state_nam, transaction_fabs.place_of_perform_state_nam)
+        COALESCE(transaction_fpds.place_of_perfor_state_desc, transaction_fabs.place_of_perform_state_nam)
             AS pop_state_name,
-        transaction_fpds.place_of_perfor_state_desc,
         POP_STATE_LOOKUP.fips AS pop_state_fips,
         POP_STATE_POPULATION.latest_population AS pop_state_population,
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
