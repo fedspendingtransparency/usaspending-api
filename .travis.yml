@@ -7,18 +7,6 @@ cache: pip
 python:
   - '3.7'
 
-# services:
-  # NOTE: This is restarted on port 5432
-  # - postgresql
-  # NOTE: This is added, but re-installed at a different version below
-  # - elasticsearch
-
-# addons:
-#   postgresql: '13'
-#   apt:
-#     packages:
-#     - postgresql-13
-
 env:
   global:
   - DEBIAN_FRONTEND=noninteractive
@@ -47,22 +35,22 @@ env:
   - MINIO_HOST=localhost
 
 before_install:
-  # Restart the postgres service and make sure to use port 5432;
-  # Postgres 13 is not pre-installed and is started on port 5433 by default
+  # Postgresql-13 requires manual installation
   - sudo apt-get update
   - sudo apt-get install -y wget lsb-release gnupg2
   - wget -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo apt-key add -
   - echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
   - sudo apt-get update
   - sudo apt-get install -y postgresql-13
-  # - sudo service postgresql stop
   - sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
   - sudo chown postgres postgresql.conf
   - sudo mv postgresql.conf /etc/postgresql/13/main
-  - sudo service postgresql start 13
+  # - sudo service postgresql start 13
+  - pg_ctlcluster 13 main start
+  -  ps aux | grep postgresql
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
-  # Re-install elasticsearch at the right version
+  # Install elasticsearch
   - sudo systemctl stop elasticsearch
   - sudo dpkg --remove elasticsearch
   - sudo dpkg --purge elasticsearch
