@@ -436,7 +436,7 @@ transaction_search_load_sql_string = fr"""
         -- Typing
         transaction_normalized.is_fpds,
         transaction_normalized.type,
-        awards.type_description,
+        transaction_normalized.type_description,
         transaction_normalized.action_type,
         transaction_normalized.action_type_description,
         awards.category AS award_category,
