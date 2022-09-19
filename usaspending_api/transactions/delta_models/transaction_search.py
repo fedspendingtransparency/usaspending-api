@@ -101,7 +101,6 @@ TRANSACTION_SEARCH_COLUMNS = {
     "place_of_performance_code": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_performance_scope": {"delta": "STRING", "postgres": "TEXT"},
     "pop_country_code": {"delta": "STRING", "postgres": "TEXT"},
-    "place_of_perf_country_desc": {"delta": "STRING", "postgres": "TEXT"},
     "pop_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_code": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perfor_state_desc": {"delta": "STRING", "postgres": "TEXT"},
@@ -559,9 +558,8 @@ transaction_search_load_sql_string = fr"""
         transaction_fabs.place_of_performance_scope,
         COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c)
             AS pop_country_code,
-        COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n)
+        COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n)
             AS pop_country_name,
-        transaction_fpds.place_of_perf_country_desc,
         COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
             AS pop_state_code,
         COALESCE(transaction_fpds.place_of_perform_state_nam, transaction_fabs.place_of_perform_state_nam)
