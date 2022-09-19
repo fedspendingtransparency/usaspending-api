@@ -408,8 +408,8 @@ transaction_search_load_sql_string = fr"""
         awards.update_date AS award_update_date,
         DATE(awards.date_signed) AS award_date_signed,
         GREATEST(transaction_normalized.update_date, awards.update_date) AS etl_update_date,
-        awards.period_of_performance_start_date,
-        awards.period_of_performance_current_end_date,
+        transaction_normalized.period_of_performance_start_date,
+        transaction_normalized.period_of_performance_current_end_date,
 
         -- Agencies
         COALESCE(transaction_fabs.awarding_agency_code, transaction_fpds.awarding_agency_code) AS awarding_agency_code,
