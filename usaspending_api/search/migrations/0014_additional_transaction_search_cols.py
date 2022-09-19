@@ -1327,4 +1327,8 @@ class Migration(migrations.Migration):
             model_name='transactionsearch',
             index=models.Index(condition=models.Q(('action_date__lt', '2007-10-01')), fields=['uri'], name='ts_idx_uri_pre2008'),
         ),
+        migrations.AddIndex(
+            model_name='transactionsearch',
+            index=models.Index(condition=models.Q(('action_date__lt', '2007-10-01')), fields=['is_fpds'], name='ts_idx_is_fpds_pre2008'),
+        ),
     ]

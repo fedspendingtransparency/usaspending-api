@@ -410,6 +410,7 @@ class TransactionSearch(models.Model):
             ),
             models.Index(fields=["fain"], name="ts_idx_fain_pre2008", condition=Q(action_date__lt="2007-10-01")),
             models.Index(fields=["uri"], name="ts_idx_uri_pre2008", condition=Q(action_date__lt="2007-10-01")),
+            models.Index(fields=["is_fpds"], name="ts_idx_is_fpds_pre2008", condition=Q(action_date__lt="2007-10-01")),
             models.Index(
                 fields=["-action_date"], name="ts_idx_action_date", condition=Q(action_date__gte="2007-10-01")
             ),
