@@ -119,7 +119,6 @@ class TransactionSearch(models.Model):
     place_of_performance_code = models.TextField(null=True)
     place_of_performance_scope = models.TextField(null=True)
     pop_country_code = models.TextField(null=True)
-    place_of_perf_country_desc = models.TextField(null=True)
     pop_country_name = models.TextField(null=True)
     pop_state_code = models.TextField(null=True)
     place_of_perfor_state_desc = models.TextField(null=True)
