@@ -49,6 +49,7 @@ before_install:
   - psql --cluster 13/main
   - ps aux | grep postgresql
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
+  - ls -al
   - cp .env.template .env
   # Install elasticsearch
   - sudo systemctl stop elasticsearch
