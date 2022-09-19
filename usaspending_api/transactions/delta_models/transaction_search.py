@@ -59,7 +59,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
-    "total_funding_amount": {"delta": "STRING", "postgres": "TEXT"},
+    "total_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "non_federal_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     # Recipient
     "recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
@@ -465,7 +465,8 @@ transaction_search_load_sql_string = fr"""
         CAST(COALESCE(transaction_normalized.face_value_loan_guarantee, 0) AS NUMERIC(23, 2))
             AS face_value_loan_guarantee,
         transaction_normalized.funding_amount,
-        transaction_fabs.total_funding_amount,
+        CAST(COALESCE(transaction_fabs.total_funding_amount, '0') AS NUMERIC(23, 2))
+            AS total_funding_amount,
         transaction_normalized.non_federal_funding_amount,
 
         -- Recipient
