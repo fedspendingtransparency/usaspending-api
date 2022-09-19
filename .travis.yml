@@ -21,6 +21,7 @@ services:
 
 env:
   global:
+  - DEBIAN_FRONTEND=noninteractive
   - POSTGRES_HOST=localhost
   - USASPENDING_DB_HOST=localhost
   - USASPENDING_DB_PORT=5432
