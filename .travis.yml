@@ -12,11 +12,11 @@ services:
   - elasticsearch
 
 addons:
-  postgresql: '13'
+  postgresql: 13
   apt:
+    update: true
     packages:
-    - postgresql-13
-
+      - postgresql-13
 env:
   global:
   - POSTGRES_HOST=localhost
