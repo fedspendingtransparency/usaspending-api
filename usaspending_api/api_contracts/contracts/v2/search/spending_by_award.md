@@ -199,6 +199,7 @@ List of table columns
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `def_codes` (optional, array[DEFC], fixed-type)
+   If the `def_codes` provided are in the COVID-19 group, the query will only return results after `2020-04-01`.
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -304,25 +305,39 @@ List of filterable award types
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
 
 ### Members
-+ `A`
-+ `B`
-+ `C`
-+ `D`
-+ `E`
-+ `F`
-+ `G`
-+ `H`
-+ `I`
-+ `J`
-+ `K`
-+ `L`
-+ `M`
-+ `N`
-+ `O`
-+ `P`
-+ `Q`
-+ `R`
-+ `S`
-+ `T`
-+ `U`
-+ `9`
+- `1`
+- `2`
+- `3`
+- `4`
+- `5`
+- `6`
+- `7`
+- `8`
+- `9`
+- `A`
+- `B`
+- `C`
+- `D`
+- `E`
+- `F`
+- `G`
+- `H`
+- `I`
+- `J`
+- `K`
+- `L`
+- `M`
+- `N`
+- `O`
+- `P`
+- `Q`
+- `QQQ`
+- `R`
+- `S`
+- `T`
+- `U`
+- `V`
+- `W`
+- `X`
+- `Y`
+- `Z`
