@@ -319,7 +319,7 @@
     "  transaction_fpds.multiple_or_single_award_i,",
     "  transaction_fpds.municipality_local_governm,",
     "  transaction_fpds.naics AS naics_code,",
-    "  transaction_fpds.naics_description AS naics_description,"
+    "  transaction_fpds.naics_description AS naics_description,",
     "  transaction_fpds.national_interest_action,",
     "  transaction_fpds.national_interest_desc,",
     "  transaction_fpds.native_american_owned_busi,",
