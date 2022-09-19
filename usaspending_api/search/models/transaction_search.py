@@ -121,7 +121,6 @@ class TransactionSearch(models.Model):
     pop_country_code = models.TextField(null=True)
     pop_country_name = models.TextField(null=True)
     pop_state_code = models.TextField(null=True)
-    place_of_perfor_state_desc = models.TextField(null=True)
     pop_state_name = models.TextField(null=True)
     pop_state_fips = models.TextField(null=True)
     pop_state_population = models.IntegerField(null=True)

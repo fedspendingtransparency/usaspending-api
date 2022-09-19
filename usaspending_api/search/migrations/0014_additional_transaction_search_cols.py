@@ -894,11 +894,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='transactionsearch',
-            name='place_of_perfor_state_desc',
-            field=models.TextField(null=True),
-        ),
-        migrations.AddField(
-            model_name='transactionsearch',
             name='place_of_perform_zip_last4',
             field=models.TextField(null=True),
         ),
