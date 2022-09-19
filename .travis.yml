@@ -45,8 +45,7 @@ before_install:
   - sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
   - sudo chown postgres postgresql.conf
   - sudo mv postgresql.conf /etc/postgresql/13/main
-  # - sudo service postgresql start 13
-  - pg_ctlcluster 13 main start
+  - sudo systemctl start postgresql@13-main
   -  ps aux | grep postgresql
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
