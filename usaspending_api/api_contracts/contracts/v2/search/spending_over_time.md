@@ -74,14 +74,14 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
         + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
-+ `recipient_search_text`: `Hampton` (optional, array[string])
++ `recipient_search_text`: `Hampton`, `Roads` (optional, array[string])
     + Text searched across a recipient’s name, UEI, and DUNS
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
-+ `recipient_type_names`: `category_business` (optional, array[string])
++ `recipient_type_names`: `category_business`, `sole_proprietorship` (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
 + `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
@@ -99,6 +99,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `program_activity` (optional, array[number])
 + `def_codes` (optional, array[DEFC], fixed-type)
     If the `def_codes` provided are in the COVID-19 group, the query will only return results after `2020-04-01`.
+
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
     Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
