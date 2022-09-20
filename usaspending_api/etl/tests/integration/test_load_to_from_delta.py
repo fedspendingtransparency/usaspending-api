@@ -5,7 +5,6 @@ NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/et
 import json
 import psycopg2
 import pytz
-
 from datetime import date, datetime
 from pathlib import Path
 from psycopg2.extensions import AsIs
@@ -267,7 +266,22 @@ def populate_usas_data(populate_broker_data):
         funding_agency_id=32,
         last_modified_date="2020-01-01",
     )
-
+    baker.make(
+        "transactions.SourceProcurementTransaction",
+        detached_award_procurement_id=4,
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+    baker.make(
+        "transactions.SourceProcurementTransaction",
+        detached_award_procurement_id=5,
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
     baker.make(
         "awards.TransactionFABS",
         transaction=asst_trx1,
@@ -947,6 +961,34 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
         verify_delta_table_loaded_from_delta(spark, "transaction_fabs", spark_s3_bucket=s3_unittest_data_bucket)
     finally:
         spark.conf.set("spark.sql.session.timeZone", original_spark_tz)
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_detached_award_procurement(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
+    baker.make(
+        "transactions.SourceProcurementTransaction",
+        detached_award_procurement_id="4",
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+    baker.make(
+        "transactions.SourceProcurementTransaction",
+        detached_award_procurement_id="5",
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+
+    verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "detached_award_procurement", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(
+        spark, "detached_award_procurement", jdbc_inserts=True
+    )  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
