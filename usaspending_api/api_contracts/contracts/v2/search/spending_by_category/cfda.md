@@ -108,7 +108,7 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
         + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
-+ `recipient_search_text`: `Hampton` (optional, array[string])
++ `recipient_search_text`: `Hampton`, `Roads` (optional, array[string])
 + `recipient_id` (optional, string)
     A unique identifier for the recipient which includes the recipient hash and level.
 + `recipient_scope` (optional, enum[string])
@@ -116,7 +116,7 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
         + `domestic`
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
-+ `recipient_type_names`: `category_business` (optional, array[string])
++ `recipient_type_names`: `category_business`, `sole_proprietorship` (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
 + `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
@@ -130,6 +130,8 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
++ `def_codes` (optional, array[DEFC], fixed-type)
+  If the `def_codes` provided are in the COVID-19 group, the query will only return results after `2020-04-01`.
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -226,3 +228,44 @@ List of filterable award types
 - `IDV_C`
 - `IDV_D`
 - `IDV_E`
+
+## DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+
+### Members
+- `1`
+- `2`
+- `3`
+- `4`
+- `5`
+- `6`
+- `7`
+- `8`
+- `9`
+- `A`
+- `B`
+- `C`
+- `D`
+- `E`
+- `F`
+- `G`
+- `H`
+- `I`
+- `J`
+- `K`
+- `L`
+- `M`
+- `N`
+- `O`
+- `P`
+- `Q`
+- `QQQ`
+- `R`
+- `S`
+- `T`
+- `U`
+- `V`
+- `W`
+- `X`
+- `Y`
+- `Z`
