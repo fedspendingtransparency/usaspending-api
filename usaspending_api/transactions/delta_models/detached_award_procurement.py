@@ -315,6 +315,6 @@ detached_award_procurement_create_sql_string = fr"""
         {", ".join([f'{key} {val}' for key, val in DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS.items()])}
     )
     USING DELTA
-    LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'\
+    LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     
 """
