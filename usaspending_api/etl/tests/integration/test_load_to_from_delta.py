@@ -370,7 +370,7 @@ def populate_usas_data(populate_broker_data):
 
     baker.make(
         "transactions.SourceAssistanceTransaction",
-        detached_award_procurement_id=6,
+        published_fabs_id=6,
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
@@ -385,7 +385,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "transactions.SourceAssistanceTransaction",
-        detached_award_procurement_id=7,
+        published_fabs_id=7,
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
@@ -834,7 +834,7 @@ def test_load_table_to_from_delta_for_recipient_testing(spark, s3_unittest_data_
 def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make(
         "transactions.SourceAssistanceTransaction",
-        detached_award_procurement_id=6,
+        published_fabs_id=6,
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
@@ -849,7 +849,7 @@ def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_buc
     )
     baker.make(
         "transactions.SourceAssistanceTransaction",
-        detached_award_procurement_id=7,
+        published_fabs_id=7,
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
