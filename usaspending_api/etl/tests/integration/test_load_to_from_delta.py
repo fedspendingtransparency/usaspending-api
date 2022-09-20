@@ -378,6 +378,9 @@ def populate_usas_data(populate_broker_data):
         is_active=True,
         federal_action_obligation=1000001,
         face_value_loan_guarantee=22.00,
+        submission_id=33.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
         _fill_optional=True,
     )
     baker.make(
@@ -390,6 +393,9 @@ def populate_usas_data(populate_broker_data):
         is_active=True,
         federal_action_obligation=1000001,
         face_value_loan_guarantee=22.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
+        submission_id=33.00,
         _fill_optional=True,
     )
     # Create account data
@@ -828,25 +834,32 @@ def test_load_table_to_from_delta_for_recipient_testing(spark, s3_unittest_data_
 def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make(
         "transactions.SourceAssistanceTransaction",
+        detached_award_procurement_id=6,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        indirect_federal_sharing=22.00,
+        is_active=True,
+        federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
+        submission_id=33.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
+        _fill_optional=True,
+    )
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
         detached_award_procurement_id=7,
         created_at=datetime.fromtimestamp(0),
         modified_at=datetime.fromtimestamp(0),
         updated_at=datetime.fromtimestamp(0),
+        indirect_federal_sharing=22.00,
         is_active=True,
         federal_action_obligation=1000001,
         face_value_loan_guarantee=22.00,
-        _fill_optional=True,
-    )
-
-    baker.make(
-        "transactions.SourceAssistanceTransaction",
-        detached_award_procurement_id=8,
-        created_at=datetime.fromtimestamp(0),
-        modified_at=datetime.fromtimestamp(0),
-        updated_at=datetime.fromtimestamp(0),
-        is_active=True,
-        federal_action_obligation=1000001,
-        face_value_loan_guarantee=22.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
+        submission_id=33.00,
         _fill_optional=True,
     )
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
