@@ -31,7 +31,6 @@ from usaspending_api.transactions.delta_models.published_fabs import (
     PUBLISHED_FABS_COLUMNS,
     PUBLISHED_FABS_POSTGRES_COLUMNS,
     published_fabs_create_sql_string,
-    published_fabs_load_sql_string,
 )
 
 __all__ = [
@@ -52,7 +51,6 @@ __all__ = [
     "summary_state_view_create_sql_string",
     "summary_state_view_load_sql_string",
     "published_fabs_create_sql_string",
-    "published_fabs_load_sql_string",
     "PUBLISHED_FABS_POSTGRES_COLUMNS",
     "PUBLISHED_FABS_COLUMNS",
     "PUBLISHED_FABS_DELTA_COLUMNS",

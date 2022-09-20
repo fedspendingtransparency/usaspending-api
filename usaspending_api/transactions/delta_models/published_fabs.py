@@ -111,10 +111,3 @@ published_fabs_create_sql_string = fr"""
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
-
-published_fabs_load_sql_string = fr"""
-    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
-    (
-        {",".join([col for col in PUBLISHED_FABS_DELTA_COLUMNS])}
-    )
-"""
