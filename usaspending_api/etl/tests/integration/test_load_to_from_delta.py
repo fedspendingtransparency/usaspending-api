@@ -363,6 +363,7 @@ def populate_usas_data(populate_broker_data):
         indirect_federal_sharing=22.00,
         is_active=True,
         federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
         _fill_optional=True,
     )
     baker.make(
