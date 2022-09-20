@@ -105,29 +105,30 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
-+ `recipient_search_text`: `Hampton` (optional, array[string])
-  + Text searched across a recipient’s name, UEI, and DUNS
-+ `recipient_id` (optional, string)
-    A hash of recipient DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
++ `recipient_search_text`: `Hampton`, `Roads` (optional, array[string])
+    + Text searched across a recipient’s name, UEI, and DUNS
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
-+ `recipient_type_names`: `category_business` (optional, array[string])
++ `recipient_type_names`: `category_business`, `sole_proprietorship` (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
 + `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
++ `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `psc_codes` (optional, enum[PSCCodeObject, array[string]])
     Supports new PSCCodeObject or legacy array of codes.
 + `contract_pricing_type_codes`: `J` (optional, array[string])
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
-+ `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
++ `object_class` (optional, array[string])
++ `program_activity` (optional, array[number])
++ `def_codes` (optional, array[DEFC], fixed-type)
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -227,3 +228,44 @@ List of filterable award types
 - `IDV_C`
 - `IDV_D`
 - `IDV_E`
+
+## DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+
+### Members
+- `1`
+- `2`
+- `3`
+- `4`
+- `5`
+- `6`
+- `7`
+- `8`
+- `9`
+- `A`
+- `B`
+- `C`
+- `D`
+- `E`
+- `F`
+- `G`
+- `H`
+- `I`
+- `J`
+- `K`
+- `L`
+- `M`
+- `N`
+- `O`
+- `P`
+- `Q`
+- `QQQ`
+- `R`
+- `S`
+- `T`
+- `U`
+- `V`
+- `W`
+- `X`
+- `Y`
+- `Z`
