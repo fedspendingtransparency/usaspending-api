@@ -1,24 +1,15 @@
 language: python
 
+dist: bionic
+
 cache: pip
 
 python:
   - '3.7'
 
-services:
-  # NOTE: This is restarted on port 5432
-  - postgresql
-  # NOTE: This is added, but re-installed at a different version below
-  - elasticsearch
-
-addons:
-  postgresql: '13'
-  apt:
-    packages:
-    - postgresql-13
-
 env:
   global:
+  - DEBIAN_FRONTEND=noninteractive
   - POSTGRES_HOST=localhost
   - USASPENDING_DB_HOST=localhost
   - USASPENDING_DB_PORT=5432
@@ -44,16 +35,25 @@ env:
   - MINIO_HOST=localhost
 
 before_install:
-  # Restart the postgres service and make sure to use port 5432;
-  # Postgres 13 is not pre-installed and is started on port 5433 by default
-  - sudo service postgresql stop
-  - sed -e 's/^port.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf > postgresql.conf
-  - sudo chown postgres postgresql.conf
-  - sudo mv postgresql.conf /etc/postgresql/13/main
-  - sudo service postgresql start 13
+  # Postgresql-13 requires manual installation
+  - sudo apt-get update
+  - sudo apt-get install -y wget lsb-release gnupg2 iproute2
+  - wget -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo apt-key add -
+  - echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+  - sudo apt-get update
+  - sudo apt-get install -y postgresql-13
+  - sudo cat /etc/postgresql/13/main/postgresql.conf
+  - sudo sed -i 's/^port =.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf 
+  - sudo cat /etc/postgresql/13/main/postgresql.conf
+  - echo "user1             travis               postgres" | sudo tee --append /etc/postgresql/13/main/pg_ident.conf
+  - sudo chown postgres /etc/postgresql/13/main/pg_ident.conf
+  - sudo sed -i '/local.*all.*postgres/ s/peer/trust/' /etc/postgresql/13/main/pg_hba.conf
+  - sudo chown postgres /etc/postgresql/13/main/pg_hba.conf
+  - sudo pg_ctlcluster 13 main stop
+  - sudo pg_ctlcluster 13 main start
   # Seed missing env vars with sensible defaults from the template .env file. Explicitly set global env vars above to override these if needed
   - cp .env.template .env
-  # Re-install elasticsearch at the right version
+  # Install elasticsearch
   - sudo systemctl stop elasticsearch
   - sudo dpkg --remove elasticsearch
   - sudo dpkg --purge elasticsearch
@@ -83,10 +83,11 @@ before_script:
   - travis_retry curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
+  - ps aux | grep postgresql
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
-  - psql -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
-  - psql -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
-  - psql -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
+  - sudo psql --cluster 13/main -U postgres -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
+  - sudo psql --cluster 13/main -U postgres -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
+  - sudo psql --cluster 13/main -U postgres -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
   # Ensure MinIO can run as our s3 substitute
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
@@ -103,6 +104,5 @@ script:
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
   - pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
-
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
