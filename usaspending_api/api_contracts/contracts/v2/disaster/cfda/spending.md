@@ -201,7 +201,6 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 - `X`
 - `Y`
 - `Z`
-- `Z`
 
 ## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov
