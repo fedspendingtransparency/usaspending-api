@@ -819,6 +819,7 @@ def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_buc
         updated_at=datetime.fromtimestamp(0),
         is_active=True,
         federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
         _fill_optional=True,
     )
 
@@ -830,6 +831,7 @@ def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_buc
         updated_at=datetime.fromtimestamp(0),
         is_active=True,
         federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
         _fill_optional=True,
     )
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
