@@ -28,7 +28,7 @@ PUBLISHED_FABS_COLUMNS = {
     "created_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18"},
     "fain": {"delta": "STRING", "postgres": "TEXT"},
-    "federal_action_obligation": {"delta": "NUMERIC", "postgres": "NUMERIC"},
+    "federal_action_obligation": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18"},
     "fiscal_year_and_quarter_co": {"delta": "STRING", "postgres": "TEXT"},
     "funding_agency_code": {"delta": "STRING", "postgres": "TEXT"},
     "funding_agency_name": {"delta": "STRING", "postgres": "TEXT"},
