@@ -91,7 +91,7 @@ PUBLISHED_FABS_COLUMNS = {
     "record_type": {"delta": "INTEGER", "postgres": "INTEGER"},
     "record_type_description": {"delta": "STRING", "postgres": "TEXT"},
     "sai_number": {"delta": "STRING", "postgres": "TEXT"},
-    "submission_id": {"delta": "NUMERIC", "postgres": "NUMERIC"},
+    "submission_id": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18)"},
     "total_funding_amount": {"delta": "STRING", "postgres": "TEXT"},
     "uei": {"delta": "STRING", "postgres": "TEXT"},
     "ultimate_parent_legal_enti": {"delta": "STRING", "postgres": "TEXT"},
