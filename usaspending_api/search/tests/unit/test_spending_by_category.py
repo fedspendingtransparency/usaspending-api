@@ -525,9 +525,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="04",
         place_of_perform_county_na="COUNTYSVILLE",
         place_of_performance_zip5="12345",
@@ -536,9 +537,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=2,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="04",
         place_of_perform_county_na="COUNTYSVILLE",
         place_of_performance_zip5="12345",
@@ -547,9 +549,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=3,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="01",
         place_of_perform_county_na="SOMEWHEREVILLE",
         place_of_performance_zip5="98765",
@@ -558,9 +561,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=4,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="01",
         place_of_perform_county_na="SOMEWHEREVILLE",
         place_of_performance_zip5="98765",
@@ -936,8 +940,8 @@ def test_category_naics_awards(naics_test_data, monkeypatch, elasticsearch_trans
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
-            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
+            {"amount": 4, "code": "NAICS 9876", "name": "NAICS DESC 9876", "id": None},
+            {"amount": 2, "code": "NAICS 1234", "name": "NAICS DESC 1234", "id": None},
         ],
         "messages": [get_time_period_message()],
     }
@@ -1037,7 +1041,7 @@ def test_category_state_territory(geo_test_data, monkeypatch, elasticsearch_tran
         "category": "state_territory",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10, "code": "XY", "name": "Test State", "id": None}],
+        "results": [{"amount": 10, "code": "XY", "name": "TEST STATE", "id": None}],
         "messages": [get_time_period_message()],
     }
 
@@ -1054,7 +1058,7 @@ def test_category_state_territory_subawards(geo_test_data):
         "category": "state_territory",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 1111, "code": "XY", "id": None, "name": "Test State"}],
+        "results": [{"amount": 1111, "code": "XY", "id": None, "name": "TEST STATE"}],
         "messages": [get_time_period_message()],
     }
 

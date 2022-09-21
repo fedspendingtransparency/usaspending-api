@@ -135,6 +135,10 @@ def spending_over_time_test_data():
         if is_fpds:
             baker.make(
                 "awards.TransactionFPDS",
+                awarding_agency_name=f"toptier_awarding_agency_agency_name_{transaction_id}",
+                funding_agency_name=f"toptier_funding_agency_agency_name_{transaction_id}",
+                awarding_sub_tier_agency_c=f"subtier_awarding_agency_agency_name_{transaction_id}",
+                funding_sub_tier_agency_na=f"subtier_funding_agency_agency_name_{transaction_id}",
                 awardee_or_recipient_legal=f"recipient_name_{transaction_id}",
                 awardee_or_recipient_uniqu=f"{transaction_id:09d}",
                 extent_competed=f"extent_competed_{transaction_id}",
@@ -146,7 +150,8 @@ def spending_over_time_test_data():
                 legal_entity_congressional=f"{transaction_id:02d}",
                 legal_entity_zip5=f"LE_ZIP5_{transaction_id}",
                 legal_entity_city_name=f"LE_CITY_NAME_{transaction_id}",
-                naics=f"{transaction_id}{transaction_id}",
+                naics_code=f"naics_code_{transaction_id}",
+                naics_description=f"naics_description_{transaction_id}",
                 piid=f"piid_{transaction_id}",
                 place_of_perform_country_c="USA",
                 place_of_perf_country_desc="UNITED STATES",
@@ -156,7 +161,8 @@ def spending_over_time_test_data():
                 place_of_performance_zip5=f"POP_ZIP5_{transaction_id}",
                 place_of_performance_congr=f"{transaction_id:02d}",
                 place_of_perform_city_name=f"POP_CITY_NAME_{transaction_id}",
-                product_or_service_code=str(transaction_id).zfill(4),
+                product_or_service_code=f"ps{transaction_id}",
+                product_or_service_description=f"psc_description_{transaction_id}",
                 transaction_id=transaction_id,
                 type_of_contract_pricing=f"type_of_contract_pricing_{transaction_id}",
                 type_set_aside=f"type_set_aside_{transaction_id}",
@@ -170,6 +176,10 @@ def spending_over_time_test_data():
         else:
             baker.make(
                 "awards.TransactionFABS",
+                awarding_agency_name=f"toptier_awarding_agency_agency_name_{transaction_id}",
+                funding_agency_name=f"toptier_funding_agency_agency_name_{transaction_id}",
+                awarding_sub_tier_agency_c=f"subtier_awarding_agency_agency_name_{transaction_id}",
+                funding_sub_tier_agency_na=f"subtier_funding_agency_agency_name_{transaction_id}",
                 awardee_or_recipient_legal=f"recipient_name_{transaction_id}",
                 awardee_or_recipient_uniqu=f"{transaction_id:09d}",
                 cfda_number=f"cfda_number_{transaction_id}",
