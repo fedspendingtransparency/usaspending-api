@@ -134,7 +134,7 @@ TABLE_SPEC = {
         "swap_table": None,
         "swap_schema": None,
         "partition_column": "published_fabs_id",
-        "partition_column_type": "Integer",
+        "partition_column_type": "numeric",
         "is_partition_column_unique": True,
         "delta_table_create_sql": published_fabs_create_sql_string,
         "source_schema": None,
