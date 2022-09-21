@@ -846,14 +846,11 @@ def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_buc
         non_federal_funding_amount=44.00,
         original_loan_subsidy_cost=55.00,
         submission_id=33.00,
-
         _fill_optional=True,
     )
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "published_fabs", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(
-        spark, "published_fabs", jdbc_inserts=True
-    )  # test alt write strategy
+    verify_delta_table_loaded_from_delta(spark, "published_fabs", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
