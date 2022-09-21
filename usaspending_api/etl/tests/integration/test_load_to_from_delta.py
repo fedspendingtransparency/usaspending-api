@@ -832,21 +832,7 @@ def test_load_table_to_from_delta_for_recipient_testing(spark, s3_unittest_data_
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make(
-        "transactions.SourceAssistanceTransaction",
-        published_fabs_id=6,
-        created_at=datetime.fromtimestamp(0),
-        modified_at=datetime.fromtimestamp(0),
-        updated_at=datetime.fromtimestamp(0),
-        indirect_federal_sharing=22.00,
-        is_active=True,
-        federal_action_obligation=1000001,
-        face_value_loan_guarantee=22.00,
-        submission_id=33.00,
-        non_federal_funding_amount=44.00,
-        original_loan_subsidy_cost=55.00,
-        _fill_optional=True,
-    )
+
     baker.make(
         "transactions.SourceAssistanceTransaction",
         published_fabs_id=7,

@@ -26,7 +26,7 @@ PUBLISHED_FABS_COLUMNS = {
     "correction_delete_ind_desc": {"delta": "STRING", "postgres": "TEXT"},
     "correction_delete_indicatr": {"delta": "STRING", "postgres": "TEXT"},
     "created_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
-    "face_value_loan_guarantee": {"delta": "NUMERIC", "postgres": "NUMERIC"},
+    "face_value_loan_guarantee": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18"},
     "fain": {"delta": "STRING", "postgres": "TEXT"},
     "federal_action_obligation": {"delta": "NUMERIC", "postgres": "NUMERIC"},
     "fiscal_year_and_quarter_co": {"delta": "STRING", "postgres": "TEXT"},
