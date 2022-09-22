@@ -150,7 +150,7 @@ def spending_over_time_test_data():
                 legal_entity_congressional=f"{transaction_id:02d}",
                 legal_entity_zip5=f"LE_ZIP5_{transaction_id}",
                 legal_entity_city_name=f"LE_CITY_NAME_{transaction_id}",
-                naics=f"naics_code_{transaction_id}",
+                naics=f"{transaction_id}{transaction_id}",
                 naics_description=f"naics_description_{transaction_id}",
                 piid=f"piid_{transaction_id}",
                 place_of_perform_country_c="USA",
@@ -161,7 +161,7 @@ def spending_over_time_test_data():
                 place_of_performance_zip5=f"POP_ZIP5_{transaction_id}",
                 place_of_performance_congr=f"{transaction_id:02d}",
                 place_of_perform_city_name=f"POP_CITY_NAME_{transaction_id}",
-                product_or_service_code=f"ps{transaction_id}",
+                product_or_service_code=str(transaction_id).zfill(4),
                 product_or_service_co_desc=f"psc_description_{transaction_id}",
                 transaction_id=transaction_id,
                 type_of_contract_pricing=f"type_of_contract_pricing_{transaction_id}",
@@ -169,10 +169,11 @@ def spending_over_time_test_data():
             )
             baker.make(
                 "references.NAICS",
-                code=f"naics_code_{transaction_id}",
+                code=f"{transaction_id}",
                 description=f"naics_description_{transaction_id}",
             )
-            baker.make("references.PSC", code=f"ps{transaction_id}", description=f"psc_description_{transaction_id}")
+            baker.make("references.PSC", code=str(transaction_id).zfill(4),
+                       description=f"psc_description_{transaction_id}")
         else:
             baker.make(
                 "awards.TransactionFABS",

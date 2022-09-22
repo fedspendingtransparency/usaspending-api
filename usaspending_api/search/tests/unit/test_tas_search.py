@@ -83,6 +83,8 @@ def mock_tas_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
+        awarding_agency_name="Department of Pizza",
+        awarding_sub_tier_agency_n="Department of Sub-Pizza",
         legal_entity_city_name="BURBANK",
         legal_entity_country_code="USA",
         legal_entity_state_code="CA",

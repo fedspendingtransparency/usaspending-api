@@ -58,6 +58,7 @@ def transaction_search_1():
         TransactionFABS,
         transaction_id=1,
         awarding_agency_code="001",
+        awarding_agency_name=toptier_agency_1.name
     )
 
     baker.make(
@@ -73,6 +74,7 @@ def transaction_search_1():
         TransactionFABS,
         transaction_id=2,
         awarding_agency_code="001",
+        awarding_agency_name=toptier_agency_1.name
     )
 
     baker.make(
@@ -88,6 +90,7 @@ def transaction_search_1():
         TransactionFABS,
         transaction_id=3,
         awarding_agency_code="001",
+        awarding_agency_name=toptier_agency_1.name
     )
 
     baker.make(
@@ -103,6 +106,7 @@ def transaction_search_1():
         TransactionFABS,
         transaction_id=4,
         awarding_agency_code="001",
+        awarding_agency_name=toptier_agency_1.name
     )
 
     baker.make(
@@ -118,6 +122,7 @@ def transaction_search_1():
         TransactionFABS,
         transaction_id=5,
         awarding_agency_code="001",
+        awarding_agency_name=toptier_agency_1.name
     )
 
     # Alternate Year
@@ -134,6 +139,7 @@ def transaction_search_1():
         TransactionFABS,
         transaction_id=6,
         awarding_agency_code="001",
+        awarding_agency_name=toptier_agency_1.name
     )
 
     # Alternate Agency
@@ -150,6 +156,7 @@ def transaction_search_1():
         TransactionFABS,
         transaction_id=7,
         awarding_agency_code="002",
+        awarding_agency_name=toptier_agency_2.name
     )
 
 

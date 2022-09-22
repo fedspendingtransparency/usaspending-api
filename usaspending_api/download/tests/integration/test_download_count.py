@@ -77,6 +77,7 @@ def download_test_data():
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa1,
+        is_fpds=True,
     )
     trann2 = baker.make(
         TransactionNormalized,
@@ -85,6 +86,7 @@ def download_test_data():
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        is_fpds=True,
     )
     trann3 = baker.make(
         TransactionNormalized,
@@ -93,6 +95,7 @@ def download_test_data():
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        is_fpds=False,
     )
 
     # Create TransactionContract

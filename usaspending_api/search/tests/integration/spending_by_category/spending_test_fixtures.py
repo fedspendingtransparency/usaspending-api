@@ -24,9 +24,9 @@ def basic_award(db, basic_agencies):
     baker.make(
         "awards.TransactionFABS",
         transaction_id=1,
-        awarding_agency_code="003",
+        awarding_agency_code="001",
         awarding_agency_name="Awarding Toptier Agency 1",
-        funding_agency_code="002",
+        funding_agency_code="004",
         funding_agency_name="Funding Toptier Agency 4",
         federal_action_obligation=5,
         action_date="2020-01-01",

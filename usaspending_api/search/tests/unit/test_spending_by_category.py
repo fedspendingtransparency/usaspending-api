@@ -225,6 +225,7 @@ def agency_test_data(db):
         funding_agency_id=1002,
         federal_action_obligation=5,
         action_date="2020-01-01",
+        is_fpds=False,
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -234,6 +235,23 @@ def agency_test_data(db):
         funding_agency_id=1002,
         federal_action_obligation=10,
         action_date="2020-01-02",
+        is_fpds=False,
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction_id=1,
+        awarding_agency_name="Awarding Toptier Agency 1",
+        funding_agency_name="Funding Toptier Agency 2",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        funding_subagency_name="Funding Subtier Agency 2",
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction_id=2,
+        awarding_agency_name="Awarding Toptier Agency 1",
+        funding_agency_name="Funding Toptier Agency 2",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        funding_subagency_name="Funding Subtier Agency 2",
     )
 
     baker.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")
