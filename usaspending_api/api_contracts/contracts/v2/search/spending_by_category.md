@@ -97,7 +97,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: `category_business`, `sole_proprietorship` (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
-+ `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
++ `award_ids`: [`SPE30018FLGFZ`, `SPE30018FLJFN`] (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: `10.331` (optional, array[string])
@@ -112,7 +112,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `def_codes` (optional, array[DEFC], fixed-type)
-   If the `def_codes` provided are in the COVID-19 group, the query will only return results after `2020-04-01`.
+  If the `def_codes` provided are in the COVID-19 group, the query will only return results of transactions where the `action_date` is on or after `2020-04-01`.
 
 ### TimePeriodObject (object)
 + `start_date` (required, string)
