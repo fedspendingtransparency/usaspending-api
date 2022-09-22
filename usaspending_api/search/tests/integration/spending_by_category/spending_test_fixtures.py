@@ -28,8 +28,6 @@ def basic_award(db, basic_agencies):
         awarding_agency_name="Awarding Toptier Agency 1",
         funding_agency_code="002",
         funding_agency_name="Funding Toptier Agency 4",
-        awarding_toptier_agency_id=1001,
-        funding_toptier_agency_id=1004,
         federal_action_obligation=5,
         action_date="2020-01-01",
     )

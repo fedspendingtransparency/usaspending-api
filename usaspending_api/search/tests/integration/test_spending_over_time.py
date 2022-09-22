@@ -162,7 +162,7 @@ def spending_over_time_test_data():
                 place_of_performance_congr=f"{transaction_id:02d}",
                 place_of_perform_city_name=f"POP_CITY_NAME_{transaction_id}",
                 product_or_service_code=f"ps{transaction_id}",
-                product_or_service_description=f"psc_description_{transaction_id}",
+                product_or_service_co_desc=f"psc_description_{transaction_id}",
                 transaction_id=transaction_id,
                 type_of_contract_pricing=f"type_of_contract_pricing_{transaction_id}",
                 type_set_aside=f"type_set_aside_{transaction_id}",
