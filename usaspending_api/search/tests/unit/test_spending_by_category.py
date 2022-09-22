@@ -1041,7 +1041,7 @@ def test_category_state_territory(geo_test_data, monkeypatch, elasticsearch_tran
         "category": "state_territory",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10, "code": "XY", "name": "TEST STATE", "id": None}],
+        "results": [{"amount": 10, "code": "XY", "name": "Test State", "id": None}],
         "messages": [get_time_period_message()],
     }
 
@@ -1058,7 +1058,7 @@ def test_category_state_territory_subawards(geo_test_data):
         "category": "state_territory",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 1111, "code": "XY", "id": None, "name": "TEST STATE"}],
+        "results": [{"amount": 1111, "code": "XY", "id": None, "name": "Test State"}],
         "messages": [get_time_period_message()],
     }
 
