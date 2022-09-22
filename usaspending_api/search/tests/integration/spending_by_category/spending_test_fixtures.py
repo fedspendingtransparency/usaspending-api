@@ -20,6 +20,7 @@ def basic_award(db, basic_agencies):
         funding_agency_id=1004,
         federal_action_obligation=5,
         action_date="2020-01-01",
+        is_fpds=False,
     )
     baker.make(
         "awards.TransactionFABS",
@@ -28,6 +29,10 @@ def basic_award(db, basic_agencies):
         awarding_agency_name="Awarding Toptier Agency 1",
         funding_agency_code="004",
         funding_agency_name="Funding Toptier Agency 4",
+        awarding_sub_tier_agency_c="1001",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        funding_sub_tier_agency_co="1004",
+        funding_sub_tier_agency_na="Funding Subtier Agency 4",
         federal_action_obligation=5,
         action_date="2020-01-01",
     )
@@ -53,6 +58,7 @@ def subagency_award(db, agencies_with_subagencies):
         funding_agency_id=1006,
         federal_action_obligation=10,
         action_date="2020-01-02",
+        is_fpds=False,
     )
     baker.make(
         "awards.TransactionFABS",
