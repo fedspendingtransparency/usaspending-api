@@ -150,7 +150,7 @@ def spending_over_time_test_data():
                 legal_entity_congressional=f"{transaction_id:02d}",
                 legal_entity_zip5=f"LE_ZIP5_{transaction_id}",
                 legal_entity_city_name=f"LE_CITY_NAME_{transaction_id}",
-                naics_code=f"naics_code_{transaction_id}",
+                naics=f"naics_code_{transaction_id}",
                 naics_description=f"naics_description_{transaction_id}",
                 piid=f"piid_{transaction_id}",
                 place_of_perform_country_c="USA",
