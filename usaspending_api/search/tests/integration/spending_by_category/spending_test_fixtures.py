@@ -65,8 +65,6 @@ def subagency_award(db, agencies_with_subagencies):
         awarding_sub_tier_agency_n="Awarding Subtier Agency 5",
         funding_sub_tier_agency_co="0006",
         funding_sub_tier_agency_na="Funding Subtier Agency 6",
-        awarding_agency_id=1005,
-        funding_agency_id=1006,
         federal_action_obligation=10,
         action_date="2020-01-02",
     )
