@@ -172,8 +172,9 @@ def spending_over_time_test_data():
                 code=f"{transaction_id}",
                 description=f"naics_description_{transaction_id}",
             )
-            baker.make("references.PSC", code=str(transaction_id).zfill(4),
-                       description=f"psc_description_{transaction_id}")
+            baker.make(
+                "references.PSC", code=str(transaction_id).zfill(4), description=f"psc_description_{transaction_id}"
+            )
         else:
             baker.make(
                 "awards.TransactionFABS",
