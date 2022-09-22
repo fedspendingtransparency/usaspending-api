@@ -243,7 +243,7 @@ def agency_test_data(db):
         awarding_agency_name="Awarding Toptier Agency 1",
         funding_agency_name="Funding Toptier Agency 2",
         awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
-        funding_subagency_name="Funding Subtier Agency 2",
+        funding_sub_tier_agency_na="Funding Subtier Agency 2",
     )
     baker.make(
         "awards.TransactionFABS",
@@ -251,7 +251,7 @@ def agency_test_data(db):
         awarding_agency_name="Awarding Toptier Agency 1",
         funding_agency_name="Funding Toptier Agency 2",
         awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
-        funding_subagency_name="Funding Subtier Agency 2",
+        funding_sub_tier_agency_na="Funding Subtier Agency 2",
     )
 
     baker.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")
