@@ -34,6 +34,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
     + `limit` (optional, number)
         How many results are returned.
         + Default: 10
+    + `bureau_slug` (optional, string) The slug of the federal bureau to filter on.
 
 + Response 200 (application/json)
     + Attributes
@@ -54,10 +55,10 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                 "page_metadata": {
                     "page": 1,
                     "total": 1,
-                    "limit": 2,
-                    "next": 2,
+                    "limit": 1,
+                    "next": null,
                     "previous": null,
-                    "hasNext": true,
+                    "hasNext": false,
                     "hasPrevious": false,
                 },
                 "totals": {
@@ -68,6 +69,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                 "results": [
                     "code": "086-0302",
                     "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
+                    "bureau_slug": "public-and-indian-housing-programs",
                     "children": [
                         {
                             "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
@@ -96,6 +98,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 ## FederalAccount (object)
 + `name` (required, string)
 + `code` (required, string)
++ `bureau_slug` (required, string)
 + `total_budgetary_resources` (required, number)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
@@ -106,7 +109,7 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
 
-## TreasuryAccount (object
+## TreasuryAccount (object)
 + `name` (required, string)
 + `code` (required, string)
 + `total_budgetary_resources` (required, number)
