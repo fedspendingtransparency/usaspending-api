@@ -402,10 +402,16 @@ class TransactionSearch(models.Model):
                 name="ts_idx_award_key_pre2008",
                 condition=Q(action_date__lt="2007-10-01"),
             ),
-            models.Index(fields=["afa_generated_unique"], name="ts_idx_fabs_key_pre2008",
-                         condition=Q(action_date__lt="2007-10-01")),
-            models.Index(fields=["detached_award_proc_unique"], name="ts_idx_fpds_key_pre2008",
-                         condition=Q(action_date__lt="2007-10-01")),
+            models.Index(
+                fields=["afa_generated_unique"],
+                name="ts_idx_fabs_key_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
+            ),
+            models.Index(
+                fields=["detached_award_proc_unique"],
+                name="ts_idx_fpds_key_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
+            ),
             models.Index(fields=["piid"], name="ts_idx_piid_pre2008", condition=Q(action_date__lt="2007-10-01")),
             models.Index(
                 fields=["parent_award_id"],
@@ -456,12 +462,11 @@ class TransactionSearch(models.Model):
             ),
             models.Index(fields=["etl_update_date"], name="ts_idx_etl_update_date"),
             models.Index(
-                fields=["type_of_contract_pricing"], name="ts_idx_tocp_pre2008",
-                condition=Q(action_date__lt="2007-10-01")
+                fields=["type_of_contract_pricing"],
+                name="ts_idx_tocp_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
             ),
-            models.Index(
-                fields=["naics_code"], name="ts_idx_naics_pre2008", condition=Q(action_date__lt="2007-10-01")
-            ),
+            models.Index(fields=["naics_code"], name="ts_idx_naics_pre2008", condition=Q(action_date__lt="2007-10-01")),
             models.Index(
                 fields=["extent_competed"], name="ts_idx_ext_com_pre2008", condition=Q(action_date__lt="2007-10-01")
             ),
@@ -469,8 +474,9 @@ class TransactionSearch(models.Model):
                 fields=["product_or_service_code"], name="ts_idx_psc_pre2008", condition=Q(action_date__lt="2007-10-01")
             ),
             models.Index(
-                fields=["type_set_aside"], name="ts_idx_type_set_aside_pre2008",
-                condition=Q(action_date__lt="2007-10-01")
+                fields=["type_set_aside"],
+                name="ts_idx_type_set_aside_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
             ),
             models.Index(
                 fields=["cfda_number"], name="ts_idx_cfda_aside_pre2008", condition=Q(action_date__lt="2007-10-01")
