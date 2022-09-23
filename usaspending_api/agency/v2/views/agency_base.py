@@ -65,6 +65,15 @@ class AgencyBase(APIView):
                 "enum_values": award_type_codes + ["no intersection"],
                 "optional": True,
             },
+            {
+                "key": "bureau_slug",
+                "name": "bureau_slug",
+                "type": "text",
+                "text_type": "search",
+                "optional": True,
+                "allow_nulls": True,
+                "default": None
+            },
         ]
         all_models = update_list_of_dictionaries(all_models, additional_models, "key")
 
@@ -148,6 +157,10 @@ class AgencyBase(APIView):
     @property
     def award_type_codes(self):
         return self._query_params.get("award_type_codes")
+
+    @property
+    def bureau_slug(self):
+        return self._query_params.get("bureau_slug")
 
     @property
     def standard_response_messages(self):
