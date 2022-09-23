@@ -101,18 +101,14 @@ def download_test_data():
         TransactionFPDS,
         transaction=trann1,
         piid="tc1piid",
-        awarding_agency_code="100",
         awarding_agency_name="Bureau of Things",
-        awarding_sub_tier_agency_c="1000",
         awarding_sub_tier_agency_n="Bureau of Things",
     )
     baker.make(
         TransactionFPDS,
         transaction=trann2,
         piid="tc2piid",
-        awarding_agency_code="101",
         awarding_agency_name="Bureau of Stuff",
-        awarding_sub_tier_agency_c="1001",
         awarding_sub_tier_agency_n="Bureau of Things",
     )
 
@@ -121,9 +117,7 @@ def download_test_data():
         TransactionFABS,
         transaction=trann3,
         fain="ta1fain",
-        awarding_agency_code="101",
         awarding_agency_name="Bureau of Stuff",
-        awarding_sub_tier_agency_c="1001",
         awarding_sub_tier_agency_n="Bureau of Things",
     )
 
