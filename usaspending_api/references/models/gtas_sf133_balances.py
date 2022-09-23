@@ -6,7 +6,7 @@ class GTASSF133Balances(models.Model):
     fiscal_year = models.IntegerField()
     fiscal_period = models.IntegerField()
     budget_authority_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=23, decimal_places=2)
-    adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(max_digits=23, decimal_places=2)
+    adjustments_to_unobligated_balance_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     obligations_incurred_total_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     budget_authority_appropriation_amount_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     borrowing_authority_amount = models.DecimalField(max_digits=23, decimal_places=2)
@@ -37,7 +37,9 @@ class GTASSF133Balances(models.Model):
     update_date = models.DateTimeField(auto_now=True)
     anticipated_prior_year_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)
     prior_year_paid_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)
-
+    adjustments_to_unobligated_balance_brought_forward_cpe = models.DecimalField(
+        max_digits=23, decimal_places=2, default=0.00
+    )
     objects = CTEManager()
 
     class Meta:
