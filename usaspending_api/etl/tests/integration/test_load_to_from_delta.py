@@ -295,7 +295,7 @@ def populate_usas_data(populate_broker_data):
         ultimate_parent_unique_ide="PARENTDUNS12345",
         ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
         indirect_federal_sharing=1.0,
-        total_funding_amount='2.23',
+        total_funding_amount="2.23",
         legal_entity_state_code="VA",
         legal_entity_county_code="001",
         legal_entity_country_code="USA",
@@ -322,7 +322,7 @@ def populate_usas_data(populate_broker_data):
         ultimate_parent_unique_ide="PARENTDUNS12345",
         ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
         indirect_federal_sharing=1.0,
-        total_funding_amount='2.23',
+        total_funding_amount="2.23",
         legal_entity_state_code="VA",
         legal_entity_county_code="001",
         legal_entity_country_code="USA",
@@ -370,6 +370,36 @@ def populate_usas_data(populate_broker_data):
         federal_action_obligation=0,
     )
 
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        published_fabs_id=6,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        indirect_federal_sharing=22.00,
+        is_active=True,
+        federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
+        submission_id=33.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
+        _fill_optional=True,
+    )
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        published_fabs_id=7,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        indirect_federal_sharing=22.00,
+        is_active=True,
+        federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
+        submission_id=33.00,
+        _fill_optional=True,
+    )
     # Create account data
     federal_account = baker.make(
         "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
@@ -753,7 +783,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         ultimate_parent_unique_ide="PARENTDUNS12345",
         ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
         indirect_federal_sharing=1.0,
-        total_funding_amount='2.23',
+        total_funding_amount="2.23",
         legal_entity_state_code="VA",
         legal_entity_county_code="001",
         legal_entity_country_code="USA",
@@ -801,6 +831,29 @@ def test_load_table_to_from_delta_for_recipient_testing(spark, s3_unittest_data_
     verify_delta_table_loaded_from_delta(
         spark, "recipient_lookup_testing", jdbc_inserts=True
     )  # test alt write strategy
+
+
+@mark.django_db(transaction=True)
+def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        published_fabs_id=7,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        indirect_federal_sharing=22.00,
+        is_active=True,
+        federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
+        submission_id=33.00,
+        _fill_optional=True,
+    )
+    verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "published_fabs", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "published_fabs", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
