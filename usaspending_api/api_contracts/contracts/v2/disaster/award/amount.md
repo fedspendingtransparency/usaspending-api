@@ -75,28 +75,42 @@ When filtering on `award_type_codes` this will filter on File D records that hav
 and belong to CARES Act DEFC.
 
 ### Members
-+ `A`
-+ `B`
-+ `C`
-+ `D`
-+ `E`
-+ `F`
-+ `G`
-+ `H`
-+ `I`
-+ `J`
-+ `K`
-+ `L`
-+ `M`
-+ `N`
-+ `O`
-+ `P`
-+ `Q`
-+ `R`
-+ `S`
-+ `T`
-+ `U`
-+ `9`
+- `1`
+- `2`
+- `3`
+- `4`
+- `5`
+- `6`
+- `7`
+- `8`
+- `9`
+- `A`
+- `B`
+- `C`
+- `D`
+- `E`
+- `F`
+- `G`
+- `H`
+- `I`
+- `J`
+- `K`
+- `L`
+- `M`
+- `N`
+- `O`
+- `P`
+- `Q`
+- `QQQ`
+- `R`
+- `S`
+- `T`
+- `U`
+- `V`
+- `W`
+- `X`
+- `Y`
+- `Z`
 
 ## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov
