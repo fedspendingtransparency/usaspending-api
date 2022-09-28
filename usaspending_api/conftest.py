@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.db import connections
 from django.test import override_settings
+from model_bakery import baker
 from pathlib import Path
 
 from usaspending_api.config import CONFIG
@@ -34,6 +35,10 @@ from usaspending_api.tests.conftest_spark import *  # noqa
 
 
 logger = logging.getLogger("console")
+
+# Baker Settings
+# Since baker doesn't support SearchVectorField, we'll pass in a function to return a string in the meantime
+baker.generators.add("django.contrib.postgres.search.SearchVectorField", lambda: "VECTORFIELD")
 
 
 def pytest_configure():

@@ -61,20 +61,35 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
         return results
 
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
-        django_filters = {f"pop_{self.location_type.value}_code__isnull": False}
+        subaward_mappings = {
+            LocationType.COUNTY: "sub_place_of_perform_county_code",
+            LocationType.CONGRESSIONAL_DISTRICT: "sub_place_of_perform_congressio",
+            LocationType.STATE_TERRITORY: "sub_place_of_perform_state_code",
+            LocationType.COUNTRY: "sub_place_of_perform_country_co",
+        }
+        django_filters = {f"{subaward_mappings[self.location_type]}__isnull": False}
 
         if self.location_type == LocationType.COUNTY:
-            django_values = ["pop_country_code", "pop_state_code", "pop_county_code", "pop_county_name"]
-            annotations = {"code": F("pop_county_code"), "name": F("pop_county_name")}
+            django_values = [
+                "sub_place_of_perform_country_co",
+                "sub_place_of_perform_state_code",
+                "sub_place_of_perform_county_code",
+                "sub_place_of_perform_county_name",
+            ]
+            annotations = {"code": F("sub_place_of_perform_county_code"), "name": F("sub_place_of_perform_county_name")}
         elif self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
-            django_values = ["pop_country_code", "pop_state_code", "pop_congressional_code"]
-            annotations = {"code": F("pop_congressional_code")}
+            django_values = [
+                "sub_place_of_perform_country_co",
+                "sub_place_of_perform_state_code",
+                "sub_place_of_perform_congressio",
+            ]
+            annotations = {"code": F("sub_place_of_perform_congressio")}
         elif self.location_type == LocationType.STATE_TERRITORY:
-            django_values = ["pop_country_code", "pop_state_code"]
-            annotations = {"code": F("pop_state_code")}
+            django_values = ["sub_place_of_perform_country_co", "sub_place_of_perform_state_code"]
+            annotations = {"code": F("sub_place_of_perform_state_code")}
         else:
-            django_values = [f"pop_country_code"]
-            annotations = {"code": F(f"pop_country_code")}
+            django_values = [f"sub_place_of_perform_country_co"]
+            annotations = {"code": F(f"sub_place_of_perform_country_co")}
 
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(**annotations)
         lower_limit = self.pagination.lower_limit
@@ -87,7 +102,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                 district_code = row["code"]
                 if district_code == "90":
                     district_code = "MULTIPLE DISTRICTS"
-                row["name"] = f"{row['pop_state_code']}-{district_code}"
+                row["name"] = f"{row['sub_place_of_perform_state_code']}-{district_code}"
             elif self.location_type == LocationType.COUNTRY:
                 row["name"] = fetch_country_name_from_code(row["code"])
             elif self.location_type == LocationType.STATE_TERRITORY:

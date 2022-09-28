@@ -535,7 +535,7 @@ def idv_transaction_annotations(filters: dict):
 def subaward_annotations(filters: dict):
     def_codes = filters.get("def_codes", [])
     annotation_fields = {
-        "subaward_action_date_fiscal_year": FiscalYear("subaward__action_date"),
+        "subaward_action_date_fiscal_year": FiscalYear("sub_action_date"),
         "prime_award_base_action_date_fiscal_year": FiscalYear("award__date_signed"),
         "prime_award_period_of_performance_potential_end_date": Cast(
             F("award__latest_transaction__contract_data__period_of_perf_potential_e"), DateField()
@@ -597,21 +597,21 @@ def subaward_annotations(filters: dict):
         ),
         "prime_award_disaster_emergency_fund_codes": Case(
             When(
-                broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
+                sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_disaster_emergency_fund_codes(def_codes=def_codes),
             ),
             output_field=TextField(),
         ),
         "prime_award_outlayed_amount_funded_by_COVID-19_supplementals": Case(
             When(
-                broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
+                sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_outlay_subquery(def_codes=def_codes),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "prime_award_obligated_amount_funded_by_COVID-19_supplementals": Case(
             When(
-                broker_subaward__sub_action_date__gte=datetime.date(2020, 4, 1),
+                sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_obligation_subquery(def_codes=def_codes),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),

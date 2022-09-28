@@ -7,8 +7,8 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from model_bakery import baker
 from pathlib import Path
-from usaspending_api.awards.models import Subaward
 from usaspending_api.references.models import CityCountyStateCode
+from usaspending_api.search.models import SubawardSearch
 
 
 TEST_TXT_FILE = Path(__file__).resolve().parent / "data" / "NationalFedCodesTest.txt"
@@ -75,26 +75,26 @@ def test_change_reversion(disable_vacuuming):
 
     # Mock a subaward.
     baker.make(
-        "awards.Subaward",
-        id=1,
-        pop_city_name="AGUA FRIA",
-        pop_state_code="AZ",
-        recipient_location_city_name="AJO",
-        recipient_location_state_code="AZ",
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        sub_place_of_perform_city_name="AGUA FRIA",
+        sub_place_of_perform_state_code="AZ",
+        sub_legal_entity_city_name="AJO",
+        sub_legal_entity_state_code="AZ",
     )
 
     call_command("load_city_county_state_code", TEST_TXT_FILE, "--force")
 
-    s = Subaward.objects.get(id=1)
-    assert s.pop_county_code == "013"
-    assert s.pop_county_name == "MARICOPA"
-    assert s.pop_city_code == "00520"
-    assert s.recipient_location_county_code == "019"
-    assert s.recipient_location_county_name == "PIMA"
-    assert s.recipient_location_city_code == "00870"
+    s = SubawardSearch.objects.get(broker_subaward_id=1)
+    assert s.sub_place_of_perform_county_code == "013"
+    assert s.sub_place_of_perform_county_name == "MARICOPA"
+    assert s.sub_place_of_perform_city_code == "00520"
+    assert s.sub_legal_entity_county_code == "019"
+    assert s.sub_legal_entity_county_name == "PIMA"
+    assert s.sub_legal_entity_city_code == "00870"
 
-    s.pop_county_name = "bogus county name"
-    s.recipient_location_county_name = "bogus county name"
+    s.sub_place_of_perform_county_name = "bogus county name"
+    s.sub_legal_entity_county_name = "bogus county name"
     s.save()
 
     # Renumber a feature id which will act as both a delete and an insert since feature id is part of the natural key.
@@ -104,8 +104,8 @@ def test_change_reversion(disable_vacuuming):
     CityCountyStateCode.objects.filter(feature_id=492).update(feature_name="Bogus Feature Name")
 
     # Confirm everything is broken.
-    assert Subaward.objects.get(id=1).pop_county_name != "MARICOPA"
-    assert Subaward.objects.get(id=1).recipient_location_county_name != "PIMA"
+    assert SubawardSearch.objects.get(broker_subaward_id=1).sub_place_of_perform_county_name != "MARICOPA"
+    assert SubawardSearch.objects.get(broker_subaward_id=1).sub_legal_entity_county_name != "PIMA"
     assert CityCountyStateCode.objects.filter(feature_id=-479).count() == 1
     assert CityCountyStateCode.objects.filter(feature_id=479).count() == 0
     assert CityCountyStateCode.objects.filter(feature_id=492).first().feature_name != "Adobe"
@@ -114,8 +114,8 @@ def test_change_reversion(disable_vacuuming):
     call_command("load_city_county_state_code", TEST_TXT_FILE, "--force")
 
     # Ensure everything got fixed.
-    assert Subaward.objects.get(id=1).pop_county_name == "MARICOPA"
-    assert Subaward.objects.get(id=1).recipient_location_county_name == "PIMA"
+    assert SubawardSearch.objects.get(broker_subaward_id=1).sub_place_of_perform_county_name == "MARICOPA"
+    assert SubawardSearch.objects.get(broker_subaward_id=1).sub_legal_entity_county_name == "PIMA"
     assert CityCountyStateCode.objects.filter(feature_id=-479).count() == 0
     assert CityCountyStateCode.objects.filter(feature_id=479).count() == 1
     assert CityCountyStateCode.objects.filter(feature_id=492).first().feature_name == "Adobe"
