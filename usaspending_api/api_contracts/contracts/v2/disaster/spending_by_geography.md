@@ -104,7 +104,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-    Return an award if an of the DEF Codes match the supplied filter since an Award can have multiple DEF Codes. If the `def_codes` provided are in the COVID-19 group, the query will only return results after `2020-04-01`.
+    Return an award if one of the DEF Codes match the supplied filter since an Award can have multiple DEF Codes. If the `def_codes` provided are in the COVID-19 group, the query will only return results of transactions where the `action_date` is on or after `2020-04-01`.
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## GeographyTypeResult (object)

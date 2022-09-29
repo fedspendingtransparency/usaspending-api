@@ -97,7 +97,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 
 ## Filter Objects
 ### AdvancedFilterObject (object)
-+ `keywords` : `transport` (optional, array[string])
++ `keywords` : [`transport`] (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
@@ -105,30 +105,31 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
-+ `recipient_search_text`: `Hampton`, `Roads` (optional, array[string])
++ `recipient_search_text`: [`Hampton`, `Roads`] (optional, array[string])
     + Text searched across a recipient’s name, UEI, and DUNS
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
-+ `recipient_type_names`: `category_business`, `sole_proprietorship` (optional, array[string])
++ `recipient_type_names`: [`category_business`, `sole_proprietorship`] (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
-+ `award_ids`: `SPE30018FLGFZ`, `SPE30018FLJFN` (optional, array[string])
++ `award_ids`: [`SPE30018FLGFZ`, `SPE30018FLJFN`] (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
-+ `program_numbers`: `10.331` (optional, array[string])
++ `program_numbers`: [`10.331`] (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `psc_codes` (optional, enum[PSCCodeObject, array[string]])
     Supports new PSCCodeObject or legacy array of codes.
-+ `contract_pricing_type_codes`: `J` (optional, array[string])
-+ `set_aside_type_codes`: `NONE` (optional, array[string])
-+ `extent_competed_type_codes`: `A` (optional, array[string])
++ `contract_pricing_type_codes`: [`J`] (optional, array[string])
++ `set_aside_type_codes`: [`NONE`] (optional, array[string])
++ `extent_competed_type_codes`: [`A`] (optional, array[string])
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `def_codes` (optional, array[DEFC], fixed-type)
+  If the `def_codes` provided are in the COVID-19 group, the query will only return results of transactions where the `action_date` is on or after `2020-04-01`.
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)

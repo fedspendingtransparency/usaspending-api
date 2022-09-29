@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 ## POST
 
-Creates a new download job for the requested account and award. Returns a link to a zipped file containing the generated data files.
+Creates a new download job for the requested COVID-19 related account and award. Returns a link to a zipped file containing the generated data files.
 
 + Request (application/json)
     + Attributes (object)
