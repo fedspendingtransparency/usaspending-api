@@ -125,10 +125,10 @@
           }
         },
         "recipient_hash": {
-          "type": "text",
+          "type": "keyword",
           "fields": {
-            "keyword": {
-              "type": "keyword"
+            "hash": {
+              "type": "murmur3"
             }
           }
         },
