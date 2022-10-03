@@ -70,7 +70,7 @@ class FederalAccountList(PaginationMixin, AgencyBase):
         self.default_sort_column = "obligated_amount"
         results = self.format_results(self.get_tbr_from_file_a_queryset(), self.get_federal_account_list_from_file_b())
         page_metadata = get_pagination_metadata(len(results), len(results), self.pagination.page)
-        print(page_metadata)  # debug
+
         return Response(
             {
                 "toptier_code": self.toptier_code,
