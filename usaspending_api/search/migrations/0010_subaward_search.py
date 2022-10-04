@@ -241,6 +241,7 @@ class Migration(migrations.Migration):
                     model_name='subawardsearch',
                     name='awarding_agency',
                     field=models.ForeignKey(
+                        null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name='awarding_subawardsearch',
                         to='references.agency'
@@ -256,6 +257,7 @@ class Migration(migrations.Migration):
                     model_name='subawardsearch',
                     name='funding_agency',
                     field=models.ForeignKey(
+                        null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name='funding_subawardsearch',
                         to='references.agency'
@@ -271,8 +273,9 @@ class Migration(migrations.Migration):
                     model_name='subawardsearch',
                     name='cfda',
                     field=models.ForeignKey(
+                        null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
-                        related_name='cfda_subawardsearch',
+                        related_name='related_subawardsearch',
                         to='references.cfda'
                     )
                 )
