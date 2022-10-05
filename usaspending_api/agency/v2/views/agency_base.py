@@ -18,7 +18,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
 )
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
-from usaspending_api.references.models import ToptierAgency, Agency
+from usaspending_api.references.models import ToptierAgency, Agency, BureauTitleLookup
 from usaspending_api.submissions.helpers import validate_request_within_revealed_submissions
 
 logger = logging.getLogger(__name__)
@@ -130,6 +130,18 @@ class AgencyBase(APIView):
         return toptier_agency
 
     @cached_property
+    def bureau_slug(self):
+        input_bureau_slug = self._query_params.get("bureau_slug")
+
+        if input_bureau_slug:
+            bureau_slug = BureauTitleLookup.objects.filter(
+                bureau_slug=input_bureau_slug
+            ).first()
+            if not bureau_slug:
+                raise NotFound(f"Bureau with a slug of '{input_bureau_slug}' does not exist")
+            return input_bureau_slug
+
+    @cached_property
     def fiscal_year(self):
         return self._query_params.get("fiscal_year") or current_fiscal_year()
 
@@ -157,10 +169,6 @@ class AgencyBase(APIView):
     @property
     def award_type_codes(self):
         return self._query_params.get("award_type_codes")
-
-    @property
-    def bureau_slug(self):
-        return self._query_params.get("bureau_slug")
 
     @property
     def standard_response_messages(self):
