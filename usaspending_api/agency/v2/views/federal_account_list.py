@@ -1,5 +1,5 @@
 import itertools
-from django.db.models import Sum, Q, Subquery, OuterRef, Exists
+from django.db.models import Sum, Q, Subquery, OuterRef
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
@@ -69,7 +69,8 @@ class FederalAccountList(PaginationMixin, AgencyBase):
         self.sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
         self.default_sort_column = "obligated_amount"
         results = self.format_results(self.get_tbr_from_file_a_queryset(), self.get_federal_account_list_from_file_b())
-        page_metadata = get_pagination_metadata(len(results), len(results), self.pagination.page)
+        results_length = len(results)
+        page_metadata = get_pagination_metadata(results_length, results_length, self.pagination.page)
 
         return Response(
             {
@@ -98,7 +99,6 @@ class FederalAccountList(PaginationMixin, AgencyBase):
             )
         )
         return results
-
 
     def get_federal_account_list_from_file_b(self) -> List[dict]:
         _, bureau_info_subquery = self.get_common_query_objects("treasury_account")
