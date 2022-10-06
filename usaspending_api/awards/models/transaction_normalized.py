@@ -168,5 +168,46 @@ class TransactionNormalized(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        db_table = "transaction_normalized"
+        managed = False
+        db_table = "vw_transaction_normalized"
         index_together = ["award", "action_date"]
+
+
+vw_transaction_normalized_sql = """
+    CREATE OR REPLACE VIEW rpt.vw_transaction_normalized AS
+        SELECT
+            -- Keys
+            transaction_id                          AS "id",
+            award_id,
+            transaction_unique_id,
+            usaspending_unique_transaction_id,
+            modification_number,
+            generated_unique_award_id               AS "unique_award_key",
+            -- Dates
+            action_date,
+            last_modified_date,
+            fiscal_year,
+            create_date,
+            update_date,
+            period_of_performance_start_date,
+            period_of_performance_current_end_date,
+            -- Agencies
+            awarding_agency_id,
+            funding_agency_id,
+            -- Typing
+            is_fpds,
+            type,
+            type_description,
+            action_type,
+            action_type_description,
+            transaction_description                 AS "description",
+            business_categories,
+            -- Amounts
+            federal_action_obligation,
+            original_loan_subsidy_cost,
+            face_value_loan_guarantee,
+            funding_amount,
+            non_federal_funding_amount
+        FROM
+            rpt.transaction_search;
+"""
