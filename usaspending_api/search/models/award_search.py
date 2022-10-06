@@ -113,7 +113,7 @@ class AwardSearch(models.Model):
     objects = CTEManager()
 
     class Meta:
-        db_table = 'rpt"."award_search'
+        db_table = "award_search"
         indexes = [
             models.Index(
                 fields=["recipient_hash"], name="as_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")
