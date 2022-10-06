@@ -63,7 +63,7 @@ def delete_tables_for_tests():
     try:
         tables = ["transaction_search", "award_search"]
         for table in tables:
-            execute_sql_simple(f"DROP TABLE IF EXISTS {table};")
+            execute_sql_simple(f"DROP TABLE IF EXISTS {table} CASCADE;")
     except Exception:
         pass
 
