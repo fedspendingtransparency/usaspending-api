@@ -4,7 +4,7 @@ repos:
     rev: v2.4.0
     hooks:
     -   id: debug-statements
-    -   id: flake8
+#    -   id: flake8
 -   repo: https://github.com/psf/black
     rev: 20.8b1
     hooks:
