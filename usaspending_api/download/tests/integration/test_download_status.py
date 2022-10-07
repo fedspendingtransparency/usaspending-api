@@ -78,6 +78,7 @@ def download_test_data(transactional_db):
         modification_number=1,
         awarding_agency=aa1,
         unique_award_key="CONT_IDV_NEW",
+        is_fpds=True,
     )
     trann2 = baker.make(
         TransactionNormalized,
@@ -88,6 +89,7 @@ def download_test_data(transactional_db):
         modification_number=1,
         awarding_agency=aa2,
         unique_award_key="CONT_AWD_NEW",
+        is_fpds=True,
     )
     trann3 = baker.make(
         TransactionNormalized,
@@ -98,14 +100,33 @@ def download_test_data(transactional_db):
         modification_number=1,
         awarding_agency=aa2,
         unique_award_key="ASST_NON_NEW",
+        is_fpds=False,
     )
 
     # Create TransactionContract
-    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_NEW")
-    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_NEW")
+    baker.make(
+        TransactionFPDS,
+        transaction=trann1,
+        piid="tc1piid",
+        unique_award_key="CONT_IDV_NEW",
+        awarding_agency_name="Bureau of Things",
+    )
+    baker.make(
+        TransactionFPDS,
+        transaction=trann2,
+        piid="tc2piid",
+        unique_award_key="CONT_AWD_NEW",
+        awarding_agency_name="Bureau of Stuff",
+    )
 
     # Create TransactionAssistance
-    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_NEW")
+    baker.make(
+        TransactionFABS,
+        transaction=trann3,
+        fain="ta1fain",
+        unique_award_key="ASST_NON_NEW",
+        awarding_agency_name="Bureau of Stuff",
+    )
 
     # Set latest_award for each award
     update_awards()
