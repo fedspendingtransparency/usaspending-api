@@ -139,8 +139,8 @@ award_search_load_sql_string = fr"""
   TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
   awards.transaction_unique_id,
-  awards.latest_transaction_id
-  awards.earliest_transaction_id
+  awards.latest_transaction_id,
+  awards.earliest_transaction_id,
   awards.category,
   awards.type,
   awards.type_description,
