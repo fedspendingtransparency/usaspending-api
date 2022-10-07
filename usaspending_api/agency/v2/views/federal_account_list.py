@@ -66,6 +66,7 @@ class FederalAccountList(PaginationMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        self.submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         self.sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
         self.default_sort_column = "obligated_amount"
         results = self.format_results(self.get_tbr_from_file_a_queryset(), self.get_federal_account_list_from_file_b())
@@ -87,6 +88,9 @@ class FederalAccountList(PaginationMixin, AgencyBase):
         Query Total Budgetary Resources from File A
         """
         filters, bureau_info_subquery = self.get_common_query_objects("treasury_account_identifier")
+        filters.append(
+            Q(submission_id__in=self.submission_ids)
+        )
 
         results = (
             (AppropriationAccountBalances.objects.filter(*filters))
@@ -102,11 +106,10 @@ class FederalAccountList(PaginationMixin, AgencyBase):
 
     def get_federal_account_list_from_file_b(self) -> List[dict]:
         _, bureau_info_subquery = self.get_common_query_objects("treasury_account")
-        submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
 
         filters = [
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
-            Q(submission_id__in=submission_ids),
+            Q(submission_id__in=self.submission_ids),
             Q(
                 Q(obligations_incurred_by_program_object_class_cpe__gt=0)
                 | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
