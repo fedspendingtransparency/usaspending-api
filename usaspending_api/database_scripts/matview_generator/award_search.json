@@ -101,6 +101,8 @@
     "",
     "  latest_transaction.awarding_agency_id,",
     "  latest_transaction.funding_agency_id,",
+    "  awards.fpds_agency_id,",
+    "  fpds_parent_agency_id,",
     "  TAA.name AS awarding_toptier_agency_name,",
     "  TFA.name AS funding_toptier_agency_name,",
     "  SAA.name AS awarding_subtier_agency_name,",
