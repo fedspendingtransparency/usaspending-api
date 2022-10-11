@@ -1266,7 +1266,7 @@ query_paths = {
         "d1": OrderedDict(
             [
                 ("prime_award_unique_key", "unique_award_key"),
-                ("prime_award_piid", "award_piid_fain"),
+                ("prime_award_piid", "piid"),
                 ("prime_award_parent_piid", "parent_award_id"),
                 ("prime_award_amount", "award_amount"),
                 ("prime_award_disaster_emergency_fund_codes", None),  # Annotation is used to create this column
@@ -1422,7 +1422,7 @@ query_paths = {
         "d2": OrderedDict(
             [
                 ("prime_award_unique_key", "unique_award_key"),
-                ("prime_award_fain", "award_piid_fain"),
+                ("prime_award_fain", "fain"),
                 ("prime_award_amount", "award_amount"),
                 ("prime_award_disaster_emergency_fund_codes", None),  # Annotation is used to create this column
                 (
