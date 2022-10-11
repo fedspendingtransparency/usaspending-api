@@ -13,7 +13,7 @@ AWARD_SEARCH_COLUMNS = {
     "generated_unique_award_id": {"delta": "STRING", "postgres": "TEXT"},
     "display_award_id": {"delta": "STRING", "postgres": "TEXT"},
     "update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
-    "certified_date": {"delta": "TIMESTAMP", "postgres": None},
+    "certified_date": {"delta": "DATE", "postgres": None},
     "create_date": {"delta": "TIMESTAMP", "postgres": None},
     "piid": {"delta": "STRING", "postgres": "TEXT"},
     "fain": {"delta": "STRING", "postgres": "TEXT"},
