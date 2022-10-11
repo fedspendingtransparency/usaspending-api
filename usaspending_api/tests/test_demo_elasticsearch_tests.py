@@ -9,8 +9,16 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture(db):
-    baker.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A")
-    baker.make("awards.TransactionFPDS", transaction_id=1, legal_entity_zip5="abcde", piid="IND12PB00323")
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
+        award_id=1,
+        action_date="2010-10-01",
+        is_fpds=True,
+        type="A",
+        piid="IND12PB00323",
+        recipient_location_zip5="abcde",
+    )
     baker.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
 

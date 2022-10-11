@@ -12,10 +12,12 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 def test_data():
 
     baker.make("awards.Award", id=1, type="A", latest_transaction_id=1, generated_unique_award_id="CONT_AWD_1")
-    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=1,
+        award_id=1,
+        action_date="2010-10-01",
         legal_entity_country_code="USA",
         legal_entity_country_name="UNITED STATES",
         legal_entity_zip5="00501",
@@ -25,10 +27,12 @@ def test_data():
     )
 
     baker.make("awards.Award", id=2, type="A", latest_transaction_id=2, generated_unique_award_id="CONT_AWD_2")
-    baker.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True)
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=2,
+        award_id=2,
+        action_date="2010-10-01",
         legal_entity_country_code="USA",
         legal_entity_country_name="UNITED STATES",
         legal_entity_zip5="00502",
@@ -38,10 +42,12 @@ def test_data():
     )
 
     baker.make("awards.Award", id=3, type="A", latest_transaction_id=3, generated_unique_award_id="CONT_AWD_3")
-    baker.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True)
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=3,
+        award_id=3,
+        action_date="2010-10-01",
         legal_entity_country_code="USA",
         legal_entity_country_name="UNITED STATES",
         legal_entity_zip5="00503",
@@ -51,10 +57,12 @@ def test_data():
     )
 
     baker.make("awards.Award", id=4, type="A", latest_transaction_id=4, generated_unique_award_id="CONT_AWD_4")
-    baker.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True)
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=4,
+        award_id=4,
+        action_date="2010-10-01",
         legal_entity_country_code="GIB",
         legal_entity_country_name="GIBRALTAR",
         legal_entity_zip5="00504",

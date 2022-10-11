@@ -215,7 +215,7 @@ def setup_test_data(db):
         },
     ]
     for transaction in transaction_list:
-        baker.make("awards.TransactionNormalized", **transaction)
+        baker.make("search.TransactionSearch", **transaction)
 
     faba_list = [
         {

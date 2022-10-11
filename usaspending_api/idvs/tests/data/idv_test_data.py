@@ -75,12 +75,11 @@ def create_idv_test_data():
             toptier_agency_id=funding_toptier_agency.toptier_agency_id,
         )
 
-        transaction_normalized = baker.make("awards.TransactionNormalized", id=7000 + award_id, award_id=award_id)
-
         baker.make(
-            "awards.TransactionFPDS",
-            transaction_id=transaction_normalized.id,
-            funding_agency_name="subtier_funding_agency_name_%s" % transaction_normalized.id,
+            "search.TransactionSearch",
+            transaction_id=7000 + award_id,
+            award_id=award_id,
+            funding_agency_name="subtier_funding_agency_name_%s" % (7000 + award_id),
             ordering_period_end_date="2018-01-%02d" % award_id,
             awardee_or_recipient_uniqu="duns_%s" % (7000 + award_id),
             period_of_perf_potential_e="2018-08-%02d" % award_id,
@@ -99,7 +98,7 @@ def create_idv_test_data():
             fpds_parent_agency_id=("fpds_agency_id_%s" % string_parent_award_id) if string_parent_award_id else None,
             awarding_agency_id=awarding_agency.id,
             funding_agency_id=funding_agency.id,
-            latest_transaction_id=transaction_normalized.id,
+            latest_transaction_id=7000 + award_id,
             total_obligation=100000 + award_id,
             base_and_all_options_value=500000 + award_id,
             period_of_performance_current_end_date="2018-03-%02d" % award_id,

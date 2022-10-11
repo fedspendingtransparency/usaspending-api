@@ -7,7 +7,6 @@ def set_up_related_award_objects():
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
 
-    trans_cont = {"pk": 1, "business_categories": ["small_business"]}
     duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
     baker.make("recipient.DUNS", **duns)
     baker.make("references.SubtierAgency", **subag)
@@ -15,11 +14,11 @@ def set_up_related_award_objects():
 
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
-    baker.make("awards.TransactionNormalized", **trans_cont)
     baker.make("references.Agency", **ag)
     cont_data = {
         "pk": 1,
-        "transaction": TransactionNormalized.objects.get(pk=1),
+        "transaction_id": 1,
+        "is_fpds": True,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "naics": "333911",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
@@ -59,8 +58,9 @@ def set_up_related_award_objects():
         "type_set_aside_description": None,
         "materials_supplies_descrip": "NO",
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
+        "business_categories": ["small_business"],
     }
-    baker.make("awards.TransactionFPDS", **cont_data)
+    baker.make("search.TransactionSearch", **cont_data)
 
 
 def create_tree(awards):

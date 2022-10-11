@@ -9,7 +9,7 @@ from itertools import chain, combinations
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.awards.models import (
-    TransactionNormalized,
+    TransactionSearch,
     TransactionFABS,
     TransactionFPDS,
     FinancialAccountsByAwards,
@@ -71,40 +71,39 @@ def download_test_data(db):
     award3 = baker.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_1")
 
     # Create Transactions
-    trann1 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        is_fpds=True,
         award=award1,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa1,
-        unique_award_key="CONT_IDV_1",
+        generated_unique_award_id="CONT_IDV_1",
+        piid="tc1piid",
     )
-    trann2 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        is_fpds=True,
         award=award2,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
-        unique_award_key="CONT_AWD_1",
+        generated_unique_award_id="CONT_AWD_1",
+        piid="tc2piid",
     )
-    trann3 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        is_fpds=False,
         award=award3,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
-        unique_award_key="ASST_NON_1",
+        generated_unique_award_id="ASST_NON_1",
+        fain="ta1fain",
     )
-
-    # Create TransactionContract
-    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_1")
-    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_1")
-
-    # Create TransactionAssistance
-    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_1")
 
     # Create FederalAccount
     fa1 = baker.make(FederalAccount, id=10)

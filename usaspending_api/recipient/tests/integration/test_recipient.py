@@ -183,24 +183,24 @@ TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FABS = {
 }
 TEST_SUMMARY_TRANSACTION_RECIPIENT = {
     "latest": {
-        "awardee_or_recipient_legal": "PARENT RECIPIENT",
-        "awardee_or_recipient_uniqu": "000000001",
-        "ultimate_parent_unique_ide": "000000001",
-        "awardee_or_recipient_uei": "AAAAAAAAAAAA",
-        "ultimate_parent_uei": "AAAAAAAAAAAA",
+        "recipient_name": "PARENT RECIPIENT",
+        "recipient_unique_id": "000000001",
+        "parent_recipient_unique_id": "000000001",
+        "recipient_uei": "AAAAAAAAAAAA",
+        "parent_uei": "AAAAAAAAAAAA",
     },
     "FY2016": {
-        "awardee_or_recipient_legal": "CHILD RECIPIENT",
-        "awardee_or_recipient_uniqu": "000000002",
-        "ultimate_parent_unique_ide": "000000001",
-        "awardee_or_recipient_uei": "BBBBBBBBBBBB",
-        "ultimate_parent_uei": "AAAAAAAAAAAA",
+        "recipient_name": "CHILD RECIPIENT",
+        "recipient_unique_id": "000000002",
+        "parent_recipient_unique_id": "000000001",
+        "recipient_uei": "BBBBBBBBBBBB",
+        "parent_uei": "AAAAAAAAAAAA",
     },
     "FY2008": {
-        "awardee_or_recipient_legal": "OTHER RECIPIENT",
-        "awardee_or_recipient_uniqu": None,
-        "ultimate_parent_unique_ide": None,
-        "awardee_or_recipient_uei": None,
+        "recipient_name": "OTHER RECIPIENT",
+        "recipient_unique_id": None,
+        "parent_recipient_unique_id": None,
+        "parent_uei": None,
     },
 }
 
@@ -211,43 +211,31 @@ def create_transaction_test_data(transaction_recipient_list=None):
     if transaction_recipient_list is None:
         transaction_recipient_list = TEST_SUMMARY_TRANSACTION_RECIPIENT.values()
 
-    for count, transaction_normalized in enumerate(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS.values(), 1):
-        base_transaction_normalized = {
-            "id": count,
+    for count, transaction_search in enumerate(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS.values(), 1):
+        base_transaction_search = {
+            "transaction_id": count,
             "award_id": count,
             "is_fpds": True,
             "business_categories": ["expected", "business", "cat"],
         }
-        base_transaction_normalized.update(transaction_normalized)
+        base_transaction_search.update(transaction_search)
+        base_transaction_search.update(transaction_recipient_list.values()[count])
         baker.make("awards.Award", id=count, latest_transaction_id=count)
-        baker.make("awards.TransactionNormalized", **base_transaction_normalized)
+        baker.make("search.TransactionSearch", **base_transaction_search)
 
-    for count, transaction_fpds in enumerate(transaction_recipient_list, 1):
-        base_transaction_fpds = {"transaction_id": count}
-        base_transaction_fpds.update(transaction_fpds)
-        baker.make("awards.TransactionFPDS", **base_transaction_fpds)
-
-    for count, transaction_normalized in enumerate(
+    for count, transaction_search in enumerate(
         TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FABS.values(), len(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS) + 1
     ):
-        base_transaction_normalized = {
-            "id": count,
+        base_transaction_search = {
+            "transaction_id": count,
             "award_id": count,
             "is_fpds": False,
             "business_categories": ["expected", "business", "cat"],
         }
-        base_transaction_normalized.update(transaction_normalized)
+        base_transaction_search.update(transaction_search)
+        base_transaction_search.update(transaction_recipient_list.values()[count])
         baker.make("awards.Award", id=count, latest_transaction_id=count)
-        baker.make("awards.TransactionNormalized", **base_transaction_normalized)
-
-    for count, transaction_fabs in enumerate(
-        transaction_recipient_list, len(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS) + 1
-    ):
-        base_transaction_fabs = {"transaction_id": count}
-        base_transaction_fabs.update(transaction_fabs)
-        base_transaction_fabs["uei"] = base_transaction_fabs["awardee_or_recipient_uei"]
-        del base_transaction_fabs["awardee_or_recipient_uei"]
-        baker.make("awards.TransactionFABS", **base_transaction_fabs)
+        baker.make("search.TransactionSearch", **base_transaction_search)
 
 
 @pytest.mark.django_db

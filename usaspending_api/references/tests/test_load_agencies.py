@@ -233,10 +233,15 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
 
     # Create some test data.
     a = baker.make("awards.Award", generated_unique_award_id="AWARD_1")
-    tn = baker.make("awards.TransactionNormalized", award=a, unique_award_key="AWARD_1")
+    tn = baker.make(
+        "search.TransactionSearch",
+        is_fpds=True,
+        award=a,
+        generated_unique_award_id="AWARD_1",
+        funding_sub_tier_agency_co="0901",
+    )
     a.latest_transaction = tn
     a.save()
-    baker.make("awards.TransactionFPDS", transaction=tn, funding_sub_tier_agency_co="0901", unique_award_key="AWARD_1")
     baker.make("search.SubawardSearch", award=a, unique_award_key="AWARD_1")
 
     # Load all the things.

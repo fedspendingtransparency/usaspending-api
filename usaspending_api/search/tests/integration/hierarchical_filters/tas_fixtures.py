@@ -96,7 +96,7 @@ def award(db, id):
         fain="xyz",
         uri="abcxyx",
     )
-    baker.make("awards.TransactionNormalized", id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
+    baker.make("search.TransactionSearch", transaction_id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
 
 
 def agency(db, agency_id, toptier_code):

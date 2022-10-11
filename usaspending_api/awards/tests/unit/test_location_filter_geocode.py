@@ -14,10 +14,13 @@ from usaspending_api.common.exceptions import InvalidParameterException
 
 @pytest.fixture
 def award_data_fixture(db):
-    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=1,
+        award_id=1,
+        action_date="2010-10-01",
+        type="A",
         legal_entity_city_name="BURBANK",
         legal_entity_country_code="USA",
         legal_entity_state_code="CA",
@@ -28,10 +31,13 @@ def award_data_fixture(db):
     )
     baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
 
-    baker.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=2,
+        award_id=2,
+        action_date="2010-10-01",
+        type="A",
         legal_entity_city_name="BRISTOL",
         legal_entity_country_code="GBR",
         piid="piiiiid",
@@ -41,10 +47,13 @@ def award_data_fixture(db):
     )
     baker.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", type="A")
 
-    baker.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionFPDS",
+        is_fpds=True,
         transaction_id=3,
+        award_id=3,
+        action_date="2010-10-01",
+        type="A",
         legal_entity_city_name="BRISBANE",
         piid="0002",
         place_of_perform_city_name="BRISBANE",
@@ -53,10 +62,13 @@ def award_data_fixture(db):
     )
     baker.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", type="A")
 
-    baker.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionFPDS",
+        is_fpds=True,
         transaction_id=4,
+        award_id=4,
+        action_date="2010-10-01",
+        type="A",
         legal_entity_city_name="NEW YORK",
         legal_entity_country_code="USA",
         piid="0003",
@@ -65,10 +77,13 @@ def award_data_fixture(db):
         place_of_perform_country_c="USA",
     )
     baker.make("awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", type="A")
-    baker.make("awards.TransactionNormalized", id=5, action_date="2010-10-01", award_id=5, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=5,
+        award_id=5,
+        action_date="2010-10-01",
+        type="A",
         legal_entity_city_name="NEW AMSTERDAM",
         legal_entity_country_code="USA",
         piid="0004",

@@ -34,7 +34,7 @@ def test_get_incremental_load_start_datetime():
     assert get_incremental_load_start_datetime() == may5 - lookback_minutes
 
     # Add a FABS updated_at that is older than last load date so it is chosen.
-    baker.make("awards.TransactionFABS", transaction__id=1, updated_at=may4)
+    baker.make("search.TransactionSearch", transaction_id=1, updated_at=may4, is_fpds=False)
     assert get_incremental_load_start_datetime() == may4 + updated_at_modifier
 
     # Make FABS updated_at newer so last load date is chosen.

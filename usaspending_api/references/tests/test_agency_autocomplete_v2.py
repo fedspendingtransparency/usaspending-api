@@ -8,7 +8,7 @@ from usaspending_api.search.models import AgencyAutocompleteMatview
 
 @pytest.fixture
 def agency_data(db):
-    tn = baker.make("awards.TransactionNormalized", action_date="1900-01-01")
+    tn = baker.make("search.TransactionSearch", action_date="1900-01-01")
 
     a = baker.make(
         "references.Agency",
@@ -22,7 +22,7 @@ def agency_data(db):
         "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
     )
 
-    tn = baker.make("awards.TransactionNormalized", action_date="2020-01-01")
+    tn = baker.make("search.TransactionSearch", action_date="2020-01-01")
 
     a = baker.make(
         "references.Agency",

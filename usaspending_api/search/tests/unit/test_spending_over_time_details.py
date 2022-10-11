@@ -21,56 +21,56 @@ def populate_models(db):
     baker.make("awards.Award", id=8, latest_transaction_id=8)
 
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=1,
         award_id=1,
         action_date=datetime(2010, 3, 1),
         federal_action_obligation=100.0,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=2,
         award_id=2,
         action_date=datetime(2011, 3, 1),
         federal_action_obligation=110.0,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=3,
         award_id=3,
         action_date=datetime(2012, 3, 1),
         federal_action_obligation=120.0,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=4,
         award_id=4,
         action_date=datetime(2013, 3, 1),
         federal_action_obligation=130.0,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=5,
         award_id=5,
         action_date=datetime(2014, 3, 1),
         federal_action_obligation=140.0,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=6,
         award_id=6,
         action_date=datetime(2015, 3, 1),
         federal_action_obligation=150.0,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=7,
         award_id=7,
         action_date=datetime(2016, 3, 1),
         federal_action_obligation=160.0,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=8,
         award_id=8,
         action_date=datetime(2017, 3, 1),
@@ -81,7 +81,7 @@ def populate_models(db):
 @pytest.fixture
 def pragmatic_fixture():
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=1,
         action_date="2010-10-01",
         award_id=1,
@@ -89,9 +89,10 @@ def pragmatic_fixture():
         original_loan_subsidy_cost=0,
         federal_action_obligation=9900,
         type="A",
+        piid="piiiiid",
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=2,
         action_date="2019-01-19",
         award_id=2,
@@ -99,14 +100,7 @@ def pragmatic_fixture():
         original_loan_subsidy_cost=1000000,
         federal_action_obligation=0,
         type="07",
-    )
-    baker.make("awards.TransactionFPDS", transaction_id=1, piid="piiiiid", federal_action_obligation=9900)
-    baker.make(
-        "awards.TransactionFABS",
-        transaction_id=2,
         fain="faiiin",
-        original_loan_subsidy_cost=1000000,
-        federal_action_obligation=None,
     )
     baker.make(
         "awards.Award",

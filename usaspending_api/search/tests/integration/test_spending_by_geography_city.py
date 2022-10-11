@@ -9,10 +9,13 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture(db):
-    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=1,
+        award_id=1,
+        action_date="2010-10-01",
+        type="A",
         legal_entity_city_name="BURBANK",
         legal_entity_country_code="USA",
         legal_entity_state_code="CA",

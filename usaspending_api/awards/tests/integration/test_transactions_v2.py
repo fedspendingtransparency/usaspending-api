@@ -24,18 +24,13 @@ def cfda_transactions(db):
         "federal_action_obligation": "10.00",
         "face_value_loan_guarantee": "10.00",
         "original_loan_subsidy_cost": "10.00",
-    }
-    trx_fabs_1 = {
-        "pk": 1,
-        "transaction_id": 1,
         "cfda_number": 12.345,
         "cfda_title": "Shiloh",
         "afa_generated_unique": "Q25B9A1MQ0",
     }
 
     baker.make("awards.Award", **award_1)
-    baker.make("awards.TransactionNormalized", **trx_norm_1)
-    baker.make("awards.TransactionFABS", **trx_fabs_1)
+    baker.make("search.TransactionSearch", **trx_norm_1)
 
 
 def test_transaction_cfda(client, cfda_transactions):

@@ -7,9 +7,12 @@ from model_bakery import baker
 
 @pytest.fixture
 def award_data_fixture(db):
-    baker.make("awards.TransactionNormalized", id=1, award_id=1, action_date="2010-10-01", is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        award_id=1,
+        action_date="2010-10-01",
+        is_fpds=True,
+        type="A",
         transaction_id=1,
         legal_entity_zip5="abcde",
         legal_entity_city_name="ARLINGTON",
@@ -19,9 +22,12 @@ def award_data_fixture(db):
     )
     baker.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
-    baker.make("awards.TransactionNormalized", id=2, award_id=2, action_date="2011-11-11", is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        award_id=2,
+        action_date="2011-11-11",
+        is_fpds=True,
+        type="A",
         transaction_id=2,
         legal_entity_zip5="abcde",
         legal_entity_city_name="BRISTOL",
@@ -31,9 +37,12 @@ def award_data_fixture(db):
     )
     baker.make("awards.Award", id=2, latest_transaction_id=2, is_fpds=True, type="A", piid="0001")
 
-    baker.make("awards.TransactionNormalized", id=3, award_id=3, action_date="2018-01-01", is_fpds=True, type="04")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        award_id=3,
+        action_date="2018-01-01",
+        is_fpds=True,
+        type="04",
         transaction_id=3,
         legal_entity_zip5="abcde",
         legal_entity_city_name="PHILLIPSBURG",
@@ -41,9 +50,13 @@ def award_data_fixture(db):
         piid="0002",
     )
     baker.make("awards.Award", id=3, latest_transaction_id=3, is_fpds=True, type="04", piid="0002")
-    baker.make("awards.TransactionNormalized", id=4, award_id=4, action_date="2011-11-11", is_fpds=True, type="A")
+
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        award_id=4,
+        action_date="2011-11-11",
+        is_fpds=True,
+        type="A",
         transaction_id=4,
         legal_entity_zip5="abcde",
         legal_entity_city_name="BRISTOL",

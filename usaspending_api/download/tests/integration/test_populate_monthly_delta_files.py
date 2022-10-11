@@ -37,9 +37,9 @@ def monthly_download_delta_data(db, monkeypatch):
     )
     baker.make("awards.FinancialAccountsByAwards", award_id=i)
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         award_id=i,
-        id=i,
+        transaction_id=i,
         is_fpds=True,
         transaction_unique_id=i,
         usaspending_unique_transaction_id="",
@@ -67,10 +67,6 @@ def monthly_download_delta_data(db, monkeypatch):
         non_federal_funding_amount=100.0,
         unique_award_key=1,
         business_categories=[],
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=i,
         detached_award_procurement_id=i,
         detached_award_proc_unique=f"test{i}",
         piid=f"piid{i}",
@@ -441,9 +437,9 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         fiscal_year=2020,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         award_id=2,
-        id=2,
+        transaction_id=2,
         is_fpds=False,
         transaction_unique_id=2,
         type="02",
@@ -458,11 +454,7 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         fiscal_year=2020,
         awarding_agency_id=1,
         funding_agency_id=1,
-        unique_award_key=2,
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction_id=2,
+        generated_unique_award_id=2,
         fain="fain2",
         awarding_agency_code="001",
         awarding_sub_tier_agency_c=1,

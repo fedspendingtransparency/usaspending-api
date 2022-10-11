@@ -14,7 +14,7 @@ def awards_transaction_data(db):
         type="B",
         total_obligation=1000,
     )
-    baker.make("awards.TransactionNormalized", id=1, award_id=1)
+    baker.make("search.TransactionSearch", transaction_id=1, award_id=1)
 
     baker.make(
         "awards.Award",
@@ -25,9 +25,9 @@ def awards_transaction_data(db):
         type="B",
         total_obligation=1000,
     )
-    baker.make("awards.TransactionNormalized", id=2, award_id=2)
-    baker.make("awards.TransactionNormalized", id=3, award_id=2)
-    baker.make("awards.TransactionNormalized", id=4, award_id=2)
+    baker.make("search.TransactionSearch", transaction_id=2, award_id=2)
+    baker.make("search.TransactionSearch", transaction_id=3, award_id=2)
+    baker.make("search.TransactionSearch", transaction_id=4, award_id=2)
 
     baker.make(
         "awards.Award",

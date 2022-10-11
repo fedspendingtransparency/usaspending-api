@@ -56,8 +56,7 @@ class CursorExecuteTestCase(TestCase):
         Set up some awards and transactions that we can query.
         """
         for _id in range(1, AWARD_COUNT + 1):
-            baker.make("awards.TransactionNormalized", id=_id, award_id=_id)
-            baker.make("awards.TransactionFPDS", transaction_id=_id)
+            baker.make("search.TransactionSearch", is_fpds=True, transaction_id=_id, award_id=_id)
             baker.make("awards.Award", id=_id, latest_transaction_id=_id)
 
     @staticmethod

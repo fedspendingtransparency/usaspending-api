@@ -24,7 +24,7 @@ def test_transaction_endpoint_v2_award_fk(client):
     awd = baker.make(
         "awards.Award", id=10, total_obligation="2000", _fill_optional=True, generated_unique_award_id="-TEST-"
     )
-    baker.make("awards.TransactionNormalized", description="this should match", _fill_optional=True, award=awd)
+    baker.make("search.TransactionSearch", transaction_description="this should match", _fill_optional=True, award=awd)
 
     resp = client.post("/api/v2/transactions/", {"award_id": 10})
     assert resp.status_code == status.HTTP_200_OK
@@ -50,7 +50,7 @@ def test_txn_get_or_create():
     agency2 = baker.make("references.Agency")
     awd1 = baker.make("awards.Award", awarding_agency=agency1)
     txn1 = baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         award=awd1,
         modification_number="1",
         awarding_agency=agency1,
@@ -139,14 +139,11 @@ def test_txn_assistance_get_or_create():
     awd1 = baker.make("awards.Award", awarding_agency=agency1)
     txn1 = baker.make(
         "awards.TransactionNormalized",
+        is_fpds=False,
         award=awd1,
         modification_number="1",
         awarding_agency=agency1,
         last_modified_date=date(2012, 3, 1),
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction=txn1,
         business_funds_indicator="a",
         record_type=1,
         total_funding_amount=1000.00,
@@ -166,7 +163,7 @@ def test_txn_assistance_get_or_create():
 
     # a new transaction gets a new TransactionFABS record
     ta_dict = {"business_funds_indicator": "z", "record_type": 5, "total_funding_amount": 8000}
-    ta3 = TransactionFABS.get_or_create_2(baker.make("awards.TransactionNormalized"), **ta_dict)
+    ta3 = TransactionFABS.get_or_create_2(baker.make("search.TransactionSearch"), **ta_dict)
     ta3.save()
     assert TransactionFABS.objects.all().count() == 2
 
@@ -178,13 +175,14 @@ def test_txn_contract_get_or_create():
     agency1 = baker.make("references.Agency")
     awd1 = baker.make("awards.Award", awarding_agency=agency1)
     txn1 = baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         award=awd1,
         modification_number="1",
         awarding_agency=agency1,
         last_modified_date=date(2012, 3, 1),
+        piid="abc",
+        base_and_all_options_value=1000,
     )
-    baker.make("awards.TransactionFPDS", transaction=txn1, piid="abc", base_and_all_options_value=1000)
     assert TransactionFPDS.objects.all().count() == 1
 
     # an updated transaction should also update existing TransactionFPDS
@@ -199,6 +197,6 @@ def test_txn_contract_get_or_create():
 
     # a new transaction gets a new TransactionFABS record
     tc_dict = {"piid": "xyz", "base_and_all_options_value": 5555}
-    tc3 = TransactionFPDS.get_or_create_2(baker.make("awards.TransactionNormalized"), **tc_dict)
+    tc3 = TransactionFPDS.get_or_create_2(baker.make("search.TransactionSearch"), **tc_dict)
     tc3.save()
     assert TransactionFPDS.objects.all().count() == 2

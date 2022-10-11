@@ -12,6 +12,7 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.search.models import TransactionSearch
 
 
 @pytest.fixture
@@ -67,37 +68,36 @@ def download_test_data(db):
     award3 = baker.make("awards.Award", id=789, category="assistance")
 
     # Create Transactions
-    trann1 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        is_fpds=True,
         award=award1,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa1,
+        piid="tc1piid",
     )
-    trann2 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        is_fpds=True,
         award=award2,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        piid="tc2piid",
     )
-    trann3 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        is_fpds=False,
         award=award3,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        fain="ta1fain",
     )
-
-    # Create TransactionContract
-    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid")
-    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid")
-
-    # Create TransactionAssistance
-    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain")
 
     # Set latest_award for each award
     update_awards()

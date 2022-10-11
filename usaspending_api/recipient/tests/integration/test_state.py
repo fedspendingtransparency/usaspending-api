@@ -91,28 +91,28 @@ def sort_states_response(response_list):
 @pytest.fixture
 def state_data(db):
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         assistance_data__place_of_perfor_state_code="TS",
         assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=100000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         assistance_data__place_of_perfor_state_code="TS",
         assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=100000,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         assistance_data__place_of_perfor_state_code="TD",
         assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         assistance_data__place_of_perfor_state_code="TT",
         assistance_data__place_of_perform_country_c="USA",
         federal_action_obligation=1000,
@@ -180,8 +180,8 @@ def state_view_data(db, monkeypatch):
 
     award_cur = baker.make("awards.Award", type="B")
 
-    trans_old = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
         award=award_old,
         type="A",
         assistance_data__place_of_perfor_state_code="AB",
@@ -189,10 +189,11 @@ def state_view_data(db, monkeypatch):
         federal_action_obligation=10,
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
 
-    trans_cur = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
         award=award_cur,
         type="B",
         assistance_data__place_of_perfor_state_code="AB",
@@ -200,10 +201,8 @@ def state_view_data(db, monkeypatch):
         federal_action_obligation=15,
         fiscal_year=generate_fiscal_year(TODAY),
         action_date=TODAY.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
-
-    baker.make("awards.TransactionFPDS", transaction=trans_old)
-    baker.make("awards.TransactionFPDS", transaction=trans_cur)
 
 
 @pytest.fixture
@@ -214,8 +213,8 @@ def state_view_loan_data(db, monkeypatch):
     award_old2 = baker.make("awards.Award", type="08")
     award_cur = baker.make("awards.Award", type="07")
 
-    trans_old = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
         award=award_old,
         type="07",
         assistance_data__place_of_perfor_state_code="AB",
@@ -224,10 +223,11 @@ def state_view_loan_data(db, monkeypatch):
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         face_value_loan_guarantee=1500,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
 
-    trans_old2 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
         award=award_old2,
         type="08",
         assistance_data__place_of_perfor_state_code="AB",
@@ -236,10 +236,11 @@ def state_view_loan_data(db, monkeypatch):
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         face_value_loan_guarantee=11,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
 
-    trans_cur = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
         award=award_cur,
         type="A",
         assistance_data__place_of_perfor_state_code="AB",
@@ -248,11 +249,8 @@ def state_view_loan_data(db, monkeypatch):
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         face_value_loan_guarantee=2000,
         action_date=TODAY.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
-
-    baker.make("awards.TransactionFPDS", transaction=trans_old)
-    baker.make("awards.TransactionFPDS", transaction=trans_old2)
-    baker.make("awards.TransactionFPDS", transaction=trans_cur)
 
 
 @pytest.fixture()

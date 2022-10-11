@@ -228,65 +228,64 @@ def spending_by_award_test_data():
     # Agency
     baker.make("references.Agency", pk=1, toptier_agency=ta1, subtier_agency_id=1)
 
-    baker.make("awards.TransactionNormalized", id=1, award=award_1, action_date="2020-04-01", is_fpds=True)
+    baker.make("search.TransactionSearch", transaction_id=1, award=award_1, action_date="2020-04-01", is_fpds=True)
     baker.make(
-        "awards.TransactionNormalized",
-        id=2,
+        "search.TransactionSearch",
+        transaction_id=2,
         award=award_1,
         action_date="2020-04-01",
         is_fpds=True,
         business_categories=["business_category_1_3"],
-    )
-    baker.make("awards.TransactionNormalized", id=3, award=award_2, action_date="2016-01-01", is_fpds=True)
-    baker.make("awards.TransactionNormalized", id=4, award=award_3, action_date="2017-01-01", is_fpds=True)
-    baker.make("awards.TransactionNormalized", id=5, award=award_3, action_date="2018-01-01", is_fpds=True)
-    baker.make(
-        "awards.TransactionNormalized",
-        id=6,
-        award=award_3,
-        action_date="2019-01-01",
-        is_fpds=True,
-        business_categories=["business_category_2_8"],
-    )
-    baker.make("awards.TransactionNormalized", id=7, award=award_4, action_date="2019-10-1", is_fpds=False)
-    baker.make("awards.TransactionNormalized", id=8, award=award_5, action_date="2019-10-1", is_fpds=False)
-    baker.make("awards.TransactionFPDS", transaction_id=1)
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=2,
-        place_of_performance_state="VA",
-        place_of_perform_country_c="USA",
-        place_of_perform_county_co="013",
-        place_of_perform_city_name="ARLINGTON",
-        legal_entity_state_code="VA",
-        legal_entity_country_code="USA",
-        legal_entity_county_code="013",
-        legal_entity_city_name="ARLINGTON",
+        pop_state_code="VA",
+        pop_country_code="USA",
+        pop_county_code="013",
+        pop_city_name="ARLINGTON",
+        recipient_location_state_code="VA",
+        recipient_location_country_code="USA",
+        recipient_location_county_code="013",
+        recipient_location_city_name="ARLINGTON",
         naics="112233",
         product_or_service_code="PSC1",
         type_of_contract_pricing="contract_pricing_test",
         type_set_aside="type_set_aside_test",
         extent_competed="extent_competed_test",
-        awardee_or_recipient_uei="testuei",
-        ultimate_parent_uei="test_parent_uei",
+        recipient_uei="testuei",
+        parent_uei="test_parent_uei",
     )
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
         transaction_id=3,
-        place_of_performance_state="VA",
-        place_of_perform_country_c="USA",
-        place_of_perform_county_co="012",
-        legal_entity_state_code="VA",
-        legal_entity_country_code="USA",
-        legal_entity_county_code="012",
+        award=award_2,
+        action_date="2016-01-01",
+        is_fpds=True,
+        pop_state_code="VA",
+        pop_country_code="USA",
+        pop_county_code="012",
+        recipient_location_state_code="VA",
+        recipient_location_country_code="USA",
+        recipient_location_county_code="012",
         naics="112244",
     )
-    baker.make("awards.TransactionFPDS", transaction_id=4)
-    baker.make("awards.TransactionFPDS", transaction_id=5)
-    baker.make("awards.TransactionFPDS", transaction_id=6)
-    baker.make("awards.TransactionFPDS", transaction_id=8)
-
-    baker.make("awards.TransactionFABS", transaction_id=7, cfda_number="10.331", awardee_or_recipient_uniqu="duns_1001")
+    baker.make("search.TransactionSearch", transaction_id=4, award=award_3, action_date="2017-01-01", is_fpds=True)
+    baker.make("search.TransactionSearch", transaction_id=5, award=award_3, action_date="2018-01-01", is_fpds=True)
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=6,
+        award=award_3,
+        action_date="2019-01-01",
+        is_fpds=True,
+        business_categories=["business_category_2_8"],
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=7,
+        award=award_4,
+        action_date="2019-10-1",
+        is_fpds=False,
+        cfda_number="10.331",
+        awardee_or_recipient_uniqu="duns_1001",
+    )
+    baker.make("search.TransactionSearch", transaction_id=8, award=award_5, action_date="2019-10-1", is_fpds=True)
 
     baker.make(
         "search.SubawardSearch",

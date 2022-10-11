@@ -200,62 +200,57 @@ def cfda_awards_and_transactions(db):
 
     # Transaction Normalized
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award=award1,
         federal_action_obligation=5,
         action_date="2020-01-01",
         is_fpds=False,
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=10,
+        "search.TransactionSearch",
+        transaction_id=10,
         award=award1,
         federal_action_obligation=5,
         action_date="2020-04-01",
         is_fpds=False,
+        cfda_number="10.100",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=20,
+        "search.TransactionSearch",
+        transaction_id=20,
         award=award2,
         federal_action_obligation=50,
         action_date="2020-04-02",
         is_fpds=False,
+        cfda_number="20.200",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=30,
+        "search.TransactionSearch",
+        transaction_id=30,
         award=award3,
         federal_action_obligation=500,
         action_date="2020-04-03",
         is_fpds=False,
+        cfda_number="20.200",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=40,
+        "search.TransactionSearch",
+        transaction_id=40,
         award=award4,
         federal_action_obligation=5000,
         action_date="2020-04-04",
         is_fpds=False,
+        cfda_number="30.300",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=50,
+        "search.TransactionSearch",
+        transaction_id=50,
         award=award5,
         federal_action_obligation=50000,
         action_date="2020-04-05",
         is_fpds=True,
     )
-
-    # Transaction FABS
-    baker.make("awards.TransactionFABS", transaction_id=10, cfda_number="10.100")
-    baker.make("awards.TransactionFABS", transaction_id=20, cfda_number="20.200")
-    baker.make("awards.TransactionFABS", transaction_id=30, cfda_number="20.200")
-    baker.make("awards.TransactionFABS", transaction_id=40, cfda_number="30.300")
-
-    # Transaction FPDS
-    baker.make("awards.TransactionFPDS", transaction_id=50)
 
     # References CFDA
     baker.make(

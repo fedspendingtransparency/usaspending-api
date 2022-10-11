@@ -30,13 +30,6 @@ def awards_and_transactions(db):
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
     baker.make("references.Agency", **ag)
 
-    trans_asst = {"pk": 1, "award_id": 1, "business_categories": ["small_business"]}
-    trans_cont_1 = {"pk": 2, "award_id": 2, "business_categories": ["small_business"]}
-    trans_cont_2 = {"pk": 3, "award_id": 3, "business_categories": ["small_business"]}
-    baker.make("awards.TransactionNormalized", **trans_asst)
-    baker.make("awards.TransactionNormalized", **trans_cont_1)
-    baker.make("awards.TransactionNormalized", **trans_cont_2)
-
     baker.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
     baker.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")
 
@@ -46,7 +39,7 @@ def awards_and_transactions(db):
 
     award_1_model = {
         "pk": 1,
-        "latest_transaction": TransactionNormalized.objects.get(pk=1),
+        "latest_transaction": 1,
         "type": "IDV_B_B",
         "category": "idv",
         "piid": 1234,
@@ -61,7 +54,7 @@ def awards_and_transactions(db):
     }
     award_2_model = {
         "pk": 2,
-        "latest_transaction": TransactionNormalized.objects.get(pk=2),
+        "latest_transaction": 2,
         "type": "IDV_A",
         "type_description": "GWAC",
         "category": "idv",
@@ -85,7 +78,7 @@ def awards_and_transactions(db):
     }
     award_3_model = {
         "pk": 3,
-        "latest_transaction": TransactionNormalized.objects.get(pk=3),
+        "latest_transaction": 3,
         "type": "IDV_A",
         "type_description": "GWAC",
         "category": "idv",
@@ -107,14 +100,17 @@ def awards_and_transactions(db):
     baker.make("awards.Award", **award_2_model)
     baker.make("awards.Award", **award_3_model)
 
-    asst_data = {"transaction": TransactionNormalized.objects.get(pk=1), "cfda_number": 1234, "cfda_title": "farms"}
+    asst_data = {"is_fpds": False, "transaction_id": 1, "award_id": 1, "cfda_number": 1234, "cfda_title": "farms"}
+    baker.make("search.TransactionSearch", **asst_data)
 
     latest_transaction_contract_data = {
         "action_date": "2010-01-01",
         "agency_id": "192",
+        "award_id": 2,
         "awardee_or_recipient_legal": "John's Pizza",
         "awardee_or_recipient_uei": "DEF",
         "awardee_or_recipient_uniqu": "456",
+        "business_categories": ["small_business"],
         "clinger_cohen_act_planning": None,
         "clinger_cohen_act_pla_desc": "NO",
         "commercial_item_acquisitio": "A",
@@ -148,6 +144,7 @@ def awards_and_transactions(db):
         "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
         "interagency_contracting_au": None,
         "interagency_contract_desc": "NOT APPLICABLE",
+        "is_fpds": True,
         "labor_standards": None,
         "labor_standards_descrip": "NO",
         "last_modified": "2018-08-24",
@@ -206,7 +203,7 @@ def awards_and_transactions(db):
         "solicitation_procedur_desc": None,
         "subcontracting_plan": "B",
         "subcontracting_plan_desc": None,
-        "transaction": TransactionNormalized.objects.get(pk=2),
+        "transaction_id": 2,
         "type_of_contract_pricing": None,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
@@ -225,9 +222,11 @@ def awards_and_transactions(db):
     latest_transaction_contract_data_without_recipient_name_or_id = {
         "action_date": "2020-01-01",
         "agency_id": "192",
+        "award_id": 3,
         "awardee_or_recipient_legal": None,
         "awardee_or_recipient_uei": None,
         "awardee_or_recipient_uniqu": None,
+        "business_categories": ["small_business"],
         "clinger_cohen_act_planning": None,
         "clinger_cohen_act_pla_desc": "NO",
         "commercial_item_acquisitio": "A",
@@ -261,6 +260,7 @@ def awards_and_transactions(db):
         "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
         "interagency_contracting_au": None,
         "interagency_contract_desc": "NOT APPLICABLE",
+        "is_fpds": True,
         "labor_standards": None,
         "labor_standards_descrip": "NO",
         "last_modified": "2018-08-24",
@@ -317,7 +317,7 @@ def awards_and_transactions(db):
         "solicitation_procedur_desc": None,
         "subcontracting_plan": "B",
         "subcontracting_plan_desc": None,
-        "transaction": TransactionNormalized.objects.get(pk=3),
+        "transaction_id": 3,
         "type_of_contract_pricing": None,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
         "type_of_idc_description": "INDEFINITE DELIVERY / INDEFINITE QUANTITY",
@@ -329,9 +329,8 @@ def awards_and_transactions(db):
         "awarding_office_name": "awarding_office",
         "funding_office_name": "funding_office",
     }
-    baker.make("awards.TransactionFABS", **asst_data)
-    baker.make("awards.TransactionFPDS", **latest_transaction_contract_data)
-    baker.make("awards.TransactionFPDS", **latest_transaction_contract_data_without_recipient_name_or_id)
+    baker.make("search.TransactionSearch", **latest_transaction_contract_data)
+    baker.make("search.TransactionSearch", **latest_transaction_contract_data_without_recipient_name_or_id)
 
 
 @pytest.mark.django_db

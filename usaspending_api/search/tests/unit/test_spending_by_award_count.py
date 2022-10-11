@@ -10,14 +10,14 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture(db):
-    baker.make("awards.TransactionNormalized", id=210210210, action_date="2013-09-17")
-    baker.make("awards.TransactionNormalized", id=321032103, action_date="2013-09-17")
-    baker.make("awards.TransactionNormalized", id=432104321, action_date="2013-09-17")
-    baker.make("awards.TransactionNormalized", id=543210543, action_date="2013-09-17")
-    baker.make("awards.TransactionNormalized", id=654321065, action_date="2013-09-17")
-    baker.make("awards.TransactionNormalized", id=765432107, action_date="2013-09-17")
-    baker.make("awards.TransactionNormalized", id=876543210, action_date="2013-09-17")
-    baker.make("awards.TransactionNormalized", id=987654321, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=210210210, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=321032103, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=432104321, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=543210543, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=654321065, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=765432107, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=876543210, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=987654321, action_date="2013-09-17")
     baker.make(
         "awards.Award",
         category="loans",

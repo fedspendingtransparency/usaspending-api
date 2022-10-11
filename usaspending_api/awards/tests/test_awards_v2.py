@@ -105,42 +105,13 @@ def awards_and_transactions(db):
     baker.make("references.Agency", **agency)
     baker.make("references.Agency", **agency_2)
 
-    # Transaction Normalized
-    bc = {"business_categories": ["small_business"]}
+    # Transaction Search
 
-    asst_trans_norm_1 = {"pk": 1, "award_id": 1, **bc}
-    asst_trans_norm_2 = {"pk": 3, "award_id": 3, **bc}
-    asst_trans_norm_3 = {"pk": 4, "award_id": 3, **bc}
-    asst_trans_norm_4 = {"pk": 5, "award_id": 3, **bc}
-    asst_trans_norm_5 = {"pk": 13, "award_id": 13, **bc}
-
-    cont_trans_norm_1 = {"pk": 2, "award_id": 2, **bc}
-    cont_trans_norm_2 = {"pk": 6, "award_id": 5, **bc}
-    cont_trans_norm_3 = {"pk": 7, "award_id": 6, **bc}
-    cont_trans_norm_4 = {"pk": 8, "award_id": 7, **bc}
-    cont_trans_norm_5 = {"pk": 9, "award_id": 8, **bc}
-    cont_trans_norm_6 = {"pk": 10, "award_id": 9, **bc}
-    cont_trans_norm_7 = {"pk": 11, "award_id": 10, **bc}
-
-    baker.make("awards.TransactionNormalized", **asst_trans_norm_1)
-    baker.make("awards.TransactionNormalized", **asst_trans_norm_2)
-    baker.make("awards.TransactionNormalized", **asst_trans_norm_3)
-    baker.make("awards.TransactionNormalized", **asst_trans_norm_4)
-    baker.make("awards.TransactionNormalized", **asst_trans_norm_5)
-
-    baker.make("awards.TransactionNormalized", **cont_trans_norm_1)
-    baker.make("awards.TransactionNormalized", **cont_trans_norm_2)
-    baker.make("awards.TransactionNormalized", **cont_trans_norm_3)
-    baker.make("awards.TransactionNormalized", **cont_trans_norm_4)
-    baker.make("awards.TransactionNormalized", **cont_trans_norm_5)
-    baker.make("awards.TransactionNormalized", **cont_trans_norm_6)
-    baker.make("awards.TransactionNormalized", **cont_trans_norm_7)
-
-    # Transaction FABS
     asst_trans_1 = {
         "pk": 1,
+        "award_id": 1,
         "record_type": 111,
-        "transaction": TransactionNormalized.objects.get(pk=1),
+        "transaction": 1,
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
         "awarding_office_name": "awarding_office",
@@ -179,11 +150,13 @@ def awards_and_transactions(db):
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
         "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
+        "business_categories": ["small_business"],
     }
     asst_trans_2 = {
         "pk": 3,
+        "award_id": 3,
         "record_type": 333,
-        "transaction": TransactionNormalized.objects.get(pk=3),
+        "transaction": 3,
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
         "awarding_office_name": "awarding_office",
@@ -225,11 +198,13 @@ def awards_and_transactions(db):
         "ultimate_parent_legal_enti": "Dave's Pizza LLC",
         "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
+        "business_categories": ["small_business"],
     }
     asst_trans_3 = {
         "pk": 4,
+        "award_id": 3,
         "record_type": 444,
-        "transaction": TransactionNormalized.objects.get(pk=4),
+        "transaction": 4,
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
         "awarding_office_name": "awarding_office",
@@ -271,11 +246,13 @@ def awards_and_transactions(db):
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
         "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
+        "business_categories": ["small_business"],
     }
     asst_trans_4 = {
         "pk": 5,
+        "award_id": 13,
         "record_type": 555,
-        "transaction": TransactionNormalized.objects.get(pk=5),
+        "transaction": 5,
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
         "awarding_office_name": "awarding_office",
@@ -317,12 +294,14 @@ def awards_and_transactions(db):
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
         "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
+        "business_categories": ["small_business"],
     }
 
     asst_trans_5 = {
         "pk": 13,
+        "award_id": 3,
         "record_type": 666,
-        "transaction": TransactionNormalized.objects.get(pk=13),
+        "transaction": 13,
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uniqu": "456",
         "awarding_office_name": "awarding_office",
@@ -365,18 +344,20 @@ def awards_and_transactions(db):
         "ultimate_parent_legal_enti": "PARENT LEGAL ENTITY",
         "ultimate_parent_uei": "ABC",
         "ultimate_parent_unique_ide": "123",
+        "business_categories": ["small_business"],
     }
 
-    baker.make("awards.TransactionFABS", **asst_trans_1)
-    baker.make("awards.TransactionFABS", **asst_trans_2)
-    baker.make("awards.TransactionFABS", **asst_trans_3)
-    baker.make("awards.TransactionFABS", **asst_trans_4)
-    baker.make("awards.TransactionFABS", **asst_trans_5)
+    baker.make("search.TransactionSearch", **asst_trans_1)
+    baker.make("search.TransactionSearch", **asst_trans_2)
+    baker.make("search.TransactionSearch", **asst_trans_3)
+    baker.make("search.TransactionSearch", **asst_trans_4)
+    baker.make("search.TransactionSearch", **asst_trans_5)
 
     # Transaction FPDS
     cont_trans_1 = {
         "pk": 2,
-        "transaction": TransactionNormalized.objects.get(pk=2),
+        "award_id": 2,
+        "transaction": 2,
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uei": "DEF",
         "awardee_or_recipient_uniqu": "456",
@@ -456,10 +437,12 @@ def awards_and_transactions(db):
         "ultimate_parent_unique_ide": "123",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
+        "business_categories": ["small_business"],
     }
     cont_trans_2 = {
         "pk": 6,
-        "transaction": TransactionNormalized.objects.get(pk=6),
+        "award_id": 5,
+        "transaction": 6,
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uei": "DEF",
         "awardee_or_recipient_uniqu": "456",
@@ -539,10 +522,12 @@ def awards_and_transactions(db):
         "ultimate_parent_unique_ide": "123",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
+        "business_categories": ["small_business"],
     }
     cont_trans_3 = {
         "pk": 7,
-        "transaction": TransactionNormalized.objects.get(pk=7),
+        "award_id": 6,
+        "transaction": 7,
         "awardee_or_recipient_legal": "LEGAL ENTITY",
         "awardee_or_recipient_uei": "DEF",
         "awardee_or_recipient_uniqu": "456",
@@ -622,10 +607,12 @@ def awards_and_transactions(db):
         "ultimate_parent_unique_ide": "123",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
+        "business_categories": ["small_business"],
     }
     cont_trans_4 = {
         "pk": 8,
-        "transaction": TransactionNormalized.objects.get(pk=8),
+        "award_id": 7,
+        "transaction": 8,
         "agency_id": "1000",
         "idv_type_description": None,
         "multiple_or_single_aw_desc": None,
@@ -633,10 +620,12 @@ def awards_and_transactions(db):
         "type_of_idc_description": None,
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
+        "business_categories": ["small_business"],
     }
     cont_trans_5 = {
         "pk": 9,
-        "transaction": TransactionNormalized.objects.get(pk=9),
+        "award_id": 8,
+        "transaction": 9,
         "agency_id": "1000",
         "idv_type_description": "TYPE DESCRIPTION TRANS 9",
         "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 9",
@@ -644,10 +633,12 @@ def awards_and_transactions(db):
         "type_of_idc_description": "IDC DESCRIPTION TRANS 9",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
+        "business_categories": ["small_business"],
     }
     cont_trans_6 = {
         "pk": 10,
-        "transaction": TransactionNormalized.objects.get(pk=10),
+        "award_id": 9,
+        "transaction": 10,
         "agency_id": "1000",
         "idv_type_description": "TYPE DESCRIPTION TRANS 10",
         "multiple_or_single_aw_desc": "AW DESCRIPTION TRANS 10",
@@ -655,24 +646,27 @@ def awards_and_transactions(db):
         "type_of_idc_description": "IDC DESCRIPTION TRANS 10",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
+        "business_categories": ["small_business"],
     }
     cont_trans_7 = {
         "pk": 11,
-        "transaction": TransactionNormalized.objects.get(pk=11),
+        "award_id": 10,
+        "transaction": 11,
         "agency_id": "2000",
         "piid": "AWARD10",
         "legal_entity_zip4": "0000",
         "national_interest_action": "NONE",
         "national_interest_desc": "NONE",
+        "business_categories": ["small_business"],
     }
 
-    baker.make("awards.TransactionFPDS", **cont_trans_1)
-    baker.make("awards.TransactionFPDS", **cont_trans_2)
-    baker.make("awards.TransactionFPDS", **cont_trans_3)
-    baker.make("awards.TransactionFPDS", **cont_trans_4)
-    baker.make("awards.TransactionFPDS", **cont_trans_5)
-    baker.make("awards.TransactionFPDS", **cont_trans_6)
-    baker.make("awards.TransactionFPDS", **cont_trans_7)
+    baker.make("search.TransactionSearch", **cont_trans_1)
+    baker.make("search.TransactionSearch", **cont_trans_2)
+    baker.make("search.TransactionSearch", **cont_trans_3)
+    baker.make("search.TransactionSearch", **cont_trans_4)
+    baker.make("search.TransactionSearch", **cont_trans_5)
+    baker.make("search.TransactionSearch", **cont_trans_6)
+    baker.make("search.TransactionSearch", **cont_trans_7)
 
     # Awards
     award_1 = {

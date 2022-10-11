@@ -15,9 +15,8 @@ def basic_fabs_award(award_count_sub_schedule, award_count_submission, defc_code
 def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_codes):
 
     transaction_normalized = baker.make(
-        "awards.TransactionNormalized", award_id=100, action_date="2022-05-01", is_fpds=True
+        "search.TransactionSearch", award_id=100, action_date="2022-05-01", is_fpds=True, recipient_unique_id="fpds"
     )
-    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="fpds")
     baker.make("recipient.RecipientLookup", recipient_hash="9427d7e5-3e8f-d0c0-3c58-2adc322ce489", duns="fpds")
     baker.make(
         "recipient.RecipientProfile", recipient_hash="9427d7e5-3e8f-d0c0-3c58-2adc322ce489", recipient_unique_id="fpds"
@@ -28,54 +27,48 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
 @pytest.fixture
 def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
     transaction_normalized = baker.make(
-        "awards.TransactionNormalized", award_id=200, action_date="2022-05-01", is_fpds=True
+        "search.TransactionSearch", award_id=200, action_date="2022-05-01", is_fpds=True, recipient_unique_id="1"
     )
-    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
     _normal_faba(baker.make("awards.Award", id=200, latest_transaction=transaction_normalized, type="A"))
 
     transaction_normalized = baker.make(
-        "awards.TransactionNormalized", award_id=300, action_date="2022-05-01", is_fpds=True
+        "search.TransactionSearch", award_id=300, action_date="2022-05-01", is_fpds=True, recipient_unique_id="2"
     )
-    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="2")
     _normal_faba(baker.make("awards.Award", id=300, latest_transaction=transaction_normalized, type="A"))
 
 
 @pytest.fixture
 def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
     transaction_normalized = baker.make(
-        "awards.TransactionNormalized", award_id=400, action_date="2022-05-01", is_fpds=True
+        "search.TransactionSearch", award_id=400, action_date="2022-05-01", is_fpds=True, recipient_unique_id="1"
     )
-    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
     _normal_faba(baker.make("awards.Award", id=400, latest_transaction=transaction_normalized, type="A"))
 
     transaction_normalized = baker.make(
-        "awards.TransactionNormalized", award_id=500, action_date="2022-05-01", is_fpds=True
+        "search.TransactionSearch", award_id=500, action_date="2022-05-01", is_fpds=True, recipient_unique_id="1"
     )
-    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
     _normal_faba(baker.make("awards.Award", id=500, latest_transaction=transaction_normalized, type="A"))
 
 
 @pytest.fixture
 def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
     transaction_normalized = baker.make(
-        "awards.TransactionNormalized", award_id=600, action_date="2022-05-01", is_fpds=True
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction=transaction_normalized,
-        awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
-        awardee_or_recipient_uniqu="123",
+        "search.TransactionSearch",
+        award_id=600,
+        action_date="2022-05-01",
+        is_fpds=True,
+        recipient_name="MULTIPLE RECIPIENTS",
+        recipient_unique_id="123",
     )
     _normal_faba(baker.make("awards.Award", id=600, latest_transaction=transaction_normalized, type="A"))
 
     transaction_normalized = baker.make(
-        "awards.TransactionNormalized", award_id=700, action_date="2022-05-01", is_fpds=True
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction=transaction_normalized,
-        awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
-        awardee_or_recipient_uniqu="456",
+        "search.TransactionSearch",
+        award_id=700,
+        action_date="2022-05-01",
+        is_fpds=True,
+        recipient_name="MULTIPLE RECIPIENTS",
+        recipient_unique_id="456",
     )
     _normal_faba(baker.make("awards.Award", id=700, latest_transaction=transaction_normalized, type="A"))
 
@@ -226,6 +219,7 @@ def _normal_faba(award):
 
 def _normal_fabs(id):
     award = baker.make("awards.Award", latest_transaction_id=id, type="07")
-    transaction_normalized = baker.make("awards.TransactionNormalized", pk=id, award=award, action_date="2022-05-01")
-    baker.make("awards.TransactionFABS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    baker.make(
+        "search.TransactionSearch", transaction_id=id, award=award, action_date="2022-05-01", recipient_unique_id="1"
+    )
     return award
