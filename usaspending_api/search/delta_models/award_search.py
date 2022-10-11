@@ -204,7 +204,7 @@ award_search_load_sql_string = fr"""
         CASE WHEN awards.type IN('07', '08') THEN awards.total_loan_value
             ELSE 0 END, 0 ) AS NUMERIC(23, 2) ) AS total_loan_value,
   awards.total_funding_amount,
-  awards.total_indirect_federal_sharing.
+  awards.total_indirect_federal_sharing,
   awards.base_and_all_options_value,
   awards.base_exercised_options_val,
   awards.non_federal_funding_amount,
