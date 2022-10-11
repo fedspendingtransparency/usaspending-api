@@ -25,6 +25,7 @@
     "  awards.piid::TEXT,",
     "  awards.fain::TEXT AS fain,",
     "  awards.uri::TEXT AS uri,",
+    "  awards.parent_award_piid,",
     "  CAST(",
     "    COALESCE(",
     "        CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost",
