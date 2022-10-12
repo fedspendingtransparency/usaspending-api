@@ -1,16 +1,18 @@
 import copy
+import logging
 
+from contextlib import contextmanager
 from django.core.management import BaseCommand
+from django.db import connection
 from pyspark.sql import SparkSession
-from pyspark.sql.types import ArrayType, StringType
 
-from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     configure_spark_session,
     get_jvm_logger,
 )
+from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTION_FABS_COLUMN_INFO
 from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMN_INFO
 
@@ -20,75 +22,58 @@ class Command(BaseCommand):
     help = """
     """
 
+    logger: logging.Logger
     spark: SparkSession
     sql_views: dict
 
     def add_arguments(self, parser):
-        """
-        Arguments:
-            - etl_level (fabs, fpds, normalized, awards) - The ETL process to run
-            -
-        """
-        pass
+        parser.add_argument(
+            "--etl-level",
+            type=str,
+            required=True,
+            help="",  # TODO: Add description
+            choices=["award", "transaction_fabs", "transaction_fpds", "transaction_ids", "transaction_normalized"],
+        )
 
     def handle(self, *args, **options):
-        """
-        Queries that are needed for each etl_level up to a specific point. The "etl_level" chosen will determine how
-        many of the queries are run.
-        Queries:
-            - VIEWs on source data
-                - vw_fabs_from_source__update
-                - vw_fabs_from_source__insert
-                - vw_fpds_from_source__update
-                - vw_fpds_from_source__insert
-            - VIEWs combining all __update and __insert together to manage new IDs
-                - vw_all_transaction__update
-                - vw_all_transaction__insert
-            - VIEWs to capture all UPSERTs
-                - vw_transaction_normalized__upsert
-                - vw_award__upsert
+        with self.prepare_spark():
+            # TODO: This should be removed in favor of preparing the environment outside of this script
+            self.initial_run()
 
-        ETL LEVEL NOTES:
-            - BEFORE ALL QUERIES
-                    - DELETE operation will need to occur; should this be per etl_level as well?
-            - Might be able to get away without using a DATE to determine what records to update. If this isn't too slow
-              this could be preferred since it would be one less item to keep track of.
+            etl_level = options["etl_level"]
 
-        NOTES ABOUT QUERIES:
-            - vw_transaction_normalized__upsert
-                - Used to populate all `int.transaction_<NAME>` tables in order to have consistent use of Transaction IDs
-            - vw_award__upsert
-                - Used to populate only `int.awards`
-            - vw_<TYPE>_from_source__<OPERATION>
-                - Will be needed by all ETL levels in order to ensure that the IDs are consistently created
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT last_load_date
+                    FROM external_data_load_date ext_date
+                    INNER JOIN external_data_type AS ext_type ON (
+                        ext_date.external_data_type_id = ext_type.external_data_type_id
+                    )
+                    WHERE ext_type.name = '{etl_level}'
+                """
+                )
+                last_etl_date = cursor.fetchone()[0]
+                last_etl_date = last_etl_date.strftime("%Y-%m-%d")
 
-        NOTES ABOUT IDs:
-            - Track the usage of IDs uniquely between all four etl_levels
-            - IDs should be compared to one another in order to ensure that each ETL is on the same page
-                - Create a new table in Delta that tracks IDs for fabs, fpds, normalized, and awards
-                - For each of these a current_val and update_at is tracked
-                - When running awards ETL it should verify that the
-                - | type | update_at | previous_val | current_val |
-                - | ---- | --------- | ------------ | ----------- |
-                - | fabs | 01/01/22  | 1,000,000    | 1,500,000   |
-                - | fpds | 01/01/22  | 1,000,000    | 1,500,000   |
-                - | tn   | 01/01/22  | 1,000,000    | 1,500,000   |
-                - | aw   | 01/01/22  | 1,000,000    | 1,500,000   |
-                - | fabs | 01/02/22  | 1,500,000    | 2,000,000   | ** IF FABS WAS RUN **
-            - If FABS is run by itself the state in the table above would be achieved (ignore the first FABS row).
+            # Build the SQL VIEW definitions
+            sql_views = {
+                "vw_fabs_from_source": self.from_source_sql("fabs", last_etl_date),
+                "vw_fpds_from_source": self.from_source_sql("fpds", last_etl_date),
+            }
 
-        CASES TO HANDLE:
-            - Pipeline fails Friday night on the FPDS level ETL. Next pipeline runs Saturday night, loading in new
-              source data and attempting to create new Transactions and Awards from the source data. In this example,
-              the Transaction IDs could become mismatched depending on DELETE and UPSERTs made.
-              SOLUTION: Using RESTORE to bring back to a previous version of the tables if they do not line up.
-                        Could this be done programatically so that if on a fresh pipeline run all are not in sync they
-                        do not copy back?
-              ADDITIONALLY: Transaction Search and Award Search shouldn't be allowed to run if the ETLs fail allowing
-                            manual cleanup to occur via restore or other process.
-              THOUGHT: Add in functionality to rest all tables to most recent shared version (not sure best way to tell)
-                       what version to use so might be best to let that be handled via manual cleanup.
-        """
+            # Build the SQL MERGE INTO definitions
+            sql_merge_operations = {"fabs": self.merge_into_sql("fabs"), "fpds": self.merge_into_sql("fpds")}
+
+            # Runs ETL steps
+            if etl_level == "transaction_ids":
+                self.load_transaction_lookup_ids(last_etl_date)
+            elif etl_level == "transaction_fpds":
+                self.spark.sql(sql_views["vw_fpds_from_source"])
+                self.spark.sql(sql_merge_operations["fpds"])
+
+    @contextmanager
+    def prepare_spark(self):
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -107,71 +92,28 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         # Setup Logger
-        # logger = get_jvm_logger(self.spark, __name__)
+        self.logger = get_jvm_logger(self.spark, __name__)
 
         # Create UDF for Business Categories
-        self.spark.udf.register(
-            name="build_business_categories",
-            f=lambda val, transaction_type: get_business_categories(val, transaction_type),
-            returnType=ArrayType(StringType()),
-        )
+        # TODO: Handle creation of UDF
 
         create_ref_temp_views(self.spark)
 
-        sql_views = {
-            "all_transactions": {
-                "vw_fabs_from_source__update": self.from_source_sql("fabs", None, "update"),
-                "vw_fabs_from_source__insert": self.from_source_sql("fabs", None, "insert"),
-                "vw_fpds_from_source__update": self.from_source_sql("fpds", None, "update"),
-                "vw_fpds_from_source__insert": self.from_source_sql("fpds", None, "insert"),
-                # vw_all_transaction__update
-                # vw_all_transaction__insert
-            },
-            "transaction_fabs": [
-                # vw_transaction_normalized_upsert
-                # MERGE INTO int.transaction_fabs
-            ],
-            "transaction_fpds": [
-                # vw_transaction_normalized_upsert
-                # MERGE INTO int.transaction_fpds
-            ],
-            "transaction_normalized": [
-                # vw_transaction_normalized_upsert
-                # MERGE INTO int.transaction_normalized
-            ],
-            "awards": [
-                # vw_award_upsert
-                #      (should reference int.awards as well to handle logic in usaspending_api/etl/award_helpers.py)
-                # MERGE INTO int.awards
-            ],
-        }
+        yield  # Going to wait for the Django command to complete then stop the spark session if needed
 
-        """
-        create table used to track last etl run for each table
-            last_load_date
-
-        if etl_level == "fpds"
-            run all_transactions
-            run transaction_fpds
-        elif etl_level == "normalized"
-            run all_transactions
-            run transaction_normalized
-        """
         if spark_created_by_command:
             self.spark.stop()
 
     @staticmethod
-    def from_source_sql(transaction_type, last_etl_date, query_type):
+    def from_source_sql(transaction_type, last_etl_date):
         if transaction_type == "fabs":
-            bronze_table_name = ""
-            silver_table_name = ""
-            unique_id = ""
+            bronze_table_name = "published_fabs"
+            unique_id = "published_fabs_id"
             col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
         elif transaction_type == "fpds":
             bronze_table_name = "raw.detached_award_procurement"
-            silver_table_name = "int.transaction_fpds"
             unique_id = "detached_award_procurement_id"
-            col_info = TRANSACTION_FPDS_COLUMN_INFO
+            col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
         else:
             raise ValueError(f"Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
 
@@ -209,61 +151,155 @@ class Command(BaseCommand):
             )
         select_cols.extend(
             [
-                # business_categories; UDF defined on Spark session in handler
-                f"build_business_categories({bronze_table_name}.*, {transaction_type}) AS business_categories"
+                # business_categories; TODO: Populate with ETL usage
             ]
         )
 
         sql = f"""
-            CREATE OR REPLACE TEMPORARY VIEW vw_{transaction_type}_from_source__{query_type} AS (
+            CREATE OR REPLACE TEMPORARY VIEW vw_{transaction_type}_from_source AS (
                 SELECT
+                    transaction_id_lookup.id AS transaction_id,
                     {", ".join(select_cols)},
                     -- Common fields between source data types that need a JOIN to the bronze_table
                     awarding_agency.id AS awarding_agency_id,
                     funding_agency.id AS funding_agency_id
                 FROM {bronze_table_name}
-                LEFT OUTER JOIN global_temp.subtier_agency funding_agency ON (
-                    funding_agency.subtier_code = {bronze_table_name}.awarding_sub_tier_agency_c
+                LEFT OUTER JOIN transaction_id_lookup ON (
+                    transaction_id_lookup.{unique_id} = {bronze_table_name}.{unique_id}
                 )
-                LEFT OUTER JOIN global_temp.subtier_agency awarding_agency ON (
-                    awarding_agency.subtier_code = {bronze_table_name}.funding_sub_tier_agency_co
+                LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
+                    funding_subtier_agency.subtier_code = {bronze_table_name}.awarding_sub_tier_agency_c
+                )
+                LEFT OUTER JOIN global_temp.agency AS funding_agency ON (
+                    funding_agency.subtier_agency_id = funding_subtier_agency.subtier_agency_id
+                )
+                LEFT OUTER JOIN global_temp.subtier_agency AS awarding_subtier_agency ON (
+                    awarding_subtier_agency.subtier_code = {bronze_table_name}.funding_sub_tier_agency_co
+                )
+                LEFT OUTER JOIN global_temp.agency AS awarding_agency ON (
+                    awarding_agency.subtier_agency_id = awarding_subtier_agency.subtier_agency_id
                 )
                 WHERE
-                    bronze_table.updated_at >= {last_etl_date}
-                    AND {"NOT" if query_type == "INSERT" else ""} EXISTS (
-                        SELECT *
-                        FROM {silver_table_name}
-                        WHERE
-                            {silver_table_name}.{unique_id} = {bronze_table_name}.{unique_id}
-                    )
+                    {bronze_table_name}.updated_at >= '{last_etl_date}'
+                    {"AND is_active IS TRUE" if transaction_type == "fabs" else ""}
             )
         """
         return sql
 
+    def load_transaction_lookup_ids(self, last_etl_date):
+        self.logger.info("Getting the next transaction_id from transaction_id_seq")
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT nextval('transaction_id_seq')")
+            # Subtract 1 since the value of "RANK()" will start at 1 and be added to the "next_id" value
+            next_id = cursor.fetchone()[0] - 1
+
+        self.logger.info("Creating new 'transaction_id_lookup' records for new transactions")
+        self.spark.sql(
+            f"""
+            INSERT INTO int.transaction_id_lookup
+            SELECT
+                {next_id} + ROW_NUMBER() OVER (
+                    PARTITION BY all_new_transactions.assign_new_id
+                    ORDER BY all_new_transactions.transaction_unique_id
+                ),
+                all_new_transactions.detached_award_procurement_id,
+                all_new_transactions.published_fabs_id,
+                all_new_transactions.transaction_unique_id
+            FROM (
+                (
+                    SELECT
+                        detached_award_procurement_id,
+                        NULL AS published_fabs_id,
+                        detached_award_proc_unique AS transaction_unique_id,
+                        -- Value of "true" assigned across all rows for use of ROW_NUMBER()
+                        TRUE AS assign_new_id
+                    FROM
+                        raw.detached_award_procurement
+                    WHERE
+                        updated_at >= '{last_etl_date}'
+                        AND NOT EXISTS(
+                            SELECT *
+                            FROM transaction_id_lookup
+                            WHERE transaction_id_lookup.detached_award_procurement_id = detached_award_procurement.detached_award_procurement_id
+                        )
+                )
+                UNION
+                (
+                    SELECT
+                        NULL AS detached_award_procurement_id,
+                        published_fabs_id,
+                        afa_generated_unique AS transaction_unique_id,
+                        -- Value of "true" assigned across all rows for use of ROW_NUMBER()
+                        TRUE AS assign_new_id
+                    FROM
+                        raw.published_fabs
+                    WHERE
+                        is_active IS TRUE
+                        AND updated_at >= '{last_etl_date}'
+                        AND NOT EXISTS(
+                            SELECT *
+                            FROM transaction_id_lookup
+                            WHERE transaction_id_lookup.published_fabs_id = published_fabs.published_fabs_id
+                        )
+                )
+            ) AS all_new_transactions
+        """
+        )
+
+        self.logger.info("Updating transaction_id_seq to the new max_id value")
+        max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.transaction_id_lookup").collect()[0]["max_id"]
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT setval('transaction_id_seq', {max_id})")
+
     @staticmethod
-    def all_transactions_insert_sql(query_type, next_id_val):
-        if query_type == "insert":
-            transaction_id_select = ""
+    def merge_into_sql(transaction_type):
+        if transaction_type == "fabs":
+            col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
+        elif transaction_type == "fpds":
+            col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
+        else:
+            raise ValueError(f"Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
+
+        set_cols = [f"silver_table.{col.silver_name} = source_view.{col.silver_name}" for col in col_info]
+        silver_table_cols = ", ".join([col.silver_name for col in col_info])
+
         sql = f"""
-            CREATE OR REPLACE TEMPORARY VIEW vw_all_transactions__{query_type} AS (
-                SELECT
-                    {transaction_id_select},
-                    left_table.*,
-                    right_table.*
-            )
+            MERGE INTO int.transaction_{transaction_type} AS silver_table
+            USING vw_{transaction_type}_from_source AS source_view
+            ON silver_table.transaction_id = source_view.transaction_id
+            WHEN MATCHED
+                THEN UPDATE SET
+                    {", ".join(set_cols)}
+            WHEN NOT MATCHED
+                THEN INSERT
+                    ({silver_table_cols})
+                    VALUES ({silver_table_cols})
         """
         return sql
 
-    @staticmethod
-    def all_transactions_update_sql(query_type):
-        sql = f"""
-            CREATE OR REPLACE TEMPORARY VIEW vw_all_transactions__update AS (
-                SELECT
-                    transaction_normalized.transaction_id,
-                    transaction_fabs_update.*,
-                    transaction_fpds_update.*
-                FROM
-                    transaction_normalized
-            )
+    def initial_run(self):
         """
-        return sql
+        TODO:
+            - Still need to create migration that creates the sequence in Postgres
+            - External Data values need to be added for all etl_levels (including transaction_ids)
+            - Script to backfill all IDs in the lookup table
+        """
+        self.spark.sql("USE int")
+
+        # This CREATE TABLE statement should be moved out of this; left in place for now during local development
+        spark_s3_bucket = CONFIG.SPARK_S3_BUCKET
+        delta_lake_s3_bucket = CONFIG.DELTA_LAKE_S3_PATH
+        destination_database = "int"
+        destination_table = "transaction_id_lookup"
+        self.spark.sql(
+            f"""
+            CREATE TABLE IF NOT EXISTS {destination_table} (
+                id LONG NOT NULL,
+                detached_award_procurement_id INTEGER,
+                published_fabs_id INTEGER,
+                transaction_unique_id STRING NOT NULL
+            )
+            USING DELTA
+            LOCATION 's3a://{spark_s3_bucket}/{delta_lake_s3_bucket}/{destination_database}/{destination_table}'
+        """
+        )
