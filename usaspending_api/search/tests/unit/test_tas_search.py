@@ -72,26 +72,22 @@ def mock_tas_data(db):
     baker.make(FinancialAccountsByAwards, treasury_account_id=3, award_id=3)
 
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         id=1,
         action_date="2010-10-01",
         award_id=1,
         is_fpds=True,
         type="A",
         awarding_agency_id=1,
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-        awarding_agency_name="Department of Pizza",
-        awarding_sub_tier_agency_n="Department of Sub-Pizza",
-        legal_entity_city_name="BURBANK",
-        legal_entity_country_code="USA",
-        legal_entity_state_code="CA",
+        awarding_toptier_agency_name="Department of Pizza",
+        awarding_subtier_agency_name="Department of Sub-Pizza",
+        recipient_location_city_name="BURBANK",
+        recipient_location_country_code="USA",
+        recipient_location_state_code="CA",
         piid="piiiiid",
-        place_of_perform_city_name="AUSTIN",
-        place_of_performance_state="TX",
-        place_of_perform_country_c="USA",
+        pop_city_name="AUSTIN",
+        pop_state_code="TX",
+        place_of_performance_code="USA",
     )
 
     baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piid", type="A", awarding_agency_id=1)

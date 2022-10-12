@@ -573,15 +573,6 @@ def federal_accounts_test_data(db):
     )
 
     baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=2,
-    )
-
-    baker.make(
         "recipient.RecipientLookup",
         duns="000000000",
         legal_business_name="Sample Recipient",

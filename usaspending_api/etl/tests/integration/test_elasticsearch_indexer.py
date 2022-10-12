@@ -32,27 +32,23 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
 def award_data_fixture(db):
     fpds_unique_key = "fpds_transaction_id_1".upper()  # our ETL UPPERs all these when brought from Broker
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         action_date="2010-10-01",
         is_fpds=True,
         type="A",
         transaction_unique_id=fpds_unique_key,
-    )
-    baker.make(
-        "awards.TransactionFPDS",
         detached_award_proc_unique=fpds_unique_key,
-        transaction_id=1,
         legal_entity_zip5="abcde",
         piid="IND12PB00323",
-        legal_entity_county_code="059",
-        legal_entity_state_code="VA",
-        legal_entity_congressional="11",
-        legal_entity_country_code="USA",
-        place_of_performance_state="VA",
-        place_of_performance_congr="11",
-        place_of_perform_country_c="USA",
+        recipient_location_county_code="059",
+        recipient_location_state_code="VA",
+        recipient_location_congressional_code="11",
+        recipient_location_country_code="USA",
+        pop_state_code="VA",
+        pop_congressional_code="11",
+        pop_country_code="USA",
         naics="331122",
         product_or_service_code="1510",
         type_set_aside="8AN",
@@ -62,17 +58,13 @@ def award_data_fixture(db):
 
     fabs_unique_key = "fabs_transaction_id_2".upper()  # our ETL UPPERs all these when brought from Broker
     baker.make(
-        "awards.TransactionNormalized",
-        id=2,
+        "search.TransactionSearch",
+        transaction_id=2,
         award_id=2,
         action_date="2016-10-01",
         is_fpds=False,
         type="02",
         transaction_unique_id=fabs_unique_key,
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction_id=2,
         fain="P063P100612",
         cfda_number="84.063",
         afa_generated_unique=fabs_unique_key,

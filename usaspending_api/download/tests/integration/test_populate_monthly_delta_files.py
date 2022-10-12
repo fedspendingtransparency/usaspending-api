@@ -65,7 +65,7 @@ def monthly_download_delta_data(db, monkeypatch):
         face_value_loan_guarantee=100.0,
         funding_amount=100.0,
         non_federal_funding_amount=100.0,
-        unique_award_key=1,
+        generated_unique_award_id=1,
         business_categories=[],
         detached_award_procurement_id=i,
         detached_award_proc_unique=f"test{i}",

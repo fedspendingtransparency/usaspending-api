@@ -203,11 +203,11 @@ class IDVAwardsTestCase(TestCase):
         string_parent_award_id = str(parent_award_id).zfill(3)
 
         baker.make(
-            "awards.TransactionNormalized",
+            "search.TransactionSearch",
             transaction_id=award_id,
             award_id=award_id,
-            funding_agency_name="subtier_funding_agency_name_%s" % string_award_id,
-            awarding_agency_name="subtier_awarding_agency_name_%s" % string_award_id,
+            funding_toptier_agency_name="subtier_funding_agency_name_%s" % string_award_id,
+            awarding_toptier_agency_name="subtier_awarding_agency_name_%s" % string_award_id,
             is_fpds=True,
         )
 
