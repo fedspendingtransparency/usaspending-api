@@ -198,7 +198,7 @@ def cfda_awards_and_transactions(db):
         submission_reveal_date="9999-4-15",
     )
 
-    # Transaction Normalized
+    # Transaction Search
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,

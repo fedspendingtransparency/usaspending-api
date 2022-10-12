@@ -138,7 +138,7 @@ def test_txn_assistance_get_or_create():
     agency1 = baker.make("references.Agency")
     awd1 = baker.make("awards.Award", awarding_agency=agency1)
     txn1 = baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         is_fpds=False,
         award=awd1,
         modification_number="1",

@@ -103,7 +103,7 @@ def new_award_data(db):
         funding_agency=ag2,
     )
 
-    transaction_search_lazy_ref = "awards.TransactionSearch"
+    transaction_search_lazy_ref = "search.TransactionSearch"
     baker.make(transaction_search_lazy_ref, transaction_id=10, award=award1, action_date="2019-10-15")
     baker.make(transaction_search_lazy_ref, transaction_id=20, award=award2, action_date="2020-12-15")
     baker.make(transaction_search_lazy_ref, transaction_id=30, award=award3, action_date="2020-01-30")

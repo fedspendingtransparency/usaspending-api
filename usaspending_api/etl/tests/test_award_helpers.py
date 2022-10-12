@@ -244,7 +244,7 @@ def test_award_update_contract_txn_with_list():
 
     # update multiple awards
     baker.make(
-        "awards.TransactionSearch",
+        "search.TransactionSearch",
         is_fpds=True,
         award=awards[1],
         base_and_all_options_value=4000,
@@ -252,7 +252,7 @@ def test_award_update_contract_txn_with_list():
         generated_unique_award_id=awards[1].generated_unique_award_id,
     )
     baker.make(
-        "awards.TransactionSearch",
+        "search.TransactionSearch",
         is_fpds=True,
         award=awards[2],
         base_and_all_options_value=5000,
