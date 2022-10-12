@@ -29,6 +29,7 @@ from usaspending_api.etl.management.commands.create_delta_table import (
     TABLE_SPEC,
 )
 from usaspending_api.recipient.models import RecipientLookup
+from usaspending_api.search.models import TransactionSearch
 
 
 @fixture
@@ -756,7 +757,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         total_subsidy_cost=100.00,
         type_description="Direct Loan",
     )
-    new_trx = baker.make(
+    baker.make(
         "search.TransactionSearch",
         action_date="2021-01-01",
         award=new_award,

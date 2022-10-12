@@ -4,7 +4,6 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 
 
