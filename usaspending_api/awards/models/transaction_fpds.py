@@ -365,7 +365,7 @@ vw_transaction_fpds_sql = """
             federal_action_obligation,
             -- Recipient
             recipient_uei                           AS "uei",
-            recipient_name                          AS "awardee_or_recipient_legal",
+            recipient_name_raw                      AS "awardee_or_recipient_legal",
             recipient_unique_id                     AS "awardee_or_recipient_uniqu",
             parent_uei                              AS "ultimate_parent_uei",
             parent_recipient_name                   AS "ultimate_parent_legal_enti",
