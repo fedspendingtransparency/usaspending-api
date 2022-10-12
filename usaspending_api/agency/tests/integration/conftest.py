@@ -266,11 +266,11 @@ def agency_account_data():
         is_final_balances_for_fy=True,
         submission_window_id=dabs.id,
     )
-    fa1 = baker.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
-    fa2 = baker.make("accounts.FederalAccount", federal_account_code="002-0000", account_title="FA 2")
-    fa3 = baker.make("accounts.FederalAccount", federal_account_code="003-0000", account_title="FA 3")
-    fa4 = baker.make("accounts.FederalAccount", federal_account_code="004-0000", account_title="FA 4")
-    fa5 = baker.make("accounts.FederalAccount", federal_account_code="005-0000", account_title="FA 5")
+    fa1 = baker.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1", parent_toptier_agency=ta1)
+    fa2 = baker.make("accounts.FederalAccount", federal_account_code="002-0000", account_title="FA 2", parent_toptier_agency=ta2)
+    fa3 = baker.make("accounts.FederalAccount", federal_account_code="003-0000", account_title="FA 3", parent_toptier_agency=ta3)
+    fa4 = baker.make("accounts.FederalAccount", federal_account_code="004-0000", account_title="FA 4", parent_toptier_agency=ta4)
+    fa5 = baker.make("accounts.FederalAccount", federal_account_code="005-0000", account_title="FA 5", parent_toptier_agency=ta5)
     tas1 = baker.make(
         "accounts.TreasuryAppropriationAccount",
         funding_toptier_agency=ta1,
@@ -354,24 +354,42 @@ def agency_account_data():
         treasury_account_identifier=tas1,
         submission=sub1,
         total_budgetary_resources_amount_cpe=100,
+        final_of_fy=True,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas5,
+        submission=sub1,
+        total_budgetary_resources_amount_cpe=101,
+        final_of_fy=True,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas6,
+        submission=sub1,
+        total_budgetary_resources_amount_cpe=102,
+        final_of_fy=True,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas2,
         submission=sub2,
         total_budgetary_resources_amount_cpe=100,
+        final_of_fy=True,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas3,
         submission=sub3,
         total_budgetary_resources_amount_cpe=100,
+        final_of_fy=True,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas4,
         submission=sub4,
         total_budgetary_resources_amount_cpe=100,
+        final_of_fy=True,
     )
 
     pa1 = baker.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
