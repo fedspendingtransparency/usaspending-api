@@ -134,6 +134,7 @@ class AgencyBase(APIView):
         input_bureau_slug = self._query_params.get("bureau_slug")
 
         if input_bureau_slug:
+            input_bureau_slug = input_bureau_slug.lower()
             bureau_slug = BureauTitleLookup.objects.filter(
                 bureau_slug=input_bureau_slug
             ).first()
