@@ -1,4 +1,3 @@
-import itertools
 from django.db.models import Sum, Q, Subquery, OuterRef
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -26,17 +25,27 @@ class FederalAccountList(PaginationMixin, AgencyBase):
         self.params_to_validate = ["fiscal_year", "filter", "bureau_slug"]
 
     def format_results(self, file_a_response, file_b_response):
-        for row_a, row_b in itertools.product(file_a_response, file_b_response):
-            if row_a["treasury_account_identifier__tas_rendering_label"] == row_b["treasury_account__tas_rendering_label"]:
-                row_b["total_budgetary_resources"] = row_a["total_budgetary_resources_amount_cpe"]
+        # Combine File A and B responses
+        combined_list_dict = {}
 
+        for row in file_b_response:
+            combined_list_dict[row['treasury_account__tas_rendering_label']] = row
+
+        for row in file_a_response:
+            # Append the total_budgetary_resources_amount_cpe value to the dict with the appropriate tas_rendering_label for this row
+            if row['treasury_account_identifier__tas_rendering_label'] in combined_list_dict:
+                combined_list_dict[row['treasury_account_identifier__tas_rendering_label']].update(
+                    {'total_budgetary_resources': row['total_budgetary_resources_amount_cpe']}
+                )
+
+        combined_response = combined_list_dict.values()
         non_distinct = [
             {
                 "code": row["treasury_account__federal_account__federal_account_code"],
                 "name": row["treasury_account__federal_account__account_title"],
                 "bureau_slug": row["bureau_info"]
             }
-            for row in file_b_response
+            for row in combined_response
         ]
         distinct = set()
         accounts = []
@@ -46,6 +55,7 @@ class FederalAccountList(PaginationMixin, AgencyBase):
                 distinct.add(account["code"])
                 accounts.append(account)
         for item in accounts:
+            # Nest child accounts under their parent (federal) account
             item["children"] = [
                 {
                     "name": row["treasury_account__account_title"],
@@ -54,7 +64,7 @@ class FederalAccountList(PaginationMixin, AgencyBase):
                     "gross_outlay_amount": row["gross_outlay_amount"],
                     "total_budgetary_resources": row["total_budgetary_resources"]
                 }
-                for row in file_b_response
+                for row in combined_response
                 if item["code"] == row["treasury_account__federal_account__federal_account_code"]
             ]
             item["obligated_amount"] = sum(x["obligated_amount"] for x in item["children"])
@@ -87,25 +97,23 @@ class FederalAccountList(PaginationMixin, AgencyBase):
         """
         Query Total Budgetary Resources from File A
         """
-        filters, bureau_info_subquery = self.get_common_query_objects("treasury_account_identifier")
-        filters.append(
-            Q(submission_id__in=self.submission_ids)
-        )
+        filters = [
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
+            Q(submission_id__in=self.submission_ids),
+            Q(treasury_account_identifier__funding_toptier_agency=self.toptier_agency),
+        ]
 
-        results = (
-            (AppropriationAccountBalances.objects.filter(*filters))
+        results = (AppropriationAccountBalances.objects
+            .filter(*filters)
             .values(
-                "total_budgetary_resources_amount_cpe",
                 "treasury_account_identifier__tas_rendering_label",
+                "total_budgetary_resources_amount_cpe"
             )
-            .annotate(
-                bureau_info=bureau_info_subquery
             )
-        )
         return results
 
     def get_federal_account_list_from_file_b(self) -> List[dict]:
-        _, bureau_info_subquery = self.get_common_query_objects("treasury_account")
+        bureau_info_subquery = self.get_bureau_subquery("treasury_account")
 
         filters = [
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
@@ -138,17 +146,13 @@ class FederalAccountList(PaginationMixin, AgencyBase):
             .annotate(
                 obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
                 gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
-                bureau_info=bureau_info_subquery
+                bureau_info=bureau_info_subquery,
             )
             .exclude(bureau_info__isnull=True)
         )
         return results
 
-    def get_common_query_objects(self, treasury_account_keyword):
-        filters = [
-            Q(**{f"{treasury_account_keyword}__federal_account__parent_toptier_agency": self.toptier_agency}),
-            Q(submission__reporting_fiscal_year=self.fiscal_year),
-        ]
+    def get_bureau_subquery(self, treasury_account_keyword):
         bureau_filters = {"bureau_slug": self.bureau_slug} if self.bureau_slug else {}
 
         bureau_info_subquery = Subquery(
@@ -160,4 +164,4 @@ class FederalAccountList(PaginationMixin, AgencyBase):
             .values("bureau_slug")
         )
 
-        return filters, bureau_info_subquery
+        return bureau_info_subquery
