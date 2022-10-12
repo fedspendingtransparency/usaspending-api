@@ -2,10 +2,16 @@ import copy
 import logging
 
 from contextlib import contextmanager
+
 from django.core.management import BaseCommand
 from django.db import connection
 from pyspark.sql import SparkSession
+from pyspark.sql.types import ArrayType, StringType
 
+from usaspending_api.broker.helpers.get_business_categories import (
+    get_business_categories_fabs,
+    get_business_categories_fpds,
+)
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
@@ -20,6 +26,15 @@ from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTI
 class Command(BaseCommand):
 
     help = """
+        This command reads transaction data from source / bronze tables in delta and creates the delta silver tables
+        specified via the "etl_level" argument. Each "etl_level" uses an exclusive value for "last_load_date" from the
+        "external_data_load_date" table in Postgres to determine the subset of transactions to load. For a full
+        pipeline run the "award_ids" and "transaction_ids" levels should be run first in order to populate the
+        lookup tables. These lookup tables are used to keep track of PK values across the different silver tables.
+
+        *****NOTE*****: Before running this command for the first time a one-time script should be run to populate the
+        lookup tables, set the value of the sequences, and set the value of "last_load_date" for each level.
+        Script: "<PLACEHOLDER>"
     """
 
     logger: logging.Logger
@@ -31,8 +46,15 @@ class Command(BaseCommand):
             "--etl-level",
             type=str,
             required=True,
-            help="",  # TODO: Add description
-            choices=["award", "transaction_fabs", "transaction_fpds", "transaction_ids", "transaction_normalized"],
+            help="The silver delta table that should be updated from the bronze delta data.",
+            choices=[
+                "award",
+                "award_ids",
+                "transaction_fabs",
+                "transaction_fpds",
+                "transaction_ids",
+                "transaction_normalized",
+            ],
         )
 
     def handle(self, *args, **options):
@@ -43,6 +65,7 @@ class Command(BaseCommand):
             etl_level = options["etl_level"]
 
             with connection.cursor() as cursor:
+                # TODO: Update "last_load_date" on the external tables after ETL run
                 cursor.execute(
                     f"""
                     SELECT last_load_date
@@ -95,7 +118,12 @@ class Command(BaseCommand):
         self.logger = get_jvm_logger(self.spark, __name__)
 
         # Create UDF for Business Categories
-        # TODO: Handle creation of UDF
+        self.spark.udf.register(
+            name="get_business_categories_fabs", f=get_business_categories_fabs, returnType=ArrayType(StringType())
+        )
+        self.spark.udf.register(
+            name="get_business_categories_fpds", f=get_business_categories_fpds, returnType=ArrayType(StringType())
+        )
 
         create_ref_temp_views(self.spark)
 
@@ -107,7 +135,7 @@ class Command(BaseCommand):
     @staticmethod
     def from_source_sql(transaction_type, last_etl_date):
         if transaction_type == "fabs":
-            bronze_table_name = "published_fabs"
+            bronze_table_name = "raw.published_fabs"
             unique_id = "published_fabs_id"
             col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
         elif transaction_type == "fpds":
@@ -137,7 +165,7 @@ class Command(BaseCommand):
                         COALESCE({bronze_table_name}.federal_action_obligation, 0)
                         + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
                     AS NUMERIC(23, 2)) AS funding_amount
-                """,
+                    """,
                     # is_fpds
                     "FALSE AS is_fpds",
                 ]
@@ -145,16 +173,13 @@ class Command(BaseCommand):
         else:
             select_cols.extend(
                 [
+                    # business_categories
                     # is_fpds
                     "TRUE AS is_fpds"
                 ]
             )
-        select_cols.extend(
-            [
-                # business_categories; TODO: Populate with ETL usage
-            ]
-        )
 
+        # TODO: Add logic to only run JOINs when etl_level is TN
         sql = f"""
             CREATE OR REPLACE TEMPORARY VIEW vw_{transaction_type}_from_source AS (
                 SELECT
@@ -211,7 +236,8 @@ class Command(BaseCommand):
                         detached_award_procurement_id,
                         NULL AS published_fabs_id,
                         detached_award_proc_unique AS transaction_unique_id,
-                        -- Value of "true" assigned across all rows for use of ROW_NUMBER()
+                        -- A value of "true" is assigned across all rows for use in creating a partition
+                        -- in ROW_NUMBER() assigning a unique, incrementing value to each row
                         TRUE AS assign_new_id
                     FROM
                         raw.detached_award_procurement
@@ -229,7 +255,8 @@ class Command(BaseCommand):
                         NULL AS detached_award_procurement_id,
                         published_fabs_id,
                         afa_generated_unique AS transaction_unique_id,
-                        -- Value of "true" assigned across all rows for use of ROW_NUMBER()
+                        -- A value of "true" is assigned across all rows for use in creating a partition
+                        -- in ROW_NUMBER() assigning a unique, incrementing value to each row
                         TRUE AS assign_new_id
                     FROM
                         raw.published_fabs
