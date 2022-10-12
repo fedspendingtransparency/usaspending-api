@@ -417,6 +417,7 @@ def get_business_categories(row, data_type):
             "Must be one of the following types: TransactionFPDS, TransactionFABS"
         )
 
+
 def get_business_categories_fabs(business_types):
     business_category_set = set()
 
@@ -486,49 +487,97 @@ def get_business_categories_fabs(business_types):
 
     return sorted(business_category_set)
 
+
 # No easy way to make this into a Spark UDF without passing all the parameters,
 # at the very least in the SQL side, so might as well just have all the
 # parameters enumerated here.
-def get_business_categories_fpds(contracting_officers_deter, women_owned_small_business,
-                                 economically_disadvantaged, joint_venture_women_owned,
-                                 emerging_small_business, self_certified_small_disad,
-                                 small_agricultural_coopera, small_disadvantaged_busine,
-                                 corporate_entity_tax_exemp, corporate_entity_not_tax_e,
-                                 partnership_or_limited_lia, sole_proprietorship,
-                                 manufacturer_of_goods, subchapter_s_corporation,
-                                 limited_liability_corporat, for_profit_organization,
-                                 alaskan_native_owned_corpo, american_indian_owned_busi,
-                                 asian_pacific_american_own, black_american_owned_busin,
-                                 hispanic_american_owned_bu, native_american_owned_busi,
-                                 native_hawaiian_owned_busi, subcontinent_asian_asian_i,
-                                 tribally_owned_business, other_minority_owned_busin,
-                                 minority_owned_business, joint_venture_economically,
-                                 woman_owned_business, service_disabled_veteran_o,
-                                 veteran_owned_business, c8a_program_participant,
-                                 the_ability_one_program, dot_certified_disadvantage,
-                                 federally_funded_research, historically_underutilized,
-                                 labor_surplus_area_firm, sba_certified_8_a_joint_ve,
-                                 community_developed_corpor, domestic_or_foreign_entity,
-                                 foreign_owned_and_located, foreign_government,
-                                 international_organization, domestic_shelter, hospital_flag,
-                                 veterinary_hospital, foundation, community_development_corp,
-                                 nonprofit_organization, other_not_for_profit_organ,
-                                 educational_institution, state_controlled_instituti,
-                                 c1862_land_grant_college, c1890_land_grant_college,
-                                 c1994_land_grant_college, private_university_or_coll,
-                                 minority_institution, historically_black_college, tribal_college,
-                                 alaskan_native_servicing_i, native_hawaiian_servicing,
-                                 hispanic_servicing_institu, school_of_forestry,
-                                 veterinary_college, us_federal_government,
-                                 federal_agency, us_government_entity, interstate_entity,
-                                 us_state_government, council_of_governments,
-                                 city_local_government, county_local_government,
-                                 inter_municipal_local_gove, municipality_local_governm,
-                                 township_local_government, us_local_government,
-                                 local_government_owned, school_district_local_gove,
-                                 us_tribal_government, indian_tribe_federally_rec,
-                                 housing_authorities_public, airport_authority,
-                                 port_authority, transit_authority, planning_commission):
+def get_business_categories_fpds(
+    contracting_officers_deter,
+    women_owned_small_business,
+    economically_disadvantaged,
+    joint_venture_women_owned,
+    emerging_small_business,
+    self_certified_small_disad,
+    small_agricultural_coopera,
+    small_disadvantaged_busine,
+    corporate_entity_tax_exemp,
+    corporate_entity_not_tax_e,
+    partnership_or_limited_lia,
+    sole_proprietorship,
+    manufacturer_of_goods,
+    subchapter_s_corporation,
+    limited_liability_corporat,
+    for_profit_organization,
+    alaskan_native_owned_corpo,
+    american_indian_owned_busi,
+    asian_pacific_american_own,
+    black_american_owned_busin,
+    hispanic_american_owned_bu,
+    native_american_owned_busi,
+    native_hawaiian_owned_busi,
+    subcontinent_asian_asian_i,
+    tribally_owned_business,
+    other_minority_owned_busin,
+    minority_owned_business,
+    joint_venture_economically,
+    woman_owned_business,
+    service_disabled_veteran_o,
+    veteran_owned_business,
+    c8a_program_participant,
+    the_ability_one_program,
+    dot_certified_disadvantage,
+    federally_funded_research,
+    historically_underutilized,
+    labor_surplus_area_firm,
+    sba_certified_8_a_joint_ve,
+    community_developed_corpor,
+    domestic_or_foreign_entity,
+    foreign_owned_and_located,
+    foreign_government,
+    international_organization,
+    domestic_shelter,
+    hospital_flag,
+    veterinary_hospital,
+    foundation,
+    community_development_corp,
+    nonprofit_organization,
+    other_not_for_profit_organ,
+    educational_institution,
+    state_controlled_instituti,
+    c1862_land_grant_college,
+    c1890_land_grant_college,
+    c1994_land_grant_college,
+    private_university_or_coll,
+    minority_institution,
+    historically_black_college,
+    tribal_college,
+    alaskan_native_servicing_i,
+    native_hawaiian_servicing,
+    hispanic_servicing_institu,
+    school_of_forestry,
+    veterinary_college,
+    us_federal_government,
+    federal_agency,
+    us_government_entity,
+    interstate_entity,
+    us_state_government,
+    council_of_governments,
+    city_local_government,
+    county_local_government,
+    inter_municipal_local_gove,
+    municipality_local_governm,
+    township_local_government,
+    us_local_government,
+    local_government_owned,
+    school_district_local_gove,
+    us_tribal_government,
+    indian_tribe_federally_rec,
+    housing_authorities_public,
+    airport_authority,
+    port_authority,
+    transit_authority,
+    planning_commission,
+):
 
     business_category_set = set()
 
@@ -661,9 +710,7 @@ def get_business_categories_fpds(contracting_officers_deter, women_owned_small_b
     if service_disabled_veteran_o is True:
         business_category_set.add("service_disabled_veteran_owned_business")
 
-    if veteran_owned_business is True or (
-        business_category_set & {"service_disabled_veteran_owned_business"}
-    ):
+    if veteran_owned_business is True or (business_category_set & {"service_disabled_veteran_owned_business"}):
         business_category_set.add("veteran_owned_business")
 
     # SPECIAL DESIGNATIONS
@@ -712,10 +759,7 @@ def get_business_categories_fpds(contracting_officers_deter, women_owned_small_b
         business_category_set.add("foreign_owned_and_us_located_business")
 
     # Foreign-Owned Business Not Incorporated in the U.S.
-    if (
-        domestic_or_foreign_entity == "D"
-        or foreign_owned_and_located is True
-    ):
+    if domestic_or_foreign_entity == "D" or foreign_owned_and_located is True:
         business_category_set.add("foreign_owned")
 
     if foreign_government is True:
@@ -813,11 +857,7 @@ def get_business_categories_fpds(contracting_officers_deter, women_owned_small_b
         business_category_set.add("higher_education")
 
     # GOVERNMENT
-    if (
-        us_federal_government is True
-        or federal_agency is True
-        or us_government_entity is True
-    ):
+    if us_federal_government is True or federal_agency is True or us_government_entity is True:
         business_category_set.add("national_government")
 
     if interstate_entity is True:
@@ -841,10 +881,7 @@ def get_business_categories_fpds(contracting_officers_deter, women_owned_small_b
     ):
         business_category_set.add("local_government")
 
-    if (
-        us_tribal_government is True
-        or indian_tribe_federally_rec is True
-    ):
+    if us_tribal_government is True or indian_tribe_federally_rec is True:
         business_category_set.add("indian_native_american_tribal_government")
 
     if (
