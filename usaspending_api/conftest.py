@@ -61,7 +61,7 @@ def delete_tables_for_tests():
     To prevent a naming conflict, the unused Django managed table is deleted while testing.
     """
     try:
-        tables = ["transaction_search", "award_search"]
+        tables = ["award_search"]
         for table in tables:
             execute_sql_simple(f"DROP TABLE IF EXISTS {table} CASCADE;")
     except Exception:
