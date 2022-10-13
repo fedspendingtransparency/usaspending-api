@@ -65,8 +65,9 @@ class TransactionDeltaManager(models.Manager):
 
 class TransactionDelta(models.Model):
 
-    transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.CASCADE, primary_key=True,
-                                       db_constraint=False)
+    transaction = models.OneToOneField(
+        "awards.TransactionNormalized", on_delete=models.CASCADE, primary_key=True, db_constraint=False
+    )
     created_at = models.DateTimeField()
 
     objects = TransactionDeltaManager()

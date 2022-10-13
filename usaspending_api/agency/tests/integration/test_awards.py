@@ -54,7 +54,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
         type="A",
         awarding_agency_code="001",
-        awarding_toptier_agency_name=toptier_agency_1.name
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     baker.make(
@@ -66,7 +66,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
         type="IDV_A",
         awarding_agency_code="001",
-        awarding_toptier_agency_name=toptier_agency_1.name
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     baker.make(
@@ -78,7 +78,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
         type="02",
         awarding_agency_code="001",
-        awarding_toptier_agency_name=toptier_agency_1.name
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     baker.make(
@@ -90,7 +90,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
         type="08",
         awarding_agency_code="001",
-        awarding_toptier_agency_name=toptier_agency_1.name
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     baker.make(
@@ -102,7 +102,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
         type="10",
         awarding_agency_code="001",
-        awarding_toptier_agency_name=toptier_agency_1.name
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     # Alternate Year
@@ -115,7 +115,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_1,
         type="IDV_A",
         awarding_agency_code="001",
-        awarding_toptier_agency_name=toptier_agency_1.name
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     # Alternate Agency
@@ -128,7 +128,7 @@ def transaction_search_1():
         awarding_agency=awarding_agency_2,
         type="IDV_C",
         awarding_agency_code="002",
-        awarding_toptier_agency_name=toptier_agency_2.name
+        awarding_toptier_agency_name=toptier_agency_2.name,
     )
 
 

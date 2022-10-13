@@ -1,7 +1,6 @@
 from django.db import models
 
 from django.contrib.postgres.fields import ArrayField
-from usaspending_api.common.helpers.date_helper import fy
 
 
 class TransactionNormalized(models.Model):
@@ -164,8 +163,7 @@ class TransactionNormalized(models.Model):
         return cls(**kwargs)
 
     def save(self, *args, **kwargs):
-        # self.fiscal_year = fy(self.action_date)
-        # super().save(*args, **kwargs)
+        # This is now a view and should never be saved as the view will automatically update
         pass
 
     class Meta:
