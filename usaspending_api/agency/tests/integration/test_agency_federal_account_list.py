@@ -703,8 +703,9 @@ def test_federal_account_list_search(client, agency_account_data, helpers):
 
 
 @pytest.mark.django_db
-def test_federal_account_list_pagination(client, agency_account_data, helpers):
-    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&limit=2&page=1"
+def test_federal_account_list_filter_by_bureau_slug(client, agency_account_data, helpers):
+    # Test using a real bureau_slug value
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&bureau_slug=test-bureau-1"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": helpers.get_mocked_current_fiscal_year(),
@@ -716,8 +717,8 @@ def test_federal_account_list_pagination(client, agency_account_data, helpers):
             "next": None,
             "page": 1,
             "previous": None,
-            "limit": 3,
-            "total": 3,
+            "limit": 1,
+            "total": 1,
         },
         "results": [
             {
@@ -737,100 +738,20 @@ def test_federal_account_list_pagination(client, agency_account_data, helpers):
                     }
                 ],
             },
-            {
-                "gross_outlay_amount": 100000.0,
-                "name": "FA 3",
-                "bureau_slug": "test-bureau-3",
-                "code": "003-0000",
-                "obligated_amount": 100.0,
-                "total_budgetary_resources": 102.00,
-                "children": [
-                    {
-                        "gross_outlay_amount": 100000.0,
-                        "name": "TA 6",
-                        "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 100.0,
-                        "total_budgetary_resources": 102.00,
-                    }
-                ],
-            },
-            {
-                "gross_outlay_amount": 1000000.0,
-                "name": "FA 2",
-                "bureau_slug": "test-bureau-2",
-                "code": "002-0000",
-                "obligated_amount": 10.0,
-                "total_budgetary_resources": 101.00,
-                "children": [
-                    {
-                        "gross_outlay_amount": 1000000.0,
-                        "name": "TA 5",
-                        "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 10.0,
-                        "total_budgetary_resources": 101.00,
-                    }
-                ],
-            },
         ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&limit=2&page=2"
+    # Test using a 'bureau_slug' that does not exist
+    query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&bureau_slug=fake-bureau"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
-        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
-        "toptier_code": "007",
-        "messages": [],
-        "page_metadata": {
-            "hasNext": False,
-            "hasPrevious": True,
-            "next": None,
-            "page": 2,
-            "previous": 1,
-            "total": 3,
-            "limit": 3,
-        },
-        "results": [
-            {
-                "gross_outlay_amount": 1000000.0,
-                "name": "FA 2",
-                "bureau_slug": "test-bureau-2",
-                "code": "002-0000",
-                "obligated_amount": 10.0,
-                "total_budgetary_resources": 101.00,
-                "children": [
-                    {
-                        "gross_outlay_amount": 1000000.0,
-                        "name": "TA 5",
-                        "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 10.0,
-                        "total_budgetary_resources": 101.00,
-                    }
-                ],
-            },
-            {
-                'code': '003-0000',
-                'gross_outlay_amount': 100000.0,
-                'name': 'FA 3',
-                'obligated_amount': 100.0,
-                'total_budgetary_resources': 102.0,
-                'bureau_slug': 'test-bureau-3',
-                'children': [
-                    {
-                        'code': '003-2017/2018-0000-000',
-                        'gross_outlay_amount': 100000.0,
-                        'name': 'TA 6',
-                        'obligated_amount': 100.0,
-                        'total_budgetary_resources': 102.0
-                    }
-                ],
-            },
-        ],
+        "detail": "Bureau with a slug of 'fake-bureau' does not exist"
     }
 
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
     assert resp.json() == expected_result
 
 
