@@ -112,16 +112,6 @@ class TransactionFABS(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
     updated_at = models.DateTimeField(blank=True, null=True, db_index=True)
 
-    @classmethod
-    def get_or_create_2(cls, transaction, **kwargs):
-        try:
-            if not transaction.newer_than(kwargs):
-                for (k, v) in kwargs.items():
-                    setattr(transaction.assistance_data, k, v)
-        except ObjectDoesNotExist:
-            transaction.assistance_data = cls(**kwargs)
-        return transaction.assistance_data
-
     @property
     def cfda_objectives(self):
         cfda = Cfda.objects.filter(program_number=self.cfda_number).first()

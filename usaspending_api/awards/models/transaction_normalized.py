@@ -127,45 +127,6 @@ class TransactionNormalized(models.Model):
     def __str__(self):
         return "%s award: %s" % (self.type_description, self.award)
 
-    def newer_than(self, dct):
-        """Compares age of this instance to a Python dictionary
-
-        Determines the age of each by last_modified_date, if set,
-        otherwise action_date.
-        Returns `False` if either side lacks a date completely.
-        """
-
-        my_date = self.last_modified_date
-        their_date = dct.get("last_modified_date")
-        if my_date and their_date:
-            return my_date > their_date
-        else:
-            return False
-
-    @classmethod
-    def get_or_create_transaction(cls, **kwargs):
-        """Gets and updates, or creates, a Transaction
-
-        Transactions must be unique on Award, Awarding Agency, and Mod Number
-        """
-        transaction = (
-            cls.objects.filter(award=kwargs.get("award"), modification_number=kwargs.get("modification_number"))
-            .order_by("-update_date")
-            .first()
-        )
-        if transaction:
-            if not transaction.newer_than(kwargs):
-                for (k, v) in kwargs.items():
-
-                    setattr(transaction, k, v)
-
-            return transaction
-        return cls(**kwargs)
-
-    def save(self, *args, **kwargs):
-        # This is now a view and should never be saved as the view will automatically update
-        pass
-
     class Meta:
         managed = False
         db_table = "vw_transaction_normalized"

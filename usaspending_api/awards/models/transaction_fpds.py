@@ -317,16 +317,6 @@ class TransactionFPDS(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
     updated_at = models.DateTimeField(blank=True, null=True, db_index=True)
 
-    @classmethod
-    def get_or_create_2(cls, transaction, **kwargs):
-        try:
-            if not transaction.newer_than(kwargs):
-                for (k, v) in kwargs.items():
-                    setattr(transaction.contract_data, k, v)
-        except ObjectDoesNotExist:
-            transaction.contract_data = cls(**kwargs)
-        return transaction.contract_data
-
     class Meta:
         managed = False
         db_table = "vw_transaction_fpds"
