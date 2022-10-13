@@ -85,7 +85,7 @@ def award_from_id(award_id):
         "search.TransactionSearch",
         transaction_id=7000 + award_id,
         award_id=award_id,
-        funding_agency_name="subtier_funding_agency_name_%s" % 7000 + award_id,
+        funding_toptier_agency_name="subtier_funding_agency_name_%s" % (7000 + award_id),
         ordering_period_end_date="2018-01-%02d" % award_id,
         awardee_or_recipient_uniqu="duns_%s" % (7000 + award_id),
         period_of_perf_potential_e="2018-08-%02d" % award_id,
