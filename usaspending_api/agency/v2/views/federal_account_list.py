@@ -93,7 +93,7 @@ class FederalAccountList(PaginationMixin, AgencyBase):
             }
         )
 
-    def get_tbr_from_file_a_queryset(self):
+    def get_tbr_from_file_a_queryset(self) -> List[dict]:
         """
         Query Total Budgetary Resources from File A
         """
@@ -153,6 +153,11 @@ class FederalAccountList(PaginationMixin, AgencyBase):
         return results
 
     def get_bureau_subquery(self, treasury_account_keyword):
+        """Subquery that returns the 'bureau_slug' associated with a Federal Account
+
+        Args:
+            treasury_account_keyword (str): Name of the Treasury Account foreign key field
+        """
         bureau_filters = {"bureau_slug": self.bureau_slug} if self.bureau_slug else {}
 
         bureau_info_subquery = Subquery(
