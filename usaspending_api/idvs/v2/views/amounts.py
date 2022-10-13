@@ -124,7 +124,7 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
                 ON faba.award_id = a.id
                 AND a.date_signed >= '2019-10-01'
             INNER JOIN child_cte a2 ON faba.award_id = a2.award_id
-            INNER JOIN transaction_normalized tn ON tn.id = a.earliest_transaction_id
+            INNER JOIN vw_transaction_normalized tn ON tn.id = a.earliest_transaction_id
             WHERE sa.is_final_balances_for_fy AND sa.reporting_fiscal_year = tn.fiscal_year
             GROUP BY faba.award_id
         )

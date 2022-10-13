@@ -646,7 +646,7 @@ def fetch_total_outlays(award_id: int) -> dict:
         INNER JOIN awards a
             ON faba.award_id = a.id
             AND a.date_signed >= '2019-10-01'
-        INNER JOIN transaction_normalized tn ON tn.id = a.earliest_transaction_id
+        INNER JOIN vw_transaction_normalized tn ON tn.id = a.earliest_transaction_id
         WHERE sa.is_final_balances_for_fy AND sa.reporting_fiscal_year = tn.fiscal_year AND {award_id_sql}
         GROUP BY faba.award_id
     )
