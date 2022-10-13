@@ -22,48 +22,57 @@ def test_federal_account_list_success(client, monkeypatch, agency_account_data, 
             "page": 1,
             "previous": None,
             "total": 3,
-            "limit": 10,
+            "limit": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
+                "bureau_slug": "test-bureau-1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
+                "total_budgetary_resources": 100,
                 "children": [
                     {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
+                        "total_budgetary_resources": 100.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
@@ -85,20 +94,23 @@ def test_federal_account_list_success(client, monkeypatch, agency_account_data, 
             "page": 1,
             "previous": None,
             "total": 1,
-            "limit": 10,
+            "limit": 1,
         },
         "results": [
             {
                 "gross_outlay_amount": 10000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 1000.0,
+                'total_budgetary_resources': 100.0,
                 "children": [
                     {
                         "gross_outlay_amount": 10000.0,
                         "name": "TA 2",
                         "code": "002-X-0000-000",
                         "obligated_amount": 1000.0,
+                        'total_budgetary_resources': 100.0,
                     }
                 ],
             }
@@ -125,7 +137,7 @@ def test_federal_account_list_success(client, monkeypatch, agency_account_data, 
             "page": 1,
             "previous": None,
             "total": 0,
-            "limit": 10,
+            "limit": 0,
         },
         "results": [],
     }
@@ -176,48 +188,58 @@ def test_federal_account_list_sort_by_name(client, agency_account_data, helpers)
             "page": 1,
             "previous": None,
             "total": 3,
-            "limit": 10,
+            "limit": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
+                "bureau_slug": "test-bureau-1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
+                "total_budgetary_resources": 100.00,
                 "children": [
                     {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
+                        "total_budgetary_resources": 100.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                'total_budgetary_resources': 101.0,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
+                        
                     }
                 ],
             },
@@ -240,48 +262,57 @@ def test_federal_account_list_sort_by_name(client, agency_account_data, helpers)
             "page": 1,
             "previous": None,
             "total": 3,
-            "limit": 10,
+            "limit": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
+                "bureau_slug": "test-bureau-1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
+                "total_budgetary_resources": 100.00,
                 "children": [
                     {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
+                        "total_budgetary_resources": 100.00,
                     }
                 ],
             },
@@ -307,48 +338,57 @@ def test_federal_account_list_sort_by_obligated_amount(client, agency_account_da
             "page": 1,
             "previous": None,
             "total": 3,
-            "limit": 10,
+            "limit": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
+                "bureau_slug": "test-bureau-1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
+                "total_budgetary_resources": 100.00,
                 "children": [
                     {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
+                        "total_budgetary_resources": 100.00,
                     }
                 ],
             },
@@ -371,48 +411,57 @@ def test_federal_account_list_sort_by_obligated_amount(client, agency_account_da
             "page": 1,
             "previous": None,
             "total": 3,
-            "limit": 10,
+            "limit": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
+                "bureau_slug": "test-bureau-1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
+                "total_budgetary_resources": 100.00,
                 "children": [
                     {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
+                        "total_budgetary_resources": 100.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
@@ -438,48 +487,57 @@ def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account
             "page": 1,
             "previous": None,
             "total": 3,
-            "limit": 10,
+            "limit": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
+                "bureau_slug": "test-bureau-1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
+                "total_budgetary_resources": 100.00,
                 "children": [
                     {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
+                        "total_budgetary_resources": 100.00,
                     }
                 ],
             },
@@ -502,48 +560,57 @@ def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account
             "page": 1,
             "previous": None,
             "total": 3,
-            "limit": 10,
+            "limit": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
+                "bureau_slug": "test-bureau-1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
+                "total_budgetary_resources": 100.00,
                 "children": [
                     {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
+                        "total_budgetary_resources": 100.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
                     }
                 ],
             },
@@ -569,20 +636,23 @@ def test_federal_account_list_search(client, agency_account_data, helpers):
             "page": 1,
             "previous": None,
             "total": 1,
-            "limit": 10,
+            "limit": 1,
         },
         "results": [
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
                     }
                 ],
             },
@@ -605,20 +675,23 @@ def test_federal_account_list_search(client, agency_account_data, helpers):
             "page": 1,
             "previous": None,
             "total": 1,
-            "limit": 10,
+            "limit": 1,
         },
         "results": [
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
@@ -638,40 +711,63 @@ def test_federal_account_list_pagination(client, agency_account_data, helpers):
         "toptier_code": "007",
         "messages": [],
         "page_metadata": {
-            "hasNext": True,
+            "hasNext": False,
             "hasPrevious": False,
-            "next": 2,
+            "next": None,
             "page": 1,
             "previous": None,
-            "limit": 2,
+            "limit": 3,
             "total": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
+                "bureau_slug": "test-bureau-1",
                 "code": "001-0000",
                 "obligated_amount": 111.0,
+                "total_budgetary_resources": 100.00,
                 "children": [
                     {
                         "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
                         "obligated_amount": 111.0,
+                        "total_budgetary_resources": 100.00,
                     }
                 ],
             },
             {
                 "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
+                "bureau_slug": "test-bureau-3",
                 "code": "003-0000",
                 "obligated_amount": 100.0,
+                "total_budgetary_resources": 102.00,
                 "children": [
                     {
                         "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
+                        "total_budgetary_resources": 102.00,
+                    }
+                ],
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
+                "code": "002-0000",
+                "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
+                "children": [
+                    {
+                        "gross_outlay_amount": 1000000.0,
+                        "name": "TA 5",
+                        "code": "002-2008/2009-0000-000",
+                        "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
                     }
                 ],
             },
@@ -694,20 +790,40 @@ def test_federal_account_list_pagination(client, agency_account_data, helpers):
             "page": 2,
             "previous": 1,
             "total": 3,
-            "limit": 2,
+            "limit": 3,
         },
         "results": [
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
+                "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
+                "total_budgetary_resources": 101.00,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
                         "obligated_amount": 10.0,
+                        "total_budgetary_resources": 101.00,
+                    }
+                ],
+            },
+            {
+                'code': '003-0000',
+                'gross_outlay_amount': 100000.0,
+                'name': 'FA 3',
+                'obligated_amount': 100.0,
+                'total_budgetary_resources': 102.0,
+                'bureau_slug': 'test-bureau-3',
+                'children': [
+                    {
+                        'code': '003-2017/2018-0000-000',
+                        'gross_outlay_amount': 100000.0,
+                        'name': 'TA 6',
+                        'obligated_amount': 100.0,
+                        'total_budgetary_resources': 102.0
                     }
                 ],
             },
@@ -729,7 +845,11 @@ def test_latest_submission_per_agency_used(client, agency_account_data, helpers)
         "results": [
             {
                 "children": [
-                    {"code": "005-X-0000-000", "gross_outlay_amount": 7000.0, "name": "TA 7", "obligated_amount": 700.0}
+                    {
+                        "code": "005-X-0000-000",
+                        "gross_outlay_amount": 7000.0,
+                        "name": "TA 7",
+                        "obligated_amount": 700.0}
                 ],
                 "code": "005-0000",
                 "gross_outlay_amount": 7000.0,
@@ -741,7 +861,7 @@ def test_latest_submission_per_agency_used(client, agency_account_data, helpers)
         "page_metadata": {
             "hasNext": False,
             "hasPrevious": False,
-            "limit": 10,
+            "limit": 1,
             "next": None,
             "page": 1,
             "previous": None,
@@ -768,7 +888,7 @@ def test_latest_submission_per_agency_used(client, agency_account_data, helpers)
         "page_metadata": {
             "hasNext": False,
             "hasPrevious": False,
-            "limit": 10,
+            "limit": 0,
             "next": None,
             "page": 1,
             "previous": None,
