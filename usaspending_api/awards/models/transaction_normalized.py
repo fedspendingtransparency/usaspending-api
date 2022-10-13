@@ -164,8 +164,9 @@ class TransactionNormalized(models.Model):
         return cls(**kwargs)
 
     def save(self, *args, **kwargs):
-        self.fiscal_year = fy(self.action_date)
-        super().save(*args, **kwargs)
+        # self.fiscal_year = fy(self.action_date)
+        # super().save(*args, **kwargs)
+        pass
 
     class Meta:
         managed = False
@@ -187,6 +188,7 @@ vw_transaction_normalized_sql = """
             action_date,
             last_modified_date,
             fiscal_year,
+            award_certified_date                    AS "certified_date",
             create_date,
             update_date,
             period_of_performance_start_date,
@@ -206,8 +208,12 @@ vw_transaction_normalized_sql = """
             federal_action_obligation,
             original_loan_subsidy_cost,
             face_value_loan_guarantee,
+            NULL                                    AS "indirect_federal_sharing",
             funding_amount,
-            non_federal_funding_amount
+            non_federal_funding_amount,
+            NULL                                    AS "drv_award_transaction_usaspend",
+            NULL                                    AS "drv_current_total_award_value_amount_adjustment",
+            NULL                                    AS "drv_potential_total_award_value_amount_adjustment"
         FROM
             rpt.transaction_search;
 """
