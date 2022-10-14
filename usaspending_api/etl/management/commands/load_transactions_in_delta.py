@@ -2,6 +2,7 @@ import copy
 import logging
 
 from contextlib import contextmanager
+from datetime import datetime, timezone
 
 from django.core.management import BaseCommand
 from django.db import connection
@@ -12,6 +13,7 @@ from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fabs,
     get_business_categories_fpds,
 )
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
@@ -37,6 +39,7 @@ class Command(BaseCommand):
         Script: "<PLACEHOLDER>"
     """
 
+    etl_level: str
     logger: logging.Logger
     spark: SparkSession
     sql_views: dict
@@ -48,11 +51,11 @@ class Command(BaseCommand):
             required=True,
             help="The silver delta table that should be updated from the bronze delta data.",
             choices=[
-                "award",
-                "award_ids",
+                "awards",
+                "award_id_lookup",
                 "transaction_fabs",
                 "transaction_fpds",
-                "transaction_ids",
+                "transaction_id_lookup",
                 "transaction_normalized",
             ],
         )
@@ -62,22 +65,15 @@ class Command(BaseCommand):
             # TODO: This should be removed in favor of preparing the environment outside of this script
             self.initial_run()
 
-            etl_level = options["etl_level"]
+            self.etl_level = options["etl_level"]
 
-            with connection.cursor() as cursor:
-                # TODO: Update "last_load_date" on the external tables after ETL run
-                cursor.execute(
-                    f"""
-                    SELECT last_load_date
-                    FROM external_data_load_date ext_date
-                    INNER JOIN external_data_type AS ext_type ON (
-                        ext_date.external_data_type_id = ext_type.external_data_type_id
-                    )
-                    WHERE ext_type.name = '{etl_level}'
-                """
-                )
-                last_etl_date = cursor.fetchone()[0]
-                last_etl_date = last_etl_date.strftime("%Y-%m-%d")
+            self.logger.info(f"Deleting old records from '{self.etl_level}'")
+            self.spark.sql(self.delete_records_sql())
+
+            # Capture start of the ETL to update the "last_load_date" after completion
+            etl_start = datetime.now(timezone.utc)
+
+            last_etl_date = str(get_last_load_date(self.etl_level, lookback_minutes=15))
 
             # Build the SQL VIEW definitions
             sql_views = {
@@ -86,14 +82,26 @@ class Command(BaseCommand):
             }
 
             # Build the SQL MERGE INTO definitions
-            sql_merge_operations = {"fabs": self.merge_into_sql("fabs"), "fpds": self.merge_into_sql("fpds")}
+            sql_merge_operations = {
+                "transaction_fabs": self.merge_into_sql("fabs"),
+                "transaction_fpds": self.merge_into_sql("fpds"),
+            }
 
-            # Runs ETL steps
-            if etl_level == "transaction_ids":
+            self.logger.info(f"Running SQL for '{self.etl_level}' ETL")
+            if self.etl_level == "transaction_id_lookup":
                 self.load_transaction_lookup_ids(last_etl_date)
-            elif etl_level == "transaction_fpds":
+            elif self.etl_level == "transaction_fabs":
+                self.spark.sql(sql_views["vw_fabs_from_source"])
+                self.spark.sql(sql_merge_operations["transaction_fabs"])
+            elif self.etl_level == "transaction_fpds":
                 self.spark.sql(sql_views["vw_fpds_from_source"])
-                self.spark.sql(sql_merge_operations["fpds"])
+                self.spark.sql(sql_merge_operations["transaction_fpds"])
+            elif self.etl_level == "transaction_normalized":
+                self.spark.sql(sql_views["vw_fabs_from_source"])
+                self.spark.sql(sql_views["vw_fpds_from_source"])
+                self.spark.sql(sql_merge_operations["transaction_normalized"])
+
+            update_last_load_date(self.etl_level, etl_start)
 
     @contextmanager
     def prepare_spark(self):
@@ -132,8 +140,7 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
-    @staticmethod
-    def from_source_sql(transaction_type, last_etl_date):
+    def from_source_sql(self, transaction_type, last_etl_date):
         if transaction_type == "fabs":
             bronze_table_name = "raw.published_fabs"
             unique_id = "published_fabs_id"
@@ -146,6 +153,7 @@ class Command(BaseCommand):
             raise ValueError(f"Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
 
         select_cols = []
+        additional_joins = ""
         omitted_cols = ["transaction_id"]
         for col in list(filter(lambda x: x.silver_name not in omitted_cols, col_info)):
             if col.is_cast:
@@ -155,43 +163,32 @@ class Command(BaseCommand):
             else:
                 select_cols.append(f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}")
 
-        # Additional conditional columns needed to support int.transaction_normalized
-        if transaction_type == "fabs":
-            select_cols.extend(
-                [
-                    # business_categories
-                    # funding_amount
-                    f"""CAST(
-                        COALESCE({bronze_table_name}.federal_action_obligation, 0)
-                        + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
-                    AS NUMERIC(23, 2)) AS funding_amount
-                    """,
-                    # is_fpds
-                    "FALSE AS is_fpds",
-                ]
-            )
-        else:
-            select_cols.extend(
-                [
-                    # business_categories
-                    # is_fpds
-                    "TRUE AS is_fpds"
-                ]
-            )
-
-        # TODO: Add logic to only run JOINs when etl_level is TN
-        sql = f"""
-            CREATE OR REPLACE TEMPORARY VIEW vw_{transaction_type}_from_source AS (
-                SELECT
-                    transaction_id_lookup.id AS transaction_id,
-                    {", ".join(select_cols)},
-                    -- Common fields between source data types that need a JOIN to the bronze_table
-                    awarding_agency.id AS awarding_agency_id,
-                    funding_agency.id AS funding_agency_id
-                FROM {bronze_table_name}
-                LEFT OUTER JOIN transaction_id_lookup ON (
-                    transaction_id_lookup.{unique_id} = {bronze_table_name}.{unique_id}
+        # Additional conditional columns / JOINs needed to support int.transaction_normalized
+        if self.etl_level == "transaction_normalized":
+            if transaction_type == "fabs":
+                select_cols.extend(
+                    [
+                        # business_categories
+                        # funding_amount
+                        f"""CAST(
+                            COALESCE({bronze_table_name}.federal_action_obligation, 0)
+                            + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
+                        AS NUMERIC(23, 2)) AS funding_amount
+                        """,
+                        # is_fpds
+                        "FALSE AS is_fpds",
+                    ]
                 )
+            else:
+                select_cols.extend(
+                    [
+                        # business_categories
+                        # is_fpds
+                        "TRUE AS is_fpds"
+                    ]
+                )
+            select_cols.extend(["awarding_agency.id AS awarding_agency_id,", "funding_agency.id AS funding_agency_id"])
+            additional_joins = f"""
                 LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
                     funding_subtier_agency.subtier_code = {bronze_table_name}.awarding_sub_tier_agency_c
                 )
@@ -204,6 +201,18 @@ class Command(BaseCommand):
                 LEFT OUTER JOIN global_temp.agency AS awarding_agency ON (
                     awarding_agency.subtier_agency_id = awarding_subtier_agency.subtier_agency_id
                 )
+            """
+
+        sql = f"""
+            CREATE OR REPLACE TEMPORARY VIEW vw_{transaction_type}_from_source AS (
+                SELECT
+                    transaction_id_lookup.id AS transaction_id,
+                    {", ".join(select_cols)}
+                FROM {bronze_table_name}
+                LEFT OUTER JOIN transaction_id_lookup ON (
+                    transaction_id_lookup.{unique_id} = {bronze_table_name}.{unique_id}
+                )
+                {additional_joins}
                 WHERE
                     {bronze_table_name}.updated_at >= '{last_etl_date}'
                     {"AND is_active IS TRUE" if transaction_type == "fabs" else ""}
@@ -301,6 +310,55 @@ class Command(BaseCommand):
                 THEN INSERT
                     ({silver_table_cols})
                     VALUES ({silver_table_cols})
+        """
+        return sql
+
+    def delete_records_sql(self):
+        if self.etl_level == "transaction_id_lookup":
+            id_col = "id"
+            subquery = f"""
+                SELECT id AS id_to_remove
+                FROM int.transaction_id_lookup
+                WHERE
+                    (
+                        transaction_id_lookup.detached_award_procurement_id IS NOT NULL
+                        AND NOT EXISTS (
+                            SELECT *
+                            FROM raw.detached_award_procurement
+                            WHERE transaction_id_lookup.detached_award_procurement_id = detached_award_procurement.detached_award_procurement_id
+                        )
+                    )
+                    OR
+                    (
+                        transaction_id_lookup.published_fabs_id IS NOT NULL
+                        AND NOT EXISTS (
+                            SELECT *
+                            FROM raw.published_fabs
+                            WHERE transaction_id_lookup.published_fabs_id = published_fabs.published_fabs_id
+                        )
+                    )
+            """
+        else:
+            id_col = "id" if self.etl_level == "transaction_normalized" else "transaction_id"
+            subquery = f"""
+                SELECT {id_col} AS id_to_remove
+                FROM int.{self.etl_level}
+                WHERE
+                    NOT EXISTS (
+                        SELECT *
+                        FROM int.transaction_id_lookup
+                        WHERE transaction_id_lookup.id = {self.etl_level}.{id_col}
+                    )
+            """
+
+        sql = f"""
+            MERGE INTO int.{self.etl_level}
+            USING (
+                {subquery}
+            ) AS deleted_records
+            ON {self.etl_level}.{id_col} = deleted_records.id_to_remove
+            WHEN MATCHED
+            THEN DELETE
         """
         return sql
 
