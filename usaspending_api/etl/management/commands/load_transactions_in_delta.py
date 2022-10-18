@@ -31,7 +31,7 @@ class Command(BaseCommand):
         This command reads transaction data from source / bronze tables in delta and creates the delta silver tables
         specified via the "etl_level" argument. Each "etl_level" uses an exclusive value for "last_load_date" from the
         "external_data_load_date" table in Postgres to determine the subset of transactions to load. For a full
-        pipeline run the "award_ids" and "transaction_ids" levels should be run first in order to populate the
+        pipeline run the "award_id_lookup" and "transaction_id_lookup" levels should be run first in order to populate the
         lookup tables. These lookup tables are used to keep track of PK values across the different silver tables.
 
         *****NOTE*****: Before running this command for the first time a one-time script should be run to populate the
@@ -63,11 +63,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with self.prepare_spark():
             # TODO: This should be removed in favor of preparing the environment outside of this script
-            self.initial_run()
+            # TODO: OR, this should only be run once according to an argument
+            # self.initial_run()
 
             self.etl_level = options["etl_level"]
 
-            self.logger.info(f"Deleting old records from '{self.etl_level}'")
+            self.logger.info(f"Running delete SQL for '{self.etl_level}' ETL")
             self.spark.sql(self.delete_records_sql())
 
             # Capture start of the ETL to update the "last_load_date" after completion
@@ -85,9 +86,11 @@ class Command(BaseCommand):
             sql_merge_operations = {
                 "transaction_fabs": self.merge_into_sql("fabs"),
                 "transaction_fpds": self.merge_into_sql("fpds"),
+                "transaction_normalized_from_fabs": self.transaction_normalized_merge_into_sql("fabs"),
+                "transaction_normalized_from_fpds": self.transaction_normalized_merge_into_sql("fpds"),
             }
 
-            self.logger.info(f"Running SQL for '{self.etl_level}' ETL")
+            self.logger.info(f"Running UPSERT SQL for '{self.etl_level}' ETL")
             if self.etl_level == "transaction_id_lookup":
                 self.load_transaction_lookup_ids(last_etl_date)
             elif self.etl_level == "transaction_fabs":
@@ -99,7 +102,8 @@ class Command(BaseCommand):
             elif self.etl_level == "transaction_normalized":
                 self.spark.sql(sql_views["vw_fabs_from_source"])
                 self.spark.sql(sql_views["vw_fpds_from_source"])
-                self.spark.sql(sql_merge_operations["transaction_normalized"])
+                self.spark.sql(sql_merge_operations["transaction_normalized_from_fabs"])
+                self.spark.sql(sql_merge_operations["transaction_normalized_from_fpds"])
 
             update_last_load_date(self.etl_level, etl_start)
 
@@ -258,7 +262,7 @@ class Command(BaseCommand):
                             WHERE transaction_id_lookup.detached_award_procurement_id = detached_award_procurement.detached_award_procurement_id
                         )
                 )
-                UNION
+                UNION ALL
                 (
                     SELECT
                         NULL AS detached_award_procurement_id,
@@ -313,6 +317,30 @@ class Command(BaseCommand):
         """
         return sql
 
+    @staticmethod
+    def transaction_normalized_merge_into_sql(transaction_type):
+        # TODO: Need to populate set_cols with the SELECT SQL needed to create int.transaction_normalized
+        if transaction_type == "fabs":
+            set_cols = {}
+        elif transaction_type == "fpds":
+            set_cols = {}
+        else:
+            raise ValueError(f"Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
+
+        # sql = f"""
+        #     MERGE INTO int.transaction_normalized
+        #     USING vw_{transaction_type}_from_source AS source_view
+        #     ON transaction_normalized.id = source_view.transaction_id
+        #     WHEN MATCHED
+        #         THEN UPDATE SET
+        #         {}
+        #     WHEN NOT MATCHED
+        #         THEN INSERT
+        #             ({})
+        #             VALUES ({})
+        # """
+        # return sql
+
     def delete_records_sql(self):
         if self.etl_level == "transaction_id_lookup":
             id_col = "id"
@@ -328,7 +356,10 @@ class Command(BaseCommand):
                             WHERE transaction_id_lookup.detached_award_procurement_id = detached_award_procurement.detached_award_procurement_id
                         )
                     )
-                    OR
+                UNION ALL
+                SELECT id AS id_to_remove
+                FROM int.transaction_id_lookup
+                WHERE
                     (
                         transaction_id_lookup.published_fabs_id IS NOT NULL
                         AND NOT EXISTS (
@@ -365,9 +396,8 @@ class Command(BaseCommand):
     def initial_run(self):
         """
         TODO:
-            - Still need to create migration that creates the sequence in Postgres
             - External Data values need to be added for all etl_levels (including transaction_ids)
-            - Script to backfill all IDs in the lookup table
+            - Initial value of the sequence should be set
         """
         self.spark.sql("USE int")
 
