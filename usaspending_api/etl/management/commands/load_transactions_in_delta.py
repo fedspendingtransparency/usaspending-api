@@ -426,13 +426,13 @@ class Command(BaseCommand):
             test_results = self.spark.sql(
                 f"SELECT COUNT(*) AS count FROM {table_name} WHERE {key_name} IS NULL").collect()
 
-            assert test_results[0]['count'] == 0, \
-                f"Found {test_results[0]['count']} NULLs in {key_name} in table {table_name}!"
+            if test_results[0]['count'] > 0:
+                raise ValueError(f"Found {test_results[0]['count']} NULLs in {key_name} in table {table_name}!")
 
         # Insert existing transactions into the lookup table
         self.spark.sql(
             f"""
-            INSERT INTO {destination_table}
+            INSERT OVERWRITE {destination_table}
                 SELECT tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.{key_names[0]}
                 FROM {table_names[0]} AS tn LEFT JOIN {table_names[1]} AS dap ON (
                     tn.{key_names[0]} = dap.{key_names[1]}
