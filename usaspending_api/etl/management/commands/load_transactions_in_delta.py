@@ -418,3 +418,29 @@ class Command(BaseCommand):
             LOCATION 's3a://{spark_s3_bucket}/{delta_lake_s3_bucket}/{destination_database}/{destination_table}'
         """
         )
+
+        # Before running INSERT, make sure expected keys have no NULLs
+        table_names = ("int.transaction_normalized", "raw.detached_award_procurement", "raw.published_fabs")
+        key_names = ("transaction_unique_id", "detached_award_proc_unique", "afa_generated_unique")
+        for table_name, key_name in zip(table_names, key_names):
+            test_results = self.spark.sql(
+                f"SELECT COUNT(*) AS count FROM {table_name} WHERE {key_name} IS NULL").collect()
+
+            assert test_results[0]['count'] == 0, \
+                f"Found {test_results[0]['count']} NULLs in {key_name} in table {table_name}!"
+
+        # Insert existing transactions into the lookup table
+        self.spark.sql(
+            f"""
+            INSERT INTO {destination_table}
+                SELECT tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.{key_names[0]}
+                FROM {table_names[0]} AS tn LEFT JOIN {table_names[1]} AS dap ON (
+                    tn.{key_names[0]} = dap.{key_names[1]}
+                )
+                LEFT JOIN {table_names[2]} AS pfabs ON (
+                    tn.{key_names[0]} = pfabs.{key_names[2]}
+                )
+            """
+        )
+
+
