@@ -1,4 +1,3 @@
-@@ -1,412 +0,0 @@
 import logging
 
 from datetime import datetime

@@ -4,6 +4,7 @@ from django.db.models import Q
 
 from usaspending_api.common.custom_django_fields import NumericField
 
+
 class TransactionSearch(models.Model):
     """
     Fields in this model have all, with the exception of primary/foreign keys, been made nullable because it
