@@ -76,7 +76,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='transactiondelta',
-            name='transaction_id',
+            name='transaction',
             field=models.OneToOneField(
                 "awards.TransactionNormalized",
                 on_delete=models.CASCADE,
