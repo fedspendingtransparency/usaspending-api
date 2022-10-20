@@ -72,7 +72,7 @@ class AgencyBase(APIView):
                 "text_type": "search",
                 "optional": True,
                 "allow_nulls": True,
-                "default": None
+                "default": None,
             },
         ]
         all_models = update_list_of_dictionaries(all_models, additional_models, "key")
@@ -135,9 +135,7 @@ class AgencyBase(APIView):
 
         if input_bureau_slug:
             input_bureau_slug = input_bureau_slug.lower()
-            bureau_slug = BureauTitleLookup.objects.filter(
-                bureau_slug=input_bureau_slug
-            ).first()
+            bureau_slug = BureauTitleLookup.objects.filter(bureau_slug=input_bureau_slug).first()
             if not bureau_slug:
                 raise NotFound(f"Bureau with a slug of '{input_bureau_slug}' does not exist")
             return input_bureau_slug

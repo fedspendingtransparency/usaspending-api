@@ -29,14 +29,14 @@ class FederalAccountList(PaginationMixin, AgencyBase):
         combined_list_dict = {}
 
         for row in file_b_response:
-            combined_list_dict[row['treasury_account__tas_rendering_label']] = row
+            combined_list_dict[row["treasury_account__tas_rendering_label"]] = row
 
         for row in file_a_response:
             # Append the total_budgetary_resources_amount_cpe value (from File A) to the dict (in File B) where the
             #   tas_rendering_label values from both rows match
-            if row['treasury_account_identifier__tas_rendering_label'] in combined_list_dict:
-                combined_list_dict[row['treasury_account_identifier__tas_rendering_label']].update(
-                    {'total_budgetary_resources': row['total_budgetary_resources_amount_cpe']}
+            if row["treasury_account_identifier__tas_rendering_label"] in combined_list_dict:
+                combined_list_dict[row["treasury_account_identifier__tas_rendering_label"]].update(
+                    {"total_budgetary_resources": row["total_budgetary_resources_amount_cpe"]}
                 )
 
         combined_response = combined_list_dict.values()
@@ -44,7 +44,7 @@ class FederalAccountList(PaginationMixin, AgencyBase):
             {
                 "code": row["treasury_account__federal_account__federal_account_code"],
                 "name": row["treasury_account__federal_account__account_title"],
-                "bureau_slug": row["bureau_info"]
+                "bureau_slug": row["bureau_info"],
             }
             for row in combined_response
         ]
@@ -63,7 +63,7 @@ class FederalAccountList(PaginationMixin, AgencyBase):
                     "code": row["treasury_account__tas_rendering_label"],
                     "obligated_amount": row["obligated_amount"],
                     "gross_outlay_amount": row["gross_outlay_amount"],
-                    "total_budgetary_resources": row["total_budgetary_resources"]
+                    "total_budgetary_resources": row["total_budgetary_resources"],
                 }
                 for row in combined_response
                 if item["code"] == row["treasury_account__federal_account__federal_account_code"]
@@ -104,13 +104,9 @@ class FederalAccountList(PaginationMixin, AgencyBase):
             Q(treasury_account_identifier__funding_toptier_agency=self.toptier_agency),
         ]
 
-        results = (AppropriationAccountBalances.objects
-            .filter(*filters)
-            .values(
-                "treasury_account_identifier__tas_rendering_label",
-                "total_budgetary_resources_amount_cpe"
-            )
-            )
+        results = AppropriationAccountBalances.objects.filter(*filters).values(
+            "treasury_account_identifier__tas_rendering_label", "total_budgetary_resources_amount_cpe"
+        )
         return results
 
     def get_federal_account_list_from_file_b(self) -> List[dict]:

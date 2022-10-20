@@ -103,14 +103,14 @@ def test_federal_account_list_success(client, monkeypatch, agency_account_data, 
                 "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 1000.0,
-                'total_budgetary_resources': 100.0,
+                "total_budgetary_resources": 100.0,
                 "children": [
                     {
                         "gross_outlay_amount": 10000.0,
                         "name": "TA 2",
                         "code": "002-X-0000-000",
                         "obligated_amount": 1000.0,
-                        'total_budgetary_resources': 100.0,
+                        "total_budgetary_resources": 100.0,
                     }
                 ],
             }
@@ -214,7 +214,7 @@ def test_federal_account_list_sort_by_name(client, agency_account_data, helpers)
                 "bureau_slug": "test-bureau-2",
                 "code": "002-0000",
                 "obligated_amount": 10.0,
-                'total_budgetary_resources': 101.0,
+                "total_budgetary_resources": 101.0,
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
@@ -239,7 +239,6 @@ def test_federal_account_list_sort_by_name(client, agency_account_data, helpers)
                         "code": "003-2017/2018-0000-000",
                         "obligated_amount": 100.0,
                         "total_budgetary_resources": 102.00,
-                        
                     }
                 ],
             },
@@ -747,9 +746,7 @@ def test_federal_account_list_filter_by_bureau_slug(client, agency_account_data,
     # Test using a 'bureau_slug' that does not exist
     query_params = f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}&bureau_slug=fake-bureau"
     resp = client.get(url.format(code="007", query_params=query_params))
-    expected_result = {
-        "detail": "Bureau with a slug of 'fake-bureau' does not exist"
-    }
+    expected_result = {"detail": "Bureau with a slug of 'fake-bureau' does not exist"}
 
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     assert resp.json() == expected_result
