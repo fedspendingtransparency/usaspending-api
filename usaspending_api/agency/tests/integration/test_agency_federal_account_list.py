@@ -763,30 +763,16 @@ def test_latest_submission_per_agency_used(client, agency_account_data, helpers)
 
     expected_result = {
         "fiscal_year": 2016,
-        "results": [
-            {
-                "children": [
-                    {
-                        "code": "005-X-0000-000",
-                        "gross_outlay_amount": 7000.0,
-                        "name": "TA 7",
-                        "obligated_amount": 700.0}
-                ],
-                "code": "005-0000",
-                "gross_outlay_amount": 7000.0,
-                "name": "FA 5",
-                "obligated_amount": 700.0,
-            }
-        ],
+        "results": [],
         "toptier_code": "011",
         "page_metadata": {
             "hasNext": False,
             "hasPrevious": False,
-            "limit": 1,
+            "limit": 0,
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 1,
+            "total": 0,
         },
         "messages": [
             "Account data powering this endpoint were first collected in "

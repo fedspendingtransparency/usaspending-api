@@ -32,7 +32,8 @@ class FederalAccountList(PaginationMixin, AgencyBase):
             combined_list_dict[row['treasury_account__tas_rendering_label']] = row
 
         for row in file_a_response:
-            # Append the total_budgetary_resources_amount_cpe value to the dict with the appropriate tas_rendering_label for this row
+            # Append the total_budgetary_resources_amount_cpe value (from File A) to the dict (in File B) where the
+            #   tas_rendering_label values from both rows match
             if row['treasury_account_identifier__tas_rendering_label'] in combined_list_dict:
                 combined_list_dict[row['treasury_account_identifier__tas_rendering_label']].update(
                     {'total_budgetary_resources': row['total_budgetary_resources_amount_cpe']}
@@ -117,6 +118,7 @@ class FederalAccountList(PaginationMixin, AgencyBase):
 
         filters = [
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
             Q(submission_id__in=self.submission_ids),
             Q(
                 Q(obligations_incurred_by_program_object_class_cpe__gt=0)

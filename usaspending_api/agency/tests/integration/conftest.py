@@ -244,7 +244,7 @@ def agency_account_data():
     )
     sub6 = baker.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2016,
+        reporting_fiscal_year=2018,
         reporting_fiscal_period=8,
         toptier_code=ta5.toptier_code,
         is_final_balances_for_fy=True,
@@ -348,7 +348,6 @@ def agency_account_data():
         account_title="TA 7",
         tas_rendering_label="005-X-0000-000",
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas1,
