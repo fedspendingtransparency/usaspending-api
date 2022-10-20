@@ -50,7 +50,8 @@ def agency_data(helpers):
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta2)
     baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
     baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub1)
-    baker.make("search.TransactionSearch", awarding_agency=a1, fiscal_year=helpers.get_mocked_current_fiscal_year())
+    baker.make("search.TransactionSearch", transaction_id=1, awarding_agency_id=a1.id,
+               fiscal_year=helpers.get_mocked_current_fiscal_year())
 
     defc = baker.make(
         "references.DisasterEmergencyFundCode", code="L", group_name="covid_19", public_law="LAW", title="title"
