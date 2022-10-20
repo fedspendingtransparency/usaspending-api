@@ -263,7 +263,7 @@ award_search_load_sql_string = fr"""
   RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
 
-  COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
+  COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
   COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) AS pop_state_code,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
@@ -274,7 +274,7 @@ award_search_load_sql_string = fr"""
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)) AS pop_city_name,
-  COALESCE(transaction_fpds.place_of_perform_state_nam, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
+  COALESCE(transaction_fpds.place_of_perfor_state_desc, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
   POP_STATE_LOOKUP.fips AS pop_state_fips,
   POP_STATE_POPULATION.latest_population AS pop_state_population,
   POP_COUNTY_POPULATION.latest_population AS pop_county_population,
