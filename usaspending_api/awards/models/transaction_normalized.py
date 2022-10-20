@@ -167,7 +167,7 @@ vw_transaction_normalized_sql = """
             federal_action_obligation,
             original_loan_subsidy_cost,
             face_value_loan_guarantee,
-            NULL                                    AS "indirect_federal_sharing",
+            indirect_federal_sharing,
             funding_amount,
             non_federal_funding_amount,
             NULL                                    AS "drv_award_transaction_usaspend",

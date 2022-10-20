@@ -58,6 +58,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "federal_action_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "indirect_federal_sharing": {"delta": "NUMERIC", "postgres": "NUMERIC"},
     "funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "total_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "non_federal_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
@@ -134,6 +135,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "officer_5_name": {"delta": "STRING", "postgres": "TEXT"},
     "officer_5_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     # Exclusively FABS
+    "published_fabs_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "afa_generated_unique": {"delta": "STRING", "postgres": "TEXT"},
     "business_funds_ind_desc": {"delta": "STRING", "postgres": "TEXT"},
     "business_funds_indicator": {"delta": "STRING", "postgres": "TEXT"},
@@ -150,6 +152,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "sai_number": {"delta": "STRING", "postgres": "TEXT"},
     "uri": {"delta": "STRING", "postgres": "TEXT"},
     # Exclusively FPDS
+    "detached_award_procurement_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "detached_award_proc_unique": {"delta": "STRING", "postgres": "TEXT"},
     "a_76_fair_act_action": {"delta": "STRING", "postgres": "TEXT"},
     "a_76_fair_act_action_desc": {"delta": "STRING", "postgres": "TEXT"},
@@ -464,6 +467,7 @@ transaction_search_load_sql_string = fr"""
             AS original_loan_subsidy_cost,
         CAST(COALESCE(transaction_normalized.face_value_loan_guarantee, 0) AS NUMERIC(23, 2))
             AS face_value_loan_guarantee,
+        transaction_normalized.indirect_federal_sharing,
         transaction_normalized.funding_amount,
         CAST(COALESCE(transaction_fabs.total_funding_amount, '0') AS NUMERIC(23, 2))
             AS total_funding_amount,
@@ -604,6 +608,7 @@ transaction_search_load_sql_string = fr"""
         COALESCE(transaction_fabs.officer_5_amount, transaction_fpds.officer_5_amount) AS officer_5_amount,
 
         -- Exclusively FABS
+        transaction_fabs.published_fabs_id,
         transaction_fabs.afa_generated_unique,
         transaction_fabs.business_funds_ind_desc,
         transaction_fabs.business_funds_indicator,
@@ -621,6 +626,7 @@ transaction_search_load_sql_string = fr"""
         awards.uri,
 
         -- Exclusively FPDS
+        transaction_fpds.detached_award_procurement_id,
         transaction_fpds.detached_award_proc_unique,
         transaction_fpds.a_76_fair_act_action,
         transaction_fpds.a_76_fair_act_action_desc,

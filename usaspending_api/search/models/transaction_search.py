@@ -2,6 +2,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 
+from usaspending_api.common.custom_django_fields import NumericField
 
 class TransactionSearch(models.Model):
     """
@@ -73,6 +74,7 @@ class TransactionSearch(models.Model):
     federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    indirect_federal_sharing = NumericField(blank=True, null=True)
     funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
@@ -155,6 +157,7 @@ class TransactionSearch(models.Model):
     officer_5_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
 
     # Exclusively FABS
+    published_fabs_id = models.IntegerField(blank=True, null=True)
     afa_generated_unique = models.TextField(null=True)
     business_funds_ind_desc = models.TextField(null=True)
     business_funds_indicator = models.TextField(null=True)
@@ -172,6 +175,7 @@ class TransactionSearch(models.Model):
     uri = models.TextField(null=True)
 
     # Exclusively FPDS
+    detached_award_procurement_id = models.IntegerField(blank=True, null=True)
     detached_award_proc_unique = models.TextField(null=True)
     a_76_fair_act_action = models.TextField(null=True)
     a_76_fair_act_action_desc = models.TextField(null=True)

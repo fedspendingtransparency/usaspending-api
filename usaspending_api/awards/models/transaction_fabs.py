@@ -158,6 +158,7 @@ vw_transaction_fabs_sql = """
             federal_action_obligation,
             original_loan_subsidy_cost,
             face_value_loan_guarantee,
+            indirect_federal_sharing,
             total_funding_amount,
             non_federal_funding_amount,
             -- Recipient
