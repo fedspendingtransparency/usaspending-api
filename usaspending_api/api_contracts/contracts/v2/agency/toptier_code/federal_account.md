@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# List Federal Accounts [/api/v2/agency/{toptier_code}/federal_account/{?fiscal_year,filter,order,sort,page,limit}]
+# List Federal Accounts [/api/v2/agency/{toptier_code}/federal_account/{?fiscal_year,filter,order,sort,bureau_slug}]
 
 Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropriations for a single fiscal year
 
@@ -28,13 +28,8 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
             + `total_budgetary_resources`
             + `obligated_amount`
             + `gross_outlay_amount`
-    + `page` (optional, number)
-        The page number that is currently returned.
-        + Default: 1
-    + `limit` (optional, number)
-        How many results are returned.
-        + Default: 10
-    + `bureau_slug` (optional, string) The slug of the federal bureau to filter on.
+    + `bureau_slug` (optional, string)
+        The slug of the federal bureau to filter on.
 
 + Response 200 (application/json)
     + Attributes
@@ -42,7 +37,6 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[FederalAccount], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -60,11 +54,6 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
                     "previous": null,
                     "hasNext": false,
                     "hasPrevious": false,
-                },
-                "totals": {
-                    "total_budgetary_resources": 66846596521.0,
-                    "obligated_amount": 56046596521.0,
-                    "gross_outlay_amount": 49589399932.2,
                 },
                 "results": [
                     "code": "086-0302",
@@ -103,11 +92,6 @@ Returns a list of Federal Accounts and Treasury Accounts in the Agency's appropr
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
 + `children` (required, array[TreasuryAccount], fixed-type)
-
-## Totals (object)
-+ `total_budgetary_resources` (required, number)
-+ `obligated_amount` (required, number)
-+ `gross_outlay_amount` (required, number)
 
 ## TreasuryAccount (object)
 + `name` (required, string)
