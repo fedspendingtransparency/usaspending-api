@@ -43,7 +43,7 @@ def psc_test_data(db):
         federal_action_obligation=1,
         action_date="2020-01-01",
         product_or_service_code="1234",
-        product_or_service_co_desc="PSC DESCRIPTION UP",
+        product_or_service_description="PSC DESCRIPTION UP",
     )
     baker.make(
         "search.TransactionSearch",
@@ -53,7 +53,7 @@ def psc_test_data(db):
         federal_action_obligation=1,
         action_date="2020-01-02",
         product_or_service_code="1234",
-        product_or_service_co_desc="PSC DESCRIPTION UP",
+        product_or_service_description="PSC DESCRIPTION UP",
     )
     baker.make(
         "search.TransactionSearch",
@@ -63,7 +63,7 @@ def psc_test_data(db):
         federal_action_obligation=2,
         action_date="2020-01-03",
         product_or_service_code="9876",
-        product_or_service_co_desc="PSC DESCRIPTION DOWN",
+        product_or_service_description="PSC DESCRIPTION DOWN",
     )
     baker.make(
         "search.TransactionSearch",
@@ -73,7 +73,7 @@ def psc_test_data(db):
         federal_action_obligation=2,
         action_date="2020-01-04",
         product_or_service_code="9876",
-        product_or_service_co_desc="PSC DESCRIPTION DOWN",
+        product_or_service_description="PSC DESCRIPTION DOWN",
     )
 
     baker.make("references.PSC", code="1234", description="PSC DESCRIPTION UP")
@@ -140,7 +140,7 @@ def naics_test_data(db):
         is_fpds=True,
         federal_action_obligation=1,
         action_date="2020-01-01",
-        naics="NAICS 1234",
+        naics_code="NAICS 1234",
         naics_description="NAICS DESC 1234",
     )
     baker.make(
@@ -150,7 +150,7 @@ def naics_test_data(db):
         is_fpds=True,
         federal_action_obligation=1,
         action_date="2020-01-02",
-        naics="NAICS 1234",
+        naics_code="NAICS 1234",
         naics_description="NAICS DESC 1234",
     )
     baker.make(
@@ -160,7 +160,7 @@ def naics_test_data(db):
         is_fpds=True,
         federal_action_obligation=2,
         action_date="2020-01-03",
-        naics="NAICS 9876",
+        naics_code="NAICS 9876",
         naics_description="NAICS DESC 9876",
     )
     baker.make(
@@ -170,7 +170,7 @@ def naics_test_data(db):
         is_fpds=True,
         federal_action_obligation=2,
         action_date="2020-01-04",
-        naics="NAICS 9876",
+        naics_code="NAICS 9876",
         naics_description="NAICS DESC 9876",
     )
 
@@ -225,10 +225,10 @@ def agency_test_data(db):
         federal_action_obligation=5,
         action_date="2020-01-01",
         is_fpds=False,
-        awarding_agency_name="Awarding Toptier Agency 1",
-        funding_agency_name="Funding Toptier Agency 2",
-        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
-        funding_sub_tier_agency_na="Funding Subtier Agency 2",
+        awarding_toptier_agency_name="Awarding Toptier Agency 1",
+        funding_toptier_agency_name="Funding Toptier Agency 2",
+        awarding_subtier_agency_name="Awarding Subtier Agency 1",
+        funding_subtier_agency_name="Funding Subtier Agency 2",
     )
     baker.make(
         "search.TransactionSearch",
@@ -239,10 +239,10 @@ def agency_test_data(db):
         federal_action_obligation=10,
         action_date="2020-01-02",
         is_fpds=False,
-        awarding_agency_name="Awarding Toptier Agency 1",
-        funding_agency_name="Funding Toptier Agency 2",
-        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
-        funding_sub_tier_agency_na="Funding Subtier Agency 2",
+        awarding_toptier_agency_name="Awarding Toptier Agency 1",
+        funding_toptier_agency_name="Funding Toptier Agency 2",
+        awarding_subtier_agency_name="Awarding Subtier Agency 1",
+        funding_subtier_agency_name="Funding Subtier Agency 2",
     )
 
     baker.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")

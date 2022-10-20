@@ -17,6 +17,8 @@ The monthly delta process will handle the rest.
 """
 from datetime import datetime, timezone
 from django.db import models, transaction
+from django.db.utils import IntegrityError
+from usaspending_api.awards.models.transaction_normalized import TransactionNormalized
 
 
 # To keep queries from getting too large.
@@ -46,6 +48,11 @@ class TransactionDeltaManager(models.Manager):
         if transaction_ids:
             # Duplicates will cause us problems so let's eliminate them.
             transaction_ids = list(set(transaction_ids))
+
+            # TransactionCheck
+            err_transactions = TransactionNormalized.objects.filter(id__in=transaction_ids).count()
+            if err_transactions != len(transaction_ids):
+                raise IntegrityError("transaction_ids not found in transaction_normalized")
 
             created_at = datetime.now(timezone.utc)
             with transaction.atomic():

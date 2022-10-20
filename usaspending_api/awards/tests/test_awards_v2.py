@@ -5,7 +5,6 @@ import json
 from rest_framework import status
 from model_bakery import baker
 
-from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import Agency
 
 

@@ -20,7 +20,7 @@ def set_up_related_award_objects():
         "transaction_id": 1,
         "is_fpds": True,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
-        "naics": "333911",
+        "naics_code": "333911",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
         "referenced_idv_agency_iden": "9700",
         "idv_type_description": None,

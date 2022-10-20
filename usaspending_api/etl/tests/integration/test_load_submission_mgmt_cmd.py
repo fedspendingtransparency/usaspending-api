@@ -127,7 +127,7 @@ class TestWithMultipleDatabases(TestCase):
         Test load submission management command for File C records with only a URI
         """
         baker.make("awards.Award", id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
-        baker.make("searc.TransactionSearch", transaction_id=-997)
+        baker.make("search.TransactionSearch", transaction_id=-997)
 
         call_command("load_submission", "-9999")
 

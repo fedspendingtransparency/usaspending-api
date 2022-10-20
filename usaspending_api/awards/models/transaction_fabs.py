@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from usaspending_api.common.custom_django_fields import NumericField

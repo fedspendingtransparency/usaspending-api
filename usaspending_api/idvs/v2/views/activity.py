@@ -58,7 +58,7 @@ ACTIVITY_SQL = SQL(
             ca.fpds_parent_agency_id = pa.fpds_agency_id and
             ca.type not like 'IDV%'
             {hide_edges_awarded_amount}
-        left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
+        left outer join vw_transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
         left outer join recipient_lookup rl on (
             (rl.uei is not null and rl.uei = tf.awardee_or_recipient_uei)
             OR (rl.duns is not null and rl.duns = tf.awardee_or_recipient_uniqu)
@@ -118,7 +118,7 @@ COUNT_ACTIVITY_HIDDEN_SQL = SQL(
             ca.fpds_parent_agency_id = pa.fpds_agency_id and
             ca.type not like 'IDV%'
             {hide_edges_awarded_amount}
-        left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
+        left outer join vw_transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
     {hide_edges_end_date}
 """
 )

@@ -106,7 +106,7 @@ class Command(BaseCommand):
 
     def part_two(self):
         fix_txn_fk_to_awards = """
-            UPDATE transaction_normalized AS tn
+            UPDATE vw_transaction_normalized AS tn
             SET award_id = a.id
             FROM awards a
             WHERE

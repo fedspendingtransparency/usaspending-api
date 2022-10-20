@@ -52,9 +52,21 @@ def aggregate_models():
 
 @pytest.fixture
 def aggregate_models_with_nulls():
-    baker.make("search.TransactionSearch", is_fpds=True, federal_action_obligation=10, naics="ABCD", _quantity=3)
-    baker.make("search.TransactionSearch", is_fpds=True, federal_action_obligation=None, naics="WXYZ")
-    baker.make("search.TransactionSearch", is_fpds=False, federal_action_obligation=10, cfda_number="10.001")
+    baker.make(
+        "search.TransactionSearch", transaction_id=1, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=2, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=3, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=4, is_fpds=True, federal_action_obligation=None, naics_code="WXYZ"
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=5, is_fpds=False, federal_action_obligation=10, cfda_number="10.001"
+    )
 
 
 @pytest.mark.django_db

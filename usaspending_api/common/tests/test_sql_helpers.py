@@ -25,8 +25,8 @@ RAW_SQL = """
         tf.transaction_id  transaction_fpds_id
     from
         awards a
-        inner join transaction_normalized tn on tn.award_id = a.id
-        inner join transaction_fpds tf on tf.transaction_id = tn.id
+        inner join vw_transaction_normalized tn on tn.award_id = a.id
+        inner join vw_transaction_fpds tf on tf.transaction_id = tn.id
     order by
         a.id
 """

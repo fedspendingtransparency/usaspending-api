@@ -60,7 +60,7 @@ GET_CHILD_IDVS_SQL = SQL(
         parent_award pap
         inner join parent_award pac on pac.parent_award_id = pap.award_id
         inner join awards ac on ac.id = pac.award_id
-        inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        inner join vw_transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
         left outer join agency a on a.id = ac.funding_agency_id
         left outer join agency b on b.id = ac.awarding_agency_id
         left outer join toptier_agency tta on tta.toptier_agency_id = a.toptier_agency_id
@@ -97,7 +97,7 @@ GET_CHILD_AWARDS_SQL = SQL(
         inner join awards ap on ap.id = pap.award_id
         inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
             ac.type not like 'IDV%'
-        inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        inner join vw_transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
         left outer join agency a on a.id = ac.funding_agency_id
         left outer join agency b on b.id = ac.awarding_agency_id
         left outer join toptier_agency tta on tta.toptier_agency_id = a.toptier_agency_id
@@ -135,7 +135,7 @@ GET_GRANDCHILD_AWARDS_SQL = SQL(
         inner join awards ap on ap.id = pac.award_id
         inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
             ac.type not like 'IDV%'
-        inner join transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
+        inner join vw_transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
         left outer join agency a on a.id = ac.funding_agency_id
         left outer join agency b on b.id = ac.awarding_agency_id
         left outer join toptier_agency tta on tta.toptier_agency_id = a.toptier_agency_id

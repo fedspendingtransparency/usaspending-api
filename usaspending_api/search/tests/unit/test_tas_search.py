@@ -73,7 +73,7 @@ def mock_tas_data(db):
 
     baker.make(
         "search.TransactionSearch",
-        id=1,
+        transaction_id=1,
         action_date="2010-10-01",
         award_id=1,
         is_fpds=True,

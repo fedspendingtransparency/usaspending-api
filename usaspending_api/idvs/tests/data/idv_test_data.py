@@ -78,6 +78,7 @@ def create_idv_test_data():
         baker.make(
             "search.TransactionSearch",
             transaction_id=7000 + award_id,
+            is_fpds=True,
             award_id=award_id,
             funding_toptier_agency_name="subtier_funding_agency_name_%s" % (7000 + award_id),
             ordering_period_end_date="2018-01-%02d" % award_id,

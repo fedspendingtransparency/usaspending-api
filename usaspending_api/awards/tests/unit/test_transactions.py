@@ -17,7 +17,8 @@ from usaspending_api.common.exceptions import UnprocessableEntityException
 def format_response(api_dict):
     svs = TransactionViewSet()
     dec_fields = ["federal_action_obligation", "face_value_loan_guarantee", "original_loan_subsidy_cost"]
-    resp = {k: v for k, v in api_dict.items() if k != "id"}
+    resp = {k: v for k, v in api_dict.items() if k != "transaction_id"}
+    resp["description"] = resp["transaction_description"]
     resp = svs._format_results([resp])[0]
     for k, v in resp.items():
         if k in dec_fields:
@@ -43,6 +44,7 @@ def test_specific_award():
     create_dummy_awards()
     baker.make("search.TransactionSearch", **transaction_1)
     baker.make("search.TransactionSearch", **transaction_2)
+    baker.make("search.TransactionSearch", **transaction_3)
     test_payload = {"award_id": "2"}
 
     svs = TransactionViewSet()
@@ -72,6 +74,7 @@ def create_dummy_awards():
 
 
 transaction_1 = {
+    "transaction_id": 1,
     "is_fpds": False,
     "transaction_unique_id": "R02L2A1XL2",
     "type": "A",
@@ -87,6 +90,7 @@ transaction_1 = {
 }
 
 transaction_2 = {
+    "transaction_id": 2,
     "is_fpds": True,
     "transaction_unique_id": "O21E7S1PT6",
     "type": None,
@@ -101,6 +105,7 @@ transaction_2 = {
     "original_loan_subsidy_cost": "414172.86",
 }
 transaction_3 = {
+    "transaction_id": 3,
     "is_fpds": False,
     "transaction_unique_id": "Q25B9A1MQ0",
     "type": "D",
