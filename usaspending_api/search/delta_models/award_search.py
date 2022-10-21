@@ -228,9 +228,8 @@ award_search_load_sql_string = fr"""
   SFA.subtier_code AS funding_subtier_agency_code,
   FA_ID.id AS funding_toptier_agency_id,
   latest_transaction.funding_agency_id AS funding_subtier_agency_id,
-
-  COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code)) AS recipient_location_country_code,
-  COALESCE(transaction_fpds.legal_entity_country_name, transaction_fabs.legal_entity_country_name)) AS recipient_location_country_name,
+  COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) AS recipient_location_country_code,
+  COALESCE(transaction_fpds.legal_entity_country_name, transaction_fabs.legal_entity_country_name) AS recipient_location_country_name,
   COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AS recipient_location_county_code,
