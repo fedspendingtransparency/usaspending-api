@@ -11,7 +11,7 @@ from usaspending_api.common.helpers.generic_helper import dates_are_month_booken
 from usaspending_api.common.helpers.generic_helper import generate_date_from_string
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.references.constants import WEBSITE_AWARD_BINS
-from usaspending_api.search.models import SubawardView
+from usaspending_api.search.models import SubawardSearch
 
 
 logger = logging.getLogger(__name__)
@@ -44,15 +44,23 @@ def merge_date_ranges(date_range_list):
     yield (saved_range.start, saved_range.end)
 
 
-def date_list_to_queryset(date_list, table):
+def date_list_to_queryset(date_list, table, is_subaward=False):
     or_queryset = Q()
     for v in date_list:
         # Modified May 2018 so that there will always be a start and end value from combine_date_range_queryset()
 
         date_type_dict = v.get("date_type_dict", {"gte": "action_date", "lte": "action_date"})
-        for date_type in date_type_dict.values():
+        for operand, date_type in date_type_dict.items():
             if date_type not in ["action_date", "last_modified_date", "date_signed"]:
                 raise InvalidParameterException("Invalid date_type: {}".format(date_type))
+            # When searching subawards, use the subaward equivalent fields
+            if is_subaward:
+                subaward_mappings = {
+                    "action_date": "sub_action_date",
+                    "last_modified_date": "last_modified_date",
+                    "date_signed": "date_signed",
+                }
+                date_type_dict[operand] = subaward_mappings[date_type]
 
         # (StartA <= EndB)  and  (EndA >= StartB)
         # where "A" is an Award and "B" is the date range being searched
@@ -65,7 +73,7 @@ def date_list_to_queryset(date_list, table):
     return table.objects.filter(or_queryset)
 
 
-def combine_date_range_queryset(date_dicts, table, min_start, max_end, dt_format="%Y-%m-%d"):
+def combine_date_range_queryset(date_dicts, table, min_start, max_end, dt_format="%Y-%m-%d", is_subaward=False):
     final_ranges = []
     date_type_list = []
 
@@ -96,19 +104,19 @@ def combine_date_range_queryset(date_dicts, table, min_start, max_end, dt_format
                 for r in list(merge_date_ranges(list_of_ranges))
             ]
         )
-    return date_list_to_queryset(final_ranges, table)
+    return date_list_to_queryset(final_ranges, table, is_subaward=is_subaward)
 
 
 def get_total_transaction_column(model):
     """Returns column name based on model"""
 
-    if model == SubawardView:
-        return "amount"
+    if model == SubawardSearch:
+        return "subaward_amount"
     else:
         return "award_amount"
 
 
-def total_obligation_queryset(amount_obj, model, filters):
+def total_obligation_queryset(amount_obj, model, filters, is_subaward=False):
     if can_use_total_obligation_enum(amount_obj):
         bins = []
         for v in amount_obj:
@@ -118,7 +126,8 @@ def total_obligation_queryset(amount_obj, model, filters):
                 if lower_bound == values["lower"] and upper_bound == values["upper"]:
                     bins.extend(values["enums"])
                     break
-        or_queryset = model.objects.filter(total_obl_bin__in=set(bins))
+        obl_bin_filter = {f"{'sub_' if is_subaward else ''}total_obl_bin__in": set(bins)}
+        or_queryset = model.objects.filter(**obl_bin_filter)
     else:
         column = get_total_transaction_column(model)
         bound_filters = Q()

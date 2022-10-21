@@ -103,10 +103,22 @@ def cfda_test_data(db):
     baker.make("awards.Award", id=2, latest_transaction_id=2)
 
     baker.make(
-        "awards.Subaward", id=1, award_id=1, amount=1, cfda_id=1, cfda_number="CFDA1234", cfda_title="CFDA TITLE 1234"
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        award_id=1,
+        subaward_amount=1,
+        cfda_id=1,
+        cfda_number="CFDA1234",
+        cfda_title="CFDA TITLE 1234",
     )
     baker.make(
-        "awards.Subaward", id=2, award_id=2, amount=1, cfda_id=1, cfda_number="CFDA1234", cfda_title="CFDA TITLE 1234"
+        "search.SubawardSearch",
+        broker_subaward_id=2,
+        award_id=2,
+        subaward_amount=1,
+        cfda_id=1,
+        cfda_number="CFDA1234",
+        cfda_title="CFDA TITLE 1234",
     )
 
     baker.make("awards.TransactionNormalized", id=1, award_id=1, federal_action_obligation=1, action_date="2020-01-01")
@@ -173,10 +185,10 @@ def agency_test_data(db):
     baker.make("awards.Award", id=2, latest_transaction_id=2)
 
     baker.make(
-        "awards.Subaward",
-        id=1,
+        "search.SubawardSearch",
+        broker_subaward_id=1,
         latest_transaction_id=1,
-        amount=50,
+        subaward_amount=50,
         awarding_agency_id=1003,
         funding_agency_id=1004,
         awarding_toptier_agency_name="Awarding Toptier Agency 3",
@@ -189,10 +201,10 @@ def agency_test_data(db):
         funding_subtier_agency_abbreviation="SA4",
     )
     baker.make(
-        "awards.Subaward",
-        id=2,
+        "search.SubawardSearch",
+        broker_subaward_id=2,
         latest_transaction_id=2,
-        amount=100,
+        subaward_amount=100,
         awarding_agency_id=1003,
         funding_agency_id=1004,
         awarding_toptier_agency_name="Awarding Toptier Agency 3",
@@ -213,6 +225,7 @@ def agency_test_data(db):
         funding_agency_id=1002,
         federal_action_obligation=5,
         action_date="2020-01-01",
+        is_fpds=False,
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -222,6 +235,23 @@ def agency_test_data(db):
         funding_agency_id=1002,
         federal_action_obligation=10,
         action_date="2020-01-02",
+        is_fpds=False,
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction_id=1,
+        awarding_agency_name="Awarding Toptier Agency 1",
+        funding_agency_name="Funding Toptier Agency 2",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        funding_sub_tier_agency_na="Funding Subtier Agency 2",
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction_id=2,
+        awarding_agency_name="Awarding Toptier Agency 1",
+        funding_agency_name="Funding Toptier Agency 2",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        funding_sub_tier_agency_na="Funding Subtier Agency 2",
     )
 
     baker.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")
@@ -250,34 +280,49 @@ def recipient_test_data(db):
     baker.make("awards.Award", id=5, latest_transaction_id=5)
 
     baker.make(
-        "awards.Subaward",
-        id=1,
+        "search.SubawardSearch",
+        broker_subaward_id=1,
         award_id=1,
-        amount=1,
-        recipient_name="University of Pawnee",
-        recipient_unique_id="00UOP00",
+        subaward_amount=1,
+        sub_awardee_or_recipient_legal_raw="UNIVERSITY OF PAWNEE",
+        sub_awardee_or_recipient_legal="UNIVERSITY OF PAWNEE",
+        sub_awardee_or_recipient_uniqu="00UOP00",
     )
     baker.make(
-        "awards.Subaward",
-        id=2,
+        "search.SubawardSearch",
+        broker_subaward_id=2,
         award_id=2,
-        amount=10,
-        recipient_name="University of Pawnee",
-        recipient_unique_id="00UOP00",
+        subaward_amount=10,
+        sub_awardee_or_recipient_legal_raw="UNIVERSITY OF PAWNEE",
+        sub_awardee_or_recipient_legal="UNIVERSITY OF PAWNEE",
+        sub_awardee_or_recipient_uniqu="00UOP00",
     )
     baker.make(
-        "awards.Subaward", id=3, award_id=3, amount=100, recipient_name="John Doe", recipient_unique_id="1234JD4321"
+        "search.SubawardSearch",
+        broker_subaward_id=3,
+        award_id=3,
+        subaward_amount=100,
+        sub_awardee_or_recipient_legal_raw="JOHN DOE",
+        sub_awardee_or_recipient_legal="JOHN DOE",
+        sub_awardee_or_recipient_uniqu="1234JD4321",
     )
     baker.make(
-        "awards.Subaward", id=4, award_id=4, amount=1000, recipient_name="John Doe", recipient_unique_id="1234JD4321"
+        "search.SubawardSearch",
+        broker_subaward_id=4,
+        award_id=4,
+        subaward_amount=1000,
+        sub_awardee_or_recipient_legal_raw="JOHN DOE",
+        sub_awardee_or_recipient_legal="JOHN DOE",
+        sub_awardee_or_recipient_uniqu="1234JD4321",
     )
     baker.make(
-        "awards.Subaward",
-        id=5,
+        "search.SubawardSearch",
+        broker_subaward_id=5,
         award_id=5,
-        amount=10000,
-        recipient_name="MULTIPLE RECIPIENTS",
-        recipient_unique_id=None,
+        subaward_amount=10000,
+        sub_awardee_or_recipient_legal_raw="MULTIPLE RECIPIENTS",
+        sub_awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
+        sub_awardee_or_recipient_uniqu=None,
     )
 
     baker.make(
@@ -402,56 +447,64 @@ def geo_test_data(db):
     baker.make("awards.Award", id=4, latest_transaction_id=4)
 
     baker.make(
-        "awards.Subaward",
-        id=1,
+        "search.SubawardSearch",
+        broker_subaward_id=1,
         award_id=1,
-        amount=1,
-        pop_country_name=None,
-        pop_country_code="US",
-        pop_state_code="XY",
-        pop_county_code="04",
-        pop_county_name="COUNTYSVILLE",
-        pop_zip4="12345",
-        pop_congressional_code="06",
+        subaward_amount=1,
+        sub_place_of_perform_country_na=None,
+        sub_place_of_perform_country_co_raw="US",
+        sub_place_of_perform_country_co="US",
+        sub_place_of_perform_state_code="XY",
+        sub_place_of_perform_county_code="004",
+        sub_place_of_perform_county_name="COUNTYSVILLE",
+        sub_place_of_performance_zip="12345",
+        sub_place_of_perform_congressio_raw="06",
+        sub_place_of_perform_congressio="06",
     )
     baker.make(
-        "awards.Subaward",
-        id=2,
+        "search.SubawardSearch",
+        broker_subaward_id=2,
         award_id=2,
-        amount=10,
-        pop_country_name=None,
-        pop_country_code="US",
-        pop_state_code="XY",
-        pop_county_code="04",
-        pop_county_name="COUNTYSVILLE",
-        pop_zip4="12345",
-        pop_congressional_code="06",
+        subaward_amount=10,
+        sub_place_of_perform_country_na=None,
+        sub_place_of_perform_country_co_raw="US",
+        sub_place_of_perform_country_co="US",
+        sub_place_of_perform_state_code="XY",
+        sub_place_of_perform_county_code="004",
+        sub_place_of_perform_county_name="COUNTYSVILLE",
+        sub_place_of_performance_zip="12345",
+        sub_place_of_perform_congressio_raw="06",
+        sub_place_of_perform_congressio="06",
     )
     baker.make(
-        "awards.Subaward",
-        id=3,
+        "search.SubawardSearch",
+        broker_subaward_id=3,
         award_id=3,
-        amount=100,
-        pop_country_name=None,
-        pop_country_code="US",
-        pop_state_code="XY",
-        pop_county_code="01",
-        pop_county_name="SOMEWHEREVILLE",
-        pop_zip4="98765",
-        pop_congressional_code="90",
+        subaward_amount=100,
+        sub_place_of_perform_country_na=None,
+        sub_place_of_perform_country_co_raw="US",
+        sub_place_of_perform_country_co="US",
+        sub_place_of_perform_state_code="XY",
+        sub_place_of_perform_county_code="001",
+        sub_place_of_perform_county_name="SOMEWHEREVILLE",
+        sub_place_of_performance_zip="98765",
+        sub_place_of_perform_congressio_raw="90",
+        sub_place_of_perform_congressio="90",
     )
     baker.make(
-        "awards.Subaward",
-        id=4,
+        "search.SubawardSearch",
+        broker_subaward_id=4,
         award_id=4,
-        amount=1000,
-        pop_country_name=None,
-        pop_country_code="US",
-        pop_state_code="XY",
-        pop_county_code="01",
-        pop_county_name="SOMEWHEREVILLE",
-        pop_zip4="98765",
-        pop_congressional_code="90",
+        subaward_amount=1000,
+        sub_place_of_perform_country_na=None,
+        sub_place_of_perform_country_co_raw="US",
+        sub_place_of_perform_country_co="US",
+        sub_place_of_perform_state_code="XY",
+        sub_place_of_perform_county_code="001",
+        sub_place_of_perform_county_name="SOMEWHEREVILLE",
+        sub_place_of_performance_zip="98765",
+        sub_place_of_perform_congressio_raw="90",
+        sub_place_of_perform_congressio="90",
     )
 
     baker.make(
@@ -490,9 +543,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="04",
         place_of_perform_county_na="COUNTYSVILLE",
         place_of_performance_zip5="12345",
@@ -501,9 +555,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=2,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="04",
         place_of_perform_county_na="COUNTYSVILLE",
         place_of_performance_zip5="12345",
@@ -512,9 +567,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=3,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="01",
         place_of_perform_county_na="SOMEWHEREVILLE",
         place_of_performance_zip5="98765",
@@ -523,9 +579,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=4,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="01",
         place_of_perform_county_na="SOMEWHEREVILLE",
         place_of_performance_zip5="98765",
@@ -901,8 +958,8 @@ def test_category_naics_awards(naics_test_data, monkeypatch, elasticsearch_trans
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
-            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
+            {"amount": 4, "code": "NAICS 9876", "name": "NAICS DESC 9876", "id": None},
+            {"amount": 2, "code": "NAICS 1234", "name": "NAICS DESC 1234", "id": None},
         ],
         "messages": [get_time_period_message()],
     }

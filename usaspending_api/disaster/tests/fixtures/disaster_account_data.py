@@ -1,7 +1,6 @@
 import pytest
 
 from model_bakery import baker
-from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_date
 
 
 @pytest.fixture
@@ -41,7 +40,7 @@ def disaster_account_data():
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=8,
-        submission_reveal_date=f"{current_fiscal_date()}",
+        submission_reveal_date=f"2022-12-31",
     )
     dsws3 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",

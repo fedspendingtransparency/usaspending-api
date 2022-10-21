@@ -268,7 +268,7 @@ LEFT OUTER JOIN
   raw.transaction_fabs
     ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)
 LEFT OUTER JOIN
-  raw.recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
+  rpt.recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
      CASE
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
@@ -364,7 +364,7 @@ LEFT OUTER JOIN
 )
 LEFT OUTER JOIN (
         SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
-        FROM raw.recipient_profile
+        FROM rpt.recipient_profile
         WHERE recipient_level != 'P'
         GROUP BY recipient_hash, uei
     ) RECIPIENT_HASH_AND_LEVELS ON (

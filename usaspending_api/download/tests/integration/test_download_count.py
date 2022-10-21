@@ -77,6 +77,7 @@ def download_test_data():
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa1,
+        is_fpds=True,
     )
     trann2 = baker.make(
         TransactionNormalized,
@@ -85,6 +86,7 @@ def download_test_data():
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        is_fpds=True,
     )
     trann3 = baker.make(
         TransactionNormalized,
@@ -93,14 +95,33 @@ def download_test_data():
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency=aa2,
+        is_fpds=False,
     )
 
     # Create TransactionContract
-    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid")
-    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid")
+    baker.make(
+        TransactionFPDS,
+        transaction=trann1,
+        piid="tc1piid",
+        awarding_agency_name="Bureau of Things",
+        awarding_sub_tier_agency_n="Bureau of Things",
+    )
+    baker.make(
+        TransactionFPDS,
+        transaction=trann2,
+        piid="tc2piid",
+        awarding_agency_name="Bureau of Stuff",
+        awarding_sub_tier_agency_n="Bureau of Things",
+    )
 
     # Create TransactionAssistance
-    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain")
+    baker.make(
+        TransactionFABS,
+        transaction=trann3,
+        fain="ta1fain",
+        awarding_agency_name="Bureau of Stuff",
+        awarding_sub_tier_agency_n="Bureau of Things",
+    )
 
     # Set latest_award for each award
     update_awards()

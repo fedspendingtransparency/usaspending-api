@@ -78,6 +78,7 @@ def download_test_data(transactional_db):
         modification_number=1,
         awarding_agency=aa1,
         unique_award_key="CONT_IDV_NEW",
+        is_fpds=True,
     )
     trann2 = baker.make(
         TransactionNormalized,
@@ -88,6 +89,7 @@ def download_test_data(transactional_db):
         modification_number=1,
         awarding_agency=aa2,
         unique_award_key="CONT_AWD_NEW",
+        is_fpds=True,
     )
     trann3 = baker.make(
         TransactionNormalized,
@@ -98,14 +100,33 @@ def download_test_data(transactional_db):
         modification_number=1,
         awarding_agency=aa2,
         unique_award_key="ASST_NON_NEW",
+        is_fpds=False,
     )
 
     # Create TransactionContract
-    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_NEW")
-    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_NEW")
+    baker.make(
+        TransactionFPDS,
+        transaction=trann1,
+        piid="tc1piid",
+        unique_award_key="CONT_IDV_NEW",
+        awarding_agency_name="Bureau of Things",
+    )
+    baker.make(
+        TransactionFPDS,
+        transaction=trann2,
+        piid="tc2piid",
+        unique_award_key="CONT_AWD_NEW",
+        awarding_agency_name="Bureau of Stuff",
+    )
 
     # Create TransactionAssistance
-    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_NEW")
+    baker.make(
+        TransactionFABS,
+        transaction=trann3,
+        fain="ta1fain",
+        unique_award_key="ASST_NON_NEW",
+        awarding_agency_name="Bureau of Stuff",
+    )
 
     # Set latest_award for each award
     update_awards()
@@ -132,7 +153,7 @@ def test_download_assistance_status(client, download_test_data):
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award_financial", "treasury_account"), ("assistance_transaction_history", "d2"), ("subaward", "d2")
+        ("award_financial", "treasury_account"), ("assistance_transaction_history", "d2"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -175,7 +196,7 @@ def test_download_awards_status(client, download_test_data, monkeypatch, elastic
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award", "d1"), ("award", "d2"), ("subaward", "d1"), ("subaward", "d2")
+        ("award", "d1"), ("award", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -216,7 +237,7 @@ def test_download_contract_status(client, download_test_data):
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award_financial", "treasury_account"), ("idv_transaction_history", "d1"), ("subaward", "d1")
+        ("award_financial", "treasury_account"), ("idv_transaction_history", "d1"), ("subaward_search", "d1")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -299,7 +320,7 @@ def test_download_transactions_status(client, download_test_data, monkeypatch, e
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("transaction", "d1"), ("transaction", "d2"), ("subaward", "d1"), ("subaward", "d2")
+        ("transaction", "d1"), ("transaction", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -341,7 +362,7 @@ def test_download_transactions_limit(client, download_test_data, monkeypatch, el
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("transaction", "d1"), ("transaction", "d2"), ("subaward", "d1"), ("subaward", "d2")
+        ("transaction", "d1"), ("transaction", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
