@@ -22,13 +22,13 @@ def basic_award(db, basic_agencies):
         action_date="2020-01-01",
         is_fpds=False,
         awarding_agency_code="001",
-        awarding_agency_name="Awarding Toptier Agency 1",
+        awarding_toptier_agency_abbreviation="Awarding Toptier Agency 1",
         funding_agency_code="004",
-        funding_agency_name="Funding Toptier Agency 4",
+        funding_toptier_agency_abbreviation="Funding Toptier Agency 4",
         awarding_sub_tier_agency_c="1001",
-        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        awarding_subtier_agency_abbreviation="Awarding Subtier Agency 1",
         funding_sub_tier_agency_co="1004",
-        funding_sub_tier_agency_na="Funding Subtier Agency 4",
+        funding_subtier_agency_abbreviation="Funding Subtier Agency 4",
     )
 
 
@@ -54,13 +54,13 @@ def subagency_award(db, agencies_with_subagencies):
         action_date="2020-01-02",
         is_fpds=False,
         awarding_agency_code="003",
-        awarding_agency_name="Awarding Toptier Agency 3",
+        awarding_toptier_agency_abbreviation="Awarding Toptier Agency 3",
         funding_agency_code="002",
-        funding_agency_name="Funding Toptier Agency 2",
+        funding_toptier_agency_abbreviation="Funding Toptier Agency 2",
         awarding_sub_tier_agency_c="0005",
-        awarding_sub_tier_agency_n="Awarding Subtier Agency 5",
+        awarding_subtier_agency_abbreviation="Awarding Subtier Agency 5",
         funding_sub_tier_agency_co="0006",
-        funding_sub_tier_agency_na="Funding Subtier Agency 6",
+        funding_subtier_agency_abbreviation="Funding Subtier Agency 6",
     )
 
 

@@ -10,7 +10,7 @@ from rest_framework import status
 def cfda_transactions(db):
     award_1 = {"pk": 1, "category": "grant", "generated_unique_award_id": "whatever"}
     trx_norm_1 = {
-        "pk": 1,
+        "transaction_id": 1,
         "award_id": 1,
         "is_fpds": False,
         "transaction_unique_id": "Q25B9A1MQ0",
@@ -20,7 +20,7 @@ def cfda_transactions(db):
         "action_type": None,
         "action_type_description": "grant",
         "modification_number": "0",
-        "description": "ligula in lacus curabitur at ipsum ac tellus semper interdum mauris",
+        "transaction_description": "ligula in lacus curabitur at ipsum ac tellus semper interdum mauris",
         "federal_action_obligation": "10.00",
         "face_value_loan_guarantee": "10.00",
         "original_loan_subsidy_cost": "10.00",

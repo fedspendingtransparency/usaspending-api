@@ -6,7 +6,7 @@ from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
@@ -68,57 +68,44 @@ def download_test_data():
     award3 = baker.make("awards.Award", id=789, category="assistance")
 
     # Create Transactions
-    trann1 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=1,
         award=award1,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa1,
+        awarding_agency_id=aa1.id,
         is_fpds=True,
+        piid="tc1piid",
+        awarding_toptier_agency_abbreviation="Bureau of Things",
+        awarding_subtier_agency_abbreviation="Bureau of Things",
     )
-    trann2 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=2,
         award=award2,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
+        awarding_agency_id=aa2.id,
         is_fpds=True,
+        piid="tc2piid",
+        awarding_toptier_agency_abbreviation="Bureau of Stuff",
+        awarding_subtier_agency_abbreviation="Bureau of Things",
     )
-    trann3 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=3,
         award=award3,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
+        awarding_agency_id=aa2.id,
         is_fpds=False,
-    )
-
-    # Create TransactionContract
-    baker.make(
-        TransactionFPDS,
-        transaction=trann1,
-        piid="tc1piid",
-        awarding_agency_name="Bureau of Things",
-        awarding_sub_tier_agency_n="Bureau of Things",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction=trann2,
-        piid="tc2piid",
-        awarding_agency_name="Bureau of Stuff",
-        awarding_sub_tier_agency_n="Bureau of Things",
-    )
-
-    # Create TransactionAssistance
-    baker.make(
-        TransactionFABS,
-        transaction=trann3,
         fain="ta1fain",
-        awarding_agency_name="Bureau of Stuff",
-        awarding_sub_tier_agency_n="Bureau of Things",
+        awarding_toptier_agency_abbreviation="Bureau of Stuff",
+        awarding_subtier_agency_abbreviation="Bureau of Things",
     )
 
     # Set latest_award for each award

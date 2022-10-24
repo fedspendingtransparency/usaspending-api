@@ -244,7 +244,7 @@ def spending_by_award_test_data():
         recipient_location_country_code="USA",
         recipient_location_county_code="013",
         recipient_location_city_name="ARLINGTON",
-        naics="112233",
+        naics_code="112233",
         product_or_service_code="PSC1",
         type_of_contract_pricing="contract_pricing_test",
         type_set_aside="type_set_aside_test",
@@ -264,7 +264,7 @@ def spending_by_award_test_data():
         recipient_location_state_code="VA",
         recipient_location_country_code="USA",
         recipient_location_county_code="012",
-        naics="112244",
+        naics_code="112244",
     )
     baker.make("search.TransactionSearch", transaction_id=4, award=award_3, action_date="2017-01-01", is_fpds=True)
     baker.make("search.TransactionSearch", transaction_id=5, award=award_3, action_date="2018-01-01", is_fpds=True)
@@ -283,7 +283,7 @@ def spending_by_award_test_data():
         action_date="2019-10-1",
         is_fpds=False,
         cfda_number="10.331",
-        awardee_or_recipient_uniqu="duns_1001",
+        recipient_unique_id="duns_1001",
     )
     baker.make("search.TransactionSearch", transaction_id=8, award=award_5, action_date="2019-10-1", is_fpds=True)
 

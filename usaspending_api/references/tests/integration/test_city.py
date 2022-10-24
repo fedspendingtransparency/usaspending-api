@@ -9,59 +9,59 @@ from model_bakery import baker
 def award_data_fixture(db):
     baker.make(
         "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         action_date="2010-10-01",
         is_fpds=True,
         type="A",
-        transaction_id=1,
-        legal_entity_zip5="abcde",
-        legal_entity_city_name="ARLINGTON",
-        legal_entity_state_code="VA",
-        legal_entity_country_code="UNITED STATES",
+        recipient_location_zip5="abcde",
+        recipient_location_city_name="ARLINGTON",
+        recipient_location_state_code="VA",
+        recipient_location_country_code="UNITED STATES",
         piid="IND12PB00323",
     )
     baker.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
     baker.make(
         "search.TransactionSearch",
+        transaction_id=2,
         award_id=2,
         action_date="2011-11-11",
         is_fpds=True,
         type="A",
-        transaction_id=2,
-        legal_entity_zip5="abcde",
-        legal_entity_city_name="BRISTOL",
-        legal_entity_state_code=None,
-        legal_entity_country_code="GBR",
+        recipient_location_zip5="abcde",
+        recipient_location_city_name="BRISTOL",
+        recipient_location_state_code=None,
+        recipient_location_country_code="GBR",
         piid="0001",
     )
     baker.make("awards.Award", id=2, latest_transaction_id=2, is_fpds=True, type="A", piid="0001")
 
     baker.make(
         "search.TransactionSearch",
+        transaction_id=3,
         award_id=3,
         action_date="2018-01-01",
         is_fpds=True,
         type="04",
-        transaction_id=3,
-        legal_entity_zip5="abcde",
-        legal_entity_city_name="PHILLIPSBURG",
-        legal_entity_state_code="PA",
+        recipient_location_zip5="abcde",
+        recipient_location_city_name="PHILLIPSBURG",
+        recipient_location_state_code="PA",
         piid="0002",
     )
     baker.make("awards.Award", id=3, latest_transaction_id=3, is_fpds=True, type="04", piid="0002")
 
     baker.make(
         "search.TransactionSearch",
+        transaction_id=4,
         award_id=4,
         action_date="2011-11-11",
         is_fpds=True,
         type="A",
-        transaction_id=4,
-        legal_entity_zip5="abcde",
-        legal_entity_city_name="BRISTOL",
-        legal_entity_state_code="IL",
-        legal_entity_country_code="USA",
+        recipient_location_zip5="abcde",
+        recipient_location_city_name="BRISTOL",
+        recipient_location_state_code="IL",
+        recipient_location_country_code="USA",
         piid="0003",
     )
     baker.make("awards.Award", id=4, latest_transaction_id=4, is_fpds=True, type="A", piid="0003")

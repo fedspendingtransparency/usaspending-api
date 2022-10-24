@@ -305,7 +305,8 @@ vw_transaction_fpds_sql = """
         SELECT
             -- Keys
             transaction_id,
-            modification_number,
+            detached_award_procurement_id,
+            modification_number                     AS "award_modification_amendme",
             generated_unique_award_id               AS "unique_award_key",
             -- Dates
             action_date,

@@ -98,7 +98,7 @@ def award_with_toptier_agency(id):
         award=a1,
         action_date="2020-04-01",
         is_fpds=True,
-        funding_agency=agency,
+        funding_agency_id=agency.id,
     )
 
     return a1

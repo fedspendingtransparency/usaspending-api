@@ -190,28 +190,32 @@ def setup_test_data(db):
     award_list = [baker.make("awards.Award", **award) for award in award_dicts]
     transaction_list = [
         {
+            "transaction_id": 1,
             "award": award_list[0],
             "fiscal_year": 2019,
             "action_date": "2018-11-15",
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
         },
         {
+            "transaction_id": 2,
             "award": award_list[0],
             "fiscal_year": 2019,
             "action_date": "2018-12-15",
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
         },
         {
+            "transaction_id": 3,
             "award": award_list[1],
             "fiscal_year": 2019,
             "action_date": "2018-10-15",
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
         },
         {
+            "transaction_id": 4,
             "award": award_list[2],
             "fiscal_year": 2019,
             "action_date": "2018-10-28",
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
         },
     ]
     for transaction in transaction_list:

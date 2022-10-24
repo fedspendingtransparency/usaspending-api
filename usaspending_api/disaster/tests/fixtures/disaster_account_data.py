@@ -454,7 +454,7 @@ def disaster_account_data():
         award=a1,
         action_date="2020-04-01",
         is_fpds=False,
-        funding_agency=ag1,
+        funding_agency_id=ag1.id,
     )
     baker.make(
         "search.TransactionSearch",
@@ -462,7 +462,7 @@ def disaster_account_data():
         award=a2,
         action_date="2020-04-02",
         is_fpds=False,
-        funding_agency=ag2,
+        funding_agency_id=ag2.id,
     )
     baker.make(
         "search.TransactionSearch",
@@ -470,7 +470,7 @@ def disaster_account_data():
         award=a3,
         action_date="2020-04-03",
         is_fpds=True,
-        unding_agency=ag3,
+        funding_agency_id=ag3.id,
     )
     baker.make(
         "search.TransactionSearch",
@@ -478,7 +478,7 @@ def disaster_account_data():
         award=a4,
         action_date="2020-04-04",
         is_fpds=False,
-        funding_agency=ag3,
+        funding_agency_id=ag3.id,
     )
     baker.make(
         "search.TransactionSearch",
@@ -486,7 +486,7 @@ def disaster_account_data():
         award=a5,
         action_date="2020-04-04",
         is_fpds=False,
-        funding_agency=ag4,
+        funding_agency_id=ag4.id,
     )
 
     faba = "awards.FinancialAccountsByAwards"

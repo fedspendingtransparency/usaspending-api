@@ -162,10 +162,7 @@ vw_transaction_normalized_sql = """
             face_value_loan_guarantee,
             indirect_federal_sharing,
             funding_amount,
-            non_federal_funding_amount,
-            NULL                                    AS "drv_award_transaction_usaspend",
-            NULL                                    AS "drv_current_total_award_value_amount_adjustment",
-            NULL                                    AS "drv_potential_total_award_value_amount_adjustment"
+            non_federal_funding_amount
         FROM
             rpt.transaction_search;
 """

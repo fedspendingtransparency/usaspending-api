@@ -69,34 +69,37 @@ def download_test_data(db):
     # Create Transactions
     baker.make(
         TransactionSearch,
+        transaction_id=1,
         is_fpds=True,
         award=award1,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa1,
+        awarding_agency_id=aa1.id,
         generated_unique_award_id="CONT_IDV_1",
         piid="tc1piid",
     )
     baker.make(
         TransactionSearch,
+        transaction_id=2,
         is_fpds=True,
         award=award2,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
+        awarding_agency_id=aa2.id,
         generated_unique_award_id="CONT_AWD_1",
         piid="tc2piid",
     )
     baker.make(
         TransactionSearch,
+        transaction_id=3,
         is_fpds=False,
         award=award3,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
+        awarding_agency_id=aa2.id,
         generated_unique_award_id="ASST_NON_1",
         fain="ta1fain",
     )

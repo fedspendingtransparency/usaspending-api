@@ -76,11 +76,11 @@ def download_test_data(transactional_db):
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa1,
+        awarding_agency_id=aa1.id,
         generated_unique_award_id="CONT_IDV_NEW",
         is_fpds=True,
         piid="tc1piid",
-        awarding_agency_name="Bureau of Things",
+        awarding_toptier_agency_abbreviation="Bureau of Things",
     )
     baker.make(
         TransactionSearch,
@@ -89,11 +89,11 @@ def download_test_data(transactional_db):
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
+        awarding_agency_id=aa2.id,
         generated_unique_award_id="CONT_AWD_NEW",
         is_fpds=True,
         piid="tc2piid",
-        awarding_agency_name="Bureau of Stuff",
+        awarding_toptier_agency_abbreviation="Bureau of Stuff",
     )
     baker.make(
         TransactionSearch,
@@ -102,11 +102,11 @@ def download_test_data(transactional_db):
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
+        awarding_agency_id=aa2.id,
         generated_unique_award_id="ASST_NON_NEW",
         is_fpds=False,
         fain="ta1fain",
-        awarding_agency_name="Bureau of Stuff",
+        awarding_toptier_agency_abbreviation="Bureau of Stuff",
     )
 
     # Set latest_award for each award

@@ -209,9 +209,9 @@ TEST_SUMMARY_TRANSACTION_RECIPIENT = {
 def create_transaction_test_data(transaction_recipient_list=None):
 
     if transaction_recipient_list is None:
-        transaction_recipient_list = TEST_SUMMARY_TRANSACTION_RECIPIENT.values()
+        transaction_recipient_list = list(TEST_SUMMARY_TRANSACTION_RECIPIENT.values())
 
-    for count, transaction_search in enumerate(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS.values(), 1):
+    for count, transaction_search in enumerate(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS.values()):
         base_transaction_search = {
             "transaction_id": count,
             "award_id": count,
@@ -219,13 +219,11 @@ def create_transaction_test_data(transaction_recipient_list=None):
             "business_categories": ["expected", "business", "cat"],
         }
         base_transaction_search.update(transaction_search)
-        base_transaction_search.update(transaction_recipient_list.values()[count])
+        base_transaction_search.update(transaction_recipient_list[count])
         baker.make("awards.Award", id=count, latest_transaction_id=count)
         baker.make("search.TransactionSearch", **base_transaction_search)
 
-    for count, transaction_search in enumerate(
-        TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FABS.values(), len(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS) + 1
-    ):
+    for count, transaction_search in enumerate(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FABS.values()):
         base_transaction_search = {
             "transaction_id": count,
             "award_id": count,
@@ -233,7 +231,7 @@ def create_transaction_test_data(transaction_recipient_list=None):
             "business_categories": ["expected", "business", "cat"],
         }
         base_transaction_search.update(transaction_search)
-        base_transaction_search.update(transaction_recipient_list.values()[count])
+        base_transaction_search.update(transaction_recipient_list[count])
         baker.make("awards.Award", id=count, latest_transaction_id=count)
         baker.make("search.TransactionSearch", **base_transaction_search)
 

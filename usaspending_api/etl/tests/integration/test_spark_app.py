@@ -119,9 +119,10 @@ def _transaction_and_award_test_data(db):
     awd1 = baker.make("awards.Award", awarding_agency=agency1)
     baker.make(
         "search.TransactionSearch",
+        transaction_id=1,
         award=awd1,
         modification_number="1",
-        awarding_agency=agency1,
+        awarding_agency_id=agency1.id,
         last_modified_date=date(2012, 3, 1),
         business_funds_indicator="a",
         record_type=1,
@@ -133,9 +134,10 @@ def _transaction_and_award_test_data(db):
     awd2 = baker.make("awards.Award", awarding_agency=agency1)
     baker.make(
         "search.TransactionSearch",
+        transaction_id=2,
         award=awd2,
         modification_number="1",
-        awarding_agency=agency1,
+        awarding_agency_id=agency1.id,
         last_modified_date=date(2012, 4, 1),
         is_fpds=True,
         piid="abc",

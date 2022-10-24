@@ -40,6 +40,8 @@ class TransactionFABS(models.Model):
     funding_agency_name = models.TextField(blank=True, null=True)
     funding_office_code = models.TextField(blank=True, null=True)
     funding_office_name = models.TextField(blank=True, null=True)
+    funding_opportunity_goals = models.TextField(blank=True, null=True)
+    funding_opportunity_number = models.TextField(blank=True, null=True)
     funding_sub_tier_agency_co = models.TextField(blank=True, null=True)
     funding_sub_tier_agency_na = models.TextField(blank=True, null=True)
     indirect_federal_sharing = NumericField(blank=True, null=True)
@@ -122,6 +124,7 @@ vw_transaction_fabs_sql = """
         SELECT
             -- Keys
             transaction_id,
+            published_fabs_id,
             modification_number                     AS "award_modification_amendme",
             generated_unique_award_id               AS "unique_award_key",
             -- Dates
@@ -218,6 +221,8 @@ vw_transaction_fabs_sql = """
             correction_delete_indicatr,
             correction_delete_ind_desc,
             fain,
+            funding_opportunity_goals,
+            funding_opportunity_number,
             record_type,
             record_type_description,
             sai_number,
