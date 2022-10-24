@@ -170,6 +170,8 @@ class TransactionSearch(models.Model):
     correction_delete_indicatr = models.TextField(null=True)
     correction_delete_ind_desc = models.TextField(null=True)
     fain = models.TextField(null=True)
+    funding_opportunity_goals = models.TextField(blank=True, null=True)
+    funding_opportunity_number = models.TextField(blank=True, null=True)
     record_type = models.IntegerField(null=True)
     record_type_description = models.TextField(null=True)
     sai_number = models.TextField(null=True)

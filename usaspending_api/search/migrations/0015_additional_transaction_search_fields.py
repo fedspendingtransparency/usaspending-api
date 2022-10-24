@@ -26,4 +26,14 @@ class Migration(migrations.Migration):
             name='published_fabs_id',
             field=models.IntegerField(blank=True, null=True),
         ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='funding_opportunity_goals',
+            field=models.TextField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name='transactionsearch',
+            name='funding_opportunity_number',
+            field=models.TextField(blank=True, null=True),
+        ),
     ]
