@@ -160,17 +160,21 @@ def copy_csvs_from_s3_to_pg(
                     cursor.execute("SET work_mem TO %s", (work_mem_override,))
                 s3_client = _get_boto3_s3_client()
                 for s3_obj_key in s3_obj_keys:
-                    yield from _stream_and_copy(
-                        configured_logger=logger,
-                        cursor=cursor,
-                        s3_client=s3_client,
-                        s3_bucket_name=s3_bucket_name,
-                        s3_obj_key=s3_obj_key,
-                        target_pg_table=target_pg_table,
-                        ordered_col_names=ordered_col_names,
-                        gzipped=gzipped,
-                        partition_prefix=partition_prefix,
-                    )
+                    # Start an explicit Transaction Context for all DML that occurs in this block (including COPY)
+                    # If errors occur in the block, it will roll them all back.
+                    # If not, it will commit all atomically at the end of the block
+                    with connection.transaction():
+                        yield from _stream_and_copy(
+                            configured_logger=logger,
+                            cursor=cursor,
+                            s3_client=s3_client,
+                            s3_bucket_name=s3_bucket_name,
+                            s3_obj_key=s3_obj_key,
+                            target_pg_table=target_pg_table,
+                            ordered_col_names=ordered_col_names,
+                            gzipped=gzipped,
+                            partition_prefix=partition_prefix,
+                        )
                 batch_elapsed = time.time() - batch_start
                 logger.info(
                     f"{partition_prefix}Finished writing batch of {batch_size} "
