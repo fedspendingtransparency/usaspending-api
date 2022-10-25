@@ -22,56 +22,56 @@ def populate_models(db):
 
     baker.make(
         "search.TransactionSearch",
-        id=1,
+        transaction_id=1,
         award_id=1,
         action_date=datetime(2010, 3, 1),
         federal_action_obligation=100.0,
     )
     baker.make(
         "search.TransactionSearch",
-        id=2,
+        transaction_id=2,
         award_id=2,
         action_date=datetime(2011, 3, 1),
         federal_action_obligation=110.0,
     )
     baker.make(
         "search.TransactionSearch",
-        id=3,
+        transaction_id=3,
         award_id=3,
         action_date=datetime(2012, 3, 1),
         federal_action_obligation=120.0,
     )
     baker.make(
         "search.TransactionSearch",
-        id=4,
+        transaction_id=4,
         award_id=4,
         action_date=datetime(2013, 3, 1),
         federal_action_obligation=130.0,
     )
     baker.make(
         "search.TransactionSearch",
-        id=5,
+        transaction_id=5,
         award_id=5,
         action_date=datetime(2014, 3, 1),
         federal_action_obligation=140.0,
     )
     baker.make(
         "search.TransactionSearch",
-        id=6,
+        transaction_id=6,
         award_id=6,
         action_date=datetime(2015, 3, 1),
         federal_action_obligation=150.0,
     )
     baker.make(
         "search.TransactionSearch",
-        id=7,
+        transaction_id=7,
         award_id=7,
         action_date=datetime(2016, 3, 1),
         federal_action_obligation=160.0,
     )
     baker.make(
         "search.TransactionSearch",
-        id=8,
+        transaction_id=8,
         award_id=8,
         action_date=datetime(2017, 3, 1),
         federal_action_obligation=170.0,
@@ -82,7 +82,7 @@ def populate_models(db):
 def pragmatic_fixture():
     baker.make(
         "search.TransactionSearch",
-        id=1,
+        transaction_id=1,
         action_date="2010-10-01",
         award_id=1,
         is_fpds=True,
@@ -93,7 +93,7 @@ def pragmatic_fixture():
     )
     baker.make(
         "search.TransactionSearch",
-        id=2,
+        transaction_id=2,
         action_date="2019-01-19",
         award_id=2,
         is_fpds=False,

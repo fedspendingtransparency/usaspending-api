@@ -872,13 +872,13 @@ def test_load_table_to_from_delta_for_recipient_profile(
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
-    baker.make("search.TransactionSearch", transaction_id=1, is_fpds=False, indirect_federal_sharing=1.0,
-               _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id=2, is_fpds=False, indirect_federal_sharing=1.0,
-               _fill_optional=True)
+    baker.make(
+        "search.TransactionSearch", transaction_id=1, is_fpds=False, indirect_federal_sharing=1.0, _fill_optional=True
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=2, is_fpds=False, indirect_federal_sharing=1.0, _fill_optional=True
+    )
     verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_fabs", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_fabs", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -923,6 +923,7 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
     # Session settings (like sesssion-set time zone)
     fabs_with_tz = baker.prepare(
         "search.TransactionSearch",
+        transaction_id=1,
         is_fpds=False,
         _save_related=True,
         indirect_federal_sharing=1.0,
@@ -1009,7 +1010,6 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
         original_spark_tz = spark.conf.get("spark.sql.session.timeZone")
         spark.conf.set("spark.sql.session.timeZone", "America/New_York")
         verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-        verify_delta_table_loaded_from_delta(spark, "transaction_fabs", spark_s3_bucket=s3_unittest_data_bucket)
     finally:
         spark.conf.set("spark.sql.session.timeZone", original_spark_tz)
 
@@ -1047,8 +1047,6 @@ def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_b
     baker.make("search.TransactionSearch", transaction_id="1", is_fpds=True, _fill_optional=True)
     baker.make("search.TransactionSearch", transaction_id="2", is_fpds=True, _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_fpds", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_fpds", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -1058,8 +1056,6 @@ def test_load_table_to_from_delta_for_transaction_normalized(
     baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
     baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_normalized", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_normalized", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -1125,13 +1121,6 @@ def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(
         alt_db="my_alt_db",
         alt_name="transaction_normalized_alt_name",
     )
-    # verify_delta_table_loaded_from_delta(
-    #     spark,
-    #     "transaction_normalized",
-    #     alt_db="my_alt_db",
-    #     alt_name="transaction_normalized_alt_name",
-    #     spark_s3_bucket=s3_unittest_data_bucket,
-    # )
 
 
 @mark.django_db(transaction=True)
