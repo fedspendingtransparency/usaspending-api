@@ -281,7 +281,6 @@ class TransactionFPDS(models.Model):
     inherently_government_func = models.TextField(blank=True, null=True)
     inherently_government_desc = models.TextField(blank=True, null=True)
     organizational_type = models.TextField(blank=True, null=True)
-    referenced_multi_or_single = models.TextField(blank=True, null=True)
     unique_award_key = models.TextField(null=True, db_index=True)
     solicitation_date = models.DateField(null=True, blank=True)
     officer_1_name = models.TextField(null=True, blank=True)
