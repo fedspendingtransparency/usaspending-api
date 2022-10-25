@@ -212,6 +212,7 @@ def populate_usas_data(populate_broker_data):
 
     baker.make(
         "search.TransactionSearch",
+        transaction_id=1,
         action_date="2020-01-01",
         award=asst_award,
         is_fpds=False,
@@ -247,6 +248,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "search.TransactionSearch",
+        transaction_id=2,
         action_date="2020-04-01",
         award=asst_award,
         is_fpds=False,
@@ -283,6 +285,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "search.TransactionSearch",
+        transaction_id=3,
         action_date="2020-07-01",
         award=cont_award,
         is_fpds=True,
@@ -312,6 +315,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "search.TransactionSearch",
+        transaction_id=4,
         action_date="2020-10-01",
         award=cont_award,
         is_fpds=True,
@@ -341,7 +345,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "search.TransactionSearch",
-        id=434,
+        transaction_id=434,
         award=cont_award2,
         type="A",
         awarding_agency_id=32,
@@ -1038,8 +1042,8 @@ def test_load_table_to_from_delta_for_detached_award_procurement(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("search.TransactionSearch", is_fpds=True, _fill_optional=True)
-    baker.make("search.TransactionSearch", is_fpds=True, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", is_fpds=True, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", is_fpds=True, _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "transaction_fpds", spark_s3_bucket=s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "transaction_fpds", jdbc_inserts=True)  # test alt write strategy

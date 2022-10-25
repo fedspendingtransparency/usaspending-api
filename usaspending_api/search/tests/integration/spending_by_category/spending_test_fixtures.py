@@ -246,7 +246,7 @@ def awards_and_transactions(db):
         recipient_unique_id="096354360",
         parent_uei="096354360AAA",
         product_or_service_code="1005",
-        product_or_service_co_desc="PSC 1",
+        product_or_service_description="PSC 1",
     )
     baker.make(
         "search.TransactionSearch",
@@ -273,7 +273,7 @@ def awards_and_transactions(db):
         recipient_unique_id="123456789",
         parent_uei="123456789AAA",
         product_or_service_code="M123",
-        product_or_service_co_desc="PSC 2",
+        product_or_service_description="PSC 2",
         naics="111110",
         naics_description="NAICS 1",
     )
