@@ -274,7 +274,7 @@ def awards_and_transactions(db):
         parent_uei="123456789AAA",
         product_or_service_code="M123",
         product_or_service_description="PSC 2",
-        naics="111110",
+        naics_code="111110",
         naics_description="NAICS 1",
     )
     baker.make(
@@ -301,7 +301,7 @@ def awards_and_transactions(db):
         recipient_name=None,
         recipient_unique_id="123456789",
         parent_uei="123456789AAA",
-        naics="222220",
+        naics_code="222220",
         naics_description="NAICS 2",
     )
     baker.make(

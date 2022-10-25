@@ -357,7 +357,7 @@ def test_state_years_success(client, state_data):
     assert resp.data == expected_response
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db()
 def test_state_current_all_years_success(client, state_data):
     # test all years
     expected_response = EXPECTED_STATE.copy()
