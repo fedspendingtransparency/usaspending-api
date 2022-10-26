@@ -1,4 +1,3 @@
-import copy
 import logging
 
 from contextlib import contextmanager
@@ -7,23 +6,14 @@ from datetime import datetime, timezone
 from django.core.management import BaseCommand
 from django.db import connection
 from pyspark.sql import SparkSession
-from pyspark.sql.types import ArrayType, StringType
 
-from usaspending_api.broker.helpers.get_business_categories import (
-    get_business_categories_fabs,
-    get_business_categories_fpds,
-)
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     configure_spark_session,
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
-from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTION_FABS_COLUMN_INFO
-from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMN_INFO
-
 
 class Command(BaseCommand):
 
@@ -34,15 +24,14 @@ class Command(BaseCommand):
         pipeline run the "award_id_lookup" and "transaction_id_lookup" levels should be run first in order to populate the
         lookup tables. These lookup tables are used to keep track of PK values across the different silver tables.
 
-        *****NOTE*****: Before running this command for the first time a one-time script should be run to populate the
-        lookup tables, set the value of the sequences, and set the value of "last_load_date" for each level.
-        Script: "<PLACEHOLDER>"
+        *****NOTE*****: Before running this command for the first time on a usual basis, it should be run with the
+            "etl_level" set to "initial_run" to set up the needed lookup tables and populate the needed sequences and
+            "last_load_date" values for the lookup tables.
     """
 
     etl_level: str
     logger: logging.Logger
     spark: SparkSession
-    sql_views: dict
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -51,13 +40,9 @@ class Command(BaseCommand):
             required=True,
             help="The silver delta table that should be updated from the bronze delta data.",
             choices=[
-                "awards",
                 "award_id_lookup",
                 "initial_run",
-                "transaction_fabs",
-                "transaction_fpds",
-                "transaction_id_lookup",
-                "transaction_normalized",
+                "transaction_id_lookup"
             ],
         )
 
@@ -83,32 +68,6 @@ class Command(BaseCommand):
                 self.load_transaction_lookup_ids(last_etl_date)
             elif self.etl_level == "award_id_lookup":
                 self.load_award_lookup_ids(last_etl_date)
-            else:
-                # Build the SQL VIEW definitions
-                sql_views = {
-                    "vw_fabs_from_source": self.from_source_sql("fabs", last_etl_date),
-                    "vw_fpds_from_source": self.from_source_sql("fpds", last_etl_date),
-                }
-
-                # Build the SQL MERGE INTO definitions
-                sql_merge_operations = {
-                    "transaction_fabs": self.merge_into_sql("fabs"),
-                    "transaction_fpds": self.merge_into_sql("fpds"),
-                    "transaction_normalized_from_fabs": self.transaction_normalized_merge_into_sql("fabs"),
-                    "transaction_normalized_from_fpds": self.transaction_normalized_merge_into_sql("fpds"),
-                }
-
-                if self.etl_level == "transaction_fabs":
-                    self.spark.sql(sql_views["vw_fabs_from_source"])
-                    self.spark.sql(sql_merge_operations["transaction_fabs"])
-                elif self.etl_level == "transaction_fpds":
-                    self.spark.sql(sql_views["vw_fpds_from_source"])
-                    self.spark.sql(sql_merge_operations["transaction_fpds"])
-                elif self.etl_level == "transaction_normalized":
-                    self.spark.sql(sql_views["vw_fabs_from_source"])
-                    self.spark.sql(sql_views["vw_fpds_from_source"])
-                    self.spark.sql(sql_merge_operations["transaction_normalized_from_fabs"])
-                    self.spark.sql(sql_merge_operations["transaction_normalized_from_fpds"])
 
             update_last_load_date(self.etl_level, etl_start)
 
@@ -116,7 +75,7 @@ class Command(BaseCommand):
     def prepare_spark(self):
         extra_conf = {
             # Config for additional packages needed
-            "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1",
+            # "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1",
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
             "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
@@ -136,100 +95,10 @@ class Command(BaseCommand):
         # Setup Logger
         self.logger = get_jvm_logger(self.spark, __name__)
 
-        # Create UDF for Business Categories
-        self.spark.udf.register(
-            name="get_business_categories_fabs", f=get_business_categories_fabs, returnType=ArrayType(StringType())
-        )
-        self.spark.udf.register(
-            name="get_business_categories_fpds", f=get_business_categories_fpds, returnType=ArrayType(StringType())
-        )
-
-        # create_ref_temp_views(self.spark)
-
         yield  # Going to wait for the Django command to complete then stop the spark session if needed
 
         if spark_created_by_command:
             self.spark.stop()
-
-    def from_source_sql(self, transaction_type, last_etl_date):
-        if transaction_type == "fabs":
-            bronze_table_name = "raw.published_fabs"
-            unique_id = "published_fabs_id"
-            col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
-        elif transaction_type == "fpds":
-            bronze_table_name = "raw.detached_award_procurement"
-            unique_id = "detached_award_procurement_id"
-            col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
-        else:
-            raise ValueError(f"Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
-
-        select_cols = []
-        additional_joins = ""
-        omitted_cols = ["transaction_id"]
-        for col in list(filter(lambda x: x.silver_name not in omitted_cols, col_info)):
-            if col.is_cast:
-                select_cols.append(
-                    f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
-                )
-            else:
-                select_cols.append(f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}")
-
-        # Additional conditional columns / JOINs needed to support int.transaction_normalized
-        if self.etl_level == "transaction_normalized":
-            if transaction_type == "fabs":
-                select_cols.extend(
-                    [
-                        # business_categories
-                        # funding_amount
-                        f"""CAST(
-                            COALESCE({bronze_table_name}.federal_action_obligation, 0)
-                            + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
-                        AS NUMERIC(23, 2)) AS funding_amount
-                        """,
-                        # is_fpds
-                        "FALSE AS is_fpds",
-                    ]
-                )
-            else:
-                select_cols.extend(
-                    [
-                        # business_categories
-                        # is_fpds
-                        "TRUE AS is_fpds"
-                    ]
-                )
-            select_cols.extend(["awarding_agency.id AS awarding_agency_id,", "funding_agency.id AS funding_agency_id"])
-            additional_joins = f"""
-                LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
-                    funding_subtier_agency.subtier_code = {bronze_table_name}.awarding_sub_tier_agency_c
-                )
-                LEFT OUTER JOIN global_temp.agency AS funding_agency ON (
-                    funding_agency.subtier_agency_id = funding_subtier_agency.subtier_agency_id
-                )
-                LEFT OUTER JOIN global_temp.subtier_agency AS awarding_subtier_agency ON (
-                    awarding_subtier_agency.subtier_code = {bronze_table_name}.funding_sub_tier_agency_co
-                )
-                LEFT OUTER JOIN global_temp.agency AS awarding_agency ON (
-                    awarding_agency.subtier_agency_id = awarding_subtier_agency.subtier_agency_id
-                )
-            """
-
-        sql = f"""
-            CREATE OR REPLACE TEMPORARY VIEW vw_{transaction_type}_from_source AS (
-                SELECT
-                    transaction_id_lookup.id AS transaction_id,
-                    {", ".join(select_cols)}
-                FROM {bronze_table_name}
-                LEFT OUTER JOIN transaction_id_lookup ON (
-                    transaction_id_lookup.{unique_id} = {bronze_table_name}.{unique_id}
-                )
-                {additional_joins}
-                WHERE
-                    {bronze_table_name}.updated_at >= '{last_etl_date}'
-                    {"AND is_active IS TRUE" if transaction_type == "fabs" else ""}
-            )
-        """
-        return sql
 
     def load_transaction_lookup_ids(self, last_etl_date):
         self.logger.info("Getting the next transaction_id from transaction_id_seq")
@@ -350,59 +219,6 @@ class Command(BaseCommand):
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_id})")
 
-
-    @staticmethod
-    def merge_into_sql(transaction_type):
-        if transaction_type == "fabs":
-            col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
-        elif transaction_type == "fpds":
-            col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
-        else:
-            raise ValueError(f"Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
-
-        set_cols = [f"silver_table.{col.silver_name} = source_view.{col.silver_name}" for col in col_info]
-        silver_table_cols = ", ".join([col.silver_name for col in col_info])
-
-        sql = f"""
-            MERGE INTO int.transaction_{transaction_type} AS silver_table
-            USING vw_{transaction_type}_from_source AS source_view
-            ON silver_table.transaction_id = source_view.transaction_id
-            WHEN MATCHED
-                THEN UPDATE SET
-                    {", ".join(set_cols)}
-            WHEN NOT MATCHED
-                THEN INSERT
-                    ({silver_table_cols})
-                    VALUES ({silver_table_cols})
-        """
-        return sql
-
-    @staticmethod
-    def transaction_normalized_merge_into_sql(transaction_type):
-        # TODO: Need to populate set_cols with the SELECT SQL needed to create int.transaction_normalized
-        if transaction_type == "fabs":
-            set_cols = [f"int.transaction_normalized.{col.silver_name} = source_view.{col.silver_name}"
-                        for col in TRANSACTION_FABS_COLUMN_INFO if col.silver_name in TRANSACTION_NORMALIZED_COLUMNS]
-            set_cols.append()
-        elif transaction_type == "fpds":
-            set_cols = {}
-        else:
-            raise ValueError(f"Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
-
-        # sql = f"""
-        #     MERGE INTO int.transaction_normalized
-        #     USING vw_{transaction_type}_from_source AS source_view
-        #     ON transaction_normalized.id = source_view.transaction_id
-        #     WHEN MATCHED
-        #         THEN UPDATE SET
-        #         {", ".join(set_cols)}
-        #     WHEN NOT MATCHED
-        #         THEN INSERT
-        #             ({})
-        #             VALUES ({})
-        # """
-        # return sql
-
     def delete_records_sql(self):
         if self.etl_level == "transaction_id_lookup":
             id_col = "id"
@@ -427,15 +243,6 @@ class Command(BaseCommand):
                     aidlu.transaction_unique_id = tidlu.transaction_unique_id
                 )
                 WHERE aidlu.transaction_unique_id IS NOT NULL AND tidlu.transaction_unique_id IS NULL
-            """
-        else:
-            id_col = "id" if self.etl_level == "transaction_normalized" else "transaction_id"
-            subquery = f"""
-                SELECT {id_col} AS id_to_remove
-                FROM int.{self.etl_level} LEFT JOIN int.transaction_id_lookup ON (
-                    {self.etl_level}.{id_col} = transaction_id_lookup.id
-                )
-                WHERE {self.etl_level}.{id_col} IS NOT NULL AND transaction_id_lookup.id IS NULL
             """
 
         sql = f"""
