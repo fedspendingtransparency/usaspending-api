@@ -60,6 +60,7 @@ GET_CHILD_IDVS_SQL = SQL(
         parent_award pap
         inner join parent_award pac on pac.parent_award_id = pap.award_id
         inner join awards ac on ac.id = pac.award_id
+        inner join vw_awards ac on ac.id = pac.award_id
         inner join vw_transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
         left outer join agency a on a.id = ac.funding_agency_id
         left outer join agency b on b.id = ac.awarding_agency_id
@@ -94,8 +95,8 @@ GET_CHILD_AWARDS_SQL = SQL(
         ac.piid
     from
         parent_award pap
-        inner join awards ap on ap.id = pap.award_id
-        inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
+        inner join vw_awards ap on ap.id = pap.award_id
+        inner join vw_awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
             ac.type not like 'IDV%'
         inner join vw_transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
         left outer join agency a on a.id = ac.funding_agency_id
@@ -132,8 +133,8 @@ GET_GRANDCHILD_AWARDS_SQL = SQL(
     from
         parent_award pap
         inner join parent_award pac on pac.parent_award_id = pap.award_id
-        inner join awards ap on ap.id = pac.award_id
-        inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
+        inner join vw_awards ap on ap.id = pac.award_id
+        inner join vw_awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
             ac.type not like 'IDV%'
         inner join vw_transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
         left outer join agency a on a.id = ac.funding_agency_id

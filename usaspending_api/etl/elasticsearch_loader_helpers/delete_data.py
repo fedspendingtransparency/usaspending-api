@@ -424,7 +424,7 @@ def _check_awards_for_deletes(id_list: list) -> list:
     sql = """
         SELECT x.generated_unique_award_id
         FROM (values {ids}) AS x(generated_unique_award_id)
-        LEFT JOIN awards a ON a.generated_unique_award_id = x.generated_unique_award_id
+        LEFT JOIN vw_awards a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id IS NULL"""
 
     return execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)

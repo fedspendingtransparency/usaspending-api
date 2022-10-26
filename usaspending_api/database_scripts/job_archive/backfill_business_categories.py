@@ -176,7 +176,7 @@ SQL = """
 
     update  subaward as s
     set     business_categories = t.business_categories
-    from    awards as a
+    from    vw_awards as a
             inner join temp_dev_3753_business_categories as t on t.transaction_id = a.latest_transaction_id
     where   s.award_id = a.id and
             s.business_categories is distinct from t.business_categories;

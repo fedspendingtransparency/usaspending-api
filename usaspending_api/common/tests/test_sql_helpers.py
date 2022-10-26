@@ -124,7 +124,7 @@ class CursorExecuteTestCase(TestCase):
             with pytest.raises(ValueError):
                 _build_composable_order_by(["column1", "column2"], sort_nulls=["first", "first", "first"])
 
-        _sql = SQL("select id, latest_transaction_id from awards a ") + SQL(
+        _sql = SQL("select id, latest_transaction_id from vw_awards a ") + SQL(
             _build_composable_order_by(["a.id", "a.latest_transaction_id"], ["desc", "asc"], ["first", "last"])
         )
         assert execute_sql_to_ordered_dictionary(_sql) == [

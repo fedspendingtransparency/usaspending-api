@@ -56,7 +56,7 @@ POPULATE_TABLE = (
 
 ADD_PRIMARY_KEY = 'alter table "%s" add primary key (id)' % TEMPORARY_TABLE_NAME
 
-GET_MIN_MAX_SQL = "select min(id), max(id) from awards"
+GET_MIN_MAX_SQL = "select min(id), max(id) from vw_awards"
 
 UPDATE_SQL = (
     """

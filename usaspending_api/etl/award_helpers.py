@@ -289,7 +289,7 @@ def execute_database_statement(sql: str, values: Optional[list] = None) -> int:
 
 def convert_award_id_to_guai(award_tuple: tuple) -> tuple:
     """Scafolding code between award PK ids and unique award ids"""
-    sql = "SELECT generated_unique_award_id FROM awards WHERE id IN %s"
+    sql = "SELECT generated_unique_award_id FROM vw_awards WHERE id IN %s"
     values = [award_tuple]
     with connection.cursor() as cursor:
         cursor.execute(sql, values)
@@ -312,7 +312,7 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
 def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
     _find_empty_awards_sql = """
         SELECT a.id
-        FROM awards a
+        FROM vw_awards a
         LEFT JOIN vw_transaction_normalized tn ON tn.award_id = a.id
         WHERE tn IS NULL {}
     """.format(
@@ -335,7 +335,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
 
     _delete_parent_award_sql = "DELETE FROM parent_award WHERE award_id in ({});".format(_find_empty_awards_sql)
 
-    _prune_empty_awards_sql = "DELETE FROM awards WHERE id IN ({}) ".format(_find_empty_awards_sql)
+    _prune_empty_awards_sql = "DELETE FROM vw_awards vw_WHERE id IN ({}) ".format(_find_empty_awards_sql)
 
     return execute_database_statement(
         _modify_subawards_sql + _modify_financial_accounts_sql + _delete_parent_award_sql + _prune_empty_awards_sql,

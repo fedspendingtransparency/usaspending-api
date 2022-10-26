@@ -26,7 +26,7 @@ logger = logging.getLogger("console")
 CHECK_MISSING_AWARDS = """
     SELECT tf.{field}
     FROM {table} AS tf
-    LEFT OUTER JOIN awards a on a.generated_unique_award_id = tf.unique_award_key
+    LEFT OUTER JOIN vw_awards a on a.generated_unique_award_id = tf.unique_award_key
     WHERE a.id IS NULL;
 """
 
@@ -108,7 +108,7 @@ class Command(BaseCommand):
         fix_txn_fk_to_awards = """
             UPDATE vw_transaction_normalized AS tn
             SET award_id = a.id
-            FROM awards a
+            FROM vw_awards a
             WHERE
                 tn.unique_award_key = a.generated_unique_award_id
                 AND tn.award_id IS DISTINCT FROM a.id
@@ -137,7 +137,7 @@ class Command(BaseCommand):
                 tn.unique_award_key as uak,
                 a.generated_unique_award_id AS guai
             FROM transaction_normalized tn
-            LEFT OUTER JOIN awards a ON tn.award_id = a.id
+            LEFT OUTER JOIN vw_awards a ON tn.award_id = a.id
             WHERE
                 a.generated_unique_award_id IS DISTINCT FROM tn.unique_award_key
         """
@@ -146,7 +146,7 @@ class Command(BaseCommand):
             SELECT
                 a.id,
                 a.generated_unique_award_id AS unique_award_key_in_award
-            FROM awards a
+            FROM vw_awards a
             LEFT JOIN transaction_normalized e ON a.earliest_transaction_id = e.id
             LEFT JOIN transaction_normalized l ON a.latest_transaction_id = l.id
             WHERE
@@ -160,7 +160,7 @@ class Command(BaseCommand):
             SELECT
                 id,
                 generated_unique_award_id
-            FROM awards
+            FROM vw_awards
             WHERE
                    earliest_transaction_id IS NULL
                 OR latest_transaction_id IS NULL

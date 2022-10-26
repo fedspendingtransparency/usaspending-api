@@ -230,85 +230,140 @@ class Award(DataSourceTrackedModel):
     officer_5_amount = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 5 Amount"
     )
-
-    objects = models.Manager()
-    nonempty = AwardManager()
-
-    def __str__(self):
-        return "%s piid: %s fain: %s uri: %s" % (self.type_description, self.piid, self.fain, self.uri)
-
-    @staticmethod
-    def get_or_create_summary_award(
-        awarding_agency=None,
-        piid=None,
-        fain=None,
-        uri=None,
-        parent_award_piid=None,
-        save=True,
-        record_type=None,
-        generated_unique_award_id=None,
-    ):
-        """
-        Given a set of award identifiers and awarding agency information,
-        find a corresponding Award record. If we can't find one, create it.
-
-        Returns:
-            created: a list of new awards created (or that need to be created if using cache) used to enable bulk insert
-            summary_award: the summary award that the calling process can map to
-        """
-        try:
-            # Contract data uses piid as transaction ID. Financial assistance data depends on the record_type and
-            # uses either uri (record_type=1) or fain (record_type=2 or 3).
-            lookup_value = (piid, "piid")
-            if record_type:
-                if str(record_type) in ("2", "3"):
-                    lookup_value = (fain, "fain")
-                else:
-                    lookup_value = (uri, "uri")
-
-            if generated_unique_award_id:
-                # Use the generated unique ID if available
-                lookup_kwargs = {"generated_unique_award_id": generated_unique_award_id}
-            else:
-                # Use the lookup_value is generated unique ID is not available
-                lookup_kwargs = {"awarding_agency": awarding_agency, lookup_value[1]: lookup_value[0]}
-
-            # Look for an existing award record
-            summary_award = Award.objects.filter(Q(**lookup_kwargs)).first()
-
-            if summary_award:
-                return [], summary_award
-
-            # Now create the award record for this award transaction
-            create_kwargs = {
-                "awarding_agency": awarding_agency,
-                "parent_award_piid": parent_award_piid,
-                lookup_value[1]: lookup_value[0],
-            }
-            if generated_unique_award_id:
-                create_kwargs["generated_unique_award_id"] = generated_unique_award_id
-                if generated_unique_award_id.startswith("CONT_"):
-                    create_kwargs["is_fpds"] = True
-
-            summary_award = Award(**create_kwargs)
-
-            if save:
-                summary_award.save()
-
-            return [summary_award], summary_award
-
-        # Do not use bare except
-        except ValueError:
-            raise ValueError(
-                "Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, "
-                "parent_award_piid={}, awarding_agency={}, generated_unique_award_id={}".format(
-                    piid, fain, uri, parent_award_piid, awarding_agency, generated_unique_award_id
-                )
-            )
+    #
+    # objects = models.Manager()
+    # nonempty = AwardManager()
+    #
+    # def __str__(self):
+    #     return "%s piid: %s fain: %s uri: %s" % (self.type_description, self.piid, self.fain, self.uri)
+    #
+    # @staticmethod
+    # def get_or_create_summary_award(
+    #     awarding_agency=None,
+    #     piid=None,
+    #     fain=None,
+    #     uri=None,
+    #     parent_award_piid=None,
+    #     save=True,
+    #     record_type=None,
+    #     generated_unique_award_id=None,
+    # ):
+    #     """
+    #     Given a set of award identifiers and awarding agency information,
+    #     find a corresponding Award record. If we can't find one, create it.
+    #
+    #     Returns:
+    #         created: a list of new awards created (or that need to be created if using cache) used to enable bulk insert
+    #         summary_award: the summary award that the calling process can map to
+    #     """
+    #     try:
+    #         # Contract data uses piid as transaction ID. Financial assistance data depends on the record_type and
+    #         # uses either uri (record_type=1) or fain (record_type=2 or 3).
+    #         lookup_value = (piid, "piid")
+    #         if record_type:
+    #             if str(record_type) in ("2", "3"):
+    #                 lookup_value = (fain, "fain")
+    #             else:
+    #                 lookup_value = (uri, "uri")
+    #
+    #         if generated_unique_award_id:
+    #             # Use the generated unique ID if available
+    #             lookup_kwargs = {"generated_unique_award_id": generated_unique_award_id}
+    #         else:
+    #             # Use the lookup_value is generated unique ID is not available
+    #             lookup_kwargs = {"awarding_agency": awarding_agency, lookup_value[1]: lookup_value[0]}
+    #
+    #         # Look for an existing award record
+    #         summary_award = Award.objects.filter(Q(**lookup_kwargs)).first()
+    #
+    #         if summary_award:
+    #             return [], summary_award
+    #
+    #         # Now create the award record for this award transaction
+    #         create_kwargs = {
+    #             "awarding_agency": awarding_agency,
+    #             "parent_award_piid": parent_award_piid,
+    #             lookup_value[1]: lookup_value[0],
+    #         }
+    #         if generated_unique_award_id:
+    #             create_kwargs["generated_unique_award_id"] = generated_unique_award_id
+    #             if generated_unique_award_id.startswith("CONT_"):
+    #                 create_kwargs["is_fpds"] = True
+    #
+    #         summary_award = Award(**create_kwargs)
+    #
+    #         if save:
+    #             summary_award.save()
+    #
+    #         return [summary_award], summary_award
+    #
+    #     # Do not use bare except
+    #     except ValueError:
+    #         raise ValueError(
+    #             "Unable to find or create an award with the provided information: piid={}, fain={}, uri={}, "
+    #             "parent_award_piid={}, awarding_agency={}, generated_unique_award_id={}".format(
+    #                 piid, fain, uri, parent_award_piid, awarding_agency, generated_unique_award_id
+    #             )
+    #         )
 
     class Meta:
-        db_table = "awards"
+        managed = False
+        db_table = "vw_awards"
         indexes = [
             models.Index(fields=["-update_date"], name="awards_update_date_desc_idx"),
             models.Index(fields=["generated_unique_award_id"], name="award_unique_id"),
         ]
+
+    vw_awards_sql = """
+    CREATE OR REPLACE VIEW rpt.awards AS
+        SELECT
+            id,
+            generated_unique_award_id,
+            is_fpds,
+            transaction_unique_id,
+            data_source,
+            type,
+            type_description,
+            piid,
+            parent_award_piid,
+            fain,
+            uri,
+            total_obligation,
+            base_and_all_options_value,
+            total_subsidy_cost,
+            date_signed,
+            description,
+            period_of_performance_start_date,
+            period_of_performance_current_end_date,
+            last_modified_date,
+            certified_date,
+            create_date timestamp ,
+            update_date timestamp,
+            total_subaward_amount,
+            subaward_count,
+            awarding_agency_id,
+            funding_agency_id,
+            latest_transaction_id,
+            category,
+            fiscal_year,
+            total_loan_value,
+            total_funding_amount,
+            non_federal_funding_amount,
+            base_exercised_options_val,
+            fpds_agency_id,
+            fpds_parent_agency_id,
+            officer_1_amount,
+            officer_1_name,
+            officer_2_amount,
+            officer_2_name,
+            officer_3_amount,
+            officer_3_name,
+            officer_4_amount,
+            officer_4_name,
+            officer_5_amount,
+            officer_5_name,
+            earliest_transaction_id,
+            total_indirect_federal_sharing
+        FROM 
+            rpt.award_search;
+"""

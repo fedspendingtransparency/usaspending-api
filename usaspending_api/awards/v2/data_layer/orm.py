@@ -643,7 +643,7 @@ def fetch_total_outlays(award_id: int) -> dict:
             financial_accounts_by_awards faba
         INNER JOIN submission_attributes sa
             ON faba.submission_id = sa.submission_id
-        INNER JOIN awards a
+        INNER JOIN vw_awards a
             ON faba.award_id = a.id
             AND a.date_signed >= '2019-10-01'
         INNER JOIN vw_transaction_normalized tn ON tn.id = a.earliest_transaction_id
