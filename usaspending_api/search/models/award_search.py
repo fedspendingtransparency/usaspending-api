@@ -132,7 +132,7 @@ class AwardSearch(models.Model):
     create_date = models.DateTimeField(null=True)
     total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     latest_transaction_id = models.IntegerField(null=True, db_index=True)
-    earliest_transaction = models.IntegerField(null=True, db_index=True)
+    earliest_transaction_id = models.IntegerField(null=True, db_index=True)
     total_indirect_federal_sharing = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     transaction_unique_id = models.TextField(null=True)
     raw_recipient_name = models.TextField(null=True)
