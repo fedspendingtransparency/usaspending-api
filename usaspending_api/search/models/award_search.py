@@ -129,7 +129,7 @@ class AwardSearch(models.Model):
     base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     parent_award_piid = models.TextField(null=True, db_index=True)
     certified_date = models.DateField(null=True)
-    create_date = models.DateField(null=True)
+    create_date = models.DateTimeField(null=True)
     total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     latest_transaction_id = models.IntegerField(null=True, db_index=True)
     earliest_transaction = models.IntegerField(null=True, db_index=True)
