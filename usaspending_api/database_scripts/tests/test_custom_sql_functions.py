@@ -61,7 +61,7 @@ def test_urlencoding_no_change(add_fun_awards):
 
 
 def test_urlencoding_with_urllib(add_fun_awards):
-    test_sql = f"SELECT generated_unique_award_id, {URLENCODE_FUNCTION_NAME}(generated_unique_award_id) from awards"
+    test_sql = f"SELECT generated_unique_award_id, {URLENCODE_FUNCTION_NAME}(generated_unique_award_id) from vw_awards"
     with connection.cursor() as cursor:
         cursor.execute(test_sql)
         results = cursor.fetchall()
@@ -73,7 +73,7 @@ def test_urlencoding_with_urllib(add_fun_awards):
 
 
 def test_reverse_urlencoding_with_urllib(add_fun_awards):
-    test_sql = f"SELECT generated_unique_award_id, {URLENCODE_FUNCTION_NAME}(generated_unique_award_id) from awards"
+    test_sql = f"SELECT generated_unique_award_id, {URLENCODE_FUNCTION_NAME}(generated_unique_award_id) from vw_awards"
     with connection.cursor() as cursor:
         cursor.execute(test_sql)
         results = cursor.fetchall()

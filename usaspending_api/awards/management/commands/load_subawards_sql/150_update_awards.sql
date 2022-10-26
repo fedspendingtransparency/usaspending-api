@@ -24,7 +24,7 @@ set
     subaward_count = coalesce(st.subaward_count, 0)
 
 from
-    awards as a
+    vw_awards as a
     left outer join subaward_totals as st on st.award_id = a.id
 
 where

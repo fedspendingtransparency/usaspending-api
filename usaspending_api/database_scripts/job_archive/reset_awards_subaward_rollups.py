@@ -59,7 +59,7 @@ INDEX_TEMP_TABLE_SQL = """
 """
 
 
-GET_MIN_MAX_SQL = "select min(id), max(id) from awards"
+GET_MIN_MAX_SQL = "select min(id), max(id) from vw_awards"
 
 
 # Reset award subaward rollups to their defaults for awards that do not have

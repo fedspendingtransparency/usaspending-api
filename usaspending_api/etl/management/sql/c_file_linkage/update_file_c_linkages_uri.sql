@@ -7,7 +7,7 @@ WITH update_cte as (
             SELECT
                 id
             FROM
-                awards AS aw
+                vw_awards AS aw
             WHERE
                 UPPER(aw.uri) = UPPER(faba.uri)
         )
@@ -23,7 +23,7 @@ WITH update_cte as (
                 AND faba_sub.award_id IS NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM awards AS aw_sub
+                    FROM vw_awards AS aw_sub
                     WHERE UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
                 ) = 1
                 {submission_id_clause}
