@@ -156,7 +156,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_fpds_sql_string,
         "source_schema": None,
         "custom_schema": "",
-        "column_names": TRANSACTION_FPDS_COLUMNS,
+        "column_names": list(TRANSACTION_FPDS_COLUMNS),
         "tsvectors": None,
     },
     "transaction_normalized": {
@@ -173,7 +173,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_normalized_sql_string,
         "source_schema": None,
         "custom_schema": "",
-        "column_names": TRANSACTION_NORMALIZED_COLUMNS,
+        "column_names": list(TRANSACTION_NORMALIZED_COLUMNS),
         "tsvectors": None,
     },
     # Tables loaded in from the Broker

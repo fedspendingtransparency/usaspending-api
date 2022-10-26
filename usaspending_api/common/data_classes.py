@@ -25,11 +25,3 @@ class Pagination:
     @property
     def robust_order_by_fields(self):
         return (self.order_by, f"{self._sort_order_field_prefix}{self.secondary_sort_key}")
-
-
-@dataclass
-class TransactionColumn:
-    silver_name: str
-    bronze_name: Optional[str]
-    delta_type: str
-    is_cast: bool
