@@ -19,6 +19,7 @@ from usaspending_api.transactions.delta_models.transaction_search import (
     TRANSACTION_SEARCH_COLUMNS,
     TRANSACTION_SEARCH_DELTA_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
+    TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS,
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
 )
