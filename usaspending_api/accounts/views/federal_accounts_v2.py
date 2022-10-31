@@ -17,6 +17,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_ye
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models.bureau_title_lookup import BureauTitleLookup
 from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
@@ -443,6 +444,16 @@ class FederalAccountViewSet(APIView):
     def federal_account(self):
         federal_account_code_param = self.kwargs["federal_account_code"]
 
+        # Get the bureau_title associated to the current Federal Account code
+        bureau_name_subquery = Subquery(
+            BureauTitleLookup.objects.filter(federal_account_code=federal_account_code_param).values("bureau_title")
+        )
+
+        # Get the bureau_slug associated to the current Federal Account code
+        bureau_slug_subquery = Subquery(
+            BureauTitleLookup.objects.filter(federal_account_code=federal_account_code_param).values("bureau_slug")
+        )
+
         federal_account = (
             FederalAccount.objects.filter(federal_account_code=federal_account_code_param)
             .annotate(
@@ -458,6 +469,7 @@ class FederalAccountViewSet(APIView):
                 "parent_agency_toptier_code",
                 "parent_agency_name",
             )
+            .annotate(bureau_slug=bureau_slug_subquery, bureau_name=bureau_name_subquery)
             .first()
         )
         if not federal_account:
@@ -533,6 +545,8 @@ class FederalAccountViewSet(APIView):
                 "federal_account_code": self.federal_account["federal_account_code"],
                 "parent_agency_toptier_code": self.federal_account["parent_agency_toptier_code"],
                 "parent_agency_name": self.federal_account["parent_agency_name"],
+                "bureau_name": self.federal_account["bureau_name"],
+                "bureau_slug": self.federal_account["bureau_slug"],
                 "total_obligated_amount": fa_obligated_amount,
                 "total_gross_outlay_amount": fa_gross_outlay_amount,
                 "total_budgetary_resources": fa_total_budgetary_resources,

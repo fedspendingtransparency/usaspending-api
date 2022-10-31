@@ -24,6 +24,8 @@ This endpoint returns the agency identifier, account code, title, and database i
         + `account_title` (required, string)
         + `parent_agency_toptier_code` (required, string)
         + `parent_agency_name` (required, string)
+        + `bureau_name` (required, string)
+        + `bureau_slug` (required, string)
         + `total_obligated_amount` (required, number),
           + Sum of all child Treasury Account `obligated_amount` values
         + `total_gross_outlay_amount` (required, number),
@@ -43,6 +45,8 @@ This endpoint returns the agency identifier, account code, title, and database i
                 "federal_account_code": "011-1022",
                 "parent_agency_toptier_code": "019",
                 "parent_agency_name": "Department of State",
+                "bureau_name": "Interest on the Public Debt",
+                "bureau_slug": "interest-on-the-public-debt",
                 "total_obligated_amount": -31604.5,
                 "total_gross_outlay_amount": 7643425.94,
                 "total_budgetary_resources": 54653496.23,
@@ -74,6 +78,8 @@ This endpoint returns the agency identifier, account code, title, and database i
 + `account_title` (required, string)
 + `parent_agency_toptier_code` (required, string)
 + `parent_agency_name` (required, string)
++ `bureau_name` (required, string)
++ `bureau_slug` (required, string)
 + `total_obligated_amount` (required, number),
 + `total_gross_outlay_amount` (required, number),
 + `total_budgetary_resources` (required, number),
