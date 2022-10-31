@@ -525,6 +525,7 @@ class FederalAccountViewSet(APIView):
 
         return Response(
             {
+                "fiscal_year": self.fiscal_year,
                 "id": self.federal_account["id"],
                 "agency_identifier": self.federal_account["agency_identifier"],
                 "main_account_code": self.federal_account["main_account_code"],
@@ -532,7 +533,6 @@ class FederalAccountViewSet(APIView):
                 "federal_account_code": self.federal_account["federal_account_code"],
                 "parent_agency_toptier_code": self.federal_account["parent_agency_toptier_code"],
                 "parent_agency_name": self.federal_account["parent_agency_name"],
-                "fiscal_year": self.fiscal_year,
                 "total_obligated_amount": fa_obligated_amount,
                 "total_gross_outlay_amount": fa_gross_outlay_amount,
                 "total_budgetary_resources": fa_total_budgetary_resources,
