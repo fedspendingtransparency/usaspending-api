@@ -1,19 +1,24 @@
 import ast
-
 from collections import OrderedDict
+from typing import List
+
 from django.db.models import F, Q, Sum, OuterRef, Subquery, Func, DecimalField, Exists
 from django.utils.dateparse import parse_date
-from fiscalyear import FiscalDateTime
+from django.utils.functional import cached_property
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from fiscalyear import FiscalDateTime
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -434,10 +439,12 @@ class FederalAccountViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts/account_number.md"
 
-    @cache_response()
-    def get(self, request, fed_acct_code, format=None):
+    @cached_property
+    def federal_account(self):
+        federal_account_code_param = self.kwargs["federal_account_code"]
+
         federal_account = (
-            FederalAccount.objects.filter(federal_account_code=fed_acct_code)
+            FederalAccount.objects.filter(federal_account_code=federal_account_code_param)
             .annotate(
                 parent_agency_toptier_code=F("parent_toptier_agency__toptier_code"),
                 parent_agency_name=F("parent_toptier_agency__name"),
@@ -451,12 +458,87 @@ class FederalAccountViewSet(APIView):
                 "parent_agency_toptier_code",
                 "parent_agency_name",
             )
+            .first()
+        )
+        if not federal_account:
+            raise InvalidParameterException(
+                f"Cannot find Federal Account with the code of '{federal_account_code_param}'"
+            )
+        return federal_account
+
+    def _get_treasury_accounts(self) -> List[dict]:
+        """Get the Treasury Accounts (using File A and B) associated with the given Federal Account during a specific
+            fiscal year.
+
+        Returns:
+            List[dict]: List of Treasury Accounts
+        """
+
+        submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
+        query_filters = [
+            Q(submission__reporting_fiscal_year=self.fiscal_year),
+            Q(submission_id__in=submission_ids),
+            Q(treasury_account__federal_account__federal_account_code=self.federal_account["federal_account_code"]),
+            Q(
+                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
+                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
+                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
+            ),
+        ]
+
+        tbr_subquery = Subquery(
+            AppropriationAccountBalances.objects.filter(
+                Q(submission__reporting_fiscal_year=self.fiscal_year),
+                Q(submission_id__in=submission_ids),
+                Q(
+                    treasury_account_identifier__federal_account__federal_account_code=self.federal_account[
+                        "federal_account_code"
+                    ]
+                ),
+                Q(treasury_account_identifier__tas_rendering_label=OuterRef("treasury_account__tas_rendering_label")),
+            ).values("total_budgetary_resources_amount_cpe")
         )
 
-        if not federal_account:
-            raise InvalidParameterException("Federal Account with code {} does not exist.".format(fed_acct_code))
+        results = (
+            (FinancialAccountsByProgramActivityObjectClass.objects.filter(*query_filters))
+            .values(
+                name=F("treasury_account__account_title"),
+                code=F("treasury_account__tas_rendering_label"),
+            )
+            .annotate(
+                obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
+                gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
+                budgetary_resources_amount=Sum(tbr_subquery),
+            )
+        )
 
-        return Response(federal_account[0])
+        return results
+
+    @cache_response()
+    def get(self, request: Request, federal_account_code: str, format=None):
+        self.fiscal_year = self.request.query_params.get("fiscal_year", current_fiscal_year())
+        child_treasury_accounts = self._get_treasury_accounts()
+        fa_obligated_amount = sum(entry["obligated_amount"] for entry in child_treasury_accounts)
+        fa_gross_outlay_amount = sum(entry["gross_outlay_amount"] for entry in child_treasury_accounts)
+        fa_total_budgetary_resources = sum(entry["budgetary_resources_amount"] for entry in child_treasury_accounts)
+
+        return Response(
+            {
+                "id": self.federal_account["id"],
+                "agency_identifier": self.federal_account["agency_identifier"],
+                "main_account_code": self.federal_account["main_account_code"],
+                "account_title": self.federal_account["account_title"],
+                "federal_account_code": self.federal_account["federal_account_code"],
+                "parent_agency_toptier_code": self.federal_account["parent_agency_toptier_code"],
+                "parent_agency_name": self.federal_account["parent_agency_name"],
+                "fiscal_year": self.fiscal_year,
+                "total_obligated_amount": fa_obligated_amount,
+                "total_gross_outlay_amount": fa_gross_outlay_amount,
+                "total_budgetary_resources": fa_total_budgetary_resources,
+                "children": child_treasury_accounts,
+            }
+        )
 
 
 class FederalAccountsViewSet(APIView):
@@ -467,7 +549,7 @@ class FederalAccountsViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts.md"
 
     def _parse_and_validate_request(self, request_dict):
-        """ Validate the Request object includes the required fields """
+        """Validate the Request object includes the required fields"""
         fy_range = [str(i) for i in range(2001, FiscalDateTime.today().year + 1)]
         last_fy = str(SubmissionAttributes.latest_available_fy()) or str(FiscalDateTime.today().year)
         request_settings = [
@@ -514,7 +596,7 @@ class FederalAccountsViewSet(APIView):
 
     @cache_response()
     def post(self, request, format=None):
-        """ Return all high-level Federal Account information """
+        """Return all high-level Federal Account information"""
         request_data = self._parse_and_validate_request(request.data)
         limit = request_data["limit"]
         page = request_data["page"]
