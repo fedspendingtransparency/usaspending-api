@@ -30,7 +30,8 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
-    AWARD_SEARCH_POSTGRES_GOLD_COLUMNS)
+    AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
+)
 from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
     subaward_search_create_sql_string,
