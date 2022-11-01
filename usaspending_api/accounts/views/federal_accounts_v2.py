@@ -488,7 +488,6 @@ class FederalAccountViewSet(APIView):
 
         submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         query_filters = [
-            Q(submission__reporting_fiscal_year=self.fiscal_year),
             Q(submission_id__in=submission_ids),
             Q(treasury_account__federal_account__federal_account_code=self.federal_account["federal_account_code"]),
             Q(
@@ -501,7 +500,6 @@ class FederalAccountViewSet(APIView):
 
         tbr_subquery = Subquery(
             AppropriationAccountBalances.objects.filter(
-                Q(submission__reporting_fiscal_year=self.fiscal_year),
                 Q(submission_id__in=submission_ids),
                 Q(
                     treasury_account_identifier__federal_account__federal_account_code=self.federal_account[
