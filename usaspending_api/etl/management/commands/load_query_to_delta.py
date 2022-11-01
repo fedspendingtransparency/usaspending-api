@@ -40,7 +40,6 @@ from usaspending_api.search.delta_models.subaward_search import (
 )
 from usaspending_api.search.models import AwardSearch, SubawardSearch, SummaryStateView, TransactionSearch
 from usaspending_api.transactions.delta_models import (
-    TRANSACTION_SEARCH_COLUMNS,
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
