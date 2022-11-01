@@ -87,25 +87,26 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         #       To get around that, we're doing this little dance of annotate() and values().
         queryset = queryset.annotate(prime_fy=F("fy"))
 
-        other_values = []
+        month_quarter_cols = []
         if self.group == "month":
             queryset = queryset.annotate(month=FiscalMonth("sub_action_date"))
-            other_values.append("month")
+            month_quarter_cols.append("month")
         elif self.group == "quarter":
             queryset = queryset.annotate(quarter=FiscalQuarter("sub_action_date"))
-            other_values.append("quarter")
+            month_quarter_cols.append("quarter")
 
-        first_values = ["prime_fy"] + other_values
-        values_dict = {"fy": F("sub_fiscal_year")}
-        values = ["fy"] + other_values
+        first_values = ["prime_fy"] + month_quarter_cols
+        second_values = ["aggregated_amount"] + month_quarter_cols
+        second_values_dict = {"fy": F("sub_fiscal_year")}
+        order_by_cols = ["fy"] + month_quarter_cols
         queryset = (
             queryset.values(*first_values)
             .annotate(aggregated_amount=Sum(obligation_column))
-            .values(*other_values, **values_dict)
-            .order_by(*["{}".format(value) for value in values])
+            .values(*second_values, **second_values_dict)
+            .order_by(*order_by_cols)
         )
 
-        return queryset, values
+        return queryset, order_by_cols
 
     def apply_elasticsearch_aggregations(self, search: TransactionSearch) -> None:
         """
@@ -204,11 +205,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         time_periods = self.filters.get("time_period", [default_time_period])
 
         if self.subawards:
-            db_results, values = self.database_data_layer_for_subawards()
+            db_results, order_by_cols = self.database_data_layer_for_subawards()
             results = bolster_missing_time_periods(
                 filter_time_periods=time_periods,
                 queryset=db_results,
-                date_range_type=values[-1],
+                date_range_type=order_by_cols[-1],
                 columns={"aggregated_amount": "aggregated_amount"},
             )
         else:
