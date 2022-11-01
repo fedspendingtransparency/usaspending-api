@@ -35,7 +35,7 @@ AWARD_SEARCH_COLUMNS = {
     "recipient_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "raw_recipient_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "parent_recipient_unique_id": {"delta": "STRING", "postgres": "TEXT"},
+    "parent_recipient_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_uei": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "parent_uei": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
