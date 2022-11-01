@@ -553,7 +553,8 @@ class Command(BaseCommand):
         # special handling. Get those columns and handle each.
         if split_df_by_special_cols:
             if postgres_model:
-                col_type_mapping = [(column.name, type(column)) for column in postgres_model._meta.get_fields()]
+                col_type_mapping = [(column.name, type(column)) for column in postgres_model._meta.get_fields()
+                                    if column.name in postgres_cols]
             else:
                 col_type_mapping = list(postgres_cols.items())
             for column_name, column_type in col_type_mapping:
