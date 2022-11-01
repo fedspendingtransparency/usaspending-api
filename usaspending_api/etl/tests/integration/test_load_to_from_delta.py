@@ -1126,8 +1126,10 @@ def test_load_table_to_from_delta_for_transaction_search(
     verify_delta_table_loaded_to_delta(
         spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
-    verify_delta_table_loaded_from_delta(spark, "transaction_search", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_search", jdbc_inserts=True)  # test alt write strategy
+    # TODO: Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC
+    #       as by design the data in delta will be different from the data in postgres
+    # verify_delta_table_loaded_from_delta(spark, "transaction_search", spark_s3_bucket=s3_unittest_data_bucket)
+    # verify_delta_table_loaded_from_delta(spark, "transaction_search", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -1135,10 +1137,12 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     verify_delta_table_loaded_to_delta(spark, "transaction_search_testing", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_search_testing", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(
-        spark, "transaction_search_testing", jdbc_inserts=True
-    )  # test alt write strategy
+    # TODO: Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC
+    #       as by design the data in delta will be different from the data in postgres
+    # verify_delta_table_loaded_from_delta(spark, "transaction_search_testing", spark_s3_bucket=s3_unittest_data_bucket)
+    # verify_delta_table_loaded_from_delta(
+    #     spark, "transaction_search_testing", jdbc_inserts=True
+    # )  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -1186,13 +1190,15 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
         alt_name="transaction_search_alt_name",
         load_command="load_query_to_delta",
     )
-    verify_delta_table_loaded_from_delta(
-        spark,
-        "transaction_search",
-        alt_db="my_alt_db",
-        alt_name="transaction_search_alt_name",
-        spark_s3_bucket=s3_unittest_data_bucket,
-    )
+    # TODO: Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC
+    #       as by design the data in delta will be different from the data in postgres
+    # verify_delta_table_loaded_from_delta(
+    #     spark,
+    #     "transaction_search",
+    #     alt_db="my_alt_db",
+    #     alt_name="transaction_search_alt_name",
+    #     spark_s3_bucket=s3_unittest_data_bucket,
+    # )
 
 
 @mark.django_db(transaction=True)
