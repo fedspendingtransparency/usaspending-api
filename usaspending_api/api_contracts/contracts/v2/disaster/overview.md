@@ -80,6 +80,4 @@ Special cases where financial details were not labeled with the searched DEFC, b
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
-
-### Members
-- List of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
+A List of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)

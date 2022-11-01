@@ -76,9 +76,7 @@ Creates a new download job for the requested filters. Returns a link to a zipped
 
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
-
-### Members
-- List of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
+A List of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
 
 ## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov

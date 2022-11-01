@@ -62,6 +62,4 @@ Creates a new download job for the requested COVID-19 related account and award.
 ## DEFC (enum[string])
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
 Currently, the download is limited to either All COVID-19 DEFC or a single COVID-19 DEFC.
-
-### Members
-- List of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
+A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
