@@ -64,10 +64,4 @@ List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the
 Currently, the download is limited to either All COVID-19 DEFC or a single COVID-19 DEFC.
 
 ### Members
-+ `L`
-+ `M`
-+ `N`
-+ `O`
-+ `P`
-+ `U`
-+ `V`
+- List of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
