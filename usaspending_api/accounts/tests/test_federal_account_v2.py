@@ -5,6 +5,8 @@ from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.accounts.models import FederalAccount
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.references.models.bureau_title_lookup import BureauTitleLookup
 
 
 @pytest.fixture
@@ -54,11 +56,12 @@ def fixture_data(db):
         federal_account_code="021-0005",
         parent_toptier_agency=ta4,
     )
-    ta0 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa0)
-    ta1 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
-    ta2 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa2)
-    ta3 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa3)
-    ta4 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa4)
+
+    ta0 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa0, tas_rendering_label="tas-label-0")
+    ta1 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa1, tas_rendering_label="tas-label-1")
+    ta2 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa2, tas_rendering_label="tas-label-2")
+    ta3 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa3, tas_rendering_label="tas-label-3")
+    ta4 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa4, tas_rendering_label="tas-label-4")
 
     baker.make(
         "accounts.AppropriationAccountBalances",
@@ -124,10 +127,59 @@ def fixture_data(db):
         submission__reporting_period_start="2018-03-02",
     )
 
+    ta99 = baker.make("references.ToptierAgency", toptier_code="999", name="Dept. of Depts")
+
+    fa99 = baker.make(
+        FederalAccount,
+        agency_identifier="999",
+        main_account_code="0009",
+        account_title="Something",
+        federal_account_code="999-0009",
+        parent_toptier_agency=ta99,
+    )
+
+    taa99 = baker.make(
+        "accounts.TreasuryAppropriationAccount", federal_account=fa99, tas_rendering_label="tas-label-99"
+    )
+
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        final_of_fy=True,
+        treasury_account_identifier=taa99,
+        total_budgetary_resources_amount_cpe=1000,
+    )
+
+    baker.make(
+        BureauTitleLookup,
+        federal_account_code="999-0009",
+        bureau_title="Test Bureau",
+        bureau_slug="test-bureau",
+    )
+
+    dabs99 = baker.make(
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2022-09-01", submission_fiscal_year=2022
+    )
+
+    sub99 = baker.make(
+        "submissions.SubmissionAttributes",
+        submission_id="099",
+        reporting_fiscal_year=2022,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs99.id,
+    )
+
+    baker.make(
+        FinancialAccountsByProgramActivityObjectClass,
+        treasury_account=taa99,
+        submission=sub99,
+        obligations_incurred_by_program_object_class_cpe=500,
+        gross_outlay_amount_by_program_object_class_cpe=800,
+    )
+
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_exists(client, fixture_data):
-    """ Verify the federal accounts endpoint returns a status of 200 """
+    """Verify the federal accounts endpoint returns a status of 200"""
     resp = client.post(
         "/api/v2/federal_accounts/", content_type="application/json", data=json.dumps({"filters": {"fy": "2017"}})
     )
@@ -136,7 +188,7 @@ def test_federal_accounts_endpoint_exists(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_correct_form(client, fixture_data):
-    """ Verify the correct keys exist within the response """
+    """Verify the correct keys exist within the response"""
     resp = client.post(
         "/api/v2/federal_accounts/", content_type="application/json", data=json.dumps({"filters": {"fy": "2017"}})
     )
@@ -151,7 +203,7 @@ def test_federal_accounts_endpoint_correct_form(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_correct_data(client, fixture_data):
-    """ Verify federal accounts endpoint returns the correct data """
+    """Verify federal accounts endpoint returns the correct data"""
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
@@ -320,21 +372,35 @@ def test_federal_accounts_uses_corrected_cgac(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_account_content(client, fixture_data):
-    """ Verify the correct Federal Account is returned with the correct contents"""
-    resp = client.get("/api/v2/federal_accounts/001-0005/")
+    """Verify the correct Federal Account is returned with the correct contents"""
+    resp = client.get("/api/v2/federal_accounts/999-0009/", data={"fiscal_year": 2022})
 
-    response_data = resp.json()
-    assert response_data["agency_identifier"] == "001"
-    assert response_data["main_account_code"] == "0005"
-    assert response_data["account_title"] == "Something"
-    assert response_data["federal_account_code"] == "001-0005"
-    assert response_data["parent_agency_toptier_code"] == "001"
-    assert response_data["parent_agency_name"] == "Dept. of Depts"
+    print(resp.json())  # debug
+
+    expected_result = {
+        "fiscal_year": "2022",
+        "id": 1,
+        "agency_identifier": "999",
+        "main_account_code": "0009",
+        "account_title": "Something",
+        "federal_account_code": "999-0009",
+        "parent_agency_toptier_code": "999",
+        "parent_agency_name": "Dept. of Depts",
+        "bureau_name": "Test Bureau",
+        "bureau_slug": "test-bureau",
+        "total_obligated_amount": 0,
+        "total_gross_outlay_amount": 0,
+        "total_budgetary_resources": 0,
+        "children": [],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
 
 
 @pytest.mark.django_db
 def test_federal_account_invalid_param(client, fixture_data):
-    """ Verify the an invalid federal account code will return as a 400 """
+    """Verify the an invalid federal account code will return as a 400"""
     resp = client.get("/api/v2/federal_accounts/001-0006/")
 
     assert resp.status_code == 400
@@ -342,7 +408,7 @@ def test_federal_account_invalid_param(client, fixture_data):
 
 @pytest.mark.django_db
 def test_federal_account_dod_cgac(client, fixture_data):
-    """ Verify DOD CGAC query returns CGAC code for all DOD departments in addition to DOD's '097' """
+    """Verify DOD CGAC query returns CGAC code for all DOD departments in addition to DOD's '097'"""
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
