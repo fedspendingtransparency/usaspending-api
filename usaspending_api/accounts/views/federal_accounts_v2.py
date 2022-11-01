@@ -5,6 +5,7 @@ from typing import List
 from django.db.models import F, Q, Sum, OuterRef, Subquery, Func, DecimalField, Exists
 from django.utils.dateparse import parse_date
 from django.utils.functional import cached_property
+from django_cte import With
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +14,7 @@ from fiscalyear import FiscalDateTime
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -486,7 +488,14 @@ class FederalAccountViewSet(APIView):
             List[dict]: List of Treasury Accounts
         """
 
-        submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
+        submission_ids = list(
+            SubmissionAttributes.objects.filter(
+                reporting_fiscal_year=self.fiscal_year,
+                submission_window__submission_reveal_date__lte=now(),
+                is_final_balances_for_fy=True,
+            ).values_list("submission_id", flat=True)
+        )
+
         query_filters = [
             Q(submission_id__in=submission_ids),
             Q(treasury_account__federal_account__federal_account_code=self.federal_account["federal_account_code"]),
@@ -498,30 +507,33 @@ class FederalAccountViewSet(APIView):
             ),
         ]
 
-        tbr_subquery = Subquery(
+        tbr_cte = With(
             AppropriationAccountBalances.objects.filter(
-                Q(submission_id__in=submission_ids),
-                Q(
-                    treasury_account_identifier__federal_account__federal_account_code=self.federal_account[
-                        "federal_account_code"
-                    ]
-                ),
-                Q(treasury_account_identifier__tas_rendering_label=OuterRef("treasury_account__tas_rendering_label")),
-            ).values("total_budgetary_resources_amount_cpe")
+                treasury_account_identifier__federal_account__federal_account_code=self.federal_account[
+                    "federal_account_code"
+                ]
+            ).values("treasury_account_identifier", "total_budgetary_resources_amount_cpe")
         )
 
-        results = (
+        fabpaoc = (
             (FinancialAccountsByProgramActivityObjectClass.objects.filter(*query_filters))
             .values(
+                "treasury_account__treasury_account_identifier",
                 name=F("treasury_account__account_title"),
                 code=F("treasury_account__tas_rendering_label"),
             )
             .annotate(
                 obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
                 gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
-                budgetary_resources_amount=Sum(tbr_subquery),
+                # budgetary_resources_amount=Sum(tbr_subquery),
             )
         )
+
+        results = tbr_cte.join(
+            fabpaoc, treasury_account__treasury_account_identifier=tbr_cte.col.treasury_account_identifier
+        ).with_cte(tbr_cte)
+
+        # results = tbr_cte.join(FinancialAccountsByProgramActivityObjectClass.objects.filter)
 
         return results
 
