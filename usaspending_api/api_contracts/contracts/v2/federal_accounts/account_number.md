@@ -16,9 +16,9 @@ This endpoint returns the agency identifier, account code, title, and database i
 
 + Response 200 (application/json)
     + Attributes
-        + `fiscal_year`: (required, number)
-        + `id`: (required, number)
-        + `agency_identifier`: (required, string)
+        + `fiscal_year`: `2022` (required, number)
+        + `id`: `3356` (required, number)
+        + `agency_identifier`: `011` (required, string)
         + `main_account_code` (required, string)
         + `federal_account_code` (required, string)
         + `account_title` (required, string)
@@ -27,11 +27,11 @@ This endpoint returns the agency identifier, account code, title, and database i
         + `bureau_name` (required, string)
         + `bureau_slug` (required, string)
         + `total_obligated_amount` (required, number),
-          + Sum of all child Treasury Account `obligated_amount` values
+            Sum of all child Treasury Account `obligated_amount` values
         + `total_gross_outlay_amount` (required, number),
-            + Sum of all child Treasury Account `gross_outlay_amount` values
+            Sum of all child Treasury Account `gross_outlay_amount` values
         + `total_budgetary_resources` (required, number),
-            + Sum of all child Treasury Account `budgetary_resources_amount` values
+            Sum of all child Treasury Account `budgetary_resources_amount` values
         + `children` (required, array[TreasuryAccount], fixed-type)
 
     + Body
