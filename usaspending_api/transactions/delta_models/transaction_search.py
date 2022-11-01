@@ -4,7 +4,8 @@ TRANSACTION_SEARCH_COLUMNS = {
     # Keys
     "transaction_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
-    "transaction_unique_id": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL", "gold": True},
+    # while transaction_unique_id is gold, it can't be NULL
+    "transaction_unique_id": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL", "gold": False},
     "usaspending_unique_transaction_id": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "modification_number": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "generated_unique_award_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -44,7 +45,8 @@ TRANSACTION_SEARCH_COLUMNS = {
     "funding_office_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "funding_office_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     # Typing
-    "is_fpds": {"delta": "BOOLEAN NOT NULL", "postgres": "BOOLEAN NOT NULL", "gold": True},
+    # while is_fpds is gold, it also can't be NULL
+    "is_fpds": {"delta": "BOOLEAN NOT NULL", "postgres": "BOOLEAN NOT NULL", "gold": False},
     "type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "action_type": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -371,14 +373,16 @@ TRANSACTION_SEARCH_COLUMNS = {
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
 }
-TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
+TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()
+                                    if not v["gold"]}
+TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()
                                        if not v["gold"]}
 TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 
 transaction_search_create_sql_string = fr"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS.items()])}
+        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
