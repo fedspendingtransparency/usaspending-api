@@ -79,7 +79,7 @@ TABLE_SPEC = {
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": "award_search_gold",
+        "swap_table": "award_search",
         "swap_schema": "rpt",
         "partition_column": "award_id",
         "partition_column_type": "numeric",
