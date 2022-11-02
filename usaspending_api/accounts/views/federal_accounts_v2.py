@@ -1,6 +1,6 @@
 import ast
 from collections import OrderedDict
-from typing import List, Optional
+from typing import List
 
 from django.db.models import F, Q, Sum, OuterRef, Subquery, Func, DecimalField, Exists
 from django.utils.dateparse import parse_date
@@ -479,7 +479,7 @@ class FederalAccountViewSet(APIView):
             )
         return federal_account
 
-    def _get_treasury_accounts(self) -> Optional[List[dict]]:
+    def _get_treasury_accounts(self) -> List[dict]:
         """Get the Treasury Accounts (using File A and B) associated with the given Federal Account during a specific
             fiscal year.
 
@@ -497,9 +497,9 @@ class FederalAccountViewSet(APIView):
             ).values_list("submission_id", flat=True)
         )
 
-        # If no applicaable submission IDs are found, return None
+        # If no applicable submission IDs are found, return an empty list
         if not submission_ids:
-            return None
+            return []
 
         fabpaoc_query_filters = [
             Q(submission_id__in=submission_ids),
@@ -555,7 +555,7 @@ class FederalAccountViewSet(APIView):
         self.fiscal_year = self.request.query_params.get("fiscal_year", current_fiscal_year())
         child_treasury_accounts = self._get_treasury_accounts()
 
-        if child_treasury_accounts:
+        if len(child_treasury_accounts) > 0:
             fa_obligated_amount = sum(entry["obligated_amount"] for entry in child_treasury_accounts)
             fa_gross_outlay_amount = sum(entry["gross_outlay_amount"] for entry in child_treasury_accounts)
             fa_total_budgetary_resources = sum(entry["budgetary_resources_amount"] for entry in child_treasury_accounts)
