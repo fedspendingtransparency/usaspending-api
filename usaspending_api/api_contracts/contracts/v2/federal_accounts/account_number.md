@@ -10,29 +10,26 @@ This endpoint supports the federal account landing page, which provides a list o
 This endpoint returns the agency identifier, account code, title, and database id for the given federal account.
 
 + Parameters
-    + `account_number`: `011-1022` (required, string)
+    + `account_number`: 011-1022 (required, string)
         The Federal Account symbol comprised of Agency Code and Main Account Code. A unique identifier for federal accounts.
-    + `fiscal_year`: `2022` (optional, number) The desired appropriations fiscal year. Defaults to the current FY.
+    + `fiscal_year`: 2022 (optional, number) The desired appropriations fiscal year. Defaults to the current FY.
 
 + Response 200 (application/json)
     + Attributes
-        + `fiscal_year`: `2022` (required, number)
-        + `id`: `3356` (required, number)
-        + `agency_identifier`: `011` (required, string)
-        + `main_account_code` (required, string)
-        + `federal_account_code` (required, string)
-        + `account_title` (required, string)
-        + `parent_agency_toptier_code` (required, string)
-        + `parent_agency_name` (required, string)
-        + `bureau_name` (required, string)
-        + `bureau_slug` (required, string)
-        + `total_obligated_amount` (required, number),
-            Sum of all child Treasury Account `obligated_amount` values
-        + `total_gross_outlay_amount` (required, number),
-            Sum of all child Treasury Account `gross_outlay_amount` values
-        + `total_budgetary_resources` (required, number),
-            Sum of all child Treasury Account `budgetary_resources_amount` values
-        + `children` (required, array[TreasuryAccount], fixed-type)
+        + `fiscal_year`: 2022 (required, number)
+        + `id`: 3356 (required, number)
+        + `agency_identifier`: 011 (required, string)
+        + `main_account_code`: 1022 (required, string)
+        + `federal_account_code`: 011-1022 (required, string)
+        + `account_title`: International Narcotics Control and Law Enforcement, International Security Assistance, State (required, string)
+        + `parent_agency_toptier_code`: 019 (required, string)
+        + `parent_agency_name`: Department of State (required, string)
+        + `bureau_name`: Interest on the Public Debt (required, string)
+        + `bureau_slug`: interest-on-the-public-debt (required, string)
+        + `total_obligated_amount`: -31604.5 (required, number) - Sum of all child Treasury Account `obligated_amount` values
+        + `total_gross_outlay_amount`: 7643425.94 (required, number) - Sum of all child Treasury Account `gross_outlay_amount` values
+        + `total_budgetary_resources`: 54653496.23 (required, number) - Sum of all child Treasury Account `budgetary_resources_amount` values
+        + `children`: (required, array[TreasuryAccount], fixed-type) - List of applicable Treasury Accounts for the given Federal Account and fiscal year. Otherwise, it will be an empty array.
 
     + Body
 
