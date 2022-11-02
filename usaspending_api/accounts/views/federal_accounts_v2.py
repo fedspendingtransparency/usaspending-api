@@ -512,28 +512,30 @@ class FederalAccountViewSet(APIView):
                 treasury_account_identifier__federal_account__federal_account_code=self.federal_account[
                     "federal_account_code"
                 ]
-            ).values("treasury_account_identifier", "total_budgetary_resources_amount_cpe")
+            ).values("treasury_account_identifier")
+            .annotate(total_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"))
         )
 
         fabpaoc = (
-            (FinancialAccountsByProgramActivityObjectClass.objects.filter(*query_filters))
+            FinancialAccountsByProgramActivityObjectClass.objects.filter(*query_filters)
             .values(
-                "treasury_account__treasury_account_identifier",
                 name=F("treasury_account__account_title"),
                 code=F("treasury_account__tas_rendering_label"),
             )
             .annotate(
                 obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
-                gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
-                # budgetary_resources_amount=Sum(tbr_subquery),
+                gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe")
             )
         )
 
-        results = tbr_cte.join(
-            fabpaoc, treasury_account__treasury_account_identifier=tbr_cte.col.treasury_account_identifier
-        ).with_cte(tbr_cte)
-
-        # results = tbr_cte.join(FinancialAccountsByProgramActivityObjectClass.objects.filter)
+        results = (
+            tbr_cte.join(
+                fabpaoc,
+                treasury_account__treasury_account_identifier=tbr_cte.col.treasury_account_identifier,
+            )
+            .with_cte(tbr_cte)
+            .annotate(budgetary_resources_amount=tbr_cte.col.total_budgetary_resources)
+        )
 
         return results
 
