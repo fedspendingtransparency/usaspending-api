@@ -1,3 +1,0 @@
-22:46:31 - Watching for file changes with StatReloader
-/Users/williamcollins/projects/data_act/usaspending-api/.venv/usaspending-api/lib/python3.7/site-packages/pandas/compat/__init__.py:124: UserWarning: Could not import the lzma module. Your installed Python is incomplete. Attempting to use lzma compression will result in a RuntimeError.
-  warnings.warn(msg)
