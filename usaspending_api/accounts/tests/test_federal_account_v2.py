@@ -206,7 +206,6 @@ def fixture_data(db):
     )
 
 
-
 @pytest.mark.django_db
 def test_federal_accounts_endpoint_exists(client, fixture_data):
     """Verify the federal accounts endpoint returns a status of 200"""
