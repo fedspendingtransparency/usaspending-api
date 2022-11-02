@@ -1,6 +1,6 @@
 import ast
 from collections import OrderedDict
-from typing import List
+from typing import List, Optional
 
 from django.db.models import F, Q, Sum, OuterRef, Subquery, Func, DecimalField, Exists
 from django.utils.dateparse import parse_date
@@ -480,12 +480,14 @@ class FederalAccountViewSet(APIView):
             )
         return federal_account
 
-    def _get_treasury_accounts(self) -> List[dict]:
+    def _get_treasury_accounts(self) -> Optional[List[dict]]:
         """Get the Treasury Accounts (using File A and B) associated with the given Federal Account during a specific
             fiscal year.
 
         Returns:
             List[dict]: List of Treasury Accounts
+            or
+            None: No Treasury Accounts were found for the given Federal Account in the given Fiscal Year
         """
 
         submission_ids = list(
@@ -496,7 +498,11 @@ class FederalAccountViewSet(APIView):
             ).values_list("submission_id", flat=True)
         )
 
-        query_filters = [
+        # If no applicaable submission IDs are found, return None
+        if not submission_ids:
+            return None
+
+        fabpaoc_query_filters = [
             Q(submission_id__in=submission_ids),
             Q(treasury_account__federal_account__federal_account_code=self.federal_account["federal_account_code"]),
             Q(
@@ -507,30 +513,34 @@ class FederalAccountViewSet(APIView):
             ),
         ]
 
+        tbr_query_filters = [
+            Q(submission_id__in=submission_ids),
+            Q(treasury_account_identifier__federal_account__federal_account_code=self.federal_account["federal_account_code"]),
+            Q(
+                Q(total_budgetary_resources_amount_cpe__gt=0)
+                | Q(total_budgetary_resources_amount_cpe__lt=0)
+            )
+        ]
+
         tbr_cte = With(
-            AppropriationAccountBalances.objects.filter(
-                treasury_account_identifier__federal_account__federal_account_code=self.federal_account[
-                    "federal_account_code"
-                ]
-            ).values("treasury_account_identifier")
+            AppropriationAccountBalances.objects.filter(*tbr_query_filters).values("treasury_account_identifier")
             .annotate(total_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"))
         )
 
-        fabpaoc = (
-            FinancialAccountsByProgramActivityObjectClass.objects.filter(*query_filters)
-            .values(
-                name=F("treasury_account__account_title"),
-                code=F("treasury_account__tas_rendering_label"),
-            )
-            .annotate(
-                obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
-                gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe")
-            )
-        )
-
         results = (
+            # Join the total budgetary resources from File A to the corresponding Treasury Account in File B
             tbr_cte.join(
-                fabpaoc,
+                (
+                    FinancialAccountsByProgramActivityObjectClass.objects.filter(*fabpaoc_query_filters)
+                    .values(
+                        name=F("treasury_account__account_title"),
+                        code=F("treasury_account__tas_rendering_label"),
+                    )
+                    .annotate(
+                        obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
+                        gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe")
+                    )
+                ),
                 treasury_account__treasury_account_identifier=tbr_cte.col.treasury_account_identifier,
             )
             .with_cte(tbr_cte)
@@ -543,9 +553,15 @@ class FederalAccountViewSet(APIView):
     def get(self, request: Request, federal_account_code: str, format=None):
         self.fiscal_year = self.request.query_params.get("fiscal_year", current_fiscal_year())
         child_treasury_accounts = self._get_treasury_accounts()
-        fa_obligated_amount = sum(entry["obligated_amount"] for entry in child_treasury_accounts)
-        fa_gross_outlay_amount = sum(entry["gross_outlay_amount"] for entry in child_treasury_accounts)
-        fa_total_budgetary_resources = sum(entry["budgetary_resources_amount"] for entry in child_treasury_accounts)
+
+        if child_treasury_accounts:
+            fa_obligated_amount = sum(entry["obligated_amount"] for entry in child_treasury_accounts)
+            fa_gross_outlay_amount = sum(entry["gross_outlay_amount"] for entry in child_treasury_accounts)
+            fa_total_budgetary_resources = sum(entry["budgetary_resources_amount"] for entry in child_treasury_accounts)
+        else:
+            fa_obligated_amount = None
+            fa_gross_outlay_amount = None
+            fa_total_budgetary_resources = None
 
         return Response(
             {
