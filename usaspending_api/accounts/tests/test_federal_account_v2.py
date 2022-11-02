@@ -165,6 +165,14 @@ def fixture_data(db):
         submission_window_id=dabs99.id,
     )
 
+    sub100 = baker.make(
+        "submissions.SubmissionAttributes",
+        submission_id="100",
+        reporting_fiscal_year=2022,
+        is_final_balances_for_fy=False,
+        submission_window_id=dabs99.id,
+    )
+
     baker.make(
         FinancialAccountsByProgramActivityObjectClass,
         treasury_account=taa99,
@@ -174,12 +182,29 @@ def fixture_data(db):
     )
 
     baker.make(
+        FinancialAccountsByProgramActivityObjectClass,
+        treasury_account=taa99,
+        submission=sub100,
+        obligations_incurred_by_program_object_class_cpe=501,
+        gross_outlay_amount_by_program_object_class_cpe=801,
+    )
+
+    baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         submission=sub99,
         treasury_account_identifier=taa99,
         total_budgetary_resources_amount_cpe=1000,
     )
+
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        final_of_fy=True,
+        submission=sub100,
+        treasury_account_identifier=taa99,
+        total_budgetary_resources_amount_cpe=1001,
+    )
+
 
 
 @pytest.mark.django_db
