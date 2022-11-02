@@ -66,7 +66,6 @@ class AppropriationAccountBalances(AbstractAppropriationAccountBalances):
         managed = True
         db_table = "appropriation_account_balances"
 
-    #objects = models.Manager()
     objects = CTEManager()
     final_objects = AppropriationAccountBalancesManager()
 

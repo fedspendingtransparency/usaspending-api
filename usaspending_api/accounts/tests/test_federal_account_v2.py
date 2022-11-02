@@ -143,7 +143,7 @@ def fixture_data(db):
         "accounts.TreasuryAppropriationAccount",
         account_title="Cool Treasury Account",
         federal_account=fa99,
-        tas_rendering_label="tas-label-99"
+        tas_rendering_label="tas-label-99",
     )
 
     baker.make(
@@ -230,8 +230,8 @@ def test_federal_accounts_endpoint_correct_data(client, fixture_data):
     assert response_data["results"][3]["managing_agency_acronym"] == "ABCD"
     assert response_data["results"][3]["budgetary_resources"] == 3000
 
-    assert response_data["results"][4]["managing_agency_acronym"] == None
-    assert response_data["results"][4]["budgetary_resources"] == None
+    assert response_data["results"][4]["managing_agency_acronym"] is None
+    assert response_data["results"][4]["budgetary_resources"] is None
 
     assert response_data["results"][5]["managing_agency_acronym"] == "EFGH"
     assert response_data["results"][5]["budgetary_resources"] == 9000
@@ -399,17 +399,18 @@ def test_federal_account_content(client, fixture_data):
         "total_budgetary_resources": 1000.0,
         "children": [
             {
-                'name': 'Cool Treasury Account',
-                'code': 'tas-label-99', 
-                'obligated_amount': 500.0,
-                'gross_outlay_amount': 800.0,
-                'budgetary_resources_amount': 1000.0
+                "name": "Cool Treasury Account",
+                "code": "tas-label-99",
+                "obligated_amount": 500.0,
+                "gross_outlay_amount": 800.0,
+                "budgetary_resources_amount": 1000.0,
             }
         ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
+
 
 @pytest.mark.django_db
 def test_federal_account_with_no_submissions(client, fixture_data):
@@ -435,6 +436,7 @@ def test_federal_account_with_no_submissions(client, fixture_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
+
 
 @pytest.mark.django_db
 def test_federal_account_invalid_param(client, fixture_data):

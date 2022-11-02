@@ -90,6 +90,5 @@ class FinancialAccountsByProgramActivityObjectClass(AbstractFinancialAccountsByP
         managed = True
         db_table = "financial_accounts_by_program_activity_object_class"
 
-    #objects = models.Manager()
     objects = CTEManager()
     final_objects = FinancialAccountsByProgramActivityObjectClassManager()

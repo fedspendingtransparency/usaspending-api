@@ -21,7 +21,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models.bureau_title_lookup import BureauTitleLookup
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
 
 class ObjectClassFederalAccountsViewSet(APIView):
@@ -515,15 +514,17 @@ class FederalAccountViewSet(APIView):
 
         tbr_query_filters = [
             Q(submission_id__in=submission_ids),
-            Q(treasury_account_identifier__federal_account__federal_account_code=self.federal_account["federal_account_code"]),
             Q(
-                Q(total_budgetary_resources_amount_cpe__gt=0)
-                | Q(total_budgetary_resources_amount_cpe__lt=0)
-            )
+                treasury_account_identifier__federal_account__federal_account_code=self.federal_account[
+                    "federal_account_code"
+                ]
+            ),
+            Q(Q(total_budgetary_resources_amount_cpe__gt=0) | Q(total_budgetary_resources_amount_cpe__lt=0)),
         ]
 
         tbr_cte = With(
-            AppropriationAccountBalances.objects.filter(*tbr_query_filters).values("treasury_account_identifier")
+            AppropriationAccountBalances.objects.filter(*tbr_query_filters)
+            .values("treasury_account_identifier")
             .annotate(total_budgetary_resources=Sum("total_budgetary_resources_amount_cpe"))
         )
 
@@ -538,7 +539,7 @@ class FederalAccountViewSet(APIView):
                     )
                     .annotate(
                         obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
-                        gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe")
+                        gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
                     )
                 ),
                 treasury_account__treasury_account_identifier=tbr_cte.col.treasury_account_identifier,
