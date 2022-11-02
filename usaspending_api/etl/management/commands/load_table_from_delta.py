@@ -556,7 +556,6 @@ class Command(BaseCommand):
                 col_type_mapping = [
                     (column.name, type(column))
                     for column in postgres_model._meta.get_fields()
-                    if column.name in postgres_cols
                 ]
             else:
                 col_type_mapping = list(postgres_cols.items())
