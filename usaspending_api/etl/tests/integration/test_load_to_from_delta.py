@@ -1136,9 +1136,9 @@ def test_load_table_to_from_delta_for_transaction_search(
 def test_load_table_to_from_delta_for_transaction_search_testing(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
-    verify_delta_table_loaded_to_delta(spark, "transaction_search_testing", s3_unittest_data_bucket)
     # TODO: Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC
     #       as by design the data in delta will be different from the data in postgres
+    # verify_delta_table_loaded_to_delta(spark, "transaction_search_testing", s3_unittest_data_bucket)
     # verify_delta_table_loaded_from_delta(spark, "transaction_search_testing", spark_s3_bucket=s3_unittest_data_bucket)
     # verify_delta_table_loaded_from_delta(
     #     spark, "transaction_search_testing", jdbc_inserts=True
