@@ -131,22 +131,19 @@ def fixture_data(db):
 
     fa99 = baker.make(
         FederalAccount,
+        id="9999",
         agency_identifier="999",
         main_account_code="0009",
-        account_title="Something",
+        account_title="Custom 99",
         federal_account_code="999-0009",
         parent_toptier_agency=ta99,
     )
 
     taa99 = baker.make(
-        "accounts.TreasuryAppropriationAccount", federal_account=fa99, tas_rendering_label="tas-label-99"
-    )
-
-    baker.make(
-        "accounts.AppropriationAccountBalances",
-        final_of_fy=True,
-        treasury_account_identifier=taa99,
-        total_budgetary_resources_amount_cpe=1000,
+        "accounts.TreasuryAppropriationAccount",
+        account_title="Cool Treasury Account",
+        federal_account=fa99,
+        tas_rendering_label="tas-label-99"
     )
 
     baker.make(
@@ -174,6 +171,14 @@ def fixture_data(db):
         submission=sub99,
         obligations_incurred_by_program_object_class_cpe=500,
         gross_outlay_amount_by_program_object_class_cpe=800,
+    )
+
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        final_of_fy=True,
+        submission=sub99,
+        treasury_account_identifier=taa99,
+        total_budgetary_resources_amount_cpe=1000,
     )
 
 
@@ -225,8 +230,11 @@ def test_federal_accounts_endpoint_correct_data(client, fixture_data):
     assert response_data["results"][3]["managing_agency_acronym"] == "ABCD"
     assert response_data["results"][3]["budgetary_resources"] == 3000
 
-    assert response_data["results"][4]["managing_agency_acronym"] == "EFGH"
-    assert response_data["results"][4]["budgetary_resources"] == 9000
+    assert response_data["results"][4]["managing_agency_acronym"] == None
+    assert response_data["results"][4]["budgetary_resources"] == None
+
+    assert response_data["results"][5]["managing_agency_acronym"] == "EFGH"
+    assert response_data["results"][5]["budgetary_resources"] == 9000
 
 
 @pytest.mark.django_db
@@ -375,28 +383,58 @@ def test_federal_account_content(client, fixture_data):
     """Verify the correct Federal Account is returned with the correct contents"""
     resp = client.get("/api/v2/federal_accounts/999-0009/", data={"fiscal_year": 2022})
 
-    print(resp.json())  # debug
-
     expected_result = {
         "fiscal_year": "2022",
-        "id": 1,
+        "id": 9999,
         "agency_identifier": "999",
         "main_account_code": "0009",
-        "account_title": "Something",
+        "account_title": "Custom 99",
         "federal_account_code": "999-0009",
         "parent_agency_toptier_code": "999",
         "parent_agency_name": "Dept. of Depts",
         "bureau_name": "Test Bureau",
         "bureau_slug": "test-bureau",
-        "total_obligated_amount": 0,
-        "total_gross_outlay_amount": 0,
-        "total_budgetary_resources": 0,
-        "children": [],
+        "total_obligated_amount": 500.0,
+        "total_gross_outlay_amount": 800.0,
+        "total_budgetary_resources": 1000.0,
+        "children": [
+            {
+                'name': 'Cool Treasury Account',
+                'code': 'tas-label-99', 
+                'obligated_amount': 500.0,
+                'gross_outlay_amount': 800.0,
+                'budgetary_resources_amount': 1000.0
+            }
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
+@pytest.mark.django_db
+def test_federal_account_with_no_submissions(client, fixture_data):
+    """Verify the Federal Account data is returned even if there aren't any valid submissions"""
+    resp = client.get("/api/v2/federal_accounts/999-0009/", data={"fiscal_year": 1776})
+
+    expected_result = {
+        "fiscal_year": "1776",
+        "id": 9999,
+        "agency_identifier": "999",
+        "main_account_code": "0009",
+        "account_title": "Custom 99",
+        "federal_account_code": "999-0009",
+        "parent_agency_toptier_code": "999",
+        "parent_agency_name": "Dept. of Depts",
+        "bureau_name": "Test Bureau",
+        "bureau_slug": "test-bureau",
+        "total_obligated_amount": None,
+        "total_gross_outlay_amount": None,
+        "total_budgetary_resources": None,
+        "children": None,
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
 
 @pytest.mark.django_db
 def test_federal_account_invalid_param(client, fixture_data):
@@ -416,9 +454,10 @@ def test_federal_account_dod_cgac(client, fixture_data):
     )
     response_data = resp.json()
 
-    assert len(response_data["results"]) == 5
+    assert len(response_data["results"]) == 6
     assert "CGAC_DOD" in response_data["results"][0]["account_name"]
     assert "CGAC_DOD" in response_data["results"][1]["account_name"]
     assert "Something" in response_data["results"][2]["account_name"]
     assert "Nothing1" in response_data["results"][3]["account_name"]
     assert "Nothing2" in response_data["results"][4]["account_name"]
+    assert "Custom 99" in response_data["results"][5]["account_name"]
