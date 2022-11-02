@@ -1143,6 +1143,7 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
     # verify_delta_table_loaded_from_delta(
     #     spark, "transaction_search_testing", jdbc_inserts=True
     # )  # test alt write strategy
+    pass
 
 
 @mark.django_db(transaction=True)
