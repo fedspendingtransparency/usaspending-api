@@ -119,40 +119,4 @@ Generate files and return metadata using filters on custom account
         + `12`
 + `def_codes` (optional, array[string])
     The Disaster Emergency Fund Code (def_codes) filter is optional. If no def_codes are provided the request will return records associated with all def_codes. If an array of valid members is provided the request will return records associated with only the def_codes provided.
-    + Members
-        - `1`
-        - `2`
-        - `3`
-        - `4`
-        - `5`
-        - `6`
-        - `7`
-        - `8`
-        - `9`
-        - `A`
-        - `B`
-        - `C`
-        - `D`
-        - `E`
-        - `F`
-        - `G`
-        - `H`
-        - `I`
-        - `J`
-        - `K`
-        - `L`
-        - `M`
-        - `N`
-        - `O`
-        - `P`
-        - `Q`
-        - `QQQ`
-        - `R`
-        - `S`
-        - `T`
-        - `U`
-        - `V`
-        - `W`
-        - `X`
-        - `Y`
-        - `Z`
+    + A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
