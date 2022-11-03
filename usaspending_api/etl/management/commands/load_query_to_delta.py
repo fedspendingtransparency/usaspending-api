@@ -30,6 +30,7 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_create_sql_string,
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
+    AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
 )
 from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
@@ -68,6 +69,26 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+    },
+    "award_search_gold": {
+        "model": AwardSearch,
+        "is_from_broker": False,
+        "source_query": award_search_load_sql_string,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": "award_search",
+        "swap_schema": "rpt",
+        "partition_column": "award_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": award_search_create_sql_string,
+        "source_schema": AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
+        "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
+        " tas_components ARRAY<STRING>",
+        "column_names": list(AWARD_SEARCH_POSTGRES_GOLD_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
     },
