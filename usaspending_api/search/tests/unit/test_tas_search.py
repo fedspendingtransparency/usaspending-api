@@ -85,9 +85,11 @@ def mock_tas_data(db):
         recipient_location_country_code="USA",
         recipient_location_state_code="CA",
         piid="piiiiid",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
         pop_city_name="AUSTIN",
         pop_state_code="TX",
-        place_of_performance_code="USA",
+        tas_components=["aid=028main=8006ata=028sub=000bpoa=2011epoa=2013a=X"],
     )
 
     baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piid", type="A", awarding_agency_id=1)
