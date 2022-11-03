@@ -67,23 +67,7 @@ This endpoint returns the agency identifier, account code, title, and database i
 
 # Data Structures
 
-## FederalAccount (object)
-+ `id` (required, number)
-+ `agency_identifier` (required, string)
-+ `main_account_code` (required, string)
-+ `federal_account_code` (required, string)
-+ `account_title` (required, string)
-+ `parent_agency_toptier_code` (required, string)
-+ `parent_agency_name` (required, string)
-+ `bureau_name` (required, string)
-+ `bureau_slug` (required, string)
-+ `total_obligated_amount` (required, number),
-+ `total_gross_outlay_amount` (required, number),
-+ `total_budgetary_resources` (required, number),
-+ `children` (required, array[TreasuryAccount], fixed-type)
-
-
-## TreasuryAccount (object
+## TreasuryAccount (object)
 + `name` (required, string)
 + `code` (required, string)
 + `obligated_amount` (required, number)
