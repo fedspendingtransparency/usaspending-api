@@ -3,7 +3,7 @@ from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_catego
 AWARD_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
-    "transaction_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "transaction_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "latest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "earliest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "category": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -43,7 +43,7 @@ AWARD_SEARCH_COLUMNS = {
     "subaward_count": {"delta": "INTEGER", "postgres": "INTEGER", "gold": True},
     "action_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
-    "last_modified_date": {"delta": "DATE", "postgres": "DATE", "gold": True},
+    "last_modified_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "period_of_performance_start_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "period_of_performance_current_end_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "date_signed": {"delta": "DATE", "postgres": "DATE", "gold": False},
