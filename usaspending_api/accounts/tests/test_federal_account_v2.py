@@ -455,7 +455,7 @@ def test_federal_account_with_no_submissions(client, fixture_data):
         "total_obligated_amount": None,
         "total_gross_outlay_amount": None,
         "total_budgetary_resources": None,
-        "children": None,
+        "children": [],
     }
 
     assert resp.status_code == status.HTTP_200_OK
