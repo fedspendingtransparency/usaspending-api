@@ -16,6 +16,6 @@ urlpatterns = [
     re_path(r"(?P<pk>[0-9]+)/fiscal_year_snapshot/?$", fiscal_year_snapshot_federal_accounts),
     # re_path(r'(?P<pk>[0-9]+)/spending_over_time$', spending_over_time_federal_accounts),
     # re_path(r'(?P<pk>[0-9]+)/spending_by_category$', spending_by_category_federal_accounts),
-    re_path(r"(?P<fed_acct_code>[0-9]{3}[\-][0-9]{4})/$", federal_account),
+    re_path(r"(?P<federal_account_code>[0-9]{3}[\-][0-9]{4})/$", federal_account),
     re_path(r"$", federal_accounts),
 ]
