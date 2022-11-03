@@ -82,8 +82,6 @@ class Command(BaseCommand):
         spark.sql(f"create database if not exists {destination_database};")
         spark.sql(f"use {destination_database};")
 
-        spark.sql(f"DROP TABLE IF EXISTS {destination_table_name}")
-
         # Define Schema Using CREATE TABLE AS command
         spark.sql(
             TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
