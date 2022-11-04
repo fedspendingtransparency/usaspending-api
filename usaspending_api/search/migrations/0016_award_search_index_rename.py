@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            sql="ALTER INDEX award_search_period_of_performance_current_end_date_64876276 RENAME TO as pop_current_end_date_64876276",
+            sql="ALTER INDEX award_search_period_of_performance_current_end_date_64876276 RENAME TO as_pop_current_end_date_64876276",
             reverse_sql="ALTER INDEX as_pop_current_end_date_64876276 RENAME TO award_search_period_of_performance_current_end_date_64876276",
         ),
     ]
