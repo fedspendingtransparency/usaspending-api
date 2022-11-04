@@ -1,4 +1,6 @@
 from django.db import models
+from django_cte import CTEManager
+
 from usaspending_api.references.models import ObjectClass, RefProgramActivity
 from usaspending_api.common.models import DataSourceTrackedModel
 
@@ -88,5 +90,5 @@ class FinancialAccountsByProgramActivityObjectClass(AbstractFinancialAccountsByP
         managed = True
         db_table = "financial_accounts_by_program_activity_object_class"
 
-    objects = models.Manager()
+    objects = CTEManager()
     final_objects = FinancialAccountsByProgramActivityObjectClassManager()
