@@ -172,12 +172,12 @@ class Command(BaseCommand):
         self.spark.sql(
             f"""
             WITH dap_filtered AS (
-                SELECT detached_award_proc_unique, unique_award_key
+                SELECT detached_award_procurement_id, detached_award_proc_unique, unique_award_key
                 FROM raw.detached_award_procurement
                 WHERE updated_at >= '{last_etl_date}'
             ),
             pfabs_filtered AS (
-                SELECT afa_generated_unique, unique_award_key
+                SELECT published_fabs_id, afa_generated_unique, unique_award_key
                 FROM raw.published_fabs
                 WHERE is_active IS TRUE AND updated_at >= '{last_etl_date}'
             )
@@ -186,11 +186,15 @@ class Command(BaseCommand):
                 {next_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
                     ORDER BY all_new_awards.unique_award_key
                 ) AS id,
+                all_new_awards.detached_award_procurement_id,
+                all_new_awards.published_fabs_id,
                 all_new_awards.transaction_unique_id,
                 all_new_awards.unique_award_key AS generated_unique_award_id
             FROM (
                 (
                     SELECT
+                        dap.detached_award_procurement_id,
+                        NULL AS published_fabs_id,
                         dap.detached_award_proc_unique AS transaction_unique_id,
                         dap.unique_award_key
                     FROM
@@ -202,6 +206,8 @@ class Command(BaseCommand):
                 UNION ALL
                 (
                     SELECT
+                        NULL AS detached_award_procurement_id,
+                        pfabs.published_fabs_id,
                         pfabs.afa_generated_unique AS transaction_unique_id,
                         pfabs.unique_award_key
                     FROM
@@ -236,13 +242,19 @@ class Command(BaseCommand):
                 WHERE tidlu.published_fabs_id IS NOT NULL AND pfabs.published_fabs_id IS NULL
             """
         elif self.etl_level == "award_id_lookup":
-            id_col = "id"
+            id_col = "transaction_unique_id"
             subquery = """
-                SELECT aidlu.id AS id_to_remove
-                FROM int.award_id_lookup AS aidlu LEFT JOIN int.transaction_id_lookup AS tidlu ON (
-                    aidlu.transaction_unique_id = tidlu.transaction_unique_id
+                SELECT aidlu.transaction_unique_id AS id_to_remove
+                FROM int.award_id_lookup AS aidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
+                    aidlu.detached_award_procurement_id = dap.detached_award_procurement_id
                 )
-                WHERE aidlu.transaction_unique_id IS NOT NULL AND tidlu.transaction_unique_id IS NULL
+                WHERE aidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_procurement_id IS NULL
+                UNION ALL
+                SELECT aidlu.transaction_unique_id AS id_to_remove
+                FROM int.award_id_lookup AS aidlu LEFT JOIN raw.published_fabs AS pfabs ON (
+                    aidlu.published_fabs_id = pfabs.published_fabs_id
+                )
+                WHERE aidlu.published_fabs_id IS NOT NULL AND pfabs.published_fabs_id IS NULL
             """
 
         sql = f"""
@@ -282,7 +294,11 @@ class Command(BaseCommand):
                 f"SELECT COUNT(*) AS count FROM {table_name} WHERE {key_name} IS NULL").collect()[0]['count']
 
             if num_nulls > 0:
-                raise ValueError(f"Found {num_nulls} NULLs in '{key_name}' in table {table_name}!")
+                raise ValueError(f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in '{key_name}' in table "
+                                 f"{table_name}!")
+
+        self.logger.info(f"Creating database {destination_database}, if not already existing.")
+        self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {destination_database};")
 
         self.logger.info("Creating transaction_id_lookup table")
         self.spark.sql(
@@ -303,12 +319,12 @@ class Command(BaseCommand):
         self.spark.sql(
             f"""
             INSERT OVERWRITE {destination_database}.{destination_table}
-                SELECT tn.{tn_key_names[0]}, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.{tn_key_names[1]}
-                FROM {tn_table_names[0]} AS tn LEFT JOIN {tn_table_names[2]} AS dap ON (
-                    tn.{tn_key_names[1]} = dap.{tn_key_names[2]}
+                SELECT tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.transaction_unique_id
+                FROM raw.transaction_normalized AS tn LEFT JOIN raw.detached_award_procurement AS dap ON (
+                    tn.transaction_unique_id = dap.detached_award_proc_unique
                 )
-                LEFT JOIN {tn_table_names[3]} AS pfabs ON (
-                    tn.{tn_key_names[1]} = pfabs.{tn_key_names[3]}
+                LEFT JOIN raw.published_fabs AS pfabs ON (
+                    tn.transaction_unique_id = pfabs.afa_generated_unique
                 )
             """
         )
@@ -336,7 +352,8 @@ class Command(BaseCommand):
                 f"SELECT COUNT(*) AS count FROM {table_name} WHERE {key_name} IS NULL").collect()[0]['count']
 
             if num_nulls > 0:
-                raise ValueError(f"Found {num_nulls} NULLs in '{key_name}' in table {table_name}!")
+                raise ValueError(f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in '{key_name}' in table "
+                                 f"{table_name}!")
 
         self.logger.info("Creating award_id_lookup table")
         destination_table = "award_id_lookup"
@@ -344,6 +361,11 @@ class Command(BaseCommand):
             f"""
                 CREATE TABLE IF NOT EXISTS {destination_database}.{destination_table} (
                     id LONG NOT NULL,
+                    -- detached_award_procurement_id and published_fabs_id are needed in this table to allow
+                    -- the award_id_lookup ETL level to choose the correct rows for deleting so that it can
+                    -- be run in parallel with the transaction_id_lookup ETL level
+                    detached_award_procurement_id INTEGER,
+                    published_fabs_id INTEGER,
                     -- transaction_unique_id *shouldn't* be NULL in the query used to populate this table.
                     -- However, at least in qat, there are awards that don't actually match any tranactions,
                     -- and we want all awards to be listed in this table, so, for now, at least, leaving off 
@@ -361,9 +383,16 @@ class Command(BaseCommand):
         self.spark.sql(
             f"""
             INSERT OVERWRITE {destination_database}.{destination_table}
-                SELECT aw.{award_key_names[0]}, tn.{tn_key_names[1]}, aw.{award_key_names[1]}
-                FROM {award_table_names[0]} AS aw LEFT JOIN {award_table_names[2]} AS tn ON (
-                    aw.{award_key_names[1]} = tn.{award_key_names[2]}
+                SELECT aw.id, dap.detached_award_procurement_id, pfabs.published_fabs_id,
+                    tn.transaction_unique_id, aw.generated_unique_award_id
+                FROM raw.awards AS aw LEFT JOIN raw.transaction_normalized AS tn ON (
+                    aw.generated_unique_award_id = tn.unique_award_key
+                )
+                LEFT JOIN raw.detached_award_procurement AS dap ON (
+                    tn.transaction_unique_id = dap.detached_award_proc_unique
+                )
+                LEFT JOIN raw.published_fabs AS pfabs ON (
+                    tn.transaction_unique_id = pfabs.afa_generated_unique
                 )
             """
         )
