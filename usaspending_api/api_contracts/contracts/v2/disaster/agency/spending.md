@@ -162,7 +162,7 @@ Returns spending details of Agencies receiving supplemental funding budgetary re
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
 When filtering on `award_type_codes` this will filter on File D records that have at least one File C with the provided DEFC
 and belong to CARES Act DEFC.
-A List of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
+A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
 
 ## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov
