@@ -26,9 +26,9 @@ This endpoint returns the agency identifier, account code, title, and database i
         + `parent_agency_name`: Department of State (required, string)
         + `bureau_name`: Interest on the Public Debt (required, string)
         + `bureau_slug`: interest-on-the-public-debt (required, string)
-        + `total_obligated_amount`: `-31604.5` (required, number) - Sum of all child Treasury Account `obligated_amount` values
-        + `total_gross_outlay_amount`: 7643425.94 (required, number) - Sum of all child Treasury Account `gross_outlay_amount` values
-        + `total_budgetary_resources`: 54653496.23 (required, number) - Sum of all child Treasury Account `budgetary_resources_amount` values
+        + `total_obligated_amount`: `-31604.5` (optional, number) - Sum of all child Treasury Account `obligated_amount` values or `null` if there are no child Treasury Accounts.
+        + `total_gross_outlay_amount`: 7643425.94 (optional, number) - Sum of all child Treasury Account `gross_outlay_amount` values or `null` if there are no child Treasury Accounts.
+        + `total_budgetary_resources`: 54653496.23 (optional, number) - Sum of all child Treasury Account `budgetary_resources_amount` values or `null` if there are no child Treasury Accounts.
         + `children` (required, array[TreasuryAccount], fixed-type) - List of applicable Treasury Accounts for the given Federal Account and fiscal year. Otherwise, it will be an empty array.
 
     + Body
