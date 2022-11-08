@@ -118,7 +118,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
 
 ## DEFC (enum[string])
-List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
 A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
 
 ## AwardTypeCodes (enum[string])
