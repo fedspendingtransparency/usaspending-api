@@ -43,5 +43,5 @@ This endpoint returns a count of DEFC
 + `def_codes` (required, array[DEFC], fixed-type)
 
 ## DEFC (enum[string])
-List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
 A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
