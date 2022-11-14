@@ -55,10 +55,20 @@ class AwardSearch(models.Model):
     awarding_subtier_agency_name = models.TextField(null=True)
     funding_subtier_agency_name = models.TextField(null=True)
 
+    awarding_toptier_agency_name_raw = models.TextField(null=True)
+    funding_toptier_agency_name_raw = models.TextField(null=True)
+    awarding_subtier_agency_name_raw = models.TextField(null=True)
+    funding_subtier_agency_name_raw = models.TextField(null=True)
+
     awarding_toptier_agency_code = models.TextField(null=True)
     funding_toptier_agency_code = models.TextField(null=True)
     awarding_subtier_agency_code = models.TextField(null=True)
     funding_subtier_agency_code = models.TextField(null=True)
+
+    awarding_toptier_agency_code_raw = models.TextField(null=True)
+    funding_toptier_agency_code_raw = models.TextField(null=True)
+    awarding_subtier_agency_code_raw = models.TextField(null=True)
+    funding_subtier_agency_code_raw = models.TextField(null=True)
 
     recipient_location_country_code = models.TextField(null=True)
     recipient_location_country_name = models.TextField(null=True)
