@@ -131,6 +131,8 @@ This endpoint returns a list of the top results of State Territories sorted by t
 + `extent_competed_type_codes`: [`A`] (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
++ `def_codes` (optional, array[DEFC], fixed-type)
+  If the `def_codes` provided are in the COVID-19 group, the query will only return results of transactions where the `action_date` is on or after `2020-04-01`.
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
@@ -227,3 +229,7 @@ List of filterable award types
 - `IDV_C`
 - `IDV_D`
 - `IDV_E`
+
+## DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
+A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
