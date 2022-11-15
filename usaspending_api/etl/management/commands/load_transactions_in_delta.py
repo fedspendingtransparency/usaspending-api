@@ -373,7 +373,8 @@ class Command(BaseCommand):
             INSERT OVERWRITE {destination_database}.{destination_table}
                 SELECT aw.id, dap.detached_award_procurement_id, pfabs.published_fabs_id,
                     tn.transaction_unique_id, aw.generated_unique_award_id
-                FROM raw.awards AS aw LEFT JOIN raw.transaction_normalized AS tn ON (
+                FROM raw.awards AS aw 
+                LEFT JOIN raw.transaction_normalized AS tn ON (
                     aw.generated_unique_award_id = tn.unique_award_key
                 )
                 LEFT JOIN raw.detached_award_procurement AS dap ON (

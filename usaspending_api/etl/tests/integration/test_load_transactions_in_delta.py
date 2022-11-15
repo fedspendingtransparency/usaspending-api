@@ -15,7 +15,7 @@ from django.core.management import call_command
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
-    verify_delta_table_loaded_to_delta, equal_datasets
+    load_delta_table_from_postgres, equal_datasets
 )
 
 @fixture
@@ -308,12 +308,12 @@ def populate_initial_postgres_data():
 
 
 
-def load_initial_tables_to_delta_and_verify(spark, s3_data_bucket):
+def load_initial_delta_tables(spark, s3_data_bucket):
     # Load tables and ensure they have loaded correctly
-    verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_data_bucket)
-    verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_data_bucket)
-    verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_data_bucket)
-    verify_delta_table_loaded_to_delta(spark, "awards", s3_data_bucket)
+    load_delta_table_from_postgres("published_fabs", s3_data_bucket)
+    load_delta_table_from_postgres("detached_award_procurement", s3_data_bucket)
+    load_delta_table_from_postgres("transaction_normalized", s3_data_bucket)
+    load_delta_table_from_postgres("awards", s3_data_bucket)
 
     # Also, make sure int database exists
     spark.sql("CREATE DATABASE IF NOT EXISTS int")
@@ -485,7 +485,7 @@ class TestInitialRun():
             unique_award_key=None
         )
 
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
+        load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
         with raises(ValueError,
                     match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
@@ -535,7 +535,7 @@ class TestInitialRun():
             unique_award_key=None
         )
 
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
+        load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
         with raises(ValueError,
                     match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
@@ -546,7 +546,7 @@ class TestInitialRun():
     def test_one_null_in_trans_norm_unique_award_key_from_delta(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
+        load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
         spark.sql("""
             UPDATE raw.transaction_normalized
@@ -562,7 +562,7 @@ class TestInitialRun():
     def test_multiple_nulls_in_trans_norm_unique_award_key_from_delta(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
+        load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
         spark.sql("""
             UPDATE raw.transaction_normalized
@@ -576,7 +576,7 @@ class TestInitialRun():
 
     @staticmethod
     def initial_run(spark, s3_data_bucket):
-        load_initial_tables_to_delta_and_verify(spark, s3_data_bucket)
+        load_initial_delta_tables(spark, s3_data_bucket)
         call_command("load_transactions_in_delta", "--etl-level", "initial_run")
 
     @staticmethod
@@ -640,7 +640,7 @@ class TestTransactionIdLookup():
     def test_no_initial_run(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
+        load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
         with raises(pyspark.sql.utils.AnalysisException,
                     match="Table or view not found: int.transaction_id_lookup"):
@@ -756,7 +756,7 @@ class TestTransactionIdLookup():
             is_active=False,
             unique_award_key="award_assist_0005"
         )
-        verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
@@ -791,7 +791,7 @@ class TestTransactionIdLookup():
             updated_at=insert_time,
             unique_award_key="award_procure_0004"
         )
-        verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
@@ -842,8 +842,8 @@ class TestTransactionIdLookup():
             updated_at=insert_time,
             unique_award_key="award_procure_0004"
         )
-        verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
-        verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
@@ -902,8 +902,8 @@ class TestTransactionIdLookup():
             updated_at=insert_time,
             unique_award_key="award_procure_0004"
         )
-        verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
-        verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
         spark.sql("""
             DELETE FROM raw.published_fabs
@@ -952,7 +952,7 @@ class TestAwardIdLookup():
     def test_no_initial_run(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
+        load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
         with raises(pyspark.sql.utils.AnalysisException,
                     match="Table or view not found: int.award_id_lookup"):
@@ -1068,7 +1068,7 @@ class TestAwardIdLookup():
             is_active=True,
             unique_award_key="award_assist_0005"
         )
-        verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
@@ -1104,7 +1104,7 @@ class TestAwardIdLookup():
             updated_at=insert_time,
             unique_award_key="award_procure_0004"
         )
-        verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
@@ -1156,8 +1156,8 @@ class TestAwardIdLookup():
             updated_at=insert_time,
             unique_award_key="award_procure_0004"
         )
-        verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
-        verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
@@ -1218,8 +1218,8 @@ class TestAwardIdLookup():
             updated_at=insert_time,
             unique_award_key="award_procure_0004"
         )
-        verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
-        verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
         spark.sql("""
             DELETE FROM raw.published_fabs
