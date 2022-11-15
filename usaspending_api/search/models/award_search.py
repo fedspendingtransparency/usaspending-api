@@ -146,6 +146,7 @@ class AwardSearch(models.Model):
     total_indirect_federal_sharing = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     transaction_unique_id = models.TextField(null=True)
     raw_recipient_name = models.TextField(null=True)
+    data_source = models.TextField(null=True)
     objects = CTEManager()
 
     class Meta:

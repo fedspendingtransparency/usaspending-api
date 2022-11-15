@@ -58,7 +58,7 @@ def delete_stale_fpds(detached_award_procurement_ids):
 
         # Set backreferences from Awards to Transaction Normalized to null. These FKs will be updated later
         cursor.execute(
-            "update awards set latest_transaction_id = null, earliest_transaction_id = null "
+            "update award_search set latest_transaction_id = null, earliest_transaction_id = null "
             "where latest_transaction_id in ({ids}) or earliest_transaction_id in ({ids}) "
             "returning id".format(ids=txn_id_str)
         )

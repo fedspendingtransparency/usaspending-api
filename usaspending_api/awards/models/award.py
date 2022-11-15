@@ -236,7 +236,7 @@ class Award(DataSourceTrackedModel):
 
     class Meta:
         managed = False
-        db_table = "awards"
+        db_table = "vw_awards"
         indexes = [
             models.Index(fields=["-update_date"], name="awards_update_date_desc_idx"),
             models.Index(fields=["generated_unique_award_id"], name="award_unique_id"),
@@ -244,9 +244,9 @@ class Award(DataSourceTrackedModel):
 
 
 vw_awards_sql = """
-    CREATE OR REPLACE VIEW rpt.awards AS
+    CREATE OR REPLACE VIEW rpt.vw_awards AS
         SELECT
-            id,
+            award_id AS id,
             generated_unique_award_id,
             is_fpds,
             transaction_unique_id,
@@ -266,8 +266,8 @@ vw_awards_sql = """
             period_of_performance_current_end_date,
             last_modified_date,
             certified_date,
-            create_date timestamp ,
-            update_date timestamp,
+            create_date,
+            update_date,
             total_subaward_amount,
             subaward_count,
             awarding_agency_id,

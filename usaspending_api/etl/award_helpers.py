@@ -53,7 +53,7 @@ txn_totals AS (
   {predicate}
   GROUP BY tn.award_id
 )
-UPDATE awards a
+UPDATE award_search a
 SET
   update_date                             = now(),
 
@@ -153,7 +153,7 @@ executive_comp AS (
   )
   SELECT DISTINCT ON (award_id) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
-UPDATE awards a
+UPDATE award_seach a
 SET
   update_date                 = now(),
   base_and_all_options_value  = t.total_base_and_options_value,
@@ -218,7 +218,7 @@ WITH
     )
     SELECT DISTINCT ON (award_id) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
-UPDATE awards a
+UPDATE award_search a
 SET
   update_date       = now(),
   officer_1_amount  = ec.officer_1_amount,
@@ -259,7 +259,7 @@ subaward_award_update_sql_string = """
     {predicate}
     GROUP BY award_id
   )
-  UPDATE awards a
+  UPDATE award_search a
     SET
       update_date           = now(),
       total_subaward_amount = subaward_totals.total_subaward_amount,

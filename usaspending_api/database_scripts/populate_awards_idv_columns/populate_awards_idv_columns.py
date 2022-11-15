@@ -61,7 +61,7 @@ GET_MIN_MAX_SQL = "select min(id), max(id) from vw_awards"
 UPDATE_SQL = (
     """
     update
-        awards
+        award_search
     set
         fpds_agency_id = t.fpds_agency_id,
         fpds_parent_agency_id = t.fpds_parent_agency_id,
