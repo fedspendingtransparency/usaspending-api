@@ -39,6 +39,7 @@ logger = logging.getLogger("console")
 # Baker Settings
 # Since baker doesn't support SearchVectorField, we'll pass in a function to return a string in the meantime
 baker.generators.add("django.contrib.postgres.search.SearchVectorField", lambda: "VECTORFIELD")
+baker.generators.add("usaspending_api.common.custom_django_fields.NumericField", lambda: 0.00)
 
 
 def pytest_configure():
@@ -61,9 +62,9 @@ def delete_tables_for_tests():
     To prevent a naming conflict, the unused Django managed table is deleted while testing.
     """
     try:
-        tables = ["transaction_search", "award_search"]
+        tables = ["award_search"]
         for table in tables:
-            execute_sql_simple(f"DROP TABLE IF EXISTS {table};")
+            execute_sql_simple(f"DROP TABLE IF EXISTS {table} CASCADE;")
     except Exception:
         pass
 

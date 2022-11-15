@@ -449,26 +449,45 @@ def disaster_account_data():
     a5 = baker.make("awards.Award", id=5, total_loan_value=666, type="02", funding_agency=ag4, latest_transaction_id=50)
 
     baker.make(
-        "awards.TransactionNormalized", id=10, award=a1, action_date="2020-04-01", is_fpds=False, funding_agency=ag1
+        "search.TransactionSearch",
+        transaction_id=10,
+        award=a1,
+        action_date="2020-04-01",
+        is_fpds=False,
+        funding_agency_id=ag1.id,
     )
     baker.make(
-        "awards.TransactionNormalized", id=20, award=a2, action_date="2020-04-02", is_fpds=False, funding_agency=ag2
+        "search.TransactionSearch",
+        transaction_id=20,
+        award=a2,
+        action_date="2020-04-02",
+        is_fpds=False,
+        funding_agency_id=ag2.id,
     )
     baker.make(
-        "awards.TransactionNormalized", id=30, award=a3, action_date="2020-04-03", is_fpds=True, funding_agency=ag3
+        "search.TransactionSearch",
+        transaction_id=30,
+        award=a3,
+        action_date="2020-04-03",
+        is_fpds=True,
+        funding_agency_id=ag3.id,
     )
     baker.make(
-        "awards.TransactionNormalized", id=40, award=a4, action_date="2020-04-04", is_fpds=False, funding_agency=ag3
+        "search.TransactionSearch",
+        transaction_id=40,
+        award=a4,
+        action_date="2020-04-04",
+        is_fpds=False,
+        funding_agency_id=ag3.id,
     )
     baker.make(
-        "awards.TransactionNormalized", id=50, award=a5, action_date="2020-04-04", is_fpds=False, funding_agency=ag4
+        "search.TransactionSearch",
+        transaction_id=50,
+        award=a5,
+        action_date="2020-04-04",
+        is_fpds=False,
+        funding_agency_id=ag4.id,
     )
-
-    baker.make("awards.TransactionFABS", transaction_id=10)
-    baker.make("awards.TransactionFABS", transaction_id=20)
-    baker.make("awards.TransactionFPDS", transaction_id=30)
-    baker.make("awards.TransactionFABS", transaction_id=40)
-    baker.make("awards.TransactionFABS", transaction_id=50)
 
     faba = "awards.FinancialAccountsByAwards"
     baker.make(

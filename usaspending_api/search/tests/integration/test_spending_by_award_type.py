@@ -12,55 +12,63 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 def test_data():
 
     baker.make("awards.Award", id=1, type="A", latest_transaction_id=1, generated_unique_award_id="CONT_AWD_1")
-    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=1,
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        legal_entity_zip5="00501",
-        place_of_perform_country_c="USA",
-        place_of_perf_country_desc="UNITED STATES",
-        place_of_performance_zip5="00001",
+        award_id=1,
+        action_date="2010-10-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_zip5="00501",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_zip5="00001",
     )
 
     baker.make("awards.Award", id=2, type="A", latest_transaction_id=2, generated_unique_award_id="CONT_AWD_2")
-    baker.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True)
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=2,
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        legal_entity_zip5="00502",
-        place_of_perform_country_c="USA",
-        place_of_perf_country_desc="UNITED STATES",
-        place_of_performance_zip5="00002",
+        award_id=2,
+        action_date="2010-10-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_zip5="00502",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_zip5="00002",
     )
 
     baker.make("awards.Award", id=3, type="A", latest_transaction_id=3, generated_unique_award_id="CONT_AWD_3")
-    baker.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True)
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=3,
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        legal_entity_zip5="00503",
-        place_of_perform_country_c="USA",
-        place_of_perf_country_desc="UNITED STATES",
-        place_of_performance_zip5="00003",
+        award_id=3,
+        action_date="2010-10-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_zip5="00503",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_zip5="00003",
     )
 
     baker.make("awards.Award", id=4, type="A", latest_transaction_id=4, generated_unique_award_id="CONT_AWD_4")
-    baker.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True)
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=4,
-        legal_entity_country_code="GIB",
-        legal_entity_country_name="GIBRALTAR",
-        legal_entity_zip5="00504",
-        place_of_perform_country_c="GIB",
-        place_of_perf_country_desc="GIBRALTAR",
-        place_of_performance_zip5="00004",
+        award_id=4,
+        action_date="2010-10-01",
+        recipient_location_country_code="GIB",
+        recipient_location_country_name="GIBRALTAR",
+        recipient_location_zip5="00504",
+        pop_country_code="GIB",
+        pop_country_name="GIBRALTAR",
+        pop_zip5="00004",
     )
 
     baker.make("references.RefCountryCode", country_code="GIB", country_name="GIBRALTAR")

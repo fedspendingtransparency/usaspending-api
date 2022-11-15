@@ -101,8 +101,7 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
 def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
 
     baker.make("awards.Award", id=1, type="A", latest_transaction_id=1)
-    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
-    baker.make("awards.TransactionFPDS", transaction_id=1)
+    baker.make("search.TransactionSearch", transaction_id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -174,7 +173,10 @@ def awards_over_different_date_ranges():
                 uri="abcxyx{}".format(award_id),
             )
             baker.make(
-                "awards.TransactionNormalized", id=1000 + award_id, award=award, action_date=date_range["action_date"]
+                "search.TransactionSearch",
+                transaction_id=1000 + award_id,
+                award=award,
+                action_date=date_range["action_date"],
             )
 
 
@@ -517,8 +519,15 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
         total_obligation=12.00,
     )
 
-    baker.make("awards.TransactionNormalized", id=8, award_id=5, action_date="2019-10-1", is_fpds=True)
-    baker.make("awards.TransactionFPDS", transaction_id=8, naics="222233", awardee_or_recipient_uniqu="duns_1001")
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=8,
+        award_id=5,
+        action_date="2019-10-1",
+        is_fpds=True,
+        naics_code="222233",
+        recipient_unique_id="duns_1001",
+    )
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 

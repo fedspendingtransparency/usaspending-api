@@ -17,7 +17,8 @@ from usaspending_api.common.exceptions import UnprocessableEntityException
 def format_response(api_dict):
     svs = TransactionViewSet()
     dec_fields = ["federal_action_obligation", "face_value_loan_guarantee", "original_loan_subsidy_cost"]
-    resp = {k: v for k, v in api_dict.items() if k != "id"}
+    resp = {k: v for k, v in api_dict.items() if k != "transaction_id"}
+    resp["description"] = resp["transaction_description"]
     resp = svs._format_results([resp])[0]
     for k, v in resp.items():
         if k in dec_fields:
@@ -41,8 +42,9 @@ def test_no_award_id():
 @pytest.mark.django_db
 def test_specific_award():
     create_dummy_awards()
-    baker.make("awards.TransactionNormalized", **transaction_1)
-    baker.make("awards.TransactionNormalized", **transaction_2)
+    baker.make("search.TransactionSearch", **transaction_1)
+    baker.make("search.TransactionSearch", **transaction_2)
+    baker.make("search.TransactionSearch", **transaction_3)
     test_payload = {"award_id": "2"}
 
     svs = TransactionViewSet()
@@ -72,6 +74,7 @@ def create_dummy_awards():
 
 
 transaction_1 = {
+    "transaction_id": 1,
     "is_fpds": False,
     "transaction_unique_id": "R02L2A1XL2",
     "type": "A",
@@ -80,13 +83,14 @@ transaction_1 = {
     "action_type": None,
     "action_type_description": "lobortis",
     "modification_number": "7",
-    "description": "duis aliquam convallis nunc proin at turpis a pede posuere nonummy",
+    "transaction_description": "duis aliquam convallis nunc proin at turpis a pede posuere nonummy",
     "federal_action_obligation": "624678.18",
     "face_value_loan_guarantee": "118692.20",
     "original_loan_subsidy_cost": "801283.57",
 }
 
 transaction_2 = {
+    "transaction_id": 2,
     "is_fpds": True,
     "transaction_unique_id": "O21E7S1PT6",
     "type": None,
@@ -95,12 +99,13 @@ transaction_2 = {
     "action_type": None,
     "action_type_description": "orci",
     "modification_number": "12",
-    "description": "rhoncus dui vel sem sed sagittis nam",
+    "transaction_description": "rhoncus dui vel sem sed sagittis nam",
     "federal_action_obligation": "528261.92",
     "face_value_loan_guarantee": "799182.50",
     "original_loan_subsidy_cost": "414172.86",
 }
 transaction_3 = {
+    "transaction_id": 3,
     "is_fpds": False,
     "transaction_unique_id": "Q25B9A1MQ0",
     "type": "D",
@@ -109,7 +114,7 @@ transaction_3 = {
     "action_type": None,
     "action_type_description": "consequat",
     "modification_number": "4",
-    "description": "ligula in lacus curabitur at ipsum ac tellus semper interdum mauris",
+    "transaction_description": "ligula in lacus curabitur at ipsum ac tellus semper interdum mauris",
     "federal_action_obligation": "177682.30",
     "face_value_loan_guarantee": "418263.20",
     "original_loan_subsidy_cost": "279682.36",

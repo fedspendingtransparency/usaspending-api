@@ -14,67 +14,82 @@ from usaspending_api.common.exceptions import InvalidParameterException
 
 @pytest.fixture
 def award_data_fixture(db):
-    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=1,
-        legal_entity_city_name="BURBANK",
-        legal_entity_country_code="USA",
-        legal_entity_state_code="CA",
+        award_id=1,
+        action_date="2010-10-01",
+        type="A",
+        recipient_location_city_name="BURBANK",
+        recipient_location_country_code="USA",
+        recipient_location_state_code="CA",
         piid="piiiiid",
-        place_of_perform_city_name="AUSTIN",
-        place_of_performance_state="TX",
-        place_of_perform_country_c="USA",
+        pop_city_name="AUSTIN",
+        pop_state_code="TX",
+        pop_country_code="USA",
     )
     baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
 
-    baker.make("awards.TransactionNormalized", id=2, action_date="2010-10-01", award_id=2, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=2,
-        legal_entity_city_name="BRISTOL",
-        legal_entity_country_code="GBR",
+        award_id=2,
+        action_date="2010-10-01",
+        type="A",
+        recipient_location_city_name="BRISTOL",
+        recipient_location_country_code="GBR",
         piid="piiiiid",
-        place_of_perform_city_name="MCCOOL JUNCTION",
-        place_of_performance_state="TX",
-        place_of_perform_country_c="USA",
+        pop_city_name="MCCOOL JUNCTION",
+        pop_state_code="TX",
+        pop_country_code="USA",
     )
     baker.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=2, piid="0001", type="A")
 
-    baker.make("awards.TransactionNormalized", id=3, action_date="2010-10-01", award_id=3, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=3,
-        legal_entity_city_name="BRISBANE",
+        award_id=3,
+        action_date="2010-10-01",
+        type="A",
+        recipient_location_city_name="BRISBANE",
         piid="0002",
-        place_of_perform_city_name="BRISBANE",
-        place_of_performance_state="NE",
-        place_of_perform_country_c="USA",
+        pop_city_name="BRISBANE",
+        pop_state_code="NE",
+        pop_country_code="USA",
     )
     baker.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=3, piid="0002", type="A")
 
-    baker.make("awards.TransactionNormalized", id=4, action_date="2010-10-01", award_id=4, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=4,
-        legal_entity_city_name="NEW YORK",
-        legal_entity_country_code="USA",
+        award_id=4,
+        action_date="2010-10-01",
+        type="A",
+        recipient_location_city_name="NEW YORK",
+        recipient_location_country_code="USA",
         piid="0003",
-        place_of_perform_city_name="NEW YORK",
-        place_of_performance_state="NE",
-        place_of_perform_country_c="USA",
+        pop_city_name="NEW YORK",
+        pop_state_code="NE",
+        pop_country_code="USA",
     )
     baker.make("awards.Award", id=4, is_fpds=True, latest_transaction_id=4, piid="0003", type="A")
-    baker.make("awards.TransactionNormalized", id=5, action_date="2010-10-01", award_id=5, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=5,
-        legal_entity_city_name="NEW AMSTERDAM",
-        legal_entity_country_code="USA",
+        award_id=5,
+        action_date="2010-10-01",
+        type="A",
+        recipient_location_city_name="NEW AMSTERDAM",
+        recipient_location_country_code="USA",
         piid="0004",
-        place_of_perform_city_name="NEW AMSTERDAM",
-        place_of_performance_state="NE",
-        place_of_perform_country_c="USA",
+        pop_city_name="NEW AMSTERDAM",
+        pop_state_code="NE",
+        pop_country_code="USA",
     )
     baker.make("awards.Award", id=5, is_fpds=True, latest_transaction_id=5, piid="0004", type="A")
 

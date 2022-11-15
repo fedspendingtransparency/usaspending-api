@@ -46,8 +46,8 @@ POPULATE_TABLE = (
             base_exercised_options_val
     from
         awards a
-        inner join transaction_normalized as tx on tx.award_id = a.id
-        inner join transaction_fpds as f on f.transaction_id = tx.id
+        inner join vw_transaction_normalized as tx on tx.award_id = a.id
+        inner join vw_transaction_fpds as f on f.transaction_id = tx.id
     group by
         tx.award_id
 """

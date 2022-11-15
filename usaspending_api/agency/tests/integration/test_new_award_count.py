@@ -103,13 +103,13 @@ def new_award_data(db):
         funding_agency=ag2,
     )
 
-    transaction_normalized_lazy_ref = "awards.TransactionNormalized"
-    baker.make(transaction_normalized_lazy_ref, id=10, award=award1, action_date="2019-10-15")
-    baker.make(transaction_normalized_lazy_ref, id=20, award=award2, action_date="2020-12-15")
-    baker.make(transaction_normalized_lazy_ref, id=30, award=award3, action_date="2020-01-30")
-    baker.make(transaction_normalized_lazy_ref, id=40, award=award4, action_date="2019-09-30")
-    baker.make(transaction_normalized_lazy_ref, id=50, award=award5, action_date="2020-12-15")
-    baker.make(transaction_normalized_lazy_ref, id=60, award=award6, action_date="2021-07-05")
+    transaction_search_lazy_ref = "search.TransactionSearch"
+    baker.make(transaction_search_lazy_ref, transaction_id=10, award=award1, action_date="2019-10-15")
+    baker.make(transaction_search_lazy_ref, transaction_id=20, award=award2, action_date="2020-12-15")
+    baker.make(transaction_search_lazy_ref, transaction_id=30, award=award3, action_date="2020-01-30")
+    baker.make(transaction_search_lazy_ref, transaction_id=40, award=award4, action_date="2019-09-30")
+    baker.make(transaction_search_lazy_ref, transaction_id=50, award=award5, action_date="2020-12-15")
+    baker.make(transaction_search_lazy_ref, transaction_id=60, award=award6, action_date="2021-07-05")
 
 
 @pytest.mark.django_db

@@ -36,61 +36,52 @@ def psc_test_data(db):
     baker.make("awards.Award", id=4, latest_transaction_id=4)
 
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         is_fpds=True,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-01",
+        fiscal_action_date="2020-04-01",
+        product_or_service_code="1234",
+        product_or_service_description="PSC DESCRIPTION UP",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=2,
+        "search.TransactionSearch",
+        transaction_id=2,
         award_id=2,
         is_fpds=True,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-02",
+        fiscal_action_date="2020-04-02",
+        product_or_service_code="1234",
+        product_or_service_description="PSC DESCRIPTION UP",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=3,
+        "search.TransactionSearch",
+        transaction_id=3,
         award_id=3,
         is_fpds=True,
         federal_action_obligation=2,
+        generated_pragmatic_obligation=2,
         action_date="2020-01-03",
+        fiscal_action_date="2020-04-03",
+        product_or_service_code="9876",
+        product_or_service_description="PSC DESCRIPTION DOWN",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=4,
+        "search.TransactionSearch",
+        transaction_id=4,
         award_id=4,
         is_fpds=True,
         federal_action_obligation=2,
+        generated_pragmatic_obligation=2,
         action_date="2020-01-04",
-    )
-
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-        product_or_service_code="1234",
-        product_or_service_co_desc="PSC DESCRIPTION UP",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=2,
-        product_or_service_code="1234",
-        product_or_service_co_desc="PSC DESCRIPTION UP",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=3,
+        fiscal_action_date="2020-04-04",
         product_or_service_code="9876",
-        product_or_service_co_desc="PSC DESCRIPTION DOWN",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=4,
-        product_or_service_code="9876",
-        product_or_service_co_desc="PSC DESCRIPTION DOWN",
+        product_or_service_description="PSC DESCRIPTION DOWN",
     )
 
     baker.make("references.PSC", code="1234", description="PSC DESCRIPTION UP")
@@ -121,11 +112,28 @@ def cfda_test_data(db):
         cfda_title="CFDA TITLE 1234",
     )
 
-    baker.make("awards.TransactionNormalized", id=1, award_id=1, federal_action_obligation=1, action_date="2020-01-01")
-    baker.make("awards.TransactionNormalized", id=2, award_id=2, federal_action_obligation=1, action_date="2020-01-02")
-
-    baker.make("awards.TransactionFABS", transaction_id=1, cfda_number="CFDA1234", cfda_title="CFDA TITLE 1234")
-    baker.make("awards.TransactionFABS", transaction_id=2, cfda_number="CFDA1234", cfda_title="CFDA TITLE 1234")
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
+        award_id=1,
+        federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
+        action_date="2020-01-01",
+        fiscal_action_date="2020-04-01",
+        cfda_number="CFDA1234",
+        cfda_title="CFDA TITLE 1234",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
+        award_id=2,
+        federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
+        action_date="2020-01-02",
+        fiscal_action_date="2020-04-02",
+        cfda_number="CFDA1234",
+        cfda_title="CFDA TITLE 1234",
+    )
 
     baker.make("references.Cfda", id=1, program_number="CFDA1234", program_title="CFDA TITLE 1234")
 
@@ -138,42 +146,53 @@ def naics_test_data(db):
     baker.make("awards.Award", id=4, latest_transaction_id=4)
 
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         is_fpds=True,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-01",
+        fiscal_action_date="2020-04-01",
+        naics_code="NAICS 1234",
+        naics_description="NAICS DESC 1234",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=2,
+        "search.TransactionSearch",
+        transaction_id=2,
         award_id=2,
         is_fpds=True,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-02",
+        fiscal_action_date="2020-04-02",
+        naics_code="NAICS 1234",
+        naics_description="NAICS DESC 1234",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=3,
+        "search.TransactionSearch",
+        transaction_id=3,
         award_id=3,
         is_fpds=True,
         federal_action_obligation=2,
+        generated_pragmatic_obligation=2,
         action_date="2020-01-03",
+        fiscal_action_date="2020-04-03",
+        naics_code="NAICS 9876",
+        naics_description="NAICS DESC 9876",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=4,
+        "search.TransactionSearch",
+        transaction_id=4,
         award_id=4,
         is_fpds=True,
         federal_action_obligation=2,
+        generated_pragmatic_obligation=2,
         action_date="2020-01-04",
+        fiscal_action_date="2020-04-04",
+        naics_code="NAICS 9876",
+        naics_description="NAICS DESC 9876",
     )
-
-    baker.make("awards.TransactionFPDS", transaction_id=1, naics="NAICS 1234", naics_description="NAICS DESC 1234")
-    baker.make("awards.TransactionFPDS", transaction_id=2, naics="NAICS 1234", naics_description="NAICS DESC 1234")
-    baker.make("awards.TransactionFPDS", transaction_id=3, naics="NAICS 9876", naics_description="NAICS DESC 9876")
-    baker.make("awards.TransactionFPDS", transaction_id=4, naics="NAICS 9876", naics_description="NAICS DESC 9876")
 
     baker.make("references.NAICS", code="NAICS 1234", description="SOURCE NAICS DESC 1234", year=1955)
     baker.make("references.NAICS", code="NAICS 9876", description="SOURCE NAICS DESC 9876", year=1985)
@@ -218,40 +237,48 @@ def agency_test_data(db):
     )
 
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         awarding_agency_id=1001,
+        awarding_toptier_agency_id=1001,
         funding_agency_id=1002,
+        funding_toptier_agency_id=1002,
         federal_action_obligation=5,
+        generated_pragmatic_obligation=5,
         action_date="2020-01-01",
+        fiscal_action_date="2020-04-01",
         is_fpds=False,
+        awarding_toptier_agency_name="Awarding Toptier Agency 1",
+        awarding_subtier_agency_name="Awarding Subtier Agency 1",
+        funding_toptier_agency_name="Funding Toptier Agency 2",
+        funding_subtier_agency_name="Funding Subtier Agency 2",
+        awarding_toptier_agency_abbreviation="TA1",
+        awarding_subtier_agency_abbreviation="SA1",
+        funding_toptier_agency_abbreviation="TA2",
+        funding_subtier_agency_abbreviation="SA2",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=2,
+        "search.TransactionSearch",
+        transaction_id=2,
         award_id=2,
         awarding_agency_id=1001,
+        awarding_toptier_agency_id=1001,
         funding_agency_id=1002,
+        funding_toptier_agency_id=1002,
         federal_action_obligation=10,
+        generated_pragmatic_obligation=10,
         action_date="2020-01-02",
+        fiscal_action_date="2020-04-02",
         is_fpds=False,
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction_id=1,
-        awarding_agency_name="Awarding Toptier Agency 1",
-        funding_agency_name="Funding Toptier Agency 2",
-        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
-        funding_sub_tier_agency_na="Funding Subtier Agency 2",
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction_id=2,
-        awarding_agency_name="Awarding Toptier Agency 1",
-        funding_agency_name="Funding Toptier Agency 2",
-        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
-        funding_sub_tier_agency_na="Funding Subtier Agency 2",
+        awarding_toptier_agency_name="Awarding Toptier Agency 1",
+        awarding_subtier_agency_name="Awarding Subtier Agency 1",
+        funding_toptier_agency_name="Funding Toptier Agency 2",
+        funding_subtier_agency_name="Funding Subtier Agency 2",
+        awarding_toptier_agency_abbreviation="TA1",
+        awarding_subtier_agency_abbreviation="SA1",
+        funding_toptier_agency_abbreviation="TA2",
+        funding_subtier_agency_abbreviation="SA2",
     )
 
     baker.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")
@@ -326,75 +353,76 @@ def recipient_test_data(db):
     )
 
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-01",
+        fiscal_action_date="2020-04-01",
         is_fpds=True,
+        recipient_name_raw="University of Pawnee",
+        recipient_name="UNIVERSITY OF PAWNEE",
+        recipient_unique_id="00UOP00",
+        recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
+        recipient_levels=["P"],
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=2,
+        "search.TransactionSearch",
+        transaction_id=2,
         award_id=2,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-02",
+        fiscal_action_date="2020-04-02",
         is_fpds=True,
+        recipient_name_raw="University of Pawnee",
+        recipient_name="UNIVERSITY OF PAWNEE",
+        recipient_unique_id="00UOP00",
+        recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
+        recipient_levels=["P"],
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=3,
+        "search.TransactionSearch",
+        transaction_id=3,
         award_id=3,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-03",
+        fiscal_action_date="2020-04-03",
         is_fpds=True,
+        recipient_name_raw="John Doe",
+        recipient_name="JOHN DOE",
+        recipient_unique_id="1234JD4321",
+        recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
+        recipient_levels=["C"],
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=4,
+        "search.TransactionSearch",
+        transaction_id=4,
         award_id=4,
         federal_action_obligation=10,
+        generated_pragmatic_obligation=10,
         action_date="2020-01-04",
+        fiscal_action_date="2020-04-04",
         is_fpds=True,
+        recipient_name_raw="John Doe",
+        recipient_name="JOHN DOE",
+        recipient_unique_id="1234JD4321",
+        recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
+        recipient_levels=["C"],
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=5,
+        "search.TransactionSearch",
+        transaction_id=5,
         award_id=5,
         federal_action_obligation=15,
+        generated_pragmatic_obligation=15,
         action_date="2020-01-05",
+        fiscal_action_date="2020-04-05",
         is_fpds=True,
-    )
-
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-        awardee_or_recipient_legal="University of Pawnee",
-        awardee_or_recipient_uniqu="00UOP00",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=2,
-        awardee_or_recipient_legal="University of Pawnee",
-        awardee_or_recipient_uniqu="00UOP00",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=3,
-        awardee_or_recipient_legal="John Doe",
-        awardee_or_recipient_uniqu="1234JD4321",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=4,
-        awardee_or_recipient_legal="John Doe",
-        awardee_or_recipient_uniqu="1234JD4321",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=5,
-        awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
-        awardee_or_recipient_uniqu=None,
+        recipient_name="MULTIPLE RECIPIENTS",
+        recipient_unique_id=None,
     )
 
     baker.make(
@@ -508,85 +536,76 @@ def geo_test_data(db):
     )
 
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-01",
+        fiscal_action_date="2020-04-01",
         is_fpds=True,
+        pop_country_code="US",
+        pop_country_name="UNITED STATES",
+        pop_state_code="XY",
+        pop_state_name="TEST STATE",
+        pop_county_code="004",
+        pop_county_name="COUNTYSVILLE",
+        pop_zip5="12345",
+        pop_congressional_code="06",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=2,
+        "search.TransactionSearch",
+        transaction_id=2,
         award_id=2,
         federal_action_obligation=2,
+        generated_pragmatic_obligation=2,
         action_date="2020-01-02",
+        fiscal_action_date="2020-04-02",
         is_fpds=True,
+        pop_country_code="US",
+        pop_country_name="UNITED STATES",
+        pop_state_code="XY",
+        pop_state_name="TEST STATE",
+        pop_county_code="004",
+        pop_county_name="COUNTYSVILLE",
+        pop_zip5="12345",
+        pop_congressional_code="06",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=3,
+        "search.TransactionSearch",
+        transaction_id=3,
         award_id=3,
         federal_action_obligation=3,
+        generated_pragmatic_obligation=3,
         action_date="2020-01-03",
+        fiscal_action_date="2020-04-03",
         is_fpds=True,
+        pop_country_code="US",
+        pop_country_name="UNITED STATES",
+        pop_state_code="XY",
+        pop_state_name="TEST STATE",
+        pop_county_code="001",
+        pop_county_name="SOMEWHEREVILLE",
+        pop_zip5="98765",
+        pop_congressional_code="90",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=4,
+        "search.TransactionSearch",
+        transaction_id=4,
         award_id=4,
         federal_action_obligation=4,
+        generated_pragmatic_obligation=4,
         action_date="2020-01-04",
+        fiscal_action_date="2020-04-04",
         is_fpds=True,
-    )
-
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-        place_of_perform_country_c="US",
-        place_of_perf_country_desc="UNITED STATES",
-        place_of_performance_state="XY",
-        place_of_perfor_state_desc="TEST STATE",
-        place_of_perform_county_co="04",
-        place_of_perform_county_na="COUNTYSVILLE",
-        place_of_performance_zip5="12345",
-        place_of_performance_congr="06",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=2,
-        place_of_perform_country_c="US",
-        place_of_perf_country_desc="UNITED STATES",
-        place_of_performance_state="XY",
-        place_of_perfor_state_desc="TEST STATE",
-        place_of_perform_county_co="04",
-        place_of_perform_county_na="COUNTYSVILLE",
-        place_of_performance_zip5="12345",
-        place_of_performance_congr="06",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=3,
-        place_of_perform_country_c="US",
-        place_of_perf_country_desc="UNITED STATES",
-        place_of_performance_state="XY",
-        place_of_perfor_state_desc="TEST STATE",
-        place_of_perform_county_co="01",
-        place_of_perform_county_na="SOMEWHEREVILLE",
-        place_of_performance_zip5="98765",
-        place_of_performance_congr="90",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=4,
-        place_of_perform_country_c="US",
-        place_of_perf_country_desc="UNITED STATES",
-        place_of_performance_state="XY",
-        place_of_perfor_state_desc="TEST STATE",
-        place_of_perform_county_co="01",
-        place_of_perform_county_na="SOMEWHEREVILLE",
-        place_of_performance_zip5="98765",
-        place_of_performance_congr="90",
+        pop_country_code="US",
+        pop_country_name="UNITED STATES",
+        pop_state_code="XY",
+        pop_state_name="TEST STATE",
+        pop_county_code="001",
+        pop_county_name="SOMEWHEREVILLE",
+        pop_zip5="98765",
+        pop_congressional_code="90",
     )
 
     baker.make("recipient.StateData", name="Test State", code="XY")
@@ -599,33 +618,34 @@ def federal_accounts_test_data(db):
     baker.make("awards.Award", id=2, latest_transaction_id=2)
 
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
         action_date="2020-01-01",
+        fiscal_action_date="2020-04-01",
         is_fpds=True,
+        recipient_name="Sample Recipient",
+        recipient_unique_id="000000000",
+        recipient_hash="ab4d44f6-7a16-4ca7-405a-dcb913effbaf",
+        recipient_levels=["R"],
+        federal_accounts=[{"id": 10, "account_title": "Test Federal Account", "federal_account_code": "020-0001"}],
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=2,
+        "search.TransactionSearch",
+        transaction_id=2,
         award_id=2,
         federal_action_obligation=2,
+        generated_pragmatic_obligation=2,
         action_date="2020-01-02",
+        fiscal_action_date="2020-04-02",
         is_fpds=True,
-    )
-
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-        awardee_or_recipient_legal="Sample Recipient",
-        awardee_or_recipient_uniqu="000000000",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=2,
-        awardee_or_recipient_legal="Sample Recipient",
-        awardee_or_recipient_uniqu="000000000",
+        recipient_name="Sample Recipient",
+        recipient_unique_id="000000000",
+        recipient_hash="ab4d44f6-7a16-4ca7-405a-dcb913effbaf",
+        recipient_levels=["R"],
+        federal_accounts=[{"id": 10, "account_title": "Test Federal Account", "federal_account_code": "020-0001"}],
     )
 
     baker.make(

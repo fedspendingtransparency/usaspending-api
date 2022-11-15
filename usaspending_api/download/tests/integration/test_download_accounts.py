@@ -8,17 +8,13 @@ from unittest.mock import Mock
 from itertools import chain, combinations
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.awards.models import (
-    TransactionNormalized,
-    TransactionFABS,
-    TransactionFPDS,
-    FinancialAccountsByAwards,
-)
+from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.lookups import JOB_STATUS, VALID_ACCOUNT_SUBMISSION_TYPES
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.search.models import TransactionSearch
 
 
 @pytest.fixture
@@ -71,40 +67,42 @@ def download_test_data(db):
     award3 = baker.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_1")
 
     # Create Transactions
-    trann1 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=1,
+        is_fpds=True,
         award=award1,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa1,
-        unique_award_key="CONT_IDV_1",
+        awarding_agency_id=aa1.id,
+        generated_unique_award_id="CONT_IDV_1",
+        piid="tc1piid",
     )
-    trann2 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=2,
+        is_fpds=True,
         award=award2,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="CONT_AWD_1",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="CONT_AWD_1",
+        piid="tc2piid",
     )
-    trann3 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=3,
+        is_fpds=False,
         award=award3,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="ASST_NON_1",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="ASST_NON_1",
+        fain="ta1fain",
     )
-
-    # Create TransactionContract
-    baker.make(TransactionFPDS, transaction=trann1, piid="tc1piid", unique_award_key="CONT_IDV_1")
-    baker.make(TransactionFPDS, transaction=trann2, piid="tc2piid", unique_award_key="CONT_AWD_1")
-
-    # Create TransactionAssistance
-    baker.make(TransactionFABS, transaction=trann3, fain="ta1fain", unique_award_key="ASST_NON_1")
 
     # Create FederalAccount
     fa1 = baker.make(FederalAccount, id=10)

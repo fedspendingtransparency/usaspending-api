@@ -100,7 +100,7 @@ class Command(BaseCommand):
         if award_type == "Contracts":
             source.queryset = source.queryset.annotate(
                 correction_delete_ind=Case(
-                    When(transaction__contract_data__created_at__lt=generate_since, then=Value("C")),
+                    When(transaction__etl_update_date__lt=generate_since, then=Value("C")),
                     default=Value(""),
                     output_field=CharField(),
                 )
@@ -109,7 +109,7 @@ class Command(BaseCommand):
             indicator_field = F("transaction__assistance_data__correction_delete_indicatr")
             source.queryset = source.queryset.annotate(
                 correction_delete_ind=Case(
-                    When(transaction__assistance_data__updated_at__gt=generate_since, then=indicator_field),
+                    When(transaction__etl_update_date__gt=generate_since, then=indicator_field),
                     When(transaction__transactiondelta__isnull=False, then=Value("C")),
                     default=indicator_field,
                     output_field=CharField(),

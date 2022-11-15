@@ -93,8 +93,12 @@ def award_with_toptier_agency(id):
     agency = baker.make("references.Agency", toptier_agency_id=id, toptier_flag=True)
     a1 = baker.make("awards.Award", type="A", funding_agency=agency, total_loan_value=0, latest_transaction_id=id)
     baker.make(
-        "awards.TransactionNormalized", id=id, award=a1, action_date="2020-04-01", is_fpds=True, funding_agency=agency
+        "search.TransactionSearch",
+        transaction_id=id,
+        award=a1,
+        action_date="2020-04-01",
+        is_fpds=True,
+        funding_agency_id=agency.id,
     )
-    baker.make("awards.TransactionFPDS", transaction_id=id)
 
     return a1

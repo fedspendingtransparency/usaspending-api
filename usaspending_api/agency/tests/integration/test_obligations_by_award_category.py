@@ -3,7 +3,7 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -50,69 +50,75 @@ def transaction_search_1():
     award_bc = baker.make("awards.Award", category="bad_cat")
 
     baker.make(
-        TransactionNormalized,
+        TransactionSearch,
+        transaction_id=1,
         award=award_contract,
         federal_action_obligation=101,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        awarding_agency_id=awarding_agency_1.id,
     )
 
     baker.make(
-        TransactionNormalized,
+        TransactionSearch,
+        transaction_id=2,
         award=award_idv,
         federal_action_obligation=102,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        awarding_agency_id=awarding_agency_1.id,
     )
 
     baker.make(
-        TransactionNormalized,
+        TransactionSearch,
+        transaction_id=3,
         award=award_grant,
         federal_action_obligation=103,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        awarding_agency_id=awarding_agency_1.id,
     )
 
     baker.make(
-        TransactionNormalized,
+        TransactionSearch,
+        transaction_id=4,
         award=award_loan,
         federal_action_obligation=104,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        awarding_agency_id=awarding_agency_1.id,
     )
 
     baker.make(
-        TransactionNormalized,
+        TransactionSearch,
+        transaction_id=4,
         award=award_dp,
         federal_action_obligation=105,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        awarding_agency_id=awarding_agency_1.id,
     )
 
     baker.make(
-        TransactionNormalized,
+        TransactionSearch,
+        transaction_id=5,
         award=award_bc,
         federal_action_obligation=106,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        awarding_agency_id=awarding_agency_1.id,
     )
-
     # Alternate Year
     baker.make(
-        TransactionNormalized,
+        TransactionSearch,
+        transaction_id=6,
         award=award_idv,
         federal_action_obligation=300,
         action_date="2020-04-01",
-        awarding_agency=awarding_agency_1,
+        awarding_agency_id=awarding_agency_1.id,
     )
-
     # Alternate Agency
     baker.make(
-        TransactionNormalized,
+        TransactionSearch,
+        transaction_id=7,
         award=award_idv,
         federal_action_obligation=400,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_2,
+        awarding_agency_id=awarding_agency_2.id,
     )
 
 

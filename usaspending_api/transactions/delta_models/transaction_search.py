@@ -476,6 +476,7 @@ transaction_search_load_sql_string = fr"""
             AS original_loan_subsidy_cost,
         CAST(COALESCE(transaction_normalized.face_value_loan_guarantee, 0) AS NUMERIC(23, 2))
             AS face_value_loan_guarantee,
+        transaction_normalized.indirect_federal_sharing,
         transaction_normalized.funding_amount,
         CAST(COALESCE(transaction_fabs.total_funding_amount, '0') AS NUMERIC(23, 2))
             AS total_funding_amount,
@@ -616,6 +617,7 @@ transaction_search_load_sql_string = fr"""
         COALESCE(transaction_fabs.officer_5_amount, transaction_fpds.officer_5_amount) AS officer_5_amount,
 
         -- Exclusively FABS
+        transaction_fabs.published_fabs_id,
         transaction_fabs.afa_generated_unique,
         transaction_fabs.business_funds_ind_desc,
         transaction_fabs.business_funds_indicator,
@@ -627,12 +629,15 @@ transaction_search_load_sql_string = fr"""
         transaction_fabs.correction_delete_indicatr,
         transaction_fabs.correction_delete_ind_desc,
         awards.fain,
+        transaction_fabs.funding_opportunity_goals,
+        transaction_fabs.funding_opportunity_number,
         transaction_fabs.record_type,
         transaction_fabs.record_type_description,
         transaction_fabs.sai_number,
         awards.uri,
 
         -- Exclusively FPDS
+        transaction_fpds.detached_award_procurement_id,
         transaction_fpds.detached_award_proc_unique,
         transaction_fpds.a_76_fair_act_action,
         transaction_fpds.a_76_fair_act_action_desc,

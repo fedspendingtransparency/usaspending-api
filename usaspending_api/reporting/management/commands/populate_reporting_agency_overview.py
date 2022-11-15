@@ -135,7 +135,7 @@ TEMP_TABLE_CONTENTS = {
                     date_part('quarter', tn.action_date + INTERVAL '3' MONTH) AS fiscal_quarter,
                     date_part('month', tn.action_date + INTERVAL '3' MONTH) AS fiscal_period
                 FROM
-                    transaction_normalized AS tn
+                    vw_transaction_normalized AS tn
                 WHERE
                     tn.action_date >= '2016-10-01'
                     AND tn.awarding_agency_id IS NOT NULL

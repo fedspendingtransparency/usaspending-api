@@ -109,13 +109,13 @@ class Migration(migrations.Migration):
                 ('total_covid_obligation', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
             ],
             options={
-                'db_table': 'rpt"."award_search',
+                'db_table': 'award_search',
             },
         ),
         # Trick Django into believing this is a foreign primary key for purposes of using the ORM,
         # but avoid the headache that comes with foreign keys and the primary key constraint
         migrations.RunSQL(
-            sql='ALTER TABLE rpt.award_search DROP COLUMN id; CREATE UNIQUE INDEX as_idx_award_id ON rpt.award_search(award_id);',
+            sql='ALTER TABLE award_search DROP COLUMN id; CREATE UNIQUE INDEX as_idx_award_id ON award_search(award_id);',
             reverse_sql="",
             state_operations=[
                 migrations.AlterField(

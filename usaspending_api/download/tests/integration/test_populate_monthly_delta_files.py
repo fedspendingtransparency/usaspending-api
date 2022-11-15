@@ -37,9 +37,9 @@ def monthly_download_delta_data(db, monkeypatch):
     )
     baker.make("awards.FinancialAccountsByAwards", award_id=i)
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         award_id=i,
-        id=i,
+        transaction_id=i,
         is_fpds=True,
         transaction_unique_id=i,
         usaspending_unique_transaction_id="",
@@ -49,13 +49,10 @@ def monthly_download_delta_data(db, monkeypatch):
         period_of_performance_current_end_date=datetime.datetime(fiscal_year, 5, 7),
         action_date=datetime.datetime(fiscal_year, 5, 7),
         federal_action_obligation=100,
-        modification_number="",
-        description="a description",
-        drv_award_transaction_usaspend=1,
-        drv_current_total_award_value_amount_adjustment=1,
-        drv_potential_total_award_value_amount_adjustment=1,
+        modification_number="1",
+        transaction_description="a description",
         last_modified_date=datetime.datetime(fiscal_year, 5, 7),
-        certified_date=datetime.datetime(fiscal_year, 5, 7),
+        award_certified_date=datetime.datetime(fiscal_year, 5, 7),
         create_date=datetime.datetime(fiscal_year, 5, 7),
         update_date=datetime.datetime(fiscal_year, 5, 7),
         fiscal_year=fiscal_year,
@@ -65,26 +62,19 @@ def monthly_download_delta_data(db, monkeypatch):
         face_value_loan_guarantee=100.0,
         funding_amount=100.0,
         non_federal_funding_amount=100.0,
-        unique_award_key=1,
+        generated_unique_award_id=1,
         business_categories=[],
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=i,
         detached_award_procurement_id=i,
         detached_award_proc_unique=f"test{i}",
         piid=f"piid{i}",
         agency_id=1,
         awarding_sub_tier_agency_c="001",
-        awarding_sub_tier_agency_n="Test_Agency",
+        awarding_subtier_agency_abbreviation="Test_Agency",
         awarding_agency_code="001",
-        awarding_agency_name="Test_Agency",
+        awarding_toptier_agency_abbreviation="Test_Agency",
         parent_award_id=f"000{i}",
-        award_modification_amendme="1",
         contract_award_type="B",
         contract_award_type_desc="Contract",
-        created_at=datetime.datetime(fiscal_year, 5, 7),
-        updated_at=datetime.datetime(fiscal_year, 5, 7),
     )
     TransactionDelta.objects.update_or_create_transaction(i)
 
@@ -441,9 +431,9 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         fiscal_year=2020,
     )
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
         award_id=2,
-        id=2,
+        transaction_id=2,
         is_fpds=False,
         transaction_unique_id=2,
         type="02",
@@ -452,22 +442,18 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         period_of_performance_current_end_date=datetime.datetime(2020, 5, 7),
         action_date=datetime.datetime(2020, 5, 7),
         last_modified_date=datetime.datetime(2020, 5, 7),
-        certified_date=datetime.datetime(2020, 5, 7),
+        award_certified_date=datetime.datetime(2020, 5, 7),
         create_date=datetime.datetime(2020, 5, 7),
         update_date=datetime.datetime(2020, 5, 7),
         fiscal_year=2020,
         awarding_agency_id=1,
         funding_agency_id=1,
-        unique_award_key=2,
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction_id=2,
+        generated_unique_award_id=2,
         fain="fain2",
         awarding_agency_code="001",
         awarding_sub_tier_agency_c=1,
-        awarding_agency_name="Test_Agency",
-        awarding_sub_tier_agency_n="Test_Agency",
+        awarding_toptier_agency_abbreviation="Test_Agency",
+        awarding_subtier_agency_abbreviation="Test_Agency",
     )
     baker.make("awards.TransactionDelta", transaction_id=2, created_at=datetime.datetime.now())
     call_command(

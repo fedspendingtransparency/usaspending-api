@@ -29,6 +29,7 @@ from usaspending_api.etl.management.commands.create_delta_table import (
     TABLE_SPEC,
 )
 from usaspending_api.recipient.models import RecipientLookup
+from usaspending_api.search.models import TransactionSearch
 
 
 @fixture
@@ -209,57 +210,142 @@ def populate_usas_data(populate_broker_data):
         funding_agency_id=32,
     )
 
-    asst_trx1 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
         action_date="2020-01-01",
         award=asst_award,
         is_fpds=False,
         type="07",
-        awarding_agency=awarding_agency,
-        funding_agency=funding_agency,
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
-        _fill_optional=True,
         federal_action_obligation=0,
+        cfda_number="12.456",
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="FABS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=1.0,
+        total_funding_amount="2.23",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_county_code="001",
+        recipient_location_county_name="COUNTY NAME",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_county_code="001",
+        pop_county_name="COUNTY NAME",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
+        _fill_optional=True,
     )
-    asst_trx2 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
         action_date="2020-04-01",
         award=asst_award,
         is_fpds=False,
         type="07",
-        awarding_agency=awarding_agency,
-        funding_agency=funding_agency,
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
-        _fill_optional=True,
         federal_action_obligation=0,
+        published_fabs_id=2,
+        cfda_number="12.456",
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="FABS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=1.0,
+        total_funding_amount="2.23",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_county_code="001",
+        recipient_location_county_name="COUNTY NAME",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_county_code="001",
+        pop_county_name="COUNTY NAME",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
+        _fill_optional=True,
     )
-    cont_trx1 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=3,
         action_date="2020-07-01",
         award=cont_award,
         is_fpds=True,
         type="A",
-        awarding_agency=awarding_agency,
-        funding_agency=funding_agency,
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
-        _fill_optional=True,
         federal_action_obligation=0,
+        naics_code="123456",
+        product_or_service_code="12",
+        recipient_uei="FPDSUEI12345",
+        recipient_unique_id="FPDSDUNS12345",
+        recipient_name="FPDS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        ordering_period_end_date="2020-07-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        _fill_optional=True,
     )
-    cont_trx2 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=4,
         action_date="2020-10-01",
         award=cont_award,
         is_fpds=True,
         type="A",
-        awarding_agency=awarding_agency,
-        funding_agency=funding_agency,
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
-        _fill_optional=True,
         federal_action_obligation=0,
+        naics_code="123456",
+        product_or_service_code="12",
+        recipient_uei="FPDSUEI12345",
+        recipient_unique_id="FPDSDUNS12345",
+        recipient_name="FPDS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        ordering_period_end_date="2020-07-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        _fill_optional=True,
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=434,
+        "search.TransactionSearch",
+        transaction_id=434,
         award=cont_award2,
         type="A",
         awarding_agency_id=32,
@@ -281,117 +367,6 @@ def populate_usas_data(populate_broker_data):
         updated_at=datetime.fromtimestamp(0),
         federal_action_obligation=1000001,
         _fill_optional=True,
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction=asst_trx1,
-        published_fabs_id=2,
-        cfda_number="12.456",
-        action_date="2020-04-01",
-        uei="FABSUEI12345",
-        awardee_or_recipient_uniqu="FABSDUNS12345",
-        awardee_or_recipient_legal="FABS RECIPIENT 12345",
-        ultimate_parent_uei="PARENTUEI12345",
-        ultimate_parent_unique_ide="PARENTDUNS12345",
-        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
-        indirect_federal_sharing=1.0,
-        total_funding_amount="2.23",
-        legal_entity_state_code="VA",
-        legal_entity_state_name="Virginia",
-        legal_entity_county_code="001",
-        legal_entity_county_name="COUNTY NAME",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        legal_entity_congressional="01",
-        place_of_perfor_state_code="VA",
-        place_of_perform_state_nam="Virginia",
-        place_of_perform_county_na="COUNTY NAME",
-        place_of_perform_county_co="001",
-        place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
-        place_of_performance_congr="01",
-        _fill_optional=True,
-        federal_action_obligation=0,
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction=asst_trx2,
-        published_fabs_id=2,
-        cfda_number="12.456",
-        action_date="2020-04-01",
-        uei="FABSUEI12345",
-        awardee_or_recipient_uniqu="FABSDUNS12345",
-        awardee_or_recipient_legal="FABS RECIPIENT 12345",
-        ultimate_parent_uei="PARENTUEI12345",
-        ultimate_parent_unique_ide="PARENTDUNS12345",
-        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
-        indirect_federal_sharing=1.0,
-        total_funding_amount="2.23",
-        legal_entity_state_code="VA",
-        legal_entity_state_name="Virginia",
-        legal_entity_county_code="001",
-        legal_entity_county_name="COUNTY NAME",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        legal_entity_congressional="01",
-        place_of_perfor_state_code="VA",
-        place_of_perform_state_nam="Virginia",
-        place_of_perform_county_co="001",
-        place_of_perform_county_na="COUNTY NAME",
-        place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
-        place_of_performance_congr="01",
-        _fill_optional=True,
-        federal_action_obligation=0,
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction=cont_trx1,
-        detached_award_procurement_id=1,
-        naics="123456",
-        product_or_service_code="12",
-        action_date="2020-07-01",
-        awardee_or_recipient_uei="FPDSUEI12345",
-        awardee_or_recipient_uniqu="FPDSDUNS12345",
-        awardee_or_recipient_legal="FPDS RECIPIENT 12345",
-        ultimate_parent_uei="PARENTUEI12345",
-        ultimate_parent_unique_ide="PARENTDUNS12345",
-        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
-        ordering_period_end_date="2020-07-01",
-        federal_action_obligation=0,
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        legal_entity_state_descrip="Virginia",
-        legal_entity_state_code="VA",
-        place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
-        place_of_perform_state_nam="Virginia",
-        place_of_performance_state="VA",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction=cont_trx2,
-        detached_award_procurement_id=2,
-        naics="123456",
-        product_or_service_code="12",
-        action_date="2020-10-01",
-        awardee_or_recipient_uei="FPDSUEI12345",
-        awardee_or_recipient_uniqu="FPDSDUNS12345",
-        awardee_or_recipient_legal="FPDS RECIPIENT 12345",
-        ultimate_parent_uei="PARENTUEI12345",
-        ultimate_parent_unique_ide="PARENTDUNS12345",
-        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
-        ordering_period_end_date="2020-07-01",
-        _fill_optional=True,
-        federal_action_obligation=0,
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        legal_entity_state_descrip="Virginia",
-        legal_entity_state_code="VA",
-        place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
-        place_of_perform_state_nam="Virginia",
-        place_of_performance_state="VA",
     )
 
     baker.make(
@@ -786,38 +761,32 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         total_subsidy_cost=100.00,
         type_description="Direct Loan",
     )
-    new_trx = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
         action_date="2021-01-01",
         award=new_award,
         is_fpds=False,
         type="07",
         last_modified_date="2021-01-01",
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction=new_trx,
-        published_fabs_id=1,
         cfda_number="12.456",
-        action_date="2021-01-01",
-        uei="FABSUEI12345",
-        awardee_or_recipient_uniqu="FABSDUNS12345",
-        awardee_or_recipient_legal="ALTERNATE NAME RECIPIENT",
-        ultimate_parent_uei="PARENTUEI12345",
-        ultimate_parent_unique_ide="PARENTDUNS12345",
-        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="ALTERNATE NAME RECIPIENT",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
         indirect_federal_sharing=1.0,
         total_funding_amount="2.23",
-        legal_entity_state_code="VA",
-        legal_entity_county_code="001",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        legal_entity_congressional="01",
-        place_of_perfor_state_code="VA",
-        place_of_perform_county_co="001",
-        place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
-        place_of_performance_congr="01",
+        recipient_location_state_code="VA",
+        recipient_location_county_code="001",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        pop_state_code="VA",
+        pop_county_code="001",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
     )
 
     update_awards()
@@ -903,11 +872,13 @@ def test_load_table_to_from_delta_for_recipient_profile(
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
-    baker.make("awards.TransactionFABS", published_fabs_id="1", indirect_federal_sharing=1.0, _fill_optional=True)
-    baker.make("awards.TransactionFABS", published_fabs_id="2", indirect_federal_sharing=1.0, _fill_optional=True)
+    baker.make(
+        "search.TransactionSearch", transaction_id=1, is_fpds=False, indirect_federal_sharing=1.0, _fill_optional=True
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=2, is_fpds=False, indirect_federal_sharing=1.0, _fill_optional=True
+    )
     verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_fabs", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_fabs", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -951,13 +922,14 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
     # Do this so we can save the TransactionFABS record without interference from the Django DB connections
     # Session settings (like sesssion-set time zone)
     fabs_with_tz = baker.prepare(
-        "awards.TransactionFABS",
+        "search.TransactionSearch",
+        transaction_id=1,
+        is_fpds=False,
         _save_related=True,
-        published_fabs_id="3",
         indirect_federal_sharing=1.0,
-        modified_at=dt_with_tz,
+        last_modified_date=dt_with_tz,
         _fill_optional=True,
-    )  # type: TransactionFABS
+    )  # type: TransactionSearch
 
     def _get_sql_insert_from_model(model):
         values = model._meta.local_fields
@@ -1038,7 +1010,6 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
         original_spark_tz = spark.conf.get("spark.sql.session.timeZone")
         spark.conf.set("spark.sql.session.timeZone", "America/New_York")
         verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-        verify_delta_table_loaded_from_delta(spark, "transaction_fabs", spark_s3_bucket=s3_unittest_data_bucket)
     finally:
         spark.conf.set("spark.sql.session.timeZone", original_spark_tz)
 
@@ -1073,22 +1044,18 @@ def test_load_table_to_from_delta_for_detached_award_procurement(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("awards.TransactionFPDS", detached_award_procurement_id="1", _fill_optional=True)
-    baker.make("awards.TransactionFPDS", detached_award_procurement_id="2", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", is_fpds=True, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", is_fpds=True, _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_fpds", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_fpds", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_normalized(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
-    baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_normalized", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_normalized", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -1150,21 +1117,14 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
 def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("awards.TransactionNormalized", id="1", _fill_optional=True)
-    baker.make("awards.TransactionNormalized", id="2", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
     verify_delta_table_loaded_to_delta(
         spark,
         "transaction_normalized",
         s3_unittest_data_bucket,
         alt_db="my_alt_db",
         alt_name="transaction_normalized_alt_name",
-    )
-    verify_delta_table_loaded_from_delta(
-        spark,
-        "transaction_normalized",
-        alt_db="my_alt_db",
-        alt_name="transaction_normalized_alt_name",
-        spark_s3_bucket=s3_unittest_data_bucket,
     )
 
 

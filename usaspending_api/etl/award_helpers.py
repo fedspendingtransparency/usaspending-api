@@ -11,7 +11,7 @@ txn_earliest AS (
     tn.action_date,
     tn.description,
     tn.period_of_performance_start_date
-  FROM transaction_normalized tn
+  FROM vw_transaction_normalized tn
   {predicate}
   ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC, tn.transaction_unique_id ASC
 ),
@@ -36,7 +36,7 @@ txn_latest AS (
       WHEN tn.type LIKE 'IDV%%'                 THEN 'idv'
       ELSE NULL
     END AS category
-  FROM transaction_normalized tn
+  FROM vw_transaction_normalized tn
   {predicate}
   ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
 ),
@@ -49,7 +49,7 @@ txn_totals AS (
     SUM(tn.face_value_loan_guarantee)   AS total_loan_value,
     SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount,
     SUM(tn.indirect_federal_sharing)    AS total_indirect_federal_sharing
-  FROM transaction_normalized tn
+  FROM vw_transaction_normalized tn
   {predicate}
   GROUP BY tn.award_id
 )
@@ -117,8 +117,8 @@ fpds_totals AS (
     tn.award_id,
     SUM(tf.base_and_all_options_value::NUMERIC(23,2)) AS total_base_and_options_value,
     SUM(tf.base_exercised_options_val::NUMERIC(23,2)) AS base_exercised_options_val
-  FROM transaction_normalized AS tn
-  INNER JOIN transaction_fpds AS tf ON tn.id = tf.transaction_id
+  FROM vw_transaction_normalized AS tn
+  INNER JOIN vw_transaction_fpds AS tf ON tn.id = tf.transaction_id
   {predicate}
   GROUP BY tn.award_id
 ),
@@ -127,8 +127,8 @@ txn_latest AS (
     tn.award_id,
     tf.agency_id,
     tf.referenced_idv_agency_iden
-  FROM transaction_normalized AS tn
-  INNER JOIN transaction_fpds AS tf ON tn.id = tf.transaction_id
+  FROM vw_transaction_normalized AS tn
+  INNER JOIN vw_transaction_fpds AS tf ON tn.id = tf.transaction_id
   {predicate}
   ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
 ),
@@ -146,8 +146,8 @@ executive_comp AS (
       fpds.officer_4_name,
       fpds.officer_5_amount,
       fpds.officer_5_name
-    FROM transaction_normalized tn
-    INNER JOIN transaction_fpds AS fpds ON tn.id = fpds.transaction_id
+    FROM vw_transaction_normalized tn
+    INNER JOIN vw_transaction_fpds AS fpds ON tn.id = fpds.transaction_id
     {predicate}
     ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
   )
@@ -211,8 +211,8 @@ WITH
         fabs.officer_4_name,
         fabs.officer_5_amount,
         fabs.officer_5_name
-      FROM transaction_normalized tn
-      INNER JOIN transaction_fabs AS fabs ON tn.id = fabs.transaction_id
+      FROM vw_transaction_normalized tn
+      INNER JOIN vw_transaction_fabs AS fabs ON tn.id = fabs.transaction_id
       {predicate}
       ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
     )
@@ -313,7 +313,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
     _find_empty_awards_sql = """
         SELECT a.id
         FROM vw_awards a
-        LEFT JOIN transaction_normalized tn ON tn.award_id = a.id
+        LEFT JOIN vw_transaction_normalized tn ON tn.award_id = a.id
         WHERE tn IS NULL {}
     """.format(
         "AND a.id IN %s" if award_tuple else ""

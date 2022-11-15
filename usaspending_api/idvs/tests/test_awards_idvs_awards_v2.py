@@ -202,13 +202,13 @@ class IDVAwardsTestCase(TestCase):
         parent_award_id = PARENTS.get(3)  # Use use parent information for I3
         string_parent_award_id = str(parent_award_id).zfill(3)
 
-        baker.make("awards.TransactionNormalized", id=award_id, award_id=award_id)
-
         baker.make(
-            "awards.TransactionFPDS",
+            "search.TransactionSearch",
             transaction_id=award_id,
-            funding_agency_name="subtier_funding_agency_name_%s" % string_award_id,
-            awarding_agency_name="subtier_awarding_agency_name_%s" % string_award_id,
+            award_id=award_id,
+            funding_toptier_agency_name="subtier_funding_agency_name_%s" % string_award_id,
+            awarding_toptier_agency_name="subtier_awarding_agency_name_%s" % string_award_id,
+            is_fpds=True,
         )
 
         baker.make(

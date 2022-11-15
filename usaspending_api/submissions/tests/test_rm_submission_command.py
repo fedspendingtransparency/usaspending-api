@@ -24,14 +24,16 @@ def submission_data():
     baker.make("awards.FinancialAccountsByAwards", submission=submission_123, _quantity=10)
 
     # Making child transaction items creates the parent by default
-    baker.make(
-        "awards.TransactionFABS",
-        transaction__award__piid="ABC123",
-        transaction__award__parent_award__piid="DEF455",
-        place_of_performance_city="city1",
-        _quantity=10,
-    )
-    baker.make("awards.TransactionFPDS", place_of_perform_city_name="city2", _quantity=10)
+    for i in range(10):
+        baker.make(
+            "search.TransactionSearch",
+            transaction_id=i + 1,
+            is_fpds=False,
+            award__piid="ABC123",
+            award__parent_award__piid="DEF455",
+            pop_city_name="city1",
+        )
+        baker.make("search.TransactionSearch", transaction_id=i + 11, is_fpds=True, pop_city_name="city2")
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123, _quantity=10
     )
@@ -39,8 +41,9 @@ def submission_data():
     baker.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
 
     # Making child transaction items creates the parent by default
-    baker.make("awards.TransactionFPDS", place_of_perform_city_name="city2", _quantity=10)
-    baker.make("awards.TransactionFABS", place_of_performance_city="city3", _quantity=10)
+    for i in range(10):
+        baker.make("search.TransactionSearch", transaction_id=i + 21, is_fpds=True, pop_city_name="city2")
+        baker.make("search.TransactionSearch", transaction_id=i + 31, is_fpds=False, pop_city_name="city3")
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_456, _quantity=10
     )

@@ -12,22 +12,16 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 def _make_fpds_transaction(id, award_id, obligation, action_date, recipient_duns, recipient_name):
-    # Transaction Normalized
+    # Transaction Search
     baker.make(
-        "awards.TransactionNormalized",
-        id=id,
+        "search.TransactionSearch",
+        transaction_id=id,
         is_fpds=True,
         award_id=award_id,
         federal_action_obligation=obligation,
         action_date=action_date,
-    )
-
-    # Transaction FPDS
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=id,
-        awardee_or_recipient_uniqu=recipient_duns,
-        awardee_or_recipient_legal=recipient_name,
+        recipient_unique_id=recipient_duns,
+        recipient_name=recipient_name,
     )
 
 

@@ -12,7 +12,7 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture():
-    baker.make("awards.TransactionNormalized", id=2)
+    baker.make("search.TransactionSearch", transaction_id=2)
     baker.make(
         "awards.Award",
         base_and_all_options_value=None,
@@ -207,12 +207,13 @@ def awards_over_different_date_ranges_with_different_counts():
                 date_signed=date_range["date_signed"],
             )
             baker.make(
-                "awards.TransactionNormalized",
-                id=award_id + 1000,
+                "search.TransactionSearch",
+                transaction_id=award_id + 1000,
                 award_id=award_id,
                 action_date=date_range["action_date"],
+                is_fpds=True,
+                pulled_from=None,
             )
-            baker.make("awards.TransactionFPDS", transaction_id=award_id + 1000, pulled_from=None)
 
 
 @pytest.mark.django_db

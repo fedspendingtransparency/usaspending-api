@@ -279,7 +279,6 @@ TRANSACTION_FPDS_COLUMNS = {
     "last_modified": "STRING",
     "initial_report_date": "STRING",
     "referenced_idv_agency_name": "STRING",
-    "referenced_multi_or_single": "STRING",
     "award_or_idv_flag": "STRING",
     "place_of_perform_country_n": "STRING",
     "place_of_perform_state_nam": "STRING",

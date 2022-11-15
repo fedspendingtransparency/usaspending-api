@@ -117,31 +117,32 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 def _transaction_and_award_test_data(db):
     agency1 = baker.make("references.Agency")
     awd1 = baker.make("awards.Award", awarding_agency=agency1)
-    txn1 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
         award=awd1,
         modification_number="1",
-        awarding_agency=agency1,
+        awarding_agency_id=agency1.id,
         last_modified_date=date(2012, 3, 1),
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction=txn1,
         business_funds_indicator="a",
         record_type=1,
         total_funding_amount=1000.00,
+        is_fpds=False,
     )
     assert TransactionFABS.objects.all().count() == 1
 
     awd2 = baker.make("awards.Award", awarding_agency=agency1)
-    txn2 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
         award=awd2,
         modification_number="1",
-        awarding_agency=agency1,
+        awarding_agency_id=agency1.id,
         last_modified_date=date(2012, 4, 1),
+        is_fpds=True,
+        piid="abc",
+        base_and_all_options_value=1000,
     )
-    baker.make("awards.TransactionFPDS", transaction=txn2, piid="abc", base_and_all_options_value=1000)
     assert TransactionFPDS.objects.all().count() == 1
 
 
