@@ -236,7 +236,7 @@ class Award(DataSourceTrackedModel):
 
     class Meta:
         managed = False
-        db_table = "vw_awards"
+        db_table = "awards"
         indexes = [
             models.Index(fields=["-update_date"], name="awards_update_date_desc_idx"),
             models.Index(fields=["generated_unique_award_id"], name="award_unique_id"),
