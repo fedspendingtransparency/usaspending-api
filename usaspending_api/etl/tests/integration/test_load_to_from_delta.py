@@ -583,6 +583,7 @@ def equal_datasets(
                 )
     return datasets_match
 
+
 def load_delta_table_from_postgres(
     delta_table_name: str,
     s3_bucket: str,

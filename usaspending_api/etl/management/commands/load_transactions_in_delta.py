@@ -15,6 +15,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 
+
 class Command(BaseCommand):
 
     help = """
@@ -278,7 +279,7 @@ class Command(BaseCommand):
         delta_lake_s3_bucket = CONFIG.DELTA_LAKE_S3_PATH
         destination_database = "int"
 
-        #### transaction_id_lookup
+        # transaction_id_lookup
 
         # Capture start time of the transaction_id_lookup creation to update the "last_load_date" after completion
         transaction_id_lookup_start_time = datetime.now(timezone.utc)
@@ -308,7 +309,7 @@ class Command(BaseCommand):
             f"""
             INSERT OVERWRITE {destination_database}.{destination_table}
                 SELECT tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.transaction_unique_id
-                FROM raw.transaction_normalized AS tn 
+                FROM raw.transaction_normalized AS tn
                 LEFT JOIN raw.detached_award_procurement AS dap ON (
                     tn.transaction_unique_id = dap.detached_award_proc_unique
                 )
@@ -326,7 +327,7 @@ class Command(BaseCommand):
 
         update_last_load_date("transaction_id_lookup", transaction_id_lookup_start_time)
 
-        #### award_id_lookup
+        # award_id_lookup
 
         # Capture start time of the award_id_lookup creation to update the "last_load_date" after completion
         award_id_lookup_start_time = datetime.now(timezone.utc)
@@ -356,7 +357,7 @@ class Command(BaseCommand):
                     published_fabs_id INTEGER,
                     -- transaction_unique_id *shouldn't* be NULL in the query used to populate this table.
                     -- However, at least in qat, there are awards that don't actually match any tranactions,
-                    -- and we want all awards to be listed in this table, so, for now, at least, leaving off 
+                    -- and we want all awards to be listed in this table, so, for now, at least, leaving off
                     -- the NOT NULL constraint from transaction_unique_id
                     transaction_unique_id STRING,
                     generated_unique_award_id STRING NOT NULL
@@ -373,7 +374,7 @@ class Command(BaseCommand):
             INSERT OVERWRITE {destination_database}.{destination_table}
                 SELECT aw.id, dap.detached_award_procurement_id, pfabs.published_fabs_id,
                     tn.transaction_unique_id, aw.generated_unique_award_id
-                FROM raw.awards AS aw 
+                FROM raw.awards AS aw
                 LEFT JOIN raw.transaction_normalized AS tn ON (
                     aw.generated_unique_award_id = tn.unique_award_key
                 )

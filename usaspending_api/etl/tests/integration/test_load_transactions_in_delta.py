@@ -18,6 +18,7 @@ from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
     load_delta_table_from_postgres, equal_datasets
 )
 
+
 @fixture
 def populate_initial_postgres_data():
     # Populate transactions.SourceAssistanceTransaction and associated broker.ExternalDataType data
@@ -71,7 +72,6 @@ def populate_initial_postgres_data():
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt)
 
-
     # Populate transactions.SourceProcurementTransaction and associated broker.ExternalDataType data
     baker.make(
         "transactions.SourceProcurementTransaction",
@@ -117,7 +117,6 @@ def populate_initial_postgres_data():
         update_date="2022-10-31"
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt)
-
 
     # Need to create awards before creating transactions
     assist_awards = []
@@ -288,7 +287,6 @@ def populate_initial_postgres_data():
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt_tn)
 
-
     # Need to populate values for transaction_id_lookup and award_id_lookup in broker.ExternalData[Type|LoadDate] tables
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt_tidlu = baker.make(
@@ -307,7 +305,6 @@ def populate_initial_postgres_data():
     baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_aidlu)
 
 
-
 def load_initial_delta_tables(spark, s3_data_bucket):
     # Load tables and ensure they have loaded correctly
     load_delta_table_from_postgres("published_fabs", s3_data_bucket)
@@ -317,6 +314,7 @@ def load_initial_delta_tables(spark, s3_data_bucket):
 
     # Also, make sure int database exists
     spark.sql("CREATE DATABASE IF NOT EXISTS int")
+
 
 class TestInitialRun():
     expected_transaction_id_lookup = [
@@ -541,7 +539,6 @@ class TestInitialRun():
                     match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
             call_command("load_transactions_in_delta", "--etl-level", "initial_run")
 
-
     @mark.django_db(transaction=True)
     def test_one_null_in_trans_norm_unique_award_key_from_delta(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
@@ -646,7 +643,6 @@ class TestTransactionIdLookup():
                     match="Table or view not found: int.transaction_id_lookup"):
             call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
-
     @mark.django_db(transaction=True)
     def test_no_deletes_or_inserts(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
@@ -665,7 +661,7 @@ class TestTransactionIdLookup():
 
         spark.sql("""
             DELETE FROM raw.published_fabs
-            WHERE published_fabs_id = 2 OR published_fabs_id = 3 
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
         """)
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
@@ -687,7 +683,7 @@ class TestTransactionIdLookup():
 
         spark.sql("""
             DELETE FROM raw.detached_award_procurement
-            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4 
+            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4
         """)
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
@@ -710,11 +706,11 @@ class TestTransactionIdLookup():
 
         spark.sql("""
             DELETE FROM raw.published_fabs
-            WHERE published_fabs_id = 2 OR published_fabs_id = 3 
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
         """)
         spark.sql("""
             DELETE FROM raw.detached_award_procurement
-            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4 
+            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4
         """)
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
@@ -907,11 +903,11 @@ class TestTransactionIdLookup():
 
         spark.sql("""
             DELETE FROM raw.published_fabs
-            WHERE published_fabs_id = 2 OR published_fabs_id = 3 
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
         """)
         spark.sql("""
             DELETE FROM raw.detached_award_procurement
-            WHERE detached_award_procurement_id = 1 
+            WHERE detached_award_procurement_id = 1
                 OR detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
         """)
 
@@ -946,7 +942,6 @@ class TestTransactionIdLookup():
         assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
 
 
-
 class TestAwardIdLookup():
     @mark.django_db(transaction=True)
     def test_no_initial_run(
@@ -957,7 +952,6 @@ class TestAwardIdLookup():
         with raises(pyspark.sql.utils.AnalysisException,
                     match="Table or view not found: int.award_id_lookup"):
             call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
-
 
     @mark.django_db(transaction=True)
     def test_no_deletes_or_inserts(
@@ -977,7 +971,7 @@ class TestAwardIdLookup():
 
         spark.sql("""
             DELETE FROM raw.published_fabs
-            WHERE published_fabs_id = 2 OR published_fabs_id = 3 
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
         """)
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
@@ -999,7 +993,7 @@ class TestAwardIdLookup():
 
         spark.sql("""
             DELETE FROM raw.detached_award_procurement
-            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4 
+            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4
         """)
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
@@ -1022,11 +1016,11 @@ class TestAwardIdLookup():
 
         spark.sql("""
             DELETE FROM raw.published_fabs
-            WHERE published_fabs_id = 2 OR published_fabs_id = 3 
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
         """)
         spark.sql("""
             DELETE FROM raw.detached_award_procurement
-            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4 
+            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4
         """)
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
@@ -1223,11 +1217,11 @@ class TestAwardIdLookup():
 
         spark.sql("""
             DELETE FROM raw.published_fabs
-            WHERE published_fabs_id = 2 OR published_fabs_id = 3 
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
         """)
         spark.sql("""
             DELETE FROM raw.detached_award_procurement
-            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id = 4 
+            WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id = 4
                 OR detached_award_procurement_id = 5
         """)
 
