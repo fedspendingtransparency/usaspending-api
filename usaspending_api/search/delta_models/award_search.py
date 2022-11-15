@@ -3,6 +3,7 @@ from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_catego
 AWARD_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
+    "data_source": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "transaction_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "latest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "earliest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
@@ -151,6 +152,7 @@ award_search_load_sql_string = fr"""
     SELECT
   TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
+  awards.data_source AS data_source,
   awards.transaction_unique_id,
   awards.latest_transaction_id,
   awards.earliest_transaction_id,

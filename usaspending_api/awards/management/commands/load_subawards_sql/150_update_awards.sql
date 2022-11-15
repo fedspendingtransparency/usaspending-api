@@ -17,7 +17,7 @@ with subaward_totals as (
 
 )
 update
-    awards as a1
+    award_search as a1
 
 set
     total_subaward_amount = st.total_subaward_amount,

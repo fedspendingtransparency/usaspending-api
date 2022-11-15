@@ -45,15 +45,4 @@ MATERIALIZED_VIEWS = OrderedDict(
         ),
     ]
 )
-CHUNKED_MATERIALIZED_VIEWS = OrderedDict(
-    [
-        (
-            "award_search",
-            {
-                "model": mv.AwardSearch,
-                "json_filepath": str(JSON_DIR / "award_search.json"),
-                "sql_filename": "award_search.sql",
-            },
-        ),
-    ]
-)
+CHUNKED_MATERIALIZED_VIEWS = OrderedDict()
