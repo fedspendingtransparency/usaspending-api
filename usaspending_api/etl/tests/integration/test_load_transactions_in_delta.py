@@ -17,10 +17,10 @@ from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
     verify_delta_table_loaded_to_delta, equal_datasets
 )
-# Create fixtures which will populate Postgres tables (including last load date table)
 
 @fixture
-def populate_initial_source_assistance_transaction_data():
+def populate_initial_postgres_data():
+    # Populate transactions.SourceAssistanceTransaction and associated broker.ExternalDataType data
     baker.make(
         "transactions.SourceAssistanceTransaction",
         published_fabs_id=1,
@@ -71,8 +71,8 @@ def populate_initial_source_assistance_transaction_data():
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt)
 
-@fixture
-def populate_initial_source_procurement_transaction_data():
+
+    # Populate transactions.SourceProcurementTransaction and associated broker.ExternalDataType data
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id=1,
@@ -118,14 +118,11 @@ def populate_initial_source_procurement_transaction_data():
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt)
 
-@fixture
-def populate_initial_awards_and_transaction_normalized_data(
-    populate_initial_source_assistance_transaction_data, populate_initial_source_procurement_transaction_data
-):
+
+    # Need to create awards before creating transactions
     assist_awards = []
     procure_awards = []
 
-    # Need to create awards before creating transactions
     assist_awards.append(
         baker.make(
             "awards.Award",
@@ -291,8 +288,8 @@ def populate_initial_awards_and_transaction_normalized_data(
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt_tn)
 
-@fixture
-def finish_external_data_tables(populate_initial_awards_and_transaction_normalized_data):
+
+    # Need to populate values for transaction_id_lookup and award_id_lookup in broker.ExternalData[Type|LoadDate] tables
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt_tidlu = baker.make(
         "broker.ExternalDataType",
@@ -458,89 +455,11 @@ class TestInitialRun():
         }
     ]
 
-    # NOTE: for id and transaction_unique_id in transaction_normalized, both the Postgres and Delta tables
-    #       indicate no NULLs are allowed in these fields, so not checking for NULLs in those fields
-
-    @mark.django_db(transaction=True)
-    def test_one_null_in_detached_award_proc_unique(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
-    ):
-        # detached_award_proc_unique does not allow for NULLs in the Postgres DB, but does in Delta, so need to load
-        # all of the records into Delta before a NULL can be set there.
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
-
-        spark.sql("""
-            UPDATE raw.detached_award_procurement
-            SET detached_award_proc_unique = NULL
-            WHERE detached_award_procurement_id = 3
-        """)
-
-        with raises(ValueError,
-                    match="Found 1 NULL in 'detached_award_proc_unique' in table raw.detached_award_procurement!"):
-            call_command("load_transactions_in_delta", "--etl-level", "initial_run")
-
-    @mark.django_db(transaction=True)
-    def test_multiple_nulls_in_detached_award_proc_unique(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
-    ):
-        # detached_award_proc_unique does not allow for NULLs in the Postgres DB, but does in Delta, so need to load
-        # all of the records into Delta before a NULL can be set there.
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
-
-        spark.sql("""
-            UPDATE raw.detached_award_procurement
-            SET detached_award_proc_unique = NULL
-            WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
-        """)
-
-        with raises(ValueError,
-                    match="Found 2 NULLs in 'detached_award_proc_unique' in table raw.detached_award_procurement!"):
-            call_command("load_transactions_in_delta", "--etl-level", "initial_run")
-
-    @mark.django_db(transaction=True)
-    def test_one_null_in_afa_generated_unique(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
-    ):
-        # afa_generated_unique does not allow for NULLs in the Postgres DB, but does in Delta, so need to load
-        # all of the records into Delta before a NULL can be set there.
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
-
-        spark.sql("""
-            UPDATE raw.published_fabs
-            SET afa_generated_unique = NULL
-            WHERE published_fabs_id = 3
-        """)
-
-        with raises(ValueError,
-                    match="Found 1 NULL in 'afa_generated_unique' in table raw.published_fabs!"):
-            call_command("load_transactions_in_delta", "--etl-level", "initial_run")
-
-    @mark.django_db(transaction=True)
-    def test_multiple_nulls_in_afa_generated_unique(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
-    ):
-        # afa_generated_unique does not allow for NULLs in the Postgres DB, but does in Delta, so need to load
-        # all of the records into Delta before a NULL can be set there.
-        load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
-
-        spark.sql("""
-            UPDATE raw.published_fabs
-            SET afa_generated_unique = NULL
-            WHERE published_fabs_id = 3 OR published_fabs_id = 4
-        """)
-
-        with raises(ValueError,
-                    match="Found 2 NULLs in 'afa_generated_unique' in table raw.published_fabs!"):
-            call_command("load_transactions_in_delta", "--etl-level", "initial_run")
-
-    # NOTE: for id and generated_unique_award_id in awards, both the Postgres and Delta tables
-    #       indicate no NULLs are allowed in these fields, so not checking for NULLs in those fields
-
     # The unique_award_key field in transaction_normalized allows for NULLs in both Postgres and Delta,
     # so test for NULLs originating from both sources.
     @mark.django_db(transaction=True)
     def test_one_null_in_trans_norm_unique_award_key_from_pg(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         baker.make(
             "transactions.SourceProcurementTransaction",
@@ -574,7 +493,7 @@ class TestInitialRun():
 
     @mark.django_db(transaction=True)
     def test_multiple_nulls_in_trans_norm_unique_award_key_from_pg(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         baker.make(
             "transactions.SourceProcurementTransaction",
@@ -625,7 +544,7 @@ class TestInitialRun():
 
     @mark.django_db(transaction=True)
     def test_one_null_in_trans_norm_unique_award_key_from_delta(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
 
@@ -641,7 +560,7 @@ class TestInitialRun():
 
     @mark.django_db(transaction=True)
     def test_multiple_nulls_in_trans_norm_unique_award_key_from_delta(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
 
@@ -701,14 +620,14 @@ class TestInitialRun():
 
     @mark.django_db(transaction=True)
     def test_happy(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
         TestInitialRun.happy_verify(spark)
 
     @mark.django_db(transaction=True)
     def test_run_twice(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         # Verify that calling initial_run twice yields the same results as calling it once.
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
@@ -719,7 +638,7 @@ class TestInitialRun():
 class TestTransactionIdLookup():
     @mark.django_db(transaction=True)
     def test_no_initial_run(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
 
@@ -730,7 +649,7 @@ class TestTransactionIdLookup():
 
     @mark.django_db(transaction=True)
     def test_no_deletes_or_inserts(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         # With no deletes or inserts, the transaction_lookup_id table should be the same as after
         # the initial run
@@ -740,7 +659,7 @@ class TestTransactionIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_deletes_only_fabs(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -762,7 +681,7 @@ class TestTransactionIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_deletes_only_fpds(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -785,7 +704,7 @@ class TestTransactionIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_deletes_fabs_and_fpds(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -814,7 +733,7 @@ class TestTransactionIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_inserts_only_fabs(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -858,7 +777,7 @@ class TestTransactionIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_inserts_only_fpds(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -893,7 +812,7 @@ class TestTransactionIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_inserts_fabs_and_fpds(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -953,7 +872,7 @@ class TestTransactionIdLookup():
 
     @mark.django_db(transaction=True)
     def test_inserts_and_deletes(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -1031,7 +950,7 @@ class TestTransactionIdLookup():
 class TestAwardIdLookup():
     @mark.django_db(transaction=True)
     def test_no_initial_run(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         load_initial_tables_to_delta_and_verify(spark, s3_unittest_data_bucket)
 
@@ -1042,7 +961,7 @@ class TestAwardIdLookup():
 
     @mark.django_db(transaction=True)
     def test_no_deletes_or_inserts(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         # With no deletes or inserts, the award_lookup_id table should be the same as after
         # the initial run
@@ -1052,7 +971,7 @@ class TestAwardIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_deletes_only_fabs(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -1074,7 +993,7 @@ class TestAwardIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_deletes_only_fpds(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -1097,7 +1016,7 @@ class TestAwardIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_deletes_fabs_and_fpds(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -1126,7 +1045,7 @@ class TestAwardIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_inserts_only_fabs(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -1171,7 +1090,7 @@ class TestAwardIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_inserts_only_fpds(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -1207,7 +1126,7 @@ class TestAwardIdLookup():
 
     @mark.django_db(transaction=True)
     def test_only_inserts_fabs_and_fpds(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
@@ -1269,7 +1188,7 @@ class TestAwardIdLookup():
 
     @mark.django_db(transaction=True)
     def test_inserts_and_deletes(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, finish_external_data_tables
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 

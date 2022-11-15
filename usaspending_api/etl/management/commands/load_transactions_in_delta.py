@@ -274,28 +274,16 @@ class Command(BaseCommand):
             - External Data values need to be added for all etl_levels (including transaction_ids)
             - Initial value of the sequence should be set
         """
+        spark_s3_bucket = CONFIG.SPARK_S3_BUCKET
+        delta_lake_s3_bucket = CONFIG.DELTA_LAKE_S3_PATH
+        destination_database = "int"
+
         #### transaction_id_lookup
 
         # Capture start time of the transaction_id_lookup creation to update the "last_load_date" after completion
         transaction_id_lookup_start_time = datetime.now(timezone.utc)
 
-        spark_s3_bucket = CONFIG.SPARK_S3_BUCKET
-        delta_lake_s3_bucket = CONFIG.DELTA_LAKE_S3_PATH
-        destination_database = "int"
         destination_table = "transaction_id_lookup"
-
-        # Before creating table or running INSERT, make sure expected keys have no NULLs
-        self.logger.info("Checking for NULLs in key transaction columns")
-        tn_table_names = ("raw.transaction_normalized", "raw.transaction_normalized",
-                          "raw.detached_award_procurement", "raw.published_fabs")
-        tn_key_names = ("id", "transaction_unique_id", "detached_award_proc_unique", "afa_generated_unique")
-        for table_name, key_name in zip(tn_table_names, tn_key_names):
-            num_nulls = self.spark.sql(
-                f"SELECT COUNT(*) AS count FROM {table_name} WHERE {key_name} IS NULL").collect()[0]['count']
-
-            if num_nulls > 0:
-                raise ValueError(f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in '{key_name}' in table "
-                                 f"{table_name}!")
 
         self.logger.info(f"Creating database {destination_database}, if not already existing.")
         self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {destination_database};")
@@ -303,15 +291,15 @@ class Command(BaseCommand):
         self.logger.info("Creating transaction_id_lookup table")
         self.spark.sql(
             f"""
-                    CREATE TABLE IF NOT EXISTS {destination_database}.{destination_table} (
-                        id LONG NOT NULL,
-                        detached_award_procurement_id INTEGER,
-                        published_fabs_id INTEGER,
-                        transaction_unique_id STRING NOT NULL
-                    )
-                    USING DELTA
-                    LOCATION 's3a://{spark_s3_bucket}/{delta_lake_s3_bucket}/{destination_database}/{destination_table}'
-                """
+                CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
+                    id LONG NOT NULL,
+                    detached_award_procurement_id INTEGER,
+                    published_fabs_id INTEGER,
+                    transaction_unique_id STRING NOT NULL
+                )
+                USING DELTA
+                LOCATION 's3a://{spark_s3_bucket}/{delta_lake_s3_bucket}/{destination_database}/{destination_table}'
+            """
         )
 
         # Insert existing transactions into the lookup table
@@ -320,7 +308,8 @@ class Command(BaseCommand):
             f"""
             INSERT OVERWRITE {destination_database}.{destination_table}
                 SELECT tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.transaction_unique_id
-                FROM raw.transaction_normalized AS tn LEFT JOIN raw.detached_award_procurement AS dap ON (
+                FROM raw.transaction_normalized AS tn 
+                LEFT JOIN raw.detached_award_procurement AS dap ON (
                     tn.transaction_unique_id = dap.detached_award_proc_unique
                 )
                 LEFT JOIN raw.published_fabs AS pfabs ON (
@@ -342,24 +331,23 @@ class Command(BaseCommand):
         # Capture start time of the award_id_lookup creation to update the "last_load_date" after completion
         award_id_lookup_start_time = datetime.now(timezone.utc)
 
-        # Before creating table or running INSERT, make sure award keys have no NULLs
-        # (already checked for transaction_unique_id above)
-        self.logger.info("Checking for NULLs in key award columns")
-        award_table_names = ("raw.awards", "raw.awards", "raw.transaction_normalized")
-        award_key_names = ("id", "generated_unique_award_id", "unique_award_key")
-        for table_name, key_name in zip(award_table_names, award_key_names):
-            num_nulls = self.spark.sql(
-                f"SELECT COUNT(*) AS count FROM {table_name} WHERE {key_name} IS NULL").collect()[0]['count']
+        destination_table = "award_id_lookup"
 
-            if num_nulls > 0:
-                raise ValueError(f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in '{key_name}' in table "
-                                 f"{table_name}!")
+        # Before creating table or running INSERT, make sure unique_award_key has no NULLs
+        # (nothing needed to check before transaction_id_lookup table creation)
+        self.logger.info("Checking for NULLs in unique_award_key")
+        num_nulls = self.spark.sql(
+            "SELECT COUNT(*) AS count FROM raw.transaction_normalized "
+            "WHERE unique_award_key IS NULL").collect()[0]['count']
+
+        if num_nulls > 0:
+            raise ValueError(f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in 'unique_award_key' in table "
+                             f"raw.transaction_normalized!")
 
         self.logger.info("Creating award_id_lookup table")
-        destination_table = "award_id_lookup"
         self.spark.sql(
             f"""
-                CREATE TABLE IF NOT EXISTS {destination_database}.{destination_table} (
+                CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
                     id LONG NOT NULL,
                     -- detached_award_procurement_id and published_fabs_id are needed in this table to allow
                     -- the award_id_lookup ETL level to choose the correct rows for deleting so that it can
