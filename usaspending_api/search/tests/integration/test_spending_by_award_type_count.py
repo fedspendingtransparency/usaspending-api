@@ -12,7 +12,22 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture():
-    baker.make("search.TransactionSearch", transaction_id=2)
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
+        transaction_unique_id="A000_8900_DECF0000058_-NONE-",
+        action_date="2009-09-10",
+        award_id=48518634,
+        fiscal_year=2009,
+        generated_unique_award_id="ASST_NON_DECF0000058_8900",
+        is_fpds=False,
+        type="07",
+        type_description="DIRECT LOAN (E)",
+        award_category="loans",
+        fain="DECF0000058",
+        piid=None,
+        uri=None,
+    )
     baker.make(
         "awards.Award",
         base_and_all_options_value=None,

@@ -43,7 +43,6 @@ AWARD_MAPPINGS = {
             6: "contract_transaction_unique_key",
         },
         "correction_delete_ind": "correction_delete_ind",
-        "date_filter": "updated_at",
         "letter_name": "d1",
         "match": re.compile(r"(?P<month>\d{2})-(?P<day>\d{2})-(?P<year>\d{4})_delete_records_(IDV|award)_\d{10}.csv"),
         "model": "contract_data",
@@ -61,7 +60,6 @@ AWARD_MAPPINGS = {
             5: "assistance_transaction_unique_key",
         },
         "correction_delete_ind": "correction_delete_ind",
-        "date_filter": "modified_at",
         "letter_name": "d2",
         "match": re.compile(r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})_FABSdeletions_\d{10}.csv"),
         "model": "assistance_data",
@@ -100,7 +98,7 @@ class Command(BaseCommand):
         if award_type == "Contracts":
             source.queryset = source.queryset.annotate(
                 correction_delete_ind=Case(
-                    When(transaction__etl_update_date__lt=generate_since, then=Value("C")),
+                    When(etl_update_date__lt=generate_since, then=Value("C")),
                     default=Value(""),
                     output_field=CharField(),
                 )
@@ -109,7 +107,7 @@ class Command(BaseCommand):
             indicator_field = F("transaction__assistance_data__correction_delete_indicatr")
             source.queryset = source.queryset.annotate(
                 correction_delete_ind=Case(
-                    When(transaction__etl_update_date__gt=generate_since, then=indicator_field),
+                    When(etl_update_date__gt=generate_since, then=indicator_field),
                     When(transaction__transactiondelta__isnull=False, then=Value("C")),
                     default=indicator_field,
                     output_field=CharField(),
@@ -118,11 +116,9 @@ class Command(BaseCommand):
 
         transaction_delta_queryset = source.queryset
 
-        _filter = {"transaction__{}__{}__gte".format(award_map["model"], award_map["date_filter"]): generate_since}
+        _filter = {"etl_update_date__gte": generate_since}
         if self.debugging_end_date:
-            _filter[
-                "transaction__{}__{}__lt".format(award_map["model"], award_map["date_filter"])
-            ] = self.debugging_end_date
+            _filter["etl_update_date__lt"] = self.debugging_end_date
 
         source.queryset = source.queryset.filter(**_filter)
 

@@ -80,7 +80,7 @@ def download_test_data(transactional_db):
         generated_unique_award_id="CONT_IDV_NEW",
         is_fpds=True,
         piid="tc1piid",
-        awarding_toptier_agency_abbreviation="Bureau of Things",
+        awarding_toptier_agency_name="Bureau of Things",
     )
     baker.make(
         TransactionSearch,
@@ -93,7 +93,7 @@ def download_test_data(transactional_db):
         generated_unique_award_id="CONT_AWD_NEW",
         is_fpds=True,
         piid="tc2piid",
-        awarding_toptier_agency_abbreviation="Bureau of Stuff",
+        awarding_toptier_agency_name="Bureau of Stuff",
     )
     baker.make(
         TransactionSearch,
@@ -106,7 +106,7 @@ def download_test_data(transactional_db):
         generated_unique_award_id="ASST_NON_NEW",
         is_fpds=False,
         fain="ta1fain",
-        awarding_toptier_agency_abbreviation="Bureau of Stuff",
+        awarding_toptier_agency_name="Bureau of Stuff",
     )
 
     # Set latest_award for each award

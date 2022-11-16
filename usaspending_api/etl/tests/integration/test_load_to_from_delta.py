@@ -180,41 +180,72 @@ def populate_usas_data(populate_broker_data):
         "awards.Award",
         id=1,
         type="07",
+        category="loans",
+        generated_unique_award_id="UNIQUE AWARD KEY B",
         period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
         date_signed="2020-01-01",
+        certified_date="2020-01-01",
+        update_date="2020-01-01",
         total_obligation=100.00,
         total_subsidy_cost=100.00,
         type_description="Direct Loan",
+        fain="FAIN",
+        uri="URI",
+        piid=None,
     )
     cont_award = baker.make(
         "awards.Award",
         id=2,
         type="A",
+        category="contracts",
+        generated_unique_award_id="UNIQUE AWARD KEY C",
         period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
         date_signed="2020-01-01",
+        certified_date="2020-01-01",
+        update_date="2020-01-01",
         total_obligation=100.00,
+        piid="PIID",
+        fain=None,
+        uri=None,
     )
     cont_award2 = baker.make(
         "awards.Award",
         id=3,
         generated_unique_award_id="UNIQUE AWARD KEY A",
         type="A",
+        category="contracts",
         period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
         date_signed="2020-01-01",
+        certified_date="2020-01-01",
         total_obligation=100.00,
         last_modified_date="2020-01-01",
+        update_date="2020-01-01",
         awarding_agency_id=32,
         funding_agency_id=32,
+        piid="PIID",
+        fain=None,
+        uri=None,
     )
 
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,
+        afa_generated_unique=1,
         action_date="2020-01-01",
-        award=asst_award,
+        fiscal_action_date="2020-04-01",
+        award_id=asst_award.id,
+        generated_unique_award_id=asst_award.generated_unique_award_id,
+        award_certified_date=asst_award.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=asst_award.date_signed,
+        etl_update_date=asst_award.update_date,
+        award_category=asst_award.category,
+        piid=asst_award.piid,
+        fain=asst_award.fain,
+        uri=asst_award.uri,
         is_fpds=False,
         type="07",
         awarding_agency_id=awarding_agency.id,
@@ -244,13 +275,23 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=2,
+        afa_generated_unique=2,
         action_date="2020-04-01",
-        award=asst_award,
+        fiscal_action_date="2020-07-01",
+        award_id=asst_award.id,
+        generated_unique_award_id=asst_award.generated_unique_award_id,
+        award_certified_date=asst_award.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=asst_award.date_signed,
+        etl_update_date=asst_award.update_date,
+        award_category=asst_award.category,
+        piid=asst_award.piid,
+        fain=asst_award.fain,
+        uri=asst_award.uri,
         is_fpds=False,
         type="07",
         awarding_agency_id=awarding_agency.id,
@@ -281,13 +322,23 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=3,
+        detached_award_procurement_id=3,
         action_date="2020-07-01",
-        award=cont_award,
+        fiscal_action_date="2020-10-01",
+        award_id=cont_award.id,
+        generated_unique_award_id=cont_award.generated_unique_award_id,
+        award_certified_date=cont_award.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=cont_award.date_signed,
+        etl_update_date=cont_award.update_date,
+        award_category=cont_award.category,
+        piid=cont_award.piid,
+        fain=cont_award.fain,
+        uri=cont_award.uri,
         is_fpds=True,
         type="A",
         awarding_agency_id=awarding_agency.id,
@@ -311,13 +362,23 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_name="Virginia",
-        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=4,
+        detached_award_procurement_id=4,
         action_date="2020-10-01",
-        award=cont_award,
+        fiscal_action_date="2021-01-01",
+        award_id=cont_award.id,
+        generated_unique_award_id=cont_award.generated_unique_award_id,
+        award_certified_date=cont_award.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=cont_award.date_signed,
+        etl_update_date=cont_award.update_date,
+        award_category=cont_award.category,
+        piid=cont_award.piid,
+        fain=cont_award.fain,
+        uri=cont_award.uri,
         is_fpds=True,
         type="A",
         awarding_agency_id=awarding_agency.id,
@@ -341,12 +402,22 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_name="Virginia",
-        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=434,
-        award=cont_award2,
+        detached_award_procurement_id=434,
+        is_fpds=True,
+        award_id=cont_award2.id,
+        generated_unique_award_id=cont_award2.generated_unique_award_id,
+        award_certified_date=cont_award2.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=cont_award2.date_signed,
+        etl_update_date=cont_award2.update_date,
+        award_category=cont_award2.category,
+        piid=cont_award2.piid,
+        fain=cont_award2.fain,
+        uri=cont_award2.uri,
         type="A",
         awarding_agency_id=32,
         funding_agency_id=32,
@@ -414,7 +485,7 @@ def populate_usas_data(populate_broker_data):
 
     baker.make(
         "awards.FinancialAccountsByAwards",
-        award=asst_award,
+        award_id=asst_award.id,
         treasury_account=tas,
         disaster_emergency_fund=defc_l,
         submission=sa,
@@ -422,7 +493,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
-        award=asst_award,
+        award_id=asst_award.id,
         treasury_account=tas,
         disaster_emergency_fund=defc_m,
         submission=sa,
@@ -430,7 +501,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
-        award=cont_award,
+        award_id=cont_award.id,
         treasury_account=tas,
         disaster_emergency_fund=defc_q,
         submission=sa,
@@ -438,7 +509,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
-        award=cont_award,
+        award_id=cont_award.id,
         treasury_account=tas,
         disaster_emergency_fund=None,
         submission=sa,
@@ -763,8 +834,11 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     )
     baker.make(
         "search.TransactionSearch",
+        transaction_id=1001,
+        afa_generated_unique=1001,
         action_date="2021-01-01",
-        award=new_award,
+        fiscal_action_date="2021-04-01",
+        award_id=new_award.id,
         is_fpds=False,
         type="07",
         last_modified_date="2021-01-01",
@@ -873,10 +947,20 @@ def test_load_table_to_from_delta_for_recipient_profile(
 def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
     baker.make(
-        "search.TransactionSearch", transaction_id=1, is_fpds=False, indirect_federal_sharing=1.0, _fill_optional=True
+        "search.TransactionSearch",
+        transaction_id=1,
+        award_id=1,
+        is_fpds=False,
+        indirect_federal_sharing=1.0,
+        _fill_optional=True,
     )
     baker.make(
-        "search.TransactionSearch", transaction_id=2, is_fpds=False, indirect_federal_sharing=1.0, _fill_optional=True
+        "search.TransactionSearch",
+        transaction_id=2,
+        award_id=1,
+        is_fpds=False,
+        indirect_federal_sharing=1.0,
+        _fill_optional=True,
     )
     verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
 
@@ -924,22 +1008,33 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
     fabs_with_tz = baker.prepare(
         "search.TransactionSearch",
         transaction_id=1,
+        transaction_unique_id=1,
+        published_fabs_id=3,
+        award_id=1,
         is_fpds=False,
         _save_related=True,
         indirect_federal_sharing=1.0,
         last_modified_date=dt_with_tz,
-        _fill_optional=True,
     )  # type: TransactionSearch
+    populated_columns = (
+        "transaction_id",
+        "transaction_unique_id",
+        "award_id",
+        "is_fpds",
+        "indirect_federal_sharing",
+        "last_modified_date",
+        "published_fabs_id",
+    )
 
-    def _get_sql_insert_from_model(model):
-        values = model._meta.local_fields
+    def _get_sql_insert_from_model(model, populated_columns):
+        values = [value for value in model._meta.local_fields if value.column in populated_columns]
         q = sql.InsertQuery(model)
         q.insert_values(values, [model])
         compiler = q.get_compiler("default")
         setattr(compiler, "return_id", False)
         stmts = compiler.as_sql()
         stmt = [
-            stmt % tuple(f"'{param}'" if type(param) in [str, datetime] else param for param in params)
+            stmt % tuple(f"'{param}'" if type(param) in [str, date, datetime] else param for param in params)
             for stmt, params in stmts
         ]
         return stmt[0]
@@ -948,7 +1043,7 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
     with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
         with new_psycopg2_conn.cursor() as cursor:
             cursor.execute("set session time zone 'HST'")
-            fabs_insert_sql = _get_sql_insert_from_model(fabs_with_tz)
+            fabs_insert_sql = _get_sql_insert_from_model(fabs_with_tz, populated_columns)
             cursor.execute(fabs_insert_sql)
             assert cursor.rowcount == 1
             new_psycopg2_conn.commit()
@@ -956,7 +1051,7 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
     # See how things look from Django's perspective
     with transaction.atomic():
         # Fetch the DB object in a new transaction
-        fabs_with_tz = TransactionFABS.objects.filter(published_fabs_id="3").first()
+        fabs_with_tz = TransactionFABS.objects.filter(published_fabs_id=3).first()
         assert fabs_with_tz is not None
 
         # Check that all dates are as expected
@@ -1076,39 +1171,6 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_search(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
-):
-    tables_to_load = [
-        "awards",
-        "financial_accounts_by_awards",
-        "recipient_lookup",
-        "recipient_profile",
-        "sam_recipient",
-        "transaction_fabs",
-        "transaction_fpds",
-        "transaction_normalized",
-    ]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-    verify_delta_table_loaded_to_delta(
-        spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
-    )
-    verify_delta_table_loaded_from_delta(spark, "transaction_search", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_search", jdbc_inserts=True)  # test alt write strategy
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_search_testing(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
-):
-    verify_delta_table_loaded_to_delta(spark, "transaction_search_testing", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "transaction_search_testing", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(
-        spark, "transaction_search_testing", jdbc_inserts=True
-    )  # test alt write strategy
-
-
-@mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
@@ -1120,38 +1182,6 @@ def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(
         s3_unittest_data_bucket,
         alt_db="my_alt_db",
         alt_name="transaction_normalized_alt_name",
-    )
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
-):
-    tables_to_load = [
-        "awards",
-        "financial_accounts_by_awards",
-        "recipient_lookup",
-        "recipient_profile",
-        "sam_recipient",
-        "transaction_fabs",
-        "transaction_fpds",
-        "transaction_normalized",
-    ]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-    verify_delta_table_loaded_to_delta(
-        spark,
-        "transaction_search",
-        s3_unittest_data_bucket,
-        alt_db="my_alt_db",
-        alt_name="transaction_search_alt_name",
-        load_command="load_query_to_delta",
-    )
-    verify_delta_table_loaded_from_delta(
-        spark,
-        "transaction_search",
-        alt_db="my_alt_db",
-        alt_name="transaction_search_alt_name",
-        spark_s3_bucket=s3_unittest_data_bucket,
     )
 
 

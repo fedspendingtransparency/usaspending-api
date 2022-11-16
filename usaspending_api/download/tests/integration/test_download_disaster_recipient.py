@@ -198,6 +198,7 @@ def awards_and_transactions(transactional_db):
         recipient_location_county_name=None,
         recipient_location_congressional_code=None,
         recipient_name="RECIPIENT 1",
+        recipient_name_raw="RECIPIENT 1",
         recipient_unique_id=None,
     )
     baker.make(
@@ -215,6 +216,7 @@ def awards_and_transactions(transactional_db):
         recipient_location_county_name="CHARLESTON",
         recipient_location_congressional_code="90",
         recipient_name="RECIPIENT 2",
+        recipient_name_raw="RECIPIENT 2",
         recipient_unique_id="456789123",
     )
     baker.make(
@@ -232,6 +234,7 @@ def awards_and_transactions(transactional_db):
         recipient_location_county_name="CHARLESTON",
         recipient_location_congressional_code="50",
         recipient_name="RECIPIENT 3",
+        recipient_name_raw="RECIPIENT 3",
         recipient_unique_id="987654321",
     )
     baker.make(
@@ -248,6 +251,7 @@ def awards_and_transactions(transactional_db):
         recipient_location_county_name="TEST NAME",
         recipient_location_congressional_code="50",
         recipient_name="MULTIPLE RECIPIENTS",
+        recipient_name_raw="MULTIPLE RECIPIENTS",
         recipient_unique_id="096354360",
     )
     baker.make(
@@ -264,6 +268,7 @@ def awards_and_transactions(transactional_db):
         recipient_location_county_name="TEST NAME",
         recipient_location_congressional_code="50",
         recipient_name=None,
+        recipient_name_raw=None,
         recipient_unique_id="987654321",
     )
     baker.make(
@@ -280,6 +285,7 @@ def awards_and_transactions(transactional_db):
         recipient_location_county_name="TEST NAME",
         recipient_location_congressional_code="50",
         recipient_name=None,
+        recipient_name_raw=None,
         recipient_unique_id="987654321",
     )
     baker.make(
@@ -296,6 +302,7 @@ def awards_and_transactions(transactional_db):
         recipient_location_county_name="CHARLESTON",
         recipient_location_congressional_code="10",
         recipient_name="MULTIPLE RECIPIENTS",
+        recipient_name_raw="MULTIPLE RECIPIENTS",
         recipient_unique_id=None,
     )
 

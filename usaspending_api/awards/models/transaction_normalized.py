@@ -160,7 +160,7 @@ vw_transaction_normalized_sql = """
             federal_action_obligation,
             original_loan_subsidy_cost,
             face_value_loan_guarantee,
-            indirect_federal_sharing,
+            indirect_federal_sharing::NUMERIC(23,2),
             funding_amount,
             non_federal_funding_amount
         FROM

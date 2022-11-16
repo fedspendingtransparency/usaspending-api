@@ -8,7 +8,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 @pytest.fixture
 def basic_fabs_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    _normal_faba(_normal_fabs(1))
+    _normal_faba(_normal_fabs(8))
 
 
 @pytest.fixture
@@ -17,9 +17,11 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
     transaction_normalized = baker.make(
         "search.TransactionSearch",
         transaction_id=1,
+        type="A",
         award_id=100,
         action_date="2022-05-01",
         is_fpds=True,
+        recipient_hash="9427d7e5-3e8f-d0c0-3c58-2adc322ce489",
         recipient_unique_id="fpds",
     )
     baker.make("recipient.RecipientLookup", recipient_hash="9427d7e5-3e8f-d0c0-3c58-2adc322ce489", duns="fpds")
@@ -93,8 +95,10 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         "search.TransactionSearch",
         transaction_id=6,
         award_id=600,
+        type="A",
         action_date="2022-05-01",
         is_fpds=True,
+        recipient_name_raw="MULTIPLE RECIPIENTS",
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_unique_id="123",
     )
@@ -106,8 +110,10 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         "search.TransactionSearch",
         transaction_id=7,
         award_id=700,
+        type="A",
         action_date="2022-05-01",
         is_fpds=True,
+        recipient_name_raw="MULTIPLE RECIPIENTS",
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_unique_id="456",
     )
@@ -263,6 +269,12 @@ def _normal_faba(award):
 def _normal_fabs(id):
     award = baker.make("awards.Award", latest_transaction_id=id, type="07")
     baker.make(
-        "search.TransactionSearch", transaction_id=id, award=award, action_date="2022-05-01", recipient_unique_id="1"
+        "search.TransactionSearch",
+        type="07",
+        transaction_id=id,
+        award=award,
+        action_date="2022-05-01",
+        recipient_unique_id="1",
+        is_fpds=False,
     )
     return award

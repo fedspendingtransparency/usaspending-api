@@ -14,6 +14,7 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 TODAY = datetime.datetime.now()
 INSIDE_OF_LATEST = TODAY - datetime.timedelta(365 - 2)
+FISCAL_INSIDE_OF_LATEST = INSIDE_OF_LATEST + datetime.timedelta(days=30 * 3)
 
 TEST_REF_COUNTRY_CODE = {
     "PARENT COUNTRY CODE": {"country_code": "PARENT COUNTRY CODE", "country_name": "PARENT COUNTRY NAME"},
@@ -172,14 +173,47 @@ TEST_RECIPIENT_PROFILES = {
 }
 
 TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS = {
-    "latest": {"action_date": INSIDE_OF_LATEST, "federal_action_obligation": 100},
-    "FY2016": {"action_date": datetime.datetime(2015, 10, 1), "federal_action_obligation": 50},
-    "FY2008": {"action_date": datetime.datetime(2007, 10, 1), "federal_action_obligation": 200},
+    "latest": {
+        "action_date": INSIDE_OF_LATEST,
+        "fiscal_action_date": FISCAL_INSIDE_OF_LATEST,
+        "federal_action_obligation": 100,
+        "generated_pragmatic_obligation": 100,
+    },
+    "FY2016": {
+        "action_date": datetime.datetime(2015, 10, 1),
+        "fiscal_action_date": datetime.datetime(2016, 1, 1),
+        "federal_action_obligation": 50,
+        "generated_pragmatic_obligation": 50,
+    },
+    "FY2008": {
+        "action_date": datetime.datetime(2007, 10, 1),
+        "fiscal_action_date": datetime.datetime(2008, 1, 1),
+        "federal_action_obligation": 200,
+        "generated_pragmatic_obligation": 200,
+    },
 }
 TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FABS = {
-    "latest": {"action_date": INSIDE_OF_LATEST, "face_value_loan_guarantee": 1000, "type": "07"},
-    "FY2016": {"action_date": datetime.datetime(2015, 10, 1), "face_value_loan_guarantee": 500, "type": "08"},
-    "FY2008": {"action_date": datetime.datetime(2007, 10, 1), "face_value_loan_guarantee": 2000, "type": "08"},
+    "latest": {
+        "action_date": INSIDE_OF_LATEST,
+        "fiscal_action_date": FISCAL_INSIDE_OF_LATEST,
+        "face_value_loan_guarantee": 1000,
+        "type": "07",
+        "generated_pragmatic_obligation": 0,
+    },
+    "FY2016": {
+        "action_date": datetime.datetime(2015, 10, 1),
+        "fiscal_action_date": datetime.datetime(2016, 1, 1),
+        "face_value_loan_guarantee": 500,
+        "type": "08",
+        "generated_pragmatic_obligation": 0,
+    },
+    "FY2008": {
+        "action_date": datetime.datetime(2007, 10, 1),
+        "fiscal_action_date": datetime.datetime(2008, 1, 1),
+        "face_value_loan_guarantee": 2000,
+        "type": "08",
+        "generated_pragmatic_obligation": 0,
+    },
 }
 TEST_SUMMARY_TRANSACTION_RECIPIENT = {
     "latest": {
@@ -188,6 +222,9 @@ TEST_SUMMARY_TRANSACTION_RECIPIENT = {
         "parent_recipient_unique_id": "000000001",
         "recipient_uei": "AAAAAAAAAAAA",
         "parent_uei": "AAAAAAAAAAAA",
+        "recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
+        "parent_recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
+        "recipient_levels": ["P", "C"],
     },
     "FY2016": {
         "recipient_name": "CHILD RECIPIENT",
@@ -195,12 +232,17 @@ TEST_SUMMARY_TRANSACTION_RECIPIENT = {
         "parent_recipient_unique_id": "000000001",
         "recipient_uei": "BBBBBBBBBBBB",
         "parent_uei": "AAAAAAAAAAAA",
+        "recipient_hash": "acb93cfc-e4f8-ecd5-5ac3-fa62f115e8f5",
+        "parent_recipient_hash": "a52a7544-829b-c925-e1ba-d04d3171c09a",
+        "recipient_levels": ["C"],
     },
     "FY2008": {
         "recipient_name": "OTHER RECIPIENT",
         "recipient_unique_id": None,
         "parent_recipient_unique_id": None,
         "parent_uei": None,
+        "recipient_hash": "cd6ac2ed-8d2d-2c2e-4934-710eb82100f3",
+        "recipient_levels": ["R"],
     },
 }
 
@@ -211,29 +253,35 @@ def create_transaction_test_data(transaction_recipient_list=None):
     if transaction_recipient_list is None:
         transaction_recipient_list = list(TEST_SUMMARY_TRANSACTION_RECIPIENT.values())
 
+    id = 1
+
     for count, transaction_search in enumerate(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FPDS.values()):
         base_transaction_search = {
-            "transaction_id": count,
-            "award_id": count,
+            "transaction_id": id,
+            "award_id": id,
             "is_fpds": True,
             "business_categories": ["expected", "business", "cat"],
         }
         base_transaction_search.update(transaction_search)
         base_transaction_search.update(transaction_recipient_list[count])
-        baker.make("awards.Award", id=count, latest_transaction_id=count)
+        baker.make("awards.Award", id=id, latest_transaction_id=id)
         baker.make("search.TransactionSearch", **base_transaction_search)
+
+        id += 1
 
     for count, transaction_search in enumerate(TEST_SUMMARY_TRANSACTION_NORMALIZED_FOR_FABS.values()):
         base_transaction_search = {
-            "transaction_id": count,
-            "award_id": count,
+            "transaction_id": id,
+            "award_id": id,
             "is_fpds": False,
             "business_categories": ["expected", "business", "cat"],
         }
         base_transaction_search.update(transaction_search)
         base_transaction_search.update(transaction_recipient_list[count])
-        baker.make("awards.Award", id=count, latest_transaction_id=count)
+        baker.make("awards.Award", id=id, latest_transaction_id=id)
         baker.make("search.TransactionSearch", **base_transaction_search)
+
+        id += 1
 
 
 @pytest.mark.django_db
@@ -431,10 +479,13 @@ def test_obtain_recipient_totals_year(monkeypatch, elasticsearch_transaction_ind
 
     # load all of the transactions
     transaction_recipient_data = {
-        "awardee_or_recipient_legal": "CHILD RECIPIENT",
-        "awardee_or_recipient_uniqu": "000000002",
-        "awardee_or_recipient_uei": "BBBBBBBBBBBB",
-        "ultimate_parent_unique_ide": "000000001",
+        "recipient_name": "CHILD RECIPIENT",
+        "recipient_name_raw": "CHILD RECIPIENT",
+        "recipient_unique_id": "000000002",
+        "recipient_uei": "BBBBBBBBBBBB",
+        "parent_recipient_unique_id": "000000001",
+        "recipient_hash": recipient_hash,
+        "recipient_levels": ["C"],
     }
     create_transaction_test_data([transaction_recipient_data] * len(TEST_SUMMARY_TRANSACTION_RECIPIENT))
 

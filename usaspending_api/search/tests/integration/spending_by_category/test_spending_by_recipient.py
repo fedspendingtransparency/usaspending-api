@@ -11,7 +11,9 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
-def _make_fpds_transaction(id, award_id, obligation, action_date, recipient_duns, recipient_name):
+def _make_fpds_transaction(
+    id, award_id, obligation, action_date, recipient_duns, recipient_name, recipient_hash, piid=None
+):
     # Transaction Search
     baker.make(
         "search.TransactionSearch",
@@ -19,9 +21,12 @@ def _make_fpds_transaction(id, award_id, obligation, action_date, recipient_duns
         is_fpds=True,
         award_id=award_id,
         federal_action_obligation=obligation,
+        generated_pragmatic_obligation=obligation,
         action_date=action_date,
         recipient_unique_id=recipient_duns,
         recipient_name=recipient_name,
+        recipient_hash=recipient_hash,
+        piid=piid,
     )
 
 
@@ -64,25 +69,25 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     baker.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
     baker.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
 
-    # Transaction FPDS
-    _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1")
-    _make_fpds_transaction(2, 3, 7.00, "2020-02-02", "111", "Biz 1")
-    _make_fpds_transaction(3, 3, 3.00, "2020-03-03", "111", "Biz 1")
-    _make_fpds_transaction(4, 2, 2.00, "2020-01-02", "111", "Biz 1")
-    _make_fpds_transaction(5, 2, 3.00, "2020-02-03", "111", "Biz 1")
-    _make_fpds_transaction(6, 2, 5.00, "2020-03-04", "111", "Biz 1")
-    _make_fpds_transaction(7, 2, 6.00, "2020-01-03", "222", "Biz 2")
-    _make_fpds_transaction(8, 2, 3.00, "2020-02-04", "222", "Biz 2")
-    _make_fpds_transaction(9, 3, 2.00, "2020-03-05", "222", "Biz 2")
-    _make_fpds_transaction(10, 3, 3.00, "2020-01-04", "222", "Biz 2")
-    _make_fpds_transaction(11, 3, 4.00, "2020-02-05", "222", "Biz 2")
-    _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2")
-
     # Awards
     # Jam a routing key value into the piid field, and use the derived piid value for routing documents to shards later
     baker.make("awards.Award", id=1, latest_transaction_id=12, piid="shard_zero")
     baker.make("awards.Award", id=2, latest_transaction_id=6, piid="shard_one")
     baker.make("awards.Award", id=3, latest_transaction_id=9, piid="shard_two")
+
+    # Transaction FPDS
+    _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1", recipient1, "shard_zero")
+    _make_fpds_transaction(2, 3, 7.00, "2020-02-02", "111", "Biz 1", recipient1, "shard_two")
+    _make_fpds_transaction(3, 3, 3.00, "2020-03-03", "111", "Biz 1", recipient1, "shard_two")
+    _make_fpds_transaction(4, 2, 2.00, "2020-01-02", "111", "Biz 1", recipient1, "shard_one")
+    _make_fpds_transaction(5, 2, 3.00, "2020-02-03", "111", "Biz 1", recipient1, "shard_one")
+    _make_fpds_transaction(6, 2, 5.00, "2020-03-04", "111", "Biz 1", recipient1, "shard_one")
+    _make_fpds_transaction(7, 2, 6.00, "2020-01-03", "222", "Biz 2", recipient2, "shard_one")
+    _make_fpds_transaction(8, 2, 3.00, "2020-02-04", "222", "Biz 2", recipient2, "shard_one")
+    _make_fpds_transaction(9, 3, 2.00, "2020-03-05", "222", "Biz 2", recipient2, "shard_two")
+    _make_fpds_transaction(10, 3, 3.00, "2020-01-04", "222", "Biz 2", recipient2, "shard_two")
+    _make_fpds_transaction(11, 3, 4.00, "2020-02-05", "222", "Biz 2", recipient2, "shard_two")
+    _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2", recipient2, "shard_zero")
 
     # Push DB data into the test ES cluster
     # NOTE: Force routing of documents by the piid field, which will separate them int 3 groups, leading to an
@@ -158,18 +163,18 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     baker.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
 
     # Transaction FPDS
-    _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1")
-    _make_fpds_transaction(2, 3, 7.00, "2020-02-02", "111", "Biz 1")
-    _make_fpds_transaction(3, 3, 3.00, "2020-03-03", "111", "Biz 1")
-    _make_fpds_transaction(4, 2, 2.00, "2020-01-02", "111", "Biz 1")
-    _make_fpds_transaction(5, 2, 3.00, "2020-02-03", "111", "Biz 1")
-    _make_fpds_transaction(6, 2, 5.00, "2020-03-04", "111", "Biz 1")
-    _make_fpds_transaction(7, 2, 6.00, "2020-01-03", "222", "Biz 2")
-    _make_fpds_transaction(8, 2, 3.00, "2020-02-04", "222", "Biz 2")
-    _make_fpds_transaction(9, 3, 2.00, "2020-03-05", "222", "Biz 2")
-    _make_fpds_transaction(10, 3, 3.00, "2020-01-04", "222", "Biz 2")
-    _make_fpds_transaction(11, 3, 4.00, "2020-02-05", "222", "Biz 2")
-    _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2")
+    _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(2, 3, 7.00, "2020-02-02", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(3, 3, 3.00, "2020-03-03", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(4, 2, 2.00, "2020-01-02", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(5, 2, 3.00, "2020-02-03", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(6, 2, 5.00, "2020-03-04", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(7, 2, 6.00, "2020-01-03", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(8, 2, 3.00, "2020-02-04", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(9, 3, 2.00, "2020-03-05", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(10, 3, 3.00, "2020-01-04", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(11, 3, 4.00, "2020-02-05", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2", recipient2)
 
     # Awards
     baker.make("awards.Award", id=1, latest_transaction_id=12)

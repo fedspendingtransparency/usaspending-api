@@ -269,7 +269,7 @@ def test_column_validation(caplog, monkeypatch):
 def test_happy_path(monkeypatch, tmp_path_factory):
     # Create the Award records for testing with Foreign Keys
     for i in range(2, 7):
-        baker.make("awards.Award", id=i, _fill_optional=True)
+        baker.make("awards.Award", id=i)
 
     temp_dir = tmp_path_factory.mktemp("test_view")
     with open(f"{temp_dir}/vw_test_table.sql", "w") as f:
