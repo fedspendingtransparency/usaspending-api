@@ -589,7 +589,7 @@ def load_delta_table_from_postgres(
     s3_bucket: str,
     alt_db: str = None,
     alt_name: str = None,
-    load_command: str = "load_table_to_delta"
+    load_command: str = "load_table_to_delta",
 ):
     """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the
     given table

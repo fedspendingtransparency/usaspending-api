@@ -14,9 +14,7 @@ from django.db import connection
 from django.core.management import call_command
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
-    load_delta_table_from_postgres, equal_datasets
-)
+from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres, equal_datasets
 
 
 @fixture
@@ -28,7 +26,7 @@ def populate_initial_postgres_data():
         afa_generated_unique="award_assist_0001_trans_0001",
         updated_at=datetime(year=2022, month=10, day=31),
         is_active=True,
-        unique_award_key="award_assist_0001"
+        unique_award_key="award_assist_0001",
     )
     baker.make(
         "transactions.SourceAssistanceTransaction",
@@ -36,7 +34,7 @@ def populate_initial_postgres_data():
         afa_generated_unique="award_assist_0002_trans_0001",
         updated_at=datetime(year=2022, month=10, day=31),
         is_active=True,
-        unique_award_key="award_assist_0002"
+        unique_award_key="award_assist_0002",
     )
     baker.make(
         "transactions.SourceAssistanceTransaction",
@@ -44,7 +42,7 @@ def populate_initial_postgres_data():
         afa_generated_unique="award_assist_0002_trans_0002",
         updated_at=datetime(year=2022, month=10, day=31),
         is_active=True,
-        unique_award_key="award_assist_0002"
+        unique_award_key="award_assist_0002",
     )
     baker.make(
         "transactions.SourceAssistanceTransaction",
@@ -52,7 +50,7 @@ def populate_initial_postgres_data():
         afa_generated_unique="award_assist_0003_trans_0001",
         updated_at=datetime(year=2022, month=10, day=31),
         is_active=True,
-        unique_award_key="award_assist_0003"
+        unique_award_key="award_assist_0003",
     )
     baker.make(
         "transactions.SourceAssistanceTransaction",
@@ -60,7 +58,7 @@ def populate_initial_postgres_data():
         afa_generated_unique="award_assist_0003_trans_0002",
         updated_at=datetime(year=2022, month=10, day=31),
         is_active=True,
-        unique_award_key="award_assist_0003"
+        unique_award_key="award_assist_0003",
     )
 
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
@@ -68,7 +66,7 @@ def populate_initial_postgres_data():
         "broker.ExternalDataType",
         name="source_assistance_transaction",
         external_data_type_id=11,
-        update_date="2022-10-31"
+        update_date="2022-10-31",
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt)
 
@@ -78,35 +76,35 @@ def populate_initial_postgres_data():
         detached_award_procurement_id=1,
         detached_award_proc_unique="award_procure_0001_trans_0001",
         updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0001"
+        unique_award_key="award_procure_0001",
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id=2,
         detached_award_proc_unique="award_procure_0002_trans_0001",
         updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0002"
+        unique_award_key="award_procure_0002",
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id=3,
         detached_award_proc_unique="award_procure_0002_trans_0002",
         updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0002"
+        unique_award_key="award_procure_0002",
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id=4,
         detached_award_proc_unique="award_procure_0003_trans_0001",
         updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0003"
+        unique_award_key="award_procure_0003",
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id=5,
         detached_award_proc_unique="award_procure_0003_trans_0002",
         updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0003"
+        unique_award_key="award_procure_0003",
     )
 
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
@@ -114,7 +112,7 @@ def populate_initial_postgres_data():
         "broker.ExternalDataType",
         name="source_procurement_transaction",
         external_data_type_id=10,
-        update_date="2022-10-31"
+        update_date="2022-10-31",
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt)
 
@@ -128,7 +126,7 @@ def populate_initial_postgres_data():
             id=1,
             update_date=datetime(year=2022, month=10, day=31),
             generated_unique_award_id="award_assist_0001",
-            is_fpds=False
+            is_fpds=False,
         )
     )
     assist_awards.append(
@@ -137,7 +135,7 @@ def populate_initial_postgres_data():
             id=2,
             update_date=datetime(year=2022, month=10, day=31),
             generated_unique_award_id="award_assist_0002",
-            is_fpds=False
+            is_fpds=False,
         )
     )
     procure_awards.append(
@@ -146,7 +144,7 @@ def populate_initial_postgres_data():
             id=3,
             update_date=datetime(year=2022, month=10, day=31),
             generated_unique_award_id="award_procure_0001",
-            is_fpds=True
+            is_fpds=True,
         )
     )
     procure_awards.append(
@@ -155,7 +153,7 @@ def populate_initial_postgres_data():
             id=4,
             update_date=datetime(year=2022, month=10, day=31),
             generated_unique_award_id="award_procure_0002",
-            is_fpds=True
+            is_fpds=True,
         )
     )
     assist_awards.append(
@@ -164,7 +162,7 @@ def populate_initial_postgres_data():
             id=5,
             update_date=datetime(year=2022, month=10, day=31),
             generated_unique_award_id="award_assist_0003",
-            is_fpds=False
+            is_fpds=False,
         )
     )
     procure_awards.append(
@@ -173,16 +171,13 @@ def populate_initial_postgres_data():
             id=6,
             update_date=datetime(year=2022, month=10, day=31),
             generated_unique_award_id="award_procure_0003",
-            is_fpds=True
+            is_fpds=True,
         )
     )
 
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt_awards = baker.make(
-        "broker.ExternalDataType",
-        name="awards",
-        external_data_type_id=204,
-        update_date="2022-10-31"
+        "broker.ExternalDataType", name="awards", external_data_type_id=204, update_date="2022-10-31"
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt_awards)
 
@@ -194,7 +189,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_assist_0001_trans_0001",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=False,
-        unique_award_key="award_assist_0001"
+        unique_award_key="award_assist_0001",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -203,7 +198,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_procure_0001_trans_0001",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=True,
-        unique_award_key="award_procure_0001"
+        unique_award_key="award_procure_0001",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -212,7 +207,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_assist_0002_trans_0001",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=False,
-        unique_award_key="award_assist_0002"
+        unique_award_key="award_assist_0002",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -221,7 +216,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_procure_0002_trans_0001",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=True,
-        unique_award_key="award_procure_0002"
+        unique_award_key="award_procure_0002",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -230,7 +225,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_assist_0002_trans_0002",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=False,
-        unique_award_key="award_assist_0002"
+        unique_award_key="award_assist_0002",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -239,7 +234,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_procure_0002_trans_0002",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=True,
-        unique_award_key="award_procure_0002"
+        unique_award_key="award_procure_0002",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -248,7 +243,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_assist_0003_trans_0001",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=False,
-        unique_award_key="award_assist_0003"
+        unique_award_key="award_assist_0003",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -257,7 +252,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_assist_0003_trans_0002",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=False,
-        unique_award_key="award_assist_0003"
+        unique_award_key="award_assist_0003",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -266,7 +261,7 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_procure_0003_trans_0001",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=True,
-        unique_award_key="award_procure_0003"
+        unique_award_key="award_procure_0003",
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -275,31 +270,22 @@ def populate_initial_postgres_data():
         transaction_unique_id="award_procure_0003_trans_0002",
         update_date=datetime(year=2022, month=10, day=31),
         is_fpds=True,
-        unique_award_key="award_procure_0003"
+        unique_award_key="award_procure_0003",
     )
 
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt_tn = baker.make(
-        "broker.ExternalDataType",
-        name="transaction_normalized",
-        external_data_type_id=203,
-        update_date="2022-10-31"
+        "broker.ExternalDataType", name="transaction_normalized", external_data_type_id=203, update_date="2022-10-31"
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt_tn)
 
     # Need to populate values for transaction_id_lookup and award_id_lookup in broker.ExternalData[Type|LoadDate] tables
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt_tidlu = baker.make(
-        "broker.ExternalDataType",
-        name="transaction_id_lookup",
-        external_data_type_id=205,
-        update_date=None
+        "broker.ExternalDataType", name="transaction_id_lookup", external_data_type_id=205, update_date=None
     )
     edt_aidlu = baker.make(
-        "broker.ExternalDataType",
-        name="award_id_lookup",
-        external_data_type_id=206,
-        update_date=None
+        "broker.ExternalDataType", name="award_id_lookup", external_data_type_id=206, update_date=None
     )
     baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_tidlu)
     baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_aidlu)
@@ -316,68 +302,68 @@ def load_initial_delta_tables(spark, s3_data_bucket):
     spark.sql("CREATE DATABASE IF NOT EXISTS int")
 
 
-class TestInitialRun():
+class TestInitialRun:
     expected_transaction_id_lookup = [
         {
             "id": 1,
             "detached_award_procurement_id": None,
             "published_fabs_id": 1,
-            "transaction_unique_id": "award_assist_0001_trans_0001"
+            "transaction_unique_id": "award_assist_0001_trans_0001",
         },
         {
             "id": 2,
             "detached_award_procurement_id": 1,
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0001_trans_0001"
+            "transaction_unique_id": "award_procure_0001_trans_0001",
         },
         {
             "id": 3,
             "detached_award_procurement_id": None,
             "published_fabs_id": 2,
-            "transaction_unique_id": "award_assist_0002_trans_0001"
+            "transaction_unique_id": "award_assist_0002_trans_0001",
         },
         {
             "id": 4,
             "detached_award_procurement_id": 2,
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0001"
+            "transaction_unique_id": "award_procure_0002_trans_0001",
         },
         {
             "id": 5,
             "detached_award_procurement_id": None,
             "published_fabs_id": 3,
-            "transaction_unique_id": "award_assist_0002_trans_0002"
+            "transaction_unique_id": "award_assist_0002_trans_0002",
         },
         {
             "id": 6,
             "detached_award_procurement_id": 3,
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0002"
+            "transaction_unique_id": "award_procure_0002_trans_0002",
         },
         {
             "id": 7,
             "detached_award_procurement_id": None,
             "published_fabs_id": 4,
-            "transaction_unique_id": "award_assist_0003_trans_0001"
+            "transaction_unique_id": "award_assist_0003_trans_0001",
         },
         {
             "id": 8,
             "detached_award_procurement_id": None,
             "published_fabs_id": 5,
-            "transaction_unique_id": "award_assist_0003_trans_0002"
+            "transaction_unique_id": "award_assist_0003_trans_0002",
         },
         {
             "id": 9,
             "detached_award_procurement_id": 4,
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0001"
+            "transaction_unique_id": "award_procure_0003_trans_0001",
         },
         {
             "id": 10,
             "detached_award_procurement_id": 5,
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0002"
-        }
+            "transaction_unique_id": "award_procure_0003_trans_0002",
+        },
     ]
 
     expected_award_id_lookup = [
@@ -386,71 +372,71 @@ class TestInitialRun():
             "detached_award_procurement_id": None,
             "published_fabs_id": 1,
             "transaction_unique_id": "award_assist_0001_trans_0001",
-            "generated_unique_award_id": "award_assist_0001"
+            "generated_unique_award_id": "award_assist_0001",
         },
         {
             "id": 2,
             "detached_award_procurement_id": None,
             "published_fabs_id": 2,
             "transaction_unique_id": "award_assist_0002_trans_0001",
-            "generated_unique_award_id": "award_assist_0002"
+            "generated_unique_award_id": "award_assist_0002",
         },
         {
             "id": 2,
             "detached_award_procurement_id": None,
             "published_fabs_id": 3,
             "transaction_unique_id": "award_assist_0002_trans_0002",
-            "generated_unique_award_id": "award_assist_0002"
+            "generated_unique_award_id": "award_assist_0002",
         },
         {
             "id": 3,
             "detached_award_procurement_id": 1,
             "published_fabs_id": None,
             "transaction_unique_id": "award_procure_0001_trans_0001",
-            "generated_unique_award_id": "award_procure_0001"
+            "generated_unique_award_id": "award_procure_0001",
         },
         {
             "id": 4,
             "detached_award_procurement_id": 2,
             "published_fabs_id": None,
             "transaction_unique_id": "award_procure_0002_trans_0001",
-            "generated_unique_award_id": "award_procure_0002"
+            "generated_unique_award_id": "award_procure_0002",
         },
         {
             "id": 4,
             "detached_award_procurement_id": 3,
             "published_fabs_id": None,
             "transaction_unique_id": "award_procure_0002_trans_0002",
-            "generated_unique_award_id": "award_procure_0002"
+            "generated_unique_award_id": "award_procure_0002",
         },
         {
             "id": 5,
             "detached_award_procurement_id": None,
             "published_fabs_id": 4,
             "transaction_unique_id": "award_assist_0003_trans_0001",
-            "generated_unique_award_id": "award_assist_0003"
+            "generated_unique_award_id": "award_assist_0003",
         },
         {
             "id": 5,
             "detached_award_procurement_id": None,
             "published_fabs_id": 5,
             "transaction_unique_id": "award_assist_0003_trans_0002",
-            "generated_unique_award_id": "award_assist_0003"
+            "generated_unique_award_id": "award_assist_0003",
         },
         {
             "id": 6,
             "detached_award_procurement_id": 4,
             "published_fabs_id": None,
             "transaction_unique_id": "award_procure_0003_trans_0001",
-            "generated_unique_award_id": "award_procure_0003"
+            "generated_unique_award_id": "award_procure_0003",
         },
         {
             "id": 6,
             "detached_award_procurement_id": 5,
             "published_fabs_id": None,
             "transaction_unique_id": "award_procure_0003_trans_0002",
-            "generated_unique_award_id": "award_procure_0003"
-        }
+            "generated_unique_award_id": "award_procure_0003",
+        },
     ]
 
     # The unique_award_key field in transaction_normalized allows for NULLs in both Postgres and Delta,
@@ -464,14 +450,14 @@ class TestInitialRun():
             detached_award_procurement_id=6,
             detached_award_proc_unique="award_procure_0004_trans_0001",
             updated_at=datetime(year=2022, month=10, day=31),
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         award = baker.make(
             "awards.Award",
             id=7,
             update_date=datetime(year=2022, month=10, day=31),
             generated_unique_award_id="award_procure_0004",
-            is_fpds=True
+            is_fpds=True,
         )
         baker.make(
             "awards.TransactionNormalized",
@@ -480,13 +466,12 @@ class TestInitialRun():
             transaction_unique_id="award_procure_0004_trans_0001",
             update_date=datetime(year=2022, month=10, day=31),
             is_fpds=True,
-            unique_award_key=None
+            unique_award_key=None,
         )
 
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
-        with raises(ValueError,
-                    match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
+        with raises(ValueError, match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
             call_command("load_transactions_in_delta", "--etl-level", "initial_run")
 
     @mark.django_db(transaction=True)
@@ -498,21 +483,21 @@ class TestInitialRun():
             detached_award_procurement_id=6,
             detached_award_proc_unique="award_procure_0004_trans_0001",
             updated_at=datetime(year=2022, month=10, day=31),
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         baker.make(
             "transactions.SourceProcurementTransaction",
             detached_award_procurement_id=7,
             detached_award_proc_unique="award_procure_0004_trans_0002",
             updated_at=datetime(year=2022, month=10, day=31),
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         award = baker.make(
             "awards.Award",
             id=7,
             update_date=datetime(year=2022, month=10, day=31),
             generated_unique_award_id="award_procure_0004",
-            is_fpds=True
+            is_fpds=True,
         )
         baker.make(
             "awards.TransactionNormalized",
@@ -521,7 +506,7 @@ class TestInitialRun():
             transaction_unique_id="award_procure_0004_trans_0001",
             update_date=datetime(year=2022, month=10, day=31),
             is_fpds=True,
-            unique_award_key=None
+            unique_award_key=None,
         )
         baker.make(
             "awards.TransactionNormalized",
@@ -530,13 +515,12 @@ class TestInitialRun():
             transaction_unique_id="award_procure_0004_trans_0002",
             update_date=datetime(year=2022, month=10, day=31),
             is_fpds=True,
-            unique_award_key=None
+            unique_award_key=None,
         )
 
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
-        with raises(ValueError,
-                    match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
+        with raises(ValueError, match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
             call_command("load_transactions_in_delta", "--etl-level", "initial_run")
 
     @mark.django_db(transaction=True)
@@ -545,14 +529,15 @@ class TestInitialRun():
     ):
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             UPDATE raw.transaction_normalized
             SET unique_award_key = NULL
             WHERE id = 5
-        """)
+        """
+        )
 
-        with raises(ValueError,
-                    match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
+        with raises(ValueError, match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
             call_command("load_transactions_in_delta", "--etl-level", "initial_run")
 
     @mark.django_db(transaction=True)
@@ -561,14 +546,15 @@ class TestInitialRun():
     ):
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             UPDATE raw.transaction_normalized
             SET unique_award_key = NULL
             WHERE id = 5 OR id = 6
-        """)
+        """
+        )
 
-        with raises(ValueError,
-                    match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
+        with raises(ValueError, match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
             call_command("load_transactions_in_delta", "--etl-level", "initial_run")
 
     @staticmethod
@@ -616,9 +602,7 @@ class TestInitialRun():
         TestInitialRun.happy_verify_award_ids(spark)
 
     @mark.django_db(transaction=True)
-    def test_happy(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
+    def test_happy(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
         TestInitialRun.happy_verify(spark)
 
@@ -632,15 +616,14 @@ class TestInitialRun():
         TestInitialRun.happy_verify(spark)
 
 
-class TestTransactionIdLookup():
+class TestTransactionIdLookup:
     @mark.django_db(transaction=True)
     def test_no_initial_run(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
-        with raises(pyspark.sql.utils.AnalysisException,
-                    match="Table or view not found: int.transaction_id_lookup"):
+        with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_id_lookup"):
             call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
     @mark.django_db(transaction=True)
@@ -659,10 +642,12 @@ class TestTransactionIdLookup():
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
@@ -681,10 +666,12 @@ class TestTransactionIdLookup():
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
@@ -704,14 +691,18 @@ class TestTransactionIdLookup():
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
-        spark.sql("""
+        """
+        )
+        spark.sql(
+            """
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
@@ -742,7 +733,7 @@ class TestTransactionIdLookup():
             afa_generated_unique="award_assist_0004_trans_0001",
             updated_at=insert_time,
             is_active=True,
-            unique_award_key="award_assist_0004"
+            unique_award_key="award_assist_0004",
         )
         baker.make(
             "transactions.SourceAssistanceTransaction",
@@ -750,7 +741,7 @@ class TestTransactionIdLookup():
             afa_generated_unique="award_assist_0005_trans_0001",
             updated_at=insert_time,
             is_active=False,
-            unique_award_key="award_assist_0005"
+            unique_award_key="award_assist_0005",
         )
         load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
@@ -762,7 +753,7 @@ class TestTransactionIdLookup():
                 "id": 11,
                 "detached_award_procurement_id": None,
                 "published_fabs_id": 6,
-                "transaction_unique_id": "award_assist_0004_trans_0001"
+                "transaction_unique_id": "award_assist_0004_trans_0001",
             }
         )
 
@@ -785,7 +776,7 @@ class TestTransactionIdLookup():
             detached_award_procurement_id=6,
             detached_award_proc_unique="award_procure_0004_trans_0001",
             updated_at=insert_time,
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
@@ -797,7 +788,7 @@ class TestTransactionIdLookup():
                 "id": 11,
                 "detached_award_procurement_id": 6,
                 "published_fabs_id": None,
-                "transaction_unique_id": "award_procure_0004_trans_0001"
+                "transaction_unique_id": "award_procure_0004_trans_0001",
             }
         )
 
@@ -821,7 +812,7 @@ class TestTransactionIdLookup():
             afa_generated_unique="award_assist_0004_trans_0001",
             updated_at=insert_time,
             is_active=True,
-            unique_award_key="award_assist_0004"
+            unique_award_key="award_assist_0004",
         )
         baker.make(
             "transactions.SourceAssistanceTransaction",
@@ -829,14 +820,14 @@ class TestTransactionIdLookup():
             afa_generated_unique="award_assist_0005_trans_0001",
             updated_at=insert_time,
             is_active=False,
-            unique_award_key="award_assist_0005"
+            unique_award_key="award_assist_0005",
         )
         baker.make(
             "transactions.SourceProcurementTransaction",
             detached_award_procurement_id=6,
             detached_award_proc_unique="award_procure_0004_trans_0001",
             updated_at=insert_time,
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
         load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
@@ -850,14 +841,14 @@ class TestTransactionIdLookup():
                     "id": 11,
                     "detached_award_procurement_id": None,
                     "published_fabs_id": 6,
-                    "transaction_unique_id": "award_assist_0004_trans_0001"
+                    "transaction_unique_id": "award_assist_0004_trans_0001",
                 },
                 {
                     "id": 12,
                     "detached_award_procurement_id": 6,
                     "published_fabs_id": None,
-                    "transaction_unique_id": "award_procure_0004_trans_0001"
-                }
+                    "transaction_unique_id": "award_procure_0004_trans_0001",
+                },
             ]
         )
 
@@ -881,7 +872,7 @@ class TestTransactionIdLookup():
             afa_generated_unique="award_assist_0004_trans_0001",
             updated_at=insert_time,
             is_active=True,
-            unique_award_key="award_assist_0004"
+            unique_award_key="award_assist_0004",
         )
         baker.make(
             "transactions.SourceAssistanceTransaction",
@@ -889,27 +880,31 @@ class TestTransactionIdLookup():
             afa_generated_unique="award_assist_0005_trans_0001",
             updated_at=insert_time,
             is_active=False,
-            unique_award_key="award_assist_0005"
+            unique_award_key="award_assist_0005",
         )
         baker.make(
             "transactions.SourceProcurementTransaction",
             detached_award_procurement_id=6,
             detached_award_proc_unique="award_procure_0004_trans_0001",
             updated_at=insert_time,
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
         load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
-        spark.sql("""
+        """
+        )
+        spark.sql(
+            """
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 1
                 OR detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
@@ -925,14 +920,14 @@ class TestTransactionIdLookup():
                     "id": 11,
                     "detached_award_procurement_id": None,
                     "published_fabs_id": 6,
-                    "transaction_unique_id": "award_assist_0004_trans_0001"
+                    "transaction_unique_id": "award_assist_0004_trans_0001",
                 },
                 {
                     "id": 12,
                     "detached_award_procurement_id": 6,
                     "published_fabs_id": None,
-                    "transaction_unique_id": "award_procure_0004_trans_0001"
-                }
+                    "transaction_unique_id": "award_procure_0004_trans_0001",
+                },
             ]
         )
 
@@ -942,15 +937,14 @@ class TestTransactionIdLookup():
         assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
 
 
-class TestAwardIdLookup():
+class TestAwardIdLookup:
     @mark.django_db(transaction=True)
     def test_no_initial_run(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
-        with raises(pyspark.sql.utils.AnalysisException,
-                    match="Table or view not found: int.award_id_lookup"):
+        with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.award_id_lookup"):
             call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
     @mark.django_db(transaction=True)
@@ -969,10 +963,12 @@ class TestAwardIdLookup():
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
@@ -991,10 +987,12 @@ class TestAwardIdLookup():
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
@@ -1014,14 +1012,18 @@ class TestAwardIdLookup():
     ):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
-        spark.sql("""
+        """
+        )
+        spark.sql(
+            """
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id >= 4
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
@@ -1052,7 +1054,7 @@ class TestAwardIdLookup():
             afa_generated_unique="award_assist_0004_trans_0001",
             updated_at=insert_time,
             is_active=False,
-            unique_award_key="award_assist_0004"
+            unique_award_key="award_assist_0004",
         )
         baker.make(
             "transactions.SourceAssistanceTransaction",
@@ -1060,7 +1062,7 @@ class TestAwardIdLookup():
             afa_generated_unique="award_assist_0005_trans_0001",
             updated_at=insert_time,
             is_active=True,
-            unique_award_key="award_assist_0005"
+            unique_award_key="award_assist_0005",
         )
         load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
@@ -1073,7 +1075,7 @@ class TestAwardIdLookup():
                 "detached_award_procurement_id": None,
                 "published_fabs_id": 7,
                 "transaction_unique_id": "award_assist_0005_trans_0001",
-                "generated_unique_award_id": "award_assist_0005"
+                "generated_unique_award_id": "award_assist_0005",
             }
         )
 
@@ -1096,7 +1098,7 @@ class TestAwardIdLookup():
             detached_award_procurement_id=6,
             detached_award_proc_unique="award_procure_0004_trans_0001",
             updated_at=insert_time,
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
@@ -1109,7 +1111,7 @@ class TestAwardIdLookup():
                 "detached_award_procurement_id": 6,
                 "published_fabs_id": None,
                 "transaction_unique_id": "award_procure_0004_trans_0001",
-                "generated_unique_award_id": "award_procure_0004"
+                "generated_unique_award_id": "award_procure_0004",
             }
         )
 
@@ -1133,7 +1135,7 @@ class TestAwardIdLookup():
             afa_generated_unique="award_assist_0004_trans_0001",
             updated_at=insert_time,
             is_active=False,
-            unique_award_key="award_assist_0004"
+            unique_award_key="award_assist_0004",
         )
         baker.make(
             "transactions.SourceAssistanceTransaction",
@@ -1141,14 +1143,14 @@ class TestAwardIdLookup():
             afa_generated_unique="award_assist_0005_trans_0001",
             updated_at=insert_time,
             is_active=True,
-            unique_award_key="award_assist_0005"
+            unique_award_key="award_assist_0005",
         )
         baker.make(
             "transactions.SourceProcurementTransaction",
             detached_award_procurement_id=6,
             detached_award_proc_unique="award_procure_0004_trans_0001",
             updated_at=insert_time,
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
         load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
@@ -1163,15 +1165,15 @@ class TestAwardIdLookup():
                     "detached_award_procurement_id": None,
                     "published_fabs_id": 7,
                     "transaction_unique_id": "award_assist_0005_trans_0001",
-                    "generated_unique_award_id": "award_assist_0005"
+                    "generated_unique_award_id": "award_assist_0005",
                 },
                 {
                     "id": 8,
                     "detached_award_procurement_id": 6,
                     "published_fabs_id": None,
                     "transaction_unique_id": "award_procure_0004_trans_0001",
-                    "generated_unique_award_id": "award_procure_0004"
-                }
+                    "generated_unique_award_id": "award_procure_0004",
+                },
             ]
         )
 
@@ -1195,7 +1197,7 @@ class TestAwardIdLookup():
             afa_generated_unique="award_assist_0004_trans_0001",
             updated_at=insert_time,
             is_active=False,
-            unique_award_key="award_assist_0004"
+            unique_award_key="award_assist_0004",
         )
         baker.make(
             "transactions.SourceAssistanceTransaction",
@@ -1203,27 +1205,31 @@ class TestAwardIdLookup():
             afa_generated_unique="award_assist_0005_trans_0001",
             updated_at=insert_time,
             is_active=True,
-            unique_award_key="award_assist_0005"
+            unique_award_key="award_assist_0005",
         )
         baker.make(
             "transactions.SourceProcurementTransaction",
             detached_award_procurement_id=6,
             detached_award_proc_unique="award_procure_0004_trans_0001",
             updated_at=insert_time,
-            unique_award_key="award_procure_0004"
+            unique_award_key="award_procure_0004",
         )
         load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
         load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
-        spark.sql("""
+        spark.sql(
+            """
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
-        spark.sql("""
+        """
+        )
+        spark.sql(
+            """
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 1 OR detached_award_procurement_id = 4
                 OR detached_award_procurement_id = 5
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
@@ -1240,15 +1246,15 @@ class TestAwardIdLookup():
                     "detached_award_procurement_id": None,
                     "published_fabs_id": 7,
                     "transaction_unique_id": "award_assist_0005_trans_0001",
-                    "generated_unique_award_id": "award_assist_0005"
+                    "generated_unique_award_id": "award_assist_0005",
                 },
                 {
                     "id": 8,
                     "detached_award_procurement_id": 6,
                     "published_fabs_id": None,
                     "transaction_unique_id": "award_procure_0004_trans_0001",
-                    "generated_unique_award_id": "award_procure_0004"
-                }
+                    "generated_unique_award_id": "award_procure_0004",
+                },
             ]
         )
 

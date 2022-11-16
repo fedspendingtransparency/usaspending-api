@@ -40,18 +40,14 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The silver delta table that should be updated from the bronze delta data.",
-            choices=[
-                "award_id_lookup",
-                "initial_run",
-                "transaction_id_lookup"
-            ],
+            choices=["award_id_lookup", "initial_run", "transaction_id_lookup"],
         )
 
     def handle(self, *args, **options):
         with self.prepare_spark():
             self.etl_level = options["etl_level"]
 
-            if self.etl_level == 'initial_run':
+            if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
                 self.initial_run()
                 return
@@ -320,8 +316,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[0]["max_id"]
+        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
+            0
+        ]["max_id"]
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_id})")
 
@@ -338,12 +335,14 @@ class Command(BaseCommand):
         # (nothing needed to check before transaction_id_lookup table creation)
         self.logger.info("Checking for NULLs in unique_award_key")
         num_nulls = self.spark.sql(
-            "SELECT COUNT(*) AS count FROM raw.transaction_normalized "
-            "WHERE unique_award_key IS NULL").collect()[0]['count']
+            "SELECT COUNT(*) AS count FROM raw.transaction_normalized " "WHERE unique_award_key IS NULL"
+        ).collect()[0]["count"]
 
         if num_nulls > 0:
-            raise ValueError(f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in 'unique_award_key' in table "
-                             f"raw.transaction_normalized!")
+            raise ValueError(
+                f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in 'unique_award_key' in table "
+                f"raw.transaction_normalized!"
+            )
 
         self.logger.info("Creating award_id_lookup table")
         self.spark.sql(
@@ -388,8 +387,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[0]["max_id"]
+        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
+            0
+        ]["max_id"]
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_id})")
 
