@@ -53,72 +53,119 @@ def transaction_search_1():
         TransactionSearch,
         transaction_id=1,
         award=award_contract,
+        award_category=award_contract.category,
+        type="D",
         federal_action_obligation=101,
+        generated_pragmatic_obligation=101,
         action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
         awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        awarding_agency_code=awarding_agency_1.toptier_agency.toptier_code,
     )
 
     baker.make(
         TransactionSearch,
         transaction_id=2,
         award=award_idv,
+        award_category=award_idv.category,
+        type="IDV_A",
         federal_action_obligation=102,
+        generated_pragmatic_obligation=102,
         action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
         awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        awarding_agency_code=awarding_agency_1.toptier_agency.toptier_code,
     )
 
     baker.make(
         TransactionSearch,
         transaction_id=3,
         award=award_grant,
+        award_category=award_grant.category,
+        type="02",
         federal_action_obligation=103,
+        generated_pragmatic_obligation=103,
         action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
         awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        awarding_agency_code=awarding_agency_1.toptier_agency.toptier_code,
     )
 
     baker.make(
         TransactionSearch,
         transaction_id=4,
         award=award_loan,
-        federal_action_obligation=104,
+        award_category=award_loan.category,
+        type="07",
+        original_loan_subsidy_cost=104,
+        generated_pragmatic_obligation=104,
         action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
         awarding_agency_id=awarding_agency_1.id,
-    )
-
-    baker.make(
-        TransactionSearch,
-        transaction_id=4,
-        award=award_dp,
-        federal_action_obligation=105,
-        action_date="2021-04-01",
-        awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        awarding_agency_code=awarding_agency_1.toptier_agency.toptier_code,
     )
 
     baker.make(
         TransactionSearch,
         transaction_id=5,
-        award=award_bc,
-        federal_action_obligation=106,
+        award=award_dp,
+        award_category=award_dp.category,
+        type="06",
+        federal_action_obligation=105,
+        generated_pragmatic_obligation=105,
         action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
         awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        awarding_agency_code=awarding_agency_1.toptier_agency.toptier_code,
+    )
+
+    baker.make(
+        TransactionSearch,
+        transaction_id=6,
+        award=award_bc,
+        award_category=award_bc.category,
+        federal_action_obligation=106,
+        generated_pragmatic_obligation=106,
+        action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
+        awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        awarding_agency_code=awarding_agency_1.toptier_agency.toptier_code,
     )
     # Alternate Year
     baker.make(
         TransactionSearch,
-        transaction_id=6,
+        transaction_id=7,
         award=award_idv,
+        award_category=award_idv.category,
+        type="IDV_A",
         federal_action_obligation=300,
+        generated_pragmatic_obligation=300,
         action_date="2020-04-01",
+        fiscal_action_date="2020-07-01",
         awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        awarding_agency_code=awarding_agency_1.toptier_agency.toptier_code,
     )
     # Alternate Agency
     baker.make(
         TransactionSearch,
-        transaction_id=7,
+        transaction_id=8,
         award=award_idv,
+        type="IDV_A",
+        award_category=award_idv.category,
         federal_action_obligation=400,
+        generated_pragmatic_obligation=400,
         action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
         awarding_agency_id=awarding_agency_2.id,
+        awarding_toptier_agency_id=awarding_agency_2.id,
+        awarding_agency_code=awarding_agency_2.toptier_agency.toptier_code,
     )
 
 

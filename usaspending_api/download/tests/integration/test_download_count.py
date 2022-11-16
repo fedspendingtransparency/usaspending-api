@@ -80,8 +80,8 @@ def download_test_data():
         awarding_agency_id=aa1.id,
         is_fpds=True,
         piid="tc1piid",
-        awarding_toptier_agency_abbreviation="Bureau of Things",
-        awarding_subtier_agency_abbreviation="Bureau of Things",
+        awarding_toptier_agency_name="Bureau of Things",
+        awarding_subtier_agency_name="Bureau of Things",
     )
     baker.make(
         TransactionSearch,
@@ -93,8 +93,8 @@ def download_test_data():
         awarding_agency_id=aa2.id,
         is_fpds=True,
         piid="tc2piid",
-        awarding_toptier_agency_abbreviation="Bureau of Stuff",
-        awarding_subtier_agency_abbreviation="Bureau of Things",
+        awarding_toptier_agency_name="Bureau of Stuff",
+        awarding_subtier_agency_name="Bureau of Things",
     )
     baker.make(
         TransactionSearch,
@@ -106,8 +106,8 @@ def download_test_data():
         awarding_agency_id=aa2.id,
         is_fpds=False,
         fain="ta1fain",
-        awarding_toptier_agency_abbreviation="Bureau of Stuff",
-        awarding_subtier_agency_abbreviation="Bureau of Things",
+        awarding_toptier_agency_name="Bureau of Stuff",
+        awarding_subtier_agency_name="Bureau of Things",
     )
 
     # Set latest_award for each award

@@ -53,6 +53,7 @@ def monthly_download_delta_data(db, monkeypatch):
         transaction_description="a description",
         last_modified_date=datetime.datetime(fiscal_year, 5, 7),
         award_certified_date=datetime.datetime(fiscal_year, 5, 7),
+        etl_update_date=datetime.date.today(),
         create_date=datetime.datetime(fiscal_year, 5, 7),
         update_date=datetime.datetime(fiscal_year, 5, 7),
         fiscal_year=fiscal_year,
@@ -69,9 +70,9 @@ def monthly_download_delta_data(db, monkeypatch):
         piid=f"piid{i}",
         agency_id=1,
         awarding_sub_tier_agency_c="001",
-        awarding_subtier_agency_abbreviation="Test_Agency",
+        awarding_subtier_agency_name="Test_Agency",
         awarding_agency_code="001",
-        awarding_toptier_agency_abbreviation="Test_Agency",
+        awarding_toptier_agency_name="Test_Agency",
         parent_award_id=f"000{i}",
         contract_award_type="B",
         contract_award_type_desc="Contract",
@@ -93,7 +94,7 @@ def test_all_agencies(monthly_download_delta_data, monkeypatch):
 @pytest.mark.django_db(transaction=True)
 def test_specific_agency(monthly_download_delta_data, monkeypatch):
     contract_data = [
-        "C",
+        "",
         "1",
         "test1",
         "CONT_AWD_1_0_0",
@@ -115,8 +116,8 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "",
         "2020-05-07",
         "2020",
-        "",
-        "",
+        "2020-05-07",
+        "2020-05-07",
         "",
         "",
         "",
@@ -179,7 +180,7 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "",
         "",
         "",
-        "",
+        "a description",
         "",
         "",
         "",
@@ -379,7 +380,7 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "",
         "",
         f"{HOST}/award/CONT_AWD_1_0_0/" if "localhost" in HOST else f"https://{HOST}/award/CONT_AWD_1_0_0/",
-        "",
+        "2020-05-07",
     ]
     call_command("populate_monthly_delta_files", "--agencies=1", "--debugging_skip_deleted", "--last_date=2020-12-31")
     file_list = listdir("csv_downloads")
@@ -443,6 +444,7 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         action_date=datetime.datetime(2020, 5, 7),
         last_modified_date=datetime.datetime(2020, 5, 7),
         award_certified_date=datetime.datetime(2020, 5, 7),
+        etl_update_date=datetime.date.today(),
         create_date=datetime.datetime(2020, 5, 7),
         update_date=datetime.datetime(2020, 5, 7),
         fiscal_year=2020,
@@ -452,8 +454,8 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         fain="fain2",
         awarding_agency_code="001",
         awarding_sub_tier_agency_c=1,
-        awarding_toptier_agency_abbreviation="Test_Agency",
-        awarding_subtier_agency_abbreviation="Test_Agency",
+        awarding_toptier_agency_name="Test_Agency",
+        awarding_subtier_agency_name="Test_Agency",
     )
     baker.make("awards.TransactionDelta", transaction_id=2, created_at=datetime.datetime.now())
     call_command(
