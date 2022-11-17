@@ -41,7 +41,7 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The silver delta table that should be updated from the bronze delta data.",
-            choices=["award_id_lookup", "initial_run", "transaction_id_lookup"]
+            choices=["award_id_lookup", "initial_run", "transaction_id_lookup"],
         )
         parser.add_argument(
             "--spark-s3-bucket",
@@ -54,7 +54,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with self.prepare_spark():
             self.etl_level = options["etl_level"]
-            self.spark_s3_bucket = options['spark_s3_bucket']
+            self.spark_s3_bucket = options["spark_s3_bucket"]
 
             if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
@@ -324,9 +324,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
-        ).collect()[0]["max_id"]
+        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
+            0
+        ]["max_id"]
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_id})")
 
@@ -395,9 +395,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
-        ).collect()[0]["max_id"]
+        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
+            0
+        ]["max_id"]
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_id})")
 
