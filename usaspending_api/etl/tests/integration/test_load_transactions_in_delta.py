@@ -472,7 +472,8 @@ class TestInitialRun:
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
         with raises(ValueError, match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
-            call_command("load_transactions_in_delta", "--etl-level", "initial_run")
+            call_command("load_transactions_in_delta", "--etl-level", "initial_run",
+                         "--spark-s3-bucket", s3_unittest_data_bucket)
 
     @mark.django_db(transaction=True)
     def test_multiple_nulls_in_trans_norm_unique_award_key_from_pg(
@@ -521,7 +522,8 @@ class TestInitialRun:
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
         with raises(ValueError, match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
-            call_command("load_transactions_in_delta", "--etl-level", "initial_run")
+            call_command("load_transactions_in_delta", "--etl-level", "initial_run",
+                         "--spark-s3-bucket", s3_unittest_data_bucket)
 
     @mark.django_db(transaction=True)
     def test_one_null_in_trans_norm_unique_award_key_from_delta(
@@ -538,7 +540,8 @@ class TestInitialRun:
         )
 
         with raises(ValueError, match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
-            call_command("load_transactions_in_delta", "--etl-level", "initial_run")
+            call_command("load_transactions_in_delta", "--etl-level", "initial_run",
+                         "--spark-s3-bucket", s3_unittest_data_bucket)
 
     @mark.django_db(transaction=True)
     def test_multiple_nulls_in_trans_norm_unique_award_key_from_delta(
@@ -555,12 +558,13 @@ class TestInitialRun:
         )
 
         with raises(ValueError, match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
-            call_command("load_transactions_in_delta", "--etl-level", "initial_run")
+            call_command("load_transactions_in_delta", "--etl-level", "initial_run",
+                         "--spark-s3-bucket", s3_unittest_data_bucket)
 
     @staticmethod
     def initial_run(spark, s3_data_bucket):
         load_initial_delta_tables(spark, s3_data_bucket)
-        call_command("load_transactions_in_delta", "--etl-level", "initial_run")
+        call_command("load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_data_bucket)
 
     @staticmethod
     def happy_verify_transaction_ids(spark):
@@ -576,6 +580,7 @@ class TestInitialRun:
         assert max_transaction_id == 10
 
         # Verify last load date (NOTE: get_last_load_date actually returns a datetime)
+        # Ignoring the possibility that the test starts on one day, but reaches this code the next day.
         last_load_dt = get_last_load_date("transaction_id_lookup")
         assert date(last_load_dt.year, last_load_dt.month, last_load_dt.day) == date.today()
 
@@ -593,6 +598,7 @@ class TestInitialRun:
         assert max_award_id == 6
 
         # Verify last load date (NOTE: get_last_load_date actually returns a datetime)
+        # Ignoring the possibility that the test starts on one day, but reaches this code the next day.
         last_load_dt = get_last_load_date("award_id_lookup")
         assert date(last_load_dt.year, last_load_dt.month, last_load_dt.day) == date.today()
 
@@ -612,7 +618,8 @@ class TestInitialRun:
     ):
         # Verify that calling initial_run twice yields the same results as calling it once.
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
-        call_command("load_transactions_in_delta", "--etl-level", "initial_run")
+        call_command("load_transactions_in_delta", "--etl-level", "initial_run",
+                     "--spark-s3-bucket", s3_unittest_data_bucket)
         TestInitialRun.happy_verify(spark)
 
 

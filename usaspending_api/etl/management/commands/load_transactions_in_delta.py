@@ -31,6 +31,7 @@ class Command(BaseCommand):
     """
 
     etl_level: str
+    spark_s3_bucket: str
     logger: logging.Logger
     spark: SparkSession
 
@@ -40,12 +41,20 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The silver delta table that should be updated from the bronze delta data.",
-            choices=["award_id_lookup", "initial_run", "transaction_id_lookup"],
+            choices=["award_id_lookup", "initial_run", "transaction_id_lookup"]
+        )
+        parser.add_argument(
+            "--spark-s3-bucket",
+            type=str,
+            required=False,
+            default=CONFIG.SPARK_S3_BUCKET,
+            help="The destination bucket in S3 for creating the tables.",
         )
 
     def handle(self, *args, **options):
         with self.prepare_spark():
             self.etl_level = options["etl_level"]
+            self.spark_s3_bucket = options['spark_s3_bucket']
 
             if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
@@ -271,8 +280,7 @@ class Command(BaseCommand):
             - External Data values need to be added for all etl_levels (including transaction_ids)
             - Initial value of the sequence should be set
         """
-        spark_s3_bucket = CONFIG.SPARK_S3_BUCKET
-        delta_lake_s3_bucket = CONFIG.DELTA_LAKE_S3_PATH
+        delta_lake_s3_path = CONFIG.DELTA_LAKE_S3_PATH
         destination_database = "int"
 
         # transaction_id_lookup
@@ -295,7 +303,7 @@ class Command(BaseCommand):
                     transaction_unique_id STRING NOT NULL
                 )
                 USING DELTA
-                LOCATION 's3a://{spark_s3_bucket}/{delta_lake_s3_bucket}/{destination_database}/{destination_table}'
+                LOCATION 's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
             """
         )
 
@@ -316,9 +324,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
-            0
-        ]["max_id"]
+        max_id = self.spark.sql(
+            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
+        ).collect()[0]["max_id"]
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_id})")
 
@@ -335,7 +343,7 @@ class Command(BaseCommand):
         # (nothing needed to check before transaction_id_lookup table creation)
         self.logger.info("Checking for NULLs in unique_award_key")
         num_nulls = self.spark.sql(
-            "SELECT COUNT(*) AS count FROM raw.transaction_normalized " "WHERE unique_award_key IS NULL"
+            "SELECT COUNT(*) AS count FROM raw.transaction_normalized WHERE unique_award_key IS NULL"
         ).collect()[0]["count"]
 
         if num_nulls > 0:
@@ -362,7 +370,7 @@ class Command(BaseCommand):
                     generated_unique_award_id STRING NOT NULL
                 )
                 USING DELTA
-                LOCATION 's3a://{spark_s3_bucket}/{delta_lake_s3_bucket}/{destination_database}/{destination_table}'
+                LOCATION 's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
             """
         )
 
@@ -387,9 +395,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
-            0
-        ]["max_id"]
+        max_id = self.spark.sql(
+            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
+        ).collect()[0]["max_id"]
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_id})")
 
