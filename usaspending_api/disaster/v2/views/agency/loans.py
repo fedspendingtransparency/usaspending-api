@@ -124,6 +124,8 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
+    top_hits_fields = ["funding_toptier_agency_name", "funding_toptier_agency_code", "funding_toptier_id"]
+    sub_top_hits_fields = ["funding_subtier_agency_name", "funding_subtier_agency_code", "funding_toptier_id"]
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
@@ -141,9 +143,9 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     def _build_json_result(self, bucket: dict):
         info = json.loads(bucket.get("key"))
         return {
-            "id": info["id"],
-            "code": info["code"],
-            "description": info["name"],
+            "id": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_id"],
+            "code": info,
+            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_id"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
