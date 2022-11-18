@@ -18,7 +18,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
 )
-from usaspending_api.references.models import Agency, ToptierAgency
+from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 logger = logging.getLogger(__name__)
@@ -124,28 +124,35 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
-    top_hits_fields = ["funding_toptier_agency_name", "funding_toptier_agency_code", "funding_toptier_id"]
-    sub_top_hits_fields = ["funding_subtier_agency_name", "funding_subtier_agency_code", "funding_toptier_id"]
+    top_hits_fields = ["funding_toptier_agency_name", "funding_toptier_agency_code", "funding_agency_id"]
+    sub_top_hits_fields = ["funding_subtier_agency_name", "funding_subtier_agency_code", "funding_agency_id"]
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
         for bucket in info_buckets:
-            result = self._build_json_result(bucket)
+            result = self._build_json_result(bucket, child=False)
             child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
             children = []
             for child_bucket in child_info_buckets:
-                children.append(self._build_json_result(child_bucket))
+                children.append(self._build_json_result(child_bucket, child=True))
             result["children"] = children
             results.append(result)
 
         return results
 
-    def _build_json_result(self, bucket: dict):
+    def _build_json_result(self, bucket: dict, child: bool):
+        if child:
+            tier = "sub"
+            id = bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]
+        else:
+            tier = "top"
+            toptier_id = Agency.objects.get(id=bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]).toptier_agency_id
+            id = Agency.objects.filter(toptier_agency_id=toptier_id).order_by("-toptier_flag", "-id").first().id
         info = json.loads(bucket.get("key"))
         return {
-            "id": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_id"],
+            "id": id,
             "code": info,
-            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_id"],
+            "description": bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0]["_source"][f"funding_{tier}tier_agency_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{

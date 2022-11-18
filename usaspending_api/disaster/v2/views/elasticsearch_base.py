@@ -74,7 +74,6 @@ class ElasticsearchDisasterBase(DisasterBase):
     sub_top_hits_fields: List[str]  # list used for top_hits sub aggregation
     top_hits_fields: List[str]  # list used for the top_hits aggregation
 
-
     @cache_response()
     def post(self, request: Request) -> Response:
         # Need to update the value of "query" to have the fields to search on
@@ -191,7 +190,9 @@ class ElasticsearchDisasterBase(DisasterBase):
             "reverse_nested", reverse_nested
         ).metric(
             "total_loan_value", sum_loan_value
-        ).metric("dim_metadata", dim_metadata)
+        ).metric(
+            "dim_metadata", dim_metadata
+        )
         search.aggs.bucket("totals", A("nested", path="covid_spending_by_defc")).bucket(
             "filtered_aggs", filtered_aggs
         ).metric("total_covid_obligation", sum_covid_obligation).metric("total_covid_outlay", sum_covid_outlay).bucket(
@@ -266,7 +267,9 @@ class ElasticsearchDisasterBase(DisasterBase):
             "reverse_nested", reverse_nested
         ).metric(
             "total_loan_value", sum_loan_value
-        ).metric("dim_metadata", sub_dim_metadata)
+        ).metric(
+            "dim_metadata", sub_dim_metadata
+        )
 
     def build_totals(self, response: dict) -> dict:
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
