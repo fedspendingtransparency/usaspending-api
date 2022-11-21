@@ -143,16 +143,24 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     def _build_json_result(self, bucket: dict, child: bool):
         if child:
             tier = "sub"
-            id = bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]
+            id = bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0]["_source"][
+                "funding_agency_id"
+            ]
         else:
             tier = "top"
-            toptier_id = Agency.objects.get(id=bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]).toptier_agency_id
+            toptier_id = Agency.objects.get(
+                id=bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0]["_source"][
+                    "funding_agency_id"
+                ]
+            ).toptier_agency_id
             id = Agency.objects.filter(toptier_agency_id=toptier_id).order_by("-toptier_flag", "-id").first().id
         info = json.loads(bucket.get("key"))
         return {
             "id": id,
             "code": info,
-            "description": bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0]["_source"][f"funding_{tier}tier_agency_name"],
+            "description": bucket["nested"]["filtered_aggs"]["reverse_nested"]["dim_metadata"]["hits"]["hits"][0][
+                "_source"
+            ][f"funding_{tier}tier_agency_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
