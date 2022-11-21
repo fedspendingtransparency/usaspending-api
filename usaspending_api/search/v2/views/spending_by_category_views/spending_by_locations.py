@@ -1,5 +1,3 @@
-import json
-
 from abc import ABCMeta
 from decimal import Decimal
 from django.db.models import QuerySet, F
@@ -14,6 +12,8 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_cate
     Category,
     AbstractSpendingByCategoryViewSet,
 )
+from usaspending_api.references.models import RefCountryCode, PopCounty, PopCongressionalDistrict
+from usaspending_api.recipient.models import StateData
 
 
 class LocationType(Enum):
@@ -31,33 +31,57 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
     location_type: LocationType
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
-        results = []
+        # Get the codes
         location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        for bucket in location_info_buckets:
-            location_info = json.loads(bucket.get("key"))
+        code_list = [bucket.get("key") for bucket in location_info_buckets if bucket.get("key")]
 
+        # Get the current location info
+        current_location_info = {}
+        if self.location_type == LocationType.COUNTRY:
+            location_info_query = (
+                RefCountryCode.objects.filter(country_code__in=code_list)
+                .annotate(name=F("country_name"), code=F("country_code"))
+                .values("name", "code")
+            )
+        elif self.location_type == LocationType.STATE_TERRITORY:
+            location_info_query = StateData.objects.filter(code__in=code_list).values("name", "code")
+        elif self.location_type == LocationType.COUNTY:
+            location_info_query = (
+                PopCounty.objects.filter(county_number__in=code_list)
+                .annotate(name=F("county_name"), code=F("county_number"))
+                .values("name", "code")
+            )
+        elif self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
+            location_info_query = PopCongressionalDistrict.objects.filter(congressional_district__in=code_list).values(
+                "state_code", "congressional_district"
+            )
+            # can't do the distict transformation in the queryset, see below
+        for location_info in location_info_query.all():
             if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
-                if location_info.get("congressional_code") == "90":
-                    congressional_code = "MULTIPLE DISTRICTS"
+                if location_info.get("congressional_district") == "90":
+                    code = "MULTIPLE DISTRICTS"
                 else:
-                    congressional_code = location_info.get("congressional_code") or ""
-                name = f"{location_info.get('state_code') or ''}-{congressional_code}"
-            else:
-                name = location_info.get(f"{self.location_type.value}_name") or ""
-
+                    code = location_info.get("congressional_district") or ""
+                location_info["code"] = code
+                location_info["name"] = f"{location_info.get('state_code') or ''}-{code}"
             if self.location_type == LocationType.STATE_TERRITORY:
-                name = name.title()
+                location_info["name"] = location_info["name"].title()
             else:
-                name = name.upper()
+                location_info["name"] = location_info["name"].upper()
+            current_location_info[location_info.code] = location_info
+
+        # Build out the results
+        results = []
+        for bucket in location_info_buckets:
+            location_info = current_location_info.get(bucket.get("key")) or {}
             results.append(
                 {
-                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "code": location_info.get(f"{self.location_type.value}_code"),
                     "id": None,
-                    "name": name,
+                    "code": location_info.get("code"),
+                    "name": location_info.get("name"),
+                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                 }
             )
-
         return results
 
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:

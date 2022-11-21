@@ -1,12 +1,10 @@
-import json
-
 from abc import ABCMeta
 from decimal import Decimal
 from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
-from usaspending_api.references.models import Cfda
+from usaspending_api.references.models import Cfda, PSC, NAICS
 from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_cfda_id_title_by_number,
     fetch_psc_description_by_code,
@@ -32,37 +30,45 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
     industry_code_type: IndustryCodeType
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
+
+        # Get the codes
+        industry_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+        code_list = [bucket.get("key") for bucket in industry_info_buckets if bucket.get("key")]
+
+        # Get the current industry info
+        current_industry_info = {}
+        if self.industry_code_type == IndustryCodeType.CFDA:
+            industry_info_query = Cfda.objects.filter(program_number__in=code_list).annotate(
+                id=F("id"), code=F("program_number"), name=F("program_title")
+            )
+        elif self.industry_code_type == IndustryCodeType.PSC:
+            industry_info_query = PSC.objects.filter(code__in=code_list).annotate(
+                # doesn't have ID, set to None
+                code=F("code"),
+                name=F("description"),
+            )
+        else:
+            industry_info_query = NAICS.objects.filter(code__in=code_list).annotate(
+                # doesn't have ID, set to None
+                code=F("code"),
+                name=F("description"),
+            )
+        industry_info_query = industry_info_query.values("code", "name")
+        for industry_info in industry_info_query.all():
+            current_industry_info[industry_info.code] = industry_info
+
+        # Build out the results
         results = []
-        cfda_code_list = []  # Separate lookup is done for CFDA to join to references_cfda during ES indexing
-        industry_code_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-
-        for bucket in industry_code_info_buckets:
-            if self.industry_code_type == IndustryCodeType.CFDA:
-                industry_code_info = {"code": bucket.get("key")}
-                cfda_code_list.append(industry_code_info["code"])
-            else:
-                industry_code_info = json.loads(bucket.get("key"))
-
+        for bucket in industry_info_buckets:
+            industry_info = current_industry_info.get(bucket.get("key")) or {}
             results.append(
                 {
+                    "id": industry_info.get("id"),
+                    "code": industry_info.get("code"),
+                    "name": industry_info.get("description"),
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "code": industry_code_info.get("code"),
-                    "id": industry_code_info.get("id"),
-                    "name": industry_code_info.get("description"),
                 }
             )
-
-        if cfda_code_list:
-            cfda_matches = {
-                cfda["program_number"]: cfda
-                for cfda in Cfda.objects.filter(program_number__in=cfda_code_list).values(
-                    "id", "program_number", "program_title"
-                )
-            }
-            for val in results:
-                val["id"] = cfda_matches.get(val["code"], {}).get("id")
-                val["name"] = cfda_matches.get(val["code"], {}).get("program_title")
-
         return results
 
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:

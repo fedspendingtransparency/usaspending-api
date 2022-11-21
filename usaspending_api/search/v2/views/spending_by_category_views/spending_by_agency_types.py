@@ -1,5 +1,3 @@
-import json
-
 from abc import ABCMeta
 from decimal import Decimal
 from django.db.models import QuerySet, F
@@ -8,7 +6,7 @@ from typing import List
 
 from django.utils.text import slugify
 
-from usaspending_api.references.models import ToptierAgencyPublishedDABSView
+from usaspending_api.references.models import ToptierAgencyPublishedDABSView, ToptierAgency, SubtierAgency
 from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
@@ -31,15 +29,33 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
     agency_type: AgencyType
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
-        results = []
+        # Get the codes
         agency_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+        code_list = [bucket.get("key") for bucket in agency_info_buckets if bucket.get("key")]
+
+        # Get the current agency info
+        current_agency_info = {}
+        if self.agency_type in (AgencyType.AWARDING_TOPTIER, AgencyType.FUNDING_TOPTIER):
+            agency_info_query = ToptierAgency.objects.filter(toptier_code__in=code_list).annotate(
+                id=F("toptier_agency_id"), name=F("name"), code=F("abbreviation")
+            )
+        else:
+            agency_info_query = SubtierAgency.objects.filter(subtier_code__in=code_list).annotate(
+                id=F("subtier_agency_id"), name=F("name"), code=F("abbreviation")
+            )
+        agency_info_query = agency_info_query.values("id", "code", "name")
+        for agency_info in agency_info_query.all():
+            current_agency_info[agency_info.code] = agency_info
+
+        # Build out the results
+        results = []
         for bucket in agency_info_buckets:
-            agency_info = json.loads(bucket.get("key"))
+            agency_info = current_agency_info.get(bucket.get("key")) or {}
             result = {
-                "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                "name": agency_info.get("name"),
-                "code": agency_info.get("abbreviation"),
                 "id": agency_info.get("id"),
+                "code": agency_info.get("abbreviation"),
+                "name": agency_info.get("name"),
+                "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
             }
             # Only returns a non-null value if the agency has a profile page -
             # meaning it is an agency that has at least one submission.
