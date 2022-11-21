@@ -290,6 +290,17 @@ def populate_initial_postgres_data():
     baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_tidlu)
     baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_aidlu)
 
+    # Also need to populate values for transaction_[fabs|fpds] in broker.ExternalData[Type|LoadDate] tables
+    # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
+    edt_tfpds = baker.make(
+        "broker.ExternalDataType", name="transaction_fpds", external_data_type_id=201, update_date=None
+    )
+    edt_tfabs = baker.make(
+        "broker.ExternalDataType", name="transaction_fabs", external_data_type_id=202, update_date=None
+    )
+    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_tfpds)
+    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_tfabs)
+
 
 def load_initial_delta_tables(spark, s3_data_bucket):
     # Load tables and ensure they have loaded correctly
@@ -303,7 +314,7 @@ def load_initial_delta_tables(spark, s3_data_bucket):
 
 
 class TestInitialRun:
-    expected_transaction_id_lookup = [
+    expected_initial_transaction_id_lookup = [
         {
             "id": 1,
             "detached_award_procurement_id": None,
@@ -366,7 +377,7 @@ class TestInitialRun:
         },
     ]
 
-    expected_award_id_lookup = [
+    expected_initial_award_id_lookup = [
         {
             "id": 1,
             "detached_award_procurement_id": None,
@@ -556,7 +567,7 @@ class TestInitialRun:
         # Verify transaction_id_lookup table
         query = "SELECT * FROM int.transaction_id_lookup ORDER BY id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
-        assert equal_datasets(TestInitialRun.expected_transaction_id_lookup, delta_data, "")
+        assert equal_datasets(TestInitialRun.expected_initial_transaction_id_lookup, delta_data, "")
 
         # Verify max transaction id
         with connection.cursor() as cursor:
@@ -574,7 +585,7 @@ class TestInitialRun:
         # Verify award_id_lookup table
         query = "SELECT * FROM int.award_id_lookup ORDER BY id, transaction_unique_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
-        assert equal_datasets(TestInitialRun.expected_award_id_lookup, delta_data, "")
+        assert equal_datasets(TestInitialRun.expected_initial_award_id_lookup, delta_data, "")
 
         # Verify max award id
         with connection.cursor() as cursor:
@@ -680,7 +691,7 @@ class TestTransactionIdLookup:
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
-        expected_transaction_id_lookup = deepcopy(TestInitialRun.expected_transaction_id_lookup)
+        expected_transaction_id_lookup = deepcopy(TestInitialRun.expected_initial_transaction_id_lookup)
         expected_transaction_id_lookup.pop()
         expected_transaction_id_lookup.pop()
         expected_transaction_id_lookup.pop(1)
@@ -780,7 +791,7 @@ class TestAwardIdLookup:
 
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
-        expected_award_id_lookup = deepcopy(TestInitialRun.expected_award_id_lookup)
+        expected_award_id_lookup = deepcopy(TestInitialRun.expected_initial_award_id_lookup)
         expected_award_id_lookup.pop()
         expected_award_id_lookup.pop()
         expected_award_id_lookup.pop(3)
@@ -809,3 +820,139 @@ class TestAwardIdLookup:
         query = "SELECT * FROM int.award_id_lookup ORDER BY id, transaction_unique_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets(expected_award_id_lookup, delta_data, "")
+
+
+class TestTransactionFabs:
+    
+    expected_initial_transaction_fabs = [
+        {
+            "afa_generated_unique": "award_assist_0001_trans_0001",
+            "is_active": True,
+            "published_fabs_id": 1,
+            "transaction_id": 1,
+            "unique_award_key": "award_assist_0001",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        },
+        {
+            "afa_generated_unique": "award_assist_0002_trans_0001",
+            "is_active": True,
+            "published_fabs_id": 2,
+            "transaction_id": 3,
+            "unique_award_key": "award_assist_0002",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        },
+        {
+            "afa_generated_unique": "award_assist_0002_trans_0002",
+            "is_active": True,
+            "published_fabs_id": 3,
+            "transaction_id": 5,
+            "unique_award_key": "award_assist_0002",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        },
+        {
+            "afa_generated_unique": "award_assist_0003_trans_0001",
+            "is_active": True,
+            "published_fabs_id": 4,
+            "transaction_id": 7,
+            "unique_award_key": "award_assist_0003",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        },
+        {
+            "afa_generated_unique": "award_assist_0003_trans_0002",
+            "is_active": True,
+            "published_fabs_id": 5,
+            "transaction_id": 8,
+            "unique_award_key": "award_assist_0003",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        }
+    ]
+
+    transaction_fabs_compare_fields = expected_initial_transaction_fabs[0].keys()
+
+    @mark.django_db(transaction=True)
+    def test_no_initial_run(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        load_initial_delta_tables(spark, s3_unittest_data_bucket)
+
+        with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_fabs"):
+            call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
+
+    @mark.django_db(transaction=True)
+    def test_initial_load(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
+
+        # Verify key fields in transaction_fabs table
+        query = (f"SELECT {', '.join(TestTransactionFabs.transaction_fabs_compare_fields)} FROM int.transaction_fabs "
+                 "ORDER BY published_fabs_id")
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+        assert equal_datasets(TestTransactionFabs.expected_initial_transaction_fabs, delta_data, "")
+
+class TestTransactionFpds:
+
+    expected_initial_transaction_fpds = [
+        {
+            "detached_award_proc_unique": "award_procure_0001_trans_0001",
+            "detached_award_procurement_id": 1,
+            "transaction_id": 2,
+            "unique_award_key": "award_procure_0001",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        },
+        {
+            "detached_award_proc_unique": "award_procure_0002_trans_0001",
+            "detached_award_procurement_id": 2,
+            "transaction_id": 4,
+            "unique_award_key": "award_procure_0002",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        },
+        {
+            "detached_award_proc_unique": "award_procure_0002_trans_0002",
+            "detached_award_procurement_id": 3,
+            "transaction_id": 6,
+            "unique_award_key": "award_procure_0002",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        },
+        {
+            "detached_award_proc_unique": "award_procure_0003_trans_0001",
+            "detached_award_procurement_id": 4,
+            "transaction_id": 9,
+            "unique_award_key": "award_procure_0003",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        },
+        {
+            "detached_award_proc_unique": "award_procure_0003_trans_0002",
+            "detached_award_procurement_id": 5,
+            "transaction_id": 10,
+            "unique_award_key": "award_procure_0003",
+            "updated_at": datetime(year=2022, month=10, day=31)
+        }
+    ]
+
+    transaction_fpds_compare_fields = expected_initial_transaction_fpds[0].keys()
+
+    @mark.django_db(transaction=True)
+    def test_no_initial_run(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        load_initial_delta_tables(spark, s3_unittest_data_bucket)
+
+        with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_fpds"):
+            call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+    @mark.django_db(transaction=True)
+    def test_initial_load(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fabs table
+        query = (f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+                 "ORDER BY detached_award_procurement_id")
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+        assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")
