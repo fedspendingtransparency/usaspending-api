@@ -584,6 +584,28 @@ def equal_datasets(
     return datasets_match
 
 
+def load_delta_table_from_postgres(
+    delta_table_name: str,
+    s3_bucket: str,
+    alt_db: str = None,
+    alt_name: str = None,
+    load_command: str = "load_table_to_delta",
+):
+    """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the
+    given table
+    """
+
+    cmd_args = [f"--destination-table={delta_table_name}"]
+    if alt_db:
+        cmd_args += [f"--alt-db={alt_db}"]
+    if alt_name:
+        cmd_args += [f"--alt-name={alt_name}"]
+
+    # make the table and load it
+    call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
+    call_command(load_command, *cmd_args)
+
+
 def verify_delta_table_loaded_to_delta(
     spark: SparkSession,
     delta_table_name: str,
@@ -598,17 +620,12 @@ def verify_delta_table_loaded_to_delta(
     create and load the given table and assert it was created and loaded as expected
     """
 
-    cmd_args = [f"--destination-table={delta_table_name}"]
-    if alt_db:
-        cmd_args += [f"--alt-db={alt_db}"]
-    expected_table_name = delta_table_name.split(".")[-1]
-    if alt_name:
-        cmd_args += [f"--alt-name={alt_name}"]
-        expected_table_name = alt_name
+    load_delta_table_from_postgres(delta_table_name, s3_bucket, alt_db, alt_name, load_command)
 
-    # make the table and load it
-    call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
-    call_command(load_command, *cmd_args)
+    if alt_name:
+        expected_table_name = alt_name
+    else:
+        expected_table_name = delta_table_name.split(".")[-1]
 
     partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
     if dummy_data is None:
