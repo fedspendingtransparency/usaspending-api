@@ -200,12 +200,10 @@ class Command(BaseCommand):
                     transaction_id_lookup.id AS transaction_id,
                     {", ".join(select_cols)}
                 FROM {bronze_table_name}
-                INNER JOIN transaction_id_lookup ON (
+                INNER JOIN int.transaction_id_lookup ON (
                     {bronze_table_name}.{unique_id} = transaction_id_lookup.{unique_id}
                 )
-                WHERE
-                    {bronze_table_name}.updated_at >= '{self.last_etl_date}'
-                    {"AND is_active IS TRUE" if transaction_type == "fabs" else ""}
+                WHERE {bronze_table_name}.updated_at >= '{self.last_etl_date}'
         """
 
         return sql
@@ -256,7 +254,7 @@ class Command(BaseCommand):
             pfabs_filtered AS (
                 SELECT published_fabs_id, afa_generated_unique
                 FROM raw.published_fabs
-                WHERE is_active IS TRUE AND updated_at >= '{self.last_etl_date}'
+                WHERE updated_at >= '{self.last_etl_date}'
             )
             INSERT INTO int.transaction_id_lookup
             SELECT
@@ -317,7 +315,7 @@ class Command(BaseCommand):
             pfabs_filtered AS (
                 SELECT published_fabs_id, afa_generated_unique, unique_award_key
                 FROM raw.published_fabs
-                WHERE is_active IS TRUE AND updated_at >= '{self.last_etl_date}'
+                WHERE updated_at >= '{self.last_etl_date}'
             )
             INSERT INTO int.award_id_lookup
             SELECT
