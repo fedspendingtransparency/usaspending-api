@@ -823,7 +823,7 @@ class TestAwardIdLookup:
 
 
 class TestTransactionFabs:
-    
+
     expected_initial_transaction_fabs = [
         {
             "afa_generated_unique": "award_assist_0001_trans_0001",
@@ -831,7 +831,7 @@ class TestTransactionFabs:
             "published_fabs_id": 1,
             "transaction_id": 1,
             "unique_award_key": "award_assist_0001",
-            "updated_at": datetime(year=2022, month=10, day=31)
+            "updated_at": datetime(year=2022, month=10, day=31),
         },
         {
             "afa_generated_unique": "award_assist_0002_trans_0001",
@@ -839,7 +839,7 @@ class TestTransactionFabs:
             "published_fabs_id": 2,
             "transaction_id": 3,
             "unique_award_key": "award_assist_0002",
-            "updated_at": datetime(year=2022, month=10, day=31)
+            "updated_at": datetime(year=2022, month=10, day=31),
         },
         {
             "afa_generated_unique": "award_assist_0002_trans_0002",
@@ -847,7 +847,7 @@ class TestTransactionFabs:
             "published_fabs_id": 3,
             "transaction_id": 5,
             "unique_award_key": "award_assist_0002",
-            "updated_at": datetime(year=2022, month=10, day=31)
+            "updated_at": datetime(year=2022, month=10, day=31),
         },
         {
             "afa_generated_unique": "award_assist_0003_trans_0001",
@@ -855,7 +855,7 @@ class TestTransactionFabs:
             "published_fabs_id": 4,
             "transaction_id": 7,
             "unique_award_key": "award_assist_0003",
-            "updated_at": datetime(year=2022, month=10, day=31)
+            "updated_at": datetime(year=2022, month=10, day=31),
         },
         {
             "afa_generated_unique": "award_assist_0003_trans_0002",
@@ -863,8 +863,8 @@ class TestTransactionFabs:
             "published_fabs_id": 5,
             "transaction_id": 8,
             "unique_award_key": "award_assist_0003",
-            "updated_at": datetime(year=2022, month=10, day=31)
-        }
+            "updated_at": datetime(year=2022, month=10, day=31),
+        },
     ]
 
     transaction_fabs_compare_fields = expected_initial_transaction_fabs[0].keys()
@@ -887,10 +887,13 @@ class TestTransactionFabs:
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
 
         # Verify key fields in transaction_fabs table
-        query = (f"SELECT {', '.join(TestTransactionFabs.transaction_fabs_compare_fields)} FROM int.transaction_fabs "
-                 "ORDER BY published_fabs_id")
+        query = (
+            f"SELECT {', '.join(TestTransactionFabs.transaction_fabs_compare_fields)} FROM int.transaction_fabs "
+            "ORDER BY published_fabs_id"
+        )
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets(TestTransactionFabs.expected_initial_transaction_fabs, delta_data, "")
+
 
 class TestTransactionFpds:
 
@@ -900,36 +903,36 @@ class TestTransactionFpds:
             "detached_award_procurement_id": 1,
             "transaction_id": 2,
             "unique_award_key": "award_procure_0001",
-            "updated_at": datetime(year=2022, month=10, day=31)
+            "updated_at": datetime(year=2022, month=10, day=31),
         },
         {
             "detached_award_proc_unique": "award_procure_0002_trans_0001",
             "detached_award_procurement_id": 2,
             "transaction_id": 4,
             "unique_award_key": "award_procure_0002",
-            "updated_at": datetime(year=2022, month=10, day=31)
+            "updated_at": datetime(year=2022, month=10, day=31),
         },
         {
             "detached_award_proc_unique": "award_procure_0002_trans_0002",
             "detached_award_procurement_id": 3,
             "transaction_id": 6,
             "unique_award_key": "award_procure_0002",
-            "updated_at": datetime(year=2022, month=10, day=31)
+            "updated_at": datetime(year=2022, month=10, day=31),
         },
         {
             "detached_award_proc_unique": "award_procure_0003_trans_0001",
             "detached_award_procurement_id": 4,
             "transaction_id": 9,
             "unique_award_key": "award_procure_0003",
-            "updated_at": datetime(year=2022, month=10, day=31)
+            "updated_at": datetime(year=2022, month=10, day=31),
         },
         {
             "detached_award_proc_unique": "award_procure_0003_trans_0002",
             "detached_award_procurement_id": 5,
             "transaction_id": 10,
             "unique_award_key": "award_procure_0003",
-            "updated_at": datetime(year=2022, month=10, day=31)
-        }
+            "updated_at": datetime(year=2022, month=10, day=31),
+        },
     ]
 
     transaction_fpds_compare_fields = expected_initial_transaction_fpds[0].keys()
@@ -952,7 +955,9 @@ class TestTransactionFpds:
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
 
         # Verify key fields in transaction_fabs table
-        query = (f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
-                 "ORDER BY detached_award_procurement_id")
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")

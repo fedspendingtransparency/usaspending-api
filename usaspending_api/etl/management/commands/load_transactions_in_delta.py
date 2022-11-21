@@ -45,13 +45,7 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The silver delta table that should be updated from the bronze delta data.",
-            choices=[
-                "award_id_lookup",
-                "initial_run",
-                "transaction_fabs",
-                "transaction_fpds",
-                "transaction_id_lookup"
-            ]
+            choices=["award_id_lookup", "initial_run", "transaction_fabs", "transaction_fpds", "transaction_id_lookup"],
         )
         parser.add_argument(
             "--spark-s3-bucket",
@@ -101,7 +95,7 @@ class Command(BaseCommand):
     def prepare_spark(self):
         extra_conf = {
             # Config for additional packages needed
-            "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1",
+            # "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1",
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
             "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
@@ -418,9 +412,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
-        ).collect()[0]["max_id"]
+        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
+            0
+        ]["max_id"]
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_id})")
 
@@ -489,9 +483,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
-        ).collect()[0]["max_id"]
+        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
+            0
+        ]["max_id"]
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_id})")
 
@@ -502,6 +496,11 @@ class Command(BaseCommand):
         destination_tables = ("transaction_fabs", "transaction_fpds")
         for destination_table in destination_tables:
             call_command(
-                "create_delta_table", "--destination-table", destination_table, "--spark-s3-bucket",
-                self.spark_s3_bucket, "--alt-db", destination_database
+                "create_delta_table",
+                "--destination-table",
+                destination_table,
+                "--spark-s3-bucket",
+                self.spark_s3_bucket,
+                "--alt-db",
+                destination_database,
             )
