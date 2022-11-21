@@ -135,7 +135,7 @@ class SpendingByGeographyViewSet(DisasterBase):
         search = AwardSearch().filter(filter_query)
 
         # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
-        bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.agg_key}")  # TODO:PUT BACK THE HASH
+        bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.agg_key}.hash")
 
         if bucket_count == 0:
             return None
