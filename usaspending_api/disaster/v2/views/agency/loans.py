@@ -18,7 +18,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
 )
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import Agency, ToptierAgency
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 logger = logging.getLogger(__name__)

@@ -1,5 +1,3 @@
-import json
-
 from decimal import Decimal
 from enum import Enum
 from typing import Optional, List, Dict
@@ -101,7 +99,7 @@ class SpendingByGeographyViewSet(DisasterBase):
         self.spending_type = json_request.get("spending_type")
         self.loc_lookup = f"{scope_field_name}_{loc_field_name}"
         if self.geo_layer != GeoLayer.STATE:
-            self.sub_agg_key = f"{scope_field_name}_{location_dict[json_request['geo_layer']]}"
+            self.sub_agg_key = f"{scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
 
         # Set which field will be the aggregation amount
         if self.spending_type == "obligation":
