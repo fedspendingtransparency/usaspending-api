@@ -1602,8 +1602,8 @@ query_paths = {
                 ),
                 (
                     "adjustments_to_unobligated_balance_brought_forward_fyb",
-                    "adjustments_to_unobligated_balance_brought_forward_cpe",
-                ),  # debug
+                    "adjustments_to_unobligated_balance_brought_forward_fyb",
+                ),
                 (
                     "adjustments_to_unobligated_balance_brought_forward_cpe",
                     "adjustments_to_unobligated_balance_brought_forward_cpe",
@@ -1626,7 +1626,7 @@ query_paths = {
                 ),
                 ("unobligated_balance", "unobligated_balance_cpe"),
                 ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
-                # ("status_of_budgetary_resources_total", "")  # debug
+                ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
             ]
         )
     },
