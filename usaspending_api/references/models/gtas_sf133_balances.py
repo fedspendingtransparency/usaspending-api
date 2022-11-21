@@ -18,6 +18,7 @@ class GTASSF133Balances(models.Model):
     gross_outlay_amount_by_tas_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     unobligated_balance_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     total_budgetary_resources_cpe = models.DecimalField(max_digits=23, decimal_places=2)
+    status_of_budgetary_resources_total = models.DecimalField(max_digits=23, decimal_places=2)
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
         models.DO_NOTHING,
