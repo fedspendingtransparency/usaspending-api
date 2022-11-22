@@ -257,28 +257,27 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
         return results
 
     def _build_json_result(self, bucket: dict, child: bool):
+        agency_id = None
         if child:
             tier = "sub"
-            id = bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]
+            agency_id = bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]
         else:
             tier = "top"
-            toptier_id = Agency.objects.get(
-                id=bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]
-            ).toptier_agency_id
-            id = Agency.objects.filter(toptier_agency_id=toptier_id).order_by("-toptier_flag", "-id").first().id
-        info = bucket.get("key")
+            tid = Agency.objects.get(id=int(bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]))
+            if tid:
+                toptier_id = tid.toptier_agency_id
+                aid = Agency.objects.filter(toptier_agency_id=toptier_id).order_by("toptier_flag", "id").first()
+                if aid:
+                    agency_id = aid.id
         return {
-            "id": id,
-            "code": info,
+            "id": agency_id,
+            "code": bucket.get("key"),
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"][f"funding_{tier}tier_agency_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: get_summed_value_as_float(
-                    bucket.get("nested", {}).get("filtered_aggs", {})
-                    if column != "face_value_of_loan"
-                    else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested"),
-                    self.sum_column_mapping[column],
+                    bucket.get("nested", {}).get("filtered_aggs", {}), self.sum_column_mapping[column]
                 )
                 for column in self.sum_column_mapping
             },

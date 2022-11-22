@@ -173,7 +173,6 @@ class ElasticsearchDisasterBase(DisasterBase):
         sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
         sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
         if self.top_hits_fields:
-            print("\nHello\n")
             dim_metadata = A(
                 "top_hits",
                 size=1,
