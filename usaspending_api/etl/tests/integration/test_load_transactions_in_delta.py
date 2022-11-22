@@ -897,12 +897,12 @@ class TestTransactionFabs:
 
         # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
         # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
-        insert_time = datetime.now(timezone.utc)
+        insert_datetime = datetime.now(timezone.utc)
         baker.make(
             "transactions.SourceAssistanceTransaction",
             published_fabs_id=6,
             afa_generated_unique="award_assist_0004_trans_0001",
-            updated_at=insert_time,
+            updated_at=insert_datetime,
             is_active=True,
             unique_award_key="award_assist_0004",
         )
@@ -985,6 +985,59 @@ class TestTransactionFabs:
         # published fabs table because nothing would have changed in the transaction_id_lookup table.
         assert equal_datasets(TestTransactionFabs.expected_initial_transaction_fabs, delta_data, "")
 
+    @mark.django_db(transaction=True)
+    def test_inserts_updates_deletes_no_transaction_id_lookup(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
+        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
+        # load_transactions_in_delta with etl-level of transaction_fabs to populate int.transaction_fabs correctly with
+        # the initial data.
+        TestTransactionFabs.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
+
+        # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
+        # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
+        insert_update_datetime = datetime.now(timezone.utc)
+        baker.make(
+            "transactions.SourceAssistanceTransaction",
+            published_fabs_id=6,
+            afa_generated_unique="award_assist_0004_trans_0001",
+            updated_at=insert_update_datetime,
+            is_active=True,
+            unique_award_key="award_assist_0004",
+        )
+        load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+
+        spark.sql(f"""
+            UPDATE raw.published_fabs
+            SET updated_at = '{insert_update_datetime}'
+            WHERE published_fabs_id = 4 OR published_fabs_id = 5
+        """)
+
+        spark.sql(f"""
+            DELETE FROM raw.published_fabs
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
+        """)
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
+
+        # Verify key fields in transaction_fabs table
+        query = (
+            f"SELECT {', '.join(TestTransactionFabs.transaction_fabs_compare_fields)} FROM int.transaction_fabs "
+            "ORDER BY published_fabs_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        # With no call to load_transactions_in_delta with etl-level of transaction_id_lookup, the above call to
+        # load_transactions_in_delta with etl-level of transaction_fabs *should* pick up the *updates* in the
+        # published fabs table because those transactions already exist in the transaction_id_lookup table.
+        # However, this call should *NOT* pick up the inserts or deletes, since those transactions will not
+        # have changed in the transaction_id_lookup table.
+        expected_transaction_fabs = deepcopy(TestTransactionFabs.expected_initial_transaction_fabs)
+        expected_transaction_fabs[-2]["updated_at"] = insert_update_datetime
+        expected_transaction_fabs[-1]["updated_at"] = insert_update_datetime
+        assert equal_datasets(expected_transaction_fabs, delta_data, "")
+
     @staticmethod
     def initial_load_happy(spark, s3_unittest_data_bucket):
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
@@ -1013,12 +1066,12 @@ class TestTransactionFabs:
 
         # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
         # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
-        insert_time = datetime.now(timezone.utc)
+        insert_datetime = datetime.now(timezone.utc)
         baker.make(
             "transactions.SourceAssistanceTransaction",
             published_fabs_id=6,
             afa_generated_unique="award_assist_0004_trans_0001",
-            updated_at=insert_time,
+            updated_at=insert_datetime,
             is_active=True,
             unique_award_key="award_assist_0004",
         )
@@ -1044,11 +1097,125 @@ class TestTransactionFabs:
                 "published_fabs_id": 6,
                 "transaction_id": 11,
                 "unique_award_key": "award_assist_0004",
-                "updated_at": insert_time,
+                "updated_at": insert_datetime,
             }
         )
         assert equal_datasets(expected_transaction_fabs, delta_data, "")
 
+    @mark.django_db(transaction=True)
+    def test_updates_only_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestTransactionFabs.initial_load_happy(spark, s3_unittest_data_bucket)
+
+        update_datetime = datetime.now(timezone.utc)
+        spark.sql(f"""
+            UPDATE raw.published_fabs
+            SET updated_at = '{update_datetime}'
+            WHERE published_fabs_id = 4 OR published_fabs_id = 5
+        """)
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
+
+        # Verify key fields in transaction_fabs table
+        query = (
+            f"SELECT {', '.join(TestTransactionFabs.transaction_fabs_compare_fields)} FROM int.transaction_fabs "
+            "ORDER BY published_fabs_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        expected_transaction_fabs = deepcopy(TestTransactionFabs.expected_initial_transaction_fabs)
+        expected_transaction_fabs[-2]["updated_at"] = update_datetime
+        expected_transaction_fabs[-1]["updated_at"] = update_datetime
+        assert equal_datasets(expected_transaction_fabs, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_deletes_only_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestTransactionFabs.initial_load_happy(spark, s3_unittest_data_bucket)
+
+        spark.sql(f"""
+            DELETE FROM raw.published_fabs
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
+        """)
+
+        # Need to load changes into the transaction_id_lookup table.
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
+
+        # Verify key fields in transaction_fabs table
+        query = (
+            f"SELECT {', '.join(TestTransactionFabs.transaction_fabs_compare_fields)} FROM int.transaction_fabs "
+            "ORDER BY published_fabs_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        expected_transaction_fabs = deepcopy(TestTransactionFabs.expected_initial_transaction_fabs)
+        expected_transaction_fabs.pop(1)
+        expected_transaction_fabs.pop(1)
+        assert equal_datasets(expected_transaction_fabs, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_inserts_updates_deletes_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestTransactionFabs.initial_load_happy(spark, s3_unittest_data_bucket)
+
+        # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
+        # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
+        insert_update_datetime = datetime.now(timezone.utc)
+        baker.make(
+            "transactions.SourceAssistanceTransaction",
+            published_fabs_id=6,
+            afa_generated_unique="award_assist_0004_trans_0001",
+            updated_at=insert_update_datetime,
+            is_active=True,
+            unique_award_key="award_assist_0004",
+        )
+        load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+
+        spark.sql(f"""
+            UPDATE raw.published_fabs
+            SET updated_at = '{insert_update_datetime}'
+            WHERE published_fabs_id = 4 OR published_fabs_id = 5
+        """)
+
+        spark.sql(f"""
+            DELETE FROM raw.published_fabs
+            WHERE published_fabs_id = 2 OR published_fabs_id = 3
+        """)
+
+        # Need to load changes into the transaction_id_lookup table.
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
+
+        # Verify key fields in transaction_fabs table
+        query = (
+            f"SELECT {', '.join(TestTransactionFabs.transaction_fabs_compare_fields)} FROM int.transaction_fabs "
+            "ORDER BY published_fabs_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        expected_transaction_fabs = deepcopy(TestTransactionFabs.expected_initial_transaction_fabs)
+        expected_transaction_fabs.pop(1)
+        expected_transaction_fabs.pop(1)
+        expected_transaction_fabs[-2]["updated_at"] = insert_update_datetime
+        expected_transaction_fabs[-1]["updated_at"] = insert_update_datetime
+        expected_transaction_fabs.append(
+            {
+                "afa_generated_unique": "award_assist_0004_trans_0001",
+                "is_active": True,
+                "published_fabs_id": 6,
+                "transaction_id": 11,
+                "unique_award_key": "award_assist_0004",
+                "updated_at": insert_update_datetime,
+            }
+        )
+        assert equal_datasets(expected_transaction_fabs, delta_data, "")
 
 class TestTransactionFpds:
 
@@ -1101,13 +1268,191 @@ class TestTransactionFpds:
         with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_fpds"):
             call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
 
+    @staticmethod
+    def initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket):
+        TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
     @mark.django_db(transaction=True)
-    def test_initial_load(
+    def test_initial_load_no_transaction_id_lookup(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
-        TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
+        TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
+
+        # Verify key fields in transaction_fabs table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
+        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
+        # load_transactions_in_delta with etl-level of transaction_fpds to populate int.transaction_fpds correctly.
+        assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_inserts_only_no_transaction_id_lookup(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
+        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
+        # load_transactions_in_delta with etl-level of transaction_fpds to populate int.transaction_fpds correctly with
+        # the initial data.
+        TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
+
+        # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
+        # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
+        insert_datetime = datetime.now(timezone.utc)
+        baker.make(
+            "transactions.SourceProcurementTransaction",
+            detached_award_procurement_id=6,
+            detached_award_proc_unique="award_procure_0004_trans_0001",
+            updated_at=insert_datetime,
+            unique_award_key="award_procure_0004",
+        )
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fpds table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        # With no call to load_transactions_in_delta with etl-level of transaction_id_lookup, the above call to
+        # load_transactions_in_delta with etl-level of transaction_fpds should *NOT* pick up the changes in the
+        # detached_award_procurement table because nothing would have changed in the transaction_id_lookup table.
+        assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_updates_only_no_transaction_id_lookup(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
+        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
+        # load_transactions_in_delta with etl-level of transaction_fpds to populate int.transaction_fpds correctly with
+        # the initial data.
+        TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
+
+        update_datetime = datetime.now(timezone.utc)
+        spark.sql(f"""
+            UPDATE raw.detached_award_procurement
+            SET updated_at = '{update_datetime}'
+            WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
+        """)
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fpds table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        # Despite not calling load_transactions_in_delta with etl-level of transaction_id_lookup, the above call to
+        # load_transactions_in_delta with etl-level of transaction_fpds *should* pick up the changes in the
+        # published fpds table because the transactions already exist in the transaction_id_lookup table.
+        expected_transaction_fpds = deepcopy(TestTransactionFpds.expected_initial_transaction_fpds)
+        expected_transaction_fpds[-2]["updated_at"] = update_datetime
+        expected_transaction_fpds[-1]["updated_at"] = update_datetime
+        assert equal_datasets(expected_transaction_fpds, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_deletes_only_no_transaction_id_lookup(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
+        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
+        # load_transactions_in_delta with etl-level of transaction_fpds to populate int.transaction_fpds correctly with
+        # the initial data.
+        TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
+
+        spark.sql(f"""
+            DELETE FROM raw.detached_award_procurement
+            WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
+        """)
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fpds table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        # With no call to load_transactions_in_delta with etl-level of transaction_id_lookup, the above call to
+        # load_transactions_in_delta with etl-level of transaction_fpds should *NOT* pick up the changes in the
+        # published fpds table because nothing would have changed in the transaction_id_lookup table.
+        assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_inserts_updates_deletes_no_transaction_id_lookup(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
+        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
+        # load_transactions_in_delta with etl-level of transaction_fpds to populate int.transaction_fpds correctly with
+        # the initial data.
+        TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
+
+        # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
+        # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
+        insert_update_datetime = datetime.now(timezone.utc)
+        baker.make(
+            "transactions.SourceProcurementTransaction",
+            detached_award_procurement_id=6,
+            detached_award_proc_unique="award_procure_0004_trans_0001",
+            updated_at=insert_update_datetime,
+            unique_award_key="award_procure_0004",
+        )
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
+        spark.sql(f"""
+            UPDATE raw.detached_award_procurement
+            SET updated_at = '{insert_update_datetime}'
+            WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
+        """)
+
+        spark.sql(f"""
+            DELETE FROM raw.detached_award_procurement
+            WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
+        """)
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fpds table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        # With no call to load_transactions_in_delta with etl-level of transaction_id_lookup, the above call to
+        # load_transactions_in_delta with etl-level of transaction_fpds *should* pick up the *updates* in the
+        # published fpds table because those transactions already exist in the transaction_id_lookup table.
+        # However, this call should *NOT* pick up the inserts or deletes, since those transactions will not
+        # have changed in the transaction_id_lookup table.
+        expected_transaction_fpds = deepcopy(TestTransactionFpds.expected_initial_transaction_fpds)
+        expected_transaction_fpds[-2]["updated_at"] = insert_update_datetime
+        expected_transaction_fpds[-1]["updated_at"] = insert_update_datetime
+        assert equal_datasets(expected_transaction_fpds, delta_data, "")
+
+    @staticmethod
+    def initial_load_happy(spark, s3_unittest_data_bucket):
+        TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+    @mark.django_db(transaction=True)
+    def test_initial_load_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
 
         # Verify key fields in transaction_fabs table
         query = (
@@ -1116,3 +1461,158 @@ class TestTransactionFpds:
         )
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_inserts_only_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
+
+        # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
+        # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
+        insert_datetime = datetime.now(timezone.utc)
+        baker.make(
+            "transactions.SourceProcurementTransaction",
+            detached_award_procurement_id=6,
+            detached_award_proc_unique="award_procure_0004_trans_0001",
+            updated_at=insert_datetime,
+            unique_award_key="award_procure_0004",
+        )
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
+        # Need to load new transactions into the transaction_id_lookup table to get new transaction ids.
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fpds table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        expected_transaction_fpds = deepcopy(TestTransactionFpds.expected_initial_transaction_fpds)
+        expected_transaction_fpds.append(
+            {
+                "detached_award_procurement_id": 6,
+                "detached_award_proc_unique": "award_procure_0004_trans_0001",
+                "transaction_id": 11,
+                "unique_award_key": "award_procure_0004",
+                "updated_at": insert_datetime,
+            }
+        )
+        assert equal_datasets(expected_transaction_fpds, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_updates_only_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
+
+        update_datetime = datetime.now(timezone.utc)
+        spark.sql(f"""
+            UPDATE raw.detached_award_procurement
+            SET updated_at = '{update_datetime}'
+            WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
+        """)
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fpds table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        expected_transaction_fpds = deepcopy(TestTransactionFpds.expected_initial_transaction_fpds)
+        expected_transaction_fpds[-2]["updated_at"] = update_datetime
+        expected_transaction_fpds[-1]["updated_at"] = update_datetime
+        assert equal_datasets(expected_transaction_fpds, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_deletes_only_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
+
+        spark.sql(f"""
+            DELETE FROM raw.detached_award_procurement
+            WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
+        """)
+
+        # Need to load changes into the transaction_id_lookup table.
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fpds table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        expected_transaction_fpds = deepcopy(TestTransactionFpds.expected_initial_transaction_fpds)
+        expected_transaction_fpds.pop(1)
+        expected_transaction_fpds.pop(1)
+        assert equal_datasets(expected_transaction_fpds, delta_data, "")
+
+    @mark.django_db(transaction=True)
+    def test_inserts_updates_deletes_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
+
+        # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
+        # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
+        insert_update_datetime = datetime.now(timezone.utc)
+        baker.make(
+            "transactions.SourceProcurementTransaction",
+            detached_award_procurement_id=6,
+            detached_award_proc_unique="award_procure_0004_trans_0001",
+            updated_at=insert_update_datetime,
+            unique_award_key="award_procure_0004",
+        )
+        load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
+        spark.sql(f"""
+            UPDATE raw.detached_award_procurement
+            SET updated_at = '{insert_update_datetime}'
+            WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
+        """)
+
+        spark.sql(f"""
+            DELETE FROM raw.detached_award_procurement
+            WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
+        """)
+
+        # Need to load changes into the transaction_id_lookup table.
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
+
+        # Verify key fields in transaction_fpds table
+        query = (
+            f"SELECT {', '.join(TestTransactionFpds.transaction_fpds_compare_fields)} FROM int.transaction_fpds "
+            "ORDER BY detached_award_procurement_id"
+        )
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+
+        expected_transaction_fpds = deepcopy(TestTransactionFpds.expected_initial_transaction_fpds)
+        expected_transaction_fpds.pop(1)
+        expected_transaction_fpds.pop(1)
+        expected_transaction_fpds[-2]["updated_at"] = insert_update_datetime
+        expected_transaction_fpds[-1]["updated_at"] = insert_update_datetime
+        expected_transaction_fpds.append(
+            {
+                "detached_award_procurement_id": 6,
+                "detached_award_proc_unique": "award_procure_0004_trans_0001",
+                "transaction_id": 11,
+                "unique_award_key": "award_procure_0004",
+                "updated_at": insert_update_datetime,
+            }
+        )
+        assert equal_datasets(expected_transaction_fpds, delta_data, "")
