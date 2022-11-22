@@ -866,8 +866,9 @@ class TestTransactionFabs:
 
         # Next, call load_transactions_in_delta with etl-level of initial_run first, then immediately call
         # load_transactions_in_delta with etl-level of transaction_fabs.
-        call_command("load_transactions_in_delta", "--etl-level", "initial_run",
-                     "--spark-s3-bucket", s3_unittest_data_bucket)
+        call_command(
+            "load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_unittest_data_bucket
+        )
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
 
         # Verify key fields in transaction_fabs table
@@ -1067,8 +1068,9 @@ class TestTransactionFpds:
 
         # Next, call load_transactions_in_delta with etl-level of initial_run first, then immediately call
         # load_transactions_in_delta with etl-level of transaction_fpds.
-        call_command("load_transactions_in_delta", "--etl-level", "initial_run",
-                     "--spark-s3-bucket", s3_unittest_data_bucket)
+        call_command(
+            "load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_unittest_data_bucket
+        )
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
 
         # Verify key fields in transaction_fabs table
