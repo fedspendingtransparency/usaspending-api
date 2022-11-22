@@ -854,24 +854,21 @@ class TestTransactionFabs:
     transaction_fabs_compare_fields = expected_initial_transaction_fabs[0].keys()
 
     @mark.django_db(transaction=True)
-    def test_no_initial_run(
+    def test_no_initial_run_initial_load_no_trans_id_lookup_and_inserts_updates_deletes_no_transaction_id_lookup(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
+        # First, test calling load_transactions_in_delta with etl-level of transaction_fabs before calling with
+        # etl-level of initial_run.
         with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_fabs"):
             call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
 
-    @staticmethod
-    def initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket):
-        TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
+        # Next, call load_transactions_in_delta with etl-level of initial_run first, then immediately call
+        # load_transactions_in_delta with etl-level of transaction_fabs.
+        call_command("load_transactions_in_delta", "--etl-level", "initial_run",
+                     "--spark-s3-bucket", s3_unittest_data_bucket)
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
-
-    @mark.django_db(transaction=True)
-    def test_initial_load_no_transaction_id_lookup(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
-        TestTransactionFabs.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
 
         # Verify key fields in transaction_fabs table
         query = (
@@ -882,18 +879,12 @@ class TestTransactionFabs:
 
         # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
         # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
-        # load_transactions_in_delta with etl-level of transaction_fabs to populate int.transaction_fabs correctly.
-        assert equal_datasets(TestTransactionFabs.expected_initial_transaction_fabs, delta_data, "")
-
-    @mark.django_db(transaction=True)
-    def test_inserts_updates_deletes_no_transaction_id_lookup(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
-        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
-        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
         # load_transactions_in_delta with etl-level of transaction_fabs to populate int.transaction_fabs correctly with
         # the initial data.
-        TestTransactionFabs.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
+        assert equal_datasets(TestTransactionFabs.expected_initial_transaction_fabs, delta_data, "")
+
+        # Finally, test inserting, updating, and deleting without calling load_transactions_in_delta with etl-level
+        # of transaction_id_lookup before calling load_transactions_in_delta with etl-level of transaction_fabs.
 
         # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
         # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
@@ -942,17 +933,15 @@ class TestTransactionFabs:
         expected_transaction_fabs[-1]["updated_at"] = insert_update_datetime
         assert equal_datasets(expected_transaction_fabs, delta_data, "")
 
-    @staticmethod
-    def initial_load_happy(spark, s3_unittest_data_bucket):
+    @mark.django_db(transaction=True)
+    def test_initial_load_happy_and_inserts_updates_deletes_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        # First, test calling load_transactions_in_delta with etl-level of transaction_fabs after calling with
+        # etl-levels of initial_run and transaction_id_lookup.
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
-
-    @mark.django_db(transaction=True)
-    def test_initial_load_happy(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
-        TestTransactionFabs.initial_load_happy(spark, s3_unittest_data_bucket)
 
         # Verify key fields in transaction_fabs table
         query = (
@@ -962,11 +951,8 @@ class TestTransactionFabs:
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets(TestTransactionFabs.expected_initial_transaction_fabs, delta_data, "")
 
-    @mark.django_db(transaction=True)
-    def test_inserts_updates_deletes_happy(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
-        TestTransactionFabs.initial_load_happy(spark, s3_unittest_data_bucket)
+        # Then, test inserting, updating, and deleting records followed by calling load_transactions_in_delta with
+        # etl-levels of transaction_id_lookup and then transaction_fabs.
 
         # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
         # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
@@ -1069,24 +1055,21 @@ class TestTransactionFpds:
     transaction_fpds_compare_fields = expected_initial_transaction_fpds[0].keys()
 
     @mark.django_db(transaction=True)
-    def test_no_initial_run(
+    def test_no_initial_run_initial_load_no_trans_id_lookup_and_inserts_updates_deletes_no_transaction_id_lookup(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
         load_initial_delta_tables(spark, s3_unittest_data_bucket)
 
+        # First, test calling load_transactions_in_delta with etl-level of transaction_fpds before calling with
+        # etl-level of initial_run.
         with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_fpds"):
             call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
 
-    @staticmethod
-    def initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket):
-        TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
+        # Next, call load_transactions_in_delta with etl-level of initial_run first, then immediately call
+        # load_transactions_in_delta with etl-level of transaction_fpds.
+        call_command("load_transactions_in_delta", "--etl-level", "initial_run",
+                     "--spark-s3-bucket", s3_unittest_data_bucket)
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
-
-    @mark.django_db(transaction=True)
-    def test_initial_load_no_transaction_id_lookup(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
-        TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
 
         # Verify key fields in transaction_fabs table
         query = (
@@ -1097,18 +1080,12 @@ class TestTransactionFpds:
 
         # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
         # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
-        # load_transactions_in_delta with etl-level of transaction_fpds to populate int.transaction_fpds correctly.
-        assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")
-
-    @mark.django_db(transaction=True)
-    def test_inserts_updates_deletes_no_transaction_id_lookup(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
-        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
-        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
         # load_transactions_in_delta with etl-level of transaction_fpds to populate int.transaction_fpds correctly with
         # the initial data.
-        TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
+        assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")
+
+        # Finally, test inserting, updating, and deleting without calling load_transactions_in_delta with etl-level
+        # of transaction_id_lookup before calling load_transactions_in_delta with etl-level of transaction_fpds.
 
         # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
         # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
@@ -1156,17 +1133,15 @@ class TestTransactionFpds:
         expected_transaction_fpds[-1]["updated_at"] = insert_update_datetime
         assert equal_datasets(expected_transaction_fpds, delta_data, "")
 
-    @staticmethod
-    def initial_load_happy(spark, s3_unittest_data_bucket):
+    @mark.django_db(transaction=True)
+    def test_initial_load_happy_and_inserts_updates_deletes_happy(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
+    ):
+        # First, test calling load_transactions_in_delta with etl-level of transaction_fpds after calling with
+        # etl-levels of initial_run and transaction_id_lookup.
         TestInitialRun.initial_run(spark, s3_unittest_data_bucket)
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
-
-    @mark.django_db(transaction=True)
-    def test_initial_load_happy(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
-        TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
 
         # Verify key fields in transaction_fabs table
         query = (
@@ -1176,11 +1151,8 @@ class TestTransactionFpds:
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets(TestTransactionFpds.expected_initial_transaction_fpds, delta_data, "")
 
-    @mark.django_db(transaction=True)
-    def test_inserts_updates_deletes_happy(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
-    ):
-        TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
+        # Then, test inserting, updating, and deleting records followed by calling load_transactions_in_delta with
+        # etl-levels of transaction_id_lookup and then transaction_fpds.
 
         # Can't use spark.sql to just insert rows with only values for desired columns (need to specify values for
         # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.

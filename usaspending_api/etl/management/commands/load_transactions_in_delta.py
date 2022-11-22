@@ -83,11 +83,10 @@ class Command(BaseCommand):
                 self.update_transaction_lookup_ids()
             elif self.etl_level == "award_id_lookup":
                 self.update_award_lookup_ids()
-            else:
-                if self.etl_level == "transaction_fabs":
-                    self.spark.sql(self.merge_into_sql("fabs"))
-                elif self.etl_level == "transaction_fpds":
-                    self.spark.sql(self.merge_into_sql("fpds"))
+            elif self.etl_level == "transaction_fabs":
+                self.spark.sql(self.merge_into_sql("fabs"))
+            elif self.etl_level == "transaction_fpds":
+                self.spark.sql(self.merge_into_sql("fpds"))
 
             update_last_load_date(self.etl_level, etl_start)
 
@@ -151,7 +150,7 @@ class Command(BaseCommand):
                 )
                 WHERE aidlu.published_fabs_id IS NOT NULL AND pfabs.published_fabs_id IS NULL
             """
-        else:
+        elif self.etl_level in ("transaction_fabs", "transaction_fpds"):
             id_col = "transaction_id"
             subquery = f"""
                 SELECT {id_col} AS id_to_remove
