@@ -933,11 +933,13 @@ class TestTransactionFabs:
         TestTransactionFabs.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
 
         update_datetime = datetime.now(timezone.utc)
-        spark.sql(f"""
+        spark.sql(
+            f"""
             UPDATE raw.published_fabs
             SET updated_at = '{update_datetime}'
             WHERE published_fabs_id = 4 OR published_fabs_id = 5
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
 
@@ -966,10 +968,12 @@ class TestTransactionFabs:
         # the initial data.
         TestTransactionFabs.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
 
@@ -1008,16 +1012,20 @@ class TestTransactionFabs:
         )
         load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             UPDATE raw.published_fabs
             SET updated_at = '{insert_update_datetime}'
             WHERE published_fabs_id = 4 OR published_fabs_id = 5
-        """)
+        """
+        )
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
 
@@ -1109,11 +1117,13 @@ class TestTransactionFabs:
         TestTransactionFabs.initial_load_happy(spark, s3_unittest_data_bucket)
 
         update_datetime = datetime.now(timezone.utc)
-        spark.sql(f"""
+        spark.sql(
+            f"""
             UPDATE raw.published_fabs
             SET updated_at = '{update_datetime}'
             WHERE published_fabs_id = 4 OR published_fabs_id = 5
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fabs")
@@ -1136,10 +1146,12 @@ class TestTransactionFabs:
     ):
         TestTransactionFabs.initial_load_happy(spark, s3_unittest_data_bucket)
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
+        """
+        )
 
         # Need to load changes into the transaction_id_lookup table.
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
@@ -1177,16 +1189,20 @@ class TestTransactionFabs:
         )
         load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             UPDATE raw.published_fabs
             SET updated_at = '{insert_update_datetime}'
             WHERE published_fabs_id = 4 OR published_fabs_id = 5
-        """)
+        """
+        )
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             DELETE FROM raw.published_fabs
             WHERE published_fabs_id = 2 OR published_fabs_id = 3
-        """)
+        """
+        )
 
         # Need to load changes into the transaction_id_lookup table.
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
@@ -1216,6 +1232,7 @@ class TestTransactionFabs:
             }
         )
         assert equal_datasets(expected_transaction_fabs, delta_data, "")
+
 
 class TestTransactionFpds:
 
@@ -1338,11 +1355,13 @@ class TestTransactionFpds:
         TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
 
         update_datetime = datetime.now(timezone.utc)
-        spark.sql(f"""
+        spark.sql(
+            f"""
             UPDATE raw.detached_award_procurement
             SET updated_at = '{update_datetime}'
             WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
 
@@ -1371,10 +1390,12 @@ class TestTransactionFpds:
         # the initial data.
         TestTransactionFpds.initial_load_no_transaction_id_lookup(spark, s3_unittest_data_bucket)
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
 
@@ -1412,16 +1433,20 @@ class TestTransactionFpds:
         )
         load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             UPDATE raw.detached_award_procurement
             SET updated_at = '{insert_update_datetime}'
             WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
-        """)
+        """
+        )
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
 
@@ -1511,11 +1536,13 @@ class TestTransactionFpds:
         TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
 
         update_datetime = datetime.now(timezone.utc)
-        spark.sql(f"""
+        spark.sql(
+            f"""
             UPDATE raw.detached_award_procurement
             SET updated_at = '{update_datetime}'
             WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
-        """)
+        """
+        )
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", "transaction_fpds")
@@ -1538,10 +1565,12 @@ class TestTransactionFpds:
     ):
         TestTransactionFpds.initial_load_happy(spark, s3_unittest_data_bucket)
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
-        """)
+        """
+        )
 
         # Need to load changes into the transaction_id_lookup table.
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
@@ -1578,16 +1607,20 @@ class TestTransactionFpds:
         )
         load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             UPDATE raw.detached_award_procurement
             SET updated_at = '{insert_update_datetime}'
             WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
-        """)
+        """
+        )
 
-        spark.sql(f"""
+        spark.sql(
+            f"""
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 2 OR detached_award_procurement_id = 3
-        """)
+        """
+        )
 
         # Need to load changes into the transaction_id_lookup table.
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
