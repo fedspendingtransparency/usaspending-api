@@ -134,8 +134,9 @@ class ElasticsearchDisasterBase(DisasterBase):
         # As of writing this the value of settings.ES_ROUTING_FIELD is the only high cardinality aggregation that
         # we support. Since the Elasticsearch clusters are routed by this field we don't care to get a count of
         # unique buckets, but instead we use the upper_limit and don't allow an upper_limit > 10k.
-
-        if self.agg_key == settings.ES_ROUTING_FIELD:
+        if self.bucket_count == 0:
+            return None
+        elif self.agg_key == settings.ES_ROUTING_FIELD:
             size = self.bucket_count
             shard_size = size
             group_by_agg_key_values = {
