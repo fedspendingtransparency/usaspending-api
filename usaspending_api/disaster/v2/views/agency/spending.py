@@ -266,7 +266,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             tid = Agency.objects.get(id=int(bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]))
             if tid:
                 toptier_id = tid.toptier_agency_id
-                aid = Agency.objects.filter(toptier_agency_id=toptier_id).order_by("toptier_flag", "id").first()
+                aid = Agency.objects.filter(toptier_agency_id=toptier_id).order_by("-toptier_flag", "-id").first()
                 if aid:
                     agency_id = aid.id
         return {
