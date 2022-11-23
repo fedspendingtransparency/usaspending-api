@@ -1,11 +1,11 @@
-import json
-
+from ast import literal_eval
 from typing import List
 
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
 )
+from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 
@@ -25,32 +25,30 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
         for bucket in info_buckets:
-            info = json.loads(bucket.get("key"))
-
             # Build a list of hash IDs to handle multiple levels
-            recipient_hash = info.get("hash")
-            recipient_levels = sorted(info.get("levels") or [])
-            if recipient_hash and recipient_levels:
+            recipient_info = bucket.get("key").split("/")
+            if len(recipient_info) == 2:
+                recipient_hash = recipient_info[0]
+                recipient_levels = literal_eval(recipient_info[1])
                 recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
-            else:
-                recipient_hash_list = None
+                info = RecipientLookup.objects.get(recipient_hash=recipient_hash)
 
-            results.append(
-                {
-                    "id": recipient_hash_list,
-                    "code": info["duns"] or "DUNS Number not provided",
-                    "description": info["name"] or None,
-                    "award_count": int(bucket.get("doc_count", 0)),
-                    **{
-                        column: get_summed_value_as_float(
-                            bucket.get("nested", {}).get("filtered_aggs", {})
-                            if column != "face_value_of_loan"
-                            else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested", {}),
-                            self.sum_column_mapping[column],
-                        )
-                        for column in self.sum_column_mapping
-                    },
-                }
-            )
+                results.append(
+                    {
+                        "id": recipient_hash_list,
+                        "code": info.duns or "DUNS Number not provided",
+                        "description": info.legal_business_name or None,
+                        "award_count": int(bucket.get("doc_count", 0)),
+                        **{
+                            column: get_summed_value_as_float(
+                                bucket.get("nested", {}).get("filtered_aggs", {})
+                                if column != "face_value_of_loan"
+                                else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested", {}),
+                                self.sum_column_mapping[column],
+                            )
+                            for column in self.sum_column_mapping
+                        },
+                    }
+                )
 
         return results

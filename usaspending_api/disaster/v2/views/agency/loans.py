@@ -1,4 +1,3 @@
-import json
 import logging
 from decimal import Decimal
 
@@ -124,26 +123,39 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
+    top_hits_fields = ["funding_toptier_agency_name", "funding_toptier_agency_code", "funding_agency_id"]
+    sub_top_hits_fields = ["funding_subtier_agency_name", "funding_subtier_agency_code", "funding_agency_id"]
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
         for bucket in info_buckets:
-            result = self._build_json_result(bucket)
+            result = self._build_json_result(bucket, child=False)
             child_info_buckets = bucket.get(self.sub_agg_group_name, {}).get("buckets", [])
             children = []
             for child_bucket in child_info_buckets:
-                children.append(self._build_json_result(child_bucket))
+                children.append(self._build_json_result(child_bucket, child=True))
             result["children"] = children
             results.append(result)
 
         return results
 
-    def _build_json_result(self, bucket: dict):
-        info = json.loads(bucket.get("key"))
+    def _build_json_result(self, bucket: dict, child: bool):
+        if child:
+            tier = "sub"
+            agency_id = bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]
+        else:
+            tier = "top"
+            toptier_id = Agency.objects.get(
+                id=bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]
+            ).toptier_agency_id
+            agency_id = Agency.objects.filter(toptier_agency_id=toptier_id).order_by("-toptier_flag", "-id").first()
+            if agency_id is not None:
+                agency_id = agency_id.id
+        info = bucket.get("key")
         return {
-            "id": info["id"],
-            "code": info["code"],
-            "description": info["name"],
+            "id": agency_id,
+            "code": info,
+            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"][f"funding_{tier}tier_agency_name"],
             # the count of distinct awards contributing to the totals
             "award_count": int(bucket.get("doc_count", 0)),
             **{
