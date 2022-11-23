@@ -52,22 +52,22 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
     }
     agg_key_creations = {
         # spending by recipient
-        "recipient_agg_key": lambda x: f"{x['recipient_hash']}-{funcs.return_one_level(x['recipient_levels'])}",
+        "recipient_agg_key": funcs.transaction_recipient_agg_key,
         # spending by category
-        "awarding_subtier_agency_agg_key": lambda x: x["awarding_sub_tier_agency_c"],
-        "awarding_toptier_agency_agg_key": lambda x: x["awarding_agency_code"],
-        "funding_subtier_agency_agg_key": lambda x: x["funding_sub_tier_agency_co"],
-        "funding_toptier_agency_agg_key": lambda x: x["funding_agency_code"],
-        "naics_agg_key": lambda x: x["naics_code"],
-        "psc_agg_key": lambda x: x["product_or_service_code"],
+        "awarding_subtier_agency_agg_key": lambda x: x.get("awarding_sub_tier_agency_c", ""),
+        "awarding_toptier_agency_agg_key": lambda x: x.get("awarding_agency_code", ""),
+        "funding_subtier_agency_agg_key": lambda x: x.get("funding_sub_tier_agency_co", ""),
+        "funding_toptier_agency_agg_key": lambda x: x.get("funding_agency_code", ""),
+        "naics_agg_key": lambda x: x.get("naics_code", ""),
+        "psc_agg_key": lambda x: x.get("product_or_service_code", ""),
         # spending by location
-        "pop_congressional_agg_key": lambda x: x["pop_congressional_code"],
-        "pop_country_agg_key": lambda x: x["pop_country_code"],
-        "pop_county_agg_key": lambda x: x["pop_county_code"],
-        "pop_state_agg_key": lambda x: x["pop_state_code"],
-        "recipient_location_congressional_agg_key": lambda x: x["recipient_location_congressional_code"],
-        "recipient_location_county_agg_key": lambda x: x["recipient_location_county_code"],
-        "recipient_location_state_agg_key": lambda x: x["recipient_location_state_code"],
+        "pop_congressional_agg_key": lambda x: x.get("pop_congressional_code", ""),
+        "pop_country_agg_key": lambda x: x.get("pop_country_code", ""),
+        "pop_county_agg_key": lambda x: x.get("pop_county_code", ""),
+        "pop_state_agg_key": lambda x: x.get("pop_state_code", ""),
+        "recipient_location_congressional_agg_key": lambda x: x.get("recipient_location_congressional_code", ""),
+        "recipient_location_county_agg_key": lambda x: x.get("recipient_location_county_code", ""),
+        "recipient_location_state_agg_key": lambda x: x.get("recipient_location_state_code", ""),
     }
     drop_fields = [
         "pop_state_name",

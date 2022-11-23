@@ -37,15 +37,15 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
         current_agency_info = {}
         if self.agency_type in (AgencyType.AWARDING_TOPTIER, AgencyType.FUNDING_TOPTIER):
             agency_info_query = ToptierAgency.objects.filter(toptier_code__in=code_list).annotate(
-                id=F("toptier_agency_id"), name=F("name"), code=F("abbreviation")
+                id=F("agency__id"), code=F("toptier_code")
             )
         else:
             agency_info_query = SubtierAgency.objects.filter(subtier_code__in=code_list).annotate(
-                id=F("subtier_agency_id"), name=F("name"), code=F("abbreviation")
+                id=F("agency__id"), code=F("subtier_code")
             )
         agency_info_query = agency_info_query.values("id", "code", "name")
         for agency_info in agency_info_query.all():
-            current_agency_info[agency_info.code] = agency_info
+            current_agency_info[agency_info["code"]] = agency_info
 
         # Build out the results
         results = []
@@ -53,7 +53,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             agency_info = current_agency_info.get(bucket.get("key")) or {}
             result = {
                 "id": agency_info.get("id"),
-                "code": agency_info.get("abbreviation"),
+                "code": agency_info.get("code"),
                 "name": agency_info.get("name"),
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
             }

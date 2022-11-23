@@ -72,25 +72,21 @@ def psc_test_data(db):
         "awards.TransactionFPDS",
         transaction_id=1,
         product_or_service_code="1234",
-        product_or_service_co_desc="PSC DESCRIPTION UP",
     )
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=2,
         product_or_service_code="1234",
-        product_or_service_co_desc="PSC DESCRIPTION UP",
     )
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=3,
         product_or_service_code="9876",
-        product_or_service_co_desc="PSC DESCRIPTION DOWN",
     )
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=4,
         product_or_service_code="9876",
-        product_or_service_co_desc="PSC DESCRIPTION DOWN",
     )
 
     baker.make("references.PSC", code="1234", description="PSC DESCRIPTION UP")
@@ -170,10 +166,10 @@ def naics_test_data(db):
         action_date="2020-01-04",
     )
 
-    baker.make("awards.TransactionFPDS", transaction_id=1, naics="NAICS 1234", naics_description="NAICS DESC 1234")
-    baker.make("awards.TransactionFPDS", transaction_id=2, naics="NAICS 1234", naics_description="NAICS DESC 1234")
-    baker.make("awards.TransactionFPDS", transaction_id=3, naics="NAICS 9876", naics_description="NAICS DESC 9876")
-    baker.make("awards.TransactionFPDS", transaction_id=4, naics="NAICS 9876", naics_description="NAICS DESC 9876")
+    baker.make("awards.TransactionFPDS", transaction_id=1, naics="NAICS 1234")
+    baker.make("awards.TransactionFPDS", transaction_id=2, naics="NAICS 1234")
+    baker.make("awards.TransactionFPDS", transaction_id=3, naics="NAICS 9876")
+    baker.make("awards.TransactionFPDS", transaction_id=4, naics="NAICS 9876")
 
     baker.make("references.NAICS", code="NAICS 1234", description="SOURCE NAICS DESC 1234", year=1955)
     baker.make("references.NAICS", code="NAICS 9876", description="SOURCE NAICS DESC 9876", year=1985)
@@ -240,29 +236,77 @@ def agency_test_data(db):
     baker.make(
         "awards.TransactionFABS",
         transaction_id=1,
-        awarding_agency_name="Awarding Toptier Agency 1",
-        funding_agency_name="Funding Toptier Agency 2",
-        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
-        funding_sub_tier_agency_na="Funding Subtier Agency 2",
+        awarding_agency_code="TA1",
+        funding_agency_code="TA2",
+        awarding_sub_tier_agency_c="SA1",
+        funding_sub_tier_agency_co="SA2",
     )
     baker.make(
         "awards.TransactionFABS",
         transaction_id=2,
-        awarding_agency_name="Awarding Toptier Agency 1",
-        funding_agency_name="Funding Toptier Agency 2",
-        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
-        funding_sub_tier_agency_na="Funding Subtier Agency 2",
+        awarding_agency_code="TA1",
+        funding_agency_code="TA2",
+        awarding_sub_tier_agency_c="SA1",
+        funding_sub_tier_agency_co="SA2",
     )
 
-    baker.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")
-    baker.make("references.SubtierAgency", subtier_agency_id=3001, name="Awarding Subtier Agency 1", abbreviation="SA1")
-    baker.make("references.ToptierAgency", toptier_agency_id=2003, name="Awarding Toptier Agency 3", abbreviation="TA3")
-    baker.make("references.SubtierAgency", subtier_agency_id=3003, name="Awarding Subtier Agency 3", abbreviation="SA3")
+    baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=2001,
+        name="Awarding Toptier Agency 1",
+        abbreviation="TA1",
+        toptier_code="TA1",
+    )
+    baker.make(
+        "references.SubtierAgency",
+        subtier_agency_id=3001,
+        name="Awarding Subtier Agency 1",
+        abbreviation="SA1",
+        subtier_code="SA1",
+    )
+    baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=2003,
+        name="Awarding Toptier Agency 3",
+        abbreviation="TA3",
+        toptier_code="TA3",
+    )
+    baker.make(
+        "references.SubtierAgency",
+        subtier_agency_id=3003,
+        name="Awarding Subtier Agency 3",
+        abbreviation="SA3",
+        subtier_code="SA3",
+    )
 
-    baker.make("references.ToptierAgency", toptier_agency_id=2002, name="Funding Toptier Agency 2", abbreviation="TA2")
-    baker.make("references.SubtierAgency", subtier_agency_id=3002, name="Funding Subtier Agency 2", abbreviation="SA2")
-    baker.make("references.ToptierAgency", toptier_agency_id=2004, name="Funding Toptier Agency 4", abbreviation="TA4")
-    baker.make("references.SubtierAgency", subtier_agency_id=3004, name="Funding Subtier Agency 4", abbreviation="SA4")
+    baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=2002,
+        name="Funding Toptier Agency 2",
+        abbreviation="TA2",
+        toptier_code="TA2",
+    )
+    baker.make(
+        "references.SubtierAgency",
+        subtier_agency_id=3002,
+        name="Funding Subtier Agency 2",
+        abbreviation="SA2",
+        subtier_code="SA2",
+    )
+    baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=2004,
+        name="Funding Toptier Agency 4",
+        abbreviation="TA4",
+        toptier_code="TA4",
+    )
+    baker.make(
+        "references.SubtierAgency",
+        subtier_agency_id=3004,
+        name="Funding Subtier Agency 4",
+        abbreviation="SA4",
+        subtier_code="SA4",
+    )
 
     baker.make("references.Agency", id=1001, toptier_agency_id=2001, subtier_agency_id=3001, toptier_flag=True)
     baker.make("references.Agency", id=1002, toptier_agency_id=2002, subtier_agency_id=3002, toptier_flag=True)
@@ -544,11 +588,8 @@ def geo_test_data(db):
         "awards.TransactionFPDS",
         transaction_id=1,
         place_of_perform_country_c="US",
-        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
-        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="04",
-        place_of_perform_county_na="COUNTYSVILLE",
         place_of_performance_zip5="12345",
         place_of_performance_congr="06",
     )
@@ -556,11 +597,8 @@ def geo_test_data(db):
         "awards.TransactionFPDS",
         transaction_id=2,
         place_of_perform_country_c="US",
-        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
-        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="04",
-        place_of_perform_county_na="COUNTYSVILLE",
         place_of_performance_zip5="12345",
         place_of_performance_congr="06",
     )
@@ -568,11 +606,8 @@ def geo_test_data(db):
         "awards.TransactionFPDS",
         transaction_id=3,
         place_of_perform_country_c="US",
-        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
-        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="01",
-        place_of_perform_county_na="SOMEWHEREVILLE",
         place_of_performance_zip5="98765",
         place_of_performance_congr="90",
     )
@@ -580,17 +615,18 @@ def geo_test_data(db):
         "awards.TransactionFPDS",
         transaction_id=4,
         place_of_perform_country_c="US",
-        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
-        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="01",
-        place_of_perform_county_na="SOMEWHEREVILLE",
         place_of_performance_zip5="98765",
         place_of_performance_congr="90",
     )
 
     baker.make("recipient.StateData", name="Test State", code="XY")
     baker.make("references.RefCountryCode", country_name="UNITED STATES", country_code="US")
+    baker.make("references.PopCounty", county_name="SOMEWHEREVILLE", county_number="001")
+    baker.make("references.PopCounty", county_name="COUNTYSVILLE", county_number="004")
+    baker.make("references.PopCongressionalDistrict", state_code="XY", congressional_district="06")
+    baker.make("references.PopCongressionalDistrict", state_code="XY", congressional_district="90")
 
 
 @pytest.fixture
@@ -958,8 +994,8 @@ def test_category_naics_awards(naics_test_data, monkeypatch, elasticsearch_trans
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 4, "code": "NAICS 9876", "name": "NAICS DESC 9876", "id": None},
-            {"amount": 2, "code": "NAICS 1234", "name": "NAICS DESC 1234", "id": None},
+            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
+            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
         ],
         "messages": [get_time_period_message()],
     }

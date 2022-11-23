@@ -389,6 +389,7 @@ def awards_and_transactions(db):
         state_code="45",
         state_name="South Carolina",
         county_number="001",
+        county_name="Charleston",
         latest_population=1,
     )
     baker.make(
@@ -397,6 +398,7 @@ def awards_and_transactions(db):
         state_code="45",
         state_name="South Carolina",
         county_number="005",
+        county_name="Test Name",
         latest_population=10,
     )
     baker.make(
@@ -405,6 +407,7 @@ def awards_and_transactions(db):
         state_code="53",
         state_name="Washington",
         county_number="005",
+        county_name="Test Name",
         latest_population=100,
     )
     baker.make(
@@ -413,6 +416,7 @@ def awards_and_transactions(db):
         state_code="45",
         state_name="South Carolina",
         county_number="000",
+        county_name="South Carolina",
         latest_population=1000,
     )
     baker.make(
@@ -421,6 +425,7 @@ def awards_and_transactions(db):
         state_code="53",
         state_name="Washington",
         county_number="000",
+        county_name="Washington",
         latest_population=10000,
     )
 
@@ -430,6 +435,7 @@ def awards_and_transactions(db):
         id=1,
         state_code="45",
         state_name="South Carolina",
+        state_abbreviation="SC",
         congressional_district="90",
         latest_population=1,
     )
@@ -438,6 +444,7 @@ def awards_and_transactions(db):
         id=2,
         state_code="45",
         state_name="South Carolina",
+        state_abbreviation="SC",
         congressional_district="10",
         latest_population=10,
     )
@@ -446,6 +453,7 @@ def awards_and_transactions(db):
         id=2,
         state_code="45",
         state_name="South Carolina",
+        state_abbreviation="SC",
         congressional_district="50",
         latest_population=100,
     )
@@ -454,6 +462,7 @@ def awards_and_transactions(db):
         id=3,
         state_code="53",
         state_name="Washington",
+        state_abbreviation="WA",
         congressional_district="50",
         latest_population=1000,
     )

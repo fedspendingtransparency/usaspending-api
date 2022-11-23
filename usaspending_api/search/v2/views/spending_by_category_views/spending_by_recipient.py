@@ -7,7 +7,7 @@ from django.utils.decorators import method_decorator
 
 from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
-from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
@@ -64,18 +64,42 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
         )
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
+        # Get the codes
+        recipient_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+        recipient_infos = [json.loads(bucket.get("key")) for bucket in recipient_info_buckets if bucket.get("key")]
+        recipient_hashes = [
+            recipient_info.get("recipient_hash")
+            for recipient_info in recipient_infos
+            if recipient_info.get("recipient_hash")
+        ]
 
+        # Get the current recipient info
+        current_recipient_info = {}
+        recipient_info_query = RecipientLookup.objects.filter(recipient_hash__in=recipient_hashes).values(
+            "duns", "legal_business_name", "recipient_hash"
+        )
+        for recipient_info in recipient_info_query.all():
+            current_recipient_info[str(recipient_info["recipient_hash"])] = recipient_info
+
+        # Build out the results
         results = []
-        location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        for bucket in location_info_buckets:
-            recipient_info = json.loads(bucket.get("key"))
+        for bucket in recipient_info_buckets:
+            result_rec_info = json.loads(bucket.get("key")) if bucket.get("key") else {}
+            result_hash = result_rec_info.get("recipient_hash")
+            result_level = result_rec_info.get("recipient_level")
+            result_hash_with_level = f"{result_hash}-{result_level}" if result_hash and result_level else None
+            recipient_info = current_recipient_info.get(result_hash) or {}
 
             results.append(
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "recipient_id": recipient_info["hash_with_level"] or None,
-                    "name": recipient_info["name"] or None,
-                    "code": recipient_info["duns"] or "Recipient not provided",
+                    "recipient_id": result_hash_with_level,
+                    "name": (
+                        recipient_info["legal_business_name"].upper()
+                        if "legal_business_name" in recipient_info
+                        else None
+                    ),
+                    "code": recipient_info.get("duns") or "Recipient not provided",
                 }
             )
 

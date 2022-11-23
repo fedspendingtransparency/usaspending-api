@@ -30,7 +30,6 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
     industry_code_type: IndustryCodeType
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
-
         # Get the codes
         industry_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         code_list = [bucket.get("key") for bucket in industry_info_buckets if bucket.get("key")]
@@ -38,24 +37,31 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
         # Get the current industry info
         current_industry_info = {}
         if self.industry_code_type == IndustryCodeType.CFDA:
-            industry_info_query = Cfda.objects.filter(program_number__in=code_list).annotate(
-                id=F("id"), code=F("program_number"), name=F("program_title")
+            industry_info_query = (
+                Cfda.objects.filter(program_number__in=code_list)
+                .annotate(code=F("program_number"), name=F("program_title"))
+                .values("id", "code", "name")
             )
         elif self.industry_code_type == IndustryCodeType.PSC:
-            industry_info_query = PSC.objects.filter(code__in=code_list).annotate(
-                # doesn't have ID, set to None
-                code=F("code"),
-                name=F("description"),
+            industry_info_query = (
+                PSC.objects.filter(code__in=code_list)
+                .annotate(
+                    # doesn't have ID, set to None
+                    name=F("description"),
+                )
+                .values("code", "name")
             )
         else:
-            industry_info_query = NAICS.objects.filter(code__in=code_list).annotate(
-                # doesn't have ID, set to None
-                code=F("code"),
-                name=F("description"),
+            industry_info_query = (
+                NAICS.objects.filter(code__in=code_list)
+                .annotate(
+                    # doesn't have ID, set to None
+                    name=F("description"),
+                )
+                .values("code", "name")
             )
-        industry_info_query = industry_info_query.values("code", "name")
         for industry_info in industry_info_query.all():
-            current_industry_info[industry_info.code] = industry_info
+            current_industry_info[industry_info["code"]] = industry_info
 
         # Build out the results
         results = []
@@ -65,7 +71,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                 {
                     "id": industry_info.get("id"),
                     "code": industry_info.get("code"),
-                    "name": industry_info.get("description"),
+                    "name": industry_info.get("name"),
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                 }
             )

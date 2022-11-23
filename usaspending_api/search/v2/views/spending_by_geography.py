@@ -392,24 +392,33 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             state_mappings = {
                 state_mapping["state_code"]: state_mapping["state_abbreviation"] for state_mapping in state_mappings
             }
-            geo_info_query = PopCounty.objects.filter(state_code__in=geo_codes, county_number="000").annotate(
-                geo_code=F("state_code"), display_name=F("state_name"), population=F("latest_population")
+            geo_info_query = (
+                PopCounty.objects.filter(state_code__in=geo_codes, county_number="000")
+                .annotate(geo_code=F("state_code"), display_name=F("state_name"), population=F("latest_population"))
+                .values("geo_code", "display_name", "population")
             )
         elif self.geo_layer == GeoLayer.COUNTY:
-            geo_info_query = PopCounty.objects.filter(county_number__in=geo_codes).annotate(
-                geo_code=F("county_number"),
-                shape_code=Concat("state_code", "county_number"),
-                display_name=F("county_name"),
-                population=F("latest_population"),
+            geo_info_query = (
+                PopCounty.objects.filter(county_number__in=geo_codes)
+                .annotate(
+                    geo_code=F("county_number"),
+                    shape_code=Concat("state_code", "county_number"),
+                    display_name=F("county_name"),
+                    population=F("latest_population"),
+                )
+                .values("geo_code", "display_name", "shape_code", "population")
             )
         else:
-            geo_info_query = PopCongressionalDistrict.objects.filter(congressional_district__in=geo_codes).annotate(
-                geo_code=F("congressional_district"),
-                shape_code=Concat("state_code", "congressional_district"),
-                display_name=Concat("state_abbreviation", Value("-"), "congressional_district"),
-                population=F("latest_population"),
+            geo_info_query = (
+                PopCongressionalDistrict.objects.filter(congressional_district__in=geo_codes)
+                .annotate(
+                    geo_code=F("congressional_district"),
+                    shape_code=Concat("state_code", "congressional_district"),
+                    display_name=Concat("state_abbreviation", Value("-"), "congressional_district"),
+                    population=F("latest_population"),
+                )
+                .values("geo_code", "display_name", "shape_code", "population")
             )
-        geo_info_query = geo_info_query.values("geo_code", "display_name", "shape_code", "population")
         for geo_info in geo_info_query.all():
             if self.geo_layer == GeoLayer.STATE:
                 geo_info["display_name"] = geo_info["display_name"].title()
@@ -418,7 +427,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 geo_info["display_name"] = geo_info["display_name"].title()
             else:
                 geo_info["display_name"] = geo_info["display_name"].upper()
-            current_geo_info[geo_info.geo_code] = geo_info
+            current_geo_info[geo_info["geo_code"]] = geo_info
 
         # Build out the results
         results = {}

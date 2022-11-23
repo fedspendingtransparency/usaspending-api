@@ -58,17 +58,14 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             # can't do the distict transformation in the queryset, see below
         for location_info in location_info_query.all():
             if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
-                if location_info.get("congressional_district") == "90":
-                    code = "MULTIPLE DISTRICTS"
-                else:
-                    code = location_info.get("congressional_district") or ""
-                location_info["code"] = code
-                location_info["name"] = f"{location_info.get('state_code') or ''}-{code}"
+                location_info["code"] = location_info.get("congressional_district") or ""
+                display_code = "MULTIPLE DISTRICTS" if location_info["code"] == "90" else location_info["code"]
+                location_info["name"] = f"{location_info.get('state_code') or ''}-{display_code}"
             if self.location_type == LocationType.STATE_TERRITORY:
                 location_info["name"] = location_info["name"].title()
             else:
                 location_info["name"] = location_info["name"].upper()
-            current_location_info[location_info.code] = location_info
+            current_location_info[location_info["code"]] = location_info
 
         # Build out the results
         results = []

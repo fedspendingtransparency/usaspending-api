@@ -32,21 +32,10 @@ def award_recipient_agg_key(record: dict) -> str:
 
 def transaction_recipient_agg_key(record: dict) -> str:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
-    if record["recipient_hash"] is None or record["recipient_levels"] is None:
-        return json.dumps(
-            {
-                "name": record["recipient_name"],
-                "duns": record["recipient_unique_id"],
-                "uei": record["recipient_uei"],
-                "hash_with_level": "",
-            }
-        )
     return json.dumps(
         {
-            "name": record["recipient_name"],
-            "duns": record["recipient_unique_id"],
-            "uei": record["recipient_uei"],
-            "hash_with_level": f"{record['recipient_hash']}-{return_one_level(record['recipient_levels'])}",
+            "recipient_hash": str(record.get("recipient_hash")),
+            "recipient_level": return_one_level(record.get("recipient_levels") or []),
         }
     )
 

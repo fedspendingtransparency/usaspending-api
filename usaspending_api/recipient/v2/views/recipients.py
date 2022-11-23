@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 
@@ -291,22 +292,30 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
 
     # Get the codes
     recipient_info_buckets = response_as_dict.get("group_by_recipient", {}).get("buckets", [])
-    recipient_hashes = [bucket.get("key")[:-2] for bucket in recipient_info_buckets if bucket.get("key")]
-
-    # Get the current recipient info
     current_recipient_info = {}
-    recipient_info_query = RecipientLookup.objects.filter(recipient_hash__in=recipient_hashes).values(
-        "duns", "legal_business_name", "uei", "recipient_hash"
-    )
-    for recipient_info in recipient_info_query.all():
-        current_recipient_info[recipient_info.recipient_hash] = recipient_info
+    if children:
+        recipient_infos = [json.loads(bucket.get("key")) for bucket in recipient_info_buckets if bucket.get("key")]
+        recipient_hashes = [
+            recipient_info.get("recipient_hash")
+            for recipient_info in recipient_infos
+            if recipient_info.get("recipient_hash")
+        ]
+
+        # Get the current recipient info
+        current_recipient_info = {}
+        recipient_info_query = RecipientLookup.objects.filter(recipient_hash__in=recipient_hashes).values(
+            "duns", "legal_business_name", "uei", "recipient_hash"
+        )
+        for recipient_info in recipient_info_query.all():
+            current_recipient_info[str(recipient_info["recipient_hash"])] = recipient_info
 
     # Build out the results
     result_list = []
     for bucket in recipient_info_buckets:
         result = {}
         if children:
-            result_hash = bucket["key"][:-2] if bucket.get("key") else None
+            result_rec_info = json.loads(bucket.get("key")) if bucket.get("key") else {}
+            result_hash = result_rec_info.get("recipient_hash")
             recipient_info = current_recipient_info.get(result_hash) or {}
             result = {
                 "recipient_hash": result_hash,
