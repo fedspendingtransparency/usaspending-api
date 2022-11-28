@@ -239,8 +239,8 @@ class Command(BaseCommand):
         self.logger.info("Getting the next transaction_id from transaction_id_seq")
         with connection.cursor() as cursor:
             cursor.execute("SELECT nextval('transaction_id_seq')")
-            # Subtract 1 since the value of "ROW_NUMBER()" will start at 1 and be added to the "next_id" value
-            next_id = cursor.fetchone()[0] - 1
+            # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
+            previous_max_id = cursor.fetchone()[0]
 
         self.logger.info("Creating new 'transaction_id_lookup' records for new transactions")
         self.spark.sql(
@@ -257,7 +257,7 @@ class Command(BaseCommand):
             )
             INSERT INTO int.transaction_id_lookup
             SELECT
-                {next_id} + ROW_NUMBER() OVER (
+                {previous_max_id} + ROW_NUMBER() OVER (
                     ORDER BY all_new_transactions.transaction_unique_id
                 ) AS id,
                 all_new_transactions.detached_award_procurement_id,
@@ -291,17 +291,27 @@ class Command(BaseCommand):
         """
         )
 
-        self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.transaction_id_lookup").collect()[0]["max_id"]
+        self.logger.info("Updating transaction_id_seq to the new maximum id value seen so far")
+        poss_max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.transaction_id_lookup").collect()[0]["max_id"]
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT setval('transaction_id_seq', {max_id})")
+            # Set is_called flag to false so that the next call to nextval() will return the specified value, and
+            #     avoid the possibility of gaps in the transaction_id sequence
+            #     https://www.postgresql.org/docs/13/functions-sequence.html
+            # If load_transactions_to_delta is called with --etl-level of transaction_id_lookup, and records are
+            #     deleted which happen to correspond to transactions at the end of the transaction_id_lookup table,
+            #     but no records are inserted, then poss_max_id will be less than previous_max_id above. Just assigning
+            #     the current value of transaction_id_seq to poss_max_id would cause problems in a subsequent call
+            #     with inserts, as it would assign the new transactions the same ids as the previously deleted ones.
+            #     To avoid this possibility, set the current value of transaction_id_seq to the maximum of poss_max_id
+            #     and previous_max_id.
+            cursor.execute(f"SELECT setval('transaction_id_seq', {max(poss_max_id, previous_max_id)}, false)")
 
     def update_award_lookup_ids(self):
         self.logger.info("Getting the next award_id from award_id_seq")
         with connection.cursor() as cursor:
             cursor.execute("SELECT nextval('award_id_seq')")
-            # Subtract 1 since the value of "DENSE_RANK()" will start at 1 and be added to the "next_id" value
-            next_id = cursor.fetchone()[0] - 1
+            # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
+            previous_max_id = cursor.fetchone()[0]
 
         self.logger.info("Creating new 'award_id_lookup' records for new awards")
         self.spark.sql(
@@ -318,7 +328,7 @@ class Command(BaseCommand):
             )
             INSERT INTO int.award_id_lookup
             SELECT
-                {next_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
+                {previous_max_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
                     ORDER BY all_new_awards.unique_award_key
                 ) AS id,
                 all_new_awards.detached_award_procurement_id,
@@ -355,10 +365,19 @@ class Command(BaseCommand):
         """
         )
 
-        self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.award_id_lookup").collect()[0]["max_id"]
+        self.logger.info("Updating award_id_seq to the new maximum id value seen so far")
+        poss_max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.award_id_lookup").collect()[0]["max_id"]
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT setval('award_id_seq', {max_id})")
+            # Set is_called flag to false so that the next call to nextval() will return the specified value, and
+            #     avoid the possibility of gaps in the transaction_id sequence
+            #     https://www.postgresql.org/docs/13/functions-sequence.html
+            # If load_transactions_to_delta is called with --etl-level of award_id_lookup, and records are deleted
+            #     which happen to correspond to transactions at the end of the award_id_lookup table, but no records
+            #     are inserted, then poss_max_id will be less than previous_max_id above. Just assigning the current
+            #     value of award_id_seq to poss_max_id would cause problems in a subsequent call with inserts, as it
+            #     would assign the new awards the same ids as the previously deleted ones.  To avoid this possibility,
+            #     set the current value of award_id_seq to the maximum of poss_max_id and previous_max_id.
+            cursor.execute(f"SELECT setval('award_id_seq', {max(poss_max_id, previous_max_id)}, false)")
 
     def initial_run(self):
         """
@@ -413,7 +432,9 @@ class Command(BaseCommand):
             0
         ]["max_id"]
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT setval('transaction_id_seq', {max_id})")
+            # Set is_called flag to false so that the next call to nextval() will return the specified value
+            # https://www.postgresql.org/docs/13/functions-sequence.html
+            cursor.execute(f"SELECT setval('transaction_id_seq', {max_id}, false)")
 
         update_last_load_date("transaction_id_lookup", transaction_id_lookup_start_time)
 
@@ -484,7 +505,9 @@ class Command(BaseCommand):
             0
         ]["max_id"]
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT setval('award_id_seq', {max_id})")
+            # Set is_called flag to false so that the next call to nextval() will return the specified value
+            # https://www.postgresql.org/docs/13/functions-sequence.html
+            cursor.execute(f"SELECT setval('award_id_seq', {max_id}, false)")
 
         update_last_load_date("award_id_lookup", award_id_lookup_start_time)
 
