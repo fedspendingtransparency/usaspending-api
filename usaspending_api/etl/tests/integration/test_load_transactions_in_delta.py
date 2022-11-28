@@ -630,7 +630,6 @@ class TestInitialRun:
 
 
 class TestTransactionIdLookup:
-
     @mark.django_db(transaction=True)
     def test_scenarios(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
@@ -760,7 +759,6 @@ class TestTransactionIdLookup:
 
 
 class TestAwardIdLookup:
-
     @mark.django_db(transaction=True)
     def test_scenarios(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
