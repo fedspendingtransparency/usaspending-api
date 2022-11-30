@@ -225,6 +225,7 @@ def agency_test_data(db):
         funding_agency_id=1002,
         federal_action_obligation=5,
         action_date="2020-01-01",
+        is_fpds=False,
     )
     baker.make(
         "awards.TransactionNormalized",
@@ -234,6 +235,23 @@ def agency_test_data(db):
         funding_agency_id=1002,
         federal_action_obligation=10,
         action_date="2020-01-02",
+        is_fpds=False,
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction_id=1,
+        awarding_agency_name="Awarding Toptier Agency 1",
+        funding_agency_name="Funding Toptier Agency 2",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        funding_sub_tier_agency_na="Funding Subtier Agency 2",
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction_id=2,
+        awarding_agency_name="Awarding Toptier Agency 1",
+        funding_agency_name="Funding Toptier Agency 2",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        funding_sub_tier_agency_na="Funding Subtier Agency 2",
     )
 
     baker.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")
@@ -525,9 +543,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="04",
         place_of_perform_county_na="COUNTYSVILLE",
         place_of_performance_zip5="12345",
@@ -536,9 +555,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=2,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="04",
         place_of_perform_county_na="COUNTYSVILLE",
         place_of_performance_zip5="12345",
@@ -547,9 +567,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=3,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="01",
         place_of_perform_county_na="SOMEWHEREVILLE",
         place_of_performance_zip5="98765",
@@ -558,9 +579,10 @@ def geo_test_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=4,
-        place_of_perf_country_desc=None,
         place_of_perform_country_c="US",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="XY",
+        place_of_perfor_state_desc="TEST STATE",
         place_of_perform_county_co="01",
         place_of_perform_county_na="SOMEWHEREVILLE",
         place_of_performance_zip5="98765",
@@ -936,8 +958,8 @@ def test_category_naics_awards(naics_test_data, monkeypatch, elasticsearch_trans
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
-            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
+            {"amount": 4, "code": "NAICS 9876", "name": "NAICS DESC 9876", "id": None},
+            {"amount": 2, "code": "NAICS 1234", "name": "NAICS DESC 1234", "id": None},
         ],
         "messages": [get_time_period_message()],
     }

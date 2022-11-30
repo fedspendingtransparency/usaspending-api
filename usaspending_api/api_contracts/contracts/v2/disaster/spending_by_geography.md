@@ -104,7 +104,7 @@ This endpoint provides geographical spending information from emergency/disaster
 
 ## Filter (object)
 + `def_codes` (required, array[DEFC], fixed-type)
-    Return an award if an of the DEF Codes match the supplied filter since an Award can have multiple DEF Codes. If the `def_codes` provided are in the COVID-19 group, the query will only return results after `2020-04-01`.
+    Return an award if one of the DEF Codes match the supplied filter since an Award can have multiple DEF Codes. If the `def_codes` provided are in the COVID-19 group, the query will only return results of transactions where the `action_date` is on or after `2020-04-01`.
 + `award_type_codes` (optional, array[AwardTypeCodes], fixed-type)
 
 ## GeographyTypeResult (object)
@@ -118,45 +118,8 @@ This endpoint provides geographical spending information from emergency/disaster
 
 
 ## DEFC (enum[string])
-List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing
-
-### Members
-- `1`
-- `2`
-- `3`
-- `4`
-- `5`
-- `6`
-- `7`
-- `8`
-- `9`
-- `A`
-- `B`
-- `C`
-- `D`
-- `E`
-- `F`
-- `G`
-- `H`
-- `I`
-- `J`
-- `K`
-- `L`
-- `M`
-- `N`
-- `O`
-- `P`
-- `Q`
-- `QQQ`
-- `R`
-- `S`
-- `T`
-- `U`
-- `V`
-- `W`
-- `X`
-- `Y`
-- `Z`
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
+A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
 
 ## AwardTypeCodes (enum[string])
 List of procurement and assistance award type codes supported by USAspending.gov
