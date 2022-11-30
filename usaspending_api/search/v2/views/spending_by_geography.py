@@ -433,7 +433,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         results = {}
         for bucket in geo_info_buckets:
             bucket_shape_code = _key_to_geo_code(bucket.get("key"))
-            geo_info = current_geo_info.get(bucket_shape_code, {"shape_code": ""})
+            geo_info = current_geo_info.get(bucket_shape_code) or {"shape_code": ""}
 
             if geo_info["shape_code"]:
                 if self.geo_layer == GeoLayer.STATE:

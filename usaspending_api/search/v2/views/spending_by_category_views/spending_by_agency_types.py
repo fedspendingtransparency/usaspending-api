@@ -51,7 +51,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
         # Build out the results
         results = []
         for bucket in agency_info_buckets:
-            agency_info = current_agency_info.get(bucket.get("key"), {})
+            agency_info = current_agency_info.get(bucket.get("key")) or {}
             result = {
                 "id": agency_info.get("id"),
                 "code": agency_info.get("code"),

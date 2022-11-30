@@ -309,7 +309,7 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
         result = {}
         if children:
             result_hash, result_level = tuple(bucket.get("key").split("/")) if bucket.get("key") else (None, None)
-            recipient_info = current_recipient_info.get(result_hash, {})
+            recipient_info = current_recipient_info.get(result_hash) or {}
             result = {
                 "recipient_hash": result_hash,
                 "uei": recipient_info.get("uei"),

@@ -83,7 +83,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
         results = []
         for bucket in location_info_buckets:
             key = _key_to_geo_code(bucket.get("key"))
-            location_info = current_location_info.get(key, {})
+            location_info = current_location_info.get(key) or {}
 
             if location_info:
                 if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
