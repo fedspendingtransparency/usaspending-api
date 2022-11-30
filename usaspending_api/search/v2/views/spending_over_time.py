@@ -95,7 +95,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             queryset = queryset.annotate(quarter=FiscalQuarter("sub_action_date"))
             month_quarter_cols.append("quarter")
 
-        first_values = ["prime_fy"] + month_quarter_cols
+        first_values = ["sub_fiscal_year"] + month_quarter_cols
         second_values = ["aggregated_amount"] + month_quarter_cols
         second_values_dict = {"fy": F("sub_fiscal_year")}
         order_by_cols = ["fy"] + month_quarter_cols
