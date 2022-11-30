@@ -36,21 +36,22 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
         # Get the current agency info
         current_agency_info = {}
         if self.agency_type in (AgencyType.AWARDING_TOPTIER, AgencyType.FUNDING_TOPTIER):
-            agency_info_query = ToptierAgency.objects.filter(toptier_code__in=code_list).annotate(
-                id=F("agency__id"), code=F("toptier_code")
-            )
+            agency_info_query = ToptierAgency.objects.filter(
+                toptier_code__in=code_list, agency__toptier_flag=True
+            ).annotate(id=F("agency__id"), agency_code=F("toptier_code"), code=F("abbreviation"))
         else:
             agency_info_query = SubtierAgency.objects.filter(subtier_code__in=code_list).annotate(
-                id=F("agency__id"), code=F("subtier_code")
+                id=F("agency__id"), agency_code=F("subtier_code"), code=F("abbreviation")
             )
-        agency_info_query = agency_info_query.values("id", "code", "name")
+        agency_info_query = agency_info_query.values("agency_code", "id", "code", "name")
         for agency_info in agency_info_query.all():
-            current_agency_info[agency_info["code"]] = agency_info
+            agency_code = agency_info.pop("agency_code")
+            current_agency_info[agency_code] = agency_info
 
         # Build out the results
         results = []
         for bucket in agency_info_buckets:
-            agency_info = current_agency_info.get(bucket.get("key")) or {}
+            agency_info = current_agency_info.get(bucket.get("key"), {})
             result = {
                 "id": agency_info.get("id"),
                 "code": agency_info.get("code"),

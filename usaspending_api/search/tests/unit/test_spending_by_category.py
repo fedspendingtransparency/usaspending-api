@@ -3,6 +3,7 @@ import pytest
 from model_bakery import baker
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
+from usaspending_api.references.abbreviations import code_to_state, state_to_code, fips_to_code
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
     AwardingAgencyViewSet,
@@ -621,12 +622,16 @@ def geo_test_data(db):
         place_of_performance_congr="90",
     )
 
-    baker.make("recipient.StateData", name="Test State", code="XY")
+    baker.make("recipient.StateData", name="Test State", code="XY", fips="99")
     baker.make("references.RefCountryCode", country_name="UNITED STATES", country_code="US")
-    baker.make("references.PopCounty", county_name="SOMEWHEREVILLE", county_number="001")
-    baker.make("references.PopCounty", county_name="COUNTYSVILLE", county_number="004")
-    baker.make("references.PopCongressionalDistrict", state_code="XY", congressional_district="06")
-    baker.make("references.PopCongressionalDistrict", state_code="XY", congressional_district="90")
+    baker.make("references.PopCounty", state_code="99", county_name="SOMEWHEREVILLE", county_number="001")
+    baker.make("references.PopCounty", state_code="99", county_name="COUNTYSVILLE", county_number="004")
+    baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="06")
+    baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="90")
+
+    code_to_state["XY"] = {"name": "Test State", "fips": "99"}
+    state_to_code["Test State"] = "XY"
+    fips_to_code["99"] = "XY"
 
 
 @pytest.fixture

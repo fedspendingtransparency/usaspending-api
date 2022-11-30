@@ -66,7 +66,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
         # Build out the results
         results = []
         for bucket in industry_info_buckets:
-            industry_info = current_industry_info.get(bucket.get("key")) or {}
+            industry_info = current_industry_info.get(bucket.get("key"), {})
             results.append(
                 {
                     "id": industry_info.get("id"),

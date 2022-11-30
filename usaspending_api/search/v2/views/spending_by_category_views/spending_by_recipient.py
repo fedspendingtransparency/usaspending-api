@@ -1,4 +1,3 @@
-import json
 from decimal import Decimal
 from typing import List
 
@@ -66,12 +65,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         # Get the codes
         recipient_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        recipient_infos = [json.loads(bucket.get("key")) for bucket in recipient_info_buckets if bucket.get("key")]
-        recipient_hashes = [
-            recipient_info.get("recipient_hash")
-            for recipient_info in recipient_infos
-            if recipient_info.get("recipient_hash")
-        ]
+        recipient_hashes = [bucket.get("key").split("/")[0] for bucket in recipient_info_buckets if bucket.get("key")]
 
         # Get the current recipient info
         current_recipient_info = {}
@@ -84,11 +78,9 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
         # Build out the results
         results = []
         for bucket in recipient_info_buckets:
-            result_rec_info = json.loads(bucket.get("key")) if bucket.get("key") else {}
-            result_hash = result_rec_info.get("recipient_hash")
-            result_level = result_rec_info.get("recipient_level")
-            result_hash_with_level = f"{result_hash}-{result_level}" if result_hash and result_level else None
-            recipient_info = current_recipient_info.get(result_hash) or {}
+            result_hash, result_level = tuple(bucket.get("key").split("/")) if bucket.get("key") else (None, None)
+            result_hash_with_level = f"{result_hash}-{result_level}" if (result_hash and result_level) else None
+            recipient_info = current_recipient_info.get(result_hash, {})
 
             results.append(
                 {
@@ -96,7 +88,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
                     "recipient_id": result_hash_with_level,
                     "name": (
                         recipient_info["legal_business_name"].upper()
-                        if "legal_business_name" in recipient_info
+                        if recipient_info.get("legal_business_name")
                         else None
                     ),
                     "code": recipient_info.get("duns") or "Recipient not provided",

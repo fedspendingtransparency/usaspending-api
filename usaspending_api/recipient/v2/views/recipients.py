@@ -1,4 +1,3 @@
-import json
 import logging
 import uuid
 
@@ -290,16 +289,11 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
     response = search.handle_execute()
     response_as_dict = response.aggs.to_dict()
 
-    # Get the codes
     recipient_info_buckets = response_as_dict.get("group_by_recipient", {}).get("buckets", [])
     current_recipient_info = {}
     if children:
-        recipient_infos = [json.loads(bucket.get("key")) for bucket in recipient_info_buckets if bucket.get("key")]
-        recipient_hashes = [
-            recipient_info.get("recipient_hash")
-            for recipient_info in recipient_infos
-            if recipient_info.get("recipient_hash")
-        ]
+        # Get the codes
+        recipient_hashes = [bucket.get("key").split("/")[0] for bucket in recipient_info_buckets if bucket.get("key")]
 
         # Get the current recipient info
         current_recipient_info = {}
@@ -314,9 +308,8 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
     for bucket in recipient_info_buckets:
         result = {}
         if children:
-            result_rec_info = json.loads(bucket.get("key")) if bucket.get("key") else {}
-            result_hash = result_rec_info.get("recipient_hash")
-            recipient_info = current_recipient_info.get(result_hash) or {}
+            result_hash, result_level = tuple(bucket.get("key").split("/")) if bucket.get("key") else (None, None)
+            recipient_info = current_recipient_info.get(result_hash, {})
             result = {
                 "recipient_hash": result_hash,
                 "uei": recipient_info.get("uei"),

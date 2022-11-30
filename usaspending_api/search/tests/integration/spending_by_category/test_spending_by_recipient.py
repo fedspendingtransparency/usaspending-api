@@ -248,7 +248,12 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "name": "RECIPIENT 3",
                 "recipient_id": "3523fd0b-c1f0-ddac-e217-7b7b25fad06f-C",
             },
-            {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
+            {
+                "amount": 50.0,
+                "code": "456789123",
+                "name": "RECIPIENT 2",
+                "recipient_id": "7976667a-dd95-2b65-5f4e-e340c686a346-R",
+            },
             {
                 "amount": 5.0,
                 "code": "Recipient not provided",
@@ -295,7 +300,14 @@ def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transactio
         "category": "recipient_duns",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None}],
+        "results": [
+            {
+                "amount": 50.0,
+                "code": "456789123",
+                "name": "RECIPIENT 2",
+                "recipient_id": "7976667a-dd95-2b65-5f4e-e340c686a346-R",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"

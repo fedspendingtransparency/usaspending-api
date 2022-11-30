@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum
 
 from django.conf import settings
-from django.db.models import Sum, FloatField, QuerySet, F, Value
+from django.db.models import Sum, FloatField, QuerySet, F, Value, TextField
 from django.db.models.functions import Cast, Concat
 from elasticsearch_dsl import A, Q as ES_Q
 from rest_framework.request import Request
@@ -380,29 +380,32 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         return search
 
     def build_elasticsearch_result(self, response: dict) -> Dict[str, dict]:
+        def _key_to_geo_code(key):
+            return f"{code_to_state[key[:2]]['fips']}{key[2:]}" if (key and key[:2] in code_to_state) else None
+
         # Get the codes
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        geo_codes = [bucket["key"] for bucket in geo_info_buckets if bucket.get("key")]
+        geo_codes = [_key_to_geo_code(bucket["key"]) for bucket in geo_info_buckets if bucket.get("key")]
 
         # Get the current geo info
         current_geo_info = {}
         if self.geo_layer == GeoLayer.STATE:
-            # since Django doesn't believe in implicit joins, we run another query to just get the state abbreviations
-            state_mappings = PopCongressionalDistrict.objects.values("state_code", "state_abbreviation").distinct()
-            state_mappings = {
-                state_mapping["state_code"]: state_mapping["state_abbreviation"] for state_mapping in state_mappings
-            }
             geo_info_query = (
                 PopCounty.objects.filter(state_code__in=geo_codes, county_number="000")
-                .annotate(geo_code=F("state_code"), display_name=F("state_name"), population=F("latest_population"))
-                .values("geo_code", "display_name", "population")
+                .annotate(
+                    geo_code=F("state_code"),
+                    display_name=F("state_name"),
+                    population=F("latest_population"),
+                    shape_code=F("state_code"),
+                )
+                .values("geo_code", "display_name", "population", "shape_code")
             )
         elif self.geo_layer == GeoLayer.COUNTY:
             geo_info_query = (
-                PopCounty.objects.filter(county_number__in=geo_codes)
+                PopCounty.objects.annotate(shape_code=Concat("state_code", "county_number", output_field=TextField()))
+                .filter(shape_code__in=geo_codes)
                 .annotate(
                     geo_code=F("county_number"),
-                    shape_code=Concat("state_code", "county_number"),
                     display_name=F("county_name"),
                     population=F("latest_population"),
                 )
@@ -410,29 +413,36 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             )
         else:
             geo_info_query = (
-                PopCongressionalDistrict.objects.filter(congressional_district__in=geo_codes)
+                PopCongressionalDistrict.objects.annotate(
+                    shape_code=Concat("state_code", "congressional_district", output_field=TextField())
+                )
+                .filter(shape_code__in=geo_codes)
                 .annotate(
                     geo_code=F("congressional_district"),
-                    shape_code=Concat("state_code", "congressional_district"),
-                    display_name=Concat("state_abbreviation", Value("-"), "congressional_district"),
+                    display_name=Concat(
+                        "state_abbreviation", Value("-"), "congressional_district", output_field=TextField()
+                    ),
                     population=F("latest_population"),
                 )
                 .values("geo_code", "display_name", "shape_code", "population")
             )
         for geo_info in geo_info_query.all():
-            if self.geo_layer == GeoLayer.STATE:
-                geo_info["display_name"] = geo_info["display_name"].title()
-                geo_info["shape_code"] = state_mappings[geo_info["geo_code"]].upper()
-            elif self.geo_layer == GeoLayer.COUNTY:
-                geo_info["display_name"] = geo_info["display_name"].title()
-            else:
-                geo_info["display_name"] = geo_info["display_name"].upper()
-            current_geo_info[geo_info["geo_code"]] = geo_info
+            current_geo_info[geo_info["shape_code"]] = geo_info
 
         # Build out the results
         results = {}
         for bucket in geo_info_buckets:
-            geo_info = current_geo_info.get(bucket.get("key")) or {"shape_code": ""}
+            bucket_shape_code = _key_to_geo_code(bucket.get("key"))
+            geo_info = current_geo_info.get(bucket_shape_code, {"shape_code": ""})
+
+            if geo_info["shape_code"]:
+                if self.geo_layer == GeoLayer.STATE:
+                    geo_info["display_name"] = geo_info["display_name"].title()
+                    geo_info["shape_code"] = fips_to_code[geo_info["shape_code"]].upper()
+                elif self.geo_layer == GeoLayer.COUNTY:
+                    geo_info["display_name"] = geo_info["display_name"].title()
+                else:
+                    geo_info["display_name"] = geo_info["display_name"].upper()
 
             per_capita = None
             aggregated_amount = int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100")
