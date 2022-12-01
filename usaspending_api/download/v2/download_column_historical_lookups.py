@@ -1596,14 +1596,37 @@ query_paths = {
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__public_law"),
+                (
+                    "budget_authority_unobligated_balance_brought_forward",
+                    "budget_authority_unobligated_balance_brought_forward_cpe",
+                ),
+                (
+                    "adjustments_to_unobligated_balance_brought_forward_fyb",
+                    "adjustments_to_unobligated_balance_brought_forward_fyb",
+                ),
+                (
+                    "adjustments_to_unobligated_balance_brought_forward_cpe",
+                    "adjustments_to_unobligated_balance_brought_forward_cpe",
+                ),
                 ("budget_authority_appropriated_amount", "budget_authority_appropriation_amount_cpe"),
+                ("borrowing_authority_amount", "borrowing_authority_amount"),
+                ("contract_authority_amount", "contract_authority_amount"),
+                (
+                    "spending_authority_from_offsetting_collections_amount",
+                    "spending_authority_from_offsetting_collections_amount",
+                ),
                 ("total_other_budgetary_resources_amount", "other_budgetary_resources_amount_cpe"),
                 ("total_budgetary_resources", "total_budgetary_resources_cpe"),
                 ("prior_year_paid_obligation_recoveries", "prior_year_paid_obligation_recoveries"),
                 ("anticipated_prior_year_obligation_recoveries", "anticipated_prior_year_obligation_recoveries"),
                 ("obligations_incurred", "obligations_incurred_total_cpe"),
+                (
+                    "deobligations_or_recoveries_or_refunds_from_prior_year",
+                    "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
+                ),
                 ("unobligated_balance", "unobligated_balance_cpe"),
                 ("gross_outlay_amount", "gross_outlay_amount_by_tas_cpe"),
+                ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
             ]
         )
     },
@@ -1636,7 +1659,7 @@ query_paths = {
                     "budget_authority_unobligated_balance_brought_forward_fyb",
                 ),
                 (
-                    "adjustments_to_unobligated_balance_brought_forward",
+                    "adjustments_to_unobligated_balance_brought_forward_cpe",
                     "adjustments_to_unobligated_balance_brought_forward_cpe",
                 ),
                 ("budget_authority_appropriated_amount", "budget_authority_appropriated_amount_cpe"),
@@ -1677,8 +1700,8 @@ query_paths = {
                     "budget_authority_unobligated_balance_brought_forward",
                 ),
                 (
-                    "adjustments_to_unobligated_balance_brought_forward",
-                    "adjustments_to_unobligated_balance_brought_forward",
+                    "adjustments_to_unobligated_balance_brought_forward_cpe",
+                    "adjustments_to_unobligated_balance_brought_forward_cpe",
                 ),
                 ("budget_authority_appropriated_amount", "budget_authority_appropriated_amount"),
                 ("borrowing_authority_amount", "borrowing_authority_amount"),
