@@ -334,8 +334,8 @@ def _test_correct_response_for_recipient_location_district_with_geo_filters(clie
             {
                 "aggregated_amount": 5000000.0,
                 "display_name": "SC-10",
-                "per_capita": None,
-                "population": None,
+                "per_capita": 500000.0,
+                "population": 10,
                 "shape_code": "4510",
             },
             {
@@ -481,8 +481,8 @@ def _test_correct_response_for_place_of_performance_district_without_geo_filters
             {
                 "aggregated_amount": 50005.0,
                 "display_name": "SC-10",
-                "per_capita": None,
-                "population": None,
+                "per_capita": 5000.5,
+                "population": 10,
                 "shape_code": "4510",
             },
             {
@@ -622,8 +622,8 @@ def _test_correct_response_for_recipient_location_district_without_geo_filters(c
             {
                 "aggregated_amount": 5000000.0,
                 "display_name": "SC-10",
-                "per_capita": None,
-                "population": None,
+                "per_capita": 500000.0,
+                "population": 10,
                 "shape_code": "4510",
             },
             {

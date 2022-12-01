@@ -3,6 +3,7 @@ import pytest
 from model_bakery import baker
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
+from usaspending_api.references.abbreviations import code_to_state, state_to_code, fips_to_code
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
     AwardingAgencyViewSet,
@@ -281,15 +282,63 @@ def agency_test_data(db):
         funding_subtier_agency_abbreviation="SA2",
     )
 
-    baker.make("references.ToptierAgency", toptier_agency_id=2001, name="Awarding Toptier Agency 1", abbreviation="TA1")
-    baker.make("references.SubtierAgency", subtier_agency_id=3001, name="Awarding Subtier Agency 1", abbreviation="SA1")
-    baker.make("references.ToptierAgency", toptier_agency_id=2003, name="Awarding Toptier Agency 3", abbreviation="TA3")
-    baker.make("references.SubtierAgency", subtier_agency_id=3003, name="Awarding Subtier Agency 3", abbreviation="SA3")
+    baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=2001,
+        name="Awarding Toptier Agency 1",
+        abbreviation="TA1",
+        toptier_code="TA1",
+    )
+    baker.make(
+        "references.SubtierAgency",
+        subtier_agency_id=3001,
+        name="Awarding Subtier Agency 1",
+        abbreviation="SA1",
+        subtier_code="SA1",
+    )
+    baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=2003,
+        name="Awarding Toptier Agency 3",
+        abbreviation="TA3",
+        toptier_code="TA3",
+    )
+    baker.make(
+        "references.SubtierAgency",
+        subtier_agency_id=3003,
+        name="Awarding Subtier Agency 3",
+        abbreviation="SA3",
+        subtier_code="SA3",
+    )
 
-    baker.make("references.ToptierAgency", toptier_agency_id=2002, name="Funding Toptier Agency 2", abbreviation="TA2")
-    baker.make("references.SubtierAgency", subtier_agency_id=3002, name="Funding Subtier Agency 2", abbreviation="SA2")
-    baker.make("references.ToptierAgency", toptier_agency_id=2004, name="Funding Toptier Agency 4", abbreviation="TA4")
-    baker.make("references.SubtierAgency", subtier_agency_id=3004, name="Funding Subtier Agency 4", abbreviation="SA4")
+    baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=2002,
+        name="Funding Toptier Agency 2",
+        abbreviation="TA2",
+        toptier_code="TA2",
+    )
+    baker.make(
+        "references.SubtierAgency",
+        subtier_agency_id=3002,
+        name="Funding Subtier Agency 2",
+        abbreviation="SA2",
+        subtier_code="SA2",
+    )
+    baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=2004,
+        name="Funding Toptier Agency 4",
+        abbreviation="TA4",
+        toptier_code="TA4",
+    )
+    baker.make(
+        "references.SubtierAgency",
+        subtier_agency_id=3004,
+        name="Funding Subtier Agency 4",
+        abbreviation="SA4",
+        subtier_code="SA4",
+    )
 
     baker.make("references.Agency", id=1001, toptier_agency_id=2001, subtier_agency_id=3001, toptier_flag=True)
     baker.make("references.Agency", id=1002, toptier_agency_id=2002, subtier_agency_id=3002, toptier_flag=True)
@@ -608,8 +657,16 @@ def geo_test_data(db):
         pop_congressional_code="90",
     )
 
-    baker.make("recipient.StateData", name="Test State", code="XY")
+    baker.make("recipient.StateData", name="Test State", code="XY", fips="99")
     baker.make("references.RefCountryCode", country_name="UNITED STATES", country_code="US")
+    baker.make("references.PopCounty", state_code="99", county_name="SOMEWHEREVILLE", county_number="001")
+    baker.make("references.PopCounty", state_code="99", county_name="COUNTYSVILLE", county_number="004")
+    baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="06")
+    baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="90")
+
+    code_to_state["XY"] = {"name": "Test State", "fips": "99"}
+    state_to_code["Test State"] = "XY"
+    fips_to_code["99"] = "XY"
 
 
 @pytest.fixture
@@ -978,8 +1035,8 @@ def test_category_naics_awards(naics_test_data, monkeypatch, elasticsearch_trans
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 4, "code": "NAICS 9876", "name": "NAICS DESC 9876", "id": None},
-            {"amount": 2, "code": "NAICS 1234", "name": "NAICS DESC 1234", "id": None},
+            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
+            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
         ],
         "messages": [get_time_period_message()],
     }
