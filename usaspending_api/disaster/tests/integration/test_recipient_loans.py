@@ -124,7 +124,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="REC")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="REC", sort="obligation")
     expected_results = [
         {
             "code": "987654321",
