@@ -22,7 +22,7 @@ def test_correct_response_defc_no_results(
 def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L"], sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -59,7 +59,7 @@ def test_correct_response_multiple_defc(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -110,12 +110,12 @@ def test_correct_response_multiple_defc(
 def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="GIBBERISH")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="GIBBERISH", sort="obligation")
     expected_results = []
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="3")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="3", sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -129,7 +129,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="ENT, 3")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="ENT, 3", sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -143,7 +143,7 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="ReCiPiEnT,")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], query="ReCiPiEnT,", sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -164,12 +164,12 @@ def test_correct_response_with_award_type_codes(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["IDV_A"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["IDV_A"], sort="obligation")
     expected_results = []
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"], sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -239,7 +239,7 @@ def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, a
 def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1, sort="obligation")
     expected_results = {
         "totals": {"award_count": 7, "obligation": 2222222.0, "outlay": 1111111.0},
         "results": [
