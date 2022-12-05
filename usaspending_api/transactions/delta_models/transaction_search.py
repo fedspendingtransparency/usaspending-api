@@ -140,7 +140,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "officer_5_name": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "officer_5_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     # Exclusively FABS
-    "published_fabs_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "published_fabs_id": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "afa_generated_unique": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "business_funds_ind_desc": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "business_funds_indicator": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -157,7 +157,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "sai_number": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "uri": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     # Exclusively FPDS
-    "detached_award_procurement_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "detached_award_procurement_id": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "detached_award_proc_unique": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "a_76_fair_act_action": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "a_76_fair_act_action_desc": {"delta": "STRING", "postgres": "TEXT", "gold": True},
