@@ -164,12 +164,16 @@ def test_correct_response_with_award_type_codes(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["IDV_A"], sort="obligation")
+    resp = helpers.post_for_spending_endpoint(
+        client, url, def_codes=["L", "M"], award_type_codes=["IDV_A"], sort="obligation"
+    )
     expected_results = []
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"], sort="obligation")
+    resp = helpers.post_for_spending_endpoint(
+        client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"], sort="obligation"
+    )
     expected_results = [
         {
             "code": "987654321",
