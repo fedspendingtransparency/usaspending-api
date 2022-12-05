@@ -46,7 +46,6 @@ def psc_test_data(db):
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
         product_or_service_code="1234",
-        product_or_service_description="PSC DESCRIPTION UP",
     )
     baker.make(
         "search.TransactionSearch",
@@ -58,7 +57,6 @@ def psc_test_data(db):
         action_date="2020-01-02",
         fiscal_action_date="2020-04-02",
         product_or_service_code="1234",
-        product_or_service_description="PSC DESCRIPTION UP",
     )
     baker.make(
         "search.TransactionSearch",
@@ -70,7 +68,6 @@ def psc_test_data(db):
         action_date="2020-01-03",
         fiscal_action_date="2020-04-03",
         product_or_service_code="9876",
-        product_or_service_description="PSC DESCRIPTION DOWN",
     )
     baker.make(
         "search.TransactionSearch",
@@ -82,7 +79,6 @@ def psc_test_data(db):
         action_date="2020-01-04",
         fiscal_action_date="2020-04-04",
         product_or_service_code="9876",
-        product_or_service_description="PSC DESCRIPTION DOWN",
     )
 
     baker.make("references.PSC", code="1234", description="PSC DESCRIPTION UP")
@@ -117,23 +113,23 @@ def cfda_test_data(db):
         "search.TransactionSearch",
         transaction_id=1,
         award_id=1,
+        is_fpds=False,
         federal_action_obligation=1,
         generated_pragmatic_obligation=1,
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
         cfda_number="CFDA1234",
-        cfda_title="CFDA TITLE 1234",
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=2,
         award_id=2,
+        is_fpds=False,
         federal_action_obligation=1,
         generated_pragmatic_obligation=1,
         action_date="2020-01-02",
         fiscal_action_date="2020-04-02",
         cfda_number="CFDA1234",
-        cfda_title="CFDA TITLE 1234",
     )
 
     baker.make("references.Cfda", id=1, program_number="CFDA1234", program_title="CFDA TITLE 1234")
@@ -156,7 +152,6 @@ def naics_test_data(db):
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
         naics_code="NAICS 1234",
-        naics_description="NAICS DESC 1234",
     )
     baker.make(
         "search.TransactionSearch",
@@ -168,7 +163,6 @@ def naics_test_data(db):
         action_date="2020-01-02",
         fiscal_action_date="2020-04-02",
         naics_code="NAICS 1234",
-        naics_description="NAICS DESC 1234",
     )
     baker.make(
         "search.TransactionSearch",
@@ -180,7 +174,6 @@ def naics_test_data(db):
         action_date="2020-01-03",
         fiscal_action_date="2020-04-03",
         naics_code="NAICS 9876",
-        naics_description="NAICS DESC 9876",
     )
     baker.make(
         "search.TransactionSearch",
@@ -192,7 +185,6 @@ def naics_test_data(db):
         action_date="2020-01-04",
         fiscal_action_date="2020-04-04",
         naics_code="NAICS 9876",
-        naics_description="NAICS DESC 9876",
     )
 
     baker.make("references.NAICS", code="NAICS 1234", description="SOURCE NAICS DESC 1234", year=1955)
@@ -250,14 +242,10 @@ def agency_test_data(db):
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
         is_fpds=False,
-        awarding_toptier_agency_name="Awarding Toptier Agency 1",
-        awarding_subtier_agency_name="Awarding Subtier Agency 1",
-        funding_toptier_agency_name="Funding Toptier Agency 2",
-        funding_subtier_agency_name="Funding Subtier Agency 2",
-        awarding_toptier_agency_abbreviation="TA1",
-        awarding_subtier_agency_abbreviation="SA1",
-        funding_toptier_agency_abbreviation="TA2",
-        funding_subtier_agency_abbreviation="SA2",
+        awarding_agency_code="TA1",
+        funding_agency_code="TA2",
+        awarding_sub_tier_agency_c="SA1",
+        funding_sub_tier_agency_co="SA2",
     )
     baker.make(
         "search.TransactionSearch",
@@ -272,14 +260,10 @@ def agency_test_data(db):
         action_date="2020-01-02",
         fiscal_action_date="2020-04-02",
         is_fpds=False,
-        awarding_toptier_agency_name="Awarding Toptier Agency 1",
-        awarding_subtier_agency_name="Awarding Subtier Agency 1",
-        funding_toptier_agency_name="Funding Toptier Agency 2",
-        funding_subtier_agency_name="Funding Subtier Agency 2",
-        awarding_toptier_agency_abbreviation="TA1",
-        awarding_subtier_agency_abbreviation="SA1",
-        funding_toptier_agency_abbreviation="TA2",
-        funding_subtier_agency_abbreviation="SA2",
+        awarding_agency_code="TA1",
+        funding_agency_code="TA2",
+        awarding_sub_tier_agency_c="SA1",
+        funding_sub_tier_agency_co="SA2",
     )
 
     baker.make(
@@ -410,9 +394,6 @@ def recipient_test_data(db):
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
         is_fpds=True,
-        recipient_name_raw="University of Pawnee",
-        recipient_name="UNIVERSITY OF PAWNEE",
-        recipient_unique_id="00UOP00",
         recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
         recipient_levels=["P"],
     )
@@ -425,9 +406,6 @@ def recipient_test_data(db):
         action_date="2020-01-02",
         fiscal_action_date="2020-04-02",
         is_fpds=True,
-        recipient_name_raw="University of Pawnee",
-        recipient_name="UNIVERSITY OF PAWNEE",
-        recipient_unique_id="00UOP00",
         recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
         recipient_levels=["P"],
     )
@@ -440,9 +418,6 @@ def recipient_test_data(db):
         action_date="2020-01-03",
         fiscal_action_date="2020-04-03",
         is_fpds=True,
-        recipient_name_raw="John Doe",
-        recipient_name="JOHN DOE",
-        recipient_unique_id="1234JD4321",
         recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
         recipient_levels=["C"],
     )
@@ -455,9 +430,6 @@ def recipient_test_data(db):
         action_date="2020-01-04",
         fiscal_action_date="2020-04-04",
         is_fpds=True,
-        recipient_name_raw="John Doe",
-        recipient_name="JOHN DOE",
-        recipient_unique_id="1234JD4321",
         recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
         recipient_levels=["C"],
     )
@@ -470,8 +442,8 @@ def recipient_test_data(db):
         action_date="2020-01-05",
         fiscal_action_date="2020-04-05",
         is_fpds=True,
-        recipient_name="MULTIPLE RECIPIENTS",
-        recipient_unique_id=None,
+        recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
+        recipient_levels=[]
     )
 
     baker.make(
@@ -594,11 +566,8 @@ def geo_test_data(db):
         fiscal_action_date="2020-04-01",
         is_fpds=True,
         pop_country_code="US",
-        pop_country_name="UNITED STATES",
         pop_state_code="XY",
-        pop_state_name="TEST STATE",
         pop_county_code="004",
-        pop_county_name="COUNTYSVILLE",
         pop_zip5="12345",
         pop_congressional_code="06",
     )
@@ -612,11 +581,8 @@ def geo_test_data(db):
         fiscal_action_date="2020-04-02",
         is_fpds=True,
         pop_country_code="US",
-        pop_country_name="UNITED STATES",
         pop_state_code="XY",
-        pop_state_name="TEST STATE",
         pop_county_code="004",
-        pop_county_name="COUNTYSVILLE",
         pop_zip5="12345",
         pop_congressional_code="06",
     )
@@ -630,11 +596,8 @@ def geo_test_data(db):
         fiscal_action_date="2020-04-03",
         is_fpds=True,
         pop_country_code="US",
-        pop_country_name="UNITED STATES",
         pop_state_code="XY",
-        pop_state_name="TEST STATE",
         pop_county_code="001",
-        pop_county_name="SOMEWHEREVILLE",
         pop_zip5="98765",
         pop_congressional_code="90",
     )
@@ -648,11 +611,8 @@ def geo_test_data(db):
         fiscal_action_date="2020-04-04",
         is_fpds=True,
         pop_country_code="US",
-        pop_country_name="UNITED STATES",
         pop_state_code="XY",
-        pop_state_name="TEST STATE",
         pop_county_code="001",
-        pop_county_name="SOMEWHEREVILLE",
         pop_zip5="98765",
         pop_congressional_code="90",
     )
@@ -683,8 +643,6 @@ def federal_accounts_test_data(db):
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
         is_fpds=True,
-        recipient_name="Sample Recipient",
-        recipient_unique_id="000000000",
         recipient_hash="ab4d44f6-7a16-4ca7-405a-dcb913effbaf",
         recipient_levels=["R"],
         federal_accounts=[{"id": 10, "account_title": "Test Federal Account", "federal_account_code": "020-0001"}],
@@ -698,8 +656,6 @@ def federal_accounts_test_data(db):
         action_date="2020-01-02",
         fiscal_action_date="2020-04-02",
         is_fpds=True,
-        recipient_name="Sample Recipient",
-        recipient_unique_id="000000000",
         recipient_hash="ab4d44f6-7a16-4ca7-405a-dcb913effbaf",
         recipient_levels=["R"],
         federal_accounts=[{"id": 10, "account_title": "Test Federal Account", "federal_account_code": "020-0001"}],
