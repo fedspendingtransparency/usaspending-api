@@ -7,7 +7,7 @@ import usaspending_api.common.custom_django_fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0014_additional_transaction_search_cols'),
+        ('search', '0018_transaction_search_cols_agency'),
     ]
 
     operations = [
