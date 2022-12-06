@@ -203,7 +203,6 @@ def test_correct_response_with_award_type_codes(
             "obligation": 20.0,
             "outlay": 10.0,
         },
-
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
