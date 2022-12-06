@@ -264,12 +264,7 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
             "previous": 1,
             "hasNext": True,
             "hasPrevious": True,
-        },
-        "messages": [
-            "Notice! API Request to sort on 'id' field isn't fully "
-            "implemented. Results were actually sorted using 'description' "
-            "field."
-        ],
+        }
     }
 
     assert resp.status_code == status.HTTP_200_OK
