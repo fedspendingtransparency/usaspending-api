@@ -183,13 +183,13 @@ class SpendingByGeographyViewSet(DisasterBase):
                         .get(self.spending_type, {})
                         .get("value", 0)
                     ) / Decimal("100")
-                results[shape_code] = {
+                results[""] = {
                     "amount": amount,
                     "display_name": None,
                     "shape_code": None,
                     "population": None,
                     "per_capita": None,
-                    "award_count": int(b.get("doc_count", 0)),
+                    "award_count": int(bucket.get("doc_count", 0)),
                 }
             else:
                 code = bucket.get("key") or ""
