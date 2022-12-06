@@ -168,8 +168,9 @@ class SpendingByGeographyViewSet(DisasterBase):
     def build_elasticsearch_result(self, response: dict) -> Dict[str, dict]:
         results = {}
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        per_capita = None
+
         for bucket in geo_info_buckets:
+            per_capita = None
             if bucket.get("key") == "NULL":
                 if self.spending_type != "face_value_of_loan":
                     amount = int(
@@ -238,6 +239,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                     state_code = code
                     state_fips = code_to_state.get(state_code, {}).get("fips", "")
                     for b in sub_bucket:
+                        per_capita = None
                         county_code = b.get("key")
                         county_data = (
                             PopCounty.objects.filter(county_number=county_code, state_code=state_fips)
@@ -281,6 +283,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                     state_code = code
                     state_fips = code_to_state.get(state_code, {}).get("fips", "")
                     for b in sub_bucket:
+                        per_capita = None
                         congress_code = b.get("key")
                         display_name = f"{state_code}-{congress_code}".upper()
                         shape_code = f"{state_fips}{congress_code}"
@@ -303,7 +306,6 @@ class SpendingByGeographyViewSet(DisasterBase):
 
                         if population:
                             per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
-
                         results[shape_code] = {
                             "amount": amount,
                             "display_name": display_name or None,
