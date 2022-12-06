@@ -78,6 +78,14 @@ def test_correct_response_multiple_defc(
             "outlay": 10000.0,
         },
         {
+            "code": "987654321",
+            "award_count": 3,
+            "description": "RECIPIENT, 3",
+            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "obligation": 202200.0,
+            "outlay": 101100.0,
+        },
+        {
             "code": "DUNS Number not provided",
             "award_count": 1,
             "description": "RECIPIENT 1",
@@ -92,14 +100,6 @@ def test_correct_response_multiple_defc(
             "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
             "obligation": 20.0,
             "outlay": 10.0,
-        },
-        {
-            "code": "987654321",
-            "award_count": 3,
-            "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
-            "obligation": 202200.0,
-            "outlay": 101100.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -180,6 +180,14 @@ def test_correct_response_with_award_type_codes(
             "outlay": 10000.0,
         },
         {
+            "code": "987654321",
+            "award_count": 1,
+            "description": "RECIPIENT, 3",
+            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "obligation": 2000.0,
+            "outlay": 1000.0,
+        },
+        {
             "code": "DUNS Number not provided",
             "award_count": 1,
             "description": "RECIPIENT 1",
@@ -195,14 +203,7 @@ def test_correct_response_with_award_type_codes(
             "obligation": 20.0,
             "outlay": 10.0,
         },
-        {
-            "code": "987654321",
-            "award_count": 1,
-            "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
-            "obligation": 2000.0,
-            "outlay": 1000.0,
-        },
+
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results

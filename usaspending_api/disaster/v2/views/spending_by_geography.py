@@ -171,9 +171,29 @@ class SpendingByGeographyViewSet(DisasterBase):
         per_capita = None
         for bucket in geo_info_buckets:
             if bucket.get("key") == "NULL":
-                display_name = None
-                shape_code = None
-                population = None
+                if self.spending_type != "face_value_of_loan":
+                    amount = int(
+                        bucket.get("nested", {})
+                            .get("filtered_aggs", {})
+                            .get(self.spending_type, {})
+                            .get("value", 0)
+                    ) / Decimal("100")
+                else:
+                    amount = int(
+                        bucket.get("nested", {})
+                            .get("filtered_aggs", {})
+                            .get(self.spending_type, {})
+                            .get(self.spending_type, {})
+                            .get("value", 0)
+                    ) / Decimal("100")
+                results[shape_code] = {
+                    "amount": amount,
+                    "display_name": None,
+                    "shape_code": None,
+                    "population": None,
+                    "per_capita": None,
+                    "award_count": int(b.get("doc_count", 0)),
+                }
             else:
                 code = bucket.get("key") or ""
                 if self.geo_layer == GeoLayer.STATE:
