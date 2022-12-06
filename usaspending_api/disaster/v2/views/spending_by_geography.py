@@ -94,7 +94,7 @@ class SpendingByGeographyViewSet(DisasterBase):
         scope_field_name = scope_dict[json_request["scope"]]
         loc_field_name = location_dict[self.geo_layer.value]
 
-        self.agg_key = f"{scope_field_name}_state_code"
+        self.agg_key = f"{scope_field_name}_state_agg_key"
         self.geo_layer_filters = json_request.get("geo_layer_filters")
         self.spending_type = json_request.get("spending_type")
         self.loc_lookup = f"{scope_field_name}_{loc_field_name}"
@@ -303,7 +303,6 @@ class SpendingByGeographyViewSet(DisasterBase):
             return []
         response = search.handle_execute()
         results_dict = self.build_elasticsearch_result(response.aggs.to_dict())
-
         if self.geo_layer_filters:
             filtered_shape_codes = set(self.geo_layer_filters) & set(results_dict.keys())
             results = [results_dict[shape_code] for shape_code in filtered_shape_codes]

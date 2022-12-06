@@ -78,12 +78,12 @@ def test_correct_response_multiple_defc(
             "outlay": 10000.0,
         },
         {
-            "code": "987654321",
-            "award_count": 3,
-            "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
-            "obligation": 202200.0,
-            "outlay": 101100.0,
+            "code": "DUNS Number not provided",
+            "award_count": 1,
+            "description": "RECIPIENT 1",
+            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
+            "obligation": 2.0,
+            "outlay": 1.0,
         },
         {
             "code": "456789123",
@@ -94,12 +94,12 @@ def test_correct_response_multiple_defc(
             "outlay": 10.0,
         },
         {
-            "code": "DUNS Number not provided",
-            "award_count": 1,
-            "description": "RECIPIENT 1",
-            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
-            "obligation": 2.0,
-            "outlay": 1.0,
+            "code": "987654321",
+            "award_count": 3,
+            "description": "RECIPIENT, 3",
+            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "obligation": 202200.0,
+            "outlay": 101100.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -180,12 +180,12 @@ def test_correct_response_with_award_type_codes(
             "outlay": 10000.0,
         },
         {
-            "code": "987654321",
+            "code": "DUNS Number not provided",
             "award_count": 1,
-            "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
-            "obligation": 2000.0,
-            "outlay": 1000.0,
+            "description": "RECIPIENT 1",
+            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
+            "obligation": 2.0,
+            "outlay": 1.0,
         },
         {
             "code": "456789123",
@@ -196,12 +196,12 @@ def test_correct_response_with_award_type_codes(
             "outlay": 10.0,
         },
         {
-            "code": "DUNS Number not provided",
+            "code": "987654321",
             "award_count": 1,
-            "description": "RECIPIENT 1",
-            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
-            "obligation": 2.0,
-            "outlay": 1.0,
+            "description": "RECIPIENT, 3",
+            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "obligation": 2000.0,
+            "outlay": 1000.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK

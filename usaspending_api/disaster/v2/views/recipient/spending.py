@@ -25,7 +25,6 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
         for bucket in info_buckets:
-            print(bucket.get("key"))
             # Build a list of hash IDs to handle multiple levels
             if "special" in bucket.get("key"):
                 recipient_info = bucket.get("key").split("/")
