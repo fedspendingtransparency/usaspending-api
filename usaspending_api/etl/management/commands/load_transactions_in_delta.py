@@ -7,7 +7,15 @@ from datetime import datetime, timezone
 from django.core.management import BaseCommand, call_command
 from django.db import connection
 from pyspark.sql import SparkSession
+from pyspark.sql.types import ArrayType, StringType
 
+from usaspending_api.broker.helpers.build_business_categories_boolean_dict import (
+    fpds_boolean_columns
+)
+from usaspending_api.broker.helpers.get_business_categories import (
+    get_business_categories_fabs,
+    get_business_categories_fpds,
+)
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
@@ -15,9 +23,14 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
-from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTION_FABS_COLUMN_INFO
-from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMN_INFO
-
+from usaspending_api.transactions.delta_models.transaction_fabs import (
+    TRANSACTION_FABS_COLUMN_INFO,
+    FABS_TO_NORMALIZED_COLUMN_INFO
+)
+from usaspending_api.transactions.delta_models.transaction_fpds import (
+    TRANSACTION_FPDS_COLUMN_INFO,
+    DAP_TO_NORMALIZED_COLUMN_INFO
+)
 
 class Command(BaseCommand):
 
@@ -45,7 +58,14 @@ class Command(BaseCommand):
             type=str,
             required=True,
             help="The silver delta table that should be updated from the bronze delta data.",
-            choices=["award_id_lookup", "initial_run", "transaction_fabs", "transaction_fpds", "transaction_id_lookup"],
+            choices=[
+                "award_id_lookup",
+                "initial_run",
+                "transaction_fabs",
+                "transaction_fpds",
+                "transaction_id_lookup",
+                "transaction_normalized"
+            ],
         )
         parser.add_argument(
             "--spark-s3-bucket",
@@ -54,11 +74,19 @@ class Command(BaseCommand):
             default=CONFIG.SPARK_S3_BUCKET,
             help="The destination bucket in S3 for creating the tables.",
         )
+        parser.add_argument(
+            "--initial-copy",
+            type=bool,
+            required=False,
+            default=True,
+            help="Whether to copy tables from the 'raw' database to the 'int' database during initial_run.",
+        )
 
     def handle(self, *args, **options):
         with self.prepare_spark():
             self.etl_level = options["etl_level"]
             self.spark_s3_bucket = options["spark_s3_bucket"]
+            self.initial_copy = options["initial_copy"]
 
             if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
@@ -87,6 +115,9 @@ class Command(BaseCommand):
                 self.spark.sql(self.merge_into_sql("fabs"))
             elif self.etl_level == "transaction_fpds":
                 self.spark.sql(self.merge_into_sql("fpds"))
+            elif self.etl_level == "transaction_normalized":
+                self.spark.sql(self.transaction_normalized_merge_into_sql("fabs"))
+                self.spark.sql(self.transaction_normalized_merge_into_sql("fpds"))
 
             update_last_load_date(self.etl_level, etl_start)
 
@@ -113,6 +144,14 @@ class Command(BaseCommand):
 
         # Setup Logger
         self.logger = get_jvm_logger(self.spark, __name__)
+
+        # Create UDFs for Business Categories
+        self.spark.udf.register(
+            name="get_business_categories_fabs", f=get_business_categories_fabs, returnType=ArrayType(StringType())
+        )
+        self.spark.udf.register(
+            name="get_business_categories_fpds", f=get_business_categories_fpds, returnType=ArrayType(StringType())
+        )
 
         yield  # Going to wait for the Django command to complete then stop the spark session if needed
 
@@ -150,8 +189,8 @@ class Command(BaseCommand):
                 )
                 WHERE aidlu.published_fabs_id IS NOT NULL AND pfabs.published_fabs_id IS NULL
             """
-        elif self.etl_level in ("transaction_fabs", "transaction_fpds"):
-            id_col = "transaction_id"
+        elif self.etl_level in ("transaction_fabs", "transaction_fpds", "transaction_normalized"):
+            id_col = "id" if self.etl_level == "transaction_normalized" else "transaction_id"
             subquery = f"""
                 SELECT {id_col} AS id_to_remove
                 FROM int.{self.etl_level} LEFT JOIN int.transaction_id_lookup ON (
@@ -184,24 +223,133 @@ class Command(BaseCommand):
         else:
             raise ValueError("Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
 
-        select_cols = []
-        omitted_cols = ["transaction_id"]
-        for col in filter(lambda x: x.silver_name not in omitted_cols, col_info):
-            if col.is_cast:
-                select_cols.append(
-                    f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
+        if self.etl_level in ("transaction_fabs", "transaction_fpds"):
+            select_cols = []
+            additional_joins = ""
+            id_col_name = "transaction_id"
+            omitted_cols = [id_col_name]
+            for col in filter(lambda x: x.silver_name not in omitted_cols, col_info):
+                if col.handling == "cast":
+                    select_cols.append(
+                        f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
+                    )
+                elif col.handling == "literal":
+                    # Use col.bronze_name directly as the value
+                    select_cols.append(f"{col.bronze_name} AS {col.silver_name}")
+                else:
+                    select_cols.append(f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}")
+
+        elif self.etl_level == "transaction_normalized":
+            id_col_name = "id"
+            select_cols = [
+                "award_id_lookup.id AS award_id",
+                "awarding_agency.id AS awarding_agency_id",
+                f"""CASE WHEN month(to_date({bronze_table_name}.action_date)) > 9 
+                             THEN year(to_date({bronze_table_name}.action_date)) + 1
+                         ELSE year(to_date({bronze_table_name}.action_date))
+                    END AS fiscal_year""",
+                "funding_agency.id AS funding_agency_id",
+            ]
+
+            if transaction_type == "fabs":
+                select_cols.extend(
+                    [
+                        # business_categories
+                        f"get_business_categories_fabs({bronze_table_name}.business_types) AS business_categories",
+                        # funding_amount
+                        f"""
+                        CAST(COALESCE({bronze_table_name}.federal_action_obligation, 0)
+                                + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
+                             AS NUMERIC(23, 2)) AS funding_amount
+                        """,
+                    ]
                 )
+                map_col_info = copy.copy(FABS_TO_NORMALIZED_COLUMN_INFO)
             else:
-                select_cols.append(f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}")
+                fpds_business_category_columns = copy.copy(fpds_boolean_columns)
+                fpds_business_category_columns.extend(["contracting_officers_deter", "domestic_or_foreign_entity"])
+                named_struct_text = ", ".join([f"'{col}', {bronze_table_name}.{col}"
+                                               for col in fpds_business_category_columns])
+
+                select_cols.extend(
+                    [
+                        # business_categories
+                        f"get_business_categories_fpds(named_struct({named_struct_text})) AS business_categories",
+                        # type
+                        f"""
+                        CASE WHEN {bronze_table_name}.pulled_from <> 'IDV' THEN {bronze_table_name}.contract_award_type
+                             WHEN {bronze_table_name}.idv_type = 'B' AND {bronze_table_name}.type_of_idc IS NOT NULL
+                               THEN 'IDV_B_' || {bronze_table_name}.type_of_idc
+                             WHEN {bronze_table_name}.idv_type = 'B'
+                                 AND {bronze_table_name}.type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS'
+                               THEN 'IDV_B_A'
+                             WHEN {bronze_table_name}.idv_type = 'B'
+                                 AND {bronze_table_name}.type_of_idc_description = 
+                                     'INDEFINITE DELIVERY / INDEFINITE QUANTITY'
+                               THEN 'IDV_B_B'
+                             WHEN {bronze_table_name}.idv_type = 'B'
+                                 AND {bronze_table_name}.type_of_idc_description = 
+                                     'INDEFINITE DELIVERY / DEFINITE QUANTITY'
+                               THEN 'IDV_B_C'
+                             ELSE 'IDV_' || {bronze_table_name}.idv_type
+                        END AS type
+                        """,
+                        # type_description
+                        f"""
+                        CASE WHEN {bronze_table_name}.pulled_from <> 'IDV'
+                               THEN {bronze_table_name}.contract_award_type_desc
+                             WHEN {bronze_table_name}.idv_type = 'B'
+                                 AND {bronze_table_name}.type_of_idc_description IS NOT NULL
+                                 AND ucase({bronze_table_name}.type_of_idc_description) <> 'NAN'
+                               THEN {bronze_table_name}.type_of_idc_description
+                             WHEN {bronze_table_name}.idv_type = 'B'
+                               THEN 'INDEFINITE DELIVERY CONTRACT'
+                             ELSE {bronze_table_name}.idv_type_description
+                        END AS type_description
+                        """
+                    ]
+                )
+                map_col_info = copy.copy(DAP_TO_NORMALIZED_COLUMN_INFO)
+
+            for col in map_col_info:
+                if col.handling == "cast":
+                    select_cols.append(
+                        f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
+                    )
+                elif col.handling == "literal":
+                    # Use col.bronze_name directly as the value
+                    select_cols.append(f"{col.bronze_name} AS {col.silver_name}")
+                else:
+                    select_cols.append(f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}")
+
+            additional_joins = f"""
+                INNER JOIN int.award_id_lookup AS award_id_lookup ON (
+                    {bronze_table_name}.{unique_id} = award_id_lookup.{unique_id}
+                )
+                LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
+                    funding_subtier_agency.subtier_code = {bronze_table_name}.awarding_sub_tier_agency_c
+                )
+                LEFT OUTER JOIN global_temp.agency AS funding_agency ON (
+                    funding_agency.subtier_agency_id = funding_subtier_agency.subtier_agency_id
+                )
+                LEFT OUTER JOIN global_temp.subtier_agency AS awarding_subtier_agency ON (
+                    awarding_subtier_agency.subtier_code = {bronze_table_name}.funding_sub_tier_agency_co
+                )
+                LEFT OUTER JOIN global_temp.agency AS awarding_agency ON (
+                    awarding_agency.subtier_agency_id = awarding_subtier_agency.subtier_agency_id
+                )
+            """
+
 
         sql = f"""
                 SELECT
-                    transaction_id_lookup.id AS transaction_id,
+                    transaction_id_lookup.id AS {id_col_name},
                     {", ".join(select_cols)}
                 FROM {bronze_table_name}
                 INNER JOIN int.transaction_id_lookup ON (
                     {bronze_table_name}.{unique_id} = transaction_id_lookup.{unique_id}
                 )
+                {additional_joins}
                 WHERE {bronze_table_name}.updated_at >= '{self.last_etl_date}'
         """
 
@@ -213,17 +361,18 @@ class Command(BaseCommand):
         elif transaction_type == "fpds":
             col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
         else:
-            raise ValueError(f"Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
+            raise ValueError(f"Invalid value for 'transaction_type': {transaction_type}. "
+                             "Must select either: 'fabs' or 'fpds'")
 
-        set_cols = [f"silver_table.{col.silver_name} = source_view.{col.silver_name}" for col in col_info]
+        set_cols = [f"silver_table.{col.silver_name} = source_subquery.{col.silver_name}" for col in col_info]
         silver_table_cols = ", ".join([col.silver_name for col in col_info])
 
         sql = f"""
             MERGE INTO int.{self.etl_level} AS silver_table
             USING (
                 {self.source_subquery_sql(transaction_type)}
-            ) AS source_view
-            ON silver_table.transaction_id = source_view.transaction_id
+            ) AS source_subquery
+            ON silver_table.transaction_id = source_subquery.transaction_id
             WHEN MATCHED
                 THEN UPDATE SET
                     {", ".join(set_cols)}
@@ -231,6 +380,50 @@ class Command(BaseCommand):
                 THEN INSERT
                     ({silver_table_cols})
                     VALUES ({silver_table_cols})
+        """
+
+        return sql
+
+    def transaction_normalized_merge_into_sql(self, transaction_type):
+        if transaction_type != "fabs" and transaction_type != "fpds":
+            raise ValueError(f"Invalid value for 'transaction_type': {transaction_type}. "
+                             "Must select either: 'fabs' or 'fpds'")
+
+        load_datetime = datetime.now(timezone.utc)
+
+        # On set, create_date will not be changed and update_date will be set below.  All other column
+        # values will come from the subquery.
+        set_cols = [
+            f"int.transaction_normalized.{col_name} = source_subquery.{col_name}"
+            for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in ("create_date", "update_date")
+        ]
+        set_cols.append(f"int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'")
+
+        # Move create_date and update_date to the end of the list of column names for ease of handling
+        # during record insert
+        insert_col_name_list = [col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS
+                                         if col_name not in ("create_date", "update_date")]
+        insert_col_name_list.extend(["create_date", "update_date"])
+        insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
+
+        # On insert, all values except for create_date and update_date will come from the subquery
+        insert_value_list = insert_col_name_list[:-2]
+        insert_value_list.extend([f"'{load_datetime.isoformat(" ")}'"] * 2)
+        insert_values = ", ".join([value for value in insert_value_list])
+
+        sql = f"""
+            MERGE INTO int.transaction_normalized
+            USING (
+                {self.source_subquery_sql(transaction_type)}
+            ) AS source_subquery
+            ON transaction_normalized.id = source_subquery.id
+            WHEN MATCHED
+                THEN UPDATE SET
+                {", ".join(set_cols)}
+            WHEN NOT MATCHED
+                THEN INSERT
+                    ({insert_col_names})
+                    VALUES ({insert_values})
         """
 
         return sql
@@ -513,7 +706,7 @@ class Command(BaseCommand):
 
         # Create tables in 'int' database
         self.logger.info("Creating tables in new database location")
-        destination_tables = ("transaction_fabs", "transaction_fpds")
+        destination_tables = ("transaction_fabs", "transaction_fpds", "transaction_normalized")
         for destination_table in destination_tables:
             call_command(
                 "create_delta_table",
@@ -524,3 +717,11 @@ class Command(BaseCommand):
                 "--alt-db",
                 destination_database,
             )
+
+            if self.initial_copy:
+                self.spark.sql(
+                    f"""
+                    INSERT OVERWRITE {destination_database}.{destination_table}
+                        SELECT * FROM raw.{destination_table}
+                    """
+                )

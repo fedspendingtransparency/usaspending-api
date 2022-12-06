@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+from typing_extensions import Literal
 
 
 @dataclass
@@ -32,4 +33,4 @@ class TransactionColumn:
     silver_name: str
     bronze_name: Optional[str]
     delta_type: str
-    is_cast: bool
+    handling: Literal["cast", "literal", "normal"] = "normal"
