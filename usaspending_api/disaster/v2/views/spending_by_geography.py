@@ -98,9 +98,9 @@ class SpendingByGeographyViewSet(DisasterBase):
         self.geo_layer_filters = json_request.get("geo_layer_filters")
         self.spending_type = json_request.get("spending_type")
         self.loc_lookup = f"{scope_field_name}_{loc_field_name}"
+        self.sub_agg_key = None
         if self.geo_layer != GeoLayer.STATE:
             self.sub_agg_key = f"{scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
-
         # Set which field will be the aggregation amount
         if self.spending_type == "obligation":
             self.metric_field = "total_covid_obligation"
