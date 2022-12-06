@@ -59,8 +59,24 @@ def test_correct_response_multiple_defc(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"],sort="description")
     expected_results = [
+        {
+            "code": "DUNS Number not provided",
+            "award_count": 1,
+            "description": "MULTIPLE RECIPIENTS",
+            "id": None,
+            "obligation": 2000000.0,
+            "outlay": 1000000.0,
+        },
+        {
+            "code": "096354360",
+            "award_count": 1,
+            "description": "MULTIPLE RECIPIENTS",
+            "id": None,
+            "obligation": 20000.0,
+            "outlay": 10000.0,
+        },
         {
             "code": "987654321",
             "award_count": 3,
@@ -85,22 +101,7 @@ def test_correct_response_multiple_defc(
             "obligation": 2.0,
             "outlay": 1.0,
         },
-        {
-            "code": "DUNS Number not provided",
-            "award_count": 1,
-            "description": "MULTIPLE RECIPIENTS",
-            "id": None,
-            "obligation": 2000000.0,
-            "outlay": 1000000.0,
-        },
-        {
-            "code": "096354360",
-            "award_count": 1,
-            "description": "MULTIPLE RECIPIENTS",
-            "id": None,
-            "obligation": 20000.0,
-            "outlay": 10000.0,
-        },
+
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
@@ -243,7 +244,7 @@ def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, a
 def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1, sort="description")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1, sort="id")
     expected_results = {
         "totals": {"award_count": 7, "obligation": 2222222.0, "outlay": 1111111.0},
         "results": [
@@ -264,7 +265,12 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
             "previous": 1,
             "hasNext": True,
             "hasPrevious": True,
-        }
+        },
+        "messages": [
+            "Notice! API Request to sort on 'id' field isn't fully "
+            "implemented. Results were actually sorted using 'description' "
+            "field."
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
