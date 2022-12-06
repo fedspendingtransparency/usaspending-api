@@ -59,7 +59,7 @@ def test_correct_response_multiple_defc(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"],sort="description")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], sort="description")
     expected_results = [
         {
             "code": "DUNS Number not provided",
@@ -101,7 +101,6 @@ def test_correct_response_multiple_defc(
             "obligation": 2.0,
             "outlay": 1.0,
         },
-
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
@@ -165,16 +164,12 @@ def test_correct_response_with_award_type_codes(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(
-        client, url, def_codes=["L", "M"], award_type_codes=["IDV_A"]
-    )
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["IDV_A"])
     expected_results = []
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(
-        client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"]
-    )
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"])
     expected_results = [
         {
             "code": "987654321",
