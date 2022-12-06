@@ -56,4 +56,4 @@ class RecipientLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisa
                     },
                 }
             )
-        return sorted(results, key=lambda x: x[self.pagination.sort_key], reverse=self.pagination.sort_order == "desc")
+        return results
