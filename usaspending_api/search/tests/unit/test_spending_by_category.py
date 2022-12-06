@@ -443,7 +443,7 @@ def recipient_test_data(db):
         fiscal_action_date="2020-04-05",
         is_fpds=True,
         recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
-        recipient_levels=[]
+        recipient_levels=[],
     )
 
     baker.make(
