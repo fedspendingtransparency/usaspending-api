@@ -170,7 +170,7 @@ class SpendingByGeographyViewSet(DisasterBase):
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
 
         for bucket in geo_info_buckets:
-            if bucket.get("key") == None:
+            if bucket.get("key") is None:
                 if self.spending_type != "face_value_of_loan":
                     amount = int(
                         bucket.get("nested", {}).get("filtered_aggs", {}).get(self.spending_type, {}).get("value", 0)
@@ -251,7 +251,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                             .first()
                         )
                         display_name = display_name.county_name if display_name else None
-                        shape_code = f"{state_fips}{county_code}"
+                        shape_code = f"{state_fips}{county_code}" if state_fips else None
                         population = county_data.latest_population if county_data else None
                         if self.spending_type != "face_value_of_loan":
                             amount = int(
