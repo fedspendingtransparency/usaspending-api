@@ -31,11 +31,11 @@ WITH update_cte as (
     RETURNING award_id
 )
 UPDATE
-    awards
+    award_search
 SET
     update_date = NOW()
 FROM
     update_cte
 WHERE
-    id = update_cte.award_id
+    award_id = update_cte.award_id
 ;

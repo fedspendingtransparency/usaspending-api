@@ -33,13 +33,13 @@ WITH update_cte AS (
     RETURNING award_id
 )
 UPDATE
-    awards
+    award_search
 SET
     update_date = NOW()
 FROM
     update_cte
 WHERE
-    id = update_cte.award_id
+    award_id = update_cte.award_id
 ;
 
 -- When both FAIN and URI are populated in File C, update File C assistance
@@ -77,11 +77,11 @@ WITH update_cte AS (
         RETURNING award_id
     )
 UPDATE
-    awards
+    award_search
 SET
     update_date = NOW()
 FROM
     update_cte
 WHERE
-    id = update_cte.award_id
+    award_id = update_cte.award_id
 ;

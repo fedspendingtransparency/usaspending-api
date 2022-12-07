@@ -23,7 +23,7 @@ def delete_stale_fabs(ids_to_delete):
 
     if delete_transaction_ids:
         awards = (
-            "UPDATE awards SET latest_transaction_id = NULL, earliest_transaction_id = NULL "
+            "UPDATE award_search SET latest_transaction_id = NULL, earliest_transaction_id = NULL "
             "WHERE latest_transaction_id IN ({ids}) OR earliest_transaction_id IN ({ids});"
         )
         ts = 'DELETE FROM "transaction_search" ts WHERE ts."transaction_id" IN ({});'
