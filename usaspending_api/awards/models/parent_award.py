@@ -2,7 +2,7 @@ from django.db import models
 
 
 class ParentAward(models.Model):
-    award = models.OneToOneField("search.AwardSearch", on_delete=models.CASCADE, primary_key=True)
+    award = models.OneToOneField("awards.Award", on_delete=models.CASCADE, primary_key=True)
     generated_unique_award_id = models.TextField(unique=True)
     parent_award = models.ForeignKey("self", on_delete=models.CASCADE, db_index=True, blank=True, null=True)
 
