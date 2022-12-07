@@ -171,6 +171,7 @@ class SpendingByGeographyViewSet(DisasterBase):
 
         for bucket in geo_info_buckets:
             code = bucket.get("key") or ""
+            per_capita = None
             if self.geo_layer == GeoLayer.STATE:
                 state_data = StateData.objects.filter(code=code).order_by("-year").first()
                 shape_code = code.upper()
@@ -264,7 +265,11 @@ class SpendingByGeographyViewSet(DisasterBase):
                         if state_code and congress_code and congress_code != "NULL" and state_code != "NULL"
                         else None
                     )
-                    shape_code = f"{state_fips}{congress_code}"
+                    shape_code = (
+                        f"{state_fips}{congress_code}"
+                        if state_fips and congress_code and congress_code != "NULL" and state_fips != "NULL"
+                        else None
+                    )
                     population = PopCongressionalDistrict.objects.filter(
                         congressional_district=congress_code, state_code=state_fips
                     ).first()
