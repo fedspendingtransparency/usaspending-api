@@ -26,19 +26,13 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
         results = []
         for bucket in info_buckets:
             # Build a list of hash IDs to handle multiple levels
-            if "special" in bucket.get("key"):
-                recipient_info = bucket.get("key").split("/")
-                recipient_name = recipient_info[1]
-                recipient_duns = recipient_info[2]
-                recipient_hash_list = None
-            else:
-                recipient_info = bucket.get("key").split("/")
-                recipient_hash = recipient_info[0]
-                recipient_levels = literal_eval(recipient_info[1])
-                recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
-                info = RecipientLookup.objects.get(recipient_hash=recipient_hash)
-                recipient_name = info.legal_business_name
-                recipient_duns = info.duns
+            recipient_info = bucket.get("key").split("/")
+            recipient_hash = recipient_info[0]
+            recipient_levels = literal_eval(recipient_info[1])
+            recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
+            info = RecipientLookup.objects.get(recipient_hash=recipient_hash)
+            recipient_name = info.legal_business_name
+            recipient_duns = info.duns
 
             results.append(
                 {
