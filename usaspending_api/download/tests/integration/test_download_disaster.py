@@ -38,13 +38,13 @@ def awards_and_transactions():
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
     # Awards
-    award1 = baker.make("awards.Award", type="07", total_loan_value=3, generated_unique_award_id="ASST_NEW_1")
-    award2 = baker.make("awards.Award", type="07", total_loan_value=30, generated_unique_award_id="ASST_NEW_2")
-    award3 = baker.make("awards.Award", type="08", total_loan_value=300, generated_unique_award_id="ASST_NEW_3")
-    award4 = baker.make("awards.Award", type="B", total_loan_value=0, generated_unique_award_id="CONT_NEW_1")
-    award5 = baker.make("awards.Award", type="A", total_loan_value=0, generated_unique_award_id="CONT_NEW_2")
-    award6 = baker.make("awards.Award", type="C", total_loan_value=0, generated_unique_award_id="CONT_NEW_3")
-    award7 = baker.make("awards.Award", type="D", total_loan_value=0, generated_unique_award_id="CONT_NEW_4")
+    award1 = baker.make("search.AwardSearch", type="07", total_loan_value=3, generated_unique_award_id="ASST_NEW_1")
+    award2 = baker.make("search.AwardSearch", type="07", total_loan_value=30, generated_unique_award_id="ASST_NEW_2")
+    award3 = baker.make("search.AwardSearch", type="08", total_loan_value=300, generated_unique_award_id="ASST_NEW_3")
+    award4 = baker.make("search.AwardSearch", type="B", total_loan_value=0, generated_unique_award_id="CONT_NEW_1")
+    award5 = baker.make("search.AwardSearch", type="A", total_loan_value=0, generated_unique_award_id="CONT_NEW_2")
+    award6 = baker.make("search.AwardSearch", type="C", total_loan_value=0, generated_unique_award_id="CONT_NEW_3")
+    award7 = baker.make("search.AwardSearch", type="D", total_loan_value=0, generated_unique_award_id="CONT_NEW_4")
 
     # Disaster Emergency Fund Code
     defc1 = baker.make(

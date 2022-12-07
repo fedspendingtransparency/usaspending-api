@@ -92,8 +92,8 @@ def award_from_id(award_id):
     )
 
     baker.make(
-        "awards.Award",
-        id=award_id,
+        "search.AwardSearch",
+        award_id=award_id,
         generated_unique_award_id="GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
         piid="piid_%s" % string_award_id,
         type_description="type_description_%s" % string_award_id,

@@ -16,7 +16,7 @@ class TransactionSearch(models.Model):
     # "transaction" and "award" are actually models.BigIntegerField(), but left as OneToOneField and ForeignKey
     # to allow for querying in the Django ORM
     transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
-    award = models.ForeignKey("awards.Award", on_delete=models.DO_NOTHING, null=True)
+    award = models.ForeignKey("search.AwardSearch", on_delete=models.DO_NOTHING, null=True)
     transaction_unique_id = models.TextField(blank=False, null=False, default="NONE")
     usaspending_unique_transaction_id = models.TextField(null=True)
     modification_number = models.TextField(null=True)

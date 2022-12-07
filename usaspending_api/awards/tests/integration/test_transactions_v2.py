@@ -29,7 +29,7 @@ def cfda_transactions(db):
         "afa_generated_unique": "Q25B9A1MQ0",
     }
 
-    baker.make("awards.Award", **award_1)
+    baker.make("search.AwardSearch", **award_1)
     baker.make("search.TransactionSearch", **trx_norm_1)
 
 

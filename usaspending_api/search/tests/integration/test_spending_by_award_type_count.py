@@ -29,7 +29,7 @@ def award_data_fixture():
         uri=None,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         base_and_all_options_value=None,
         base_exercised_options_val=None,
         category="loans",
@@ -44,7 +44,7 @@ def award_data_fixture():
         fpds_parent_agency_id=None,
         funding_agency_id=None,
         generated_unique_award_id="ASST_NON_DECF0000058_8900",
-        id=48518634,
+        award_id=48518634,
         is_fpds=False,
         last_modified_date="2018-08-02",
         latest_transaction_id=2,
@@ -133,7 +133,7 @@ def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_aw
 
 @pytest.mark.django_db
 def test_spending_by_award_subawards_no_intersection(client):
-    baker.make("awards.Award", id=90)
+    baker.make("search.AwardSearch", award_id=90)
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=9999,
@@ -211,8 +211,8 @@ def awards_over_different_date_ranges_with_different_counts():
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
             baker.make(
-                "awards.Award",
-                id=award_id,
+                "search.AwardSearch",
+                award_id=award_id,
                 latest_transaction_id=award_id + 1000,
                 type=award_type,
                 category=award_category,

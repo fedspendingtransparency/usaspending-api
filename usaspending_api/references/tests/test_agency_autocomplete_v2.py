@@ -19,7 +19,7 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         awarding_agency=a,
         funding_agency=a,
         latest_transaction_id=tn.transaction_id,
@@ -37,7 +37,7 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         awarding_agency=a,
         funding_agency=a,
         latest_transaction_id=tn.transaction_id,
@@ -53,7 +53,7 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         awarding_agency=a,
         funding_agency=a,
         latest_transaction_id=tn.transaction_id,
@@ -69,7 +69,7 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         awarding_agency=a,
         funding_agency=a,
         latest_transaction_id=tn.transaction_id,
@@ -85,7 +85,7 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         awarding_agency=a,
         funding_agency=a,
         latest_transaction_id=tn.transaction_id,
@@ -102,7 +102,7 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         awarding_agency=a,
         funding_agency=a,
         latest_transaction_id=tn.transaction_id,

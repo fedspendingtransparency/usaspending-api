@@ -12,7 +12,7 @@ def test_data(db):
     baker.make("references.CGAC", cgac_code="000", agency_name="Agency 000", agency_abbreviation="A000")
     baker.make("references.CGAC", cgac_code="002", agency_name="Agency 002", agency_abbreviation="A002")
 
-    award = baker.make("awards.Award")
+    award = baker.make("search.AwardSearch")
 
     taa = baker.make(
         "accounts.TreasuryAppropriationAccount",

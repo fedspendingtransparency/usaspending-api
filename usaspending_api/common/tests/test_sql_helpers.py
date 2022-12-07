@@ -57,7 +57,7 @@ class CursorExecuteTestCase(TestCase):
         """
         for _id in range(1, AWARD_COUNT + 1):
             baker.make("search.TransactionSearch", is_fpds=True, transaction_id=_id, award_id=_id)
-            baker.make("awards.Award", id=_id, latest_transaction_id=_id)
+            baker.make("search.AwardSearch", award_id=_id, latest_transaction_id=_id)
 
     @staticmethod
     def test_build_composable_order_by():

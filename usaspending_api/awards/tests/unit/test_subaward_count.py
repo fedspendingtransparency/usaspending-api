@@ -6,8 +6,8 @@ from rest_framework import status
 @pytest.fixture
 def award_subaward_count_data(db):
     baker.make(
-        "awards.Award",
-        id=1,
+        "search.AwardSearch",
+        award_id=1,
         generated_unique_award_id="CONT_AWD_zzz_whatever",
         piid="zzz",
         fain="abc123",
@@ -16,8 +16,8 @@ def award_subaward_count_data(db):
         subaward_count=10,
     )
     baker.make(
-        "awards.Award",
-        id=2,
+        "search.AwardSearch",
+        award_id=2,
         generated_unique_award_id="CONT_AWD_aaa_whatever",
         piid="aaa",
         fain="abc123",

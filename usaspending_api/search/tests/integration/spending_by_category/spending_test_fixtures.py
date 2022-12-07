@@ -11,7 +11,7 @@ def basic_agencies(db):
 
 @pytest.fixture
 def basic_award(db, basic_agencies):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,
@@ -50,7 +50,7 @@ def agencies_with_subagencies(db):
 
 @pytest.fixture
 def subagency_award(db, agencies_with_subagencies):
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
 
     baker.make(
         "search.TransactionSearch",
@@ -119,13 +119,13 @@ def _setup_agency(id, subtiers, special_name):
 @pytest.fixture
 def awards_and_transactions(db):
     # Awards
-    baker.make("awards.Award", id=1, latest_transaction_id=10)
-    baker.make("awards.Award", id=2, latest_transaction_id=20)
-    baker.make("awards.Award", id=3, latest_transaction_id=30)
-    baker.make("awards.Award", id=4, latest_transaction_id=40)
-    baker.make("awards.Award", id=5, latest_transaction_id=50)
-    baker.make("awards.Award", id=6, latest_transaction_id=60)
-    baker.make("awards.Award", id=7, latest_transaction_id=70)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=10)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=20)
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=30)
+    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=40)
+    baker.make("search.AwardSearch", award_id=5, latest_transaction_id=50)
+    baker.make("search.AwardSearch", award_id=6, latest_transaction_id=60)
+    baker.make("search.AwardSearch", award_id=7, latest_transaction_id=70)
 
     baker.make("awards.FinancialAccountsByAwards", pk=1, award_id=1, treasury_account_id=1)
     baker.make("accounts.TreasuryAppropriationAccount", pk=1, federal_account_id=1)

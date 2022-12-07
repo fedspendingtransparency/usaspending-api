@@ -41,7 +41,7 @@ def new_award_data(db):
     ag2 = baker.make(agency_lazy_ref, id=2, toptier_agency=ta2)
     ag3 = baker.make(agency_lazy_ref, id=3, toptier_agency=ta3)
 
-    awards_lazy_ref = "awards.Award"
+    awards_lazy_ref = "search.AwardSearch"
     award1 = baker.make(
         awards_lazy_ref,
         id=1,

@@ -5,11 +5,11 @@ import pytest
 @pytest.fixture
 def cfda_awards_and_transactions(db):
     # Awards
-    award1 = baker.make("awards.Award", latest_transaction_id=10, type="07", total_loan_value=3)
-    award2 = baker.make("awards.Award", latest_transaction_id=20, type="07", total_loan_value=30)
-    award3 = baker.make("awards.Award", latest_transaction_id=30, type="08", total_loan_value=300)
-    award4 = baker.make("awards.Award", latest_transaction_id=40, type="02", total_loan_value=0)
-    award5 = baker.make("awards.Award", latest_transaction_id=50, type="A", total_loan_value=0)
+    award1 = baker.make("search.AwardSearch", latest_transaction_id=10, type="07", total_loan_value=3)
+    award2 = baker.make("search.AwardSearch", latest_transaction_id=20, type="07", total_loan_value=30)
+    award3 = baker.make("search.AwardSearch", latest_transaction_id=30, type="08", total_loan_value=300)
+    award4 = baker.make("search.AwardSearch", latest_transaction_id=40, type="02", total_loan_value=0)
+    award5 = baker.make("search.AwardSearch", latest_transaction_id=50, type="A", total_loan_value=0)
 
     # Disaster Emergency Fund Code
     defc1 = baker.make(

@@ -400,7 +400,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ParentAward',
             fields=[
-                ('award', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='awards.Award')),
+                ('award', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='search.AwardSearch')),
                 ('generated_unique_award_id', models.TextField(unique=True)),
                 ('direct_idv_count', models.IntegerField()),
                 ('direct_contract_count', models.IntegerField()),

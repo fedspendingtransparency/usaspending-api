@@ -103,8 +103,8 @@ def basic_object_class_multiple_faba_with_loan_value_with_two_object_classes(
 
 
 def _normal_award():
-    return baker.make("awards.Award", type="A", total_loan_value=0)
+    return baker.make("search.AwardSearch", type="A", total_loan_value=0)
 
 
 def _loan_award():
-    return baker.make("awards.Award", type="07", total_loan_value=5)
+    return baker.make("search.AwardSearch", type="07", total_loan_value=5)

@@ -264,7 +264,7 @@ def create_transaction_test_data(transaction_recipient_list=None):
         }
         base_transaction_search.update(transaction_search)
         base_transaction_search.update(transaction_recipient_list[count])
-        baker.make("awards.Award", id=id, latest_transaction_id=id)
+        baker.make("search.AwardSearch", award_id=id, latest_transaction_id=id)
         baker.make("search.TransactionSearch", **base_transaction_search)
 
         id += 1
@@ -278,7 +278,7 @@ def create_transaction_test_data(transaction_recipient_list=None):
         }
         base_transaction_search.update(transaction_search)
         base_transaction_search.update(transaction_recipient_list[count])
-        baker.make("awards.Award", id=id, latest_transaction_id=id)
+        baker.make("search.AwardSearch", award_id=id, latest_transaction_id=id)
         baker.make("search.TransactionSearch", **base_transaction_search)
 
         id += 1

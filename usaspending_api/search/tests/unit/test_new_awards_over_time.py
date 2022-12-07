@@ -69,8 +69,8 @@ def add_award_recipients(db):
     )
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2009, 5, 30),
             latest_transaction_id=i,
             earliest_transaction_id=i,
@@ -89,8 +89,8 @@ def add_award_recipients(db):
     new_award_count = 3
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2009, 5, 1),
             latest_transaction_id=i,
             earliest_transaction_id=i,
@@ -109,8 +109,8 @@ def add_award_recipients(db):
     new_award_count = 1
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2009, 7, 2),
             latest_transaction_id=i,
             earliest_transaction_id=i,
@@ -129,8 +129,8 @@ def add_award_recipients(db):
     new_award_count = 2
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2008, 1, 10),
             latest_transaction_id=i,
             earliest_transaction_id=i,
@@ -149,8 +149,8 @@ def add_award_recipients(db):
     new_award_count = 6
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2009, 7, 30),
             latest_transaction_id=i,
             earliest_transaction_id=i,

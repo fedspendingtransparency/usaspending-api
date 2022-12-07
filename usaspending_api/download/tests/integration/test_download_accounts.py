@@ -62,9 +62,13 @@ def download_test_data(db):
     baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
-    award1 = baker.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_1")
-    award2 = baker.make("awards.Award", id=456, category="contracts", generated_unique_award_id="CONT_AWD_1")
-    award3 = baker.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_1")
+    award1 = baker.make("search.AwardSearch", award_id=123, category="idv", generated_unique_award_id="CONT_IDV_1")
+    award2 = baker.make(
+        "search.AwardSearch", award_id=456, category="contracts", generated_unique_award_id="CONT_AWD_1"
+    )
+    award3 = baker.make(
+        "search.AwardSearch", award_id=789, category="assistance", generated_unique_award_id="ASST_NON_1"
+    )
 
     # Create Transactions
     baker.make(

@@ -95,9 +95,9 @@ def awards_and_transactions(db):
         "subaward_count": 10,
         "date_signed": "2004-03-02",
     }
-    baker.make("awards.Award", **award_1_model)
-    baker.make("awards.Award", **award_2_model)
-    baker.make("awards.Award", **award_3_model)
+    baker.make("search.AwardSearch", **award_1_model)
+    baker.make("search.AwardSearch", **award_2_model)
+    baker.make("search.AwardSearch", **award_3_model)
 
     asst_data = {"is_fpds": False, "transaction_id": 1, "award_id": 1, "cfda_number": 1234, "cfda_title": "farms"}
     baker.make("search.TransactionSearch", **asst_data)

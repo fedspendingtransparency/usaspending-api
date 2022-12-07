@@ -902,18 +902,18 @@ def awards_and_transactions(db):
         "uri": 1234,
     }
 
-    baker.make("awards.Award", **award_1)
-    baker.make("awards.Award", **award_2)
-    baker.make("awards.Award", **award_3)
-    baker.make("awards.Award", **award_4)
-    baker.make("awards.Award", **award_5)
-    baker.make("awards.Award", **award_6)
-    baker.make("awards.Award", **award_7)
-    baker.make("awards.Award", **award_8)
-    baker.make("awards.Award", **award_9)
-    baker.make("awards.Award", **award_10)
-    baker.make("awards.Award", **award_11)
-    baker.make("awards.Award", **award_13)
+    baker.make("search.AwardSearch", **award_1)
+    baker.make("search.AwardSearch", **award_2)
+    baker.make("search.AwardSearch", **award_3)
+    baker.make("search.AwardSearch", **award_4)
+    baker.make("search.AwardSearch", **award_5)
+    baker.make("search.AwardSearch", **award_6)
+    baker.make("search.AwardSearch", **award_7)
+    baker.make("search.AwardSearch", **award_8)
+    baker.make("search.AwardSearch", **award_9)
+    baker.make("search.AwardSearch", **award_10)
+    baker.make("search.AwardSearch", **award_11)
+    baker.make("search.AwardSearch", **award_13)
 
     # Parent Award
     parent_award_1 = {
@@ -944,8 +944,8 @@ def awards_and_transactions(db):
 
 @pytest.fixture
 def update_awards(db):
-    baker.make("awards.Award", pk=11)
-    baker.make("awards.Award", pk=12)
+    baker.make("search.AwardSearch", pk=11)
+    baker.make("search.AwardSearch", pk=12)
 
 
 def test_award_last_updated_endpoint(client, update_awards):

@@ -232,7 +232,7 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
     """ Test all three together since they're so tightly intertwined. """
 
     # Create some test data.
-    a = baker.make("awards.Award", generated_unique_award_id="AWARD_1")
+    a = baker.make("search.AwardSearch", generated_unique_award_id="AWARD_1")
     tn = baker.make(
         "search.TransactionSearch",
         transaction_id=1,

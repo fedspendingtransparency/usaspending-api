@@ -19,12 +19,12 @@ def award_data_fixture(db):
     baker.make("search.TransactionSearch", transaction_id=876543210, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=987654321, action_date="2013-09-17")
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="loans",
         date_signed="2012-09-10",
         fain="DECF0000058",
         generated_unique_award_id="ASST_NON_DECF0000058_8900",
-        id=200,
+        award_id=200,
         latest_transaction_id=210210210,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2012-09-10",
@@ -33,12 +33,12 @@ def award_data_fixture(db):
         uri=None,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="idvs",
         date_signed="2009-12-10",
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY2_8900",
-        id=300,
+        award_id=300,
         latest_transaction_id=321032103,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2014-09-10",
@@ -47,12 +47,12 @@ def award_data_fixture(db):
         uri=None,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="idvs",
         date_signed="2015-05-10",
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY3_8900",
-        id=400,
+        award_id=400,
         latest_transaction_id=432104321,
         period_of_performance_current_end_date="2018-09-09",
         period_of_performance_start_date="2018-09-01",
@@ -61,12 +61,12 @@ def award_data_fixture(db):
         uri=None,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="idvs",
         date_signed="2009-09-10",
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY_8900",
-        id=500,
+        award_id=500,
         latest_transaction_id=543210543,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2018-09-10",
@@ -75,12 +75,12 @@ def award_data_fixture(db):
         uri=None,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="idvs",
         date_signed="2009-09-10",
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY55_8900",
-        id=600,
+        award_id=600,
         latest_transaction_id=654321065,
         period_of_performance_current_end_date="2039-09-09",
         period_of_performance_start_date="2009-09-10",
@@ -89,12 +89,12 @@ def award_data_fixture(db):
         uri=None,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="idvs",
         date_signed="2009-12-20",
         fain=None,
         generated_unique_award_id="CONT_AW_BEANS_8900",
-        id=700,
+        award_id=700,
         latest_transaction_id=765432107,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2009-12-20",
@@ -103,12 +103,12 @@ def award_data_fixture(db):
         uri=None,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="idvs",
         date_signed="2011-09-10",
         fain=None,
         generated_unique_award_id="CONT_AW_BEANS55_8900",
-        id=800,
+        award_id=800,
         latest_transaction_id=876543210,
         period_of_performance_current_end_date="2020-12-09",
         period_of_performance_start_date="2011-09-10",
@@ -117,12 +117,12 @@ def award_data_fixture(db):
         uri=None,
     )
     baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="other",
         date_signed="2013-09-10",
         fain=None,
         generated_unique_award_id="ASST_AGG_JHISUONSD_8900",
-        id=900,
+        award_id=900,
         latest_transaction_id=987654321,
         period_of_performance_current_end_date="2018-09-09",
         period_of_performance_start_date="2013-09-10",

@@ -104,9 +104,17 @@ def mock_tas_data(db):
         tas_components=["aid=028main=8006ata=028sub=000bpoa=2011epoa=2013a=X"],
     )
 
-    baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piid", type="A", awarding_agency_id=1)
-    baker.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", type="B")
-    baker.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piid",
+        type="A",
+        awarding_agency_id=1,
+    )
+    baker.make("search.AwardSearch", award_id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", type="B")
+    baker.make("search.AwardSearch", award_id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
 
     baker.make(
         "search.SubawardSearch",
