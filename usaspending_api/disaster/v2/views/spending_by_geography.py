@@ -171,10 +171,9 @@ class SpendingByGeographyViewSet(DisasterBase):
 
         for bucket in geo_info_buckets:
             code = bucket.get("key") or ""
-            per_capita = None
             if self.geo_layer == GeoLayer.STATE:
                 state_data = StateData.objects.filter(code=code).order_by("-year").first()
-                shape_code = code.upper()
+                shape_code = code.upper() if code and code != "NULL" else None
                 display_name = state_data.name if state_data else code_to_state.get(code, {}).get("name", "")
                 display_name = display_name.title()
                 pop_data = (
