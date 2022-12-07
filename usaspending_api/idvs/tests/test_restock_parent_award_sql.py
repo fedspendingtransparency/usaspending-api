@@ -86,7 +86,7 @@ def set_up_db(*awards):
     set_up_related_award_objects()
     award_dict = create_tree(awards)
     for award in award_dict:
-        baker.make("awards.Award", **award)
+        baker.make("search.AwardSearch", **award)
     call_command("restock_parent_award")
 
 

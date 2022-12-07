@@ -177,8 +177,8 @@ def populate_usas_data(populate_broker_data):
 
     # Create awards and transactions
     asst_award = baker.make(
-        "awards.Award",
-        id=1,
+        "search.AwardSearch",
+        award_id=1,
         type="07",
         category="loans",
         generated_unique_award_id="UNIQUE AWARD KEY B",
@@ -195,8 +195,8 @@ def populate_usas_data(populate_broker_data):
         piid=None,
     )
     cont_award = baker.make(
-        "awards.Award",
-        id=2,
+        "search.AwardSearch",
+        award_id=2,
         type="A",
         category="contracts",
         generated_unique_award_id="UNIQUE AWARD KEY C",
@@ -211,8 +211,8 @@ def populate_usas_data(populate_broker_data):
         uri=None,
     )
     cont_award2 = baker.make(
-        "awards.Award",
-        id=3,
+        "search.AwardSearch",
+        award_id=3,
         generated_unique_award_id="UNIQUE AWARD KEY A",
         type="A",
         category="contracts",
@@ -822,7 +822,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
 
     # Create a new Transaction a transaction that represents a new name for a recipient
     new_award = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         id=1000,
         type="07",
         period_of_performance_start_date="2021-01-01",

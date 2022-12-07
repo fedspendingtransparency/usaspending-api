@@ -414,8 +414,8 @@ def monthly_download_data(db, monkeypatch):
     i = 1
     for fiscal_year in range(2001, 2021):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             generated_unique_award_id="CONT_AWD_1_0_0",
             is_fpds=True,
             type="B",
@@ -464,8 +464,8 @@ def monthly_download_data(db, monkeypatch):
             parent_award_id=f"000{i}",
         )
         baker.make(
-            "awards.Award",
-            id=i + 100,
+            "search.AwardSearch",
+            award_id=i + 100,
             generated_unique_award_id="ASST_NON_2_0_0",
             is_fpds=False,
             type="02",

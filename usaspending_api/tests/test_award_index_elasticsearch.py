@@ -41,8 +41,8 @@ def award_data_fixture(db):
     baker.make("references.SubtierAgency", subtier_agency_id=1, name="Department of Transportation")
     baker.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1)
     baker.make(
-        "awards.Award",
-        id=1,
+        "search.AwardSearch",
+        award_id=1,
         latest_transaction_id=1,
         is_fpds=True,
         type="A",
@@ -54,8 +54,8 @@ def award_data_fixture(db):
         funding_agency_id=1,
     )
     baker.make(
-        "awards.Award",
-        id=2,
+        "search.AwardSearch",
+        award_id=2,
         latest_transaction_id=2,
         is_fpds=False,
         type="02",

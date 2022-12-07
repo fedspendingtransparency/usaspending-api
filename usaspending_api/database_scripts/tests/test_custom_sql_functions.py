@@ -42,7 +42,7 @@ def add_fun_awards(db):
         "何者なにものかによって、爆発物ばくはつぶつが仕掛しかけられたようです。",
     ]
     for id_, generated_unique_award_id in enumerate(generated_unique_award_ids):
-        baker.make("awards.award", id=id_, generated_unique_award_id=generated_unique_award_id)
+        baker.make("search.AwardSearch", award_id=id_, generated_unique_award_id=generated_unique_award_id)
 
 
 def test_urlencoding_no_change(add_fun_awards):

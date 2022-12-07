@@ -73,15 +73,15 @@ def award_data(transactional_db):
     baker.make("accounts.FederalAccount", account_title="Compensation to Accounts", agency_identifier="102", id=1)
 
     # Create Awards
-    baker.make("awards.Award", id=1, category="contracts", generated_unique_award_id="TEST_AWARD_1")
-    baker.make("awards.Award", id=2, category="contracts", generated_unique_award_id="TEST_AWARD_2")
-    baker.make("awards.Award", id=3, category="assistance", generated_unique_award_id="TEST_AWARD_3")
-    baker.make("awards.Award", id=4, category="contracts", generated_unique_award_id="TEST_AWARD_4")
-    baker.make("awards.Award", id=5, category="assistance", generated_unique_award_id="TEST_AWARD_5")
-    baker.make("awards.Award", id=6, category="assistance", generated_unique_award_id="TEST_AWARD_6")
-    baker.make("awards.Award", id=7, category="contracts", generated_unique_award_id="TEST_AWARD_7")
-    baker.make("awards.Award", id=8, category="assistance", generated_unique_award_id="TEST_AWARD_8")
-    baker.make("awards.Award", id=9, category="assistance", generated_unique_award_id="TEST_AWARD_9")
+    baker.make("search.AwardSearch", award_id=1, category="contracts", generated_unique_award_id="TEST_AWARD_1")
+    baker.make("search.AwardSearch", award_id=2, category="contracts", generated_unique_award_id="TEST_AWARD_2")
+    baker.make("search.AwardSearch", award_id=3, category="assistance", generated_unique_award_id="TEST_AWARD_3")
+    baker.make("search.AwardSearch", award_id=4, category="contracts", generated_unique_award_id="TEST_AWARD_4")
+    baker.make("search.AwardSearch", award_id=5, category="assistance", generated_unique_award_id="TEST_AWARD_5")
+    baker.make("search.AwardSearch", award_id=6, category="assistance", generated_unique_award_id="TEST_AWARD_6")
+    baker.make("search.AwardSearch", award_id=7, category="contracts", generated_unique_award_id="TEST_AWARD_7")
+    baker.make("search.AwardSearch", award_id=8, category="assistance", generated_unique_award_id="TEST_AWARD_8")
+    baker.make("search.AwardSearch", award_id=9, category="assistance", generated_unique_award_id="TEST_AWARD_9")
 
     # Create Transactions
     baker.make(

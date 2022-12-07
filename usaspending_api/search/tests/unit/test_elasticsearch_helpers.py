@@ -26,7 +26,7 @@ def transaction_type_data(db):
         transaction_description="pop tart",
         piid="0001",
     )
-    baker.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="0001")
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="0001")
 
     baker.make(
         "search.TransactionSearch",
@@ -38,7 +38,7 @@ def transaction_type_data(db):
         transaction_description="pop tart",
         fain="0002",
     )
-    baker.make("awards.Award", id=2, latest_transaction_id=2, is_fpds=False, type="02", fain="0002")
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2, is_fpds=False, type="02", fain="0002")
 
     baker.make(
         "search.TransactionSearch",
@@ -50,7 +50,7 @@ def transaction_type_data(db):
         transaction_description="pop tart",
         fain="0003",
     )
-    baker.make("awards.Award", id=3, latest_transaction_id=3, is_fpds=False, type="11", fain="0003")
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=3, is_fpds=False, type="11", fain="0003")
 
     baker.make(
         "search.TransactionSearch",
@@ -62,7 +62,7 @@ def transaction_type_data(db):
         transaction_description="pop tart",
         fain="0004",
     )
-    baker.make("awards.Award", id=4, latest_transaction_id=4, is_fpds=False, type="06", fain="0004")
+    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=4, is_fpds=False, type="06", fain="0004")
 
     baker.make(
         "search.TransactionSearch",
@@ -74,7 +74,7 @@ def transaction_type_data(db):
         transaction_description="pop tart",
         fain="0006",
     )
-    baker.make("awards.Award", id=5, latest_transaction_id=5, is_fpds=False, type="07", fain="0005")
+    baker.make("search.AwardSearch", award_id=5, latest_transaction_id=5, is_fpds=False, type="07", fain="0005")
 
     baker.make(
         "search.TransactionSearch",
@@ -86,7 +86,7 @@ def transaction_type_data(db):
         transaction_description="pop tart",
         piid="0006",
     )
-    baker.make("awards.Award", id=6, latest_transaction_id=6, is_fpds=True, type="IDV_A", piid="0006")
+    baker.make("search.AwardSearch", award_id=6, latest_transaction_id=6, is_fpds=True, type="IDV_A", piid="0006")
 
 
 def test_spending_by_transaction_count(monkeypatch, transaction_type_data, elasticsearch_transaction_index):

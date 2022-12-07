@@ -11,7 +11,9 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 @pytest.mark.django_db
 def test_data():
 
-    baker.make("awards.Award", id=1, type="A", latest_transaction_id=1, generated_unique_award_id="CONT_AWD_1")
+    baker.make(
+        "search.AwardSearch", award_id=1, type="A", latest_transaction_id=1, generated_unique_award_id="CONT_AWD_1"
+    )
     baker.make(
         "search.TransactionSearch",
         is_fpds=True,
@@ -26,7 +28,9 @@ def test_data():
         pop_zip5="00001",
     )
 
-    baker.make("awards.Award", id=2, type="A", latest_transaction_id=2, generated_unique_award_id="CONT_AWD_2")
+    baker.make(
+        "search.AwardSearch", award_id=2, type="A", latest_transaction_id=2, generated_unique_award_id="CONT_AWD_2"
+    )
     baker.make(
         "search.TransactionSearch",
         is_fpds=True,
@@ -41,7 +45,9 @@ def test_data():
         pop_zip5="00002",
     )
 
-    baker.make("awards.Award", id=3, type="A", latest_transaction_id=3, generated_unique_award_id="CONT_AWD_3")
+    baker.make(
+        "search.AwardSearch", award_id=3, type="A", latest_transaction_id=3, generated_unique_award_id="CONT_AWD_3"
+    )
     baker.make(
         "search.TransactionSearch",
         is_fpds=True,
@@ -56,7 +62,9 @@ def test_data():
         pop_zip5="00003",
     )
 
-    baker.make("awards.Award", id=4, type="A", latest_transaction_id=4, generated_unique_award_id="CONT_AWD_4")
+    baker.make(
+        "search.AwardSearch", award_id=4, type="A", latest_transaction_id=4, generated_unique_award_id="CONT_AWD_4"
+    )
     baker.make(
         "search.TransactionSearch",
         is_fpds=True,

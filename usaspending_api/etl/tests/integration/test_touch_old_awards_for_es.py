@@ -17,7 +17,7 @@ def award_data1(db):
     award_id = 111  # used below
     defc = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
 
-    aw1 = baker.make("awards.Award", id=award_id)
+    aw1 = baker.make("search.AwardSearch", award_id=award_id)
     baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
 
     yield award_id
@@ -32,8 +32,8 @@ def award_data2(db):
     piids = ["abc", "def", "ghi", "jki"]
 
     awards = [
-        baker.make("awards.Award", piid=random.choice(piids), id=award_id),
-        *baker.make("awards.Award", piid=random.choice(piids), _quantity=9),
+        baker.make("search.AwardSearch", piid=random.choice(piids), id=award_id),
+        *baker.make("search.AwardSearch", piid=random.choice(piids), _quantity=9),
     ]
 
     for index, award in enumerate(awards):
@@ -50,8 +50,8 @@ def award_data2(db):
 def award_data3(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
 
-    aw1 = baker.make("awards.Award", fain="abc123")
-    aw2 = baker.make("awards.Award", fain="zyx987")
+    aw1 = baker.make("search.AwardSearch", fain="abc123")
+    aw2 = baker.make("search.AwardSearch", fain="zyx987")
 
     Award.objects.filter(pk=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
     Award.objects.filter(pk=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
@@ -67,8 +67,8 @@ def award_data3(db):
 def award_data4(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
 
-    aw1 = baker.make("awards.Award", fain="abc123")
-    aw2 = baker.make("awards.Award", fain="zyx987")
+    aw1 = baker.make("search.AwardSearch", fain="abc123")
+    aw2 = baker.make("search.AwardSearch", fain="zyx987")
 
     Award.objects.filter(pk=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
     Award.objects.filter(pk=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
@@ -84,10 +84,10 @@ def award_data4(db):
 def award_mixed_periods(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="O", group_name="covid_19")
 
-    aw1 = baker.make("awards.Award", piid="abc123")
-    aw2 = baker.make("awards.Award", piid="zyx987")
-    aw3 = baker.make("awards.Award", piid="ABC321")
-    aw4 = baker.make("awards.Award", piid="ZYX789")
+    aw1 = baker.make("search.AwardSearch", piid="abc123")
+    aw2 = baker.make("search.AwardSearch", piid="zyx987")
+    aw3 = baker.make("search.AwardSearch", piid="ABC321")
+    aw4 = baker.make("search.AwardSearch", piid="ZYX789")
 
     Award.objects.filter(pk=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
     Award.objects.filter(pk=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()

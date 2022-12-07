@@ -116,7 +116,7 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 @fixture()
 def _transaction_and_award_test_data(db):
     agency1 = baker.make("references.Agency")
-    awd1 = baker.make("awards.Award", awarding_agency=agency1)
+    awd1 = baker.make("search.AwardSearch", awarding_agency=agency1)
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,
@@ -131,7 +131,7 @@ def _transaction_and_award_test_data(db):
     )
     assert TransactionFABS.objects.all().count() == 1
 
-    awd2 = baker.make("awards.Award", awarding_agency=agency1)
+    awd2 = baker.make("search.AwardSearch", awarding_agency=agency1)
     baker.make(
         "search.TransactionSearch",
         transaction_id=2,

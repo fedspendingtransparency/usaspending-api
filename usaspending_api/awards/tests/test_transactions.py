@@ -19,8 +19,8 @@ def test_transaction_endpoint_v2_award_fk(client):
     """Test the transaction endpoint."""
 
     awd = baker.make(
-        "awards.Award",
-        id=10,
+        "search.AwardSearch",
+        award_id=10,
         total_obligation="2000",
         latest_transaction_id=1,
         earliest_transaction_id=1,

@@ -4,10 +4,10 @@ import pytest
 from django.core.management import call_command
 from model_bakery import baker
 
-from usaspending_api.awards.models import Award, TransactionFABS, TransactionNormalized
+from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
 from usaspending_api.broker.models import ExternalDataLoadDate, ExternalDataType
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.search.models import TransactionSearch
+from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
 
@@ -153,7 +153,7 @@ def test_load_source_assistance_by_ids():
 @pytest.mark.django_db(transaction=True)
 def test_delete_fabs_success(monkeypatch):
     # Award/Transaction deleted based on 1-1 transaction
-    baker.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
+    baker.make(AwardSearch, award_id=1, generated_unique_award_id="TEST_AWARD_1")
     baker.make(
         TransactionSearch,
         transaction_id=1,
@@ -163,7 +163,7 @@ def test_delete_fabs_success(monkeypatch):
     )
 
     # Award kept despite having one of their associated transactions removed
-    baker.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
+    baker.make(AwardSearch, award_id=2, generated_unique_award_id="TEST_AWARD_2")
     baker.make(
         TransactionSearch, transaction_id=2, award_id=2, generated_unique_award_id="2019-01-01", published_fabs_id=302
     )
@@ -172,7 +172,7 @@ def test_delete_fabs_success(monkeypatch):
     )
 
     # Award/Transaction untouched at all as control
-    baker.make(Award, id=3, generated_unique_award_id="TEST_AWARD_3")
+    baker.make(AwardSearch, award_id=3, generated_unique_award_id="TEST_AWARD_3")
     baker.make(
         TransactionSearch,
         transaction_id=4,
@@ -182,7 +182,7 @@ def test_delete_fabs_success(monkeypatch):
     )
 
     # Award is not deleted; old transaction deleted; new transaction uses old award
-    baker.make(Award, id=4, generated_unique_award_id="TEST_AWARD_4")
+    baker.make(AwardSearch, award_id=4, generated_unique_award_id="TEST_AWARD_4")
     baker.make(
         TransactionSearch,
         transaction_id=5,

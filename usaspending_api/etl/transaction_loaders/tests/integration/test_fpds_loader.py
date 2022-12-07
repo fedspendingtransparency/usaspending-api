@@ -13,6 +13,7 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
 )
+from usaspending_api.search.models import AwardSearch
 from usaspending_api.transactions.models import SourceProcurementTransaction
 
 
@@ -122,24 +123,24 @@ def test_load_source_procurement_by_ids():
 @pytest.mark.django_db(transaction=True)
 def test_delete_fpds_success(monkeypatch):
     # Award/Transaction deleted based on 1-1 transaction
-    baker.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
+    baker.make(AwardSearch, award_id=1, generated_unique_award_id="TEST_AWARD_1")
     baker.make(TransactionNormalized, id=1, award_id=1, unique_award_key="TEST_AWARD_1")
     baker.make(TransactionFPDS, transaction_id=1, detached_award_procurement_id=301, unique_award_key="TEST_AWARD_1")
 
     # Award kept despite having one of their associated transactions removed
-    baker.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
+    baker.make(AwardSearch, award_id=2, generated_unique_award_id="TEST_AWARD_2")
     baker.make(TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2")
     baker.make(TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2")
     baker.make(TransactionFPDS, transaction_id=2, detached_award_procurement_id=302, unique_award_key="TEST_AWARD_2")
     baker.make(TransactionFPDS, transaction_id=3, detached_award_procurement_id=303, unique_award_key="TEST_AWARD_2")
 
     # Award/Transaction untouched at all as control
-    baker.make(Award, id=3, generated_unique_award_id="TEST_AWARD_3")
+    baker.make(AwardSearch, award_id=3, generated_unique_award_id="TEST_AWARD_3")
     baker.make(TransactionNormalized, id=4, award_id=3, unique_award_key="TEST_AWARD_3")
     baker.make(TransactionFPDS, transaction_id=4, detached_award_procurement_id=304, unique_award_key="TEST_AWARD_3")
 
     # Award is not deleted; old transaction deleted; new transaction uses old award
-    baker.make(Award, id=4, generated_unique_award_id="TEST_AWARD_4")
+    baker.make(AwardSearch, award_id=4, generated_unique_award_id="TEST_AWARD_4")
     baker.make(TransactionNormalized, id=5, award_id=4, unique_award_key="TEST_AWARD_4")
     baker.make(TransactionFPDS, transaction_id=5, detached_award_procurement_id=305, unique_award_key="TEST_AWARD_4")
     baker.make(

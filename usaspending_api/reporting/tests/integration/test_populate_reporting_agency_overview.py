@@ -187,7 +187,7 @@ def setup_test_data(db):
             "total_subsidy_cost": 2000,
         },
     ]
-    award_list = [baker.make("awards.Award", **award) for award in award_dicts]
+    award_list = [baker.make("search.AwardSearch", **award) for award in award_dicts]
     transaction_list = [
         {
             "transaction_id": 1,

@@ -166,7 +166,7 @@ def award_count_sub_schedule():
 
 
 def _normal_award():
-    return baker.make("awards.Award", type="A")
+    return baker.make("search.AwardSearch", type="A")
 
 
 def _faba_for_award(award, id=1, negative=False, outlay_based=False):

@@ -293,6 +293,6 @@ vw_awards_sql = """
             officer_5_name,
             earliest_transaction_id,
             total_indirect_federal_sharing
-        FROM 
+        FROM
             rpt.award_search;
 """

@@ -20,8 +20,8 @@ def award_data(db):
     award_id = 987
 
     awards = [
-        baker.make("awards.Award", id=award_id),
-        *baker.make("awards.Award", _quantity=9),
+        baker.make("search.AwardSearch", award_id=award_id),
+        *baker.make("search.AwardSearch", _quantity=9),
     ]
 
     for index, award in enumerate(awards):
@@ -43,9 +43,9 @@ def award_data_old_and_new(db):
     award_id_too_new = 989
 
     awards = [
-        baker.make("awards.Award", id=award_id_too_old),
-        baker.make("awards.Award", id=award_id_too_new),
-        *baker.make("awards.Award", _quantity=9),
+        baker.make("search.AwardSearch", award_id=award_id_too_old),
+        baker.make("search.AwardSearch", award_id=award_id_too_new),
+        *baker.make("search.AwardSearch", _quantity=9),
     ]
 
     for index, award in enumerate(awards):

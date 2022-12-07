@@ -53,27 +53,27 @@ def sub_agency_data_1():
 
     # Awards
     award_contract = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="contract",
         date_signed="2021-04-01",
     )
     award_idv = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="idv",
         date_signed="2020-04-01",
     )
     award_grant = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="grant",
         date_signed="2021-04-01",
     )
     award_loan = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="loans",
         date_signed="2021-04-01",
     )
     award_dp = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
         category="direct payment",
         date_signed="2021-04-01",
     )

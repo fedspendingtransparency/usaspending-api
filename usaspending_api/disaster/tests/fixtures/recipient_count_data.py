@@ -30,7 +30,11 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
     )
     _normal_faba(
         baker.make(
-            "awards.Award", id=100, latest_transaction_id=transaction_normalized.transaction_id, type="A", is_fpds=True
+            "search.AwardSearch",
+            award_id=100,
+            latest_transaction_id=transaction_normalized.transaction_id,
+            type="A",
+            is_fpds=True,
         )
     )
 
@@ -46,7 +50,9 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
         recipient_unique_id="1",
     )
     _normal_faba(
-        baker.make("awards.Award", id=200, latest_transaction_id=transaction_normalized.transaction_id, type="A")
+        baker.make(
+            "search.AwardSearch", award_id=200, latest_transaction_id=transaction_normalized.transaction_id, type="A"
+        )
     )
 
     transaction_normalized = baker.make(
@@ -58,7 +64,9 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
         recipient_unique_id="2",
     )
     _normal_faba(
-        baker.make("awards.Award", id=300, latest_transaction_id=transaction_normalized.transaction_id, type="A")
+        baker.make(
+            "search.AwardSearch", award_id=300, latest_transaction_id=transaction_normalized.transaction_id, type="A"
+        )
     )
 
 
@@ -73,7 +81,9 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
         recipient_unique_id="1",
     )
     _normal_faba(
-        baker.make("awards.Award", id=400, latest_transaction_id=transaction_normalized.transaction_id, type="A")
+        baker.make(
+            "search.AwardSearch", award_id=400, latest_transaction_id=transaction_normalized.transaction_id, type="A"
+        )
     )
 
     transaction_normalized = baker.make(
@@ -85,7 +95,9 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
         recipient_unique_id="1",
     )
     _normal_faba(
-        baker.make("awards.Award", id=500, latest_transaction_id=transaction_normalized.transaction_id, type="A")
+        baker.make(
+            "search.AwardSearch", award_id=500, latest_transaction_id=transaction_normalized.transaction_id, type="A"
+        )
     )
 
 
@@ -103,7 +115,9 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         recipient_unique_id="123",
     )
     _normal_faba(
-        baker.make("awards.Award", id=600, latest_transaction_id=transaction_normalized.transaction_id, type="A")
+        baker.make(
+            "search.AwardSearch", award_id=600, latest_transaction_id=transaction_normalized.transaction_id, type="A"
+        )
     )
 
     transaction_normalized = baker.make(
@@ -118,7 +132,9 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         recipient_unique_id="456",
     )
     _normal_faba(
-        baker.make("awards.Award", id=700, latest_transaction_id=transaction_normalized.transaction_id, type="A")
+        baker.make(
+            "search.AwardSearch", award_id=700, latest_transaction_id=transaction_normalized.transaction_id, type="A"
+        )
     )
 
 
@@ -267,7 +283,7 @@ def _normal_faba(award):
 
 
 def _normal_fabs(id):
-    award = baker.make("awards.Award", latest_transaction_id=id, type="07")
+    award = baker.make("search.AwardSearch", latest_transaction_id=id, type="07")
     baker.make(
         "search.TransactionSearch",
         type="07",

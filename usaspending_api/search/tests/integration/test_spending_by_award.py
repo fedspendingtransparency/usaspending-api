@@ -100,7 +100,7 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
 @pytest.mark.django_db
 def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
 
-    baker.make("awards.Award", id=1, type="A", latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=1, type="A", latest_transaction_id=1)
     baker.make("search.TransactionSearch", transaction_id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -161,8 +161,8 @@ def awards_over_different_date_ranges():
             award_type_list = all_award_types_mappings[award_category]
             award_type = award_type_list[award_id % len(award_type_list)]
             award = baker.make(
-                "awards.Award",
-                id=award_id,
+                "search.AwardSearch",
+                award_id=award_id,
                 generated_unique_award_id=guai,
                 type=award_type,
                 category=award_category,
@@ -507,8 +507,8 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
     """
 
     baker.make(
-        "awards.Award",
-        id=5,
+        "search.AwardSearch",
+        award_id=5,
         type="A",
         category="contract",
         fain="abc444",

@@ -71,9 +71,9 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
 
     # Awards
     # Jam a routing key value into the piid field, and use the derived piid value for routing documents to shards later
-    baker.make("awards.Award", id=1, latest_transaction_id=12, piid="shard_zero")
-    baker.make("awards.Award", id=2, latest_transaction_id=6, piid="shard_one")
-    baker.make("awards.Award", id=3, latest_transaction_id=9, piid="shard_two")
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=12, piid="shard_zero")
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=6, piid="shard_one")
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=9, piid="shard_two")
 
     # Transaction FPDS
     _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1", recipient1, "shard_zero")
@@ -177,9 +177,9 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2", recipient2)
 
     # Awards
-    baker.make("awards.Award", id=1, latest_transaction_id=12)
-    baker.make("awards.Award", id=2, latest_transaction_id=6)
-    baker.make("awards.Award", id=3, latest_transaction_id=9)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=12)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=6)
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=9)
 
     # Push DB data into the test ES cluster
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
