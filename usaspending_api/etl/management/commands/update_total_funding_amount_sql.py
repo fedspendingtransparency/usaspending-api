@@ -43,11 +43,11 @@ class Command(BaseCommand):
     """
 
     AWARDS_TFA = """
-        UPDATE awards AS aw
+        UPDATE award_search AS aw
         SET total_funding_amount = (
             SELECT SUM(funding_amount)
             FROM transaction_normalized AS txn
-            WHERE txn.award_id = aw.id
+            WHERE txn.award_id = aw.award_id
         )
         WHERE category IS NOT NULL AND category != 'contract';
     """

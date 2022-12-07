@@ -54,13 +54,13 @@ last_periods_covid_awards AS (
 )
 {operation_sql}
 WHERE
-    id IN (
+    award_id IN (
         SELECT
             *
         FROM
             last_periods_covid_awards
     )
-    AND id IN (
+    AND award_id IN (
         SELECT
             award_id
         FROM
@@ -95,7 +95,7 @@ WITH covid_awards AS (
 )
 {operation_sql}
 WHERE
-    id IN (
+    award_id IN (
         SELECT
             award_id
         FROM
@@ -108,7 +108,7 @@ WHERE
 
 UPDATE_OPERATION_SQL = """
 UPDATE
-    awards
+    award_search
 SET
     update_date = NOW()
 """
