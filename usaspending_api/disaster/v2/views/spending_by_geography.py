@@ -251,7 +251,9 @@ class SpendingByGeographyViewSet(DisasterBase):
                             .first()
                         )
                         display_name = display_name.county_name if display_name else None
-                        shape_code = f"{state_fips}{county_code}" if state_fips else None
+                        shape_code = (
+                            f"{state_fips}{county_code}" if state_fips is not None and county_code is not None else None
+                        )
                         population = county_data.latest_population if county_data else None
                         if self.spending_type != "face_value_of_loan":
                             amount = int(
@@ -284,7 +286,11 @@ class SpendingByGeographyViewSet(DisasterBase):
                     for b in sub_bucket:
                         per_capita = None
                         congress_code = b.get("key")
-                        display_name = f"{state_code}-{congress_code}".upper()
+                        display_name = (
+                            f"{state_code}-{congress_code}".upper()
+                            if state_code is not None and congress_code is not None
+                            else None
+                        )
                         shape_code = f"{state_fips}{congress_code}"
                         population = PopCongressionalDistrict.objects.filter(
                             congressional_district=congress_code, state_code=state_fips
