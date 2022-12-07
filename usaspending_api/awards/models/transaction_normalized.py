@@ -6,7 +6,7 @@ from django.contrib.postgres.fields import ArrayField
 class TransactionNormalized(models.Model):
     id = models.BigAutoField(primary_key=True)
     award = models.ForeignKey(
-        "search.AwardSearch", on_delete=models.DO_NOTHING, help_text="The award which this transaction is contained in"
+        "awards.Awards", on_delete=models.DO_NOTHING, help_text="The award which this transaction is contained in"
     )
     usaspending_unique_transaction_id = models.TextField(
         blank=True,
