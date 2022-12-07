@@ -59,7 +59,7 @@ def route_agency_spending_backend(**initkwargs):
 
 
 class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase):
-    """ Returns disaster spending by agency. """
+    """Returns disaster spending by agency."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
     required_filters = ["def_codes", "award_type_codes", "query"]
@@ -197,7 +197,7 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
                         deobligation=Func("deobligations_or_recoveries_or_refunds_from_prior_year_cpe", function="Sum"),
                         prior_year=Func("prior_year_paid_obligation_recoveries", function="Sum"),
                         unobligated_adjustments=Func(
-                            "adjustments_to_unobligated_balance_brought_forward_cpe", function="Sum"
+                            "adjustments_to_unobligated_balance_brought_forward_fyb", function="Sum"
                         ),
                     )
                     .annotate(

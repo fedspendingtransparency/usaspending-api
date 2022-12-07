@@ -630,6 +630,28 @@ def equal_datasets(
     return datasets_match
 
 
+def load_delta_table_from_postgres(
+    delta_table_name: str,
+    s3_bucket: str,
+    alt_db: str = None,
+    alt_name: str = None,
+    load_command: str = "load_table_to_delta",
+):
+    """Generic function that uses the create_delta_table and load_table_to_delta commands to create and load the
+    given table
+    """
+
+    cmd_args = [f"--destination-table={delta_table_name}"]
+    if alt_db:
+        cmd_args += [f"--alt-db={alt_db}"]
+    if alt_name:
+        cmd_args += [f"--alt-name={alt_name}"]
+
+    # make the table and load it
+    call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
+    call_command(load_command, *cmd_args)
+
+
 def verify_delta_table_loaded_to_delta(
     spark: SparkSession,
     delta_table_name: str,
@@ -644,17 +666,12 @@ def verify_delta_table_loaded_to_delta(
     create and load the given table and assert it was created and loaded as expected
     """
 
-    cmd_args = [f"--destination-table={delta_table_name}"]
-    if alt_db:
-        cmd_args += [f"--alt-db={alt_db}"]
-    expected_table_name = delta_table_name.split(".")[-1]
-    if alt_name:
-        cmd_args += [f"--alt-name={alt_name}"]
-        expected_table_name = alt_name
+    load_delta_table_from_postgres(delta_table_name, s3_bucket, alt_db, alt_name, load_command)
 
-    # make the table and load it
-    call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
-    call_command(load_command, *cmd_args)
+    if alt_name:
+        expected_table_name = alt_name
+    else:
+        expected_table_name = delta_table_name.split(".")[-1]
 
     partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
     if dummy_data is None:
@@ -767,42 +784,6 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_sam_recipient_testing_and_reload(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
-    baker.make("recipient.DUNS", broker_duns_id="1", _fill_optional=True)
-    baker.make("recipient.DUNS", broker_duns_id="2", _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "sam_recipient_testing", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient_testing", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient_testing", jdbc_inserts=True)  # test alt write strategy
-
-    # Getting count of the first load
-    expected_exported_table = "duns_temp"
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-        with connection.cursor() as cursor:
-            # get a list of tables
-            cursor.execute(f"SELECT COUNT(*) FROM {expected_exported_table}")
-            expected_exported_table_count = dictfetchall(cursor)[0]["count"]
-
-    # Rerunning again to see it working as intended
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient_testing", spark_s3_bucket=s3_unittest_data_bucket)
-
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
-        with connection.cursor() as cursor:
-            # get a list of tables and ensure no other new tables got made
-            cursor.execute("SELECT * FROM pg_catalog.pg_tables;")
-            postgres_data = [
-                d["tablename"] for d in dictfetchall(cursor) if d["tablename"].startswith(expected_exported_table)
-            ]
-            assert len(postgres_data) == 1
-
-            # make sure the new table has been truncated and reloaded
-            cursor.execute(f"SELECT COUNT(*) FROM {expected_exported_table}")
-            expected_new_exported_table_count = dictfetchall(cursor)[0]["count"]
-            assert expected_exported_table_count == expected_new_exported_table_count
-
-
-@mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
@@ -890,18 +871,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_recipient_testing(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("recipient.RecipientLookup", id="1", _fill_optional=True)
-    baker.make("recipient.RecipientLookup", id="2", _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "recipient_lookup_testing", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "recipient_lookup_testing", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(
-        spark, "recipient_lookup_testing", jdbc_inserts=True
-    )  # test alt write strategy
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
 
     baker.make(
         "transactions.SourceAssistanceTransaction",
@@ -919,8 +889,6 @@ def test_load_table_to_from_delta_for_published_fabs(spark, s3_unittest_data_buc
         _fill_optional=True,
     )
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "published_fabs", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "published_fabs", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -966,7 +934,7 @@ def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_b
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
+def test_load_table_to_delta_for_transaction_fabs_timezone_aware(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     """Test that timestamps are not inadvertently shifted due to loss of timezone during reads and writes.
@@ -1110,9 +1078,7 @@ def test_load_table_to_from_delta_for_transaction_fabs_timezone_aware(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_detached_award_procurement(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
+def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id="4",
@@ -1131,10 +1097,6 @@ def test_load_table_to_from_delta_for_detached_award_procurement(
     )
 
     verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "detached_award_procurement", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(
-        spark, "detached_award_procurement", jdbc_inserts=True
-    )  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
@@ -1209,7 +1171,7 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_normalized_alt_db_and_name(
+def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
@@ -1280,16 +1242,7 @@ def test_load_table_to_from_delta_for_award_search(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_award_search_testing(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
-):
-    verify_delta_table_loaded_to_delta(spark, "award_search_testing", s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "award_search_testing", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "award_search_testing", jdbc_inserts=True)  # test alt write strategy
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
+def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
     expected_data = [
         {
             "awardee_or_recipient_uniqu": "812918241",
@@ -1316,12 +1269,10 @@ def test_load_table_to_from_delta_for_sam_recipient(spark, s3_unittest_data_buck
     verify_delta_table_loaded_to_delta(
         spark, "sam_recipient", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=expected_data
     )
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "sam_recipient", jdbc_inserts=True)  # test alt write strategy
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_summary_state_view(
+def test_load_table_to_delta_for_summary_state_view(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
     tables_to_load = [
@@ -1333,5 +1284,3 @@ def test_load_table_to_from_delta_for_summary_state_view(
     verify_delta_table_loaded_to_delta(
         spark, "summary_state_view", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
-    verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "summary_state_view", jdbc_inserts=True)  # test alt write strategy
