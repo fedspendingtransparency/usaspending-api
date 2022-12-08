@@ -76,7 +76,7 @@ def awards_and_transactions(db):
         "officer_2_amount": 1234.00,
     }
     award_3_model = {
-        "pk": 3,
+        "award_id": 3,
         "latest_transaction_id": 3,
         "type": "IDV_A",
         "type_description": "GWAC",

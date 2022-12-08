@@ -82,7 +82,7 @@ def award_data_fixture(db):
     baker.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1)
     baker.make(
         "search.AwardSearch",
-        id=1,
+        award_id=1,
         generated_unique_award_id="CONT_AWD_IND12PB00323",
         latest_transaction_id=1,
         is_fpds=True,
@@ -98,7 +98,7 @@ def award_data_fixture(db):
     )
     baker.make(
         "search.AwardSearch",
-        id=2,
+        award_id=2,
         generated_unique_award_id="ASST_NON_P063P100612",
         latest_transaction_id=2,
         is_fpds=False,

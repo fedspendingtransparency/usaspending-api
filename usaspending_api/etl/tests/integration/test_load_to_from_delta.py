@@ -804,7 +804,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     # Create a new Transaction a transaction that represents a new name for a recipient
     new_award = baker.make(
         "search.AwardSearch",
-        id=1000,
+        award_id=1000,
         type="07",
         period_of_performance_start_date="2021-01-01",
         period_of_performance_current_end_date="2022-01-01",
