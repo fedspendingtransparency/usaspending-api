@@ -14,7 +14,7 @@ class AwardSearch(models.Model):
     type_description = models.TextField(null=True)
     generated_unique_award_id = models.TextField(null=True)
     display_award_id = models.TextField(null=True)
-    update_date = models.DateTimeField(null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
     piid = models.TextField(null=True, db_index=True)
     fain = models.TextField(null=True, db_index=True)
     uri = models.TextField(null=True, db_index=True)
@@ -36,7 +36,7 @@ class AwardSearch(models.Model):
 
     action_date = models.DateField(null=True)
     fiscal_year = models.IntegerField(null=True)
-    last_modified_date = models.DateField(null=True)
+    last_modified_date = models.DateField(blank=True, null=True)
 
     period_of_performance_start_date = models.DateField(null=True, db_index=True)
     period_of_performance_current_end_date = models.DateField(null=True, db_index=True)
@@ -138,8 +138,8 @@ class AwardSearch(models.Model):
     subaward_count = models.IntegerField(null=True)
     base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     parent_award_piid = models.TextField(null=True, db_index=True)
-    certified_date = models.DateField(null=True)
-    create_date = models.DateTimeField(null=True)
+    certified_date = models.DateField(blank=True, null=True)
+    create_date = models.DateTimeField(null=True, auto_now_add=True)
     total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     latest_transaction_id = models.IntegerField(null=True, db_index=True)
     earliest_transaction_id = models.IntegerField(null=True, db_index=True)
