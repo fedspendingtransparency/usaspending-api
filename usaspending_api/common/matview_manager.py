@@ -20,14 +20,6 @@ DROP_OLD_MATVIEWS = settings.APP_DIR / "database_scripts" / "matviews" / "drop_o
 MATERIALIZED_VIEWS = OrderedDict(
     [
         (
-            "award_search",
-            {
-                "model": mv.AwardSearch,
-                "json_filepath": str(JSON_DIR / "award_search.json"),
-                "sql_filename": "award_search.sql",
-            },
-        ),
-        (
             "mv_agency_autocomplete",
             {
                 "model": mv.AgencyAutocompleteMatview,
