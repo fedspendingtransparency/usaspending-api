@@ -213,7 +213,7 @@ class IDVAwardsTestCase(TestCase):
 
         baker.make(
             "search.AwardSearch",
-            id=award_id,
+            award_id=award_id,
             generated_unique_award_id="CONT_IDV_%s" % string_award_id,
             type="CONTRACT_%s" % string_award_id,
             total_obligation=award_id,

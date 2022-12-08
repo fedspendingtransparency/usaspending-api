@@ -94,14 +94,14 @@ class TestWithMultipleDatabases(TestCase):
         """
         baker.make(
             "search.AwardSearch",
-            id=-999,
+            award_id=-999,
             uri="RANDOM_LOAD_SUB_URI_999",
             fain="RANDOM_LOAD_SUB_FAIN_999",
             latest_transaction_id=-999,
         )
         baker.make(
             "search.AwardSearch",
-            id=-1999,
+            award_id=-1999,
             uri="RANDOM_LOAD_SUB_URI_1999",
             fain="RANDOM_LOAD_SUB_FAIN_1999",
             latest_transaction_id=-1999,
@@ -164,7 +164,7 @@ class TestWithMultipleDatabases(TestCase):
         """
         baker.make(
             "search.AwardSearch",
-            id=-997,
+            award_id=-997,
             piid="RANDOM_LOAD_SUB_PIID",
             parent_award_piid="RANDOM_LOAD_SUB_PARENT_PIID",
             latest_transaction_id=-997,
@@ -212,7 +212,7 @@ class TestWithMultipleDatabases(TestCase):
         """
         baker.make(
             "search.AwardSearch",
-            id=-1001,
+            award_id=-1001,
             piid="RANDOM_LOAD_SUB_PIID",
             parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
             latest_transaction_id=-1234,
@@ -236,7 +236,7 @@ class TestWithMultipleDatabases(TestCase):
         """
         baker.make(
             "search.AwardSearch",
-            id=-999,
+            award_id=-999,
             piid="RANDOM_LOAD_SUB_PIID_DNE",
             parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
             latest_transaction_id=-999,
