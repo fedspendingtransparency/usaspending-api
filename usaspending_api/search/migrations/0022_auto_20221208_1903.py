@@ -30,4 +30,14 @@ class Migration(migrations.Migration):
             name='update_date',
             field=models.DateTimeField(auto_now=True, null=True),
         ),
+        migrations.RemoveField(
+            model_name='awardsearch',
+            name='award',
+        ),
+        migrations.AddField(
+            model_name='awardsearch',
+            name='award_id',
+            field=models.BigAutoField(default=0, primary_key=True, serialize=False),
+            preserve_default=False,
+        ),
     ]

@@ -88,7 +88,7 @@ def create_idv_test_data():
 
         baker.make(
             "search.AwardSearch",
-            id=award_id,
+            award_id=award_id,
             generated_unique_award_id="CONT_IDV_%s" % string_award_id,
             type=("IDV_%s" if award_id in IDVS else "CONTRACT_%s") % string_award_id,
             piid="piid_%s" % string_award_id,
