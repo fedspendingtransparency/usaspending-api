@@ -34,7 +34,7 @@ def construct_response(results: list, pagination: Pagination):
 
 
 class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase, PaginationMixin):
-    """ Returns disaster spending by federal account. """
+    """Returns disaster spending by federal account."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
     agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
@@ -193,7 +193,7 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                         deobligation=Func("deobligations_or_recoveries_or_refunds_from_prior_year_cpe", function="Sum"),
                         prior_year=Func("prior_year_paid_obligation_recoveries", function="Sum"),
                         unobligated_adjustments=Func(
-                            "adjustments_to_unobligated_balance_brought_forward_cpe", function="Sum"
+                            "adjustments_to_unobligated_balance_brought_forward_fyb", function="Sum"
                         ),
                     )
                     .annotate(

@@ -443,6 +443,9 @@ def awards_and_transactions():
         congressional_district="50",
         latest_population=1000,
     )
+    baker.make("references.CityCountyStateCode", county_numeric="005", state_numeric="53", county_name="Test Name")
+    baker.make("references.CityCountyStateCode", county_numeric="005", state_numeric="45", county_name="Test Name")
+    baker.make("references.CityCountyStateCode", county_numeric="001", state_numeric="45", county_name="Charleston")
 
     # Recipient Profile
     baker.make(
@@ -506,6 +509,7 @@ def awards_and_transactions():
         legal_business_name="RECIPIENT 1",
         recipient_hash="5f572ec9-8b49-e5eb-22c7-f6ef316f7689",
         duns=None,
+        uei=None,
     )
     baker.make(
         "recipient.RecipientLookup",

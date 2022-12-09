@@ -434,7 +434,6 @@ def awards_and_transactions(db):
         county_name="Washington",
         latest_population=10000,
     )
-
     # References Population Congressional District
     baker.make(
         "references.PopCongressionalDistrict",

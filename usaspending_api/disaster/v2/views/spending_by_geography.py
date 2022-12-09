@@ -94,13 +94,13 @@ class SpendingByGeographyViewSet(DisasterBase):
         scope_field_name = scope_dict[json_request["scope"]]
         loc_field_name = location_dict[self.geo_layer.value]
 
-        self.agg_key = f"{scope_field_name}_state_code"
+        self.agg_key = f"{scope_field_name}_state_agg_key"
         self.geo_layer_filters = json_request.get("geo_layer_filters")
         self.spending_type = json_request.get("spending_type")
         self.loc_lookup = f"{scope_field_name}_{loc_field_name}"
+        self.sub_agg_key = None
         if self.geo_layer != GeoLayer.STATE:
             self.sub_agg_key = f"{scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
-
         # Set which field will be the aggregation amount
         if self.spending_type == "obligation":
             self.metric_field = "total_covid_obligation"
@@ -168,133 +168,133 @@ class SpendingByGeographyViewSet(DisasterBase):
     def build_elasticsearch_result(self, response: dict) -> Dict[str, dict]:
         results = {}
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        per_capita = None
+
         for bucket in geo_info_buckets:
-            if bucket.get("key") == "NULL":
-                display_name = None
-                shape_code = None
-                population = None
-            else:
-                code = bucket.get("key") or ""
-                if self.geo_layer == GeoLayer.STATE:
-                    state_data = StateData.objects.filter(code=code).order_by("-year").first()
-                    shape_code = code.upper()
-                    display_name = state_data.name if state_data else code_to_state.get(code, {}).get("name", "")
-                    display_name = display_name.title()
-                    pop_data = (
-                        PopCounty.objects.filter(state_code=state_data.fips, county_number="000") if state_data else []
-                    )
-                    if len(pop_data) > 0:
-                        population = pop_data[0].latest_population
-                    else:
-                        population = None
+            code = bucket.get("key") or ""
+            if self.geo_layer == GeoLayer.STATE:
+                state_data = StateData.objects.filter(code=code).order_by("-year").first()
+                shape_code = code.upper() if code and code != "NULL" else None
+                display_name = state_data.name if state_data else code_to_state.get(code, {}).get("name", "")
+                display_name = display_name.title()
+                pop_data = (
+                    PopCounty.objects.filter(state_code=state_data.fips, county_number="000") if state_data else []
+                )
+                if len(pop_data) > 0:
+                    population = pop_data[0].latest_population
+                else:
+                    population = None
+                per_capita = None
+                if self.spending_type != "face_value_of_loan":
+                    amount = int(
+                        bucket.get("nested", {}).get("filtered_aggs", {}).get(self.spending_type, {}).get("value", 0)
+                    ) / Decimal("100")
+                else:
+                    amount = int(
+                        bucket.get("nested", {})
+                        .get("filtered_aggs", {})
+                        .get(self.spending_type, {})
+                        .get(self.spending_type, {})
+                        .get("value", 0)
+                    ) / Decimal("100")
+                if population:
+                    per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
+                results[shape_code] = {
+                    "amount": amount,
+                    "display_name": display_name or None,
+                    "shape_code": shape_code or None,
+                    "population": population,
+                    "per_capita": per_capita,
+                    "award_count": int(bucket.get("doc_count", 0)),
+                }
+            elif self.geo_layer == GeoLayer.COUNTY:
+                sub_bucket = bucket.get("group_by_sub_agg_key", {}).get("buckets", [])
+                state_code = code
+                state_fips = code_to_state.get(state_code, {}).get("fips", "")
+                for b in sub_bucket:
                     per_capita = None
+                    county_code = b.get("key")
+                    county_data = (
+                        PopCounty.objects.filter(county_number=county_code, state_code=state_fips)
+                        .order_by("-id")
+                        .first()
+                    )
+                    display_name = (
+                        CityCountyStateCode.objects.filter(county_numeric=county_code, state_numeric=state_fips)
+                        .order_by("-id")
+                        .first()
+                    )
+                    display_name = display_name.county_name if display_name else None
+                    shape_code = (
+                        f"{state_fips}{county_code}"
+                        if state_fips and county_code and county_code != "NULL" and state_code != "NULL"
+                        else None
+                    )
+                    population = county_data.latest_population if county_data else None
                     if self.spending_type != "face_value_of_loan":
                         amount = int(
-                            bucket.get("nested", {})
-                            .get("filtered_aggs", {})
-                            .get(self.spending_type, {})
-                            .get("value", 0)
+                            b.get("nested", {}).get("filtered_aggs", {}).get(self.spending_type, {}).get("value", 0)
                         ) / Decimal("100")
                     else:
                         amount = int(
-                            bucket.get("nested", {})
+                            b.get("nested", {})
                             .get("filtered_aggs", {})
                             .get(self.spending_type, {})
                             .get(self.spending_type, {})
                             .get("value", 0)
                         ) / Decimal("100")
-
                     if population:
                         per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
-
                     results[shape_code] = {
                         "amount": amount,
                         "display_name": display_name or None,
                         "shape_code": shape_code or None,
                         "population": population,
                         "per_capita": per_capita,
-                        "award_count": int(bucket.get("doc_count", 0)),
+                        "award_count": int(b.get("doc_count", 0)),
                     }
-                elif self.geo_layer == GeoLayer.COUNTY:
-                    sub_bucket = bucket.get("group_by_sub_agg_key", {}).get("buckets", [])
-                    state_code = code
-                    state_fips = code_to_state.get(state_code, {}).get("fips", "")
-                    for b in sub_bucket:
-                        county_code = b.get("key")
-                        county_data = (
-                            PopCounty.objects.filter(county_number=county_code, state_code=state_fips)
-                            .order_by("-id")
-                            .first()
-                        )
-                        display_name = (
-                            CityCountyStateCode.objects.filter(county_numeric=county_code, state_numeric=state_fips)
-                            .order_by("-id")
-                            .first()
-                        )
-                        display_name = display_name.county_name if display_name else None
-                        shape_code = f"{state_fips}{county_code}"
-                        population = county_data.latest_population if county_data else None
-                        if self.spending_type != "face_value_of_loan":
-                            amount = int(
-                                b.get("nested", {}).get("filtered_aggs", {}).get(self.spending_type, {}).get("value", 0)
-                            ) / Decimal("100")
-                        else:
-                            amount = int(
-                                b.get("nested", {})
-                                .get("filtered_aggs", {})
-                                .get(self.spending_type, {})
-                                .get(self.spending_type, {})
-                                .get("value", 0)
-                            ) / Decimal("100")
-
-                        if population:
-                            per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
-
-                        results[shape_code] = {
-                            "amount": amount,
-                            "display_name": display_name or None,
-                            "shape_code": shape_code or None,
-                            "population": population,
-                            "per_capita": per_capita,
-                            "award_count": int(b.get("doc_count", 0)),
-                        }
-                else:
-                    sub_bucket = bucket.get("group_by_sub_agg_key", {}).get("buckets", [])
-                    state_code = code
-                    state_fips = code_to_state.get(state_code, {}).get("fips", "")
-                    for b in sub_bucket:
-                        congress_code = b.get("key")
-                        display_name = f"{state_code}-{congress_code}".upper()
-                        shape_code = f"{state_fips}{congress_code}"
-                        population = PopCongressionalDistrict.objects.filter(
-                            congressional_district=congress_code, state_code=state_fips
-                        ).first()
-                        population = population.latest_population if population is not None else None
-                        if self.spending_type != "face_value_of_loan":
-                            amount = int(
-                                b.get("nested", {}).get("filtered_aggs", {}).get(self.spending_type, {}).get("value", 0)
-                            ) / Decimal("100")
-                        else:
-                            amount = int(
-                                b.get("nested", {})
-                                .get("filtered_aggs", {})
-                                .get(self.spending_type, {})
-                                .get(self.spending_type, {})
-                                .get("value", 0)
-                            ) / Decimal("100")
-
-                        if population:
-                            per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
-
-                        results[shape_code] = {
-                            "amount": amount,
-                            "display_name": display_name or None,
-                            "shape_code": shape_code or None,
-                            "population": population,
-                            "per_capita": per_capita,
-                            "award_count": int(b.get("doc_count", 0)),
-                        }
+            else:
+                sub_bucket = bucket.get("group_by_sub_agg_key", {}).get("buckets", [])
+                state_code = code
+                state_fips = code_to_state.get(state_code, {}).get("fips", "")
+                for b in sub_bucket:
+                    per_capita = None
+                    congress_code = b.get("key")
+                    display_name = (
+                        f"{state_code}-{congress_code}".upper()
+                        if state_code and congress_code and congress_code != "NULL" and state_code != "NULL"
+                        else None
+                    )
+                    shape_code = (
+                        f"{state_fips}{congress_code}"
+                        if state_fips and congress_code and congress_code != "NULL" and state_fips != "NULL"
+                        else None
+                    )
+                    population = PopCongressionalDistrict.objects.filter(
+                        congressional_district=congress_code, state_code=state_fips
+                    ).first()
+                    population = population.latest_population if population is not None else None
+                    if self.spending_type != "face_value_of_loan":
+                        amount = int(
+                            b.get("nested", {}).get("filtered_aggs", {}).get(self.spending_type, {}).get("value", 0)
+                        ) / Decimal("100")
+                    else:
+                        amount = int(
+                            b.get("nested", {})
+                            .get("filtered_aggs", {})
+                            .get(self.spending_type, {})
+                            .get(self.spending_type, {})
+                            .get("value", 0)
+                        ) / Decimal("100")
+                    if population:
+                        per_capita = (Decimal(amount) / Decimal(population)).quantize(Decimal(".01"))
+                    results[shape_code] = {
+                        "amount": amount,
+                        "display_name": display_name or None,
+                        "shape_code": shape_code or None,
+                        "population": population,
+                        "per_capita": per_capita,
+                        "award_count": int(b.get("doc_count", 0)),
+                    }
         return results
 
     def query_elasticsearch(self, filter_query: ES_Q) -> list:
@@ -303,7 +303,6 @@ class SpendingByGeographyViewSet(DisasterBase):
             return []
         response = search.handle_execute()
         results_dict = self.build_elasticsearch_result(response.aggs.to_dict())
-
         if self.geo_layer_filters:
             filtered_shape_codes = set(self.geo_layer_filters) & set(results_dict.keys())
             results = [results_dict[shape_code] for shape_code in filtered_shape_codes]
