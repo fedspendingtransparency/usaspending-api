@@ -22,7 +22,7 @@ def test_correct_response_defc_no_results(
 def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L"], sort="obligation")
     expected_results = [
         {
             "code": "987654321",
@@ -59,32 +59,8 @@ def test_correct_response_multiple_defc(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"])
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], sort="description")
     expected_results = [
-        {
-            "code": "987654321",
-            "award_count": 3,
-            "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
-            "obligation": 202200.0,
-            "outlay": 101100.0,
-        },
-        {
-            "code": "456789123",
-            "award_count": 1,
-            "description": "RECIPIENT 2",
-            "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
-            "obligation": 20.0,
-            "outlay": 10.0,
-        },
-        {
-            "code": "DUNS Number not provided",
-            "award_count": 1,
-            "description": "RECIPIENT 1",
-            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
-            "obligation": 2.0,
-            "outlay": 1.0,
-        },
         {
             "code": "DUNS Number not provided",
             "award_count": 1,
@@ -100,6 +76,30 @@ def test_correct_response_multiple_defc(
             "id": None,
             "obligation": 20000.0,
             "outlay": 10000.0,
+        },
+        {
+            "code": "987654321",
+            "award_count": 3,
+            "description": "RECIPIENT, 3",
+            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "obligation": 202200.0,
+            "outlay": 101100.0,
+        },
+        {
+            "code": "DUNS Number not provided",
+            "award_count": 1,
+            "description": "RECIPIENT 1",
+            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
+            "obligation": 2.0,
+            "outlay": 1.0,
+        },
+        {
+            "code": "456789123",
+            "award_count": 1,
+            "description": "RECIPIENT 2",
+            "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+            "obligation": 20.0,
+            "outlay": 10.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -172,20 +172,20 @@ def test_correct_response_with_award_type_codes(
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"])
     expected_results = [
         {
+            "code": "096354360",
+            "award_count": 1,
+            "description": "MULTIPLE RECIPIENTS",
+            "id": None,
+            "obligation": 20000.0,
+            "outlay": 10000.0,
+        },
+        {
             "code": "987654321",
             "award_count": 1,
             "description": "RECIPIENT, 3",
             "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
             "obligation": 2000.0,
             "outlay": 1000.0,
-        },
-        {
-            "code": "456789123",
-            "award_count": 1,
-            "description": "RECIPIENT 2",
-            "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
-            "obligation": 20.0,
-            "outlay": 10.0,
         },
         {
             "code": "DUNS Number not provided",
@@ -196,12 +196,12 @@ def test_correct_response_with_award_type_codes(
             "outlay": 1.0,
         },
         {
-            "code": "096354360",
+            "code": "456789123",
             "award_count": 1,
-            "description": "MULTIPLE RECIPIENTS",
-            "id": None,
-            "obligation": 20000.0,
-            "outlay": 10000.0,
+            "description": "RECIPIENT 2",
+            "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+            "obligation": 20.0,
+            "outlay": 10.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
@@ -239,7 +239,7 @@ def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, a
 def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=2, limit=1)
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], page=5, limit=1, sort="id")
     expected_results = {
         "totals": {"award_count": 7, "obligation": 2222222.0, "outlay": 1111111.0},
         "results": [
@@ -253,12 +253,12 @@ def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_a
             }
         ],
         "page_metadata": {
-            "page": 2,
+            "page": 5,
             "total": 5,
             "limit": 1,
-            "next": 3,
-            "previous": 1,
-            "hasNext": True,
+            "next": None,
+            "previous": 4,
+            "hasNext": False,
             "hasPrevious": True,
         },
         "messages": [

@@ -26,29 +26,36 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
         results = []
         for bucket in info_buckets:
             # Build a list of hash IDs to handle multiple levels
-            recipient_info = bucket.get("key").split("/")
-            if len(recipient_info) == 2:
+            if "special" in bucket.get("key"):
+                recipient_info = bucket.get("key").split("/")
+                recipient_name = recipient_info[1]
+                recipient_duns = recipient_info[2]
+                recipient_hash_list = None
+            else:
+                recipient_info = bucket.get("key").split("/")
                 recipient_hash = recipient_info[0]
                 recipient_levels = literal_eval(recipient_info[1])
                 recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
                 info = RecipientLookup.objects.get(recipient_hash=recipient_hash)
+                recipient_name = info.legal_business_name
+                recipient_duns = info.duns
 
-                results.append(
-                    {
-                        "id": recipient_hash_list,
-                        "code": info.duns or "DUNS Number not provided",
-                        "description": info.legal_business_name or None,
-                        "award_count": int(bucket.get("doc_count", 0)),
-                        **{
-                            column: get_summed_value_as_float(
-                                bucket.get("nested", {}).get("filtered_aggs", {})
-                                if column != "face_value_of_loan"
-                                else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested", {}),
-                                self.sum_column_mapping[column],
-                            )
-                            for column in self.sum_column_mapping
-                        },
-                    }
-                )
+            results.append(
+                {
+                    "id": recipient_hash_list,
+                    "code": recipient_duns or "DUNS Number not provided",
+                    "description": recipient_name or None,
+                    "award_count": int(bucket.get("doc_count", 0)),
+                    **{
+                        column: get_summed_value_as_float(
+                            bucket.get("nested", {}).get("filtered_aggs", {})
+                            if column != "face_value_of_loan"
+                            else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested", {}),
+                            self.sum_column_mapping[column],
+                        )
+                        for column in self.sum_column_mapping
+                    },
+                }
+            )
 
         return results
