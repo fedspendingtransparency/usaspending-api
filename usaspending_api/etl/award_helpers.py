@@ -85,7 +85,7 @@ INNER JOIN txn_latest   l ON e.award_id = l.award_id
 INNER JOIN txn_totals   t ON e.award_id = t.award_id
 
 WHERE
-  e.award_id = a.id
+  e.award_id = a.award_id
   AND (
        a.earliest_transaction_id                 IS DISTINCT FROM e.id
     OR a.date_signed                             IS DISTINCT FROM e.action_date
@@ -176,7 +176,7 @@ FROM fpds_totals AS t
 INNER JOIN txn_latest AS l ON t.award_id = l.award_id
 LEFT OUTER JOIN executive_comp AS ec ON t.award_id = ec.award_id
 WHERE
-  t.award_id = a.id
+  t.award_id = a.award_id
   AND (
         a.base_and_all_options_value IS DISTINCT FROM t.total_base_and_options_value
      OR a.base_exercised_options_val IS DISTINCT FROM t.base_exercised_options_val
@@ -233,7 +233,7 @@ SET
   officer_5_name    = ec.officer_5_name
 FROM executive_comp AS ec
 WHERE
-  ec.award_id = a.id
+  ec.award_id = a.award_id
   AND (
        a.officer_1_amount IS DISTINCT FROM ec.officer_1_amount
     OR a.officer_1_name   IS DISTINCT FROM ec.officer_1_name
@@ -266,7 +266,7 @@ subaward_award_update_sql_string = """
       subaward_count        = subaward_totals.subaward_count
     FROM subaward_totals
     WHERE
-      subaward_totals.award_id = a.id
+      subaward_totals.award_id = a.award_id
       AND (
            a.total_subaward_amount  IS DISTINCT FROM subaward_totals.total_subaward_amount
         OR a.subaward_count         IS DISTINCT FROM subaward_totals.subaward_count

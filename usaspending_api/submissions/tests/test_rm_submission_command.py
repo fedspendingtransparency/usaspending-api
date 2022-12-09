@@ -29,6 +29,7 @@ def submission_data():
             "search.TransactionSearch",
             transaction_id=i + 1,
             is_fpds=False,
+            award__award_id=i + 1,
             award__piid="ABC123",
             award__parent_award__piid="DEF455",
             pop_city_name="city1",
