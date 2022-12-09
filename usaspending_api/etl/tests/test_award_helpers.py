@@ -16,7 +16,8 @@ def test_award_update_from_latest_transaction():
 
     award = baker.make(
         "search.AwardSearch",
-        awarding_agency=agency1,
+        award_id=1,
+        awarding_agency_id=agency1.id,
         period_of_performance_current_end_date=datetime.date(2016, 1, 1),
         description="original award",
         generated_unique_award_id="AWD_1",
@@ -88,7 +89,7 @@ def test_award_update_from_latest_transaction():
 def test_award_update_from_earliest_transaction():
     """Test awards fields that should be updated with most earliest transaction info."""
 
-    award = baker.make("search.AwardSearch", generated_unique_award_id="AWD_ALPHA")
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="AWD_ALPHA")
     baker.make(
         "search.TransactionSearch",
         transaction_id=3,
@@ -133,7 +134,9 @@ def test_award_update_from_earliest_transaction():
 def test_award_update_obligated_amt():
     """Test that the award obligated amt updates as child transactions change."""
 
-    award = baker.make("search.AwardSearch", total_obligation=1000, generated_unique_award_id="BIG_AGENCY_AWD_1")
+    award = baker.make(
+        "search.AwardSearch", award_id=1, total_obligation=1000, generated_unique_award_id="BIG_AGENCY_AWD_1"
+    )
     for i in range(5):
         baker.make(
             "search.TransactionSearch",
@@ -153,7 +156,8 @@ def test_award_update_obligated_amt():
 def test_award_update_with_list():
     """Test optional parameter to update specific awards with txn data."""
     awards = [
-        baker.make("search.AwardSearch", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(10)
+        baker.make("search.AwardSearch", award_id=i, total_obligation=0, generated_unique_award_id=f"AWARD_{i}")
+        for i in range(10)
     ]
     test_award = awards[3]
 
@@ -210,7 +214,7 @@ def test_award_update_from_contract_transaction():
 
     # for contract type transactions, the base_and_all_options_value and base_exercised_options_val fields
     # should update the corresponding field on the award table
-    award = baker.make("search.AwardSearch", generated_unique_award_id="EXAMPLE_AWARD_1")
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="EXAMPLE_AWARD_1")
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,
@@ -241,7 +245,8 @@ def test_award_update_from_contract_transaction():
 def test_award_update_contract_txn_with_list():
     """Test optional parameter to update specific awards from txn contract."""
     awards = [
-        baker.make("search.AwardSearch", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(5)
+        baker.make("search.AwardSearch", award_id=i, total_obligation=0, generated_unique_award_id=f"AWARD_{i}")
+        for i in range(5)
     ]
     baker.make(
         "search.TransactionSearch",
@@ -292,7 +297,7 @@ def test_award_update_contract_txn_with_list():
 def test_award_update_contract_executive_comp():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = baker.make("search.AwardSearch", generated_unique_award_id="AWARD_CONT_IDV")
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="AWARD_CONT_IDV")
     baker.make(
         "search.TransactionSearch",
         transaction_id=13,
@@ -357,7 +362,7 @@ def test_award_update_contract_executive_comp():
 def test_award_update_assistance_executive_comp():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = baker.make("search.AwardSearch", generated_unique_award_id="ASST_ONE")
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="ASST_ONE")
     baker.make(
         "search.TransactionSearch",
         transaction_id=15,
@@ -423,7 +428,7 @@ def test_award_update_assistance_executive_comp():
 def test_award_update_transaction_fk():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = baker.make("search.AwardSearch", generated_unique_award_id="FAKE_award_YELLOW_12")
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="FAKE_award_YELLOW_12")
     baker.make(
         "search.TransactionSearch",
         transaction_id=18,

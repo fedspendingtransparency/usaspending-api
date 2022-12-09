@@ -139,7 +139,7 @@ class Command(BaseCommand):
 
             # award.save() is called in Award.get_or_create_summary_award by default
             created, award = Award.get_or_create_summary_award(
-                awarding_agency=awarding_agency,
+                awarding_agency_id=awarding_agency.id,
                 fain=row.get("fain"),
                 uri=row.get("uri"),
                 generated_unique_award_id=row.get("unique_award_key"),
@@ -301,7 +301,7 @@ class Command(BaseCommand):
                     row["awarding_agency_code"], row["awarding_sub_tier_agency_c"]
                 )
                 created, award = Award.get_or_create_summary_award(
-                    awarding_agency=awarding_agency,
+                    awarding_agency_id=awarding_agency.id,
                     piid=row.get("piid"),
                     fain=row.get("fain"),
                     uri=row.get("uri"),

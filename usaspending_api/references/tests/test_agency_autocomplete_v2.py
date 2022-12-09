@@ -21,8 +21,8 @@ def agency_data(db):
     baker.make(
         "search.AwardSearch",
         award_id=1,
-        awarding_agency=a,
-        funding_agency=a,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
         latest_transaction_id=tn.transaction_id,
         certified_date=tn.action_date,
     )
@@ -40,8 +40,8 @@ def agency_data(db):
     baker.make(
         "search.AwardSearch",
         award_id=2,
-        awarding_agency=a,
-        funding_agency=a,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
         latest_transaction_id=tn.transaction_id,
         certified_date=tn.action_date,
     )
@@ -57,8 +57,8 @@ def agency_data(db):
     baker.make(
         "search.AwardSearch",
         award_id=3,
-        awarding_agency=a,
-        funding_agency=a,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
         latest_transaction_id=tn.transaction_id,
         certified_date=tn.action_date,
     )
@@ -74,8 +74,8 @@ def agency_data(db):
     baker.make(
         "search.AwardSearch",
         award_id=4,
-        awarding_agency=a,
-        funding_agency=a,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
         latest_transaction_id=tn.transaction_id,
         certified_date=tn.action_date,
     )
@@ -91,8 +91,8 @@ def agency_data(db):
     baker.make(
         "search.AwardSearch",
         award_id=5,
-        awarding_agency=a,
-        funding_agency=a,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
         latest_transaction_id=tn.transaction_id,
         certified_date=tn.action_date,
     )
@@ -109,8 +109,8 @@ def agency_data(db):
     baker.make(
         "search.AwardSearch",
         award_id=6,
-        awarding_agency=a,
-        funding_agency=a,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
         latest_transaction_id=tn.transaction_id,
         certified_date=tn.action_date,
     )

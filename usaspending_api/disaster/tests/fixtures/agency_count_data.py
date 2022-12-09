@@ -14,7 +14,9 @@ def faba_with_toptier_agencies(award_count_sub_schedule, award_count_submission,
 
     toptier_agency(2)
     award2 = award_with_toptier_agency(2)
-    award3 = baker.make("search.AwardSearch", type="A", funding_agency=Agency.objects.first(), total_loan_value=0)
+    award3 = baker.make(
+        "search.AwardSearch", award_id=1, type="A", funding_agency_id=Agency.objects.first().id, total_loan_value=0
+    )
 
     faba_for_award(award1, 8, 0)
     faba_for_award(award2, 0, 7)
@@ -91,7 +93,14 @@ def toptier_agency(id):
 
 def award_with_toptier_agency(id):
     agency = baker.make("references.Agency", toptier_agency_id=id, toptier_flag=True)
-    a1 = baker.make("search.AwardSearch", type="A", funding_agency=agency, total_loan_value=0, latest_transaction_id=id)
+    a1 = baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        type="A",
+        funding_agency_id=agency.id,
+        total_loan_value=0,
+        latest_transaction_id=id,
+    )
     baker.make(
         "search.TransactionSearch",
         transaction_id=id,
