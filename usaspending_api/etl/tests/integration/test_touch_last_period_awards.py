@@ -7,7 +7,7 @@ from model_bakery import baker
 
 from usaspending_api.awards.models import Award
 from usaspending_api.broker.models import ExternalDataType
-
+from usaspending_api.search.models import AwardSearch
 
 OLD_DATE = "2020-04-05"
 SCRIPT_NAME = "touch_last_period_awards"
@@ -30,7 +30,9 @@ def award_data(db):
             baker.make("awards.FinancialAccountsByAwards", submission_id=11, award=award, disaster_emergency_fund=defc)
         else:
             baker.make("awards.FinancialAccountsByAwards", submission_id=21, award=award, disaster_emergency_fund=defc)
-        Award.objects.filter(pk=award.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
+        AwardSearch.objects.filter(award_id=award.id).update(
+            update_date=OLD_DATE
+        )  # convoluted line to sidestep auto_now()
 
     yield award_id
 
@@ -45,7 +47,7 @@ def award_data_old_and_new(db):
     awards = [
         baker.make("search.AwardSearch", award_id=award_id_too_old),
         baker.make("search.AwardSearch", award_id=award_id_too_new),
-        *baker.make("search.AwardSearch", _quantity=9),
+        *baker.make("search.AwardSearch", award_id=1, _quantity=9),
     ]
 
     for index, award in enumerate(awards):
@@ -53,7 +55,9 @@ def award_data_old_and_new(db):
             baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=award, disaster_emergency_fund=defc)
         else:
             baker.make("awards.FinancialAccountsByAwards", submission_id=12, award=award, disaster_emergency_fund=defc)
-        Award.objects.filter(pk=award.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
+        AwardSearch.objects.filter(award_id=award.id).update(
+            update_date=OLD_DATE
+        )  # convoluted line to sidestep auto_now()
 
     yield award_id_too_old, award_id_too_new
 

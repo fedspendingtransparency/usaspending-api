@@ -62,7 +62,7 @@ def test_specific_award():
 
 @pytest.mark.django_db
 def create_dummy_awards():
-    baker.make("search.AwardSearch", **{"award+id": 1})
+    baker.make("search.AwardSearch", **{"award_id": 1})
     dummy_award_1 = Award.objects.get(id=1)
     baker.make("search.AwardSearch", **{"award_id": 2})
     dummy_award_2 = Award.objects.get(id=2)
