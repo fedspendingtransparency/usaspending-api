@@ -44,63 +44,63 @@ def new_award_data(db):
     awards_lazy_ref = "search.AwardSearch"
     award1 = baker.make(
         awards_lazy_ref,
-        id=1,
+        award_id=1,
         type="A",
         date_signed="2019-10-15",
         earliest_transaction_id=10,
         latest_transaction_id=10,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        funding_agency_id=ag2.id,
     )
     award2 = baker.make(
         awards_lazy_ref,
-        id=2,
+        award_id=2,
         type="B",
         date_signed="2019-12-15",
         earliest_transaction_id=20,
         latest_transaction_id=20,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        funding_agency_id=ag2.id,
     )
     award3 = baker.make(
         awards_lazy_ref,
-        id=3,
+        award_id=3,
         type="07",
         date_signed="2020-01-30",
         earliest_transaction_id=30,
         latest_transaction_id=30,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        funding_agency_id=ag2.id,
     )
     award4 = baker.make(
         awards_lazy_ref,
-        id=4,
+        award_id=4,
         type="B",
         date_signed="2019-09-30",
         earliest_transaction_id=40,
         latest_transaction_id=40,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        funding_agency_id=ag2.id,
     )
     award5 = baker.make(
         awards_lazy_ref,
-        id=5,
+        award_id=5,
         type="08",
         date_signed="2020-12-15",
         earliest_transaction_id=50,
         latest_transaction_id=50,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        funding_agency_id=ag2.id,
     )
     award6 = baker.make(
         awards_lazy_ref,
-        id=6,
+        award_id=6,
         type="08",
         date_signed="2021-07-05",
         earliest_transaction_id=60,
         latest_transaction_id=60,
-        awarding_agency=ag3,
-        funding_agency=ag2,
+        awarding_agency_id=ag3.id,
+        funding_agency_id=ag2.id,
     )
 
     transaction_search_lazy_ref = "search.TransactionSearch"
