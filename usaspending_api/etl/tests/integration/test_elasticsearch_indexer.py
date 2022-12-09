@@ -26,7 +26,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     _lookup_deleted_award_keys,
     delete_docs_by_unique_key,
 )
-from usaspending_api.search.models import TransactionSearch
+from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -195,7 +195,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
 
     # Now modify one of the DB objects
-    awd = Award.objects.first()  # type: Award
+    awd = AwardSearch.objects.first()  # type: Award
     awd.total_obligation = 9999
     awd.save()
 
@@ -384,7 +384,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     original_db_awards_count = Award.objects.count()
     # Simulate an awards ETL deleting the transactions and awards from the DB.
     TransactionSearch.objects.all().delete()
-    Award.objects.all().delete()
+    AwardSearch.objects.all().delete()
 
     client = elasticsearch_award_index.client  # type: Elasticsearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
