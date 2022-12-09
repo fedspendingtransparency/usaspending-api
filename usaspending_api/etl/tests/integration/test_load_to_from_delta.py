@@ -15,10 +15,8 @@ from pyspark.sql import SparkSession
 from pytest import fixture, mark
 
 from django.core.management import call_command
-from django.db import connection, connections, transaction
-from django.db.models import sql
+from django.db import connection, connections, transaction, models
 
-from usaspending_api.awards.models import TransactionFABS
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple, get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
@@ -28,8 +26,8 @@ from usaspending_api.etl.management.commands.create_delta_table import (
     LOAD_TABLE_TABLE_SPEC,
     TABLE_SPEC,
 )
+from usaspending_api.etl.tests.integration.test_model import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
 from usaspending_api.recipient.models import RecipientLookup
-from usaspending_api.search.models import TransactionSearch
 
 
 @fixture
@@ -934,9 +932,7 @@ def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_b
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_transaction_fabs_timezone_aware(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
+def test_load_table_to_delta_timezone_aware(spark, monkeypatch, s3_unittest_data_bucket, hive_unittest_metastore_db):
     """Test that timestamps are not inadvertently shifted due to loss of timezone during reads and writes.
 
     The big takeaways from this are:
@@ -969,34 +965,28 @@ def test_load_table_to_delta_for_transaction_fabs_timezone_aware(
     # offset is actually 10 hours ahead of the stated day+hour when looked at in the UTC timezone
     assert dt_with_utc.timestamp() < dt_with_tz.timestamp()
 
+    # Setting up an agnostic TestModel and updating the TABLE_SPEC
+    with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
+        with new_psycopg2_conn.cursor() as cursor:
+            cursor.execute(TEST_TABLE_POSTGRES)
+    TABLE_SPEC.update(TEST_TABLE_SPEC)
+    monkeypatch.setattr("usaspending_api.etl.management.commands.load_table_to_delta.TABLE_SPEC", TABLE_SPEC)
+
     # Prepare a model object without saving it, but do save the related fields
     # - https://model-bakery.readthedocs.io/en/latest/basic_usage.html#non-persistent-objects
     # Do this so we can save the TransactionFABS record without interference from the Django DB connections
     # Session settings (like sesssion-set time zone)
-    fabs_with_tz = baker.prepare(
-        "search.TransactionSearch",
-        transaction_id=1,
-        transaction_unique_id=1,
-        published_fabs_id=3,
-        award_id=1,
-        is_fpds=False,
+    model_with_tz = baker.prepare(
+        TestModel,
         _save_related=True,
-        indirect_federal_sharing=1.0,
-        last_modified_date=dt_with_tz,
-    )  # type: TransactionSearch
-    populated_columns = (
-        "transaction_id",
-        "transaction_unique_id",
-        "award_id",
-        "is_fpds",
-        "indirect_federal_sharing",
-        "last_modified_date",
-        "published_fabs_id",
-    )
+        id=3,
+        test_timestamp=dt_with_tz,
+    )  # type: TestModel
+    populated_columns = ("id", "test_timestamp")
 
     def _get_sql_insert_from_model(model, populated_columns):
         values = [value for value in model._meta.local_fields if value.column in populated_columns]
-        q = sql.InsertQuery(model)
+        q = models.sql.InsertQuery(model)
         q.insert_values(values, [model])
         compiler = q.get_compiler("default")
         setattr(compiler, "return_id", False)
@@ -1011,7 +1001,7 @@ def test_load_table_to_delta_for_transaction_fabs_timezone_aware(
     with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
         with new_psycopg2_conn.cursor() as cursor:
             cursor.execute("set session time zone 'HST'")
-            fabs_insert_sql = _get_sql_insert_from_model(fabs_with_tz, populated_columns)
+            fabs_insert_sql = _get_sql_insert_from_model(model_with_tz, populated_columns)
             cursor.execute(fabs_insert_sql)
             assert cursor.rowcount == 1
             new_psycopg2_conn.commit()
@@ -1019,11 +1009,11 @@ def test_load_table_to_delta_for_transaction_fabs_timezone_aware(
     # See how things look from Django's perspective
     with transaction.atomic():
         # Fetch the DB object in a new transaction
-        fabs_with_tz = TransactionFABS.objects.filter(published_fabs_id=3).first()
-        assert fabs_with_tz is not None
+        test_model_with_tz = TestModel.objects.filter(id=3).first()
+        assert test_model_with_tz is not None
 
         # Check that all dates are as expected
-        model_datetime = fabs_with_tz.modified_at  # type: datetime
+        model_datetime = test_model_with_tz.test_timestamp  # type: datetime
         assert model_datetime.tzinfo is not None
 
         # NOTE: this is because of our Django settings. Upon saving timezone-aware data, it shifts it to UTC
@@ -1041,7 +1031,7 @@ def test_load_table_to_delta_for_transaction_fabs_timezone_aware(
 
         # Confirm also that this is the case in the DB (i.e. it was at write-time that UTC was set, not read-time
         with connection.cursor() as cursor:
-            cursor.execute("select modified_at from transaction_fabs where published_fabs_id = 3")
+            cursor.execute("select test_table.test_timestamp from test_table where id = 3")
             dt_from_db = [row[0] for row in cursor.fetchall()][0]  # type: datetime
             assert dt_from_db.tzinfo is not None
             assert dt_from_db.tzname() == "UTC"
@@ -1057,7 +1047,7 @@ def test_load_table_to_delta_for_transaction_fabs_timezone_aware(
     with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
         with new_psycopg2_conn.cursor() as cursor:
             cursor.execute("set session time zone 'HST'")
-            cursor.execute("select modified_at from transaction_fabs where published_fabs_id = 3")
+            cursor.execute("select test_table.test_timestamp from test_table where id = 3")
             dt_from_db = [row[0] for row in cursor.fetchall()][0]  # type: datetime
             assert dt_from_db.tzinfo is not None
             # Can't use traditional time zone names with tzname() since pyscopg2 uses its own time zone infos.
@@ -1072,9 +1062,12 @@ def test_load_table_to_delta_for_transaction_fabs_timezone_aware(
         # and READ (e.g. from a Delta Table over that parquet into a DataFrame) under the SAME timezone
         original_spark_tz = spark.conf.get("spark.sql.session.timeZone")
         spark.conf.set("spark.sql.session.timeZone", "America/New_York")
-        verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
+        verify_delta_table_loaded_to_delta(spark, "test_table", s3_unittest_data_bucket)
     finally:
         spark.conf.set("spark.sql.session.timeZone", original_spark_tz)
+        with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
+            with new_psycopg2_conn.cursor() as cursor:
+                cursor.execute("DROP TABLE test_table")
 
 
 @mark.django_db(transaction=True)
@@ -1116,6 +1109,7 @@ def test_load_table_to_from_delta_for_transaction_normalized(
 
 
 @mark.django_db(transaction=True)
+@mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):
@@ -1169,6 +1163,7 @@ def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(
 
 
 @mark.django_db(transaction=True)
+@mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
 def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):

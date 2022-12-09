@@ -67,6 +67,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     "total_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     "non_federal_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
+    "indirect_federal_sharing": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     # Recipient
     "recipient_hash": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
@@ -152,6 +153,8 @@ TRANSACTION_SEARCH_COLUMNS = {
     "correction_delete_indicatr": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "correction_delete_ind_desc": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "fain": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "funding_opportunity_goals": {"delta": "STRING", "postgres": "TEXT", "gold": True},
+    "funding_opportunity_number": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "record_type": {"delta": "INTEGER", "postgres": "INTEGER", "gold": True},
     "record_type_description": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "sai_number": {"delta": "STRING", "postgres": "TEXT", "gold": True},

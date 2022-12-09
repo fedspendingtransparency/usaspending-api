@@ -104,7 +104,17 @@ TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("uri", "uri", "STRING", False),
 ]
 
-TRANSACTION_FABS_COLUMNS = [col.silver_name for col in TRANSACTION_FABS_COLUMN_INFO]
+delta_columns_not_in_view = [
+    "fiscal_year_and_quarter_co",
+    "is_active",
+    "is_historical",
+    "submission_id",
+    "created_at",
+    "updated_at",
+]
+TRANSACTION_FABS_COLUMNS = [
+    col.silver_name for col in TRANSACTION_FABS_COLUMN_INFO if col.silver_name not in delta_columns_not_in_view
+]
 
 transaction_fabs_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (

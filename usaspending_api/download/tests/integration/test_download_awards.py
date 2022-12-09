@@ -43,8 +43,8 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Awarding Agencies
-    baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=True)
-    baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=True)
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=True)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=True)
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -75,7 +75,7 @@ def download_test_data():
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency_id=ata1.id,
+        awarding_agency_id=aa1.id,
         is_fpds=True,
         piid="tc1piid",
         awarding_agency_code="100",
@@ -89,7 +89,7 @@ def download_test_data():
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency_id=ata2.id,
+        awarding_agency_id=aa2.id,
         is_fpds=True,
         piid="tc2piid",
         awarding_agency_code="101",
@@ -103,7 +103,7 @@ def download_test_data():
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency_id=ata2.id,
+        awarding_agency_id=aa2.id,
         is_fpds=False,
         fain="ta1fain",
         awarding_agency_code="101",

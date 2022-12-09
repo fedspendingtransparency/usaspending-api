@@ -293,7 +293,9 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
     current_recipient_info = {}
     if children:
         # Get the codes
-        recipient_hashes = [bucket.get("key").split("/")[0] for bucket in recipient_info_buckets if bucket.get("key")]
+        recipient_hashes = [
+            bucket.get("key").split("/")[0] for bucket in recipient_info_buckets if bucket.get("key") != ""
+        ]
 
         # Get the current recipient info
         current_recipient_info = {}
