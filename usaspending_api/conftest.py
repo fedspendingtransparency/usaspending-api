@@ -40,6 +40,7 @@ logger = logging.getLogger("console")
 # Since baker doesn't support SearchVectorField, we'll pass in a function to return a string in the meantime
 baker.generators.add("django.contrib.postgres.search.SearchVectorField", lambda: "VECTORFIELD")
 baker.generators.add("usaspending_api.common.custom_django_fields.NumericField", lambda: 0.00)
+baker.generators.add("usaspending_api.common.custom_django_fields.BooleanFieldWithDefault", lambda: False)
 
 
 def pytest_configure():
