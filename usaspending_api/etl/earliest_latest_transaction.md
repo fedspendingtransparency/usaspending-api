@@ -13,5 +13,5 @@ In order to perform these calculations, we sort by the following fields. Usually
 
 ### Note on Modification Numbers
 
-Because a modification number can be empty or `null`, it is important to understand how Postgres handles `null` values in sorts. An empty or `null` value is considered larger than any other numbers, so if two or more transactions share the same `action_date`, the transaction a `modification_number` of `null` would be considered newer than one with a non-`null` `modification_number`.
+Because a modification number can be empty or `null`, it is important to understand how Postgres handles `null` values in sorts. An empty or `null` value is considered larger than any other numbers, so if two or more transactions share the same `action_date`, a transaction with a `modification_number` of `null` would be considered newer than one with a non-`null` `modification_number`.
 
