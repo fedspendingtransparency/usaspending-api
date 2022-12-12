@@ -26,25 +26,30 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
         results = []
         for bucket in info_buckets:
             # Build a list of hash IDs to handle multiple levels
-            if "special" in bucket.get("key"):
-                recipient_info = bucket.get("key").split("/")
-                recipient_name = recipient_info[1]
-                recipient_duns = recipient_info[2]
+            recipient_info = bucket.get("key").split("/")
+            recipient_hash = recipient_info[0]
+            recipient_levels = literal_eval(recipient_info[1]) if len(recipient_info) > 1 else None
+            recipient_hash_list = (
+                [f"{recipient_hash}-{level}" for level in recipient_levels] if recipient_levels else None
+            )
+            info = RecipientLookup.objects.filter(recipient_hash=recipient_hash).first()
+            recipient_name = info.legal_business_name if info else None
+            recipient_duns = info.duns if info else None
+            if recipient_name in [
+                "MULTIPLE RECIPIENTS",
+                "REDACTED DUE TO PII",
+                "MULTIPLE FOREIGN RECIPIENTS",
+                "PRIVATE INDIVIDUAL",
+                "INDIVIDUAL RECIPIENT",
+                "MISCELLANEOUS FOREIGN AWARDEES",
+            ]:
                 recipient_hash_list = None
-            else:
-                recipient_info = bucket.get("key").split("/")
-                recipient_hash = recipient_info[0]
-                recipient_levels = literal_eval(recipient_info[1])
-                recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
-                info = RecipientLookup.objects.get(recipient_hash=recipient_hash)
-                recipient_name = info.legal_business_name
-                recipient_duns = info.duns
 
             results.append(
                 {
                     "id": recipient_hash_list,
                     "code": recipient_duns or "DUNS Number not provided",
-                    "description": recipient_name or None,
+                    "description": recipient_name,
                     "award_count": int(bucket.get("doc_count", 0)),
                     **{
                         column: get_summed_value_as_float(
