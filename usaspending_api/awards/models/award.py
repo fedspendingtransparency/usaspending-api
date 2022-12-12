@@ -105,22 +105,8 @@ class Award(DataSourceTrackedModel):
         blank=True,
         help_text="The total of the indirect_federal_sharing from associated transactions",
     )
-    awarding_agency = models.ForeignKey(
-        "references.Agency",
-        on_delete=models.DO_NOTHING,
-        related_name="+",
-        null=True,
-        help_text="The awarding agency for the award",
-        db_index=True,
-    )
-    funding_agency = models.ForeignKey(
-        "references.Agency",
-        on_delete=models.DO_NOTHING,
-        related_name="+",
-        null=True,
-        help_text="The funding agency for the award",
-        db_index=True,
-    )
+    awarding_agency_id = models.IntegerField(null=True, db_index=True)
+    funding_agency_id = models.IntegerField(null=True, db_index=True)
     date_signed = models.DateField(
         null=True, db_index=False, verbose_name="Award Date", help_text="The date the award was signed"
     )
