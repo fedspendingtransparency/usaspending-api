@@ -32,9 +32,12 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
             recipient_hash_list = (
                 [f"{recipient_hash}-{level}" for level in recipient_levels] if recipient_levels else None
             )
-            info = RecipientLookup.objects.get(recipient_hash=recipient_hash)
-            recipient_name = info.legal_business_name
-            recipient_duns = info.duns
+            info = RecipientLookup.objects.filter(recipient_hash=recipient_hash).first()
+            recipient_name = None
+            recipient_duns = None
+            if info is not None:
+                recipient_name = info.legal_business_name
+                recipient_duns = info.duns
 
             results.append(
                 {

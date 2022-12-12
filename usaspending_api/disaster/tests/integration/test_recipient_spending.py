@@ -62,28 +62,20 @@ def test_correct_response_multiple_defc(
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], sort="description")
     expected_results = [
         {
-            "code": "DUNS Number not provided",
-            "award_count": 1,
-            "description": "MULTIPLE RECIPIENTS",
-            "id": None,
-            "obligation": 2000000.0,
-            "outlay": 1000000.0,
-        },
-        {
-            "code": "096354360",
-            "award_count": 1,
-            "description": "MULTIPLE RECIPIENTS",
-            "id": None,
-            "obligation": 20000.0,
-            "outlay": 10000.0,
-        },
-        {
             "code": "987654321",
             "award_count": 3,
             "description": "RECIPIENT, 3",
             "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
             "obligation": 202200.0,
             "outlay": 101100.0,
+        },
+        {
+            "code": "456789123",
+            "award_count": 1,
+            "description": "RECIPIENT 2",
+            "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
+            "obligation": 20.0,
+            "outlay": 10.0,
         },
         {
             "code": "DUNS Number not provided",
@@ -94,12 +86,20 @@ def test_correct_response_multiple_defc(
             "outlay": 1.0,
         },
         {
-            "code": "456789123",
+            "code": "096354360",
             "award_count": 1,
-            "description": "RECIPIENT 2",
-            "id": ["3c92491a-f2cd-ec7d-294b-7daf91511866-R"],
-            "obligation": 20.0,
-            "outlay": 10.0,
+            "description": "MULTIPLE RECIPIENTS",
+            "id": None,
+            "obligation": 20000.0,
+            "outlay": 10000.0,
+        },
+        {
+            "code": "DUNS Number not provided",
+            "award_count": 1,
+            "description": "MULTIPLE RECIPIENTS",
+            "id": None,
+            "obligation": 2000000.0,
+            "outlay": 1000000.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
