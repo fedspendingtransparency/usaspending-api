@@ -25,6 +25,7 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
         for bucket in info_buckets:
+            print(bucket.get("key"))
             # Build a list of hash IDs to handle multiple levels
             recipient_info = bucket.get("key").split("/")
             recipient_hash = recipient_info[0]
@@ -33,17 +34,23 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
                 [f"{recipient_hash}-{level}" for level in recipient_levels] if recipient_levels else None
             )
             info = RecipientLookup.objects.filter(recipient_hash=recipient_hash).first()
-            recipient_name = None
-            recipient_duns = None
-            if info is not None:
-                recipient_name = info.legal_business_name
-                recipient_duns = info.duns
+            recipient_name = info.legal_business_name if info else None
+            recipient_duns = info.duns if info else None
+            if recipient_name in [
+                "MULTIPLE RECIPIENTS",
+                "REDACTED DUE TO PII",
+                "MULTIPLE FOREIGN RECIPIENTS",
+                "PRIVATE INDIVIDUAL",
+                "INDIVIDUAL RECIPIENT",
+                "MISCELLANEOUS FOREIGN AWARDEES",
+            ]:
+                recipient_hash_list = None
 
             results.append(
                 {
                     "id": recipient_hash_list,
                     "code": recipient_duns or "DUNS Number not provided",
-                    "description": recipient_name or None,
+                    "description": recipient_name,
                     "award_count": int(bucket.get("doc_count", 0)),
                     **{
                         column: get_summed_value_as_float(

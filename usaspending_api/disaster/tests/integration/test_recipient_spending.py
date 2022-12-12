@@ -59,8 +59,16 @@ def test_correct_response_multiple_defc(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], sort="description")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], sort="obligation")
     expected_results = [
+        {
+            "code": "DUNS Number not provided",
+            "award_count": 1,
+            "description": "MULTIPLE RECIPIENTS",
+            "id": None,
+            "obligation": 2000000.0,
+            "outlay": 1000000.0,
+        },
         {
             "code": "987654321",
             "award_count": 3,
@@ -68,6 +76,14 @@ def test_correct_response_multiple_defc(
             "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
             "obligation": 202200.0,
             "outlay": 101100.0,
+        },
+        {
+            "code": "096354360",
+            "award_count": 1,
+            "description": "MULTIPLE RECIPIENTS",
+            "id": None,
+            "obligation": 20000.0,
+            "outlay": 10000.0,
         },
         {
             "code": "456789123",
@@ -84,22 +100,6 @@ def test_correct_response_multiple_defc(
             "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
             "obligation": 2.0,
             "outlay": 1.0,
-        },
-        {
-            "code": "096354360",
-            "award_count": 1,
-            "description": "MULTIPLE RECIPIENTS",
-            "id": None,
-            "obligation": 20000.0,
-            "outlay": 10000.0,
-        },
-        {
-            "code": "DUNS Number not provided",
-            "award_count": 1,
-            "description": "MULTIPLE RECIPIENTS",
-            "id": None,
-            "obligation": 2000000.0,
-            "outlay": 1000000.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
