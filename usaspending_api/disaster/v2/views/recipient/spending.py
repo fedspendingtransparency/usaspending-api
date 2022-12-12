@@ -28,8 +28,10 @@ class RecipientSpendingViewSet(ElasticsearchSpendingPaginationMixin, Elasticsear
             # Build a list of hash IDs to handle multiple levels
             recipient_info = bucket.get("key").split("/")
             recipient_hash = recipient_info[0]
-            recipient_levels = literal_eval(recipient_info[1])
-            recipient_hash_list = [f"{recipient_hash}-{level}" for level in recipient_levels]
+            recipient_levels = literal_eval(recipient_info[1]) if len(recipient_info) > 1 else None
+            recipient_hash_list = (
+                [f"{recipient_hash}-{level}" for level in recipient_levels] if recipient_levels else None
+            )
             info = RecipientLookup.objects.get(recipient_hash=recipient_hash)
             recipient_name = info.legal_business_name
             recipient_duns = info.duns

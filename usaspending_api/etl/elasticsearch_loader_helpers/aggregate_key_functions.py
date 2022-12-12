@@ -9,7 +9,7 @@ logger = logging.getLogger("script")
 
 def award_recipient_agg_key(record: dict) -> str:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
-    if record["recipient_hash"] is None or record["recipient_levels"] is None:
+    if record["recipient_hash"] is None:
         return ""
     return str(record["recipient_hash"]) + "/" + str(record["recipient_levels"])
 
