@@ -52,6 +52,7 @@ def _assemble_source_assistance_records(id_list):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
 def test_load_source_assistance_by_ids():
     """
     Simple end-to-end integration test to exercise the FABS loader given 3 records in an actual broker database
@@ -151,6 +152,7 @@ def test_load_source_assistance_by_ids():
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
 def test_delete_fabs_success(monkeypatch):
     # Award/Transaction deleted based on 1-1 transaction
     baker.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
