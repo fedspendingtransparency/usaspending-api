@@ -169,7 +169,9 @@ def test_correct_response_with_award_type_codes(
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"])
+    resp = helpers.post_for_spending_endpoint(
+        client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"], sort="obligation"
+    )
     expected_results = [
         {
             "code": "096354360",
@@ -188,14 +190,6 @@ def test_correct_response_with_award_type_codes(
             "outlay": 1000.0,
         },
         {
-            "code": "DUNS Number not provided",
-            "award_count": 1,
-            "description": "RECIPIENT 1",
-            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
-            "obligation": 2.0,
-            "outlay": 1.0,
-        },
-        {
             "code": "456789123",
             "award_count": 1,
             "description": "RECIPIENT 2",
@@ -203,8 +197,17 @@ def test_correct_response_with_award_type_codes(
             "obligation": 20.0,
             "outlay": 10.0,
         },
+        {
+            "code": "DUNS Number not provided",
+            "award_count": 1,
+            "description": "RECIPIENT 1",
+            "id": ["5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R"],
+            "obligation": 2.0,
+            "outlay": 1.0,
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
+    print(resp.json()["results"])
     assert resp.json()["results"] == expected_results
 
 
