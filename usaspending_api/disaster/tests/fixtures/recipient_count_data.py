@@ -9,6 +9,18 @@ from usaspending_api.submissions.models import SubmissionAttributes
 @pytest.fixture
 def basic_fabs_award(award_count_sub_schedule, award_count_submission, defc_codes):
     _normal_faba(_normal_fabs(1))
+    baker.make(
+        "recipient.RecipientLookup",
+        recipient_hash="c229f674-92c9-1128-7bdf-292fb3e4226b",
+        uei="1",
+        legal_business_name="Recipient 1",
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="c229f674-92c9-1128-7bdf-292fb3e4226b",
+        uei="1",
+        recipient_level="R",
+    )
 
 
 @pytest.fixture
@@ -17,10 +29,18 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
     transaction_normalized = baker.make(
         "awards.TransactionNormalized", award_id=100, action_date="2022-05-01", is_fpds=True
     )
-    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="fpds")
-    baker.make("recipient.RecipientLookup", recipient_hash="9427d7e5-3e8f-d0c0-3c58-2adc322ce489", duns="fpds")
+    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uei="fpds")
     baker.make(
-        "recipient.RecipientProfile", recipient_hash="9427d7e5-3e8f-d0c0-3c58-2adc322ce489", recipient_unique_id="fpds"
+        "recipient.RecipientLookup",
+        recipient_hash="053cca9b-ad9c-09ee-4b4b-243fa59f0be2",
+        uei="fpds",
+        legal_business_name="Recipient FPDS",
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="053cca9b-ad9c-09ee-4b4b-243fa59f0be2",
+        uei="fpds",
+        recipient_level="R",
     )
     _normal_faba(baker.make("awards.Award", id=100, latest_transaction=transaction_normalized, type="A", is_fpds=True))
 
@@ -30,13 +50,39 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
     transaction_normalized = baker.make(
         "awards.TransactionNormalized", award_id=200, action_date="2022-05-01", is_fpds=True
     )
-    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uei="fpds")
+
+    baker.make(
+        "recipient.RecipientLookup",
+        recipient_hash="053cca9b-ad9c-09ee-4b4b-243fa59f0be2",
+        uei="fpds",
+        legal_business_name="Recipient FPDS",
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="053cca9b-ad9c-09ee-4b4b-243fa59f0be2",
+        uei="fpds",
+        recipient_level="R",
+    )
     _normal_faba(baker.make("awards.Award", id=200, latest_transaction=transaction_normalized, type="A"))
 
     transaction_normalized = baker.make(
         "awards.TransactionNormalized", award_id=300, action_date="2022-05-01", is_fpds=True
     )
-    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uniqu="2")
+    baker.make("awards.TransactionFPDS", transaction=transaction_normalized, awardee_or_recipient_uei="2")
+
+    baker.make(
+        "recipient.RecipientLookup",
+        recipient_hash="dfdbbb4f-1a81-1232-84b0-341e93d0acb1",
+        uei="2",
+        legal_business_name="Recipient 2",
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="dfdbbb4f-1a81-1232-84b0-341e93d0acb1",
+        uei="2",
+        recipient_level="R",
+    )
     _normal_faba(baker.make("awards.Award", id=300, latest_transaction=transaction_normalized, type="A"))
 
 
@@ -227,5 +273,5 @@ def _normal_faba(award):
 def _normal_fabs(id):
     award = baker.make("awards.Award", latest_transaction_id=id, type="07")
     transaction_normalized = baker.make("awards.TransactionNormalized", pk=id, award=award, action_date="2022-05-01")
-    baker.make("awards.TransactionFABS", transaction=transaction_normalized, awardee_or_recipient_uniqu="1")
+    baker.make("awards.TransactionFABS", transaction=transaction_normalized, uei="1")
     return award

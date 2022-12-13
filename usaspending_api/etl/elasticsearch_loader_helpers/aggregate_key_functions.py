@@ -9,25 +9,9 @@ logger = logging.getLogger("script")
 
 def award_recipient_agg_key(record: dict) -> str:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
-    if record["recipient_hash"] is None or record["recipient_levels"] is None:
-        return json.dumps(
-            {
-                "name": record["recipient_name"],
-                "duns": record["recipient_unique_id"],
-                "uei": record["recipient_uei"],
-                "hash": "",
-                "levels": "",
-            }
-        )
-    return json.dumps(
-        {
-            "name": record["recipient_name"],
-            "duns": record["recipient_unique_id"],
-            "uei": record["recipient_uei"],
-            "hash": str(record["recipient_hash"]),
-            "levels": record["recipient_levels"],
-        }
-    )
+    if record["recipient_hash"] is None:
+        return ""
+    return str(record["recipient_hash"]) + "/" + str(record["recipient_levels"])
 
 
 def transaction_recipient_agg_key(record: dict) -> str:
