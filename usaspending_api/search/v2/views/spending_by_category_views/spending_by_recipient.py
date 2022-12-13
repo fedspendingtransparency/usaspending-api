@@ -87,9 +87,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "recipient_id": result_hash_with_level,
                     "name": (
-                        recipient_info["legal_business_name"]
-                        if recipient_info.get("legal_business_name")
-                        else None
+                        recipient_info["legal_business_name"] if recipient_info.get("legal_business_name") else None
                     ),
                     "code": recipient_info.get("duns") or "Recipient not provided",
                 }
