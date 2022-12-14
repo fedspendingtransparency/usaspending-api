@@ -1,5 +1,6 @@
 import copy
 import json
+from ast import literal_eval
 
 from sys import maxsize
 from django.conf import settings
@@ -442,9 +443,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
     def get_recipient_hash_with_level(self, award_doc):
-        recipient_agg_key = json.loads(award_doc.get("recipient_agg_key"))
-        recipient_hash = recipient_agg_key.get("hash")
-        recipient_levels = recipient_agg_key.get("levels", [])
+        recipient_info = award_doc.get("recipient_agg_key").split("/")
+        recipient_hash = recipient_info[0]
+        recipient_levels = literal_eval(recipient_info[1]) if len(recipient_info) > 1 else None
 
         if recipient_hash is None or len(recipient_levels) == 0:
             return None
