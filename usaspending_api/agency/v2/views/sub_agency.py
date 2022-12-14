@@ -9,7 +9,7 @@ from usaspending_api.common.elasticsearch.aggregation_helpers import create_coun
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.references.models import Agency
+from usaspending_api.references.models import Agency, SubtierAgency, Office
 
 
 class SubAgencyList(PaginationMixin, AgencyBase):
@@ -23,6 +23,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.subtier_code_field = {"awarding": "awarding_sub_tier_agency_c", "funding": "funding_sub_tier_agency_co"}
         self.params_to_validate = ["fiscal_year", "agency_type", "award_type_codes"]
 
     @cache_response()
@@ -49,20 +50,41 @@ class SubAgencyList(PaginationMixin, AgencyBase):
     def format_elasticsearch_results(self, results):
         response = []
         buckets = results.aggs.to_dict().get("subtier_agencies", {}).get("buckets", [])
+
+        # Get the subtier codes
+        subtier_codes = [bucket.get("key") for bucket in buckets if bucket.get("key") is not None]
+
+        # Get the current recipient info
+        current_subtier_info = {}
+        subtier_info_query = SubtierAgency.objects.filter(subtier_code__in=subtier_codes).values(
+            "subtier_code", "name", "abbreviation"
+        )
+        for subtier in subtier_info_query:
+            current_subtier_info[subtier["subtier_code"]] = subtier
+
+        # Get the office codes
+        office_codes = []
         for bucket in buckets:
+            office_codes.extend([child.get("key") for child in bucket.get("offices").get("buckets")])
+            # remove any potential dups
+            office_codes = set(list(office_codes))
+
+        # Get the current recipient info
+        current_office_info = {}
+        for office in Office.objects.filter(office_code__in=office_codes).values("office_code", "office_name").all():
+            current_office_info[office["office_code"]] = office["office_name"]
+
+        for bucket in buckets:
+            subtier_info = current_subtier_info[bucket.get("key")] or {}
             response.append(
                 {
-                    "name": bucket.get("key"),
-                    "abbreviation": bucket.get("subagency_info", {})
-                    .get("hits", {})
-                    .get("hits", [{}])[0]
-                    .get("_source", {})
-                    .get(f"{self.agency_type}_subtier_agency_abbreviation"),
+                    "abbreviation": subtier_info.get("abbreviation"),
+                    "name": subtier_info.get("name"),
                     "total_obligations": round(bucket.get("total_subagency_obligations", {}).get("value", 0), 2),
                     "transaction_count": bucket.get("doc_count"),
                     "new_award_count": bucket.get("agency_award_count", {}).get("agency_award_value", {}).get("value"),
                     "children": sorted(
-                        self.format_child_response(bucket.get("offices").get("buckets")),
+                        self.format_child_response(bucket.get("offices").get("buckets"), current_office_info),
                         key=lambda x: x.get(self.pagination.sort_key),
                         reverse=self.pagination.sort_order == "desc",
                     ),
@@ -70,17 +92,13 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             )
         return response
 
-    def format_child_response(self, children):
+    def format_child_response(self, children, current_office_info):
         response = []
         for child in children:
             response.append(
                 {
-                    "name": child.get("office_info", {})
-                    .get("hits", {})
-                    .get("hits", [{}])[0]
-                    .get("_source", {})
-                    .get(f"{self.agency_type}_office_name"),
                     "code": child.get("key"),
+                    "name": current_office_info.get(child.get("key")),
                     "total_obligations": round(child.get("total_office_obligations", {}).get("value", 0), 2),
                     "transaction_count": child.get("doc_count"),
                     "new_award_count": child.get("office_award_count", {}).get("office_award_value", {}).get("value"),
@@ -118,7 +136,9 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             _source={"includes": [f"{self.agency_type}_office_name"]},
         )
         subtier_agency_agg = A(
-            "terms", field=f"{self.agency_type}_subtier_agency_name.keyword", size=term_agg_sizes["subtier_agency_size"]
+            "terms",
+            field=f"{self.subtier_code_field[self.agency_type]}.keyword",
+            size=term_agg_sizes["subtier_agency_size"],
         )
         office_agg = A("terms", field=f"{self.agency_type}_office_code.keyword", size=term_agg_sizes["office_size"])
         agency_obligation_agg = A("sum", field="generated_pragmatic_obligation")
@@ -156,7 +176,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         ).count()
 
         unique_subtier_agg = A(
-            "terms", field=f"{self.agency_type}_subtier_agency_name.keyword", size=max_subtier_agencies
+            "terms", field=f"{self.subtier_code_field[self.agency_type]}.keyword", size=max_subtier_agencies
         )
         unique_office_count_agg = A("cardinality", field=f"{self.agency_type}_office_code.keyword")
         max_office_count_agg = A("max_bucket", buckets_path="unique_subtier_agg>unique_office_count_agg")
