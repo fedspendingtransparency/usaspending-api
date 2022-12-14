@@ -1,5 +1,4 @@
 import copy
-import json
 from ast import literal_eval
 
 from sys import maxsize
