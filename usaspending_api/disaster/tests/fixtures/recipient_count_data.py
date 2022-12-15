@@ -107,7 +107,9 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
         recipient_hash="dfdbbb4f-1a81-1232-84b0-341e93d0acb1",
         recipient_levels=["R"],
     )
-    _normal_faba(baker.make("search.AwardSearch", id=300, latest_transaction_id=transaction_fpds_2.transaction_id, type="A"))
+    _normal_faba(
+        baker.make("search.AwardSearch", id=300, latest_transaction_id=transaction_fpds_2.transaction_id, type="A")
+    )
 
     baker.make(
         "recipient.RecipientLookup",
@@ -120,6 +122,7 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
         recipient_hash="dfdbbb4f-1a81-1232-84b0-341e93d0acb1",
         uei="2",
         recipient_level="R",
+    )
 
 
 @pytest.fixture
@@ -148,9 +151,10 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
     )
     _normal_faba(
         baker.make(
-            "search.AwardSearch", award_id=500,  latest_transaction_id=transaction_fpds_2.transaction_id, type="A"
+            "search.AwardSearch", award_id=500, latest_transaction_id=transaction_fpds_2.transaction_id, type="A"
         )
     )
+
 
 @pytest.fixture
 def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
@@ -166,7 +170,11 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_unique_id="123",
     )
-    _normal_faba(baker.make( "search.AwardSearch", award_id=600,latest_transaction_id=transaction_fpds_1.transaction_id, type="A"))
+    _normal_faba(
+        baker.make(
+            "search.AwardSearch", award_id=600, latest_transaction_id=transaction_fpds_1.transaction_id, type="A"
+        )
+    )
 
     transaction_fpds_2 = baker.make(
         "search.TransactionSearch",
@@ -180,7 +188,11 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_unique_id="456",
     )
-    _normal_faba(baker.make("search.AwardSearch", award_id=700, latest_transaction_id=transaction_fpds_2.transaction_id, type="A"))
+    _normal_faba(
+        baker.make(
+            "search.AwardSearch", award_id=700, latest_transaction_id=transaction_fpds_2.transaction_id, type="A"
+        )
+    )
 
 
 @pytest.fixture
@@ -328,7 +340,7 @@ def _normal_faba(award):
 
 
 def _normal_fabs(id):
-    fabs_award = baker.make("search.AwardSearch", latest_transaction_id=id, type="07",  is_fpds=False)
+    fabs_award = baker.make("search.AwardSearch", latest_transaction_id=id, type="07", is_fpds=False)
     baker.make(
         "search.TransactionSearch",
         type="07",
