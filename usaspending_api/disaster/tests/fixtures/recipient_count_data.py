@@ -139,7 +139,6 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
     _normal_faba(
         baker.make(
             "search.AwardSearch", award_id=400, latest_transaction_id=transaction_fpds_1.transaction_id, type="A"
-
         )
     )
     transaction_fpds_2 = baker.make(
@@ -154,7 +153,6 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
     _normal_faba(
         baker.make(
             "search.AwardSearch", award_id=500, latest_transaction_id=transaction_fpds_2.transaction_id, type="A"
-
         )
     )
 
