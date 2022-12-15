@@ -141,10 +141,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
 
     def _build_json_result(self, bucket: dict, child: bool):
         agency_id = None
-        if child:
-            tier = "sub"
-        else:
-            tier = "top"
+        tier = "sub" if child else "top"
         tid = Agency.objects.filter(
             id=bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_agency_id"]
         ).first()

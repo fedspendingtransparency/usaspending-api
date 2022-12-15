@@ -449,13 +449,13 @@ def recipient_test_data(db):
     baker.make(
         "recipient.RecipientLookup",
         duns="00UOP00",
-        legal_business_name="University of Pawnee",
+        legal_business_name="UNIVERSITY OF PAWNEE",
         recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
     )
     baker.make(
         "recipient.RecipientLookup",
         duns="1234JD4321",
-        legal_business_name="John Doe",
+        legal_business_name="JOHN DOE",
         recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
     )
     baker.make(
@@ -470,14 +470,14 @@ def recipient_test_data(db):
         recipient_unique_id="00UOP00",
         recipient_level="P",
         recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
-        recipient_name="University of Pawnee",
+        recipient_name="UNIVERSITY OF PAWNEE",
     )
     baker.make(
         "recipient.RecipientProfile",
         recipient_unique_id="1234JD4321",
         recipient_level="C",
         recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
-        recipient_name="John Doe",
+        recipient_name="JOHN DOE",
     )
     baker.make(
         "recipient.RecipientProfile",
