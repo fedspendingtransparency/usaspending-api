@@ -1098,7 +1098,7 @@ def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_d
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make("search.TransactionSearch", transaction_id="1", is_fpds=True, _fill_optional=True)
     baker.make("search.TransactionSearch", transaction_id="2", is_fpds=True, _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
@@ -1115,6 +1115,23 @@ def test_load_table_to_from_delta_for_transaction_normalized(
 
 @mark.django_db(transaction=True)
 @mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
+def test_load_table_to_from_delta_for_recipient_profile_testing(
+    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+):
+    tables_to_load = [
+        "recipient_lookup",
+        "sam_recipient",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    verify_delta_table_loaded_to_delta(
+        spark, "recipient_profile_testing", s3_unittest_data_bucket, load_command="load_table_to_delta"
+    )
+
+
+@mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):

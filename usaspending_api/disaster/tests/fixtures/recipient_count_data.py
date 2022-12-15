@@ -43,7 +43,7 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
         baker.make(
             "search.AwardSearch",
             award_id=100,
-            latest_transaction_id=transaction_normalized.transaction_id,
+            latest_transaction_id=transaction_fpds.transaction_id,
             type="A",
             is_fpds=True,
         )
@@ -64,6 +64,7 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
 
 @pytest.fixture
 def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_count_submission, defc_codes):
+
     transaction_fpds_1 = baker.make(
         "search.TransactionSearch",
         transaction_id=3,
@@ -138,6 +139,7 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
     _normal_faba(
         baker.make(
             "search.AwardSearch", award_id=400, latest_transaction_id=transaction_fpds_1.transaction_id, type="A"
+
         )
     )
     transaction_fpds_2 = baker.make(
@@ -152,6 +154,7 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
     _normal_faba(
         baker.make(
             "search.AwardSearch", award_id=500, latest_transaction_id=transaction_fpds_2.transaction_id, type="A"
+
         )
     )
 

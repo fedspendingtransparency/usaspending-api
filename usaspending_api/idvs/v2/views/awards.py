@@ -59,7 +59,6 @@ GET_CHILD_IDVS_SQL = SQL(
     from
         parent_award pap
         inner join parent_award pac on pac.parent_award_id = pap.award_id
-        inner join awards ac on ac.id = pac.award_id
         inner join vw_awards ac on ac.id = pac.award_id
         inner join vw_transaction_fpds tf on tf.transaction_id = ac.latest_transaction_id
         left outer join agency a on a.id = ac.funding_agency_id

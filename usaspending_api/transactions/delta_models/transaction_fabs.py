@@ -103,7 +103,6 @@ TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("updated_at", "updated_at", "TIMESTAMP", False),
     TransactionColumn("uri", "uri", "STRING", False),
 ]
-
 delta_columns_not_in_view = [
     "fiscal_year_and_quarter_co",
     "is_active",
