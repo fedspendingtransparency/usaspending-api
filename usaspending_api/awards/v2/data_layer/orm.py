@@ -38,6 +38,7 @@ from usaspending_api.references.models import (
     ToptierAgencyPublishedDABSView,
 )
 from usaspending_api.awards.v2.data_layer.sql import defc_sql
+from usaspending_api.search.models import AwardSearch
 
 logger = logging.getLogger("console")
 
@@ -59,10 +60,10 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
     response["record_type"] = transaction["record_type"]
     response["cfda_info"] = fetch_all_cfda_details(award)
     response["transaction_obligated_amount"] = fetch_transaction_obligated_amount_by_internal_award_id(award["id"])
-    response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    response["funding_agency"] = fetch_agency_details(response["_funding_agency_id"])
     if response["funding_agency"]:
         response["funding_agency"]["office_agency_name"] = transaction["_funding_office_name"]
-    response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
+    response["awarding_agency"] = fetch_agency_details(response["_awarding_agency_id"])
     if response["awarding_agency"]:
         response["awarding_agency"]["office_agency_name"] = transaction["_awarding_office_name"]
     response["period_of_performance"] = OrderedDict(
@@ -98,10 +99,10 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
         award["_parent_award_piid"], award["_fpds_parent_agency_id"]
     )
     response["latest_transaction_contract_data"] = transaction
-    response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    response["funding_agency"] = fetch_agency_details(response["_funding_agency_id"])
     if response["funding_agency"]:
         response["funding_agency"]["office_agency_name"] = transaction["_funding_office_name"]
-    response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
+    response["awarding_agency"] = fetch_agency_details(response["_awarding_agency_id"])
     if response["awarding_agency"]:
         response["awarding_agency"]["office_agency_name"] = transaction["_awarding_office_name"]
     response["period_of_performance"] = OrderedDict(
@@ -150,10 +151,10 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
 
     response["parent_award"] = fetch_idv_parent_award_details(award["generated_unique_award_id"])
     response["latest_transaction_contract_data"] = transaction
-    response["funding_agency"] = fetch_agency_details(response["_funding_agency"])
+    response["funding_agency"] = fetch_agency_details(response["_funding_agency_id"])
     if response["funding_agency"]:
         response["funding_agency"]["office_agency_name"] = transaction["_funding_office_name"]
-    response["awarding_agency"] = fetch_agency_details(response["_awarding_agency"])
+    response["awarding_agency"] = fetch_agency_details(response["_awarding_agency_id"])
     if response["awarding_agency"]:
         response["awarding_agency"]["office_agency_name"] = transaction["_awarding_office_name"]
     response["period_of_performance"] = OrderedDict(
@@ -323,7 +324,7 @@ def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]
     parent_award_guai = parent_award_ids["parent_award_guai"]
 
     parent_award = (
-        Award.objects.filter(id=parent_award_award_id)
+        AwardSearch.objects.filter(id=parent_award_award_id)
         .values(
             "latest_transaction__contract_data__agency_id",
             "latest_transaction__contract_data__idv_type_description",
