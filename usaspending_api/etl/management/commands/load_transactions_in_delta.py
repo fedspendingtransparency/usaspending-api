@@ -115,9 +115,7 @@ class Command(BaseCommand):
                 self.update_transaction_lookup_ids()
             elif self.etl_level == "award_id_lookup":
                 self.update_award_lookup_ids()
-            elif self.etl_level == "transaction_fabs":
-                self.spark.sql(self.transaction_fabs_fpds_merge_into_sql())
-            elif self.etl_level == "transaction_fpds":
+            elif self.etl_level in ("transaction_fabs", "transaction_fpds"):
                 self.spark.sql(self.transaction_fabs_fpds_merge_into_sql())
             elif self.etl_level == "transaction_normalized":
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fabs"))
@@ -658,7 +656,9 @@ class Command(BaseCommand):
         except AnalysisException as e:
             if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
                 # In this case, we just don't populate transaction_id_lookup
-                pass
+                self.logger.warning(
+                    "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
+                )
             else:
                 # Don't try to handle anything else
                 raise e
@@ -708,7 +708,7 @@ class Command(BaseCommand):
             self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
         except AnalysisException as e:
             if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
-                # In this case, we just don't populate transaction_id_lookup
+                # In this case, we just don't check for NULLs in unique_award_key.
                 pass
             else:
                 # Don't try to handle anything else
@@ -755,7 +755,7 @@ class Command(BaseCommand):
         except AnalysisException as e:
             if re.match(r"Table or view not found: raw\.awards", e.desc):
                 # In this case, we just don't populate award_id_lookup
-                pass
+                self.logger.warning("Skipping population of award_id_lookup table; no raw.awards table.")
             else:
                 # Don't try to handle anything else
                 raise e
