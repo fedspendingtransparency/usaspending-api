@@ -341,7 +341,7 @@ def _normal_faba(award):
 
 
 def _normal_fabs(id):
-    fabs_award = baker.make("search.AwardSearch", latest_transaction_id=id, type="07", is_fpds=False)
+    fabs_award = baker.make("search.AwardSearch", award_id=id, latest_transaction_id=id, type="07", is_fpds=False)
     baker.make(
         "search.TransactionSearch",
         type="07",

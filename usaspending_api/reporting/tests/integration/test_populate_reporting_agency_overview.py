@@ -163,6 +163,7 @@ def setup_test_data(db):
 
     award_dicts = [
         {
+            "award_id": 1,
             "is_fpds": True,
             "awarding_agency": agencies[0],
             "type": "A",
@@ -170,6 +171,7 @@ def setup_test_data(db):
             "certified_date": "2019-12-15",
         },
         {
+            "award_id": 2,
             "is_fpds": False,
             "awarding_agency": agencies[0],
             "type": "08",
@@ -179,6 +181,7 @@ def setup_test_data(db):
             "total_subsidy_cost": 1000,
         },
         {
+            "award_id": 3,
             "is_fpds": False,
             "awarding_agency": agencies[0],
             "type": "07",

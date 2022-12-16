@@ -90,8 +90,8 @@ def sort_states_response(response_list):
 
 @pytest.fixture
 def state_data(db):
-    award_old = baker.make("search.AwardSearch", type="07")
-    award_old2 = baker.make("search.AwardSearch", type="08")
+    award_old = baker.make("search.AwardSearch", award_id=1, type="07")
+    award_old2 = baker.make("search.AwardSearch", award_id=2, type="08")
 
     baker.make(
         "search.TransactionSearch",
@@ -189,9 +189,9 @@ def state_data(db):
 def state_view_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"01": {"code": "AB"}})
 
-    award_old = baker.make("search.AwardSearch", type="A")
+    award_old = baker.make("search.AwardSearch", award_id=1, type="A")
 
-    award_cur = baker.make("search.AwardSearch", type="B")
+    award_cur = baker.make("search.AwardSearch", award_id=2, type="B")
 
     baker.make(
         "search.TransactionSearch",
@@ -224,9 +224,9 @@ def state_view_data(db, monkeypatch):
 def state_view_loan_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"01": {"code": "AB"}})
 
-    award_old = baker.make("search.AwardSearch", type="07")
-    award_old2 = baker.make("search.AwardSearch", type="08")
-    award_cur = baker.make("search.AwardSearch", type="07")
+    award_old = baker.make("search.AwardSearch", award_id=1, type="07")
+    award_old2 = baker.make("search.AwardSearch", award_id=2, type="08")
+    award_cur = baker.make("search.AwardSearch", award_id=3, type="07")
 
     baker.make(
         "search.TransactionSearch",

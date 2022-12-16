@@ -10,7 +10,6 @@ from model_bakery import baker
 
 # Imports from your apps
 from usaspending_api.awards.v2.views.transactions import TransactionViewSet
-from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.search.models import AwardSearch
 
