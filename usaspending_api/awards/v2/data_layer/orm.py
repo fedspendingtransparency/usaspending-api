@@ -324,7 +324,7 @@ def _fetch_parent_award_details(parent_award_ids: dict) -> Optional[OrderedDict]
     parent_award_guai = parent_award_ids["parent_award_guai"]
 
     parent_award = (
-        AwardSearch.objects.filter(id=parent_award_award_id)
+        AwardSearch.objects.filter(award_id=parent_award_award_id)
         .values(
             "latest_transaction__contract_data__agency_id",
             "latest_transaction__contract_data__idv_type_description",
