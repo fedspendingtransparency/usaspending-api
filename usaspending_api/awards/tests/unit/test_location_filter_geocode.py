@@ -29,7 +29,20 @@ def award_data_fixture(db):
         pop_state_code="TX",
         pop_country_code="USA",
     )
-    baker.make("search.AwardSearch", award_id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piiiiid",
+        type="A",
+        recipient_location_city_name="BURBANK",
+        recipient_location_country_code="USA",
+        recipient_location_state_code="CA",
+        pop_city_name="AUSTIN",
+        pop_state_code="TX",
+        pop_country_code="USA",
+    )
 
     baker.make(
         "search.TransactionSearch",
@@ -45,7 +58,19 @@ def award_data_fixture(db):
         pop_state_code="TX",
         pop_country_code="USA",
     )
-    baker.make("search.AwardSearch", award_id=2, is_fpds=True, latest_transaction_id=2, piid="0001", type="A")
+    baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        is_fpds=True,
+        latest_transaction_id=2,
+        piid="0001",
+        type="A",
+        recipient_location_city_name="BRISTOL",
+        recipient_location_country_code="GBR",
+        pop_city_name="MCCOOL JUNCTION",
+        pop_state_code="TX",
+        pop_country_code="USA",
+    )
 
     baker.make(
         "search.TransactionSearch",
@@ -60,7 +85,18 @@ def award_data_fixture(db):
         pop_state_code="NE",
         pop_country_code="USA",
     )
-    baker.make("search.AwardSearch", award_id=3, is_fpds=True, latest_transaction_id=3, piid="0002", type="A")
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        is_fpds=True,
+        latest_transaction_id=3,
+        piid="0002",
+        type="A",
+        recipient_location_city_name="BRISBANE",
+        pop_city_name="BRISBANE",
+        pop_state_code="NE",
+        pop_country_code="USA",
+    )
 
     baker.make(
         "search.TransactionSearch",
@@ -76,7 +112,19 @@ def award_data_fixture(db):
         pop_state_code="NE",
         pop_country_code="USA",
     )
-    baker.make("search.AwardSearch", award_id=4, is_fpds=True, latest_transaction_id=4, piid="0003", type="A")
+    baker.make(
+        "search.AwardSearch",
+        award_id=4,
+        is_fpds=True,
+        latest_transaction_id=4,
+        piid="0003",
+        type="A",
+        recipient_location_city_name="NEW YORK",
+        recipient_location_country_code="USA",
+        pop_city_name="NEW YORK",
+        pop_state_code="NE",
+        pop_country_code="USA",
+    )
     baker.make(
         "search.TransactionSearch",
         is_fpds=True,
@@ -91,7 +139,19 @@ def award_data_fixture(db):
         pop_state_code="NE",
         pop_country_code="USA",
     )
-    baker.make("search.AwardSearch", award_id=5, is_fpds=True, latest_transaction_id=5, piid="0004", type="A")
+    baker.make(
+        "search.AwardSearch",
+        award_id=5,
+        is_fpds=True,
+        latest_transaction_id=5,
+        piid="0004",
+        type="A",
+        recipient_location_city_name="NEW AMSTERDAM",
+        recipient_location_country_code="USA",
+        pop_city_name="NEW AMSTERDAM",
+        pop_state_code="NE",
+        pop_country_code="USA",
+    )
 
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 

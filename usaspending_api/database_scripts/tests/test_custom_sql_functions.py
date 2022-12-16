@@ -49,7 +49,7 @@ def test_urlencoding_no_change(add_fun_awards):
     test_sql = f"""
         SELECT      generated_unique_award_id,
                     {URLENCODE_FUNCTION_NAME}(generated_unique_award_id)
-        from        awards
+        from        vw_awards
         order by    id
     """
     with connection.cursor() as cursor:

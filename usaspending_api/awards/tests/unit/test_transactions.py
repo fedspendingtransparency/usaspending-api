@@ -12,6 +12,7 @@ from model_bakery import baker
 from usaspending_api.awards.v2.views.transactions import TransactionViewSet
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.search.models import AwardSearch
 
 
 def format_response(api_dict):
@@ -63,11 +64,11 @@ def test_specific_award():
 @pytest.mark.django_db
 def create_dummy_awards():
     baker.make("search.AwardSearch", **{"award_id": 1})
-    dummy_award_1 = Award.objects.get(id=1)
+    dummy_award_1 = AwardSearch.objects.get(award_id=1)
     baker.make("search.AwardSearch", **{"award_id": 2})
-    dummy_award_2 = Award.objects.get(id=2)
+    dummy_award_2 = AwardSearch.objects.get(award_id=2)
     baker.make("search.AwardSearch", **{"award_id": 3})
-    dummy_award_3 = Award.objects.get(id=3)
+    dummy_award_3 = AwardSearch.objects.get(award_id=3)
     transaction_1["award"] = dummy_award_1
     transaction_2["award"] = dummy_award_2
     transaction_3["award"] = dummy_award_3
