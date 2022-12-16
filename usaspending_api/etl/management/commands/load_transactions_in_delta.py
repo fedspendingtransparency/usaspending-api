@@ -11,9 +11,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import ArrayType, StringType
 from pyspark.sql.utils import AnalysisException
 
-from usaspending_api.broker.helpers.build_business_categories_boolean_dict import (
-    fpds_boolean_columns
-)
+from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
 from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fabs,
     get_business_categories_fpds,
@@ -28,14 +26,15 @@ from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     TRANSACTION_FABS_COLUMN_INFO,
     TRANSACTION_FABS_COLUMNS,
-    FABS_TO_NORMALIZED_COLUMN_INFO
+    FABS_TO_NORMALIZED_COLUMN_INFO,
 )
 from usaspending_api.transactions.delta_models.transaction_fpds import (
     TRANSACTION_FPDS_COLUMN_INFO,
     TRANSACTION_FPDS_COLUMNS,
-    DAP_TO_NORMALIZED_COLUMN_INFO
+    DAP_TO_NORMALIZED_COLUMN_INFO,
 )
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
+
 
 class Command(BaseCommand):
 
@@ -70,7 +69,7 @@ class Command(BaseCommand):
                 "transaction_fabs",
                 "transaction_fpds",
                 "transaction_id_lookup",
-                "transaction_normalized"
+                "transaction_normalized",
             ],
         )
         parser.add_argument(
@@ -82,7 +81,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--no-initial-copy",
-            action='store_true',
+            action="store_true",
             required=False,
             help="Whether to skip copying tables from the 'raw' database to the 'int' database during initial_run.",
         )
@@ -216,8 +215,7 @@ class Command(BaseCommand):
 
         return sql
 
-    def source_subquery_sql(self, transaction_type = None):
-
+    def source_subquery_sql(self, transaction_type=None):
         def handle_column(col, bronze_table_name):
             if col.handling == "cast":
                 return f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
@@ -232,14 +230,17 @@ class Command(BaseCommand):
                 return f"COALESCE({bronze_table_name}.{col.bronze_name}, FALSE) AS {col.silver_name}"
             else:
                 return f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}"
+
         def select_columns_transaction_fabs_fpds(bronze_table_name):
             if self.etl_level == "transaction_fabs":
                 col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
             elif self.etl_level == "transaction_fpds":
                 col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
             else:
-                raise RuntimeError(f"Function called with invalid 'etl_level': {self.etl_level}. "
-                                   "Only for use with 'transaction_fabs' or 'transaction_fpds' etl_level.")
+                raise RuntimeError(
+                    f"Function called with invalid 'etl_level': {self.etl_level}. "
+                    "Only for use with 'transaction_fabs' or 'transaction_fpds' etl_level."
+                )
 
             select_cols = []
             for col in filter(lambda x: x.silver_name not in ["transaction_id"], col_info):
@@ -251,7 +252,7 @@ class Command(BaseCommand):
             select_cols = [
                 "award_id_lookup.id AS award_id",
                 "awarding_agency.id AS awarding_agency_id",
-                f"""CASE WHEN month(to_date({bronze_table_name}.action_date)) > 9 
+                f"""CASE WHEN month(to_date({bronze_table_name}.action_date)) > 9
                              THEN year(to_date({bronze_table_name}.action_date)) + 1
                          ELSE year(to_date({bronze_table_name}.action_date))
                     END AS fiscal_year""",
@@ -276,8 +277,9 @@ class Command(BaseCommand):
                 fpds_business_category_columns = copy.copy(fpds_boolean_columns)
                 # Add a couple of non-boolean columns that are needed in the business category logic
                 fpds_business_category_columns.extend(["contracting_officers_deter", "domestic_or_foreign_entity"])
-                named_struct_text = ", ".join([f"'{col}', {bronze_table_name}.{col}"
-                                               for col in fpds_business_category_columns])
+                named_struct_text = ", ".join(
+                    [f"'{col}', {bronze_table_name}.{col}" for col in fpds_business_category_columns]
+                )
 
                 select_cols.extend(
                     [
@@ -292,11 +294,11 @@ class Command(BaseCommand):
                                  AND {bronze_table_name}.type_of_idc_description = 'INDEFINITE DELIVERY / REQUIREMENTS'
                                THEN 'IDV_B_A'
                              WHEN {bronze_table_name}.idv_type = 'B'
-                                 AND {bronze_table_name}.type_of_idc_description = 
+                                 AND {bronze_table_name}.type_of_idc_description =
                                      'INDEFINITE DELIVERY / INDEFINITE QUANTITY'
                                THEN 'IDV_B_B'
                              WHEN {bronze_table_name}.idv_type = 'B'
-                                 AND {bronze_table_name}.type_of_idc_description = 
+                                 AND {bronze_table_name}.type_of_idc_description =
                                      'INDEFINITE DELIVERY / DEFINITE QUANTITY'
                                THEN 'IDV_B_C'
                              ELSE 'IDV_' || {bronze_table_name}.idv_type
@@ -314,7 +316,7 @@ class Command(BaseCommand):
                                THEN 'INDEFINITE DELIVERY CONTRACT'
                              ELSE {bronze_table_name}.idv_type_description
                         END AS type_description
-                        """
+                        """,
                     ]
                 )
                 map_col_info = copy.copy(DAP_TO_NORMALIZED_COLUMN_INFO)
@@ -344,8 +346,9 @@ class Command(BaseCommand):
                 bronze_table_name = "raw.detached_award_procurement"
                 unique_id = "detached_award_procurement_id"
             else:
-                raise ValueError(f"Invalid value for 'transaction_type': {transaction_type}; "
-                                 "must select either: 'fabs' or 'fpds'")
+                raise ValueError(
+                    f"Invalid value for 'transaction_type': {transaction_type}; " "must select either: 'fabs' or 'fpds'"
+                )
 
             id_col_name = "id"
             select_columns = select_columns_transaction_normalized(bronze_table_name)
@@ -367,9 +370,11 @@ class Command(BaseCommand):
                 )
             """
         else:
-            raise RuntimeError(f"Function called with invalid 'etl_level': {self.etl_level}. "
-                               "Only for use with 'transaction_fabs', 'transaction_fpds', or 'transaction_normalized' "
-                               "etl_level.")
+            raise RuntimeError(
+                f"Function called with invalid 'etl_level': {self.etl_level}. "
+                "Only for use with 'transaction_fabs', 'transaction_fpds', or 'transaction_normalized' "
+                "etl_level."
+            )
 
         sql = f"""
             SELECT
@@ -391,8 +396,10 @@ class Command(BaseCommand):
         elif self.etl_level == "transaction_fpds":
             col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
         else:
-            raise RuntimeError(f"Function called with invalid 'etl_level': {self.etl_level}. "
-                               "Only for use with 'transaction_fabs' or 'transaction_fpds' etl_level.")
+            raise RuntimeError(
+                f"Function called with invalid 'etl_level': {self.etl_level}. "
+                "Only for use with 'transaction_fabs' or 'transaction_fpds' etl_level."
+            )
 
         set_cols = [f"silver_table.{col.silver_name} = source_subquery.{col.silver_name}" for col in col_info]
         silver_table_cols = ", ".join([col.silver_name for col in col_info])
@@ -416,8 +423,9 @@ class Command(BaseCommand):
 
     def transaction_normalized_merge_into_sql(self, transaction_type):
         if transaction_type != "fabs" and transaction_type != "fpds":
-            raise ValueError(f"Invalid value for 'transaction_type': {transaction_type}. "
-                             "Must select either: 'fabs' or 'fpds'")
+            raise ValueError(
+                f"Invalid value for 'transaction_type': {transaction_type}. " "Must select either: 'fabs' or 'fpds'"
+            )
 
         load_datetime = datetime.now(timezone.utc)
 
@@ -425,14 +433,16 @@ class Command(BaseCommand):
         # values will come from the subquery.
         set_cols = [
             f"int.transaction_normalized.{col_name} = source_subquery.{col_name}"
-            for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in ("create_date", "update_date")
+            for col_name in TRANSACTION_NORMALIZED_COLUMNS
+            if col_name not in ("create_date", "update_date")
         ]
         set_cols.append(f"""int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'""")
 
         # Move create_date and update_date to the end of the list of column names for ease of handling
         # during record insert
-        insert_col_name_list = [col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS
-                                         if col_name not in ("create_date", "update_date")]
+        insert_col_name_list = [
+            col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in ("create_date", "update_date")
+        ]
         insert_col_name_list.extend(["create_date", "update_date"])
         insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
 
@@ -660,7 +670,7 @@ class Command(BaseCommand):
             self.spark.sql(
                 f"""
                 INSERT OVERWRITE {destination_database}.{destination_table}
-                    SELECT 
+                    SELECT
                         tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.transaction_unique_id
                     FROM raw.transaction_normalized AS tn
                     LEFT JOIN raw.detached_award_procurement AS dap ON (
@@ -673,9 +683,9 @@ class Command(BaseCommand):
             )
 
         self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
-        ).collect()[0]["max_id"]
+        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
+            0
+        ]["max_id"]
         if max_id is None:
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the transaction IDs
             # will start at 2.
@@ -769,7 +779,7 @@ class Command(BaseCommand):
                                 aw.id,
                                 dap.detached_award_procurement_id,
                                 NULL AS published_fabs_id,
-                                -- The transaction loader code will convert this to upper case, so use that 
+                                -- The transaction loader code will convert this to upper case, so use that
                                 -- version here.
                                 ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
                                 aw.generated_unique_award_id
@@ -784,7 +794,7 @@ class Command(BaseCommand):
                                 aw.id,
                                 NULL AS detached_award_procurement_id,
                                 pfabs.published_fabs_id,
-                                -- The transaction loader code will convert this to upper case, so use that 
+                                -- The transaction loader code will convert this to upper case, so use that
                                 -- version here.
                                 ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
                                 aw.generated_unique_award_id
@@ -797,27 +807,10 @@ class Command(BaseCommand):
                 """
             )
 
-
-        """    
-                SELECT 
-                    aw.id, dap.detached_award_procurement_id, pfabs.published_fabs_id,
-                    tn.transaction_unique_id, aw.generated_unique_award_id
-                FROM raw.awards AS aw
-                LEFT JOIN raw.transaction_normalized AS tn ON (
-                    aw.generated_unique_award_id = tn.unique_award_key
-                )
-                LEFT JOIN raw.detached_award_procurement AS dap ON (
-                    tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
-                )
-                LEFT JOIN raw.published_fabs AS pfabs ON (
-                    tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
-                )
-        """
-
         self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
-        ).collect()[0]["max_id"]
+        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
+            0
+        ]["max_id"]
         if max_id is None:
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs
             # will start at 2.
