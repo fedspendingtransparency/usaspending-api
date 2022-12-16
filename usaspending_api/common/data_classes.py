@@ -33,4 +33,4 @@ class TransactionColumn:
     silver_name: str
     bronze_name: Optional[str]
     delta_type: str
-    handling: Literal["cast", "literal", "normal"] = "normal"
+    handling: Literal["cast", "leave_null", "literal", "normal"] = "normal"

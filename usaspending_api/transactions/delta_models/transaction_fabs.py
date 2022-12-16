@@ -40,7 +40,7 @@ TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("funding_sub_tier_agency_na", "funding_sub_tier_agency_na", "STRING"),
     TransactionColumn("indirect_federal_sharing", "indirect_federal_sharing", "NUMERIC(38,18)"),
     TransactionColumn("is_active", "is_active", "BOOLEAN"),
-    TransactionColumn("is_historical", "is_historical", "BOOLEAN"),
+    TransactionColumn("is_historical", "is_historical", "BOOLEAN", "leave_null"),
     TransactionColumn("legal_entity_address_line1", "legal_entity_address_line1", "STRING"),
     TransactionColumn("legal_entity_address_line2", "legal_entity_address_line2", "STRING"),
     TransactionColumn("legal_entity_address_line3", "legal_entity_address_line3", "STRING"),

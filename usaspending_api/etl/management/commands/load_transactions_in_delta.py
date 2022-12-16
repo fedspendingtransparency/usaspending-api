@@ -1,5 +1,6 @@
 import copy
 import logging
+import re
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -8,6 +9,7 @@ from django.core.management import BaseCommand, call_command
 from django.db import connection
 from pyspark.sql import SparkSession
 from pyspark.sql.types import ArrayType, StringType
+from pyspark.sql.utils import AnalysisException
 
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import (
     fpds_boolean_columns
@@ -25,12 +27,15 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     TRANSACTION_FABS_COLUMN_INFO,
+    TRANSACTION_FABS_COLUMNS,
     FABS_TO_NORMALIZED_COLUMN_INFO
 )
 from usaspending_api.transactions.delta_models.transaction_fpds import (
     TRANSACTION_FPDS_COLUMN_INFO,
+    TRANSACTION_FPDS_COLUMNS,
     DAP_TO_NORMALIZED_COLUMN_INFO
 )
+from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 
 class Command(BaseCommand):
 
@@ -49,6 +54,7 @@ class Command(BaseCommand):
     etl_level: str
     last_etl_date: str
     spark_s3_bucket: str
+    no_initial_copy: bool
     logger: logging.Logger
     spark: SparkSession
 
@@ -75,18 +81,17 @@ class Command(BaseCommand):
             help="The destination bucket in S3 for creating the tables.",
         )
         parser.add_argument(
-            "--initial-copy",
-            type=bool,
+            "--no-initial-copy",
+            action='store_true',
             required=False,
-            default=True,
-            help="Whether to copy tables from the 'raw' database to the 'int' database during initial_run.",
+            help="Whether to skip copying tables from the 'raw' database to the 'int' database during initial_run.",
         )
 
     def handle(self, *args, **options):
         with self.prepare_spark():
             self.etl_level = options["etl_level"]
             self.spark_s3_bucket = options["spark_s3_bucket"]
-            self.initial_copy = options["initial_copy"]
+            self.no_initial_copy = options["no_initial_copy"]
 
             if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
@@ -112,9 +117,9 @@ class Command(BaseCommand):
             elif self.etl_level == "award_id_lookup":
                 self.update_award_lookup_ids()
             elif self.etl_level == "transaction_fabs":
-                self.spark.sql(self.merge_into_sql("fabs"))
+                self.spark.sql(self.transaction_fabs_fpds_merge_into_sql())
             elif self.etl_level == "transaction_fpds":
-                self.spark.sql(self.merge_into_sql("fpds"))
+                self.spark.sql(self.transaction_fabs_fpds_merge_into_sql())
             elif self.etl_level == "transaction_normalized":
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fabs"))
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fpds"))
@@ -211,36 +216,38 @@ class Command(BaseCommand):
 
         return sql
 
-    def source_subquery_sql(self, transaction_type):
-        if transaction_type == "fabs":
-            bronze_table_name = "raw.published_fabs"
-            unique_id = "published_fabs_id"
-            col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
-        elif transaction_type == "fpds":
-            bronze_table_name = "raw.detached_award_procurement"
-            unique_id = "detached_award_procurement_id"
-            col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
-        else:
-            raise ValueError("Invalid value for 'transaction_type'; must select either: 'fabs' or 'fpds'")
+    def source_subquery_sql(self, transaction_type = None):
 
-        if self.etl_level in ("transaction_fabs", "transaction_fpds"):
+        def handle_column(col, bronze_table_name):
+            if col.handling == "cast":
+                return f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
+            elif col.handling == "literal":
+                # Use col.bronze_name directly as the value
+                return f"{col.bronze_name} AS {col.silver_name}"
+            elif col.delta_type.upper() == "STRING":
+                # Capitalize all string values
+                return f"ucase({bronze_table_name}.{col.bronze_name}) AS {col.silver_name}"
+            elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
+                # Unless specified, convert any nulls to false for boolean columns
+                return f"COALESCE({bronze_table_name}.{col.bronze_name}, FALSE) AS {col.silver_name}"
+            else:
+                return f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}"
+        def select_columns_transaction_fabs_fpds(bronze_table_name):
+            if self.etl_level == "transaction_fabs":
+                col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
+            elif self.etl_level == "transaction_fpds":
+                col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
+            else:
+                raise RuntimeError(f"Function called with invalid 'etl_level': {self.etl_level}. "
+                                   "Only for use with 'transaction_fabs' or 'transaction_fpds' etl_level.")
+
             select_cols = []
-            additional_joins = ""
-            id_col_name = "transaction_id"
-            omitted_cols = [id_col_name]
-            for col in filter(lambda x: x.silver_name not in omitted_cols, col_info):
-                if col.handling == "cast":
-                    select_cols.append(
-                        f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
-                    )
-                elif col.handling == "literal":
-                    # Use col.bronze_name directly as the value
-                    select_cols.append(f"{col.bronze_name} AS {col.silver_name}")
-                else:
-                    select_cols.append(f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}")
+            for col in filter(lambda x: x.silver_name not in ["transaction_id"], col_info):
+                select_cols.append(handle_column(col, bronze_table_name))
 
-        elif self.etl_level == "transaction_normalized":
-            id_col_name = "id"
+            return select_cols
+
+        def select_columns_transaction_normalized(bronze_table_name):
             select_cols = [
                 "award_id_lookup.id AS award_id",
                 "awarding_agency.id AS awarding_agency_id",
@@ -267,6 +274,7 @@ class Command(BaseCommand):
                 map_col_info = copy.copy(FABS_TO_NORMALIZED_COLUMN_INFO)
             else:
                 fpds_business_category_columns = copy.copy(fpds_boolean_columns)
+                # Add a couple of non-boolean columns that are needed in the business category logic
                 fpds_business_category_columns.extend(["contracting_officers_deter", "domestic_or_foreign_entity"])
                 named_struct_text = ", ".join([f"'{col}', {bronze_table_name}.{col}"
                                                for col in fpds_business_category_columns])
@@ -312,16 +320,35 @@ class Command(BaseCommand):
                 map_col_info = copy.copy(DAP_TO_NORMALIZED_COLUMN_INFO)
 
             for col in map_col_info:
-                if col.handling == "cast":
-                    select_cols.append(
-                        f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
-                    )
-                elif col.handling == "literal":
-                    # Use col.bronze_name directly as the value
-                    select_cols.append(f"{col.bronze_name} AS {col.silver_name}")
-                else:
-                    select_cols.append(f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}")
+                select_cols.append(handle_column(col, bronze_table_name))
 
+            return select_cols
+
+        if self.etl_level == "transaction_fabs":
+            bronze_table_name = "raw.published_fabs"
+            unique_id = "published_fabs_id"
+            id_col_name = "transaction_id"
+            select_columns = select_columns_transaction_fabs_fpds(bronze_table_name)
+            additional_joins = ""
+        elif self.etl_level == "transaction_fpds":
+            bronze_table_name = "raw.detached_award_procurement"
+            unique_id = "detached_award_procurement_id"
+            id_col_name = "transaction_id"
+            select_columns = select_columns_transaction_fabs_fpds(bronze_table_name)
+            additional_joins = ""
+        elif self.etl_level == "transaction_normalized":
+            if transaction_type == "fabs":
+                bronze_table_name = "raw.published_fabs"
+                unique_id = "published_fabs_id"
+            elif transaction_type == "fpds":
+                bronze_table_name = "raw.detached_award_procurement"
+                unique_id = "detached_award_procurement_id"
+            else:
+                raise ValueError(f"Invalid value for 'transaction_type': {transaction_type}; "
+                                 "must select either: 'fabs' or 'fpds'")
+
+            id_col_name = "id"
+            select_columns = select_columns_transaction_normalized(bronze_table_name)
             additional_joins = f"""
                 INNER JOIN int.award_id_lookup AS award_id_lookup ON (
                     {bronze_table_name}.{unique_id} = award_id_lookup.{unique_id}
@@ -339,30 +366,33 @@ class Command(BaseCommand):
                     awarding_agency.subtier_agency_id = awarding_subtier_agency.subtier_agency_id
                 )
             """
-
+        else:
+            raise RuntimeError(f"Function called with invalid 'etl_level': {self.etl_level}. "
+                               "Only for use with 'transaction_fabs', 'transaction_fpds', or 'transaction_normalized' "
+                               "etl_level.")
 
         sql = f"""
-                SELECT
-                    transaction_id_lookup.id AS {id_col_name},
-                    {", ".join(select_cols)}
-                FROM {bronze_table_name}
-                INNER JOIN int.transaction_id_lookup ON (
-                    {bronze_table_name}.{unique_id} = transaction_id_lookup.{unique_id}
-                )
-                {additional_joins}
-                WHERE {bronze_table_name}.updated_at >= '{self.last_etl_date}'
+            SELECT
+                transaction_id_lookup.id AS {id_col_name},
+                {", ".join(select_columns)}
+            FROM {bronze_table_name}
+            INNER JOIN int.transaction_id_lookup ON (
+                {bronze_table_name}.{unique_id} = transaction_id_lookup.{unique_id}
+            )
+            {additional_joins}
+            WHERE {bronze_table_name}.updated_at >= '{self.last_etl_date}'
         """
 
         return sql
 
-    def merge_into_sql(self, transaction_type):
-        if transaction_type == "fabs":
+    def transaction_fabs_fpds_merge_into_sql(self):
+        if self.etl_level == "transaction_fabs":
             col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
-        elif transaction_type == "fpds":
+        elif self.etl_level == "transaction_fpds":
             col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
         else:
-            raise ValueError(f"Invalid value for 'transaction_type': {transaction_type}. "
-                             "Must select either: 'fabs' or 'fpds'")
+            raise RuntimeError(f"Function called with invalid 'etl_level': {self.etl_level}. "
+                               "Only for use with 'transaction_fabs' or 'transaction_fpds' etl_level.")
 
         set_cols = [f"silver_table.{col.silver_name} = source_subquery.{col.silver_name}" for col in col_info]
         silver_table_cols = ", ".join([col.silver_name for col in col_info])
@@ -370,7 +400,7 @@ class Command(BaseCommand):
         sql = f"""
             MERGE INTO int.{self.etl_level} AS silver_table
             USING (
-                {self.source_subquery_sql(transaction_type)}
+                {self.source_subquery_sql()}
             ) AS source_subquery
             ON silver_table.transaction_id = source_subquery.transaction_id
             WHEN MATCHED
@@ -397,7 +427,7 @@ class Command(BaseCommand):
             f"int.transaction_normalized.{col_name} = source_subquery.{col_name}"
             for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in ("create_date", "update_date")
         ]
-        set_cols.append(f"int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'")
+        set_cols.append(f"""int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'""")
 
         # Move create_date and update_date to the end of the list of column names for ease of handling
         # during record insert
@@ -408,7 +438,7 @@ class Command(BaseCommand):
 
         # On insert, all values except for create_date and update_date will come from the subquery
         insert_value_list = insert_col_name_list[:-2]
-        insert_value_list.extend([f"'{load_datetime.isoformat(" ")}'"] * 2)
+        insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
         insert_values = ", ".join([value for value in insert_value_list])
 
         sql = f"""
@@ -461,7 +491,8 @@ class Command(BaseCommand):
                     SELECT
                         dap.detached_award_procurement_id,
                         NULL AS published_fabs_id,
-                        dap.detached_award_proc_unique AS transaction_unique_id
+                        -- The transaction loader code will convert this to upper case, so use that version here.
+                        ucase(dap.detached_award_proc_unique) AS transaction_unique_id
                     FROM
                          dap_filtered AS dap LEFT JOIN int.transaction_id_lookup AS tidlu ON (
                             dap.detached_award_procurement_id = tidlu.detached_award_procurement_id
@@ -473,7 +504,8 @@ class Command(BaseCommand):
                     SELECT
                         NULL AS detached_award_procurement_id,
                         pfabs.published_fabs_id,
-                        pfabs.afa_generated_unique AS transaction_unique_id
+                        -- The transaction loader code will convert this to upper case, so use that version here.
+                        ucase(pfabs.afa_generated_unique) AS transaction_unique_id
                     FROM
                         pfabs_filtered AS pfabs LEFT JOIN int.transaction_id_lookup AS tidlu ON (
                             pfabs.published_fabs_id = tidlu.published_fabs_id
@@ -486,6 +518,10 @@ class Command(BaseCommand):
 
         self.logger.info("Updating transaction_id_seq to the new maximum id value seen so far")
         poss_max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.transaction_id_lookup").collect()[0]["max_id"]
+        if poss_max_id is None:
+            # Since initial_run will always start the id sequence from at least 1, and we take the max of
+            # poss_max_id and previous_max_id below, this can be set to 0 here.
+            poss_max_id = 0
         with connection.cursor() as cursor:
             # Set is_called flag to false so that the next call to nextval() will return the specified value, and
             #     avoid the possibility of gaps in the transaction_id sequence
@@ -533,11 +569,12 @@ class Command(BaseCommand):
                     SELECT
                         dap.detached_award_procurement_id,
                         NULL AS published_fabs_id,
-                        dap.detached_award_proc_unique AS transaction_unique_id,
-                        dap.unique_award_key
+                        -- The transaction loader code will convert these to upper case, so use those versions here.
+                        ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
+                        ucase(dap.unique_award_key) AS unique_award_key
                     FROM
                          dap_filtered AS dap LEFT JOIN int.award_id_lookup AS aidlu ON (
-                            dap.detached_award_proc_unique = aidlu.transaction_unique_id
+                            ucase(dap.detached_award_proc_unique) = aidlu.transaction_unique_id
                          )
                     WHERE aidlu.transaction_unique_id IS NULL
                 )
@@ -546,11 +583,12 @@ class Command(BaseCommand):
                     SELECT
                         NULL AS detached_award_procurement_id,
                         pfabs.published_fabs_id,
-                        pfabs.afa_generated_unique AS transaction_unique_id,
-                        pfabs.unique_award_key
+                        -- The transaction loader code will convert these to upper case, so use those versions here.
+                        ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
+                        ucase(pfabs.unique_award_key) AS unique_award_key
                     FROM
                         pfabs_filtered AS pfabs LEFT JOIN int.award_id_lookup AS aidlu ON (
-                            pfabs.afa_generated_unique = aidlu.transaction_unique_id
+                            ucase(pfabs.afa_generated_unique) = aidlu.transaction_unique_id
                          )
                     WHERE aidlu.transaction_unique_id IS NULL
                 )
@@ -560,6 +598,10 @@ class Command(BaseCommand):
 
         self.logger.info("Updating award_id_seq to the new maximum id value seen so far")
         poss_max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.award_id_lookup").collect()[0]["max_id"]
+        if poss_max_id is None:
+            # Since initial_run will always start the id sequence from at least 1, and we take the max of
+            # poss_max_id and previous_max_id below, this can be set to 0 here.
+            poss_max_id = 0
         with connection.cursor() as cursor:
             # Set is_called flag to false so that the next call to nextval() will return the specified value, and
             #     avoid the possibility of gaps in the transaction_id sequence
@@ -581,10 +623,6 @@ class Command(BaseCommand):
         destination_database = "int"
 
         # transaction_id_lookup
-
-        # Capture start time of the transaction_id_lookup creation to update the "last_load_date" after completion
-        transaction_id_lookup_start_time = datetime.now(timezone.utc)
-
         destination_table = "transaction_id_lookup"
 
         self.logger.info(f"Creating database {destination_database}, if not already existing.")
@@ -604,52 +642,80 @@ class Command(BaseCommand):
             """
         )
 
-        # Insert existing transactions into the lookup table
-        self.logger.info("Populating transaction_id_lookup table")
-        self.spark.sql(
-            f"""
-            INSERT OVERWRITE {destination_database}.{destination_table}
-                SELECT tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.transaction_unique_id
-                FROM raw.transaction_normalized AS tn
-                LEFT JOIN raw.detached_award_procurement AS dap ON (
-                    tn.transaction_unique_id = dap.detached_award_proc_unique
-                )
-                LEFT JOIN raw.published_fabs AS pfabs ON (
-                    tn.transaction_unique_id = pfabs.afa_generated_unique
-                )
-            """
-        )
+        # Test to see if raw.transaction_normalized exists
+        try:
+            self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
+        except AnalysisException as e:
+            if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
+                # In this case, we just don't populate transaction_id_lookup
+                pass
+            else:
+                # Don't try to handle anything else
+                raise e
+        else:
+            # Insert existing transactions into the lookup table
+            self.logger.info("Populating transaction_id_lookup table from raw.transaction_normalized")
+            # Note that the transaction loader code will convert string fields to upper case, so we have to match
+            # on the upper-cased versions of the strings.
+            self.spark.sql(
+                f"""
+                INSERT OVERWRITE {destination_database}.{destination_table}
+                    SELECT 
+                        tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.transaction_unique_id
+                    FROM raw.transaction_normalized AS tn
+                    LEFT JOIN raw.detached_award_procurement AS dap ON (
+                        tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+                    )
+                    LEFT JOIN raw.published_fabs AS pfabs ON (
+                        tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+                    )
+                """
+            )
 
         self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
-            0
-        ]["max_id"]
+        max_id = self.spark.sql(
+            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
+        ).collect()[0]["max_id"]
+        if max_id is None:
+            # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the transaction IDs
+            # will start at 2.
+            max_id = 1
         with connection.cursor() as cursor:
             # Set is_called flag to false so that the next call to nextval() will return the specified value
             # https://www.postgresql.org/docs/13/functions-sequence.html
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_id}, false)")
 
-        update_last_load_date("transaction_id_lookup", transaction_id_lookup_start_time)
+        # NOTE: Do *NOT* update the last load date on the transaction_id_lookup table here, as there might be
+        # entries in raw.published_fabs or raw.detached_award_procurement that haven't been added to
+        # raw.transaction_normalized yet, and we don't want to miss those the first time load_transactions_to_delta
+        # is called with etl-level of 'transaction_id_lookup'.
 
         # award_id_lookup
-
-        # Capture start time of the award_id_lookup creation to update the "last_load_date" after completion
-        award_id_lookup_start_time = datetime.now(timezone.utc)
-
         destination_table = "award_id_lookup"
 
-        # Before creating table or running INSERT, make sure unique_award_key has no NULLs
-        # (nothing needed to check before transaction_id_lookup table creation)
-        self.logger.info("Checking for NULLs in unique_award_key")
-        num_nulls = self.spark.sql(
-            "SELECT COUNT(*) AS count FROM raw.transaction_normalized WHERE unique_award_key IS NULL"
-        ).collect()[0]["count"]
+        # Test to see if raw.transaction_normalized exists
+        try:
+            self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
+        except AnalysisException as e:
+            if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
+                # In this case, we just don't populate transaction_id_lookup
+                pass
+            else:
+                # Don't try to handle anything else
+                raise e
+        else:
+            # Before creating table or running INSERT, make sure unique_award_key has no NULLs
+            # (nothing needed to check before transaction_id_lookup table creation)
+            self.logger.info("Checking for NULLs in unique_award_key")
+            num_nulls = self.spark.sql(
+                "SELECT COUNT(*) AS count FROM raw.transaction_normalized WHERE unique_award_key IS NULL"
+            ).collect()[0]["count"]
 
-        if num_nulls > 0:
-            raise ValueError(
-                f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in 'unique_award_key' in table "
-                "raw.transaction_normalized!"
-            )
+            if num_nulls > 0:
+                raise ValueError(
+                    f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in 'unique_award_key' in table "
+                    "raw.transaction_normalized!"
+                )
 
         self.logger.info("Creating award_id_lookup table")
         self.spark.sql(
@@ -673,41 +739,106 @@ class Command(BaseCommand):
             """
         )
 
-        # Insert existing transactions into the lookup table
-        self.logger.info("Populating award_id_lookup table")
-        self.spark.sql(
-            f"""
-            INSERT OVERWRITE {destination_database}.{destination_table}
-                SELECT aw.id, dap.detached_award_procurement_id, pfabs.published_fabs_id,
+        # Test to see if raw.awards exists
+        try:
+            self.spark.sql("SELECT 1 FROM raw.awards")
+        except AnalysisException as e:
+            if re.match(r"Table or view not found: raw\.awards", e.desc):
+                # In this case, we just don't populate award_id_lookup
+                pass
+            else:
+                # Don't try to handle anything else
+                raise e
+        else:
+            # Insert existing transactions into the lookup table
+            self.logger.info("Populating award_id_lookup table from raw.awards")
+            # Once again we have to match on the upper-cased versions of the strings from published_fabs
+            # and detached_award_procurement.
+            self.spark.sql(
+                f"""
+                INSERT OVERWRITE {destination_database}.{destination_table}
+                    SELECT
+                        existing_awards.id,
+                        existing_awards.detached_award_procurement_id,
+                        existing_awards.published_fabs_id,
+                        existing_awards.transaction_unique_id,
+                        existing_awards.generated_unique_award_id
+                    FROM (
+                        (
+                            SELECT
+                                aw.id,
+                                dap.detached_award_procurement_id,
+                                NULL AS published_fabs_id,
+                                -- The transaction loader code will convert this to upper case, so use that 
+                                -- version here.
+                                ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
+                                aw.generated_unique_award_id
+                            FROM
+                                raw.awards AS aw INNER JOIN raw.detached_award_procurement AS dap ON (
+                                    aw.generated_unique_award_id = ucase(dap.unique_award_key)
+                                )
+                        )
+                        UNION ALL
+                        (
+                            SELECT
+                                aw.id,
+                                NULL AS detached_award_procurement_id,
+                                pfabs.published_fabs_id,
+                                -- The transaction loader code will convert this to upper case, so use that 
+                                -- version here.
+                                ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
+                                aw.generated_unique_award_id
+                            FROM
+                                raw.awards AS aw INNER JOIN raw.published_fabs AS pfabs ON (
+                                    aw.generated_unique_award_id = ucase(pfabs.unique_award_key)
+                                )
+                        )
+                    ) AS existing_awards
+                """
+            )
+
+
+        """    
+                SELECT 
+                    aw.id, dap.detached_award_procurement_id, pfabs.published_fabs_id,
                     tn.transaction_unique_id, aw.generated_unique_award_id
                 FROM raw.awards AS aw
                 LEFT JOIN raw.transaction_normalized AS tn ON (
                     aw.generated_unique_award_id = tn.unique_award_key
                 )
                 LEFT JOIN raw.detached_award_procurement AS dap ON (
-                    tn.transaction_unique_id = dap.detached_award_proc_unique
+                    tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
                 )
                 LEFT JOIN raw.published_fabs AS pfabs ON (
-                    tn.transaction_unique_id = pfabs.afa_generated_unique
+                    tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
                 )
-            """
-        )
+        """
 
         self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
-            0
-        ]["max_id"]
+        max_id = self.spark.sql(
+            f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}"
+        ).collect()[0]["max_id"]
+        if max_id is None:
+            # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs
+            # will start at 2.
+            max_id = 1
         with connection.cursor() as cursor:
             # Set is_called flag to false so that the next call to nextval() will return the specified value
             # https://www.postgresql.org/docs/13/functions-sequence.html
             cursor.execute(f"SELECT setval('award_id_seq', {max_id}, false)")
 
-        update_last_load_date("award_id_lookup", award_id_lookup_start_time)
+        # NOTE: Do *NOT* update the last load date on the award_id_lookup table here, as there might be
+        # entries in raw.published_fabs or raw.detached_award_procurement that haven't been added to
+        # raw.awards yet, and we don't want to miss those the first time load_transactions_to_delta
+        # is called with etl-level of 'award_id_lookup'.
 
         # Create tables in 'int' database
         self.logger.info("Creating tables in new database location")
-        destination_tables = ("transaction_fabs", "transaction_fpds", "transaction_normalized")
-        for destination_table in destination_tables:
+        table_to_col_names_dict = {}
+        table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
+        table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS
+        table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
+        for destination_table, col_names in table_to_col_names_dict.items():
             call_command(
                 "create_delta_table",
                 "--destination-table",
@@ -718,10 +849,27 @@ class Command(BaseCommand):
                 destination_database,
             )
 
-            if self.initial_copy:
-                self.spark.sql(
-                    f"""
-                    INSERT OVERWRITE {destination_database}.{destination_table}
-                        SELECT * FROM raw.{destination_table}
-                    """
-                )
+            if not self.no_initial_copy:
+                # Test to see if the raw table exists
+                try:
+                    self.spark.sql(f"SELECT 1 FROM raw.{destination_table}")
+                except AnalysisException as e:
+                    if re.match(rf"Table or view not found: raw\.{destination_table}", e.desc):
+                        # In this case, we just don't copy anything over
+                        pass
+                    else:
+                        # Don't try to handle anything else
+                        raise e
+                else:
+                    # Handle the possibility that the order of columns is different between the raw and int tables.
+                    self.spark.sql(
+                        f"""
+                        INSERT OVERWRITE {destination_database}.{destination_table} ({", ".join(col_names)})
+                            SELECT {", ".join(col_names)} FROM raw.{destination_table}
+                        """
+                    )
+
+            # NOTE: Do *NOT* update the last load date on the specified table here, as there might be
+            # entries in raw.published_fabs or raw.detached_award_procurement that haven't been added to
+            # the raw version of the specified table yet, and we don't want to miss those the first time
+            # load_transactions_to_delta is called with specified etl-level.

@@ -422,6 +422,8 @@ def get_business_categories(row, data_type):
 
 
 def get_business_categories_fabs(business_types):
+    # This function is supposed to be invoked as a Spark UDF with the business_types field passed to it.
+
     business_category_set = set()
 
     # BUSINESS (FOR-PROFIT)
@@ -492,6 +494,9 @@ def get_business_categories_fabs(business_types):
 
 
 def get_business_categories_fpds(row):
+    # This function is supposed to be invoked as a Spark UDF with a named_struct containing the necessary
+    # fields passed to it.
+
     def row_get(row, col_name):
         "pyspark.sql.types.Row is basically a named tuple, not a dict, so make a dict-like get function"
         if col_name in fpds_boolean_columns:
