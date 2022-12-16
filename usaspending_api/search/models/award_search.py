@@ -141,8 +141,22 @@ class AwardSearch(models.Model):
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(null=True, auto_now_add=True)
     total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    latest_transaction_id = models.IntegerField(null=True, db_index=True)
-    earliest_transaction_id = models.IntegerField(null=True, db_index=True)
+    latest_transaction = models.ForeignKey(
+        "awards.TransactionNormalized",
+        on_delete=models.DO_NOTHING,
+        related_name="latest_for_award",
+        null=True,
+        help_text="The latest transaction by action_date and mod associated with this award",
+        db_constraint=False,
+    )
+    earliest_transaction = models.ForeignKey(
+        "awards.TransactionNormalized",
+        on_delete=models.DO_NOTHING,
+        related_name="earliest_for_award",
+        null=True,
+        help_text="The earliest transaction by action_date and mod associated with this award",
+        db_constraint=False,
+    )
     total_indirect_federal_sharing = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     transaction_unique_id = models.TextField(null=True)
     raw_recipient_name = models.TextField(null=True)

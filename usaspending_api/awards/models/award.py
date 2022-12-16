@@ -145,22 +145,8 @@ class Award(DataSourceTrackedModel):
     update_date = models.DateTimeField(
         auto_now=True, null=True, help_text="The last time this record was updated in the API"
     )
-    latest_transaction = models.ForeignKey(
-        "awards.TransactionNormalized",
-        on_delete=models.DO_NOTHING,
-        related_name="latest_for_award",
-        null=True,
-        help_text="The latest transaction by action_date and mod associated with this award",
-        db_constraint=False,
-    )
-    earliest_transaction = models.ForeignKey(
-        "awards.TransactionNormalized",
-        on_delete=models.DO_NOTHING,
-        related_name="earliest_for_award",
-        null=True,
-        help_text="The earliest transaction by action_date and mod associated with this award",
-        db_constraint=False,
-    )
+    latest_transaction_id = models.IntegerField(null=True, db_index=True)
+    earliest_transaction_id = models.IntegerField(null=True, db_index=True)
     parent_award_piid = models.TextField(
         db_index=True, null=True, verbose_name="Parent Award Piid", help_text="The piid of the Award's parent Award"
     )

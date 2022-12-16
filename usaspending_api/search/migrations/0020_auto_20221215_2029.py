@@ -46,4 +46,28 @@ class Migration(migrations.Migration):
             name='award',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='search.awardsearch'),
         ),
+        migrations.RemoveField(
+            model_name='awardsearch',
+            name='earliest_transaction_id',
+        ),
+        migrations.RemoveField(
+            model_name='awardsearch',
+            name='latest_transaction_id',
+        ),
+        migrations.AddField(
+            model_name='awardsearch',
+            name='earliest_transaction',
+            field=models.ForeignKey(db_constraint=False,
+                                    help_text='The earliest transaction by action_date and mod associated with this award',
+                                    null=True, on_delete=django.db.models.deletion.DO_NOTHING,
+                                    related_name='earliest_for_award', to='awards.transactionnormalized'),
+        ),
+        migrations.AddField(
+            model_name='awardsearch',
+            name='latest_transaction',
+            field=models.ForeignKey(db_constraint=False,
+                                    help_text='The latest transaction by action_date and mod associated with this award',
+                                    null=True, on_delete=django.db.models.deletion.DO_NOTHING,
+                                    related_name='latest_for_award', to='awards.transactionnormalized'),
+        ),
     ]
