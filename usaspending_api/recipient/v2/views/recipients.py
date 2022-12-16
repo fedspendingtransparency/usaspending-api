@@ -1,4 +1,3 @@
-import json
 import logging
 import uuid
 
@@ -289,20 +288,33 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
 
     response = search.handle_execute()
     response_as_dict = response.aggs.to_dict()
+
     recipient_info_buckets = response_as_dict.get("group_by_recipient", {}).get("buckets", [])
+    current_recipient_info = {}
+    if children:
+        # Get the codes
+        recipient_hashes = [bucket.get("key").split("/")[0] for bucket in recipient_info_buckets if bucket.get("key")]
 
+        # Get the current recipient info
+        current_recipient_info = {}
+        recipient_info_query = RecipientLookup.objects.filter(recipient_hash__in=recipient_hashes).values(
+            "duns", "legal_business_name", "uei", "recipient_hash"
+        )
+        for recipient_info in recipient_info_query.all():
+            current_recipient_info[str(recipient_info["recipient_hash"])] = recipient_info
+
+    # Build out the results
     result_list = []
-
     for bucket in recipient_info_buckets:
         result = {}
         if children:
-            recipient_info = json.loads(bucket.get("key"))
-            hash_with_level = recipient_info.get("hash_with_level") or None
+            result_hash, result_level = tuple(bucket.get("key").split("/")) if bucket.get("key") else (None, None)
+            recipient_info = current_recipient_info.get(result_hash) or {}
             result = {
-                "recipient_hash": hash_with_level[:-2] if hash_with_level else None,
-                "recipient_unique_id": recipient_info.get("duns"),
+                "recipient_hash": result_hash,
                 "uei": recipient_info.get("uei"),
-                "recipient_name": recipient_info.get("name"),
+                "recipient_unique_id": recipient_info.get("duns"),
+                "recipient_name": recipient_info.get("legal_business_name"),
             }
         loan_info = bucket.get("filter_loans", {})
         result.update(
@@ -315,7 +327,6 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
             }
         )
         result_list.append(result)
-
     return result_list
 
 
