@@ -101,7 +101,7 @@ def insert_new_fabs(to_insert):
             "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
             "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
             "action_date": format_date(row["action_date"]),
-            "last_modified_date": row["modified_at"].date if row["modified_at"] is not None else None,
+            "last_modified_date": row["modified_at"].date() if row["modified_at"] is not None else None,
             "type_description": row["assistance_type_desc"],
             "transaction_unique_id": row["afa_generated_unique"],
             "business_categories": get_business_categories(row=row, data_type="fabs"),
