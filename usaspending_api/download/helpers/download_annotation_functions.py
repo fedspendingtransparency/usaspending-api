@@ -543,7 +543,9 @@ def subaward_annotations(filters: dict):
         "prime_award_treasury_accounts_funding_this_award": Subquery(
             Award.objects.filter(id=OuterRef("award_id"))
             .annotate(
-                value=StringAggWithDefault("financial_set__treasury_account__tas_rendering_label", ";", distinct=True)
+                value=StringAggWithDefault(
+                    "awardsearch__financial_set__treasury_account__tas_rendering_label", ";", distinct=True
+                )
             )
             .values("value"),
             output_field=TextField(),
@@ -552,7 +554,9 @@ def subaward_annotations(filters: dict):
             Award.objects.filter(id=OuterRef("award_id"))
             .annotate(
                 value=StringAggWithDefault(
-                    "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
+                    "awardsearch__financial_set__treasury_account__federal_account__federal_account_code",
+                    ";",
+                    distinct=True,
                 )
             )
             .values("value"),

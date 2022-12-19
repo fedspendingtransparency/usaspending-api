@@ -28,7 +28,7 @@ def test_award_update_from_latest_transaction():
         "search.TransactionSearch",
         transaction_id=1,
         award=award,
-        awarding_agency_id=award.awarding_agency.id,
+        awarding_agency_id=award.awarding_agency_id,
         period_of_performance_current_end_date=award.period_of_performance_current_end_date,
         transaction_description=award.description,
         action_date=datetime.date(2016, 2, 1),
@@ -170,7 +170,7 @@ def test_award_update_with_list():
             federal_action_obligation=1000,
             generated_unique_award_id=test_award.generated_unique_award_id,
         )
-    count = update_awards((test_award.id,))
+    count = update_awards((test_award.award_id,))
     test_award.refresh_from_db()
     # one award is updated
     assert count == 1
@@ -258,7 +258,7 @@ def test_award_update_contract_txn_with_list():
         generated_unique_award_id=awards[0].generated_unique_award_id,
     )
     # single award is updated
-    count = update_procurement_awards((awards[0].id,))
+    count = update_procurement_awards((awards[0].award_id,))
     awards[0].refresh_from_db()
     assert count == 1
     assert awards[0].base_and_all_options_value == 1000

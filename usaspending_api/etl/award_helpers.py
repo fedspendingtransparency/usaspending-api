@@ -153,7 +153,7 @@ executive_comp AS (
   )
   SELECT DISTINCT ON (award_id) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
-UPDATE award_seach a
+UPDATE award_search a
 SET
   update_date                 = now(),
   base_and_all_options_value  = t.total_base_and_options_value,
