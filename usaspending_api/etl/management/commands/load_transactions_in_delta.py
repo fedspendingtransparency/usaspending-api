@@ -194,7 +194,7 @@ class Command(BaseCommand):
         elif self.etl_level in ("transaction_fabs", "transaction_fpds", "transaction_normalized"):
             id_col = "id" if self.etl_level == "transaction_normalized" else "transaction_id"
             subquery = f"""
-                SELECT {id_col} AS id_to_remove
+                SELECT {self.etl_level}.{id_col} AS id_to_remove
                 FROM int.{self.etl_level} LEFT JOIN int.transaction_id_lookup ON (
                     {self.etl_level}.{id_col} = transaction_id_lookup.id
                 )
@@ -656,7 +656,7 @@ class Command(BaseCommand):
         except AnalysisException as e:
             if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
                 # In this case, we just don't populate transaction_id_lookup
-                self.logger.warning(
+                self.logger.warn(
                     "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
                 )
             else:
@@ -755,7 +755,7 @@ class Command(BaseCommand):
         except AnalysisException as e:
             if re.match(r"Table or view not found: raw\.awards", e.desc):
                 # In this case, we just don't populate award_id_lookup
-                self.logger.warning("Skipping population of award_id_lookup table; no raw.awards table.")
+                self.logger.warn("Skipping population of award_id_lookup table; no raw.awards table.")
             else:
                 # Don't try to handle anything else
                 raise e
@@ -849,7 +849,8 @@ class Command(BaseCommand):
                 except AnalysisException as e:
                     if re.match(rf"Table or view not found: raw\.{destination_table}", e.desc):
                         # In this case, we just don't copy anything over
-                        pass
+                        self.logger.warn(f"Skipping copy of {destination_table} table from 'raw' to 'int' database; "
+                                         f"no raw.{destination_table} table.")
                     else:
                         # Don't try to handle anything else
                         raise e

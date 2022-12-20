@@ -4,7 +4,8 @@ NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/et
 """
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+import re
 from typing import Any, Dict, Optional, Sequence, Set
 
 import pyspark
@@ -30,153 +31,141 @@ from usaspending_api.transactions.delta_models.transaction_fpds import (
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
 
+initial_datetime = datetime(year=2022, month=10, day=31)
+
+initial_assists = [
+    {
+        "published_fabs_id": 1,
+        "afa_generated_unique": "award_assist_0001_trans_0001",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "is_active": True,
+        "unique_award_key": "award_assist_0001"
+    },
+    {
+        "published_fabs_id": 2,
+        "afa_generated_unique": "award_assist_0002_trans_0001",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "is_active": True,
+        "unique_award_key": "award_assist_0002"
+    },
+    {
+        "published_fabs_id": 3,
+        "afa_generated_unique": "award_assist_0002_trans_0002",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "is_active": True,
+        "unique_award_key": "award_assist_0002"
+    },
+    {
+        "published_fabs_id": 4,
+        "afa_generated_unique": "award_assist_0003_trans_0001",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "is_active": True,
+        "unique_award_key": "award_assist_0003"
+    },
+    {
+        "published_fabs_id": 5,
+        "afa_generated_unique": "award_assist_0003_trans_0002",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "is_active": True,
+        "unique_award_key": "award_assist_0003"
+    },
+]
+
+initial_procures = [
+    {
+        "detached_award_procurement_id": 1,
+        "detached_award_proc_unique": "award_procure_0001_trans_0001",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "unique_award_key": "award_procure_0001",
+    },
+    {
+        "detached_award_procurement_id": 2,
+        "detached_award_proc_unique": "award_procure_0002_trans_0001",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "unique_award_key": "award_procure_0002",
+    },
+    {
+        "detached_award_procurement_id": 3,
+        "detached_award_proc_unique": "award_procure_0002_trans_0002",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "unique_award_key": "award_procure_0002",
+    },
+    {
+        "detached_award_procurement_id": 4,
+        "detached_award_proc_unique": "award_procure_0003_trans_0001",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "unique_award_key": "award_procure_0003",
+    },
+    {
+        "detached_award_procurement_id": 5,
+        "detached_award_proc_unique": "award_procure_0003_trans_0002",
+        "action_date": initial_datetime.date().isoformat(),
+        "created_at": initial_datetime,
+        "updated_at": initial_datetime,
+        "unique_award_key": "award_procure_0003",
+    },
+]
 
 @fixture
 def populate_initial_source_tables_pg():
     # Populate transactions.SourceAssistanceTransaction and associated broker.ExternalDataType data in Postgres
-    baker.make(
-        "transactions.SourceAssistanceTransaction",
-        published_fabs_id=1,
-        afa_generated_unique="award_assist_0001_trans_0001",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        is_active=True,
-        unique_award_key="award_assist_0001",
-    )
-    baker.make(
-        "transactions.SourceAssistanceTransaction",
-        published_fabs_id=2,
-        afa_generated_unique="award_assist_0002_trans_0001",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        is_active=True,
-        unique_award_key="award_assist_0002",
-    )
-    baker.make(
-        "transactions.SourceAssistanceTransaction",
-        published_fabs_id=3,
-        afa_generated_unique="award_assist_0002_trans_0002",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        is_active=True,
-        unique_award_key="award_assist_0002",
-    )
-    baker.make(
-        "transactions.SourceAssistanceTransaction",
-        published_fabs_id=4,
-        afa_generated_unique="award_assist_0003_trans_0001",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        is_active=True,
-        unique_award_key="award_assist_0003",
-    )
-    baker.make(
-        "transactions.SourceAssistanceTransaction",
-        published_fabs_id=5,
-        afa_generated_unique="award_assist_0003_trans_0002",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        is_active=True,
-        unique_award_key="award_assist_0003",
-    )
+    for assist in initial_assists:
+        baker.make("transactions.SourceAssistanceTransaction", **assist)
 
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt = baker.make(
         "broker.ExternalDataType",
         name="source_assistance_transaction",
         external_data_type_id=11,
-        update_date="2022-10-31",
+        update_date=initial_datetime.date().isoformat(),
     )
-    baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt)
+    baker.make(
+        "broker.ExternalDataLoadDate", last_load_date=initial_datetime.date().isoformat(), external_data_type=edt
+    )
 
     # Populate transactions.SourceProcurementTransaction and associated broker.ExternalDataType data in Postgres
-    baker.make(
-        "transactions.SourceProcurementTransaction",
-        detached_award_procurement_id=1,
-        detached_award_proc_unique="award_procure_0001_trans_0001",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0001",
-    )
-    baker.make(
-        "transactions.SourceProcurementTransaction",
-        detached_award_procurement_id=2,
-        detached_award_proc_unique="award_procure_0002_trans_0001",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0002",
-    )
-    baker.make(
-        "transactions.SourceProcurementTransaction",
-        detached_award_procurement_id=3,
-        detached_award_proc_unique="award_procure_0002_trans_0002",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0002",
-    )
-    baker.make(
-        "transactions.SourceProcurementTransaction",
-        detached_award_procurement_id=4,
-        detached_award_proc_unique="award_procure_0003_trans_0001",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0003",
-    )
-    baker.make(
-        "transactions.SourceProcurementTransaction",
-        detached_award_procurement_id=5,
-        detached_award_proc_unique="award_procure_0003_trans_0002",
-        action_date="2022-10-31",
-        created_at=datetime(year=2022, month=10, day=31),
-        updated_at=datetime(year=2022, month=10, day=31),
-        unique_award_key="award_procure_0003",
-    )
+    for procure in initial_procures:
+        baker.make("transactions.SourceProcurementTransaction", **procure)
 
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt = baker.make(
         "broker.ExternalDataType",
         name="source_procurement_transaction",
         external_data_type_id=10,
-        update_date="2022-10-31",
+        update_date=initial_datetime.date().isoformat(),
     )
-    baker.make("broker.ExternalDataLoadDate", last_load_date="2022-10-31", external_data_type=edt)
+    baker.make(
+        "broker.ExternalDataLoadDate", last_load_date=initial_datetime.date().isoformat(), external_data_type=edt
+    )
 
     # Also need to populate values for int.transaction_[fabs|fpds|normalized], int.awards, and id lookup tables in
     # broker.ExternalData[Type|LoadDate] tables
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
-    edt_tfpds = baker.make(
-        "broker.ExternalDataType", name="transaction_fpds", external_data_type_id=201, update_date=None
-    )
-    edt_tfabs = baker.make(
-        "broker.ExternalDataType", name="transaction_fabs", external_data_type_id=202, update_date=None
-    )
-    edt_tn = baker.make(
-        "broker.ExternalDataType", name="transaction_normalized", external_data_type_id=203, update_date=None
-    )
-    edt_awards = baker.make("broker.ExternalDataType", name="awards", external_data_type_id=204, update_date=None)
-    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_tfpds)
-    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_tfabs)
-    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_tn)
-    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_awards)
-
-    edt_tidlu = baker.make(
-        "broker.ExternalDataType", name="transaction_id_lookup", external_data_type_id=205, update_date=None
-    )
-    edt_aidlu = baker.make(
-        "broker.ExternalDataType", name="award_id_lookup", external_data_type_id=206, update_date=None
-    )
-    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_tidlu)
-    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt_aidlu)
-
+    for table_name, id in zip(
+        ("transaction_fpds", "transaction_fabs", "transaction_normalized", "awards", "transaction_id_lookup",
+         "award_id_lookup"),
+        range(201, 207)
+    ):
+        edt = baker.make("broker.ExternalDataType", name=table_name, external_data_type_id=id, update_date=None)
+        baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt)
 
 def execute_pg_transaction_loader():
     # Before calling the loader, make sure to set up the ExternalDataType and ExternalDataLoadDate entries for
@@ -367,7 +356,6 @@ class TestInitialRun:
         expected_normalized_count=0,
         expected_fabs_count=0,
         expected_fpds_count=0,
-        verify_raw_vs_int_tables=True,
     ):
         TestInitialRun.verify_lookup_info(spark, expected_transaction_id_lookup, expected_award_id_lookup)
 
@@ -379,8 +367,17 @@ class TestInitialRun:
         ):
             actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.{table_name}").collect()[0]["count"]
             assert actual_count == expected_count
-            if expected_count > 0 and verify_raw_vs_int_tables:
-                TestInitialRun.verify_raw_vs_int_tables(spark, table_name, col_names)
+            if expected_count > 0:
+                # Only verify raw vs int tables if raw table exists
+                try:
+                    spark.sql(f"SELECT 1 FROM raw.{table_name}")
+                except pyspark.sql.utils.AnalysisException as e:
+                    if re.match(rf"Table or view not found: raw\.{table_name}", e.desc):
+                        pass
+                    else:
+                        raise e
+                else:
+                    TestInitialRun.verify_raw_vs_int_tables(spark, table_name, col_names)
 
     @mark.django_db(transaction=True)
     def test_edge_cases_using_only_source_tables(
@@ -404,241 +401,71 @@ class TestInitialRun:
 
 
 class TestInitialRunWithPostgresLoader:
-    expected_initial_transaction_id_lookup = [
-        {
-            "id": 1,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 1,
-            "transaction_unique_id": "award_assist_0001_trans_0001".upper(),
-        },
-        {
-            "id": 2,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 2,
-            "transaction_unique_id": "award_assist_0002_trans_0001".upper(),
-        },
-        {
-            "id": 3,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 3,
-            "transaction_unique_id": "award_assist_0002_trans_0002".upper(),
-        },
-        {
-            "id": 4,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 4,
-            "transaction_unique_id": "award_assist_0003_trans_0001".upper(),
-        },
-        {
-            "id": 5,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 5,
-            "transaction_unique_id": "award_assist_0003_trans_0002".upper(),
-        },
-        {
-            "id": 6,
-            "detached_award_procurement_id": 1,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0001_trans_0001".upper(),
-        },
-        {
-            "id": 7,
-            "detached_award_procurement_id": 2,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0001".upper(),
-        },
-        {
-            "id": 8,
-            "detached_award_procurement_id": 3,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0002".upper(),
-        },
-        {
-            "id": 9,
-            "detached_award_procurement_id": 4,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0001".upper(),
-        },
-        {
-            "id": 10,
-            "detached_award_procurement_id": 5,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0002".upper(),
-        },
-    ]
+    expected_initial_transaction_id_lookup = (
+        [
+            {
+                "id": id,
+                "detached_award_procurement_id": None,
+                "published_fabs_id": initial_assists[id - 1]["published_fabs_id"],
+                "transaction_unique_id": initial_assists[id - 1]["afa_generated_unique"].upper(),
+            }
+            for id in range(1, len(initial_assists) + 1)
+        ]
+        +
+        [
+            {
+                "id": id,
+                "detached_award_procurement_id": initial_procures[id - 6]["detached_award_procurement_id"],
+                "published_fabs_id": None,
+                "transaction_unique_id": initial_procures[id - 6]["detached_award_proc_unique"].upper(),
+            }
+            for id in range(len(initial_assists) + 1, len(initial_assists) + len(initial_procures) + 1)
+        ]
+    )
 
-    expected_initial_award_id_lookup = [
-        {
-            "id": 1,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 1,
-            "transaction_unique_id": "award_assist_0001_trans_0001".upper(),
-            "generated_unique_award_id": "award_assist_0001".upper(),
-        },
-        {
-            "id": 2,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 2,
-            "transaction_unique_id": "award_assist_0002_trans_0001".upper(),
-            "generated_unique_award_id": "award_assist_0002".upper(),
-        },
-        {
-            "id": 2,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 3,
-            "transaction_unique_id": "award_assist_0002_trans_0002".upper(),
-            "generated_unique_award_id": "award_assist_0002".upper(),
-        },
-        {
-            "id": 3,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 4,
-            "transaction_unique_id": "award_assist_0003_trans_0001".upper(),
-            "generated_unique_award_id": "award_assist_0003".upper(),
-        },
-        {
-            "id": 3,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": 5,
-            "transaction_unique_id": "award_assist_0003_trans_0002".upper(),
-            "generated_unique_award_id": "award_assist_0003".upper(),
-        },
-        {
-            "id": 4,
-            "detached_award_procurement_id": 1,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0001_trans_0001".upper(),
-            "generated_unique_award_id": "award_procure_0001".upper(),
-        },
-        {
-            "id": 5,
-            "detached_award_procurement_id": 2,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0001".upper(),
-            "generated_unique_award_id": "award_procure_0002".upper(),
-        },
-        {
-            "id": 5,
-            "detached_award_procurement_id": 3,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0002".upper(),
-            "generated_unique_award_id": "award_procure_0002".upper(),
-        },
-        {
-            "id": 6,
-            "detached_award_procurement_id": 4,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0001".upper(),
-            "generated_unique_award_id": "award_procure_0003".upper(),
-        },
-        {
-            "id": 6,
-            "detached_award_procurement_id": 5,
-            "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0002".upper(),
-            "generated_unique_award_id": "award_procure_0003".upper(),
-        },
-    ]
+    expected_initial_award_id_lookup = (
+        [
+            {
+                "id": int(assist["unique_award_key"].split("_")[-1]),
+                "detached_award_procurement_id": None,
+                "published_fabs_id": assist["published_fabs_id"],
+                "transaction_unique_id": assist["afa_generated_unique"].upper(),
+                "generated_unique_award_id": assist["unique_award_key"].upper()
+            }
+            for assist in initial_assists
+        ]
+        +
+        [
+            {
+                "id": (int(procure["unique_award_key"].split("_")[-1])
+                       + max([int(assist["unique_award_key"].split("_")[-1]) for assist in initial_assists])),
+                "detached_award_procurement_id": procure["detached_award_procurement_id"],
+                "published_fabs_id": None,
+                "transaction_unique_id": procure["detached_award_proc_unique"].upper(),
+                "generated_unique_award_id": procure["unique_award_key"].upper()
+            }
+            for procure in initial_procures
+        ]
+    )
 
     expected_initial_transaction_fabs = [
         {
-            "published_fabs_id": 1,
-            "afa_generated_unique": "award_assist_0001_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 1,
-            "unique_award_key": "award_assist_0001".upper(),
-        },
-        {
-            "published_fabs_id": 2,
-            "afa_generated_unique": "award_assist_0002_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 2,
-            "unique_award_key": "award_assist_0002".upper(),
-        },
-        {
-            "published_fabs_id": 3,
-            "afa_generated_unique": "award_assist_0002_trans_0002".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 3,
-            "unique_award_key": "award_assist_0002".upper(),
-        },
-        {
-            "published_fabs_id": 4,
-            "afa_generated_unique": "award_assist_0003_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 4,
-            "unique_award_key": "award_assist_0003".upper(),
-        },
-        {
-            "published_fabs_id": 5,
-            "afa_generated_unique": "award_assist_0003_trans_0002".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 5,
-            "unique_award_key": "award_assist_0003".upper(),
-        },
+            **assist,
+            "afa_generated_unique": assist["afa_generated_unique"].upper(),
+            "transaction_id": assist["published_fabs_id"],
+            "unique_award_key": assist["unique_award_key"].upper(),
+        }
+        for assist in initial_assists
     ]
 
     expected_initial_transaction_fpds = [
         {
-            "detached_award_procurement_id": 1,
-            "detached_award_proc_unique": "award_procure_0001_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 6,
-            "unique_award_key": "award_procure_0001".upper(),
-        },
-        {
-            "detached_award_procurement_id": 2,
-            "detached_award_proc_unique": "award_procure_0002_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 7,
-            "unique_award_key": "award_procure_0002".upper(),
-        },
-        {
-            "detached_award_procurement_id": 3,
-            "detached_award_proc_unique": "award_procure_0002_trans_0002".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 8,
-            "unique_award_key": "award_procure_0002".upper(),
-        },
-        {
-            "detached_award_procurement_id": 4,
-            "detached_award_proc_unique": "award_procure_0003_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 9,
-            "unique_award_key": "award_procure_0003".upper(),
-        },
-        {
-            "detached_award_procurement_id": 5,
-            "detached_award_proc_unique": "award_procure_0003_trans_0002".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 10,
-            "unique_award_key": "award_procure_0003".upper(),
-        },
+            **procure,
+            "detached_award_proc_unique": procure["detached_award_proc_unique"].upper(),
+            "transaction_id": procure["detached_award_procurement_id"] + len(initial_assists),
+            "unique_award_key": procure["unique_award_key"].upper()
+        }
+        for procure in initial_procures
     ]
 
     # Although transaction_normalized and source[assistance,procurement]_transaction django models say that
@@ -702,14 +529,16 @@ class TestInitialRunWithPostgresLoader:
         # Don't call Postgres loader again or reload any of the tables
         TestInitialRun.initial_run(s3_unittest_data_bucket, False, False)
         TestInitialRun.verify(
-            spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, 10
+            spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup,
+                len(initial_assists) + len(initial_procures)
         )
 
         # 3. Call initial_run with initial-copy, and have all raw tables populated
         # Also, don't call Postgres loader again or reload the source tables again
         TestInitialRun.initial_run(s3_unittest_data_bucket, False, False, destination_tables)
         TestInitialRun.verify(
-            spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, 10, 5, 5
+            spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup,
+                len(initial_assists) + len(initial_procures), len(initial_assists), len(initial_procures)
         )
 
 
@@ -718,62 +547,62 @@ class TestInitialRunNoPostgresLoader:
         {
             "id": 1,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 1,
-            "transaction_unique_id": "award_assist_0001_trans_0001".upper(),
+            "published_fabs_id": initial_assists[0]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
         },
         {
             "id": 2,
-            "detached_award_procurement_id": 1,
+            "detached_award_procurement_id": initial_procures[0]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0001_trans_0001".upper(),
+            "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
         },
         {
             "id": 3,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 2,
-            "transaction_unique_id": "award_assist_0002_trans_0001".upper(),
+            "published_fabs_id": initial_assists[1]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
         },
         {
             "id": 4,
-            "detached_award_procurement_id": 2,
+            "detached_award_procurement_id": initial_procures[1]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0001".upper(),
+            "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
         },
         {
             "id": 5,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 3,
-            "transaction_unique_id": "award_assist_0002_trans_0002".upper(),
+            "published_fabs_id": initial_assists[2]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
         },
         {
             "id": 6,
-            "detached_award_procurement_id": 3,
+            "detached_award_procurement_id": initial_procures[2]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0002".upper(),
+            "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
         },
         {
             "id": 7,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 4,
-            "transaction_unique_id": "award_assist_0003_trans_0001".upper(),
+            "published_fabs_id": initial_assists[3]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
         },
         {
             "id": 8,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 5,
-            "transaction_unique_id": "award_assist_0003_trans_0002".upper(),
+            "published_fabs_id": initial_assists[4]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
         },
         {
             "id": 9,
-            "detached_award_procurement_id": 4,
+            "detached_award_procurement_id": initial_procures[3]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0001".upper(),
+            "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
         },
         {
             "id": 10,
-            "detached_award_procurement_id": 5,
+            "detached_award_procurement_id": initial_procures[4]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0002".upper(),
+            "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
         },
     ]
 
@@ -781,122 +610,124 @@ class TestInitialRunNoPostgresLoader:
         {
             "id": 1,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 1,
-            "transaction_unique_id": "award_assist_0001_trans_0001".upper(),
-            "generated_unique_award_id": "award_assist_0001".upper(),
+            "published_fabs_id": initial_assists[0]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": initial_assists[0]["unique_award_key"].upper(),
         },
         {
             "id": 2,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 2,
-            "transaction_unique_id": "award_assist_0002_trans_0001".upper(),
-            "generated_unique_award_id": "award_assist_0002".upper(),
+            "published_fabs_id": initial_assists[1]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": initial_assists[1]["unique_award_key"].upper(),
         },
         {
             "id": 2,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 3,
-            "transaction_unique_id": "award_assist_0002_trans_0002".upper(),
-            "generated_unique_award_id": "award_assist_0002".upper(),
+            "published_fabs_id": initial_assists[2]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": initial_assists[2]["unique_award_key"].upper(),
         },
         {
             "id": 3,
-            "detached_award_procurement_id": 1,
+            "detached_award_procurement_id": initial_procures[0]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0001_trans_0001".upper(),
-            "generated_unique_award_id": "award_procure_0001".upper(),
+            "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": initial_procures[0]["unique_award_key"].upper(),
         },
         {
             "id": 4,
-            "detached_award_procurement_id": 2,
+            "detached_award_procurement_id": initial_procures[1]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0001".upper(),
-            "generated_unique_award_id": "award_procure_0002".upper(),
+            "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": initial_procures[1]["unique_award_key"].upper(),
         },
         {
             "id": 4,
-            "detached_award_procurement_id": 3,
+            "detached_award_procurement_id": initial_procures[2]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0002_trans_0002".upper(),
-            "generated_unique_award_id": "award_procure_0002".upper(),
+            "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": initial_procures[2]["unique_award_key"].upper(),
         },
         {
             "id": 5,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 4,
-            "transaction_unique_id": "award_assist_0003_trans_0001".upper(),
-            "generated_unique_award_id": "award_assist_0003".upper(),
+            "published_fabs_id": initial_assists[3]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": initial_assists[3]["unique_award_key"].upper(),
         },
         {
             "id": 5,
             "detached_award_procurement_id": None,
-            "published_fabs_id": 5,
-            "transaction_unique_id": "award_assist_0003_trans_0002".upper(),
-            "generated_unique_award_id": "award_assist_0003".upper(),
+            "published_fabs_id": initial_assists[4]["published_fabs_id"],
+            "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": initial_assists[4]["unique_award_key"].upper(),
         },
         {
             "id": 6,
-            "detached_award_procurement_id": 4,
+            "detached_award_procurement_id": initial_procures[3]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0001".upper(),
-            "generated_unique_award_id": "award_procure_0003".upper(),
+            "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": initial_procures[3]["unique_award_key"].upper(),
         },
         {
             "id": 6,
-            "detached_award_procurement_id": 5,
+            "detached_award_procurement_id": initial_procures[4]["detached_award_procurement_id"],
             "published_fabs_id": None,
-            "transaction_unique_id": "award_procure_0003_trans_0002".upper(),
-            "generated_unique_award_id": "award_procure_0003".upper(),
+            "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": initial_procures[4]["unique_award_key"].upper(),
         },
     ]
+
+    initial_award_trans_norm_update_create_date = initial_datetime + timedelta(days=1)
 
     initial_awards = [
         {
             "id": 1,
-            "update_date": datetime(year=2022, month=11, day=1),
-            "generated_unique_award_id": "award_assist_0001".upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
+            "generated_unique_award_id": initial_assists[0]["unique_award_key"].upper(),
             "is_fpds": False,
-            "transaction_unique_id": "award_assist_0001_trans_0001".upper(),
+            "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 2,
-            "update_date": datetime(year=2022, month=11, day=1),
-            "generated_unique_award_id": "award_assist_0002".upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
+            "generated_unique_award_id": initial_assists[1]["unique_award_key"].upper(),
             "is_fpds": False,
-            "transaction_unique_id": "award_assist_0002_trans_0001".upper(),
+            "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 3,
-            "update_date": datetime(year=2022, month=11, day=1),
-            "generated_unique_award_id": "award_procure_0001".upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
+            "generated_unique_award_id": initial_procures[0]["unique_award_key"].upper(),
             "is_fpds": True,
-            "transaction_unique_id": "award_procure_0001_trans_0001".upper(),
+            "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 4,
-            "update_date": datetime(year=2022, month=11, day=1),
-            "generated_unique_award_id": "award_procure_0002".upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
+            "generated_unique_award_id": initial_procures[1]["unique_award_key"].upper(),
             "is_fpds": True,
-            "transaction_unique_id": "award_procure_0002_trans_0001".upper(),
+            "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 5,
-            "update_date": datetime(year=2022, month=11, day=1),
-            "generated_unique_award_id": "award_assist_0003".upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
+            "generated_unique_award_id": initial_assists[3]["unique_award_key"].upper(),
             "is_fpds": False,
-            "transaction_unique_id": "award_assist_0003_trans_0001".upper(),
+            "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 6,
-            "update_date": datetime(year=2022, month=11, day=1),
-            "generated_unique_award_id": "award_procure_0003".upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
+            "generated_unique_award_id": initial_procures[3]["unique_award_key"].upper(),
             "is_fpds": True,
-            "transaction_unique_id": "award_procure_0003_trans_0001".upper(),
+            "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
             "subaward_count": 0,
         },
     ]
@@ -906,214 +737,161 @@ class TestInitialRunNoPostgresLoader:
             "id": 1,
             "award_id": 1,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_assist_0001_trans_0001".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": "award_assist_0001".upper(),
+            "unique_award_key": initial_assists[0]["unique_award_key"].upper(),
         },
         {
             "id": 2,
             "award_id": 3,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_procure_0001_trans_0001".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": "award_procure_0001".upper(),
+            "unique_award_key": initial_procures[0]["unique_award_key"].upper(),
         },
         {
             "id": 3,
             "award_id": 2,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_assist_0002_trans_0001".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": "award_assist_0002".upper(),
+            "unique_award_key": initial_assists[1]["unique_award_key"].upper(),
         },
         {
             "id": 4,
             "award_id": 4,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_procure_0002_trans_0001".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": "award_procure_0002".upper(),
+            "unique_award_key": initial_procures[1]["unique_award_key"].upper(),
         },
         {
             "id": 5,
             "award_id": 2,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_assist_0002_trans_0002".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": "award_assist_0002".upper(),
+            "unique_award_key": initial_assists[2]["unique_award_key"].upper(),
         },
         {
             "id": 6,
             "award_id": 4,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_procure_0002_trans_0002".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": "award_procure_0002".upper(),
+            "unique_award_key": initial_procures[2]["unique_award_key"].upper(),
         },
         {
             "id": 7,
             "award_id": 5,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_assist_0003_trans_0001".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": "award_assist_0003".upper(),
+            "unique_award_key": initial_assists[3]["unique_award_key"].upper(),
         },
         {
             "id": 8,
             "award_id": 5,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_assist_0003_trans_0002".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": "award_assist_0003".upper(),
+            "unique_award_key": initial_assists[4]["unique_award_key"].upper(),
         },
         {
             "id": 9,
             "award_id": 6,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_procure_0003_trans_0001".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": "award_procure_0003".upper(),
+            "unique_award_key": initial_procures[3]["unique_award_key"].upper(),
         },
         {
             "id": 10,
             "award_id": 6,
             "business_categories": [],
-            "action_date": datetime(year=2022, month=10, day=31),
-            "create_date": datetime(year=2022, month=11, day=1),
-            "transaction_unique_id": "award_procure_0003_trans_0002".upper(),
-            "update_date": datetime(year=2022, month=11, day=1),
+            "action_date": initial_datetime,
+            "create_date": initial_award_trans_norm_update_create_date,
+            "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
+            "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": "award_procure_0003".upper(),
+            "unique_award_key": initial_procures[4]["unique_award_key"].upper(),
         },
     ]
 
-    initial_transaction_fabs = [
-        {
-            "published_fabs_id": 1,
-            "afa_generated_unique": "award_assist_0001_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 1,
-            "unique_award_key": "award_assist_0001".upper(),
-        },
-        {
-            "published_fabs_id": 2,
-            "afa_generated_unique": "award_assist_0002_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 3,
-            "unique_award_key": "award_assist_0002".upper(),
-        },
-        {
-            "published_fabs_id": 3,
-            "afa_generated_unique": "award_assist_0002_trans_0002".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 5,
-            "unique_award_key": "award_assist_0002".upper(),
-        },
-        {
-            "published_fabs_id": 4,
-            "afa_generated_unique": "award_assist_0003_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 7,
-            "unique_award_key": "award_assist_0003".upper(),
-        },
-        {
-            "published_fabs_id": 5,
-            "afa_generated_unique": "award_assist_0003_trans_0002".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "is_active": True,
-            "transaction_id": 8,
-            "unique_award_key": "award_assist_0003".upper(),
-        },
-    ]
+    initial_transaction_fabs = (
+        [
+            {
+                **assist,
+                "afa_generated_unique": assist["afa_generated_unique"].upper(),
+                "transaction_id": (assist["published_fabs_id"] - 1) * 2 + 1,
+                "unique_award_key": assist["unique_award_key"].upper(),
+            }
+            for assist in initial_assists[:4]
+        ]
+        +
+        [
+            {
+                **initial_assists[4],
+                "afa_generated_unique": initial_assists[4]["afa_generated_unique"].upper(),
+                "transaction_id": 8,
+                "unique_award_key": initial_assists[4]["unique_award_key"].upper(),
+            }
+        ]
+    )
 
-    initial_transaction_fpds = [
-        {
-            "detached_award_procurement_id": 1,
-            "detached_award_proc_unique": "award_procure_0001_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 2,
-            "unique_award_key": "award_procure_0001".upper(),
-        },
-        {
-            "detached_award_procurement_id": 2,
-            "detached_award_proc_unique": "award_procure_0002_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 4,
-            "unique_award_key": "award_procure_0002".upper(),
-        },
-        {
-            "detached_award_procurement_id": 3,
-            "detached_award_proc_unique": "award_procure_0002_trans_0002".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 6,
-            "unique_award_key": "award_procure_0002".upper(),
-        },
-        {
-            "detached_award_procurement_id": 4,
-            "detached_award_proc_unique": "award_procure_0003_trans_0001".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 9,
-            "unique_award_key": "award_procure_0003".upper(),
-        },
-        {
-            "detached_award_procurement_id": 5,
-            "detached_award_proc_unique": "award_procure_0003_trans_0002".upper(),
-            "action_date": "2022-10-31",
-            "created_at": datetime(year=2022, month=10, day=31),
-            "updated_at": datetime(year=2022, month=10, day=31),
-            "transaction_id": 10,
-            "unique_award_key": "award_procure_0003".upper(),
-        },
-    ]
+    initial_transaction_fpds = (
+        [
+            {
+                **procure,
+                "detached_award_proc_unique": procure["detached_award_proc_unique"].upper(),
+                "transaction_id": procure["detached_award_procurement_id"] * 2,
+                "unique_award_key": procure["unique_award_key"].upper(),
+            }
+            for procure in initial_procures[:3]
+        ]
+        +
+        [
+            {
+                **initial_procures[3],
+                "detached_award_proc_unique": initial_procures[3]["detached_award_proc_unique"].upper(),
+                "transaction_id": 9,
+                "unique_award_key": initial_procures[3]["unique_award_key"].upper(),
+            },
+            {
+                **initial_procures[4],
+                "detached_award_proc_unique": initial_procures[4]["detached_award_proc_unique"].upper(),
+                "transaction_id": 10,
+                "unique_award_key": initial_procures[4]["unique_award_key"].upper(),
+            }
+        ]
+    )
 
     # This test will only load the source tables from postgres, and NOT use the Postgres transaction loader
     # to populate any other Delta tables, so can only test for NULLs originating in Delta.
@@ -1282,7 +1060,7 @@ class TestTransactionIdLookup:
             cursor.execute("SELECT nextval('transaction_id_seq')")
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             max_transaction_id = cursor.fetchone()[0]
-        assert max_transaction_id == 10
+        assert max_transaction_id == (len(initial_assists) + len(initial_procures))
 
         # Since this test just called nextval(), need to reset the sequence with the is_called flag set to false
         # so that the next call to nextval() will return the same value as previously.
@@ -1560,7 +1338,7 @@ class TestAwardIdLookup:
             cursor.execute("SELECT nextval('award_id_seq')")
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             max_award_id = cursor.fetchone()[0]
-        assert max_award_id == 6
+        assert max_award_id == max([award["id"] for award in TestInitialRunNoPostgresLoader.initial_awards])
 
         # Since this test just called nextval(), need to reset the sequence with the is_called flag set to false
         # so that the next call to nextval() will return the same value as previously.
@@ -1838,12 +1616,11 @@ class TransactionFabsFpdsCore:
             [],
             0,
             len(self.expected_initial_transaction_fabs),
-            len(self.expected_initial_transaction_fpds),
-            False,
+            len(self.expected_initial_transaction_fpds)
         )
 
-        # Verify key fields in transaction_fabs table.  Note that the transaction_ids should be 1 more than in those
-        # from TestInitialRunWithPostgresLoader
+        # Verify key fields in transaction_f[ab|pd]s table.  Note that the transaction_ids should be 1 more than
+        # in those from TestInitialRunWithPostgresLoader
         query = f"SELECT {', '.join(self.compare_fields)} FROM int.{self.etl_level} ORDER BY {self.pk_field}"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
 
@@ -1879,8 +1656,7 @@ class TransactionFabsFpdsCore:
             [],
             0,
             len(self.expected_initial_transaction_fabs),
-            len(self.expected_initial_transaction_fpds),
-            False,
+            len(self.expected_initial_transaction_fpds)
         )
 
         # Verify key fields in transaction_fabs table.
@@ -1933,7 +1709,6 @@ class TransactionFabsFpdsCore:
             0,
             len(self.expected_initial_transaction_fabs),
             len(self.expected_initial_transaction_fpds),
-            False,
         )
 
         # Verify key fields in transaction_f[ab|pd]s table
@@ -2324,3 +2099,62 @@ class TestTransactionFpds:
             self.expected_transaction_id_lookup_append,
             self.expected_transaction_fabs_fpds_append,
         )
+
+'''
+class TestTransactionNormalized:
+
+    new_transaction_fabs_fpds_id = 6
+    new_transaction_id = 11
+
+    def test_unexpected_paths_source_tables_only(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+    ):
+        # First, load the source tables to Delta
+        load_tables_to_delta(s3_unittest_data_bucket)
+
+        # 1. Test calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s before calling with
+        # etl-level of initial_run.
+        with raises(pyspark.sql.utils.AnalysisException, match=f"Table or view not found: int.transaction_normalized"):
+            call_command("load_transactions_in_delta", "--etl-level", "transaction_normalized")
+
+        # 2. Call load_transactions_in_delta with etl-level of initial_run first, but without first loading
+        # raw.transaction_normalized or raw.awards.  Then immediately call load_transactions_in_delta with
+        # etl-level of transaction_normalized.
+        TestInitialRun.initial_run(s3_unittest_data_bucket, False)
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_normalized")
+
+        # Verify the transaction and award id lookup tables and other int transaction tables.  They should all be empty.
+        TestInitialRun.verify(spark, [], [])
+
+        # 3. With raw.transaction_normalized and raw.awards still not created, call load_transactions_in_delta
+        # with etl-level of transaction_id_lookup, and then again with etl-level of transaction_normalized.
+
+        # Since the call to load_transactions_in_delta with etl-level of transaction_normalized above succeeded,
+        # we first need to reset the last load date on transaction_fabs
+        update_last_load_date("transaction_normalized", datetime(1970, 1, 1))
+
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_normalized")
+
+        # The expected transaction_id_lookup table should be the same as in TestInitialRunWithPostgresLoader,
+        # but all of the transaction ids should be 1 larger than expected there.
+        expected_transaction_id_lookup = deepcopy(
+            TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
+        )
+        for item in expected_transaction_id_lookup:
+            item["id"] += 1
+        TestInitialRun.verify(spark, expected_transaction_id_lookup, [], len(expected_transaction_id_lookup))
+
+        # Verify key fields in transaction_normalized table.  Note that the transaction_ids should be 1 more than
+        # in those from TestInitialRunWithPostgresLoader
+        query = f"SELECT {', '.join(self.compare_fields)} FROM int.transaction_normlized ORDER BY id"
+        delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
+
+        if len(self.expected_initial_transaction_fabs) > 0:
+            expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fabs)
+        else:
+            expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fpds)
+        for item in expected_transaction_fabs_fpds:
+            item["transaction_id"] += 1
+        assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
+'''
