@@ -95,7 +95,7 @@ def award_with_toptier_agency(id):
     agency = baker.make("references.Agency", toptier_agency_id=id, toptier_flag=True)
     a1 = baker.make(
         "search.AwardSearch",
-        award_id=1,
+        award_id=id,
         type="A",
         funding_agency_id=agency.id,
         total_loan_value=0,

@@ -39,7 +39,7 @@ def test_award_update_from_latest_transaction():
     update_awards()
     award.refresh_from_db()
 
-    assert award.awarding_agency == agency1
+    assert award.awarding_agency_id == agency1.id
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
     assert award.description == "original award"
     assert award.latest_transaction == transaction
@@ -59,7 +59,7 @@ def test_award_update_from_latest_transaction():
     update_awards()
     award.refresh_from_db()
 
-    assert award.awarding_agency == agency1
+    assert award.awarding_agency_id == agency1.id
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
     assert award.description == "older description"
 
@@ -79,7 +79,7 @@ def test_award_update_from_latest_transaction():
     update_awards()
     award.refresh_from_db()
 
-    assert award.awarding_agency == agency2
+    assert award.awarding_agency_id == agency2.id
     assert award.period_of_performance_current_end_date == datetime.date(2010, 1, 1)
     # award desc should still reflect the earliest txn
     assert award.description == "older description"
@@ -196,7 +196,7 @@ def test_award_update_with_list():
             federal_action_obligation=-1000,
             generated_unique_award_id=awards[1].generated_unique_award_id,
         )
-    count = update_awards((awards[0].id, awards[1].id))
+    count = update_awards((awards[0].award_id, awards[1].award_id))
     awards[0].refresh_from_db()
     awards[1].refresh_from_db()
     # two awards are updated
@@ -283,7 +283,7 @@ def test_award_update_contract_txn_with_list():
         generated_unique_award_id=awards[2].generated_unique_award_id,
     )
     # multiple awards updated
-    count = update_procurement_awards((awards[1].id, awards[2].id))
+    count = update_procurement_awards((awards[1].award_id, awards[2].award_id))
     awards[1].refresh_from_db()
     awards[2].refresh_from_db()
     assert count == 2

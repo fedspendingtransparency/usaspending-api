@@ -8,7 +8,7 @@ from rest_framework import status
 
 @pytest.fixture
 def cfda_transactions(db):
-    award_1 = {"pk": 1, "category": "grant", "generated_unique_award_id": "whatever"}
+    award_1 = {"award_id": 1, "category": "grant", "generated_unique_award_id": "whatever"}
     trx_norm_1 = {
         "transaction_id": 1,
         "award_id": 1,
