@@ -9,21 +9,21 @@ from usaspending_api.submissions.models.dabs_submission_window_schedule import D
 
 @pytest.fixture
 def basic_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
+    award = _normal_award(123)
 
     _faba_for_award(award)
 
 
 @pytest.fixture
 def award_with_quarterly_submission(award_count_sub_schedule, award_count_quarterly_submission, defc_codes):
-    award = _normal_award()
+    award = _normal_award(345)
 
     _faba_for_award(award)
 
 
 @pytest.fixture
 def award_with_early_submission(defc_codes):
-    award = _normal_award()
+    award = _normal_award(456)
     _award_count_early_submission()
 
     _faba_for_award(award)
@@ -39,7 +39,7 @@ def file_c_with_no_award(defc_codes):
 
 @pytest.fixture
 def multiple_file_c_to_same_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
+    award = _normal_award(874)
 
     _faba_for_award(award)
     _faba_for_award(award)
@@ -47,7 +47,7 @@ def multiple_file_c_to_same_award(award_count_sub_schedule, award_count_submissi
 
 @pytest.fixture
 def multiple_outlay_file_c_to_same_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
+    award = _normal_award(923)
 
     _faba_for_award(award, outlay_based=True)
     _faba_for_award(award, outlay_based=True)
@@ -55,7 +55,7 @@ def multiple_outlay_file_c_to_same_award(award_count_sub_schedule, award_count_s
 
 @pytest.fixture
 def multiple_file_c_to_same_award_that_cancel_out(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
+    award = _normal_award(643)
 
     _faba_for_award(award)
     _faba_for_award(award, negative=True)
@@ -63,7 +63,7 @@ def multiple_file_c_to_same_award_that_cancel_out(award_count_sub_schedule, awar
 
 @pytest.fixture
 def obligations_incurred_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
+    award = _normal_award(592)
 
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -77,7 +77,7 @@ def obligations_incurred_award(award_count_sub_schedule, award_count_submission,
 
 @pytest.fixture
 def non_matching_defc_award(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
+    award = _normal_award(937)
 
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -165,8 +165,8 @@ def award_count_sub_schedule():
     )
 
 
-def _normal_award():
-    return baker.make("search.AwardSearch", type="A")
+def _normal_award(id):
+    return baker.make("search.AwardSearch", award_id=id, type="A")
 
 
 def _faba_for_award(award, id=1, negative=False, outlay_based=False):

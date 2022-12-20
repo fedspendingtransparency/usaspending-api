@@ -1,8 +1,8 @@
 import pytest
 
 from model_bakery import baker
-from usaspending_api.awards.models import Award
 from usaspending_api.references.models.ref_program_activity import RefProgramActivity
+from usaspending_api.search.models import AwardSearch
 
 
 @pytest.fixture
@@ -401,7 +401,7 @@ def spending_by_award_test_data():
 
     # Financial Accounts by Awards
     financial_accounts_by_awards_1 = {
-        "award": Award.objects.get(pk=1),
+        "award": AwardSearch.objects.get(award_id=1),
         "program_activity": RefProgramActivity.objects.get(pk=1),
     }
     baker.make("awards.FinancialAccountsByAwards", **financial_accounts_by_awards_1)

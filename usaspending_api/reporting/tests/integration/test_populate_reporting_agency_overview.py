@@ -165,7 +165,7 @@ def setup_test_data(db):
         {
             "award_id": 1,
             "is_fpds": True,
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
             "type": "A",
             "piid": "123",
             "certified_date": "2019-12-15",
@@ -173,7 +173,7 @@ def setup_test_data(db):
         {
             "award_id": 2,
             "is_fpds": False,
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
             "type": "08",
             "fain": "abc",
             "uri": "def",
@@ -183,7 +183,7 @@ def setup_test_data(db):
         {
             "award_id": 3,
             "is_fpds": False,
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
             "type": "07",
             "fain": "abcdef",
             "certified_date": "2019-12-15",

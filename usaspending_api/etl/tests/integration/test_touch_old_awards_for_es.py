@@ -1,3 +1,5 @@
+from itertools import cycle
+
 import pytest
 import random
 
@@ -31,10 +33,11 @@ def award_data2(db):
     award_id = 987
     yesterday = datetime.now() - timedelta(days=1)
     piids = ["abc", "def", "ghi", "jki"]
+    award_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     awards = [
-        baker.make("search.AwardSearch", piid=random.choice(piids), id=award_id),
-        *baker.make("search.AwardSearch", piid=random.choice(piids), _quantity=9),
+        baker.make("search.AwardSearch", piid=random.choice(piids), award_id=award_id),
+        *baker.make("search.AwardSearch", piid=random.choice(piids), award_id=cycle(award_ids), _quantity=9),
     ]
 
     for index, award in enumerate(awards):
@@ -55,11 +58,15 @@ def award_data2(db):
 def award_data3(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
 
-    aw1 = baker.make("search.AwardSearch", fain="abc123")
-    aw2 = baker.make("search.AwardSearch", fain="zyx987")
+    aw1 = baker.make("search.AwardSearch", award_id=19834, fain="abc123")
+    aw2 = baker.make("search.AwardSearch", award_id=10938, fain="zyx987")
 
-    AwardSearch.objects.filter(award_id=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
-    AwardSearch.objects.filter(award_id=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
+    AwardSearch.objects.filter(award_id=aw1.award_id).update(
+        update_date=OLD_DATE
+    )  # convoluted line to sidestep auto_now()
+    AwardSearch.objects.filter(award_id=aw2.award_id).update(
+        update_date=OLD_DATE
+    )  # convoluted line to sidestep auto_now()
 
     baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
     baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw2, disaster_emergency_fund=defc)
@@ -72,11 +79,15 @@ def award_data3(db):
 def award_data4(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
 
-    aw1 = baker.make("search.AwardSearch", fain="abc123")
-    aw2 = baker.make("search.AwardSearch", fain="zyx987")
+    aw1 = baker.make("search.AwardSearch", award_id=284, fain="abc123")
+    aw2 = baker.make("search.AwardSearch", award_id=9081, fain="zyx987")
 
-    AwardSearch.objects.filter(award_id=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
-    AwardSearch.objects.filter(award_id=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
+    AwardSearch.objects.filter(award_id=aw1.award_id).update(
+        update_date=OLD_DATE
+    )  # convoluted line to sidestep auto_now()
+    AwardSearch.objects.filter(award_id=aw2.award_id).update(
+        update_date=OLD_DATE
+    )  # convoluted line to sidestep auto_now()
 
     baker.make("awards.FinancialAccountsByAwards", submission_id=9, award=aw1, disaster_emergency_fund=defc)
     baker.make("awards.FinancialAccountsByAwards", submission_id=9, award=aw2, disaster_emergency_fund=defc)
@@ -94,10 +105,18 @@ def award_mixed_periods(db):
     aw3 = baker.make("search.AwardSearch", award_id=3, piid="ABC321")
     aw4 = baker.make("search.AwardSearch", award_id=4, piid="ZYX789")
 
-    AwardSearch.objects.filter(award_id=aw1.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
-    AwardSearch.objects.filter(award_id=aw2.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
-    AwardSearch.objects.filter(award_id=aw3.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
-    AwardSearch.objects.filter(award_id=aw4.id).update(update_date=OLD_DATE)  # convoluted line to sidestep auto_now()
+    AwardSearch.objects.filter(award_id=aw1.award_id).update(
+        update_date=OLD_DATE
+    )  # convoluted line to sidestep auto_now()
+    AwardSearch.objects.filter(award_id=aw2.award_id).update(
+        update_date=OLD_DATE
+    )  # convoluted line to sidestep auto_now()
+    AwardSearch.objects.filter(award_id=aw3.award_id).update(
+        update_date=OLD_DATE
+    )  # convoluted line to sidestep auto_now()
+    AwardSearch.objects.filter(award_id=aw4.award_id).update(
+        update_date=OLD_DATE
+    )  # convoluted line to sidestep auto_now()
 
     baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
     baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw2, disaster_emergency_fund=defc)
