@@ -55,11 +55,15 @@ def faba_for_award(award, toa, outlay):
         "accounts.FederalAccount",
         federal_account_code="001-0000",
         account_title="FA 1",
-        parent_toptier_agency=ToptierAgency.objects.get(pk=award.funding_agency.toptier_agency_id),
+        parent_toptier_agency=ToptierAgency.objects.get(
+            pk=Agency.objects.get(id=award.funding_agency_id).toptier_agency_id
+        ),
     )
     tas1 = baker.make(
         "accounts.TreasuryAppropriationAccount",
-        funding_toptier_agency=ToptierAgency.objects.get(pk=award.funding_agency.toptier_agency_id),
+        funding_toptier_agency=ToptierAgency.objects.get(
+            pk=Agency.objects.get(id=award.funding_agency_id).toptier_agency_id
+        ),
         budget_function_code=100,
         budget_function_title="NAME 1",
         budget_subfunction_code=1100,

@@ -75,6 +75,10 @@ def add_award_recipients(db):
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2009, 5, 30),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
+            recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         )
         baker.make(
             "search.TransactionSearch",
@@ -95,6 +99,10 @@ def add_award_recipients(db):
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2009, 5, 1),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
+            recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         )
         baker.make(
             "search.TransactionSearch",
@@ -115,6 +123,10 @@ def add_award_recipients(db):
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2009, 7, 2),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
+            recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         )
         baker.make(
             "search.TransactionSearch",
@@ -135,6 +147,10 @@ def add_award_recipients(db):
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2008, 1, 10),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
+            recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         )
         baker.make(
             "search.TransactionSearch",
@@ -155,6 +171,10 @@ def add_award_recipients(db):
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2009, 7, 30),
+            recipient_uei="K87WE4KQLBG4",
+            parent_uei=None,
+            recipient_hash="6a1765a8-6948-6ae8-ee2a-1cfc72de739d",
         )
         baker.make(
             "search.TransactionSearch",

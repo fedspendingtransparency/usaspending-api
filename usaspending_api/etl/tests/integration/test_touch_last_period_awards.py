@@ -1,3 +1,5 @@
+from itertools import cycle
+
 import pytest
 import io
 
@@ -21,7 +23,7 @@ def award_data(db):
 
     awards = [
         baker.make("search.AwardSearch", award_id=award_id),
-        *baker.make("search.AwardSearch", _quantity=9),
+        *baker.make("search.AwardSearch", award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]), _quantity=9),
     ]
 
     for index, award in enumerate(awards):
@@ -47,7 +49,7 @@ def award_data_old_and_new(db):
     awards = [
         baker.make("search.AwardSearch", award_id=award_id_too_old),
         baker.make("search.AwardSearch", award_id=award_id_too_new),
-        *baker.make("search.AwardSearch", award_id=1, _quantity=9),
+        *baker.make("search.AwardSearch", award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]), _quantity=9),
     ]
 
     for index, award in enumerate(awards):
@@ -55,7 +57,7 @@ def award_data_old_and_new(db):
             baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=award, disaster_emergency_fund=defc)
         else:
             baker.make("awards.FinancialAccountsByAwards", submission_id=12, award=award, disaster_emergency_fund=defc)
-        AwardSearch.objects.filter(award_id=award.id).update(
+        AwardSearch.objects.filter(award_id=award.award_id).update(
             update_date=OLD_DATE
         )  # convoluted line to sidestep auto_now()
 

@@ -441,6 +441,7 @@ def disaster_account_data():
         type="07",
         funding_agency_id=ag1.id,
         latest_transaction_id=10,
+        action_date="2020-01-01",
     )  # Loan
     a2 = baker.make(
         "search.AwardSearch",
@@ -449,6 +450,7 @@ def disaster_account_data():
         type="02",
         funding_agency_id=ag2.id,
         latest_transaction_id=20,
+        action_date="2020-01-01",
     )  # Block Grant - subtier sister to a4
     a3 = baker.make(
         "search.AwardSearch",
@@ -457,6 +459,7 @@ def disaster_account_data():
         type="A",
         funding_agency_id=ag3.id,
         latest_transaction_id=30,
+        action_date="2020-01-01",
     )  # BPA Call
     a4 = baker.make(
         "search.AwardSearch",
@@ -465,6 +468,7 @@ def disaster_account_data():
         type="02",
         funding_agency_id=ag3.id,
         latest_transaction_id=40,
+        action_date="2020-01-01",
     )  # Block Grant - subtier sister to a2
     a5 = baker.make(
         "search.AwardSearch",
@@ -473,6 +477,7 @@ def disaster_account_data():
         type="02",
         funding_agency_id=ag4.id,
         latest_transaction_id=50,
+        action_date="2020-01-01",
     )
 
     baker.make(

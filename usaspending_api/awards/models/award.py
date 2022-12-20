@@ -13,7 +13,11 @@ class AwardManager(models.Manager):
         (i.e. it is no longer empty), these will be updated via update_from_transaction
         and the award will no longer match these criteria
         """
-        q_kwargs = {"latest_transaction__isnull": True, "date_signed__isnull": True, "total_obligation__isnull": True}
+        q_kwargs = {
+            "awardsearch__latest_transaction__isnull": True,
+            "date_signed__isnull": True,
+            "total_obligation__isnull": True,
+        }
 
         return super(AwardManager, self).get_queryset().filter(~Q(**q_kwargs))
 

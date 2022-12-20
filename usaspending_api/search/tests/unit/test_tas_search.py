@@ -112,9 +112,32 @@ def mock_tas_data(db):
         piid="piid",
         type="A",
         awarding_agency_id=1,
+        tas_components="{aid=028main=8006ata=028sub=000bpoa=2011epoa=2013a=X}",
+        action_date="2020-01-01",
+        subaward_count=1,
     )
-    baker.make("search.AwardSearch", award_id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", type="B")
-    baker.make("search.AwardSearch", award_id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
+    baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piid2",
+        type="B",
+        tas_components="{aid=028main=8006ata=004sub=005bpoa=2012epoa=2013a=X}",
+        action_date="2020-01-01",
+        subaward_count=1,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piid3",
+        type="C",
+        tas_components="{aid=011main=8007ata=001sub=001bpoa=2001epoa=2002a=X}",
+        action_date="2020-01-01",
+        subaward_count=1,
+    )
 
     baker.make(
         "search.SubawardSearch",
