@@ -281,7 +281,7 @@ class TestInitialRun:
     @staticmethod
     def verify_transaction_ids(spark, expected_transaction_id_lookup):
         # Verify transaction_id_lookup table
-        query = "SELECT * FROM int.transaction_id_lookup ORDER BY id"
+        query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
 
@@ -291,7 +291,8 @@ class TestInitialRun:
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             max_transaction_id = cursor.fetchone()[0]
         if expected_transaction_id_lookup:
-            assert max_transaction_id == max([transaction["id"] for transaction in expected_transaction_id_lookup])
+            assert max_transaction_id == max([transaction["transaction_id"]
+                                              for transaction in expected_transaction_id_lookup])
         else:
             assert max_transaction_id == 1
 
@@ -303,7 +304,7 @@ class TestInitialRun:
     @staticmethod
     def verify_award_ids(spark, expected_award_id_lookup):
         # Verify award_id_lookup table
-        query = "SELECT * FROM int.award_id_lookup ORDER BY id, transaction_unique_id"
+        query = "SELECT * FROM int.award_id_lookup ORDER BY award_id, transaction_unique_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets(expected_award_id_lookup, delta_data, "")
 
@@ -313,7 +314,7 @@ class TestInitialRun:
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             max_award_id = cursor.fetchone()[0]
         if expected_award_id_lookup:
-            assert max_award_id == max([award["id"] for award in expected_award_id_lookup])
+            assert max_award_id == max([award["award_id"] for award in expected_award_id_lookup])
         else:
             assert max_award_id == 1
 
@@ -404,7 +405,7 @@ class TestInitialRunWithPostgresLoader:
     expected_initial_transaction_id_lookup = (
         [
             {
-                "id": id,
+                "transaction_id": id,
                 "detached_award_procurement_id": None,
                 "published_fabs_id": initial_assists[id - 1]["published_fabs_id"],
                 "transaction_unique_id": initial_assists[id - 1]["afa_generated_unique"].upper(),
@@ -414,7 +415,7 @@ class TestInitialRunWithPostgresLoader:
         +
         [
             {
-                "id": id,
+                "transaction_id": id,
                 "detached_award_procurement_id": initial_procures[id - 6]["detached_award_procurement_id"],
                 "published_fabs_id": None,
                 "transaction_unique_id": initial_procures[id - 6]["detached_award_proc_unique"].upper(),
@@ -426,7 +427,7 @@ class TestInitialRunWithPostgresLoader:
     expected_initial_award_id_lookup = (
         [
             {
-                "id": int(assist["unique_award_key"].split("_")[-1]),
+                "award_id": int(assist["unique_award_key"].split("_")[-1]),
                 "detached_award_procurement_id": None,
                 "published_fabs_id": assist["published_fabs_id"],
                 "transaction_unique_id": assist["afa_generated_unique"].upper(),
@@ -437,8 +438,8 @@ class TestInitialRunWithPostgresLoader:
         +
         [
             {
-                "id": (int(procure["unique_award_key"].split("_")[-1])
-                       + max([int(assist["unique_award_key"].split("_")[-1]) for assist in initial_assists])),
+                "award_id": (int(procure["unique_award_key"].split("_")[-1])
+                             + max([int(assist["unique_award_key"].split("_")[-1]) for assist in initial_assists])),
                 "detached_award_procurement_id": procure["detached_award_procurement_id"],
                 "published_fabs_id": None,
                 "transaction_unique_id": procure["detached_award_proc_unique"].upper(),
@@ -545,61 +546,61 @@ class TestInitialRunWithPostgresLoader:
 class TestInitialRunNoPostgresLoader:
     expected_initial_transaction_id_lookup = [
         {
-            "id": 1,
+            "transaction_id": 1,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[0]["published_fabs_id"],
             "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
         },
         {
-            "id": 2,
+            "transaction_id": 2,
             "detached_award_procurement_id": initial_procures[0]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
         },
         {
-            "id": 3,
+            "transaction_id": 3,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[1]["published_fabs_id"],
             "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
         },
         {
-            "id": 4,
+            "transaction_id": 4,
             "detached_award_procurement_id": initial_procures[1]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
         },
         {
-            "id": 5,
+            "transaction_id": 5,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[2]["published_fabs_id"],
             "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
         },
         {
-            "id": 6,
+            "transaction_id": 6,
             "detached_award_procurement_id": initial_procures[2]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
         },
         {
-            "id": 7,
+            "transaction_id": 7,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[3]["published_fabs_id"],
             "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
         },
         {
-            "id": 8,
+            "transaction_id": 8,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[4]["published_fabs_id"],
             "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
         },
         {
-            "id": 9,
+            "transaction_id": 9,
             "detached_award_procurement_id": initial_procures[3]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
         },
         {
-            "id": 10,
+            "transaction_id": 10,
             "detached_award_procurement_id": initial_procures[4]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
@@ -608,70 +609,70 @@ class TestInitialRunNoPostgresLoader:
 
     expected_initial_award_id_lookup = [
         {
-            "id": 1,
+            "award_id": 1,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[0]["published_fabs_id"],
             "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[0]["unique_award_key"].upper(),
         },
         {
-            "id": 2,
+            "award_id": 2,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[1]["published_fabs_id"],
             "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[1]["unique_award_key"].upper(),
         },
         {
-            "id": 2,
+            "award_id": 2,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[2]["published_fabs_id"],
             "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[2]["unique_award_key"].upper(),
         },
         {
-            "id": 3,
+            "award_id": 3,
             "detached_award_procurement_id": initial_procures[0]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[0]["unique_award_key"].upper(),
         },
         {
-            "id": 4,
+            "award_id": 4,
             "detached_award_procurement_id": initial_procures[1]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[1]["unique_award_key"].upper(),
         },
         {
-            "id": 4,
+            "award_id": 4,
             "detached_award_procurement_id": initial_procures[2]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[2]["unique_award_key"].upper(),
         },
         {
-            "id": 5,
+            "award_id": 5,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[3]["published_fabs_id"],
             "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[3]["unique_award_key"].upper(),
         },
         {
-            "id": 5,
+            "award_id": 5,
             "detached_award_procurement_id": None,
             "published_fabs_id": initial_assists[4]["published_fabs_id"],
             "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[4]["unique_award_key"].upper(),
         },
         {
-            "id": 6,
+            "award_id": 6,
             "detached_award_procurement_id": initial_procures[3]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[3]["unique_award_key"].upper(),
         },
         {
-            "id": 6,
+            "award_id": 6,
             "detached_award_procurement_id": initial_procures[4]["detached_award_procurement_id"],
             "published_fabs_id": None,
             "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
@@ -1028,7 +1029,7 @@ class TestTransactionIdLookup:
             TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
         )
         for item in expected_transaction_id_lookup:
-            item["id"] += 1
+            item["transaction_id"] += 1
         TestInitialRun.verify(spark, expected_transaction_id_lookup, [])
 
         # Verify last load date, as closely as we can (NOTE: get_last_load_date actually returns a datetime)
@@ -1048,7 +1049,7 @@ class TestTransactionIdLookup:
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
         # Verify transaction_id_lookup table
-        query = "SELECT * FROM int.transaction_id_lookup ORDER BY id"
+        query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
         expected_transaction_id_lookup.pop()
@@ -1087,12 +1088,12 @@ class TestTransactionIdLookup:
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
         # Verify transaction_id_lookup table
-        query = "SELECT * FROM int.transaction_id_lookup ORDER BY id"
+        query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
         expected_transaction_id_lookup.append(
             {
-                "id": 11,
+                "transaction_id": 11,
                 "detached_award_procurement_id": None,
                 "published_fabs_id": 6,
                 "transaction_unique_id": "award_assist_0004_trans_0001".upper(),
@@ -1165,7 +1166,7 @@ class TestTransactionIdLookup:
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
         # Verify transaction_id_lookup table
-        query = "SELECT * FROM int.transaction_id_lookup ORDER BY id"
+        query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
         expected_transaction_id_lookup.pop(1)
@@ -1173,7 +1174,7 @@ class TestTransactionIdLookup:
         expected_transaction_id_lookup.pop(3)
         expected_transaction_id_lookup.append(
             {
-                "id": 12,
+                "transaction_id": 12,
                 "detached_award_procurement_id": 6,
                 "published_fabs_id": None,
                 "transaction_unique_id": "award_procure_0004_trans_0001".upper(),
@@ -1253,7 +1254,7 @@ class TestTransactionIdLookup:
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
         # Verify transaction_id_lookup table
-        query = "SELECT * FROM int.transaction_id_lookup ORDER BY id"
+        query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
         expected_transaction_id_lookup.pop(1)
@@ -1261,7 +1262,7 @@ class TestTransactionIdLookup:
         expected_transaction_id_lookup.pop(2)
         expected_transaction_id_lookup.append(
             {
-                "id": 12,
+                "transaction_id": 12,
                 "detached_award_procurement_id": 6,
                 "published_fabs_id": None,
                 "transaction_unique_id": "award_procure_0004_trans_0001".upper(),
@@ -1306,7 +1307,7 @@ class TestAwardIdLookup:
         # but all of the award ids should be 1 larger than expected there.
         expected_award_id_lookup = deepcopy(TestInitialRunWithPostgresLoader.expected_initial_award_id_lookup)
         for item in expected_award_id_lookup:
-            item["id"] += 1
+            item["award_id"] += 1
         TestInitialRun.verify(spark, [], expected_award_id_lookup)
 
         # Verify last load date, as closely as we can (NOTE: get_last_load_date actually returns a datetime)
@@ -1326,7 +1327,7 @@ class TestAwardIdLookup:
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # Verify award_id_lookup table
-        query = "SELECT * FROM int.award_id_lookup ORDER BY id, transaction_unique_id"
+        query = "SELECT * FROM int.award_id_lookup ORDER BY award_id, transaction_unique_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
         expected_award_id_lookup.pop()
@@ -1365,12 +1366,12 @@ class TestAwardIdLookup:
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # Verify award_id_lookup table
-        query = "SELECT * FROM int.award_id_lookup ORDER BY id, transaction_unique_id"
+        query = "SELECT * FROM int.award_id_lookup ORDER BY award_id, transaction_unique_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
         expected_award_id_lookup.append(
             {
-                "id": 7,
+                "award_id": 7,
                 "detached_award_procurement_id": None,
                 "published_fabs_id": 6,
                 "transaction_unique_id": "award_assist_0004_trans_0001".upper(),
@@ -1442,7 +1443,7 @@ class TestAwardIdLookup:
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # Verify award_id_lookup table
-        query = "SELECT * FROM int.award_id_lookup ORDER BY id, transaction_unique_id"
+        query = "SELECT * FROM int.award_id_lookup ORDER BY award_id, transaction_unique_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
         expected_award_id_lookup.pop(1)
@@ -1450,7 +1451,7 @@ class TestAwardIdLookup:
         expected_award_id_lookup.pop(3)
         expected_award_id_lookup.append(
             {
-                "id": 8,
+                "award_id": 8,
                 "detached_award_procurement_id": 6,
                 "published_fabs_id": None,
                 "transaction_unique_id": "award_procure_0004_trans_0001".upper(),
@@ -1528,7 +1529,7 @@ class TestAwardIdLookup:
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # Verify award_id_lookup table
-        query = "SELECT * FROM int.award_id_lookup ORDER BY id, transaction_unique_id"
+        query = "SELECT * FROM int.award_id_lookup ORDER BY award_id, transaction_unique_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
         expected_award_id_lookup.pop(3)
@@ -1536,7 +1537,7 @@ class TestAwardIdLookup:
         expected_award_id_lookup.pop(1)
         expected_award_id_lookup.append(
             {
-                "id": 8,
+                "award_id": 8,
                 "detached_award_procurement_id": 6,
                 "published_fabs_id": None,
                 "transaction_unique_id": "award_procure_0004_trans_0001".upper(),
@@ -1609,7 +1610,7 @@ class TransactionFabsFpdsCore:
             TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
         )
         for item in expected_transaction_id_lookup:
-            item["id"] += 1
+            item["transaction_id"] += 1
         TestInitialRun.verify(
             self.spark,
             expected_transaction_id_lookup,
@@ -1821,7 +1822,7 @@ class TransactionFabsFpdsCore:
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Verify transaction_id_lookup table
-        query = "SELECT * FROM int.transaction_id_lookup ORDER BY id"
+        query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
 
         expected_transaction_id_lookup = deepcopy(expected_initial_transaction_id_lookup)
@@ -1829,7 +1830,7 @@ class TransactionFabsFpdsCore:
         expected_transaction_id_lookup.pop(expected_transaction_id_lookup_pops[1])
         expected_transaction_id_lookup_append.update(
             {
-                "id": self.new_transaction_id,
+                "transaction_id": self.new_transaction_id,
             }
         )
         expected_transaction_id_lookup.append(expected_transaction_id_lookup_append)

@@ -162,15 +162,15 @@ class Command(BaseCommand):
 
     def delete_records_sql(self):
         if self.etl_level == "transaction_id_lookup":
-            id_col = "id"
+            id_col = "transaction_id"
             subquery = """
-                SELECT id AS id_to_remove
+                SELECT transaction_id AS id_to_remove
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
                     tidlu.detached_award_procurement_id = dap.detached_award_procurement_id
                 )
                 WHERE tidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_procurement_id IS NULL
                 UNION ALL
-                SELECT id AS id_to_remove
+                SELECT transaction_id AS id_to_remove
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.published_fabs AS pfabs ON (
                     tidlu.published_fabs_id = pfabs.published_fabs_id
                 )
@@ -196,9 +196,9 @@ class Command(BaseCommand):
             subquery = f"""
                 SELECT {self.etl_level}.{id_col} AS id_to_remove
                 FROM int.{self.etl_level} LEFT JOIN int.transaction_id_lookup ON (
-                    {self.etl_level}.{id_col} = transaction_id_lookup.id
+                    {self.etl_level}.{id_col} = transaction_id_lookup.transaction_id
                 )
-                WHERE {self.etl_level}.{id_col} IS NOT NULL AND transaction_id_lookup.id IS NULL
+                WHERE {self.etl_level}.{id_col} IS NOT NULL AND transaction_id_lookup.transaction_id IS NULL
             """
 
         sql = f"""
@@ -248,7 +248,7 @@ class Command(BaseCommand):
 
         def select_columns_transaction_normalized(bronze_table_name):
             select_cols = [
-                "award_id_lookup.id AS award_id",
+                "award_id_lookup.award_id",
                 "awarding_agency.id AS awarding_agency_id",
                 f"""CASE WHEN month(to_date({bronze_table_name}.action_date)) > 9
                              THEN year(to_date({bronze_table_name}.action_date)) + 1
@@ -376,7 +376,7 @@ class Command(BaseCommand):
 
         sql = f"""
             SELECT
-                transaction_id_lookup.id AS {id_col_name},
+                transaction_id_lookup.transaction_id AS {id_col_name},
                 {", ".join(select_columns)}
             FROM {bronze_table_name}
             INNER JOIN int.transaction_id_lookup ON (
@@ -490,7 +490,7 @@ class Command(BaseCommand):
             SELECT
                 {previous_max_id} + ROW_NUMBER() OVER (
                     ORDER BY all_new_transactions.transaction_unique_id
-                ) AS id,
+                ) AS transaction_id,
                 all_new_transactions.detached_award_procurement_id,
                 all_new_transactions.published_fabs_id,
                 all_new_transactions.transaction_unique_id
@@ -525,7 +525,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating transaction_id_seq to the new maximum id value seen so far")
-        poss_max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.transaction_id_lookup").collect()[0]["max_id"]
+        poss_max_id = self.spark.sql(
+            "SELECT MAX(transaction_id) AS max_id FROM int.transaction_id_lookup"
+        ).collect()[0]["max_id"]
         if poss_max_id is None:
             # Since initial_run will always start the id sequence from at least 1, and we take the max of
             # poss_max_id and previous_max_id below, this can be set to 0 here.
@@ -567,7 +569,7 @@ class Command(BaseCommand):
             SELECT
                 {previous_max_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
                     ORDER BY all_new_awards.unique_award_key
-                ) AS id,
+                ) AS award_id,
                 all_new_awards.detached_award_procurement_id,
                 all_new_awards.published_fabs_id,
                 all_new_awards.transaction_unique_id,
@@ -605,7 +607,7 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating award_id_seq to the new maximum id value seen so far")
-        poss_max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM int.award_id_lookup").collect()[0]["max_id"]
+        poss_max_id = self.spark.sql("SELECT MAX(award_id) AS max_id FROM int.award_id_lookup").collect()[0]["max_id"]
         if poss_max_id is None:
             # Since initial_run will always start the id sequence from at least 1, and we take the max of
             # poss_max_id and previous_max_id below, this can be set to 0 here.
@@ -640,7 +642,7 @@ class Command(BaseCommand):
         self.spark.sql(
             f"""
                 CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
-                    id LONG NOT NULL,
+                    transaction_id LONG NOT NULL,
                     detached_award_procurement_id INTEGER,
                     published_fabs_id INTEGER,
                     transaction_unique_id STRING NOT NULL
@@ -671,7 +673,10 @@ class Command(BaseCommand):
                 f"""
                 INSERT OVERWRITE {destination_database}.{destination_table}
                     SELECT
-                        tn.id, dap.detached_award_procurement_id, pfabs.published_fabs_id, tn.transaction_unique_id
+                        tn.id AS transaction_id, 
+                        dap.detached_award_procurement_id, 
+                        pfabs.published_fabs_id, 
+                        tn.transaction_unique_id
                     FROM raw.transaction_normalized AS tn
                     LEFT JOIN raw.detached_award_procurement AS dap ON (
                         tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
@@ -683,9 +688,9 @@ class Command(BaseCommand):
             )
 
         self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
-            0
-        ]["max_id"]
+        max_id = self.spark.sql(
+            f"SELECT MAX(transaction_id) AS max_id FROM {destination_database}.{destination_table}"
+        ).collect()[0]["max_id"]
         if max_id is None:
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the transaction IDs
             # will start at 2.
@@ -731,7 +736,7 @@ class Command(BaseCommand):
         self.spark.sql(
             f"""
                 CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
-                    id LONG NOT NULL,
+                    award_id LONG NOT NULL,
                     -- detached_award_procurement_id and published_fabs_id are needed in this table to allow
                     -- the award_id_lookup ETL level to choose the correct rows for deleting so that it can
                     -- be run in parallel with the transaction_id_lookup ETL level
@@ -768,7 +773,7 @@ class Command(BaseCommand):
                 f"""
                 INSERT OVERWRITE {destination_database}.{destination_table}
                     SELECT
-                        existing_awards.id,
+                        existing_awards.id AS award_id,
                         existing_awards.detached_award_procurement_id,
                         existing_awards.published_fabs_id,
                         existing_awards.transaction_unique_id,
@@ -808,9 +813,9 @@ class Command(BaseCommand):
             )
 
         self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM {destination_database}.{destination_table}").collect()[
-            0
-        ]["max_id"]
+        max_id = self.spark.sql(
+            f"SELECT MAX(award_id) AS max_id FROM {destination_database}.{destination_table}"
+        ).collect()[0]["max_id"]
         if max_id is None:
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs
             # will start at 2.
