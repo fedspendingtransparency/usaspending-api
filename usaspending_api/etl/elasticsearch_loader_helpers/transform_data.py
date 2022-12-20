@@ -18,15 +18,15 @@ logger = logging.getLogger("script")
 def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {}
     agg_key_creations = {
-        "funding_subtier_agency_agg_key": funcs.funding_subtier_agency_agg_key,
-        "funding_toptier_agency_agg_key": funcs.funding_toptier_agency_agg_key,
-        "pop_congressional_agg_key": funcs.pop_congressional_agg_key,
-        "pop_county_agg_key": funcs.pop_county_agg_key,
-        "pop_state_agg_key": funcs.pop_state_agg_key,
+        "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
+        "funding_toptier_agency_agg_key": lambda x: x["funding_toptier_agency_code"],
+        "pop_congressional_agg_key": lambda x: x["pop_congressional_code"],
+        "pop_county_agg_key": lambda x: x["pop_county_code"],
+        "pop_state_agg_key": lambda x: x["pop_state_code"],
         "recipient_agg_key": funcs.award_recipient_agg_key,
-        "recipient_location_congressional_agg_key": funcs.recipient_location_congressional_agg_key,
-        "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
-        "recipient_location_state_agg_key": funcs.recipient_location_state_agg_key,
+        "recipient_location_congressional_agg_key": lambda x: x["recipient_location_congressional_code"],
+        "recipient_location_county_agg_key": lambda x: x["recipient_location_county_code"],
+        "recipient_location_state_agg_key": lambda x: x["recipient_location_state_code"],
     }
     drop_fields = [
         "recipient_levels",
@@ -51,20 +51,20 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "federal_accounts": convert_postgres_json_array_to_list,
     }
     agg_key_creations = {
-        "awarding_subtier_agency_agg_key": funcs.awarding_subtier_agency_agg_key,
-        "awarding_toptier_agency_agg_key": funcs.awarding_toptier_agency_agg_key,
-        "funding_subtier_agency_agg_key": funcs.funding_subtier_agency_agg_key,
-        "funding_toptier_agency_agg_key": funcs.funding_toptier_agency_agg_key,
-        "naics_agg_key": funcs.naics_agg_key,
-        "pop_congressional_agg_key": funcs.pop_congressional_agg_key,
-        "pop_country_agg_key": funcs.pop_country_agg_key,
-        "pop_county_agg_key": funcs.pop_county_agg_key,
-        "pop_state_agg_key": funcs.pop_state_agg_key,
-        "psc_agg_key": funcs.psc_agg_key,
         "recipient_agg_key": funcs.transaction_recipient_agg_key,
+        "awarding_subtier_agency_agg_key": lambda x: x["awarding_sub_tier_agency_c"],
+        "awarding_toptier_agency_agg_key": lambda x: x["awarding_agency_code"],
+        "funding_subtier_agency_agg_key": lambda x: x["funding_sub_tier_agency_co"],
+        "funding_toptier_agency_agg_key": lambda x: x["funding_agency_code"],
+        "naics_agg_key": lambda x: x["naics_code"],
+        "psc_agg_key": lambda x: x["product_or_service_code"],
+        "pop_country_agg_key": lambda x: x["pop_country_code"],
+        "pop_state_agg_key": lambda x: x["pop_state_code"],
+        "pop_county_agg_key": funcs.pop_county_agg_key,
+        "pop_congressional_agg_key": funcs.pop_congressional_agg_key,
+        "recipient_location_state_agg_key": lambda x: x["recipient_location_state_code"],
         "recipient_location_congressional_agg_key": funcs.recipient_location_congressional_agg_key,
         "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
-        "recipient_location_state_agg_key": funcs.recipient_location_state_agg_key,
     }
     drop_fields = [
         "pop_state_name",

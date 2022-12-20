@@ -91,9 +91,11 @@ def sub_agency_data_1():
     baker.make(
         TransactionFPDS,
         transaction=contract_transaction,
-        awarding_office_name="Office 1",
+        awarding_agency_code="001",
+        funding_agency_code="001",
+        awarding_sub_tier_agency_c="0001",
+        funding_sub_tier_agency_co="0001",
         awarding_office_code="0001",
-        funding_office_name="Office 2",
         funding_office_code="0002",
     )
 
@@ -110,6 +112,10 @@ def sub_agency_data_1():
     baker.make(
         TransactionFPDS,
         transaction=no_office_transaction,
+        awarding_agency_code="003",
+        funding_agency_code="003",
+        awarding_sub_tier_agency_c="0003",
+        funding_sub_tier_agency_co="0003",
         awarding_office_name=None,
         awarding_office_code=None,
         funding_office_name=None,
@@ -128,7 +134,8 @@ def sub_agency_data_1():
     baker.make(
         TransactionFPDS,
         transaction=idv_transaction,
-        awarding_office_name="Office 1",
+        awarding_agency_code="001",
+        awarding_sub_tier_agency_c="0001",
         awarding_office_code="0001",
     )
 
@@ -144,7 +151,8 @@ def sub_agency_data_1():
     baker.make(
         TransactionFABS,
         transaction=grant_transaction,
-        awarding_office_name="Office 2",
+        awarding_agency_code="001",
+        awarding_sub_tier_agency_c="0001",
         awarding_office_code="0002",
     )
     loan_transaction = baker.make(
@@ -159,6 +167,8 @@ def sub_agency_data_1():
     baker.make(
         TransactionFABS,
         transaction=loan_transaction,
+        awarding_agency_code="001",
+        awarding_sub_tier_agency_c="0001",
         awarding_office_name="Office 2",
         awarding_office_code="0002",
     )
@@ -174,7 +184,8 @@ def sub_agency_data_1():
     baker.make(
         TransactionFABS,
         transaction=directpayment_transaction,
-        awarding_office_name="Office 2",
+        awarding_agency_code="001",
+        awarding_sub_tier_agency_c="0001",
         awarding_office_code="0002",
     )
 
@@ -190,7 +201,8 @@ def sub_agency_data_1():
     baker.make(
         TransactionFPDS,
         transaction=idv_2,
-        awarding_office_name="Office 1",
+        awarding_agency_code="001",
+        awarding_sub_tier_agency_c="0001",
         awarding_office_code="0001",
     )
 
@@ -206,6 +218,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionFPDS,
         transaction=idv_3,
-        awarding_office_name="Office 2",
+        awarding_agency_code="002",
+        awarding_sub_tier_agency_c="0002",
         awarding_office_code="0002",
     )

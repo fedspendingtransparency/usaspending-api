@@ -37,7 +37,7 @@ from usaspending_api.transactions.delta_models import (
     transaction_fpds_sql_string,
     TRANSACTION_NORMALIZED_COLUMNS,
     transaction_normalized_sql_string,
-    TRANSACTION_SEARCH_COLUMNS,
+    TRANSACTION_SEARCH_POSTGRES_COLUMNS,
     transaction_search_create_sql_string,
     PUBLISHED_FABS_COLUMNS,
     published_fabs_create_sql_string,
@@ -122,7 +122,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_fabs_sql_string,
         "source_schema": None,
         "custom_schema": "",
-        "column_names": list(TRANSACTION_FABS_COLUMNS),
+        "column_names": TRANSACTION_FABS_COLUMNS,
         "tsvectors": None,
     },
     "published_fabs": {
@@ -156,7 +156,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_fpds_sql_string,
         "source_schema": None,
         "custom_schema": "",
-        "column_names": list(TRANSACTION_FPDS_COLUMNS),
+        "column_names": TRANSACTION_FPDS_COLUMNS,
         "tsvectors": None,
     },
     "transaction_normalized": {
@@ -280,7 +280,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_search_create_sql_string,
         "source_schema": None,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
-        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
+        "column_names": list(TRANSACTION_SEARCH_POSTGRES_COLUMNS),
         "tsvectors": None,
     },
 }

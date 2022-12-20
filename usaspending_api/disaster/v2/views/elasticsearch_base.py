@@ -71,6 +71,8 @@ class ElasticsearchDisasterBase(DisasterBase):
     pagination: Pagination  # Overwritten by a pagination mixin
     sort_column_mapping: Dict[str, str]  # Overwritten by a pagination mixin
     sum_column_mapping: Dict[str, str]  # Overwritten by a pagination mixin
+    sub_top_hits_fields: List[str] = None  # list used for top_hits sub aggregation
+    top_hits_fields: List[str] = None  # list used for the top_hits aggregation, defaults to none
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -170,6 +172,13 @@ class ElasticsearchDisasterBase(DisasterBase):
         sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
         sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
         sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
+        if self.top_hits_fields:
+            dim_metadata = A(
+                "top_hits",
+                size=1,
+                sort=[{"update_date": {"order": "desc"}}],
+                _source={"includes": self.top_hits_fields},
+            )
         reverse_nested = A("reverse_nested", **{})
 
         # Apply the aggregations
@@ -184,6 +193,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         ).metric(
             "total_loan_value", sum_loan_value
         )
+        if self.top_hits_fields:
+            search.aggs[self.agg_group_name].metric("dim_metadata", dim_metadata)
         search.aggs.bucket("totals", A("nested", path="covid_spending_by_defc")).bucket(
             "filtered_aggs", filtered_aggs
         ).metric("total_covid_obligation", sum_covid_obligation).metric("total_covid_outlay", sum_covid_outlay).bucket(
@@ -242,6 +253,13 @@ class ElasticsearchDisasterBase(DisasterBase):
         sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
         filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
+        if self.sub_top_hits_fields:
+            sub_dim_metadata = A(
+                "top_hits",
+                size=1,
+                sort=[{"update_date": {"order": "desc"}}],
+                _source={"includes": self.sub_top_hits_fields},
+            )
 
         # Apply the aggregations
         search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key).bucket(
@@ -253,6 +271,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         ).metric(
             "total_loan_value", sum_loan_value
         )
+        if self.sub_top_hits_fields:
+            search.aggs[self.agg_group_name][self.sub_agg_group_name].metric("dim_metadata", sub_dim_metadata)
 
     def build_totals(self, response: dict) -> dict:
         totals = {key: 0 for key in self.sum_column_mapping.keys()}

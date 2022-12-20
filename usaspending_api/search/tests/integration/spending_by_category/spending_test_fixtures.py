@@ -20,6 +20,21 @@ def basic_award(db, basic_agencies):
         funding_agency_id=1004,
         federal_action_obligation=5,
         action_date="2020-01-01",
+        is_fpds=False,
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction_id=1,
+        awarding_agency_code="001",
+        awarding_agency_name="Awarding Toptier Agency 1",
+        funding_agency_code="004",
+        funding_agency_name="Funding Toptier Agency 4",
+        awarding_sub_tier_agency_c="1001",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 1",
+        funding_sub_tier_agency_co="1004",
+        funding_sub_tier_agency_na="Funding Subtier Agency 4",
+        federal_action_obligation=5,
+        action_date="2020-01-01",
     )
 
 
@@ -43,6 +58,21 @@ def subagency_award(db, agencies_with_subagencies):
         funding_agency_id=1006,
         federal_action_obligation=10,
         action_date="2020-01-02",
+        is_fpds=False,
+    )
+    baker.make(
+        "awards.TransactionFABS",
+        transaction_id=2,
+        awarding_agency_code="003",
+        awarding_agency_name="Awarding Toptier Agency 3",
+        funding_agency_code="002",
+        funding_agency_name="Funding Toptier Agency 2",
+        awarding_sub_tier_agency_c="1005",
+        awarding_sub_tier_agency_n="Awarding Subtier Agency 5",
+        funding_sub_tier_agency_co="1006",
+        funding_sub_tier_agency_na="Funding Subtier Agency 6",
+        federal_action_obligation=10,
+        action_date="2020-01-02",
     )
 
 
@@ -59,6 +89,7 @@ def _setup_agency(id, subtiers, special_name):
         subtier_agency_id=id + 3000,
         name=f"{special_name} Subtier Agency {id}",
         abbreviation=f"SA{id}",
+        subtier_code=f"100{id}",
     )
     baker.make(
         "references.Agency", id=id + 1000, toptier_agency_id=id + 2000, subtier_agency_id=id + 3000, toptier_flag=True
@@ -70,6 +101,7 @@ def _setup_agency(id, subtiers, special_name):
             subtier_agency_id=sub_id + 3000,
             name=f"{special_name} Subtier Agency {sub_id}",
             abbreviation=f"SA{sub_id}",
+            subtier_code=f"100{sub_id}",
         )
         baker.make(
             "references.Agency",
@@ -188,12 +220,16 @@ def awards_and_transactions(db):
         transaction_id=10,
         cfda_number="10.100",
         place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
         place_of_perfor_state_code="SC",
+        place_of_perform_state_nam="SOUTH CAROLINA",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
         place_of_performance_congr="10",
         legal_entity_country_code="CAN",
+        legal_entity_country_name="CANADA",
         legal_entity_state_code=None,
+        legal_entity_state_name=None,
         legal_entity_county_code=None,
         legal_entity_county_name=None,
         legal_entity_congressional=None,
@@ -206,12 +242,16 @@ def awards_and_transactions(db):
         transaction_id=20,
         cfda_number="20.200",
         place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
         place_of_perfor_state_code="SC",
+        place_of_perform_state_nam="SOUTH CAROLINA",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
         place_of_performance_congr="50",
         legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
         legal_entity_state_code="SC",
+        legal_entity_state_name="SOUTH CAROLINA",
         legal_entity_county_code="001",
         legal_entity_county_name="CHARLESTON",
         legal_entity_congressional="90",
@@ -224,12 +264,16 @@ def awards_and_transactions(db):
         transaction_id=30,
         cfda_number="20.200",
         place_of_perform_country_c="USA",
+        place_of_perform_country_n="UNITED STATES",
         place_of_perfor_state_code="WA",
+        place_of_perform_state_nam="WASHINGTON",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
         place_of_performance_congr="50",
         legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
         legal_entity_state_code="SC",
+        legal_entity_state_name="SOUTH CAROLINA",
         legal_entity_county_code="001",
         legal_entity_county_name="CHARLESTON",
         legal_entity_congressional="50",
@@ -243,17 +287,22 @@ def awards_and_transactions(db):
         "awards.TransactionFPDS",
         transaction_id=40,
         place_of_perform_country_c="USA",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="WA",
+        place_of_perfor_state_desc="WASHINGTON",
         place_of_perform_county_co="005",
         place_of_perform_county_na="TEST NAME",
         place_of_performance_congr="50",
         legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
         legal_entity_state_code="WA",
+        legal_entity_state_descrip="WASHINGTON",
         legal_entity_county_code="005",
         legal_entity_county_name="TEST NAME",
         legal_entity_congressional="50",
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu="096354360",
+        awardee_or_recipient_uei="096354360AAA",
         ultimate_parent_uei="096354360AAA",
         product_or_service_code="1005",
         product_or_service_co_desc="PSC 1",
@@ -262,17 +311,22 @@ def awards_and_transactions(db):
         "awards.TransactionFPDS",
         transaction_id=50,
         place_of_perform_country_c="USA",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="SC",
+        place_of_perfor_state_desc="SOUTH CAROLINA",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
         place_of_performance_congr="10",
         legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
         legal_entity_state_code="WA",
+        legal_entity_state_descrip="WASHINGTON",
         legal_entity_county_code="005",
         legal_entity_county_name="TEST NAME",
         legal_entity_congressional="50",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
+        awardee_or_recipient_uei="123456789AAA",
         ultimate_parent_uei="123456789AAA",
         product_or_service_code="M123",
         product_or_service_co_desc="PSC 2",
@@ -283,17 +337,22 @@ def awards_and_transactions(db):
         "awards.TransactionFPDS",
         transaction_id=60,
         place_of_perform_country_c="USA",
+        place_of_perf_country_desc="UNITED STATES",
         place_of_performance_state="SC",
+        place_of_perfor_state_desc="SOUTH CAROLINA",
         place_of_perform_county_co="001",
         place_of_perform_county_na="CHARLESTON",
         place_of_performance_congr="90",
         legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
         legal_entity_state_code="SC",
+        legal_entity_state_descrip="SOUTH CAROLINA",
         legal_entity_county_code="005",
         legal_entity_county_name="TEST NAME",
         legal_entity_congressional="50",
         awardee_or_recipient_legal=None,
         awardee_or_recipient_uniqu="123456789",
+        awardee_or_recipient_uei="123456789AAA",
         ultimate_parent_uei="123456789AAA",
         naics="222220",
         naics_description="NAICS 2",
@@ -302,17 +361,22 @@ def awards_and_transactions(db):
         "awards.TransactionFPDS",
         transaction_id=70,
         place_of_perform_country_c="CAN",
+        place_of_perf_country_desc="CANADA",
         place_of_performance_state=None,
+        place_of_perfor_state_desc=None,
         place_of_perform_county_co=None,
         place_of_perform_county_na=None,
         place_of_performance_congr=None,
         legal_entity_country_code="USA",
+        legal_entity_country_name="UNITED STATES",
         legal_entity_state_code="SC",
+        legal_entity_state_descrip="SOUTH CAROLINA",
         legal_entity_county_code="01",
         legal_entity_county_name="CHARLESTON",
         legal_entity_congressional="10",
         awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         awardee_or_recipient_uniqu=None,
+        awardee_or_recipient_uei=None,
         ultimate_parent_uei=None,
     )
 
@@ -331,6 +395,7 @@ def awards_and_transactions(db):
         state_code="45",
         state_name="South Carolina",
         county_number="001",
+        county_name="Charleston",
         latest_population=1,
     )
     baker.make(
@@ -339,6 +404,7 @@ def awards_and_transactions(db):
         state_code="45",
         state_name="South Carolina",
         county_number="005",
+        county_name="Test Name",
         latest_population=10,
     )
     baker.make(
@@ -347,6 +413,7 @@ def awards_and_transactions(db):
         state_code="53",
         state_name="Washington",
         county_number="005",
+        county_name="Test Name",
         latest_population=100,
     )
     baker.make(
@@ -355,6 +422,7 @@ def awards_and_transactions(db):
         state_code="45",
         state_name="South Carolina",
         county_number="000",
+        county_name="South Carolina",
         latest_population=1000,
     )
     baker.make(
@@ -363,15 +431,16 @@ def awards_and_transactions(db):
         state_code="53",
         state_name="Washington",
         county_number="000",
+        county_name="Washington",
         latest_population=10000,
     )
-
     # References Population Congressional District
     baker.make(
         "references.PopCongressionalDistrict",
         id=1,
         state_code="45",
         state_name="South Carolina",
+        state_abbreviation="SC",
         congressional_district="90",
         latest_population=1,
     )
@@ -380,22 +449,25 @@ def awards_and_transactions(db):
         id=2,
         state_code="45",
         state_name="South Carolina",
+        state_abbreviation="SC",
         congressional_district="10",
         latest_population=10,
     )
     baker.make(
         "references.PopCongressionalDistrict",
-        id=2,
+        id=3,
         state_code="45",
         state_name="South Carolina",
+        state_abbreviation="SC",
         congressional_district="50",
         latest_population=100,
     )
     baker.make(
         "references.PopCongressionalDistrict",
-        id=3,
+        id=4,
         state_code="53",
         state_name="Washington",
+        state_abbreviation="WA",
         congressional_district="50",
         latest_population=1000,
     )
@@ -417,6 +489,7 @@ def awards_and_transactions(db):
         recipient_name="RECIPIENT 2",
         recipient_level="R",
         recipient_unique_id="456789123",
+        recipient_hash="7976667a-dd95-2b65-5f4e-e340c686a346",
         uei="UEIAAABBBCCC",
     )
     baker.make(
@@ -439,7 +512,7 @@ def awards_and_transactions(db):
         "recipient.RecipientProfile",
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_level="R",
-        recipient_hash="5bf6217b-4a70-da67-1351-af6ab2e0a4b3",
+        recipient_hash="b1bcf17e-d0dc-d9ad-866c-ca262cb05029",
         recipient_unique_id="096354360",
         uei="096354360AAA",
     )
@@ -455,10 +528,45 @@ def awards_and_transactions(db):
     # Recipient Lookup
     baker.make(
         "recipient.RecipientLookup",
+        legal_business_name="RECIPIENT 1",
+        recipient_hash="5f572ec9-8b49-e5eb-22c7-f6ef316f7689",
+        duns=None,
+        uei=None,
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="RECIPIENT 2",
+        recipient_hash="7976667a-dd95-2b65-5f4e-e340c686a346",
+        duns="456789123",
+        uei="UEIAAABBBCCC",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
         legal_business_name="RECIPIENT 3",
         recipient_hash="3523fd0b-c1f0-ddac-e217-7b7b25fad06f",
         duns="987654321",
         uei="987654321AAA",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="MULTIPLE RECIPIENTS",
+        recipient_hash="b1bcf17e-d0dc-d9ad-866c-ca262cb05029",
+        duns="096354360",
+        uei="096354360AAA",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="MULTIPLE RECIPIENTS",
+        recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
+        duns=None,
+        uei=None,
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name=None,
+        recipient_hash="f1400310-181e-9a06-ac94-0d80a819bb5e",
+        duns="123456789",
+        uei="123456789AAA",
     )
 
     # PSC

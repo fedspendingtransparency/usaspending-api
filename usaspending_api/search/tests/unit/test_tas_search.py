@@ -21,9 +21,19 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 @pytest.fixture
 def mock_tas_data(db):
 
-    a1 = baker.make("references.ToptierAgency", toptier_agency_id=99, name="Department of Pizza", abbreviation="DOP")
+    a1 = baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=99,
+        name="Department of Pizza",
+        toptier_code="DOP",
+        abbreviation="DOP",
+    )
     a2 = baker.make(
-        "references.SubtierAgency", subtier_agency_id=22, name="Department of Sub-Pizza", abbreviation="DOSP"
+        "references.SubtierAgency",
+        subtier_agency_id=22,
+        name="Department of Sub-Pizza",
+        abbreviation="DOSP",
+        subtier_code="DOSP",
     )
     baker.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
     baker.make(FederalAccount, id=1, parent_toptier_agency_id=99, agency_identifier="99", main_account_code="0001")
@@ -83,6 +93,8 @@ def mock_tas_data(db):
     baker.make(
         "awards.TransactionFPDS",
         transaction_id=1,
+        awarding_agency_code="DOP",
+        awarding_sub_tier_agency_c="DOSP",
         legal_entity_city_name="BURBANK",
         legal_entity_country_code="USA",
         legal_entity_state_code="CA",
