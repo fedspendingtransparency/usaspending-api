@@ -9,6 +9,7 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_subaward_success(client, spending_by_award_test_data):
 
@@ -85,6 +86,7 @@ def test_spending_by_award_subaward_success(client, spending_by_award_test_data)
     }
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -97,6 +99,7 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
     assert resp.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
 
@@ -180,6 +183,7 @@ def awards_over_different_date_ranges():
             )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_date_range_search_with_one_range(
     client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
@@ -267,6 +271,7 @@ def test_date_range_search_with_one_range(
     assert len(resp.data["results"]) == 0
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_date_range_search_with_two_ranges(
     client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
@@ -368,6 +373,7 @@ def test_date_range_search_with_two_ranges(
     assert resp.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -415,6 +421,7 @@ def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_in
     assert len(resp.data["results"]) == 2
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index):
     """
@@ -440,6 +447,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
     assert resp.status_code == status.HTTP_200_OK, f"Failed to return 200 Response"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
@@ -470,6 +478,7 @@ def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
     assert len(resp.json().get("results")) == 2
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
@@ -500,6 +509,7 @@ def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
     assert len(resp.json().get("results")) == 0
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
@@ -556,6 +566,7 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
     assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
@@ -1360,6 +1371,7 @@ def _test_correct_response_for_def_codes_subaward(client):
     assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -1399,6 +1411,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
     assert resp.json().get("detail") == "Field 'fields' value '[]' is below min '1' items"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_search_after(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -1430,6 +1443,7 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
     assert resp.json().get("results") == expected_result, "Award Type Code filter does not match expected result"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_no_0_covid_amounts(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -1459,6 +1473,7 @@ def test_no_0_covid_amounts(client, monkeypatch, spending_by_award_test_data, el
     assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_uei_keyword_filter(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -1488,6 +1503,7 @@ def test_uei_keyword_filter(client, monkeypatch, spending_by_award_test_data, el
     assert resp.json().get("results") == expected_result, "UEI filter does not match expected result"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_parent_uei_keyword_filter(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -1517,6 +1533,7 @@ def test_parent_uei_keyword_filter(client, monkeypatch, spending_by_award_test_d
     assert resp.json().get("results") == expected_result, "UEI filter does not match expected result"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_uei_recipient_filter_subaward(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)

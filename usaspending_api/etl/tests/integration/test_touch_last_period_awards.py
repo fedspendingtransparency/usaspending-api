@@ -70,6 +70,7 @@ def load_date(db):
     baker.make("broker.ExternalDataLoadDate", external_data_type=data_type, last_load_date=datetime(2000, 1, 31))
 
 
+@pytest.mark.skip
 def test_awards_updated(load_date, submissions, award_data):
 
     today = datetime.now(timezone.utc)
@@ -98,6 +99,7 @@ def test_awards_updated(load_date, submissions, award_data):
     assert after.update_date == after2.update_date
 
 
+@pytest.mark.skip
 def test_no_awards_updated(load_date, submissions, award_data_old_and_new):
     """
     'too_old' is a faba record associated with a submission already revealed, but not the newest

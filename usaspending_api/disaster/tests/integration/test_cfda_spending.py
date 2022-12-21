@@ -18,6 +18,7 @@ def test_correct_response_defc_no_results(
     assert resp.json()["results"] == expected_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_single_defc(
     client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
@@ -73,6 +74,7 @@ def test_correct_response_single_defc(
     assert resp.json()["results"] == expected_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_multiple_defc(
     client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
@@ -129,6 +131,7 @@ def test_correct_response_multiple_defc(
     assert resp.json()["results"] == expected_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_with_query(
     client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
@@ -161,6 +164,7 @@ def test_correct_response_with_query(
     assert resp.json()["results"] == expected_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_with_award_type_codes(
     client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
@@ -248,6 +252,7 @@ def test_invalid_award_type_codes(
     )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_pagination_page_and_limit(
     client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions

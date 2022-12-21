@@ -37,6 +37,7 @@ def build_request_data(award_ids, subawards):
     )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_award_id_search(client, monkeypatch, elasticsearch_award_index, award_id_search_data):
     """

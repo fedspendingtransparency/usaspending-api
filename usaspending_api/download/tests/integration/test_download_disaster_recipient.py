@@ -376,6 +376,7 @@ def awards_and_transactions(transactional_db):
     update_awards()
 
 
+@pytest.mark.skip
 def test_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L", "M"])
@@ -408,6 +409,7 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
     assert resp_json["download_request"]["file_format"] == "tsv"
 
 
+@pytest.mark.skip
 def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L", "M"], award_type_codes=["07", "08"], file_format="pstxt")

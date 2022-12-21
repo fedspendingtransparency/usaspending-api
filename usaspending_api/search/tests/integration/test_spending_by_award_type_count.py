@@ -131,6 +131,7 @@ def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_aw
     }, "Results returned, they should all be 0"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_subawards_no_intersection(client):
     baker.make("search.AwardSearch", award_id=90)
@@ -231,6 +232,7 @@ def awards_over_different_date_ranges_with_different_counts():
             )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_date_range_search_counts_with_one_range(
     client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges_with_different_counts
@@ -295,6 +297,7 @@ def test_date_range_search_counts_with_one_range(
     assert resp.data["results"]["other"] == 0
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_date_range_search_counts_with_two_ranges(
     client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges_with_different_counts

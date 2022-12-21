@@ -151,6 +151,7 @@ def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_pop_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by pop zips works"""
@@ -229,6 +230,7 @@ def test_spending_by_award_pop_zip_filter(client, monkeypatch, elasticsearch_awa
     assert resp.data["results"][0] != resp.data["results"][1]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_recipient_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by recipient zips works"""
@@ -301,6 +303,7 @@ def test_spending_by_award_recipient_zip_filter(client, monkeypatch, elasticsear
     assert resp.data["results"][0] != resp.data["results"][1]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_both_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by both kinds of zips works"""
@@ -371,6 +374,7 @@ def test_spending_by_award_both_zip_filter(client, monkeypatch, elasticsearch_aw
     }
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_foreign_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Verify that foreign country filter is returning the correct results """
