@@ -51,7 +51,9 @@ def new_award_data(db):
         earliest_transaction_id=10,
         latest_transaction_id=10,
         awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
         funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award2 = baker.make(
         awards_lazy_ref,
@@ -62,7 +64,9 @@ def new_award_data(db):
         earliest_transaction_id=20,
         latest_transaction_id=20,
         awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
         funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award3 = baker.make(
         awards_lazy_ref,
@@ -73,7 +77,9 @@ def new_award_data(db):
         earliest_transaction_id=30,
         latest_transaction_id=30,
         awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
         funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award4 = baker.make(
         awards_lazy_ref,
@@ -84,7 +90,9 @@ def new_award_data(db):
         earliest_transaction_id=40,
         latest_transaction_id=40,
         awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
         funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award5 = baker.make(
         awards_lazy_ref,
@@ -95,7 +103,9 @@ def new_award_data(db):
         earliest_transaction_id=50,
         latest_transaction_id=50,
         awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
         funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award6 = baker.make(
         awards_lazy_ref,
@@ -106,7 +116,9 @@ def new_award_data(db):
         earliest_transaction_id=60,
         latest_transaction_id=60,
         awarding_agency_id=ag3.id,
+        awarding_toptier_agency_code=ta3.toptier_code,
         funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
 
     transaction_search_lazy_ref = "search.TransactionSearch"

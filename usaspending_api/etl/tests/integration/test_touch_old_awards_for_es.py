@@ -43,11 +43,11 @@ def award_data2(db):
     for index, award in enumerate(awards):
         baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=award, disaster_emergency_fund=defc)
         if index % 2 == 0:
-            AwardSearch.objects.filter(award_id=award.id).update(
+            AwardSearch.objects.filter(award_id=award.award_id).update(
                 update_date=OLD_DATE
             )  # convoluted line to sidestep auto_now()
         else:
-            AwardSearch.objects.filter(award_id=award.id).update(
+            AwardSearch.objects.filter(award_id=award.award_id).update(
                 update_date=yesterday
             )  # convoluted line to sidestep auto_now()
 

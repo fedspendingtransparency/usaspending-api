@@ -487,7 +487,7 @@ def populate_usas_data(populate_broker_data):
 
     baker.make(
         "awards.FinancialAccountsByAwards",
-        award_id=asst_award.id,
+        award_id=asst_award.award_id,
         treasury_account=tas,
         disaster_emergency_fund=defc_l,
         submission=sa,
@@ -495,7 +495,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
-        award_id=asst_award.id,
+        award_id=asst_award.award_id,
         treasury_account=tas,
         disaster_emergency_fund=defc_m,
         submission=sa,
@@ -503,7 +503,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
-        award_id=cont_award.id,
+        award_id=cont_award.award_id,
         treasury_account=tas,
         disaster_emergency_fund=defc_q,
         submission=sa,
@@ -511,7 +511,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
-        award_id=cont_award.id,
+        award_id=cont_award.award_id,
         treasury_account=tas,
         disaster_emergency_fund=None,
         submission=sa,

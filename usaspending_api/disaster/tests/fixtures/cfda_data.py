@@ -12,6 +12,10 @@ def cfda_awards_and_transactions(db):
         type="07",
         total_loan_value=3,
         action_date="2020-01-01",
+        cfda_number="10.100",
+        disaster_emergency_fund_codes=["L"],
+        total_covid_outlay=101,
+        total_covid_obligation=202,
     )
     award2 = baker.make(
         "search.AwardSearch",
@@ -20,6 +24,10 @@ def cfda_awards_and_transactions(db):
         type="07",
         total_loan_value=30,
         action_date="2020-01-01",
+        cfda_number="20.200",
+        disaster_emergency_fund_codes=["L"],
+        total_covid_outlay=10,
+        total_covid_obligation=20,
     )
     award3 = baker.make(
         "search.AwardSearch",
@@ -28,6 +36,10 @@ def cfda_awards_and_transactions(db):
         type="08",
         total_loan_value=300,
         action_date="2020-01-01",
+        cfda_number="30.300",
+        disaster_emergency_fund_codes=["M"],
+        total_covid_outlay=100,
+        total_covid_obligation=200,
     )
     award4 = baker.make(
         "search.AwardSearch",
@@ -36,6 +48,10 @@ def cfda_awards_and_transactions(db):
         type="02",
         total_loan_value=0,
         action_date="2020-01-01",
+        cfda_number="40.400",
+        disaster_emergency_fund_codes=["L"],
+        total_covid_outlay=1000,
+        total_covid_obligation=2000,
     )
     award5 = baker.make(
         "search.AwardSearch",
@@ -44,6 +60,10 @@ def cfda_awards_and_transactions(db):
         type="A",
         total_loan_value=0,
         action_date="2020-01-01",
+        cfda_number="50.500",
+        disaster_emergency_fund_codes=["M"],
+        total_covid_outlay=10000,
+        total_covid_obligation=20000,
     )
 
     # Disaster Emergency Fund Code

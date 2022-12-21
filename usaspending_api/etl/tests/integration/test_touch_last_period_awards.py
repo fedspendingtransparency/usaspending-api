@@ -32,7 +32,7 @@ def award_data(db):
             baker.make("awards.FinancialAccountsByAwards", submission_id=11, award=award, disaster_emergency_fund=defc)
         else:
             baker.make("awards.FinancialAccountsByAwards", submission_id=21, award=award, disaster_emergency_fund=defc)
-        AwardSearch.objects.filter(award_id=award.id).update(
+        AwardSearch.objects.filter(award_id=award.award_id).update(
             update_date=OLD_DATE
         )  # convoluted line to sidestep auto_now()
 
