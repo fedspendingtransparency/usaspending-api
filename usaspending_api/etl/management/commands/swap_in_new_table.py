@@ -92,15 +92,21 @@ class Command(BaseCommand):
             schemas_lookup = {table: schema for (table, schema) in cursor.fetchall()}
             self.curr_schema_name = schemas_lookup.get(self.curr_table_name)
             self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
+            self.dep_views = self.dependent_views(cursor)
 
             self.validate_state_of_tables(cursor, options)
             self.cleanup_old_data(cursor)
             self.swap_constraints_sql(cursor)
             self.swap_index_sql(cursor)
+            if self.dep_views:
+                self.create_temp_views(cursor)
+                self.drop_old_views(cursor)
             self.swap_table_sql(cursor)
             if not options["keep_old_data"]:
                 self.drop_old_table_sql(cursor)
             self.extra_sql(cursor)
+            if self.dep_views:
+                self.rename_temp_views(cursor)
 
     def cleanup_old_data(self, cursor):
         """
@@ -293,6 +299,53 @@ class Command(BaseCommand):
                     f"The index definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
                 )
                 raise SystemExit(1)
+
+    def dependent_views(self, cursor):
+        """ Detects views that are dependent on the table to be swapped. """
+        detect_dep_view_sql = f"""
+            SELECT
+                dependent_ns.nspname AS dep_view_schema,
+                dependent_view.relname AS dep_view_name,
+                CONCAT(dependent_ns.nspname, '.', dependent_view.relname) as dep_view_fullname,
+                RTRIM(pg_get_viewdef(CONCAT(dependent_ns.nspname, '.', dependent_view.relname), TRUE), ';') AS dep_view_sql
+            FROM pg_depend
+            JOIN pg_rewrite ON pg_depend.objid = pg_rewrite.oid
+            JOIN pg_class as dependent_view ON pg_rewrite.ev_class = dependent_view.oid
+            JOIN pg_class as source_table ON pg_depend.refobjid = source_table.oid
+            JOIN pg_attribute ON pg_depend.refobjid = pg_attribute.attrelid
+                AND pg_depend.refobjsubid = pg_attribute.attnum
+            JOIN pg_namespace dependent_ns ON dependent_ns.oid = dependent_view.relnamespace
+            JOIN pg_namespace source_ns ON source_ns.oid = source_table.relnamespace
+            WHERE
+                source_ns.nspname = '{self.curr_schema_name}'
+                AND source_table.relname = '{self.curr_table_name}'
+            GROUP BY
+                CONCAT(source_ns.nspname, '.', source_table.relname),
+                dependent_ns.nspname,
+                dependent_view.relname,
+                CONCAT(dependent_ns.nspname, '.', dependent_view.relname);
+        """
+        cursor.execute(detect_dep_view_sql)
+        dep_views = ordered_dictionary_fetcher(cursor)
+        return dep_views
+
+    def create_temp_views(self, cursor):
+        for dep_view in self.dep_views:
+            # Note: Despite pointing at the new temp table at first,
+            #       the recreated views will automatically update and stay pointed to it in the swap via postgres
+            logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}")
+            dep_view_sql = dep_view["dep_view_sql"].replace(self.curr_table_name, self.temp_table_name)
+            cursor.execute(f"CREATE VIEW {dep_view['dep_view_fullname']}_temp AS ({dep_view_sql});")
+
+    def drop_old_views(self, cursor):
+        for dep_view in self.dep_views:
+            logger.info(f"Dropping dependent view: {dep_view['dep_view_fullname']}")
+            cursor.execute(f"DROP VIEW {dep_view['dep_view_fullname']};")
+
+    def rename_temp_views(self, cursor):
+        for dep_view in self.dep_views:
+            logger.info(f"Renaming temp view: {dep_view['dep_view_fullname']}_temp -> {dep_view['dep_view_fullname']}")
+            cursor.execute(f"ALTER VIEW {dep_view['dep_view_fullname']}_temp RENAME TO {dep_view['dep_view_name']};")
 
     def validate_foreign_keys(self, cursor):
         logger.info("Verifying that Foreign Key constraints are not found")
