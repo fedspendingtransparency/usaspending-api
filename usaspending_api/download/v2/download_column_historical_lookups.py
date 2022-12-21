@@ -18,7 +18,7 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
 
 query_paths = {
-    "award": {
+    "award_search": {
         "d1": OrderedDict(
             [
                 ("contract_award_unique_key", "generated_unique_award_id"),
@@ -2263,7 +2263,7 @@ query_paths["transaction"] = {
 
 
 # IDV Orders are identical to Award but only contain "d1"
-query_paths["idv_orders"] = {"d1": copy.deepcopy(query_paths["award"]["d1"])}
+query_paths["idv_orders"] = {"d1": copy.deepcopy(query_paths["award_search"]["d1"])}
 
 # IDV Transactions are identical to Transactions but only contain "d1"
 query_paths["idv_transaction_history"] = {"d1": copy.deepcopy(query_paths["transaction"]["d1"])}

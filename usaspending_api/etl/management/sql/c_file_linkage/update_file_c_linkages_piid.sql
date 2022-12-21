@@ -6,9 +6,9 @@ WITH update_cte AS (
     SET
         award_id = (
             SELECT
-                id
+                award_id
             FROM
-                vw_awards AS aw
+                award_search AS aw
             WHERE
                 UPPER(aw.piid) = UPPER(faba.piid)
                 AND UPPER(aw.parent_award_piid) = UPPER(faba.parent_award_id)
@@ -25,7 +25,7 @@ WITH update_cte AS (
                 AND faba_sub.parent_award_id IS NOT NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM vw_awards AS aw_sub
+                    FROM award_search AS aw_sub
                     WHERE
                         UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
                         AND UPPER(aw_sub.parent_award_piid) = UPPER(faba_sub.parent_award_id)
@@ -35,13 +35,13 @@ WITH update_cte AS (
     RETURNING award_id
 )
 UPDATE
-    award_search
+    award_search a
 SET
     update_date = NOW()
 FROM
     update_cte
 WHERE
-    award_id = update_cte.award_id
+    a.award_id = update_cte.award_id
 ;
 
 -- When PIID is populated and Parent PIID is NULL, update File C contract
@@ -52,9 +52,9 @@ WITH update_cte AS (
     SET
         award_id = (
             SELECT
-                id
+                award_id
             FROM
-                vw_awards AS aw
+                award_search AS aw
             WHERE
                 UPPER(aw.piid) = UPPER(faba.piid)
         )
@@ -70,7 +70,7 @@ WITH update_cte AS (
                 AND faba_sub.parent_award_id IS NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM vw_awards AS aw_sub
+                    FROM award_search AS aw_sub
                     WHERE
                         UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
                 ) = 1
@@ -79,11 +79,11 @@ WITH update_cte AS (
     RETURNING award_id
 )
 UPDATE
-    award_search
+    award_search a
 SET
     update_date = NOW()
 FROM
     update_cte
 WHERE
-    award_id = update_cte.award_id
+    a.award_id = update_cte.award_id
 ;

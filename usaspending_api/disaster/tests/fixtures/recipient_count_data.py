@@ -85,6 +85,10 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
             latest_transaction_id=transaction_fpds_1.transaction_id,
             type="A",
             action_date="2020-01-01",
+            is_fpds=True,
+            recipient_unique_id="1",
+            recipient_hash="053cca9b-ad9c-09ee-4b4b-243fa59f0be2",
+            recipient_uei="fpds",
         )
     )
 
@@ -120,6 +124,11 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
             latest_transaction_id=transaction_fpds_2.transaction_id,
             type="A",
             action_date="2020-02-02",
+            is_fpds=True,
+            recipient_unique_id="2",
+            recipient_uei="2",
+            recipient_hash="dfdbbb4f-1a81-1232-84b0-341e93d0acb1",
+            recipient_levels=["R"],
         )
     )
 
@@ -154,6 +163,7 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
             latest_transaction_id=transaction_fpds_1.transaction_id,
             type="A",
             action_date="2020-01-01",
+            recipient_unique_id="1",
         )
     )
     transaction_fpds_2 = baker.make(
@@ -172,6 +182,7 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
             latest_transaction_id=transaction_fpds_2.transaction_id,
             type="A",
             action_date="2020-01-01",
+            recipient_unique_id="1",
         )
     )
 
@@ -186,7 +197,6 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         action_date="2022-05-01",
         fiscal_action_date="2022-09-01",
         is_fpds=True,
-        recipient_name_raw="MULTIPLE RECIPIENTS",
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_unique_id="123",
     )
@@ -197,6 +207,9 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
             latest_transaction_id=transaction_fpds_1.transaction_id,
             type="A",
             action_date="2020-01-01",
+            is_fpds=True,
+            recipient_name="MULTIPLE RECIPIENTS",
+            recipient_unique_id="123",
         )
     )
 
@@ -208,7 +221,6 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         action_date="2022-05-01",
         fiscal_action_date="2022-09-01",
         is_fpds=True,
-        recipient_name_raw="MULTIPLE RECIPIENTS",
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_unique_id="456",
     )
@@ -219,6 +231,9 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
             latest_transaction_id=transaction_fpds_2.transaction_id,
             type="A",
             action_date="2020-01-01",
+            is_fpds=True,
+            recipient_name="MULTIPLE RECIPIENTS",
+            recipient_unique_id="456",
         )
     )
 
@@ -375,6 +390,10 @@ def _normal_fabs(id):
         type="07",
         is_fpds=False,
         action_date="2020-01-01",
+        recipient_uei="1",
+        recipient_hash="c229f674-92c9-1128-7bdf-292fb3e4226b",
+        recipient_name="Recipient 1",
+        recipient_levels=["R"],
     )
     baker.make(
         "search.TransactionSearch",
@@ -386,7 +405,6 @@ def _normal_fabs(id):
         recipient_uei="1",
         recipient_hash="c229f674-92c9-1128-7bdf-292fb3e4226b",
         recipient_name="Recipient 1",
-        recipient_name_raw="Recipient 1",
         recipient_levels=["R"],
         is_fpds=False,
     )

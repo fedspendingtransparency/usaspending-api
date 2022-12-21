@@ -37,7 +37,7 @@ class TransactionCountRetrieveViewSet(APIView):
             logger.info("No Award found with: '{}'".format(award_id))
             raise NotFound("No Award found with: '{}'".format(award_id))
 
-        transaction_count = TransactionNormalized.objects.filter(award_id=award.award_id).count()
+        transaction_count = TransactionNormalized.objects.filter(award_id=award.id).count()
         response_content = {"transactions": transaction_count}
         return response_content
 

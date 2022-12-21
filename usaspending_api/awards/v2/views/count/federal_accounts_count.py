@@ -38,7 +38,7 @@ class FederalAccountCountRetrieveViewSet(APIView):
             logger.info("No Award found with: '{}'".format(award_id))
             raise NotFound("No Award found with: '{}'".format(award_id))
 
-        federal_account_count = FinancialAccountsByAwards.objects.filter(award_id=award.award_id).count()
+        federal_account_count = FinancialAccountsByAwards.objects.filter(award_id=award.id).count()
         response_content = {"federal_accounts": federal_account_count}
         return response_content
 
