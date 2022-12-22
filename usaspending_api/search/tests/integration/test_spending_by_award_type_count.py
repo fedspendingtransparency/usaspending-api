@@ -104,6 +104,7 @@ def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)

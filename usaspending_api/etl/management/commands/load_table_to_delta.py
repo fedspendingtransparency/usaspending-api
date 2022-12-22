@@ -60,7 +60,7 @@ TABLE_SPEC = {
     "awards": {
         "model": Award,
         "is_from_broker": False,
-        "source_table": "awards",
+        "source_table": "vw_awards",
         "source_database": "rpt",
         "destination_database": "raw",
         "swap_table": None,
