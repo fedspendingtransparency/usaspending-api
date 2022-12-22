@@ -236,9 +236,9 @@ def get_all_award_ids_in_idv_hierarchy(root_idv_award_id):
         )
         select  ca.id
         from    cte
-                inner join awards pa on
+                inner join vw_awards pa on
                     pa.id = cte.award_id
-                inner join awards ca on
+                inner join vw_awards ca on
                     ca.parent_award_piid = pa.piid and
                     ca.fpds_parent_agency_id = pa.fpds_agency_id
         union   all
@@ -272,9 +272,9 @@ def get_descendant_award_ids(root_idv_award_id, include_child_idvs):
         )
         select  ca.id
         from    cte
-                inner join awards pa on
+                inner join vw_awards pa on
                     pa.id = cte.award_id
-                inner join awards ca on
+                inner join vw_awards ca on
                     ca.parent_award_piid = pa.piid and
                     ca.fpds_parent_agency_id = pa.fpds_agency_id
     """ + (

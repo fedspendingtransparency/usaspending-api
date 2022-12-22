@@ -33,13 +33,13 @@ SQL_LOOKUP = {
     "Transaction": {
         "min_max_sql": """
             SELECT MIN(transaction_id), MAX(transaction_id)
-            FROM transaction_fabs
+            FROM vw_transaction_fabs
             WHERE indirect_federal_sharing IS NOT NULL
         """,
         "update_sql": """
-            UPDATE transaction_normalized AS tn
+            UPDATE vw_transaction_normalized AS tn
             SET indirect_federal_sharing = fabs.indirect_federal_sharing
-            FROM transaction_fabs AS fabs
+            FROM vw_transaction_fabs AS fabs
             WHERE fabs.transaction_id BETWEEN {min_id} AND {max_id}
                 AND tn.id = fabs.transaction_id
                 AND fabs.indirect_federal_sharing IS NOT NULL
@@ -48,23 +48,23 @@ SQL_LOOKUP = {
     "Award": {
         "min_max_sql": """
             SELECT MIN(award_id), MAX(award_id)
-            FROM transaction_normalized
+            FROM vw_transaction_normalized
             WHERE is_fpds = FALSE
                 AND indirect_federal_sharing IS NOT NULL
         """,
         "update_sql": """
             WITH award_transaction_sum AS (
                 SELECT tn.award_id, SUM(tn.indirect_federal_sharing) AS total_indirect_federal_sharing
-                FROM transaction_normalized AS tn
+                FROM vw_transaction_normalized AS tn
                 WHERE tn.award_id BETWEEN {min_id} AND {max_id}
                     AND tn.is_fpds = FALSE
                     AND tn.indirect_federal_sharing IS NOT NULL
                 GROUP BY tn.award_id
             )
-            UPDATE awards AS aw
+            UPDATE award_search AS aw
             SET total_indirect_federal_sharing = award_transaction_sum.total_indirect_federal_sharing
             FROM award_transaction_sum
-            WHERE aw.id = award_transaction_sum.award_id
+            WHERE aw.award_id = award_transaction_sum.award_id
         """,
     },
 }

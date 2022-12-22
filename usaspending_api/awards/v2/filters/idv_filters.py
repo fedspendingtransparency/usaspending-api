@@ -5,13 +5,13 @@ other types of filters so they get their own file.
 import logging
 
 from usaspending_api.accounts.v2.filters.account_download import generate_treasury_account_query
-from usaspending_api.awards.models import Award, TransactionNormalized
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.filters.filter_helpers import (
     get_all_award_ids_in_idv_hierarchy,
     get_descendant_award_ids,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
-
+from usaspending_api.search.models import AwardSearch
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +32,8 @@ def idv_order_filter(filters):
         # If there are no descendant awards, we need a condition that cannot
         # possibly be true since we cannot pass an empty list into an __in
         # statement (well, we can but it'll throw an exception later).
-        return Award.objects.filter(id__isnull=True)
-    return Award.objects.filter(id__in=descendant_award_ids)
+        return AwardSearch.objects.filter(award_id__isnull=True)
+    return AwardSearch.objects.filter(id__in=descendant_award_ids)
 
 
 def idv_transaction_filter(filters):

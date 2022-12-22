@@ -9,7 +9,7 @@ from usaspending_api.awards.models import Award, TransactionFPDS, TransactionNor
 from usaspending_api.references.management.commands.load_agencies import Command, Agency as AgencyTuple
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
 from usaspending_api.references.models import CGAC, FREC
-from usaspending_api.search.models import SubawardSearch
+from usaspending_api.search.models import SubawardSearch, TransactionSearch
 
 
 AGENCY_FILE = Path(__file__).resolve().parent / "data" / "test_load_agencies.csv"
@@ -232,11 +232,18 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
     """ Test all three together since they're so tightly intertwined. """
 
     # Create some test data.
-    a = baker.make("awards.Award", generated_unique_award_id="AWARD_1")
-    tn = baker.make("awards.TransactionNormalized", award=a, unique_award_key="AWARD_1")
-    a.latest_transaction = tn
+    a = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="AWARD_1")
+    tn = baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
+        is_fpds=True,
+        award=a,
+        generated_unique_award_id="AWARD_1",
+        funding_agency_id="0901",
+        funding_sub_tier_agency_co="0901",
+    )
+    a.latest_transaction_id = tn.transaction_id
     a.save()
-    baker.make("awards.TransactionFPDS", transaction=tn, funding_sub_tier_agency_co="0901", unique_award_key="AWARD_1")
     baker.make("search.SubawardSearch", award=a, unique_award_key="AWARD_1")
 
     # Load all the things.
@@ -249,7 +256,7 @@ def test_update_transactions_awards_subawards(disable_vacuuming):
     assert SubawardSearch.objects.first().funding_agency_id == agency_id
 
     # Set it to something else and reload to make sure it gets updated.
-    TransactionFPDS.objects.update(funding_sub_tier_agency_co="0501")
+    TransactionSearch.objects.update(funding_sub_tier_agency_co="0501")
 
     # Double check.
     assert TransactionFPDS.objects.first().funding_sub_tier_agency_co == "0501"

@@ -5,11 +5,65 @@ import pytest
 @pytest.fixture
 def cfda_awards_and_transactions(db):
     # Awards
-    award1 = baker.make("awards.Award", latest_transaction_id=10, type="07", total_loan_value=3)
-    award2 = baker.make("awards.Award", latest_transaction_id=20, type="07", total_loan_value=30)
-    award3 = baker.make("awards.Award", latest_transaction_id=30, type="08", total_loan_value=300)
-    award4 = baker.make("awards.Award", latest_transaction_id=40, type="02", total_loan_value=0)
-    award5 = baker.make("awards.Award", latest_transaction_id=50, type="A", total_loan_value=0)
+    award1 = baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        latest_transaction_id=10,
+        type="07",
+        total_loan_value=3,
+        action_date="2020-01-01",
+        cfda_number="10.100",
+        disaster_emergency_fund_codes=["L"],
+        total_covid_outlay=101,
+        total_covid_obligation=202,
+    )
+    award2 = baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        latest_transaction_id=20,
+        type="07",
+        total_loan_value=30,
+        action_date="2020-01-01",
+        cfda_number="20.200",
+        disaster_emergency_fund_codes=["L"],
+        total_covid_outlay=10,
+        total_covid_obligation=20,
+    )
+    award3 = baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        latest_transaction_id=30,
+        type="08",
+        total_loan_value=300,
+        action_date="2020-01-01",
+        cfda_number="20.200",
+        disaster_emergency_fund_codes=["M"],
+        total_covid_outlay=100,
+        total_covid_obligation=200,
+    )
+    award4 = baker.make(
+        "search.AwardSearch",
+        award_id=4,
+        latest_transaction_id=40,
+        type="02",
+        total_loan_value=0,
+        action_date="2020-01-01",
+        cfda_number="30.300",
+        disaster_emergency_fund_codes=["L"],
+        total_covid_outlay=1000,
+        total_covid_obligation=2000,
+    )
+    award5 = baker.make(
+        "search.AwardSearch",
+        award_id=5,
+        latest_transaction_id=50,
+        type="A",
+        total_loan_value=0,
+        action_date="2020-01-01",
+        disaster_emergency_fund_codes=["M"],
+        total_covid_outlay=10000,
+        total_covid_obligation=20000,
+    )
 
     # Disaster Emergency Fund Code
     defc1 = baker.make(
@@ -198,64 +252,59 @@ def cfda_awards_and_transactions(db):
         submission_reveal_date="9999-4-15",
     )
 
-    # Transaction Normalized
+    # Transaction Search
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award=award1,
         federal_action_obligation=5,
         action_date="2020-01-01",
         is_fpds=False,
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=10,
+        "search.TransactionSearch",
+        transaction_id=10,
         award=award1,
         federal_action_obligation=5,
         action_date="2020-04-01",
         is_fpds=False,
+        cfda_number="10.100",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=20,
+        "search.TransactionSearch",
+        transaction_id=20,
         award=award2,
         federal_action_obligation=50,
         action_date="2020-04-02",
         is_fpds=False,
+        cfda_number="20.200",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=30,
+        "search.TransactionSearch",
+        transaction_id=30,
         award=award3,
         federal_action_obligation=500,
         action_date="2020-04-03",
         is_fpds=False,
+        cfda_number="20.200",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=40,
+        "search.TransactionSearch",
+        transaction_id=40,
         award=award4,
         federal_action_obligation=5000,
         action_date="2020-04-04",
         is_fpds=False,
+        cfda_number="30.300",
     )
     baker.make(
-        "awards.TransactionNormalized",
-        id=50,
+        "search.TransactionSearch",
+        transaction_id=50,
         award=award5,
         federal_action_obligation=50000,
         action_date="2020-04-05",
         is_fpds=True,
     )
-
-    # Transaction FABS
-    baker.make("awards.TransactionFABS", transaction_id=10, cfda_number="10.100")
-    baker.make("awards.TransactionFABS", transaction_id=20, cfda_number="20.200")
-    baker.make("awards.TransactionFABS", transaction_id=30, cfda_number="20.200")
-    baker.make("awards.TransactionFABS", transaction_id=40, cfda_number="30.300")
-
-    # Transaction FPDS
-    baker.make("awards.TransactionFPDS", transaction_id=50)
 
     # References CFDA
     baker.make(

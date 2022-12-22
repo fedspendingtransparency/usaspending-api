@@ -10,7 +10,7 @@ used by the db setup scripts *and* the application code.
 from collections import namedtuple, OrderedDict
 
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
-from usaspending_api.awards.models import Award, TransactionNormalized
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.download.helpers.elasticsearch_download_functions import (
     AwardsElasticsearchDownload,
     TransactionsElasticsearchDownload,
@@ -66,7 +66,7 @@ VALUE_MAPPINGS = {
     # Elasticsearch Award Level
     "elasticsearch_awards": {
         "source_type": "award",
-        "table": Award,
+        "table": AwardSearch,
         "table_name": "award",
         "type_name": "PrimeAwardSummaries",
         "download_name": "{agency}{type}_PrimeAwardSummaries_{timestamp}",
@@ -147,7 +147,7 @@ VALUE_MAPPINGS = {
     },
     "idv_orders": {
         "source_type": "award",
-        "table": Award,
+        "table": AwardSearch,
         "table_name": "idv_orders",
         "download_name": "IDV_{piid}_Orders",
         "contract_data": "latest_transaction__contract_data",

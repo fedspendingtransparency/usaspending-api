@@ -18,7 +18,7 @@ ROLLUP_SQL = SQL(
                 a.funding_agency_id,
                 nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
                 faba.treasury_account_id
-        from    awards a
+        from    vw_awards a
                 inner join financial_accounts_by_awards faba on faba.award_id = a.id
                 INNER JOIN submission_attributes sa ON faba.submission_id = sa.submission_id
                 INNER JOIN dabs_submission_window_schedule dabs ON sa.submission_window_id = dabs.id and dabs.submission_reveal_date <= now()

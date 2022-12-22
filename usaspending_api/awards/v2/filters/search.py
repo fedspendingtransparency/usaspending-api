@@ -106,7 +106,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             logger.info("Found {} transactions based on keyword: {}".format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
             queryset = queryset.extra(
-                where=['"transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(",".join(transaction_ids))]
+                where=['"vw_transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(",".join(transaction_ids))]
             )
 
         elif key == "time_period":
@@ -313,7 +313,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             result = Q()
             for oc in value:
                 subresult = Q()
-                subresult &= filter_on("award__financial_set__object_class", "object_class", oc)
+                subresult &= filter_on("award__awardsearch__financial_set__object_class", "object_class", oc)
                 result |= subresult
             queryset = queryset.filter(result)
 
@@ -321,7 +321,7 @@ def matview_search_filter(filters, model, for_downloads=False):
         elif key == "program_activity":
             or_queryset = Q()
             for v in value:
-                or_queryset |= Q(award__financial_set__program_activity__id=v)
+                or_queryset |= Q(award__awardsearch__financial_set__program_activity__id=v)
             queryset = queryset.filter(or_queryset)
 
     if faba_flag:

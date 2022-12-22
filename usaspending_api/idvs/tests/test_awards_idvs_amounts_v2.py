@@ -36,7 +36,7 @@ EXPECTED_GOOD_OUTPUT = {
 class IDVAmountsTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        baker.make("awards.Award", pk=1)
+        baker.make("search.AwardSearch", award_id=1)
         baker.make(
             "awards.ParentAward",
             award_id=1,
@@ -82,7 +82,9 @@ class IDVAmountsTestCase(TestCase):
             assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_special_characters(self):
-        baker.make("awards.Award", pk=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
+        baker.make(
+            "search.AwardSearch", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700"
+        )
         baker.make(
             "awards.ParentAward", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700"
         )
