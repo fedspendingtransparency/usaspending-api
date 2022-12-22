@@ -207,7 +207,7 @@ def _matching_award(cursor, load_object):
 def _lookup_existing_transaction(cursor, load_object):
     """find existing fpds transaction, if any"""
     find_matching_transaction_sql = (
-        "select transaction_id from transaction_fpds "
+        "select transaction_id from vw_transaction_fpds "
         "where detached_award_proc_unique = '{}'".format(load_object["transaction_fpds"]["detached_award_proc_unique"])
     )
     cursor.execute(find_matching_transaction_sql)

@@ -231,7 +231,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
         }
     elif arg_parse_options["load_type"] == "transaction":
         config = {
-            "base_table": "transaction_normalized",
+            "base_table": "vw_transaction_normalized",
             "base_table_id": "id",
             "create_award_type_aliases": True,
             "data_transform_func": transform_transaction_data,

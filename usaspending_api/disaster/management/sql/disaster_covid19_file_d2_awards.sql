@@ -66,7 +66,7 @@ SELECT
     "transaction_fabs"."place_of_performance_zip4a" AS "primary_place_of_performance_zip_4",
     "transaction_fabs"."place_of_performance_congr" AS "primary_place_of_performance_congressional_district",
     "transaction_fabs"."place_of_performance_forei" AS "primary_place_of_performance_foreign_location",
-    (SELECT STRING_AGG(DISTINCT CONCAT(U0."cfda_number", ': ', U0."cfda_title"), '; '  ORDER BY  CONCAT(U0."cfda_number", ': ', U0."cfda_title")) AS "total" FROM "transaction_fabs" U0 INNER JOIN "transaction_normalized" U1 ON (U0."transaction_id" = U1."id") WHERE U1."award_id" = ("awards"."award_id") GROUP BY U1."award_id") AS "cfda_numbers_and_titles",
+    (SELECT STRING_AGG(DISTINCT CONCAT(U0."cfda_number", ': ', U0."cfda_title"), '; '  ORDER BY  CONCAT(U0."cfda_number", ': ', U0."cfda_title")) AS "total" FROM "vw_transaction_fabs" U0 INNER JOIN "vw_transaction_normalized" U1 ON (U0."transaction_id" = U1."id") WHERE U1."award_id" = ("awards"."award_id") GROUP BY U1."award_id") AS "cfda_numbers_and_titles",
     "transaction_fabs"."assistance_type" AS "assistance_type_code",
     "transaction_fabs"."assistance_type_desc" AS "assistance_type_description",
     "awards"."description" AS "prime_award_base_transaction_description",
@@ -89,7 +89,7 @@ SELECT
     CONCAT('https://www.usaspending.gov/award/', urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
     "transaction_fabs"."modified_at" AS "last_modified_date"
 FROM "award_search" AS "awards"
-INNER JOIN "transaction_fabs" ON ("awards"."latest_transaction_id" = "transaction_fabs"."transaction_id")
+INNER JOIN "vw_transaction_fabs" AS "transaction_fabs" ON ("awards"."latest_transaction_id" = "transaction_fabs"."transaction_id")
 INNER JOIN (
     SELECT
         faba.award_id,

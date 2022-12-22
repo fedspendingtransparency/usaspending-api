@@ -275,8 +275,8 @@ SELECT
     CONCAT('https://www.usaspending.gov/award/', urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
     "transaction_fpds"."last_modified" AS "last_modified_date"
 FROM "award_search" AS "awards"
-INNER JOIN "transaction_fpds" ON ("awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")
-INNER JOIN "transaction_fpds" AS "earliest_transaction" ON ("awards"."earliest_transaction_id" = "earliest_transaction"."transaction_id")
+INNER JOIN "vw_transaction_fpds" AS "transaction_fpds" ON ("awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")
+INNER JOIN "vw_transaction_fpds" AS "earliest_transaction" ON ("awards"."earliest_transaction_id" = "earliest_transaction"."transaction_id")
 INNER JOIN (
     SELECT
         faba.award_id,

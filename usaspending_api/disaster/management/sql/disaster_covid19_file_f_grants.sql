@@ -54,7 +54,7 @@ SELECT
     "subaward_search"."place_of_perform_country_co" AS "prime_award_primary_place_of_performance_country_code",
     "subaward_search"."place_of_perform_country_na" AS "prime_award_primary_place_of_performance_country_name",
     "subaward_search"."award_description" AS "prime_award_base_transaction_description",
-    (SELECT STRING_AGG(DISTINCT CONCAT(U0."cfda_number", ': ', U0."cfda_title"), '; '  ORDER BY  CONCAT(U0."cfda_number", ': ', U0."cfda_title")) AS "total" FROM "transaction_fabs" U0 INNER JOIN "transaction_normalized" U1 ON (U0."transaction_id" = U1."id") WHERE U1."award_id" = ("subaward_search"."award_id") GROUP BY U1."award_id") AS "prime_award_cfda_numbers_and_titles",
+    (SELECT STRING_AGG(DISTINCT CONCAT(U0."cfda_number", ': ', U0."cfda_title"), '; '  ORDER BY  CONCAT(U0."cfda_number", ': ', U0."cfda_title")) AS "total" FROM "vw_transaction_fabs" U0 INNER JOIN "vw_transaction_normalized" U1 ON (U0."transaction_id" = U1."id") WHERE U1."award_id" = ("subaward_search"."award_id") GROUP BY U1."award_id") AS "prime_award_cfda_numbers_and_titles",
     "subaward_search"."subaward_type" AS "subaward_type",
     "subaward_search"."internal_id" AS "subaward_fsrs_report_id",
     "subaward_search"."subaward_report_year" AS "subaward_fsrs_report_year",
