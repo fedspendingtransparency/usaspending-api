@@ -308,7 +308,31 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("women_owned_small_business", "women_owned_small_business", "BOOLEAN", False),
 ]
 
-TRANSACTION_FPDS_COLUMNS = [col.silver_name for col in TRANSACTION_FPDS_COLUMN_INFO]
+delta_columns_not_in_view = [
+    "annual_revenue",
+    "award_or_idv_flag",
+    "division_name",
+    "division_number_or_office",
+    "entity_data_source",
+    "initial_report_date",
+    "number_of_employees",
+    "place_of_perform_country_n",
+    "place_of_perform_state_nam",
+    "place_of_performance_locat",
+    "referenced_idv_agency_name",
+    "referenced_multi_or_single",
+    "vendor_alternate_name",
+    "vendor_alternate_site_code",
+    "vendor_enabled",
+    "vendor_legal_org_name",
+    "vendor_location_disabled_f",
+    "vendor_site_code",
+    "created_at",
+    "updated_at",
+]
+TRANSACTION_FPDS_COLUMNS = [
+    col.silver_name for col in TRANSACTION_FPDS_COLUMN_INFO if col.silver_name not in delta_columns_not_in_view
+]
 
 transaction_fpds_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (

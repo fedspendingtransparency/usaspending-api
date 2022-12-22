@@ -154,7 +154,7 @@ class SubawardSearch(models.Model):
     sub_compensation_q2 = models.BooleanField(null=True, blank=True)
 
     # USAS Links (and associated derivations)
-    award = models.ForeignKey("awards.Award", models.DO_NOTHING, related_name="subawardsearch", null=True)
+    award = models.ForeignKey("search.AwardSearch", models.DO_NOTHING, related_name="subawardsearch", null=True)
     prime_award_group = models.TextField(null=True, blank=True)
     prime_award_type = models.TextField(null=True, blank=True)
     piid = models.TextField(null=True, blank=True)

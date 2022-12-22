@@ -163,15 +163,17 @@ def setup_test_data(db):
 
     award_dicts = [
         {
+            "award_id": 1,
             "is_fpds": True,
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
             "type": "A",
             "piid": "123",
             "certified_date": "2019-12-15",
         },
         {
+            "award_id": 2,
             "is_fpds": False,
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
             "type": "08",
             "fain": "abc",
             "uri": "def",
@@ -179,43 +181,48 @@ def setup_test_data(db):
             "total_subsidy_cost": 1000,
         },
         {
+            "award_id": 3,
             "is_fpds": False,
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
             "type": "07",
             "fain": "abcdef",
             "certified_date": "2019-12-15",
             "total_subsidy_cost": 2000,
         },
     ]
-    award_list = [baker.make("awards.Award", **award) for award in award_dicts]
+    award_list = [baker.make("search.AwardSearch", **award) for award in award_dicts]
     transaction_list = [
         {
+            "transaction_id": 1,
             "award": award_list[0],
             "fiscal_year": 2019,
             "action_date": "2018-11-15",
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
         },
         {
+            "transaction_id": 2,
             "award": award_list[0],
             "fiscal_year": 2019,
             "action_date": "2018-12-15",
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
         },
         {
+            "transaction_id": 3,
             "award": award_list[1],
             "fiscal_year": 2019,
             "action_date": "2018-10-15",
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
         },
         {
+            "transaction_id": 4,
             "award": award_list[2],
             "fiscal_year": 2019,
             "action_date": "2018-10-28",
-            "awarding_agency": agencies[0],
+            "awarding_agency_id": agencies[0].id,
         },
     ]
     for transaction in transaction_list:
-        baker.make("awards.TransactionNormalized", **transaction)
+        baker.make("search.TransactionSearch", **transaction)
 
     faba_list = [
         {

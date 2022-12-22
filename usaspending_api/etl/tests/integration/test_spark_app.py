@@ -116,32 +116,33 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 @fixture()
 def _transaction_and_award_test_data(db):
     agency1 = baker.make("references.Agency")
-    awd1 = baker.make("awards.Award", awarding_agency=agency1)
-    txn1 = baker.make(
-        "awards.TransactionNormalized",
+    awd1 = baker.make("search.AwardSearch", award_id=1, awarding_agency_id=agency1.id)
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
         award=awd1,
         modification_number="1",
-        awarding_agency=agency1,
+        awarding_agency_id=agency1.id,
         last_modified_date=date(2012, 3, 1),
-    )
-    baker.make(
-        "awards.TransactionFABS",
-        transaction=txn1,
         business_funds_indicator="a",
         record_type=1,
         total_funding_amount=1000.00,
+        is_fpds=False,
     )
     assert TransactionFABS.objects.all().count() == 1
 
-    awd2 = baker.make("awards.Award", awarding_agency=agency1)
-    txn2 = baker.make(
-        "awards.TransactionNormalized",
+    awd2 = baker.make("search.AwardSearch", award_id=1, awarding_agency_id=agency1.id)
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
         award=awd2,
         modification_number="1",
-        awarding_agency=agency1,
+        awarding_agency_id=agency1.id,
         last_modified_date=date(2012, 4, 1),
+        is_fpds=True,
+        piid="abc",
+        base_and_all_options_value=1000,
     )
-    baker.make("awards.TransactionFPDS", transaction=txn2, piid="abc", base_and_all_options_value=1000)
     assert TransactionFPDS.objects.all().count() == 1
 
 
@@ -163,7 +164,7 @@ def test_spark_write_to_s3_delta_from_db(
     schema_name = delta_lake_unittest_schema
 
     # ==== transaction_normalized ====
-    table_name = "transaction_normalized"
+    table_name = "vw_transaction_normalized"
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
@@ -181,7 +182,7 @@ def test_spark_write_to_s3_delta_from_db(
     )
 
     # ==== transaction_fabs ====
-    table_name = "transaction_fabs"
+    table_name = "vw_transaction_fabs"
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
@@ -199,7 +200,7 @@ def test_spark_write_to_s3_delta_from_db(
     )
 
     # ==== transaction_fpds ====
-    table_name = "transaction_fpds"
+    table_name = "vw_transaction_fpds"
     logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
@@ -219,23 +220,23 @@ def test_spark_write_to_s3_delta_from_db(
     schema_tables = spark.sql(f"show tables in {schema_name}").collect()
     assert len(schema_tables) == 3
     schema_table_names = [t.tableName for t in schema_tables]
-    assert "transaction_normalized" in schema_table_names
-    assert "transaction_fabs" in schema_table_names
-    assert "transaction_fpds" in schema_table_names
+    assert "vw_transaction_normalized" in schema_table_names
+    assert "vw_transaction_fabs" in schema_table_names
+    assert "vw_transaction_fpds" in schema_table_names
 
     # Now assert that we're still by-default using the unittest schema, by way of using that pytest fixture.
     # i.e. don't tell it what schema to look at
     tables = spark.sql(f"show tables").collect()
     assert len(tables) == 3
     table_names = [t.tableName for t in tables]
-    assert "transaction_normalized" in table_names
-    assert "transaction_fabs" in table_names
-    assert "transaction_fpds" in table_names
+    assert "vw_transaction_normalized" in table_names
+    assert "vw_transaction_fabs" in table_names
+    assert "vw_transaction_fpds" in table_names
 
     # Assert rows are present
-    assert spark.sql("select count(*) from transaction_normalized").collect()[0][0] == 2
-    assert spark.sql("select count(*) from transaction_fabs").collect()[0][0] == 1
-    assert spark.sql("select count(*) from transaction_fpds").collect()[0][0] == 1
+    assert spark.sql("select count(*) from vw_transaction_normalized").collect()[0][0] == 2
+    assert spark.sql("select count(*) from vw_transaction_fabs").collect()[0][0] == 1
+    assert spark.sql("select count(*) from vw_transaction_fpds").collect()[0][0] == 1
 
 
 @mark.django_db(transaction=True)

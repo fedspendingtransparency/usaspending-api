@@ -9,6 +9,7 @@ from model_bakery import baker
 
 # Imports from your apps
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
+from usaspending_api.search.models import AwardSearch
 
 
 @pytest.mark.django_db
@@ -18,7 +19,7 @@ def test_update_contract_linkages_piid_with_no_parent_piid():
     """
 
     models_to_mock = [
-        {"model": Award, "id": 999, "piid": "RANDOM_PIID", "parent_award_piid": None},
+        {"model": AwardSearch, "award_id": 999, "piid": "RANDOM_PIID", "parent_award_piid": None},
         {
             "model": FinancialAccountsByAwards,
             "financial_accounts_by_awards_id": 777,
@@ -47,8 +48,8 @@ def test_update_contract_linkages_piid_with_parent_piid():
     """
 
     models_to_mock = [
-        {"model": Award, "id": 999, "piid": "RANDOM_PIID", "parent_award_piid": "RANDOM_PARENT_PIID"},
-        {"model": Award, "id": 1999, "piid": "RANDOM_PIID_2", "parent_award_piid": None},
+        {"model": AwardSearch, "award_id": 999, "piid": "RANDOM_PIID", "parent_award_piid": "RANDOM_PARENT_PIID"},
+        {"model": AwardSearch, "award_id": 1999, "piid": "RANDOM_PIID_2", "parent_award_piid": None},
         {
             "model": FinancialAccountsByAwards,
             "financial_accounts_by_awards_id": 777,
@@ -93,7 +94,7 @@ def test_update_assistance_linkages_fain():
     """
 
     models_to_mock = [
-        {"model": Award, "id": 999, "fain": "RANDOM_FAIN"},
+        {"model": AwardSearch, "award_id": 999, "fain": "RANDOM_FAIN"},
         {"model": FinancialAccountsByAwards, "financial_accounts_by_awards_id": 777, "fain": "RANDOM_FAIN"},
     ]
 
@@ -117,7 +118,7 @@ def test_update_assistance_linkages_uri():
     """
 
     models_to_mock = [
-        {"model": Award, "id": 999, "uri": "RANDOM_URI"},
+        {"model": AwardSearch, "award_id": 999, "uri": "RANDOM_URI"},
         {"model": FinancialAccountsByAwards, "financial_accounts_by_awards_id": 777, "uri": "RANDOM_URI"},
     ]
 
@@ -141,8 +142,8 @@ def test_update_assistance_linkages_fain_and_uri():
     """
 
     models_to_mock = [
-        {"model": Award, "id": 999, "fain": "RANDOM_FAIN_999", "uri": "RANDOM_URI_999"},
-        {"model": Award, "id": 1999, "fain": "RANDOM_FAIN_1999", "uri": "RANDOM_URI_1999"},
+        {"model": AwardSearch, "award_id": 999, "fain": "RANDOM_FAIN_999", "uri": "RANDOM_URI_999"},
+        {"model": AwardSearch, "award_id": 1999, "fain": "RANDOM_FAIN_1999", "uri": "RANDOM_URI_1999"},
         {
             "model": FinancialAccountsByAwards,
             "financial_accounts_by_awards_id": 777,

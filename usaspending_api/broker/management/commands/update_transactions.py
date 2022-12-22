@@ -7,12 +7,11 @@ from django.db import connections, transaction as db_transaction, IntegrityError
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
-from usaspending_api.awards.models import Award
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
 from usaspending_api.etl.management.load_base import format_date, load_data_into_model
 from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
-
+from usaspending_api.search.models import AwardSearch
 
 logger = logging.getLogger("script")
 exception_logger = logging.getLogger("exceptions")
@@ -138,8 +137,8 @@ class Command(BaseCommand):
             funding_agency_list.append(funding_agency)
 
             # award.save() is called in Award.get_or_create_summary_award by default
-            created, award = Award.get_or_create_summary_award(
-                awarding_agency=awarding_agency,
+            created, award = AwardSearch.get_or_create_summary_award(
+                awarding_agency_id=awarding_agency.id,
                 fain=row.get("fain"),
                 uri=row.get("uri"),
                 generated_unique_award_id=row.get("unique_award_key"),
@@ -147,12 +146,12 @@ class Command(BaseCommand):
             )
 
             award_bulk.append(award)
-            award_update_id_list.append(award.id)
-            award_assistance_update_id_list.append(award.id)
+            award_update_id_list.append(award.award_id)
+            award_assistance_update_id_list.append(award.award_id)
 
         logger.info("Bulk creating {} award rows...".format(len(award_bulk)))
         try:
-            Award.objects.bulk_create(award_bulk)
+            AwardSearch.objects.bulk_create(award_bulk)
         except IntegrityError:
             logger.info("!!! DUPLICATES FOUND. Continuing... ")
 
@@ -300,8 +299,8 @@ class Command(BaseCommand):
                 awarding_agency = Agency.get_by_toptier_subtier(
                     row["awarding_agency_code"], row["awarding_sub_tier_agency_c"]
                 )
-                created, award = Award.get_or_create_summary_award(
-                    awarding_agency=awarding_agency,
+                created, award = AwardSearch.get_or_create_summary_award(
+                    awarding_agency_id=awarding_agency.id,
                     piid=row.get("piid"),
                     fain=row.get("fain"),
                     uri=row.get("uri"),
@@ -310,8 +309,8 @@ class Command(BaseCommand):
                 )
                 award.save()
 
-                award_update_id_list.append(award.id)
-                award_contract_update_id_list.append(award.id)
+                award_update_id_list.append(award.award_id)
+                award_contract_update_id_list.append(award.award_id)
 
                 parent_txn_value_map = {
                     "award": award,

@@ -52,13 +52,13 @@ ACTIVITY_SQL = SQL(
         gaids.grandchild
     from
         gather_award_ids gaids
-        inner join awards pa on pa.id = gaids.award_id
-        inner join awards ca on
+        inner join vw_awards pa on pa.id = gaids.award_id
+        inner join vw_awards ca on
             ca.parent_award_piid = pa.piid and
             ca.fpds_parent_agency_id = pa.fpds_agency_id and
             ca.type not like 'IDV%'
             {hide_edges_awarded_amount}
-        left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
+        left outer join vw_transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
         left outer join recipient_lookup rl on (
             (rl.uei is not null and rl.uei = tf.awardee_or_recipient_uei)
             OR (rl.duns is not null and rl.duns = tf.awardee_or_recipient_uniqu)
@@ -112,13 +112,13 @@ COUNT_ACTIVITY_HIDDEN_SQL = SQL(
         count(*) rollup_contract_count
     from
         gather_award_ids gaids
-        inner join awards pa on pa.id = gaids.award_id
-        inner join awards ca on
+        inner join vw_awards pa on pa.id = gaids.award_id
+        inner join vw_awards ca on
             ca.parent_award_piid = pa.piid and
             ca.fpds_parent_agency_id = pa.fpds_agency_id and
             ca.type not like 'IDV%'
             {hide_edges_awarded_amount}
-        left outer join transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
+        left outer join vw_transaction_fpds tf on tf.transaction_id = ca.latest_transaction_id
     {hide_edges_end_date}
 """
 )

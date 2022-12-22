@@ -40,9 +40,9 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
         ELSE tn.federal_action_obligation
       END, 0)::NUMERIC(23, 2) AS generated_pragmatic_obligation
   FROM
-    transaction_normalized tn
-  LEFT OUTER JOIN transaction_fpds as fpds ON tn.id = fpds.transaction_id
-  LEFT OUTER JOIN transaction_fabs as fabs ON tn.id = fabs.transaction_id
+    vw_transaction_normalized tn
+  LEFT OUTER JOIN vw_transaction_fpds as fpds ON tn.id = fpds.transaction_id
+  LEFT OUTER JOIN vw_transaction_fabs as fabs ON tn.id = fabs.transaction_id
   WHERE
     tn.action_date >= '2007-10-01'
     AND tn.type IS NOT NULL

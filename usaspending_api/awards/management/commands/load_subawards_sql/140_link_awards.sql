@@ -9,7 +9,7 @@ set
     award_id = a.id
 
 from
-    awards as a
+    vw_awards as a
 
 where
     a.generated_unique_award_id = s.unique_award_key and
