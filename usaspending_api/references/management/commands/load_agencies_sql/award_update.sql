@@ -1,7 +1,7 @@
 -- awards are linked to agencies when they're created and when new transactions are created for them.
 -- This will fix any incorrect links caused by changes to agencies.
 update
-    awards as a
+    award_search as a
 set
     awarding_agency_id = tn.awarding_agency_id,
     funding_agency_id = tn.funding_agency_id

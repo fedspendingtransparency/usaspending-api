@@ -8,9 +8,9 @@ from datetime import datetime
 def award_spending_data(db):
     ttagency = baker.make("references.ToptierAgency")
     agency = baker.make("references.Agency", id=111, toptier_flag=True, toptier_agency=ttagency)
-    award = baker.make("awards.Award", category="grants", awarding_agency=agency)
-    award1 = baker.make("awards.Award", category="contracts", awarding_agency=agency)
-    award2 = baker.make("awards.Award", category=None, awarding_agency=agency)
+    award = baker.make("search.AwardSearch", award_id=1, category="grants", awarding_agency_id=agency.id)
+    award1 = baker.make("search.AwardSearch", award_id=2, category="contracts", awarding_agency_id=agency.id)
+    award2 = baker.make("search.AwardSearch", award_id=3, category=None, awarding_agency_id=agency.id)
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,

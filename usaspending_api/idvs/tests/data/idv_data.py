@@ -1,6 +1,6 @@
 from model_bakery import baker
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 
 def set_up_related_award_objects():
@@ -68,8 +68,8 @@ def create_tree(awards):
         "type_description": "FAKE",
         "category": "contract",
         "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
         "latest_transaction": TransactionNormalized.objects.get(pk=1),

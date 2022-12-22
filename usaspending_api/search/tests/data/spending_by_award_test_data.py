@@ -1,8 +1,8 @@
 import pytest
 
 from model_bakery import baker
-from usaspending_api.awards.models import Award
 from usaspending_api.references.models.ref_program_activity import RefProgramActivity
+from usaspending_api.search.models import AwardSearch
 
 
 @pytest.fixture
@@ -56,8 +56,8 @@ def spending_by_award_test_data():
     )
 
     award_1 = baker.make(
-        "awards.Award",
-        id=1,
+        "search.AwardSearch",
+        award_id=1,
         type="A",
         category="contract",
         piid="abc111",
@@ -71,8 +71,8 @@ def spending_by_award_test_data():
         total_obligation=999999.00,
     )
     award_2 = baker.make(
-        "awards.Award",
-        id=2,
+        "search.AwardSearch",
+        award_id=2,
         type="A",
         category="contract",
         piid="abc222",
@@ -83,8 +83,8 @@ def spending_by_award_test_data():
         total_obligation=9016.00,
     )
     award_3 = baker.make(
-        "awards.Award",
-        id=3,
+        "search.AwardSearch",
+        award_id=3,
         type="A",
         category="contract",
         piid="abc333",
@@ -95,8 +95,8 @@ def spending_by_award_test_data():
         total_obligation=500000001.00,
     )
     award_4 = baker.make(
-        "awards.Award",
-        id=4,
+        "search.AwardSearch",
+        award_id=4,
         type="02",
         category="grant",
         fain="abc444",
@@ -107,8 +107,8 @@ def spending_by_award_test_data():
         total_obligation=12.00,
     )
     award_5 = baker.make(
-        "awards.Award",
-        id=5,
+        "search.AwardSearch",
+        award_id=5,
         type="A",
         category="contract",
         piid="abcdef123",
@@ -401,7 +401,7 @@ def spending_by_award_test_data():
 
     # Financial Accounts by Awards
     financial_accounts_by_awards_1 = {
-        "award": Award.objects.get(pk=1),
+        "award": AwardSearch.objects.get(award_id=1),
         "program_activity": RefProgramActivity.objects.get(pk=1),
     }
     baker.make("awards.FinancialAccountsByAwards", **financial_accounts_by_awards_1)

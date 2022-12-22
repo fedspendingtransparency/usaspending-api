@@ -41,66 +41,84 @@ def new_award_data(db):
     ag2 = baker.make(agency_lazy_ref, id=2, toptier_agency=ta2)
     ag3 = baker.make(agency_lazy_ref, id=3, toptier_agency=ta3)
 
-    awards_lazy_ref = "awards.Award"
+    awards_lazy_ref = "search.AwardSearch"
     award1 = baker.make(
         awards_lazy_ref,
-        id=1,
+        award_id=1,
         type="A",
         date_signed="2019-10-15",
+        action_date="2019-10-15",
         earliest_transaction_id=10,
         latest_transaction_id=10,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
+        funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award2 = baker.make(
         awards_lazy_ref,
-        id=2,
+        award_id=2,
         type="B",
         date_signed="2019-12-15",
+        action_date="2019-12-15",
         earliest_transaction_id=20,
         latest_transaction_id=20,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
+        funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award3 = baker.make(
         awards_lazy_ref,
-        id=3,
+        award_id=3,
         type="07",
         date_signed="2020-01-30",
+        action_date="2020-01-30",
         earliest_transaction_id=30,
         latest_transaction_id=30,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
+        funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award4 = baker.make(
         awards_lazy_ref,
-        id=4,
+        award_id=4,
         type="B",
         date_signed="2019-09-30",
+        action_date="2019-09-30",
         earliest_transaction_id=40,
         latest_transaction_id=40,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
+        funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award5 = baker.make(
         awards_lazy_ref,
-        id=5,
+        award_id=5,
         type="08",
         date_signed="2020-12-15",
+        action_date="2020-12-15",
         earliest_transaction_id=50,
         latest_transaction_id=50,
-        awarding_agency=ag1,
-        funding_agency=ag2,
+        awarding_agency_id=ag1.id,
+        awarding_toptier_agency_code=ta1.toptier_code,
+        funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
     award6 = baker.make(
         awards_lazy_ref,
-        id=6,
+        award_id=6,
         type="08",
         date_signed="2021-07-05",
+        action_date="2021-07-05",
         earliest_transaction_id=60,
         latest_transaction_id=60,
-        awarding_agency=ag3,
-        funding_agency=ag2,
+        awarding_agency_id=ag3.id,
+        awarding_toptier_agency_code=ta3.toptier_code,
+        funding_agency_id=ag2.id,
+        funding_toptier_agency_code=ta2.toptier_code,
     )
 
     transaction_search_lazy_ref = "search.TransactionSearch"

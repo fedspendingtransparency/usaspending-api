@@ -53,7 +53,7 @@ txn_totals AS (
   {predicate}
   GROUP BY tn.award_id
 )
-UPDATE awards a
+UPDATE award_search a
 SET
   update_date                             = now(),
 
@@ -85,7 +85,7 @@ INNER JOIN txn_latest   l ON e.award_id = l.award_id
 INNER JOIN txn_totals   t ON e.award_id = t.award_id
 
 WHERE
-  e.award_id = a.id
+  e.award_id = a.award_id
   AND (
        a.earliest_transaction_id                 IS DISTINCT FROM e.id
     OR a.date_signed                             IS DISTINCT FROM e.action_date
@@ -153,7 +153,7 @@ executive_comp AS (
   )
   SELECT DISTINCT ON (award_id) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
-UPDATE awards a
+UPDATE award_search a
 SET
   update_date                 = now(),
   base_and_all_options_value  = t.total_base_and_options_value,
@@ -176,7 +176,7 @@ FROM fpds_totals AS t
 INNER JOIN txn_latest AS l ON t.award_id = l.award_id
 LEFT OUTER JOIN executive_comp AS ec ON t.award_id = ec.award_id
 WHERE
-  t.award_id = a.id
+  t.award_id = a.award_id
   AND (
         a.base_and_all_options_value IS DISTINCT FROM t.total_base_and_options_value
      OR a.base_exercised_options_val IS DISTINCT FROM t.base_exercised_options_val
@@ -218,7 +218,7 @@ WITH
     )
     SELECT DISTINCT ON (award_id) * FROM sub_cte_all_transactions WHERE officer_1_name is not null
 )
-UPDATE awards a
+UPDATE award_search a
 SET
   update_date       = now(),
   officer_1_amount  = ec.officer_1_amount,
@@ -233,7 +233,7 @@ SET
   officer_5_name    = ec.officer_5_name
 FROM executive_comp AS ec
 WHERE
-  ec.award_id = a.id
+  ec.award_id = a.award_id
   AND (
        a.officer_1_amount IS DISTINCT FROM ec.officer_1_amount
     OR a.officer_1_name   IS DISTINCT FROM ec.officer_1_name
@@ -259,14 +259,14 @@ subaward_award_update_sql_string = """
     {predicate}
     GROUP BY award_id
   )
-  UPDATE awards a
+  UPDATE award_search a
     SET
       update_date           = now(),
       total_subaward_amount = subaward_totals.total_subaward_amount,
       subaward_count        = subaward_totals.subaward_count
     FROM subaward_totals
     WHERE
-      subaward_totals.award_id = a.id
+      subaward_totals.award_id = a.award_id
       AND (
            a.total_subaward_amount  IS DISTINCT FROM subaward_totals.total_subaward_amount
         OR a.subaward_count         IS DISTINCT FROM subaward_totals.subaward_count
@@ -289,7 +289,7 @@ def execute_database_statement(sql: str, values: Optional[list] = None) -> int:
 
 def convert_award_id_to_guai(award_tuple: tuple) -> tuple:
     """Scafolding code between award PK ids and unique award ids"""
-    sql = "SELECT generated_unique_award_id FROM awards WHERE id IN %s"
+    sql = "SELECT generated_unique_award_id FROM vw_awards WHERE id IN %s"
     values = [award_tuple]
     with connection.cursor() as cursor:
         cursor.execute(sql, values)
@@ -312,7 +312,7 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
 def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
     _find_empty_awards_sql = """
         SELECT a.id
-        FROM awards a
+        FROM vw_awards a
         LEFT JOIN vw_transaction_normalized tn ON tn.award_id = a.id
         WHERE tn IS NULL {}
     """.format(
@@ -335,7 +335,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
 
     _delete_parent_award_sql = "DELETE FROM parent_award WHERE award_id in ({});".format(_find_empty_awards_sql)
 
-    _prune_empty_awards_sql = "DELETE FROM awards WHERE id IN ({}) ".format(_find_empty_awards_sql)
+    _prune_empty_awards_sql = "DELETE FROM vw_awards vw_WHERE id IN ({}) ".format(_find_empty_awards_sql)
 
     return execute_database_statement(
         _modify_subawards_sql + _modify_financial_accounts_sql + _delete_parent_award_sql + _prune_empty_awards_sql,

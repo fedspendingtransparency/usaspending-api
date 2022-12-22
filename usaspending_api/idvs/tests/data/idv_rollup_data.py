@@ -91,8 +91,8 @@ def basic_idvs():
         )
 
         baker.make(
-            "awards.Award",
-            id=award_id,
+            "search.AwardSearch",
+            award_id=award_id,
             generated_unique_award_id="CONT_IDV_%s" % string_award_id,
             type=("IDV_%s" if award_id in IDVS else "CONTRACT_%s") % string_award_id,
             piid="piid_%s" % string_award_id,
@@ -275,8 +275,8 @@ def idv_from_award_id(award_id, defc):
     )
 
     baker.make(
-        "awards.Award",
-        id=award_id,
+        "search.AwardSearch",
+        award_id=award_id,
         generated_unique_award_id="CONT_IDV_%s" % string_award_id,
         type=("IDV_%s" if award_id in IDVS else "CONTRACT_%s") % string_award_id,
         piid="piid_%s" % string_award_id,

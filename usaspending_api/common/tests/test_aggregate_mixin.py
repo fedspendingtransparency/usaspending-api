@@ -11,6 +11,7 @@ from model_bakery import baker
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.mixins import AggregateQuerysetMixin
+from usaspending_api.search.models import AwardSearch
 
 
 @pytest.fixture()
@@ -34,10 +35,11 @@ def aggregate_models():
         datetime.date(2050, 7, 14),
     ]
     obligated_amts = [1000.01, 2000, None, 4000.02]
-
+    award_ids = [1, 2, 3, 4]
     # create awards
     award_recipe = Recipe(
-        Award,
+        AwardSearch,
+        award_id=cycle(award_ids),
         piid=cycle(award_piid),
         fain=cycle(award_fain),
         uri=cycle(award_uri),

@@ -53,27 +53,32 @@ def sub_agency_data_1():
 
     # Awards
     award_contract = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=1,
         category="contract",
         date_signed="2021-04-01",
     )
     award_idv = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=2,
         category="idv",
         date_signed="2020-04-01",
     )
     award_grant = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=3,
         category="grant",
         date_signed="2021-04-01",
     )
     award_loan = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=5,
         category="loans",
         date_signed="2021-04-01",
     )
     award_dp = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=6,
         category="direct payment",
         date_signed="2021-04-01",
     )
@@ -81,7 +86,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionSearch,
         transaction_id=1,
-        award_id=award_contract.id,
+        award_id=award_contract.award_id,
         award_category="contract",
         federal_action_obligation=101,
         generated_pragmatic_obligation=101,
@@ -113,7 +118,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionSearch,
         transaction_id=2,
-        award_id=award_contract.id,
+        award_id=award_contract.award_id,
         award_category="contract",
         federal_action_obligation=110,
         generated_pragmatic_obligation=110,
@@ -144,7 +149,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionSearch,
         transaction_id=3,
-        award_id=award_idv.id,
+        award_id=award_idv.award_id,
         award_category="idv",
         federal_action_obligation=102,
         generated_pragmatic_obligation=102,
@@ -166,7 +171,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionSearch,
         transaction_id=4,
-        award_id=award_grant.id,
+        award_id=award_grant.award_id,
         award_category="grant",
         federal_action_obligation=103,
         generated_pragmatic_obligation=103,
@@ -188,7 +193,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionSearch,
         transaction_id=5,
-        award_id=award_loan.id,
+        award_id=award_loan.award_id,
         award_category="loans",
         federal_action_obligation=104,
         generated_pragmatic_obligation=104,
@@ -210,7 +215,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionSearch,
         transaction_id=6,
-        award_id=award_dp.id,
+        award_id=award_dp.award_id,
         award_category="direct payment",
         federal_action_obligation=105,
         generated_pragmatic_obligation=105,
@@ -233,7 +238,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionSearch,
         transaction_id=7,
-        award_id=award_idv.id,
+        award_id=award_idv.award_id,
         award_category="direct payment",
         federal_action_obligation=300,
         generated_pragmatic_obligation=300,
@@ -255,7 +260,7 @@ def sub_agency_data_1():
     baker.make(
         TransactionSearch,
         transaction_id=8,
-        award_id=award_idv.id,
+        award_id=award_idv.award_id,
         award_category="idv",
         federal_action_obligation=400,
         generated_pragmatic_obligation=400,

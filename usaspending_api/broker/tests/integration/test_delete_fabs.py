@@ -1,11 +1,12 @@
 import pytest
 
 from model_bakery import baker
-from usaspending_api.awards.models import Award, TransactionNormalized, TransactionFABS
+
+from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, Award
 from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
 from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.search.models import TransactionSearch
+from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
 
@@ -15,7 +16,7 @@ def test_delete_fabs_success():
     """ Testing delete fabs works properly """
 
     # Award/Transaction deleted based on 1-1 transaction
-    baker.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
+    baker.make(AwardSearch, award_id=1, generated_unique_award_id="TEST_AWARD_1")
     baker.make(
         TransactionSearch,
         transaction_id=1,
@@ -26,7 +27,7 @@ def test_delete_fabs_success():
     )
 
     # Award kept despite having one of their associated transactions removed
-    baker.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
+    baker.make(AwardSearch, award_id=2, generated_unique_award_id="TEST_AWARD_2")
     baker.make(
         TransactionSearch,
         transaction_id=2,
@@ -47,7 +48,7 @@ def test_delete_fabs_success():
     )
 
     # Award/Transaction untouched at all as control
-    baker.make(Award, id=3, generated_unique_award_id="TEST_AWARD_3")
+    baker.make(AwardSearch, award_id=3, generated_unique_award_id="TEST_AWARD_3")
     baker.make(
         TransactionSearch,
         transaction_id=4,
@@ -58,7 +59,7 @@ def test_delete_fabs_success():
     )
 
     # Award is not deleted; old transaction deleted; new transaction uses old award
-    baker.make(Award, id=4, generated_unique_award_id="TEST_AWARD_4")
+    baker.make(AwardSearch, award_id=4, generated_unique_award_id="TEST_AWARD_4")
     baker.make(
         TransactionSearch,
         transaction_id=5,

@@ -164,6 +164,7 @@ def test_unreported_data_actual_value_file_b(client):
     assert expected_results == actual_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_unreported_data_actual_value_file_c(client):
     models_to_mock = [
@@ -325,6 +326,7 @@ def test_federal_account_linkage(client):
     assert json_response["results"][0]["account_number"] == "867-5309"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_budget_function_filter_success(setup_only_dabs_window, client):
 
@@ -448,6 +450,7 @@ def test_budget_function_failure(client):
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_object_class_filter_success(setup_only_dabs_window, client):
     baker.make(
@@ -544,6 +547,7 @@ def test_object_class_failure(client):
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_agency_filter_success(setup_only_dabs_window, client):
     baker.make(
@@ -696,6 +700,7 @@ def test_object_budget_match(client):
     assert json_response_1["results"][0]["amount"] == json_response_2["results"][0]["amount"]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_period(setup_only_dabs_window, client):
 
@@ -868,6 +873,7 @@ def test_period(setup_only_dabs_window, client):
     assert resp.json() == resp2.json()
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_unreported_file_c(client):
     models_to_mock = [

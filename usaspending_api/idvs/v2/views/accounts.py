@@ -41,8 +41,8 @@ ACCOUNTS_SQL = SQL(
         select  ca.id award_id,
                 ca.funding_agency_id
         from    gather_award_ids gaids
-                inner join awards pa on pa.id = gaids.award_id
-                inner join awards ca on
+                inner join vw_awards pa on pa.id = gaids.award_id
+                inner join vw_awards ca on
                     ca.parent_award_piid = pa.piid and
                     ca.fpds_parent_agency_id = pa.fpds_agency_id and
                     ca.type not like 'IDV%'

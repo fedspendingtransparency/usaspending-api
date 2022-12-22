@@ -63,9 +63,9 @@ BSD_SIGNALS = {
 }
 
 DEBUG, CLEANUP = False, False
-GET_FABS_AWARDS = "SELECT id FROM awards where is_fpds = FALSE AND id BETWEEN {minid} AND {maxid}"
-GET_FPDS_AWARDS = "SELECT id FROM awards where is_fpds = TRUE AND id BETWEEN {minid} AND {maxid}"
-GET_MIN_MAX_SQL = "SELECT MIN(id), MAX(id) FROM awards"
+GET_FABS_AWARDS = "SELECT id FROM vw_awards where is_fpds = FALSE AND id BETWEEN {minid} AND {maxid}"
+GET_FPDS_AWARDS = "SELECT id FROM vw_awards where is_fpds = TRUE AND id BETWEEN {minid} AND {maxid}"
+GET_MIN_MAX_SQL = "SELECT MIN(id), MAX(id) FROM vw_awards"
 MAX_ID, MIN_ID, CLOSING_TIME, ITERATION_ESTIMATED_SECONDS = None, None, None, None
 TOTAL_UPDATES, CHUNK_SIZE = 0, 20000
 TYPES = ("fpds", "fabs")

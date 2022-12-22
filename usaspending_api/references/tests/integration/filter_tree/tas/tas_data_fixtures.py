@@ -109,5 +109,5 @@ def _setup_tas(id, fa):
 
 
 def _setup_faba(id):
-    baker.make("awards.Award", id=id)
+    baker.make("search.AwardSearch", award_id=id)
     baker.make("awards.FinancialAccountsByAwards", treasury_account_id=id, award_id=id)

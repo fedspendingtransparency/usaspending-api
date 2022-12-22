@@ -11,14 +11,14 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def populate_models(db):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
-    baker.make("awards.Award", id=3, latest_transaction_id=3)
-    baker.make("awards.Award", id=4, latest_transaction_id=4)
-    baker.make("awards.Award", id=5, latest_transaction_id=5)
-    baker.make("awards.Award", id=6, latest_transaction_id=6)
-    baker.make("awards.Award", id=7, latest_transaction_id=7)
-    baker.make("awards.Award", id=8, latest_transaction_id=8)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=3)
+    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=4)
+    baker.make("search.AwardSearch", award_id=5, latest_transaction_id=5)
+    baker.make("search.AwardSearch", award_id=6, latest_transaction_id=6)
+    baker.make("search.AwardSearch", award_id=7, latest_transaction_id=7)
+    baker.make("search.AwardSearch", award_id=8, latest_transaction_id=8)
 
     baker.make(
         "search.TransactionSearch",
@@ -123,8 +123,8 @@ def pragmatic_fixture():
         fain="faiiin",
     )
     baker.make(
-        "awards.Award",
-        id=1,
+        "search.AwardSearch",
+        award_id=1,
         latest_transaction_id=1,
         piid="piiiiid",
         type="A",
@@ -132,8 +132,8 @@ def pragmatic_fixture():
         total_subsidy_cost=-1,
     )
     baker.make(
-        "awards.Award",
-        id=2,
+        "search.AwardSearch",
+        award_id=2,
         latest_transaction_id=2,
         piid="faiiin",
         type="07",

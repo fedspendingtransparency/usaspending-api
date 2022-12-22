@@ -8,7 +8,7 @@ from rest_framework import status
 
 @pytest.fixture
 def cfda_transactions(db):
-    award_1 = {"pk": 1, "category": "grant", "generated_unique_award_id": "whatever"}
+    award_1 = {"award_id": 1, "category": "grant", "generated_unique_award_id": "whatever"}
     trx_norm_1 = {
         "transaction_id": 1,
         "award_id": 1,
@@ -29,7 +29,7 @@ def cfda_transactions(db):
         "afa_generated_unique": "Q25B9A1MQ0",
     }
 
-    baker.make("awards.Award", **award_1)
+    baker.make("search.AwardSearch", **award_1)
     baker.make("search.TransactionSearch", **trx_norm_1)
 
 

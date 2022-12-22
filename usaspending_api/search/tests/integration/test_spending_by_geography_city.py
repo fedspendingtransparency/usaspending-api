@@ -25,7 +25,7 @@ def award_data_fixture(db):
         pop_state_code="TX",
         pop_country_code="USA",
     )
-    baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
+    baker.make("search.AwardSearch", award_id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=1,

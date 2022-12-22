@@ -43,8 +43,8 @@ def spending_over_time_test_data():
 
         # Award
         baker.make(
-            "awards.Award",
-            id=award_id,
+            "search.AwardSearch",
+            award_id=award_id,
             fain=f"fain_{transaction_id}" if not is_fpds else None,
             is_fpds=is_fpds,
             latest_transaction_id=transaction_id,
@@ -1035,7 +1035,7 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
     baker.make(
         "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
     )
-    baker.make("awards.Award", id=99, total_obligation=20, piid="0001")
+    baker.make("search.AwardSearch", award_id=99, total_obligation=20, piid="0001")
     baker.make(
         "search.TransactionSearch",
         transaction_id=99,

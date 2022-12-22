@@ -42,12 +42,12 @@ def transaction_search_1():
     awarding_agency_2 = baker.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True)
 
     # Awards
-    award_contract = baker.make("awards.Award", category="contract")
-    award_idv = baker.make("awards.Award", category="idv")
-    award_grant = baker.make("awards.Award", category="grant")
-    award_loan = baker.make("awards.Award", category="loans")
-    award_dp = baker.make("awards.Award", category="direct payment")
-    award_bc = baker.make("awards.Award", category="bad_cat")
+    award_contract = baker.make("search.AwardSearch", award_id=1, category="contract")
+    award_idv = baker.make("search.AwardSearch", award_id=2, category="idv")
+    award_grant = baker.make("search.AwardSearch", award_id=3, category="grant")
+    award_loan = baker.make("search.AwardSearch", award_id=4, category="loans")
+    award_dp = baker.make("search.AwardSearch", award_id=5, category="direct payment")
+    award_bc = baker.make("search.AwardSearch", award_id=6, category="bad_cat")
 
     baker.make(
         TransactionSearch,

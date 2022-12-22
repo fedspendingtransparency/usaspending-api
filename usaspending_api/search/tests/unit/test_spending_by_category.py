@@ -31,10 +31,10 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_reci
 
 @pytest.fixture
 def psc_test_data(db):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
-    baker.make("awards.Award", id=3, latest_transaction_id=3)
-    baker.make("awards.Award", id=4, latest_transaction_id=4)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=3)
+    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=4)
 
     baker.make(
         "search.TransactionSearch",
@@ -87,8 +87,8 @@ def psc_test_data(db):
 
 @pytest.fixture
 def cfda_test_data(db):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
 
     baker.make(
         "search.SubawardSearch",
@@ -137,10 +137,10 @@ def cfda_test_data(db):
 
 @pytest.fixture
 def naics_test_data(db):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
-    baker.make("awards.Award", id=3, latest_transaction_id=3)
-    baker.make("awards.Award", id=4, latest_transaction_id=4)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=3)
+    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=4)
 
     baker.make(
         "search.TransactionSearch",
@@ -193,8 +193,8 @@ def naics_test_data(db):
 
 @pytest.fixture
 def agency_test_data(db):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
 
     baker.make(
         "search.SubawardSearch",
@@ -333,11 +333,11 @@ def agency_test_data(db):
 
 @pytest.fixture
 def recipient_test_data(db):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
-    baker.make("awards.Award", id=3, latest_transaction_id=3)
-    baker.make("awards.Award", id=4, latest_transaction_id=4)
-    baker.make("awards.Award", id=5, latest_transaction_id=5)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=3)
+    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=4)
+    baker.make("search.AwardSearch", award_id=5, latest_transaction_id=5)
 
     baker.make(
         "search.SubawardSearch",
@@ -490,10 +490,10 @@ def recipient_test_data(db):
 
 @pytest.fixture
 def geo_test_data(db):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
-    baker.make("awards.Award", id=3, latest_transaction_id=3)
-    baker.make("awards.Award", id=4, latest_transaction_id=4)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=3)
+    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=4)
 
     baker.make(
         "search.SubawardSearch",
@@ -631,8 +631,8 @@ def geo_test_data(db):
 
 @pytest.fixture
 def federal_accounts_test_data(db):
-    baker.make("awards.Award", id=1, latest_transaction_id=1)
-    baker.make("awards.Award", id=2, latest_transaction_id=2)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
 
     baker.make(
         "search.TransactionSearch",

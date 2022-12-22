@@ -5,8 +5,6 @@ import json
 from rest_framework import status
 from model_bakery import baker
 
-from usaspending_api.references.models import Agency
-
 
 @pytest.fixture
 def awards_and_transactions(db):
@@ -685,9 +683,9 @@ def awards_and_transactions(db):
 
     # Awards
     award_1 = {
-        "pk": 1,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "award_id": 1,
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "latest_transaction_id": 1,
         "category": "grant",
         "date_signed": "2005-04-03",
@@ -706,9 +704,9 @@ def awards_and_transactions(db):
         "uri": 1234,
     }
     award_2 = {
-        "pk": 2,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "award_id": 2,
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "latest_transaction_id": 2,
         "base_and_all_options_value": 2000,
         "category": "contract",
@@ -731,9 +729,9 @@ def awards_and_transactions(db):
         "type_description": "DEFINITIVE CONTRACT",
     }
     award_3 = {
-        "pk": 3,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "award_id": 3,
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "latest_transaction_id": 3,
         "base_and_all_options_value": 600,
         "category": "grant",
@@ -751,9 +749,9 @@ def awards_and_transactions(db):
         "type_description": "FORMULA GRANT (A)",
     }
     award_4 = {
-        "pk": 4,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "award_id": 4,
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "latest_transaction_id": 3,
         "base_and_all_options_value": 600,
         "category": "idv",
@@ -771,9 +769,9 @@ def awards_and_transactions(db):
         "type_description": "INDEFINITE DELIVERY CONTRACT",
     }
     award_5 = {
-        "pk": 5,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "award_id": 5,
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "latest_transaction_id": 6,
         "base_and_all_options_value": 2000,
         "category": "contract",
@@ -796,9 +794,9 @@ def awards_and_transactions(db):
         "type_description": "DEFINITIVE CONTRACT",
     }
     award_6 = {
-        "pk": 6,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "award_id": 6,
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "latest_transaction_id": 7,
         "base_and_all_options_value": 2000,
         "category": "contract",
@@ -821,7 +819,7 @@ def awards_and_transactions(db):
         "type_description": "DEFINITIVE CONTRACT",
     }
     award_7 = {
-        "pk": 7,
+        "award_id": 7,
         "latest_transaction_id": 8,
         "category": "contract",
         "fpds_parent_agency_id": 1000,
@@ -831,7 +829,7 @@ def awards_and_transactions(db):
         "type": "A",
     }
     award_8 = {
-        "pk": 8,
+        "award_id": 8,
         "latest_transaction_id": 9,
         "category": "idv",
         "fpds_parent_agency_id": 1000,
@@ -841,7 +839,7 @@ def awards_and_transactions(db):
         "type": "IDV_A",
     }
     award_9 = {
-        "pk": 9,
+        "award_id": 9,
         "latest_transaction_id": 10,
         "category": "idv",
         "fpds_parent_agency_id": None,
@@ -851,7 +849,7 @@ def awards_and_transactions(db):
         "type": "IDV_A",
     }
     award_10 = {
-        "pk": 10,
+        "award_id": 10,
         "latest_transaction_id": 11,
         "category": "contract",
         "fpds_parent_agency_id": None,
@@ -861,15 +859,15 @@ def awards_and_transactions(db):
         "type": "A",
     }
     award_11 = {
-        "pk": 11,
+        "award_id": 11,
         "type": "03",
         "type_description": "FORMULA GRANT (A)",
         "category": "grant",
         "piid": "000",
         "parent_award_piid": "000",
         "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "total_obligation": 600,
         "base_and_all_options_value": 600,
         "period_of_performance_start_date": "2004-02-04",
@@ -881,9 +879,9 @@ def awards_and_transactions(db):
         "date_signed": "2004-03-02",
     }
     award_13 = {
-        "pk": 13,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "award_id": 13,
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "latest_transaction_id": 13,
         "category": "grant",
         "date_signed": "2005-04-03",
@@ -902,18 +900,18 @@ def awards_and_transactions(db):
         "uri": 1234,
     }
 
-    baker.make("awards.Award", **award_1)
-    baker.make("awards.Award", **award_2)
-    baker.make("awards.Award", **award_3)
-    baker.make("awards.Award", **award_4)
-    baker.make("awards.Award", **award_5)
-    baker.make("awards.Award", **award_6)
-    baker.make("awards.Award", **award_7)
-    baker.make("awards.Award", **award_8)
-    baker.make("awards.Award", **award_9)
-    baker.make("awards.Award", **award_10)
-    baker.make("awards.Award", **award_11)
-    baker.make("awards.Award", **award_13)
+    baker.make("search.AwardSearch", **award_1)
+    baker.make("search.AwardSearch", **award_2)
+    baker.make("search.AwardSearch", **award_3)
+    baker.make("search.AwardSearch", **award_4)
+    baker.make("search.AwardSearch", **award_5)
+    baker.make("search.AwardSearch", **award_6)
+    baker.make("search.AwardSearch", **award_7)
+    baker.make("search.AwardSearch", **award_8)
+    baker.make("search.AwardSearch", **award_9)
+    baker.make("search.AwardSearch", **award_10)
+    baker.make("search.AwardSearch", **award_11)
+    baker.make("search.AwardSearch", **award_13)
 
     # Parent Award
     parent_award_1 = {
@@ -944,8 +942,8 @@ def awards_and_transactions(db):
 
 @pytest.fixture
 def update_awards(db):
-    baker.make("awards.Award", pk=11)
-    baker.make("awards.Award", pk=12)
+    baker.make("search.AwardSearch", award_id=11)
+    baker.make("search.AwardSearch", award_id=12)
 
 
 def test_award_last_updated_endpoint(client, update_awards):

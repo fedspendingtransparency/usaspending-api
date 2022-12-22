@@ -304,14 +304,14 @@ def award_annotations(filters: dict):
     annotation_fields = {
         "award_base_action_date_fiscal_year": FiscalYear("date_signed"),
         "treasury_accounts_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
             .annotate(value=StringAggWithDefault("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
             .annotate(
                 value=StringAggWithDefault(
@@ -325,16 +325,16 @@ def award_annotations(filters: dict):
             Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "disaster_emergency_fund_codes"
-        + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(def_codes=def_codes, award_id_col="id"),
+        + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(def_codes=def_codes, award_id_col="award_id"),
         "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(
-            def_codes=def_codes, award_id_col="id"
+            def_codes=def_codes, award_id_col="award_id"
         ),
         "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(
-            def_codes=def_codes, award_id_col="id"
+            def_codes=def_codes, award_id_col="award_id"
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("id"), object_class_id__isnull=False
+                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
             )
             .annotate(
                 value=ExpressionWrapper(
@@ -349,7 +349,7 @@ def award_annotations(filters: dict):
         ),
         "program_activities_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("id"), program_activity_id__isnull=False
+                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), program_activity_id__isnull=False
             )
             .annotate(
                 value=ExpressionWrapper(
@@ -368,7 +368,7 @@ def award_annotations(filters: dict):
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
         "cfda_numbers_and_titles": Subquery(
-            TransactionFABS.objects.filter(transaction__award_id=OuterRef("id"))
+            TransactionFABS.objects.filter(transaction__award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     ConcatAll(F("cfda_number"), Value(": "), F("cfda_title")),
@@ -388,14 +388,14 @@ def idv_order_annotations(filters: dict):
     annotation_fields = {
         "award_base_action_date_fiscal_year": FiscalYear("date_signed"),
         "treasury_accounts_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
             .annotate(value=StringAggWithDefault("treasury_account__tas_rendering_label", ";", distinct=True))
             .values("value"),
             output_field=TextField(),
         ),
         "federal_accounts_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("id"))
+            FinancialAccountsByAwards.objects.filter(award_id=OuterRef("award_id"))
             .values("award_id")
             .annotate(
                 value=StringAggWithDefault(
@@ -409,12 +409,12 @@ def idv_order_annotations(filters: dict):
             Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
         ),
         "disaster_emergency_fund_codes"
-        + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(award_id_col="id"),
-        "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(award_id_col="id"),
-        "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(award_id_col="id"),
+        + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(award_id_col="award_id"),
+        "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(award_id_col="award_id"),
+        "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(award_id_col="award_id"),
         "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
         "object_classes_funding_this_award": Subquery(
-            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("id"))
+            FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
                     ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
@@ -428,7 +428,7 @@ def idv_order_annotations(filters: dict):
         ),
         "program_activities_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("id"), program_activity_id__isnull=False
+                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), program_activity_id__isnull=False
             )
             .annotate(
                 value=ExpressionWrapper(
@@ -543,7 +543,9 @@ def subaward_annotations(filters: dict):
         "prime_award_treasury_accounts_funding_this_award": Subquery(
             Award.objects.filter(id=OuterRef("award_id"))
             .annotate(
-                value=StringAggWithDefault("financial_set__treasury_account__tas_rendering_label", ";", distinct=True)
+                value=StringAggWithDefault(
+                    "awardsearch__financial_set__treasury_account__tas_rendering_label", ";", distinct=True
+                )
             )
             .values("value"),
             output_field=TextField(),
@@ -552,7 +554,9 @@ def subaward_annotations(filters: dict):
             Award.objects.filter(id=OuterRef("award_id"))
             .annotate(
                 value=StringAggWithDefault(
-                    "financial_set__treasury_account__federal_account__federal_account_code", ";", distinct=True
+                    "awardsearch__financial_set__treasury_account__federal_account__federal_account_code",
+                    ";",
+                    distinct=True,
                 )
             )
             .values("value"),

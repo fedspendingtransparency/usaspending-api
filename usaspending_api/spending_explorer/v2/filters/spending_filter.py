@@ -71,7 +71,7 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # award, award_category
             elif key == "award" or key == "award_category":
-                alt_set = alt_set.filter(award__id=value)
+                alt_set = alt_set.filter(award__award_id=value)
 
             # agency
             elif key == "agency":
@@ -114,7 +114,9 @@ def spending_filter(alt_set, queryset, filters, _type):
             # award, award_category
             elif key == "award" or key == "award_category":
                 queryset = queryset.filter(
-                    treasury_account__in=alt_set.filter(award__id=value).values_list("treasury_account_id", flat=True)
+                    treasury_account__in=alt_set.filter(award__award_id=value).values_list(
+                        "treasury_account_id", flat=True
+                    )
                 )
 
             # agency

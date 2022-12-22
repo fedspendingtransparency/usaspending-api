@@ -4,7 +4,7 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def awards_and_transactions(db):
     baker.make("references.NAICS", code="33", description="Manufacturing")
 
     award_1_model = {
-        "pk": 1,
+        "award_id": 1,
         "latest_transaction_id": 1,
         "type": "IDV_B_B",
         "category": "idv",
@@ -47,12 +47,12 @@ def awards_and_transactions(db):
         "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "date_signed": "2005-04-03",
     }
     award_2_model = {
-        "pk": 2,
+        "award_id": 2,
         "latest_transaction_id": 2,
         "type": "IDV_A",
         "type_description": "GWAC",
@@ -60,8 +60,8 @@ def awards_and_transactions(db):
         "piid": "5678",
         "parent_award_piid": "1234",
         "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -76,7 +76,7 @@ def awards_and_transactions(db):
         "officer_2_amount": 1234.00,
     }
     award_3_model = {
-        "pk": 3,
+        "award_id": 3,
         "latest_transaction_id": 3,
         "type": "IDV_A",
         "type_description": "GWAC",
@@ -84,8 +84,8 @@ def awards_and_transactions(db):
         "piid": "9123",
         "parent_award_piid": "1234",
         "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "total_obligation": 1000,
         "base_and_all_options_value": 2000,
         "period_of_performance_start_date": "2004-02-04",
@@ -95,9 +95,9 @@ def awards_and_transactions(db):
         "subaward_count": 10,
         "date_signed": "2004-03-02",
     }
-    baker.make("awards.Award", **award_1_model)
-    baker.make("awards.Award", **award_2_model)
-    baker.make("awards.Award", **award_3_model)
+    baker.make("search.AwardSearch", **award_1_model)
+    baker.make("search.AwardSearch", **award_2_model)
+    baker.make("search.AwardSearch", **award_3_model)
 
     asst_data = {"is_fpds": False, "transaction_id": 1, "award_id": 1, "cfda_number": 1234, "cfda_title": "farms"}
     baker.make("search.TransactionSearch", **asst_data)

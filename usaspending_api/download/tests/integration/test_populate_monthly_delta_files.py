@@ -24,8 +24,8 @@ def monthly_download_delta_data(db, monkeypatch):
     i = 1
     fiscal_year = 2020
     baker.make(
-        "awards.Award",
-        id=i,
+        "search.AwardSearch",
+        award_id=i,
         generated_unique_award_id="CONT_AWD_1_0_0",
         is_fpds=True,
         type="B",
@@ -421,8 +421,8 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
     assert f"FY(All)_001_Assistance_Delta_{formatted_date}.zip" not in file_list
 
     baker.make(
-        "awards.Award",
-        id=2,
+        "search.AwardSearch",
+        award_id=2,
         is_fpds=False,
         type="02",
         type_description="Block Grant",

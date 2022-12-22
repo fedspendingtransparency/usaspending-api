@@ -10,7 +10,7 @@ class TransactionDeltaTestCase(TransactionTestCase):
     def setUp(self):
         for _id in range(1, 5):
             baker.make("search.TransactionSearch", transaction_id=_id, is_fpds=True)
-            baker.make("awards.Award", id=_id, latest_transaction_id=_id)
+            baker.make("search.AwardSearch", award_id=_id, latest_transaction_id=_id)
 
     @staticmethod
     def test_get_max_created_at():

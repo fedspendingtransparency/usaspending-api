@@ -20,7 +20,7 @@ def award_data_fixture(db):
         recipient_location_country_code="UNITED STATES",
         piid="IND12PB00323",
     )
-    baker.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
     baker.make(
         "search.TransactionSearch",
@@ -35,7 +35,7 @@ def award_data_fixture(db):
         recipient_location_country_code="GBR",
         piid="0001",
     )
-    baker.make("awards.Award", id=2, latest_transaction_id=2, is_fpds=True, type="A", piid="0001")
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2, is_fpds=True, type="A", piid="0001")
 
     baker.make(
         "search.TransactionSearch",
@@ -49,7 +49,7 @@ def award_data_fixture(db):
         recipient_location_state_code="PA",
         piid="0002",
     )
-    baker.make("awards.Award", id=3, latest_transaction_id=3, is_fpds=True, type="04", piid="0002")
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=3, is_fpds=True, type="04", piid="0002")
 
     baker.make(
         "search.TransactionSearch",
@@ -64,7 +64,7 @@ def award_data_fixture(db):
         recipient_location_country_code="USA",
         piid="0003",
     )
-    baker.make("awards.Award", id=4, latest_transaction_id=4, is_fpds=True, type="A", piid="0003")
+    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=4, is_fpds=True, type="A", piid="0003")
 
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
     baker.make("references.RefCountryCode", country_code="GBR", country_name="UNITED KINGDOM")
