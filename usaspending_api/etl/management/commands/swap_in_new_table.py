@@ -196,12 +196,12 @@ class Command(BaseCommand):
                     sql_view_template.format(
                         old_view_name=dep_view["dep_view_fullname"], new_view_name=f"{dep_view['dep_view_name']}_old"
                     ),
+                    f"ALTER VIEW temp.{dep_view['dep_view_name']}_temp SET SCHEMA {dep_view['dep_view_schema']};",
                     sql_view_template.format(
                         old_view_name=f"{dep_view['dep_view_fullname']}_temp", new_view_name=dep_view["dep_view_name"]
                     ),
                 ]
             )
-
         cursor.execute("\n".join(rename_sql))
 
     def drop_old_table_sql(self, cursor):
@@ -341,7 +341,7 @@ class Command(BaseCommand):
             #       the recreated views will automatically update and stay pointed to it in the swap via postgres
             logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}_temp")
             dep_view_sql = dep_view["dep_view_sql"].replace(self.curr_table_name, self.temp_table_name)
-            cursor.execute(f"CREATE VIEW {dep_view['dep_view_fullname']}_temp AS ({dep_view_sql});")
+            cursor.execute(f"CREATE VIEW temp.{dep_view['dep_view_name']}_temp AS ({dep_view_sql});")
 
     def validate_foreign_keys(self, cursor):
         logger.info("Verifying that Foreign Key constraints are not found")
