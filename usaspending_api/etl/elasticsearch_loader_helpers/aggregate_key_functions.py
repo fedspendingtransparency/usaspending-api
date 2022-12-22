@@ -16,9 +16,9 @@ def award_recipient_agg_key(record: dict) -> str:
 
 def transaction_recipient_agg_key(record: dict) -> str:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
-    if record["recipient_hash"] is None or record["recipient_levels"] is None:
+    if record["recipient_hash"] is None:
         return ""
-    return str(record["recipient_hash"]) + "/" + (return_one_level(record["recipient_levels"]) or "")
+    return str(record["recipient_hash"]) + "/" + (return_one_level(record["recipient_levels"] or []) or "")
 
 
 def return_one_level(levels: List[str]) -> Optional[str]:
