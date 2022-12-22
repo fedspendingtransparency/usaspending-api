@@ -1,20 +1,12 @@
 import logging
 import re
 
-from django.conf import settings
 from django.core.management import BaseCommand
 from django.db import connection, ProgrammingError, transaction
 
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 
 logger = logging.getLogger("script")
-
-
-VIEWS_TO_UPDATE = {
-    "award_search": [
-        settings.APP_DIR / "database_scripts" / "matviews" / "vw_es_award_search.sql",
-    ]
-}
 
 
 class Command(BaseCommand):
@@ -98,15 +90,12 @@ class Command(BaseCommand):
             self.cleanup_old_data(cursor)
             self.swap_constraints_sql(cursor)
             self.swap_index_sql(cursor)
-            if self.dep_views:
-                self.create_temp_views(cursor)
-                self.drop_old_views(cursor)
-            self.swap_table_sql(cursor)
+            self.create_new_views(cursor)
+            self.swap_table_view_sql(cursor)
             if not options["keep_old_data"]:
+                self.drop_old_views(cursor)
                 self.drop_old_table_sql(cursor)
             self.extra_sql(cursor)
-            if self.dep_views:
-                self.rename_temp_views(cursor)
 
     def cleanup_old_data(self, cursor):
         """
@@ -188,20 +177,32 @@ class Command(BaseCommand):
             cursor.execute("\n".join(rename_sql))
 
     @transaction.atomic
-    def swap_table_sql(self, cursor):
-        logger.info("Renaming the new and old tables")
-        sql_template = "ALTER TABLE {old_table_name} RENAME TO {new_table_name};"
+    def swap_table_view_sql(self, cursor):
+        logger.info("Renaming the new and old tables and views")
+        sql_table_template = "ALTER TABLE {old_table_name} RENAME TO {new_table_name};"
 
         rename_sql = [
             f"ALTER TABLE {self.temp_table_name} SET SCHEMA {self.curr_schema_name};",
-            sql_template.format(old_table_name=self.curr_table_name, new_table_name=f"{self.curr_table_name}_old"),
-            sql_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
+            sql_table_template.format(
+                old_table_name=self.curr_table_name, new_table_name=f"{self.curr_table_name}_old"
+            ),
+            sql_table_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
         ]
-        cursor.execute("\n".join(rename_sql))
 
-        # Update views to use the new "current" table following the swap
-        for view_sql in VIEWS_TO_UPDATE.get(self.curr_table_name, []):
-            cursor.execute(view_sql.read_text())
+        sql_view_template = "ALTER VIEW {old_view_name} RENAME TO {new_view_name};"
+        for dep_view in self.dep_views:
+            rename_sql.extend(
+                [
+                    sql_view_template.format(
+                        old_view_name=dep_view["dep_view_fullname"], new_view_name=f"{dep_view['dep_view_name']}_old"
+                    ),
+                    sql_view_template.format(
+                        old_view_name=f"{dep_view['dep_view_fullname']}_temp", new_view_name=dep_view["dep_view_name"]
+                    ),
+                ]
+            )
+
+        cursor.execute("\n".join(rename_sql))
 
     def drop_old_table_sql(self, cursor):
         # Instead of using CASCADE, all old constraints and indexes are dropped manually
@@ -218,6 +219,11 @@ class Command(BaseCommand):
 
         cursor.execute("\n".join(drop_sql))
         self.cleanup_old_data(cursor)
+
+    def drop_old_views(self, cursor):
+        for dep_view in self.dep_views:
+            logger.info(f"Dropping old dependent view: {dep_view['dep_view_fullname']}_old")
+            cursor.execute(f"DROP VIEW {dep_view['dep_view_fullname']}_old;")
 
     def extra_sql(self, cursor):
         cursor.execute(f"ANALYZE VERBOSE {self.curr_table_name}")
@@ -329,23 +335,13 @@ class Command(BaseCommand):
         dep_views = ordered_dictionary_fetcher(cursor)
         return dep_views
 
-    def create_temp_views(self, cursor):
+    def create_new_views(self, cursor):
         for dep_view in self.dep_views:
             # Note: Despite pointing at the new temp table at first,
             #       the recreated views will automatically update and stay pointed to it in the swap via postgres
-            logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}")
+            logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}_temp")
             dep_view_sql = dep_view["dep_view_sql"].replace(self.curr_table_name, self.temp_table_name)
             cursor.execute(f"CREATE VIEW {dep_view['dep_view_fullname']}_temp AS ({dep_view_sql});")
-
-    def drop_old_views(self, cursor):
-        for dep_view in self.dep_views:
-            logger.info(f"Dropping dependent view: {dep_view['dep_view_fullname']}")
-            cursor.execute(f"DROP VIEW {dep_view['dep_view_fullname']};")
-
-    def rename_temp_views(self, cursor):
-        for dep_view in self.dep_views:
-            logger.info(f"Renaming temp view: {dep_view['dep_view_fullname']}_temp -> {dep_view['dep_view_fullname']}")
-            cursor.execute(f"ALTER VIEW {dep_view['dep_view_fullname']}_temp RENAME TO {dep_view['dep_view_name']};")
 
     def validate_foreign_keys(self, cursor):
         logger.info("Verifying that Foreign Key constraints are not found")
