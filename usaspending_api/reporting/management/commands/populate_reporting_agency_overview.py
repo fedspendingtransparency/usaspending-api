@@ -115,8 +115,8 @@ TEMP_TABLE_CONTENTS = {
             -- Exact same columns are mentioned in GROUP BY instead of using DISTINCT
             -- for better performance
             fa.toptier_code,
-            vw_awards.award_id AS award_id,
-            vw_awards.is_fpds,
+            award_search.award_id AS award_id,
+            award_search.is_fpds,
             transactions.fiscal_year,
             CASE
                 -- Belongs to quarterly submission so lets get the last period of the quarter
@@ -126,7 +126,7 @@ TEMP_TABLE_CONTENTS = {
                 ELSE transactions.fiscal_period
             END AS fiscal_period
         FROM
-            vw_awards
+            award_search
         INNER JOIN
             (
                 SELECT
@@ -139,12 +139,12 @@ TEMP_TABLE_CONTENTS = {
                 WHERE
                     tn.action_date >= '2016-10-01'
                     AND tn.awarding_agency_id IS NOT NULL
-            ) AS transactions ON (transactions.award_id = vw_awards.award_id)
+            ) AS transactions ON (transactions.award_id = award_search.award_id)
         INNER JOIN LATERAL (
             SELECT ta.toptier_code
             FROM agency AS ag
             INNER JOIN toptier_agency AS ta ON (ag.toptier_agency_id = ta.toptier_agency_id)
-            WHERE ag.id = vw_awards.awarding_agency_id
+            WHERE ag.id = award_search.awarding_agency_id
         ) AS fa ON true
         LEFT OUTER JOIN
             {TempTableName.QUARTERLY_LOOKUP.value} AS ql ON (
@@ -154,13 +154,13 @@ TEMP_TABLE_CONTENTS = {
             )
         WHERE
             (
-                (awards.type IN ('07', '08') AND vw_awards.total_subsidy_cost > 0)
-                OR vw_awards.type NOT IN ('07', '08')
-            ) AND vw_awards.certified_date >= '2016-10-01'
+                (award_search.type IN ('07', '08') AND award_search.total_subsidy_cost > 0)
+                OR award_search.type NOT IN ('07', '08')
+            ) AND award_search.certified_date >= '2016-10-01'
         GROUP BY
             fa.toptier_code,
-            vw_awards.award_id,
-            vw_awards.is_fpds,
+            award_search.award_id,
+            award_search.is_fpds,
             transactions.fiscal_year,
             CASE
                 -- Belongs to quarterly submission so lets get the last period of the quarter

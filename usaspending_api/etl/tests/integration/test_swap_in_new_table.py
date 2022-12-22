@@ -137,7 +137,7 @@ def test_constraint_validation(caplog, monkeypatch):
         cursor.execute(
             "CREATE TABLE test_table (col1 TEXT, col2 INT);"
             "CREATE TABLE test_table_temp (col1 TEXT, col2 INT);"
-            "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
+            "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES award_search (award_id);"
         )
         try:
             call_command("swap_in_new_table", "--table=test_table")

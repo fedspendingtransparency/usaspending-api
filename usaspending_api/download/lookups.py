@@ -67,7 +67,7 @@ VALUE_MAPPINGS = {
     "elasticsearch_awards": {
         "source_type": "award",
         "table": AwardSearch,
-        "table_name": "award_search",
+        "table_name": "award",
         "type_name": "PrimeAwardSummaries",
         "download_name": "{agency}{type}_PrimeAwardSummaries_{timestamp}",
         "contract_data": "latest_transaction__contract_data",

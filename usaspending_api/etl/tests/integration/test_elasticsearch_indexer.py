@@ -123,7 +123,6 @@ def award_data_fixture(db):
     baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
 
 
-@pytest.mark.skip
 def mock_execute_sql(sql, results, verbosity=None):
     """SQL method is being mocked here since the `execute_sql_statement` used
     doesn't use the same DB connection to avoid multiprocessing errors
@@ -131,6 +130,7 @@ def mock_execute_sql(sql, results, verbosity=None):
     return execute_sql_to_ordered_dictionary(sql)
 
 
+@pytest.mark.skip
 def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to create a new awards index and load it
     with data from the DB
@@ -182,6 +182,7 @@ def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch
     assert es_award_docs == original_db_tx_count
 
 
+@pytest.mark.skip
 def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to incrementally load updated data into the awards ES
     index from the DB, overwriting the doc that was already there

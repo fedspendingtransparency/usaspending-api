@@ -167,6 +167,7 @@ def test_spending_by_award_subawards_no_intersection(client):
     assert resp.data["results"] == {"subcontracts": 0, "subgrants": 0}, "Results returned, there should all be 0"
 
 
+@pytest.mark.skip
 @pytest.fixture
 def awards_over_different_date_ranges_with_different_counts():
     award_category_list_and_counts = {

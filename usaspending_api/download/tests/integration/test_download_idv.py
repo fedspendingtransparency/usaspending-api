@@ -70,6 +70,7 @@ def download_test_data(db):
         type="IDV_A",
         action_date="2018-01-01",
         awarding_agency_id=aa1.id,
+        generated_unique_award_id="CONT_IDV_tc1piid_123",
     )
     award2 = baker.make(
         "search.AwardSearch",
@@ -79,6 +80,7 @@ def download_test_data(db):
         type="A",
         action_date="2018-01-01",
         awarding_agency_id=aa2.id,
+        generated_unique_award_id="CONT_AWD_tc2piid_456",
     )
     award3 = baker.make(
         "search.AwardSearch",
@@ -88,6 +90,7 @@ def download_test_data(db):
         type="02",
         action_date="2018-01-01",
         awarding_agency_id=aa2.id,
+        generated_unique_award_id="ASST_NON_ta1fain_456",
     )
     # Create Transactions
     baker.make(

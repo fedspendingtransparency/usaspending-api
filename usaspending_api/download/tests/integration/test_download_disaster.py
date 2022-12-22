@@ -375,6 +375,7 @@ def awards_and_transactions():
     update_awards()
 
 
+@pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
 def test_csv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -397,6 +398,7 @@ def test_csv_download_success(client, monkeypatch, awards_and_transactions, elas
     assert re.match(r".*COVID-19_Profile_2021-09-20_H20M11S49647843.zip", resp_json["file_url"])
 
 
+@pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
 def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -408,6 +410,7 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
     assert resp_json["download_request"]["file_format"] == "tsv"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
 def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -419,6 +422,7 @@ def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, el
     assert resp_json["download_request"]["file_format"] == "pstxt"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
 def test_download_failure_with_two_defc(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)

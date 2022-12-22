@@ -155,7 +155,9 @@ class Explorer(object):
         # Award Category Queryset
         alt_set = (
             self.alt_set.annotate(
-                id=F("award__id"), type=Value("award_category", output_field=TextField()), name=F("award__category")
+                id=F("award__award_id"),
+                type=Value("award_category", output_field=TextField()),
+                name=F("award__category"),
             )
             .values("id", "type", "piid", "fain", "uri", "name", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
@@ -168,7 +170,7 @@ class Explorer(object):
         # Awards Queryset
         alt_set = (
             self.alt_set.annotate(
-                id=F("award__id"),
+                id=F("award__award_id"),
                 generated_unique_award_id=F("award__generated_unique_award_id"),
                 type=Value("award", output_field=TextField()),
             )
