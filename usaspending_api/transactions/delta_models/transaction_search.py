@@ -1033,6 +1033,4 @@ transaction_search_load_sql_string = fr"""
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
     ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)
-    WHERE
-        transaction_normalized.action_date >= '2000-10-01'
 """
