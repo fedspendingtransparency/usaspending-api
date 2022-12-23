@@ -442,7 +442,8 @@ class Command(BaseCommand):
         # values will come from the subquery.
         set_cols = [
             f"int.transaction_normalized.{col_name} = source_subquery.{col_name}"
-            for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in ("create_date", "update_date")
+            for col_name in TRANSACTION_NORMALIZED_COLUMNS
+            if col_name not in ("create_date", "update_date")
         ]
         set_cols.append(f"""int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'""")
 
@@ -535,9 +536,9 @@ class Command(BaseCommand):
         )
 
         self.logger.info("Updating transaction_id_seq to the new maximum id value seen so far")
-        poss_max_id = self.spark.sql(
-            "SELECT MAX(transaction_id) AS max_id FROM int.transaction_id_lookup"
-        ).collect()[0]["max_id"]
+        poss_max_id = self.spark.sql("SELECT MAX(transaction_id) AS max_id FROM int.transaction_id_lookup").collect()[
+            0
+        ]["max_id"]
         if poss_max_id is None:
             # Since initial_run will always start the id sequence from at least 1, and we take the max of
             # poss_max_id and previous_max_id below, this can be set to 0 here.
@@ -684,9 +685,9 @@ class Command(BaseCommand):
                 f"""
                 INSERT OVERWRITE {destination_database}.{destination_table}
                     SELECT
-                        tn.id AS transaction_id, 
-                        dap.detached_award_procurement_id, 
-                        pfabs.published_fabs_id, 
+                        tn.id AS transaction_id,
+                        dap.detached_award_procurement_id,
+                        pfabs.published_fabs_id,
                         tn.transaction_unique_id
                     FROM raw.transaction_normalized AS tn
                     LEFT JOIN raw.detached_award_procurement AS dap ON (
@@ -866,8 +867,10 @@ class Command(BaseCommand):
                 except AnalysisException as e:
                     if re.match(rf"Table or view not found: raw\.{destination_table}", e.desc):
                         # In this case, we just don't copy anything over
-                        self.logger.warn(f"Skipping copy of {destination_table} table from 'raw' to 'int' database; "
-                                         f"no raw.{destination_table} table.")
+                        self.logger.warn(
+                            f"Skipping copy of {destination_table} table from 'raw' to 'int' database; "
+                            f"no raw.{destination_table} table."
+                        )
                     else:
                         # Don't try to handle anything else
                         raise e
