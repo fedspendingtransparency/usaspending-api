@@ -1032,7 +1032,7 @@ transaction_search_load_sql_string = fr"""
         INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
-    ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)\
+    ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)
     WHERE
         TRUE
 """
