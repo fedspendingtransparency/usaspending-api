@@ -17,6 +17,7 @@ from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fpds,
 )
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     configure_spark_session,
@@ -92,18 +93,24 @@ class Command(BaseCommand):
             self.spark_s3_bucket = options["spark_s3_bucket"]
             self.no_initial_copy = options["no_initial_copy"]
 
+            # Capture minimum last load date of the source tables to update the "last_load_date" after completion
+            last_procure_load = get_last_load_date("source_procurement_transaction")
+            last_assist_load = get_last_load_date("source_assistance_transaction")
+            if last_procure_load is None:
+                last_procure_load = datetime.utcfromtimestamp(0)
+            if last_assist_load is None:
+                last_assist_load = datetime.utcfromtimestamp(0)
+            next_last_load = min(last_assist_load, last_procure_load)
+
             if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
-                self.initial_run()
+                self.initial_run(next_last_load)
                 return
-
-            # Capture start of the ETL to update the "last_load_date" after completion
-            etl_start = datetime.now(timezone.utc)
 
             self.logger.info(f"Running delete SQL for '{self.etl_level}' ETL")
             self.spark.sql(self.delete_records_sql())
 
-            last_etl_date = get_last_load_date(self.etl_level, lookback_minutes=15)
+            last_etl_date = get_last_load_date(self.etl_level)
             if last_etl_date is None:
                 # Table has not been loaded yet.  To avoid checking for None in all the locations where
                 # last_etl_date is used, set it to a long time ago.
@@ -118,10 +125,11 @@ class Command(BaseCommand):
             elif self.etl_level in ("transaction_fabs", "transaction_fpds"):
                 self.spark.sql(self.transaction_fabs_fpds_merge_into_sql())
             elif self.etl_level == "transaction_normalized":
+                create_ref_temp_views(self.spark)
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fabs"))
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fpds"))
 
-            update_last_load_date(self.etl_level, etl_start)
+            update_last_load_date(self.etl_level, next_last_load)
 
     @contextmanager
     def prepare_spark(self):
@@ -216,18 +224,21 @@ class Command(BaseCommand):
     def source_subquery_sql(self, transaction_type=None):
         def handle_column(col, bronze_table_name):
             if col.handling == "cast":
-                return f"CAST({bronze_table_name}.{col.bronze_name} AS {col.delta_type}) AS {col.silver_name}"
+                return f"CAST({bronze_table_name}.{col.source} AS {col.delta_type}) AS {col.dest_name}"
             elif col.handling == "literal":
-                # Use col.bronze_name directly as the value
-                return f"{col.bronze_name} AS {col.silver_name}"
+                # Use col.source directly as the value
+                return f"{col.source} AS {col.dest_name}"
+            elif col.handling == "truncate_string_date":
+                # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded
+                return f"CAST(CAST({bronze_table_name}.{col.source} AS DATE) AS STRING) AS {col.dest_name}"
             elif col.delta_type.upper() == "STRING":
                 # Capitalize all string values
-                return f"ucase({bronze_table_name}.{col.bronze_name}) AS {col.silver_name}"
+                return f"ucase({bronze_table_name}.{col.source}) AS {col.dest_name}"
             elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
                 # Unless specified, convert any nulls to false for boolean columns
-                return f"COALESCE({bronze_table_name}.{col.bronze_name}, FALSE) AS {col.silver_name}"
+                return f"COALESCE({bronze_table_name}.{col.source}, FALSE) AS {col.dest_name}"
             else:
-                return f"{bronze_table_name}.{col.bronze_name} AS {col.silver_name}"
+                return f"{bronze_table_name}.{col.source} AS {col.dest_name}"
 
         def select_columns_transaction_fabs_fpds(bronze_table_name):
             if self.etl_level == "transaction_fabs":
@@ -241,7 +252,7 @@ class Command(BaseCommand):
                 )
 
             select_cols = []
-            for col in filter(lambda x: x.silver_name not in ["transaction_id"], col_info):
+            for col in filter(lambda x: x.dest_name not in ["transaction_id"], col_info):
                 select_cols.append(handle_column(col, bronze_table_name))
 
             return select_cols
@@ -355,13 +366,13 @@ class Command(BaseCommand):
                     {bronze_table_name}.{unique_id} = award_id_lookup.{unique_id}
                 )
                 LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
-                    funding_subtier_agency.subtier_code = {bronze_table_name}.awarding_sub_tier_agency_c
+                    funding_subtier_agency.subtier_code = {bronze_table_name}.funding_sub_tier_agency_co
                 )
                 LEFT OUTER JOIN global_temp.agency AS funding_agency ON (
                     funding_agency.subtier_agency_id = funding_subtier_agency.subtier_agency_id
                 )
                 LEFT OUTER JOIN global_temp.subtier_agency AS awarding_subtier_agency ON (
-                    awarding_subtier_agency.subtier_code = {bronze_table_name}.funding_sub_tier_agency_co
+                    awarding_subtier_agency.subtier_code = {bronze_table_name}.awarding_sub_tier_agency_c
                 )
                 LEFT OUTER JOIN global_temp.agency AS awarding_agency ON (
                     awarding_agency.subtier_agency_id = awarding_subtier_agency.subtier_agency_id
@@ -399,8 +410,8 @@ class Command(BaseCommand):
                 "Only for use with 'transaction_fabs' or 'transaction_fpds' etl_level."
             )
 
-        set_cols = [f"silver_table.{col.silver_name} = source_subquery.{col.silver_name}" for col in col_info]
-        silver_table_cols = ", ".join([col.silver_name for col in col_info])
+        set_cols = [f"silver_table.{col.dest_name} = source_subquery.{col.dest_name}" for col in col_info]
+        silver_table_cols = ", ".join([col.dest_name for col in col_info])
 
         sql = f"""
             MERGE INTO int.{self.etl_level} AS silver_table
@@ -431,8 +442,7 @@ class Command(BaseCommand):
         # values will come from the subquery.
         set_cols = [
             f"int.transaction_normalized.{col_name} = source_subquery.{col_name}"
-            for col_name in TRANSACTION_NORMALIZED_COLUMNS
-            if col_name not in ("create_date", "update_date")
+            for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in ("create_date", "update_date")
         ]
         set_cols.append(f"""int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'""")
 
@@ -624,7 +634,7 @@ class Command(BaseCommand):
             #     set the current value of award_id_seq to the maximum of poss_max_id and previous_max_id.
             cursor.execute(f"SELECT setval('award_id_seq', {max(poss_max_id, previous_max_id)}, false)")
 
-    def initial_run(self):
+    def initial_run(self, next_last_load):
         """
         Procedure to create & set up transaction_id_lookup and award_id_lookup tables and create other tables in
         int database that will be populated by subsequent calls.
@@ -634,6 +644,7 @@ class Command(BaseCommand):
 
         # transaction_id_lookup
         destination_table = "transaction_id_lookup"
+        set_last_load_date = True
 
         self.logger.info(f"Creating database {destination_database}, if not already existing.")
         self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {destination_database};")
@@ -695,18 +706,19 @@ class Command(BaseCommand):
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the transaction IDs
             # will start at 2.
             max_id = 1
+            # Also, don't set the last load date in this case
+            set_last_load_date = False
         with connection.cursor() as cursor:
             # Set is_called flag to false so that the next call to nextval() will return the specified value
             # https://www.postgresql.org/docs/13/functions-sequence.html
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_id}, false)")
 
-        # NOTE: Do *NOT* update the last load date on the transaction_id_lookup table here, as there might be
-        # entries in raw.published_fabs or raw.detached_award_procurement that haven't been added to
-        # raw.transaction_normalized yet, and we don't want to miss those the first time load_transactions_to_delta
-        # is called with etl-level of 'transaction_id_lookup'.
+        if set_last_load_date:
+            update_last_load_date(destination_table, next_last_load)
 
         # award_id_lookup
         destination_table = "award_id_lookup"
+        set_last_load_date = True
 
         # Test to see if raw.transaction_normalized exists
         try:
@@ -820,15 +832,15 @@ class Command(BaseCommand):
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs
             # will start at 2.
             max_id = 1
+            # Also, don't set the last load date in this case
+            set_last_load_date = False
         with connection.cursor() as cursor:
             # Set is_called flag to false so that the next call to nextval() will return the specified value
             # https://www.postgresql.org/docs/13/functions-sequence.html
             cursor.execute(f"SELECT setval('award_id_seq', {max_id}, false)")
 
-        # NOTE: Do *NOT* update the last load date on the award_id_lookup table here, as there might be
-        # entries in raw.published_fabs or raw.detached_award_procurement that haven't been added to
-        # raw.awards yet, and we don't want to miss those the first time load_transactions_to_delta
-        # is called with etl-level of 'award_id_lookup'.
+        if set_last_load_date:
+            update_last_load_date(destination_table, next_last_load)
 
         # Create tables in 'int' database
         self.logger.info("Creating tables in new database location")
@@ -868,7 +880,8 @@ class Command(BaseCommand):
                         """
                     )
 
-            # NOTE: Do *NOT* update the last load date on the specified table here, as there might be
-            # entries in raw.published_fabs or raw.detached_award_procurement that haven't been added to
-            # the raw version of the specified table yet, and we don't want to miss those the first time
-            # load_transactions_to_delta is called with specified etl-level.
+                    count = self.spark.sql(
+                        f"SELECT COUNT(*) AS count FROM {destination_database}.{destination_table}"
+                    ).collect()[0]["count"]
+                    if count > 0:
+                        update_last_load_date(destination_table, next_last_load)

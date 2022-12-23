@@ -30,7 +30,7 @@ class Pagination:
 
 @dataclass
 class TransactionColumn:
-    silver_name: str
-    bronze_name: Optional[str]
+    dest_name: str
+    source: Optional[str]
     delta_type: str
-    handling: Literal["cast", "leave_null", "literal", "normal"] = "normal"
+    handling: Literal["cast", "leave_null", "literal", "normal", "truncate_string_date"] = "normal"

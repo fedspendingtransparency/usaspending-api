@@ -1,7 +1,7 @@
 from usaspending_api.common.data_classes import TransactionColumn
 
 TRANSACTION_FABS_COLUMN_INFO = [
-    TransactionColumn("action_date", "action_date", "STRING"),
+    TransactionColumn("action_date", "action_date", "STRING", "truncate_string_date"),
     TransactionColumn("action_type", "action_type", "STRING"),
     TransactionColumn("action_type_description", "action_type_description", "STRING"),
     TransactionColumn("afa_generated_unique", "afa_generated_unique", "STRING"),
@@ -104,11 +104,11 @@ TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("uri", "uri", "STRING"),
 ]
 
-TRANSACTION_FABS_COLUMNS = [col.silver_name for col in TRANSACTION_FABS_COLUMN_INFO]
+TRANSACTION_FABS_COLUMNS = [col.dest_name for col in TRANSACTION_FABS_COLUMN_INFO]
 
 transaction_fabs_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{col.silver_name} {col.delta_type}' for col in TRANSACTION_FABS_COLUMN_INFO])}
+        {", ".join([f'{col.dest_name} {col.delta_type}' for col in TRANSACTION_FABS_COLUMN_INFO])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

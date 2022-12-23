@@ -3,7 +3,7 @@ from usaspending_api.common.data_classes import TransactionColumn
 TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("a_76_fair_act_action", "a_76_fair_act_action", "STRING"),
     TransactionColumn("a_76_fair_act_action_desc", "a_76_fair_act_action_desc", "STRING"),
-    TransactionColumn("action_date", "action_date", "STRING"),
+    TransactionColumn("action_date", "action_date", "STRING", "truncate_string_date"),
     TransactionColumn("action_type", "action_type", "STRING"),
     TransactionColumn("action_type_description", "action_type_description", "STRING"),
     TransactionColumn("agency_id", "agency_id", "STRING"),
@@ -124,7 +124,7 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("information_technology_com", "information_technology_com", "STRING"),
     TransactionColumn("inherently_government_desc", "inherently_government_desc", "STRING"),
     TransactionColumn("inherently_government_func", "inherently_government_func", "STRING"),
-    TransactionColumn("initial_report_date", "initial_report_date", "STRING"),
+    TransactionColumn("initial_report_date", "initial_report_date", "STRING", "truncate_string_date"),
     TransactionColumn("inter_municipal_local_gove", "inter_municipal_local_gove", "BOOLEAN"),
     TransactionColumn("interagency_contract_desc", "interagency_contract_desc", "STRING"),
     TransactionColumn("interagency_contracting_au", "interagency_contracting_au", "STRING"),
@@ -186,7 +186,7 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("officer_4_name", "high_comp_officer4_full_na", "STRING"),
     TransactionColumn("officer_5_amount", "high_comp_officer5_amount", "NUMERIC(23,2)", "cast"),
     TransactionColumn("officer_5_name", "high_comp_officer5_full_na", "STRING"),
-    TransactionColumn("ordering_period_end_date", "ordering_period_end_date", "STRING"),
+    TransactionColumn("ordering_period_end_date", "ordering_period_end_date", "STRING", "truncate_string_date"),
     TransactionColumn("organizational_type", "organizational_type", "STRING"),
     TransactionColumn("other_minority_owned_busin", "other_minority_owned_busin", "BOOLEAN"),
     TransactionColumn("other_not_for_profit_organ", "other_not_for_profit_organ", "BOOLEAN"),
@@ -308,11 +308,11 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("women_owned_small_business", "women_owned_small_business", "BOOLEAN"),
 ]
 
-TRANSACTION_FPDS_COLUMNS = [col.silver_name for col in TRANSACTION_FPDS_COLUMN_INFO]
+TRANSACTION_FPDS_COLUMNS = [col.dest_name for col in TRANSACTION_FPDS_COLUMN_INFO]
 
 transaction_fpds_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{col.silver_name} {col.delta_type}' for col in TRANSACTION_FPDS_COLUMN_INFO])}
+        {", ".join([f'{col.dest_name} {col.delta_type}' for col in TRANSACTION_FPDS_COLUMN_INFO])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
