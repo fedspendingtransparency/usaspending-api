@@ -532,8 +532,5 @@ WHERE
         )
     )
     -- Make sure that we also pick up the current state of Pre2008 matview
-    OR (
-        latest_transaction.action_date >= '2000-10-01'
-        AND latest_transaction.action_date < '2007-10-01'
-    )
+    OR latest_transaction.action_date < '2007-10-01'
 """
