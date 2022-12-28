@@ -170,7 +170,7 @@ class Command(BaseCommand):
             name="truncate_string_date",
             # Make sure not to choke on empty strings or NULLs
             f=lambda s: str(dateutil.parser.parse(s).date()) if s else s,
-            returnType=StringType()
+            returnType=StringType(),
         )
 
         # Create UDF to parse string dates.  Needed because some date strings aren't parsed correctly when cast from
@@ -178,8 +178,6 @@ class Command(BaseCommand):
         self.spark.udf.register(
             name="parse_string_date", f=lambda s: dateutil.parser.parse(s).date() if s else None, returnType=DateType()
         )
-
-
 
         yield  # Going to wait for the Django command to complete then stop the spark session if needed
 
