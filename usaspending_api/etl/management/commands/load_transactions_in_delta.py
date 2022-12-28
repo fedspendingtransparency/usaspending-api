@@ -245,7 +245,20 @@ class Command(BaseCommand):
                 # Use col.source directly as the value
                 return f"{col.source} AS {col.dest_name}"
             elif col.handling == "parse_string_date":
-                return f"parse_string_date({bronze_table_name}.{col.source}) AS {col.dest_name}"
+                # return f"parse_string_date({bronze_table_name}.{col.source}) AS {col.dest_name}"
+                return rf"""CAST((regexp_extract({bronze_table_name}.{col.source},
+                                                 '(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})',
+                                                 1)
+                                  || '-' ||
+                                  regexp_extract({bronze_table_name}.{col.source},
+                                                 '(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})',
+                                                 3)
+                                  || '-' ||
+                                  regexp_extract({bronze_table_name}.{col.source},
+                                                 '(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})',
+                                                 5)
+                                ) AS DATE) AS {col.dest_name}
+                """
             elif col.handling == "truncate_string_date":
                 # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
                 # even though they remain as strings
