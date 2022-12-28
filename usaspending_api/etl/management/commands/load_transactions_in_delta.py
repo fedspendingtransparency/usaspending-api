@@ -5,10 +5,11 @@ import re
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
+import dateutil
 from django.core.management import BaseCommand, call_command
 from django.db import connection
 from pyspark.sql import SparkSession
-from pyspark.sql.types import ArrayType, StringType
+from pyspark.sql.types import ArrayType, DateType, StringType
 from pyspark.sql.utils import AnalysisException
 
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
@@ -163,6 +164,23 @@ class Command(BaseCommand):
             name="get_business_categories_fpds", f=get_business_categories_fpds, returnType=ArrayType(StringType())
         )
 
+        # Create UDF to parse string dates and return only the date part, as a string.  Needed because some date strings
+        # aren't parsed correctly when cast from STRING to DATE in Spark, but are parsed correctly by dateutil.
+        self.spark.udf.register(
+            name="truncate_string_date",
+            # Make sure not to choke on empty strings or NULLs
+            f=lambda s: str(dateutil.parser.parse(s).date()) if s else s,
+            returnType=StringType()
+        )
+
+        # Create UDF to parse string dates.  Needed because some date strings aren't parsed correctly when cast from
+        # STRING to DATE in Spark, but are parsed correctly by dateutil.
+        self.spark.udf.register(
+            name="parse_string_date", f=lambda s: dateutil.parser.parse(s).date() if s else None, returnType=DateType()
+        )
+
+
+
         yield  # Going to wait for the Django command to complete then stop the spark session if needed
 
         if spark_created_by_command:
@@ -228,9 +246,12 @@ class Command(BaseCommand):
             elif col.handling == "literal":
                 # Use col.source directly as the value
                 return f"{col.source} AS {col.dest_name}"
+            elif col.handling == "parse_string_date":
+                return f"parse_string_date({bronze_table_name}.{col.source}) AS {col.dest_name}"
             elif col.handling == "truncate_string_date":
-                # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded
-                return f"CAST(CAST({bronze_table_name}.{col.source} AS DATE) AS STRING) AS {col.dest_name}"
+                # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
+                # even though they remain as strings
+                return f"truncate_string_date({bronze_table_name}.{col.source}) AS {col.dest_name}"
             elif col.delta_type.upper() == "STRING":
                 # Capitalize all string values
                 return f"ucase({bronze_table_name}.{col.source}) AS {col.dest_name}"

@@ -320,7 +320,7 @@ transaction_fpds_sql_string = rf"""
 
 # Mapping from raw.detached_award_procurement to int.transaction_normalized columns, where a simple mapping exists
 DAP_TO_NORMALIZED_COLUMN_INFO = [
-    TransactionColumn("action_date", "action_date", "DATE", "cast"),
+    TransactionColumn("action_date", "action_date", "DATE", "parse_string_date"),
     TransactionColumn("action_type", "action_type", "STRING"),
     TransactionColumn("action_type_description", "action_type_description", "STRING"),
     TransactionColumn("certified_date", "NULL", "DATE", "literal"),

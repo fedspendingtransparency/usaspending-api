@@ -31,7 +31,7 @@ from usaspending_api.transactions.delta_models.transaction_normalized import TRA
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
 
 BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
-initial_datetime = datetime(year=2022, month=10, day=31, tzinfo=timezone.utc)
+initial_datetime = datetime(2022, 10, 31, tzinfo=timezone.utc)
 initial_source_table_load_datetime = initial_datetime + timedelta(hours=12)
 
 initial_assists = [
@@ -56,7 +56,8 @@ initial_assists = [
     {
         "published_fabs_id": 3,
         "afa_generated_unique": "award_assist_0002_trans_0002",
-        "action_date": initial_datetime.isoformat(),
+        # Deliberately formatting this action_date somewhat unusually.
+        "action_date": initial_datetime.strftime("%Y%m%d"),
         "created_at": initial_datetime,
         "updated_at": initial_datetime,
         "is_active": True,
@@ -65,7 +66,8 @@ initial_assists = [
     {
         "published_fabs_id": 4,
         "afa_generated_unique": "award_assist_0003_trans_0001",
-        "action_date": initial_datetime.isoformat(),
+        # Deliberately formatting this action_date somewhat unusually.
+        "action_date": initial_datetime.strftime("%Y%m%d"),
         "created_at": initial_datetime,
         "updated_at": initial_datetime,
         "is_active": True,
@@ -102,7 +104,8 @@ initial_procures = [
     {
         "detached_award_procurement_id": 3,
         "detached_award_proc_unique": "award_procure_0002_trans_0002",
-        "action_date": initial_datetime.isoformat(),
+        # Deliberately formatting this action_date somewhat unusually.
+        "action_date": initial_datetime.strftime("%Y%m%d"),
         "created_at": initial_datetime,
         "updated_at": initial_datetime,
         "unique_award_key": "award_procure_0002",
@@ -110,7 +113,8 @@ initial_procures = [
     {
         "detached_award_procurement_id": 4,
         "detached_award_proc_unique": "award_procure_0003_trans_0001",
-        "action_date": initial_datetime.isoformat(),
+        # Deliberately formatting this action_date somewhat unusually.
+        "action_date": initial_datetime.strftime("%Y%m%d"),
         "created_at": initial_datetime,
         "updated_at": initial_datetime,
         "unique_award_key": "award_procure_0003",
