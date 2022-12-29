@@ -246,8 +246,10 @@ class Command(BaseCommand):
                 return f"{col.source} AS {col.dest_name}"
             elif col.handling == "parse_string_date":
                 # return f"parse_string_date({bronze_table_name}.{col.source}) AS {col.dest_name}"
+                # Require a separator for mmddYYYY, but not for YYYYmmdd, or there is no way to tell them apart
+                # from just regexp.
                 regexp_mmddYYYY = (
-                    r"(\\d{2})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+                    r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
                 )
                 regexp_YYYYmmdd = (
                     r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
