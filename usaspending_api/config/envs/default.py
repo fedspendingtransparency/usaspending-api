@@ -56,8 +56,8 @@ class DefaultConfig(BaseSettings):
         ES_SCHEME: "http" or "https". Defaults to "https:
         ES_HOST: Host on which to connect to the USAspending Elasticsearch cluster
         ES_PORT: Port on which to connect to the USAspending Elasticsearch cluster, if different than 80 or 443
-                 Defaults to empty string ("")
-        ES_NAME: Defaults to None and not set. Here for compatibility with URL-based configs
+                 Defaults to None
+        ES_NAME: Defaults to None and not intended to be set. Here for compatibility with URL-based configs
         ES_USER: Username to be used if basic auth is required for ES connections
         ES_PASSWORD: Password to be used if basic auth is required for ES connections
     """
@@ -179,7 +179,7 @@ class DefaultConfig(BaseSettings):
     ES_URL: str = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
     ES_SCHEME: str = "https"
     ES_HOST: str = ENV_SPECIFIC_OVERRIDE
-    ES_PORT: str = ""
+    ES_PORT: str = None
     ES_USER: str = None
     ES_PASSWORD: SecretStr = None
     ES_NAME: str = None
