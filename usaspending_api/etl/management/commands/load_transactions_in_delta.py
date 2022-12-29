@@ -5,11 +5,10 @@ import re
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-import dateutil
 from django.core.management import BaseCommand, call_command
 from django.db import connection
 from pyspark.sql import SparkSession
-from pyspark.sql.types import ArrayType, DateType, StringType
+from pyspark.sql.types import ArrayType, StringType
 from pyspark.sql.utils import AnalysisException
 
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
