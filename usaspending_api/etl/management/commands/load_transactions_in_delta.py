@@ -246,18 +246,27 @@ class Command(BaseCommand):
                 return f"{col.source} AS {col.dest_name}"
             elif col.handling == "parse_string_date":
                 # return f"parse_string_date({bronze_table_name}.{col.source}) AS {col.dest_name}"
-                return rf"""CAST((regexp_extract({bronze_table_name}.{col.source},
-                                                 '(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})',
-                                                 1)
-                                  || '-' ||
-                                  regexp_extract({bronze_table_name}.{col.source},
-                                                 '(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})',
-                                                 3)
-                                  || '-' ||
-                                  regexp_extract({bronze_table_name}.{col.source},
-                                                 '(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})',
-                                                 5)
-                                ) AS DATE) AS {col.dest_name}
+                regexp_mmddYYYY = (
+                    r"(\\d{2})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+                )
+                regexp_YYYYmmdd = (
+                    r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+                )
+                return f"""
+                    CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
+                              THEN CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
+                                         || '-' ||
+                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
+                                         || '-' ||
+                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
+                                        AS DATE)
+                         ELSE CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
+                                    || '-' ||
+                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
+                                    || '-' ||
+                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
+                                   AS DATE)
+                    END AS {col.dest_name}
                 """
             elif col.handling == "truncate_string_date":
                 # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
@@ -417,10 +426,14 @@ class Command(BaseCommand):
                 "etl_level."
             )
 
+        # {} expressions in f-strings can't contain backslashes, so need to be a little creative to get \n
+        # into {} expression (see
+        # https://stackoverflow.com/questions/67680296/syntaxerror-f-string-expression-part-cannot-include-a-backslash
+        # and https://martinheinz.dev/blog/70, section 'Nested F-Strings')
         sql = f"""
             SELECT
                 transaction_id_lookup.transaction_id AS {id_col_name},
-                {", ".join(select_columns)}
+                {","f'{chr(10)}    '.join(select_columns)}
             FROM {bronze_table_name}
             INNER JOIN int.transaction_id_lookup ON (
                 {bronze_table_name}.{unique_id} = transaction_id_lookup.{unique_id}
