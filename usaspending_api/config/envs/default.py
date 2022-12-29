@@ -14,21 +14,19 @@ from typing import ClassVar
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
-    eval_default_factory,
     eval_default_factory_from_root_validator,
-    CONFIG_VAR_PLACEHOLDERS,
-    parse_pg_uri,
-    unveil, parse_http_url,
+    check_for_full_url_config,
+    validate_url_and_parts,
+    check_required_url_parts,
+    backfill_url_parts_config,
 )
 from pydantic import (
     AnyHttpUrl,
     BaseSettings,
     PostgresDsn,
     SecretStr,
-    validator,
     root_validator,
 )
-from pydantic.fields import ModelField
 
 _PROJECT_NAME = "usaspending-api"
 # WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
@@ -100,18 +98,18 @@ class DefaultConfig(BaseSettings):
         """ Helper function to validate both DATABASE_URLs and their parts """
 
         # First determine if full URL config was provided.
-        is_full_url_provided = cls._check_for_full_url_config(url_conf_name, values)
+        is_full_url_provided = check_for_full_url_config(url_conf_name, values)
 
         # If the full URL config was provided
         # - it should take precedence
         # - its values will be used to backfill any missing URL parts stored as separate config vars
         if is_full_url_provided:
-            values = cls._backfill_url_parts_config(url_conf_name, resource_conf_prefix, values)
+            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
 
         # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
         if not is_full_url_provided:
             # First validate that we have enough parts to provide it
-            enough_parts = cls._check_required_url_parts(
+            enough_parts = check_required_url_parts(
                 error_if_missing=required,
                 url_conf_name=url_conf_name,
                 resource_conf_prefix=resource_conf_prefix,
@@ -126,14 +124,15 @@ class DefaultConfig(BaseSettings):
                     password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value(),
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
-                    path="/" + values[f"{resource_conf_prefix}_NAME"] if values[
-                        f"{resource_conf_prefix}_NAME"] else None,
+                    path="/" + values[f"{resource_conf_prefix}_NAME"]
+                    if values[f"{resource_conf_prefix}_NAME"]
+                    else None,
                 )
                 values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(pg_dsn))
 
         # if the fully configured URL is now available, check for consistency with the URL-part config values
         if values.get(url_conf_name, None):
-            cls._validate_url_and_parts(url_conf_name, resource_conf_prefix, values)
+            validate_url_and_parts(url_conf_name, resource_conf_prefix, values)
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
@@ -149,7 +148,7 @@ class DefaultConfig(BaseSettings):
         """
         # noinspection PyArgumentList
         cls._validate_database_url(
-            cls=cls, values=values, db_url_conf_name="DATABASE_URL", db_conf_prefix="USASPENDING_DB", required=True
+            cls=cls, values=values, url_conf_name="DATABASE_URL", resource_conf_prefix="USASPENDING_DB", required=True
         )
         return values
 
@@ -169,8 +168,8 @@ class DefaultConfig(BaseSettings):
         cls._validate_database_url(
             cls=cls,
             values=values,
-            db_url_conf_name="DATA_BROKER_DATABASE_URL",
-            db_conf_prefix="BROKER_DB",
+            url_conf_name="DATA_BROKER_DATABASE_URL",
+            resource_conf_prefix="BROKER_DB",
             required=False,
         )
         return values
@@ -190,13 +189,13 @@ class DefaultConfig(BaseSettings):
     @root_validator
     def _ES_URL_and_parts_factory(cls, values):
         """A root validator to backfill ES_URL and ES_* part config vars and validate that they are
-                all consistent.
+        all consistent.
 
-                - Serves as a factory function to fill out all places where we track the ES URL as both one
-                complete connection string and as individual parts.
-                - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
-                be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
-                """
+        - Serves as a factory function to fill out all places where we track the ES URL as both one
+        complete connection string and as individual parts.
+        - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
+        be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
+        """
         # noinspection PyArgumentList
         cls._validate_http_url(
             cls=cls, values=values, url_conf_name="ES_URL", resource_conf_prefix="ES", required=False
@@ -209,18 +208,18 @@ class DefaultConfig(BaseSettings):
         """ Helper function to validate complete URLs and their individual parts when either/both are provided """
 
         # First determine if full URL config was provided.
-        is_full_url_provided = cls._check_for_full_url_config(url_conf_name, values)
+        is_full_url_provided = check_for_full_url_config(url_conf_name, values)
 
         # If the full URL config was provided
         # - it should take precedence
         # - its values will be used to backfill any missing URL parts stored as separate config vars
         if is_full_url_provided:
-            values = cls._backfill_url_parts_config(url_conf_name, resource_conf_prefix, values)
+            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
 
         # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
         if not is_full_url_provided:
             # First validate that we have enough parts to provide it
-            enough_parts = cls._check_required_url_parts(
+            enough_parts = check_required_url_parts(
                 error_if_missing=required,
                 url_conf_name=url_conf_name,
                 resource_conf_prefix=resource_conf_prefix,
@@ -235,118 +234,15 @@ class DefaultConfig(BaseSettings):
                     password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value(),
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
-                    path="/" + values[f"{resource_conf_prefix}_NAME"] if values[f"{resource_conf_prefix}_NAME"] else None,
+                    path="/" + values[f"{resource_conf_prefix}_NAME"]
+                    if values[f"{resource_conf_prefix}_NAME"]
+                    else None,
                 )
                 values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(http_url))
 
         # if the fully configured URL is now available, check for consistency with the URL-part config values
         if values.get(url_conf_name, None):
-            cls._validate_url_and_parts(url_conf_name, resource_conf_prefix, values)
-
-    def _check_required_url_parts(cls, error_if_missing, url_conf_name, resource_conf_prefix, values):
-        enough_parts = False
-        required_url_parts = [
-            f"{resource_conf_prefix}_SCHEME",
-            f"{resource_conf_prefix}_HOST",
-            f"{resource_conf_prefix}_PORT",
-            f"{resource_conf_prefix}_NAME",
-            f"{resource_conf_prefix}_USER",
-            f"{resource_conf_prefix}_PASSWORD",
-        ]
-        if not (
-                all(url_part in values for url_part in required_url_parts)
-                and all(values[url_part] is not None for url_part in required_url_parts)
-        ):
-            if error_if_missing:
-                raise ValueError(
-                    f"Config URL {url_conf_name} was not provided and could not be built because one or more of"
-                    " these required parts were missing. Please check that the parts are completely configured, or"
-                    f" provide the complete URL for {url_conf_name} instead: {required_url_parts}"
-                )
-            else:
-                print(
-                    f"Config URL {url_conf_name} was not provided and could not be built because one or more of"
-                    " these required parts were missing. Leaving blank for now. Please check that the parts are"
-                    f" completely configured, or provide a complete URL for {url_conf_name} to use it:"
-                    f" {required_url_parts}"
-                )
-        else:
-            enough_parts = True
-        return enough_parts
-
-    def _backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values):
-        url_parts, username, password = parse_http_url(values[url_conf_name])
-        backfill_configs = {
-            f"{resource_conf_prefix}_SCHEME": lambda: url_parts.scheme,
-            f"{resource_conf_prefix}_HOST": lambda: url_parts.hostname,
-            f"{resource_conf_prefix}_PORT": lambda: str(url_parts.port),
-            f"{resource_conf_prefix}_NAME": lambda: url_parts.path.lstrip("/"),
-            f"{resource_conf_prefix}_USER": lambda: username,
-            f"{resource_conf_prefix}_PASSWORD": lambda: SecretStr(password),
-        }
-        # Backfill only URL CONFIG vars that are missing their value
-        for config_name, transformation in backfill_configs.items():
-            value = values.get(config_name, None)
-            if config_name == f"{resource_conf_prefix}_PASSWORD":
-                value = unveil(value)
-            if value in [None] + CONFIG_VAR_PLACEHOLDERS:
-                values = eval_default_factory_from_root_validator(cls, values, config_name, transformation)
-        return values
-
-    def _check_for_full_url_config(self, url_conf_name, values):
-        return values[url_conf_name] and values[url_conf_name] not in CONFIG_VAR_PLACEHOLDERS
-
-    def _validate_url_and_parts(self, url_conf_name, resource_conf_prefix, values):
-        # Now validate the provided and/or built values are consistent between complete URL and URL config parts
-        url_config_errors = {}
-        url_parts, url_username, url_password = parse_http_url(values[url_conf_name])
-        # Validate host
-        if url_parts.hostname != values[f"{resource_conf_prefix}_HOST"]:
-            url_config_errors[f"{resource_conf_prefix}_HOST"] = (
-                values[f"{resource_conf_prefix}_HOST"],
-                url_parts.hostname,
-            )
-        # Validate port
-        if (
-                (url_parts.port is not None and str(url_parts.port) != values[f"{resource_conf_prefix}_PORT"])
-                or url_parts.port is None
-                and values[f"{resource_conf_prefix}_PORT"] is not None
-        ):
-            url_config_errors[f"{resource_conf_prefix}_PORT"] = (values[f"{resource_conf_prefix}_PORT"], url_parts.port)
-        # Validate resource name (path)
-        if (
-                (url_parts.path is not None and url_parts.path.lstrip("/") != values[f"{resource_conf_prefix}_NAME"])
-                or url_parts.path is None
-                and values[f"{resource_conf_prefix}_NAME"] is not None
-        ):
-            url_config_errors[f"{resource_conf_prefix}_NAME"] = (
-                values[f"{resource_conf_prefix}_NAME"],
-                url_parts.path.lstrip("/")
-                if url_parts.path is not None and url_parts.path != "/"
-                else None,
-            )
-        # Validate username
-        if url_username != values[f"{resource_conf_prefix}_USER"]:
-            url_config_errors[f"{resource_conf_prefix}_USER"] = (values[f"{resource_conf_prefix}_USER"], url_username)
-        # Validate password
-        if url_password != unveil(values[f"{resource_conf_prefix}_PASSWORD"]):
-            # NOTE: Keeping password text obfuscated in the error output
-            url_config_errors[f"{resource_conf_prefix}_PASSWORD"] = (
-                values[f"{resource_conf_prefix}_PASSWORD"],
-                "*" * len(url_password) if url_password is not None else None,
-            )
-        if len(url_config_errors) > 0:
-            err_msg = (
-                f"The URL config var named {url_conf_name} was provided along with one or more "
-                f"{resource_conf_prefix}_* URL-part config var values, however they were not consistent. Differing "
-                f"configuration sources that should match will cause confusion. Either provide all values "
-                f"consistently, or only provide a complete {url_conf_name} and leave the others as None or unset, "
-                f"or leave the {url_conf_name} None or unset and provide only the required URL-parts. "
-                "Parts not matching:\n"
-            )
-            for k, v in url_config_errors.items():
-                err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {url_conf_name}: {v[1]}\n"
-            raise ValueError(err_msg)
+            validate_url_and_parts(url_conf_name, resource_conf_prefix, values)
 
     # ==== [Spark] ====
     # SPARK_SCHEDULER_MODE = "FAIR"  # if used with weighted pools, could allow round-robin tasking of simultaneous jobs
