@@ -164,21 +164,6 @@ class Command(BaseCommand):
             name="get_business_categories_fpds", f=get_business_categories_fpds, returnType=ArrayType(StringType())
         )
 
-        # Create UDF to parse string dates and return only the date part, as a string.  Needed because some date strings
-        # aren't parsed correctly when cast from STRING to DATE in Spark, but are parsed correctly by dateutil.
-        self.spark.udf.register(
-            name="truncate_string_date",
-            # Make sure not to choke on empty strings or NULLs
-            f=lambda s: str(dateutil.parser.parse(s).date()) if s else s,
-            returnType=StringType(),
-        )
-
-        # Create UDF to parse string dates.  Needed because some date strings aren't parsed correctly when cast from
-        # STRING to DATE in Spark, but are parsed correctly by dateutil.
-        self.spark.udf.register(
-            name="parse_string_date", f=lambda s: dateutil.parser.parse(s).date() if s else None, returnType=DateType()
-        )
-
         yield  # Going to wait for the Django command to complete then stop the spark session if needed
 
         if spark_created_by_command:
@@ -244,8 +229,7 @@ class Command(BaseCommand):
             elif col.handling == "literal":
                 # Use col.source directly as the value
                 return f"{col.source} AS {col.dest_name}"
-            elif col.handling == "parse_string_date":
-                # return f"parse_string_date({bronze_table_name}.{col.source}) AS {col.dest_name}"
+            elif col.handling in ("parse_string_date", "truncate_string_date"):
                 # Require a separator for mmddYYYY, but not for YYYYmmdd, or there is no way to tell them apart
                 # from just regexp.
                 regexp_mmddYYYY = (
@@ -254,26 +238,40 @@ class Command(BaseCommand):
                 regexp_YYYYmmdd = (
                     r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
                 )
-                return f"""
-                    CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
-                              THEN CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
-                                         || '-' ||
-                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
-                                         || '-' ||
-                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
-                                        AS DATE)
-                         ELSE CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
-                                   AS DATE)
-                    END AS {col.dest_name}
-                """
-            elif col.handling == "truncate_string_date":
-                # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
-                # even though they remain as strings
-                return f"truncate_string_date({bronze_table_name}.{col.source}) AS {col.dest_name}"
+                if col.handling == "parse_string_date":
+                    return f"""
+                        CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
+                                  THEN CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
+                                             || '-' ||
+                                             regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
+                                             || '-' ||
+                                             regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
+                                            AS DATE)
+                             ELSE CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
+                                        || '-' ||
+                                        regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
+                                        || '-' ||
+                                        regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
+                                       AS DATE)
+                        END AS {col.dest_name}
+                    """
+                else:
+                    # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
+                    # even though they remain as strings
+                    return f"""
+                        CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
+                                  THEN (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
+                                        || '-' ||
+                                        regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
+                                        || '-' ||
+                                        regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
+                             ELSE (regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
+                                   || '-' ||
+                                   regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
+                                   || '-' ||
+                                   regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
+                        END AS {col.dest_name}
+                    """
             elif col.delta_type.upper() == "STRING":
                 # Capitalize all string values
                 return f"ucase({bronze_table_name}.{col.source}) AS {col.dest_name}"
