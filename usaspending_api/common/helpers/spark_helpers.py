@@ -25,7 +25,7 @@ from pyspark.sql.conf import RuntimeConfig
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
 
-from usaspending_api.config.utils import parse_pg_uri
+from usaspending_api.config.utils import parse_pg_uri, parse_http_url
 
 
 def get_active_spark_context() -> Optional[SparkContext]:
@@ -396,12 +396,13 @@ def get_es_config():  # pragma: no cover -- will be used eventually
         index_config["es.mapping.routing"] = routing  # for index routing key
         index_config["es.mapping.id"] = doc_id        # for _id field of indexed documents
     """
-    es_host = CONFIG.ELASTICSEARCH_HOST  # type: AnyHttpUrl
-    ssl = es_host.scheme == "https"
-    host = es_host.host
-    port = es_host.port if es_host.port else "443" if ssl else "80"
-    user = es_host.user if es_host.user else ""
-    password = es_host.password if es_host.password else ""
+    es_url = CONFIG.ES_URL
+    url_parts, url_username, url_password = parse_http_url(es_url)
+    ssl = url_parts.scheme == "https"
+    host = url_parts.host
+    port = url_parts.port if url_parts.port else "443" if ssl else "80"
+    user = url_username or ""
+    password = url_password or ""
 
     # More values at:
     # - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html

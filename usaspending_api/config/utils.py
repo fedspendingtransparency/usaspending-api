@@ -152,14 +152,14 @@ def eval_default_factory_from_root_validator(
     return configured_vars
 
 
-def parse_pg_uri(pg_uri) -> (ParseResult, str, str):
-    """Use the urlparse lib to parse out parts of a PostgreSQL URI connection string
+def parse_http_url(http_url) -> (ParseResult, str, str):
+    """Use the urlparse lib to parse out parts of an HTTP(s) URL string
 
     Supports ``username:password`` format or if ``?username=...&password=...`` format
 
     Returns: A three-tuple of the URL Parts ParseResult, the username (or None), and the password (or None)
     """
-    url_parts = urlparse(pg_uri)
+    url_parts = urlparse(http_url)
     user = (
         url_parts.username if url_parts.username else parse_qs(url_parts.query)["user"][0] if url_parts.query else None
     )
@@ -171,3 +171,13 @@ def parse_pg_uri(pg_uri) -> (ParseResult, str, str):
         else None
     )
     return url_parts, user, password
+
+
+def parse_pg_uri(pg_uri) -> (ParseResult, str, str):
+    """Use the urlparse lib to parse out parts of a PostgreSQL URI connection string
+
+    Supports ``username:password`` format or if ``?username=...&password=...`` format
+
+    Returns: A three-tuple of the URL Parts ParseResult, the username (or None), and the password (or None)
+    """
+    return parse_http_url(pg_uri)
