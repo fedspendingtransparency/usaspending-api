@@ -10,7 +10,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_es_config,
 )
-from usaspending_api.common.etl.spark import load_es_index
+from usaspending_api.common.etl.spark import load_es_index, convert_decimal_cols_to_string
 
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
@@ -122,6 +122,10 @@ class Command(BaseCommand):
         # Read from Delta
         df = spark.table(delta_table)  # type: DataFrame
 
+        # ES does not intake DecimalType cols, due to risk of losing precision. Cast to StringType, and use fixed
+        # type in index mapping or index mapping template to which it will be cast on write
+        df_no_decimal = convert_decimal_cols_to_string(df)
+
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
         # always needed, this should help to prevent any future mismatch between the two.
@@ -135,7 +139,7 @@ class Command(BaseCommand):
         try:
             load_es_index(
                 spark=spark,
-                source_df=df,
+                source_df=df_no_decimal,
                 base_config=get_es_config(),
                 index_name=index_name,
                 routing=routing_field,
