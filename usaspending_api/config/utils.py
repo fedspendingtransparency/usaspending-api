@@ -194,7 +194,7 @@ def backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values):
         f"{resource_conf_prefix}_HOST": lambda: url_parts.hostname,
         f"{resource_conf_prefix}_PORT": lambda: str(url_parts.port) if url_parts.port else None,
         f"{resource_conf_prefix}_NAME": lambda: url_parts.path.lstrip("/")
-        if url_parts.path is not None and url_parts.path != "/"
+        if url_parts.path and url_parts.path != "/"
         else None,
         f"{resource_conf_prefix}_USER": lambda: username,
         f"{resource_conf_prefix}_PASSWORD": lambda: SecretStr(password) if password else None,
@@ -262,13 +262,13 @@ def validate_url_and_parts(url_conf_name, resource_conf_prefix, values):
         url_config_errors[f"{resource_conf_prefix}_PORT"] = (values[f"{resource_conf_prefix}_PORT"], url_parts.port)
     # Validate resource name (path)
     if (
-        (url_parts.path is not None and url_parts.path.lstrip("/") != values[f"{resource_conf_prefix}_NAME"])
+        (url_parts.path and url_parts.path.lstrip("/") != values[f"{resource_conf_prefix}_NAME"])
         or url_parts.path is None
         and values[f"{resource_conf_prefix}_NAME"] is not None
     ):
         url_config_errors[f"{resource_conf_prefix}_NAME"] = (
             values[f"{resource_conf_prefix}_NAME"],
-            url_parts.path.lstrip("/") if url_parts.path is not None and url_parts.path != "/" else None,
+            url_parts.path.lstrip("/") if url_parts.path and url_parts.path != "/" else None,
         )
     # Validate username
     if url_username != values[f"{resource_conf_prefix}_USER"]:
