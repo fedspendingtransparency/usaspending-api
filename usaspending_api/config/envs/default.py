@@ -114,6 +114,7 @@ class DefaultConfig(BaseSettings):
                 url_conf_name=url_conf_name,
                 resource_conf_prefix=resource_conf_prefix,
                 values=values,
+                required_parts=["USER", "PASSWORD", "HOST", "PORT", "NAME"]
             )
 
             if enough_parts:
@@ -224,6 +225,7 @@ class DefaultConfig(BaseSettings):
                 url_conf_name=url_conf_name,
                 resource_conf_prefix=resource_conf_prefix,
                 values=values,
+                required_parts=["SCHEME", "HOST", "PORT"]
             )
 
             if enough_parts:
@@ -231,7 +233,9 @@ class DefaultConfig(BaseSettings):
                     url=None,
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
                     user=values[f"{resource_conf_prefix}_USER"],
-                    password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value(),
+                    password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
+                    if values[f"{resource_conf_prefix}_PASSWORD"]
+                    else None,
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
                     path="/" + values[f"{resource_conf_prefix}_NAME"]

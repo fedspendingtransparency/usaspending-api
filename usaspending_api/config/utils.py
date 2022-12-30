@@ -207,16 +207,18 @@ def backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values):
     return values
 
 
-def check_required_url_parts(error_if_missing, url_conf_name, resource_conf_prefix, values):
+def check_required_url_parts(
+    error_if_missing,
+    url_conf_name,
+    resource_conf_prefix,
+    values,
+    required_parts=None,
+):
+    # Default required parts list if not overridden in call
+    if required_parts is None:
+        required_parts = ["SCHEME", "HOST", "PORT", "NAME", "USER", "PASSWORD"]
     enough_parts = False
-    required_url_parts = [
-        f"{resource_conf_prefix}_SCHEME",
-        f"{resource_conf_prefix}_HOST",
-        f"{resource_conf_prefix}_PORT",
-        f"{resource_conf_prefix}_NAME",
-        f"{resource_conf_prefix}_USER",
-        f"{resource_conf_prefix}_PASSWORD",
-    ]
+    required_url_parts = [f"{resource_conf_prefix}_{part}" for part in required_parts]
     if not (
         all(url_part in values for url_part in required_url_parts)
         and all(values[url_part] is not None for url_part in required_url_parts)
