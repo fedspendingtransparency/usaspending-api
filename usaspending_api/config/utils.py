@@ -262,7 +262,11 @@ def validate_url_and_parts(url_conf_name, resource_conf_prefix, values):
         url_config_errors[f"{resource_conf_prefix}_PORT"] = (values[f"{resource_conf_prefix}_PORT"], url_parts.port)
     # Validate resource name (path)
     if (
-        (url_parts.path and url_parts.path.lstrip("/") != values[f"{resource_conf_prefix}_NAME"])
+        (
+            url_parts.path
+            and url_parts.path != "/"
+            and url_parts.path.lstrip("/") != values[f"{resource_conf_prefix}_NAME"]
+        )
         or url_parts.path is None
         and values[f"{resource_conf_prefix}_NAME"] is not None
     ):
