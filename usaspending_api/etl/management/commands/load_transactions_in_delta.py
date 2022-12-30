@@ -11,6 +11,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import ArrayType, StringType
 from pyspark.sql.utils import AnalysisException
 
+from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
 from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fabs,
@@ -66,6 +67,7 @@ class Command(BaseCommand):
             help="The silver delta table that should be updated from the bronze delta data.",
             choices=[
                 "award_id_lookup",
+                "awards"
                 "initial_run",
                 "transaction_fabs",
                 "transaction_fpds",
@@ -128,6 +130,8 @@ class Command(BaseCommand):
                 create_ref_temp_views(self.spark)
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fabs"))
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fpds"))
+            elif self.etl_level == "awards":
+                self.create_awards_temp_views()
 
             update_last_load_date(self.etl_level, next_last_load)
 
@@ -208,6 +212,13 @@ class Command(BaseCommand):
                 )
                 WHERE {self.etl_level}.{id_col} IS NOT NULL AND transaction_id_lookup.transaction_id IS NULL
             """
+        elif self.etl_level == "awards":
+            id_col = "id"
+            subquery = f"""
+                SELECT awards.id AS id_to_remove
+                FROM int.awards LEFT JOIN int.award_id_lookup ON awards.id = award_id_lookup.award_id
+                WHERE awards.id IS NOT NULL AND award_id_lookup IS NULL
+            """
 
         sql = f"""
             MERGE INTO int.{self.etl_level}
@@ -220,6 +231,131 @@ class Command(BaseCommand):
         """
 
         return sql
+
+    def create_awards_temp_views(self):
+        ### TODO: figure out how to deal with deleted transactions.
+        ### Possibly need additional table to store them!
+        self.spark.sql(
+            f"""
+                CREATE OR REPLACE TEMPORARY VIEW award_ids_to_update AS (
+                    SELECT DISTINCT(award_id)
+                    FROM int.award_id_lookup
+                    WHERE transaction_unique_id IN (SELECT transaction_unique_id
+                                                    FROM int.transaction_normalized
+                                                    WHERE update_date >= '{self.last_etl_date}')
+                )
+            """
+        )
+
+        self.spark.sql(
+            """
+                CREATE OR REPLACE TEMPORARY VIEW transaction_earliest AS (
+                    SELECT * FROM (
+                        SELECT
+                            tn.award_id,
+                            tn.id,
+                            tn.action_date,
+                            tn.description,
+                            tn.period_of_performance_start_date,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY tn.award_id
+                                ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC, 
+                                         tn.transaction_unique_id ASC
+                            ) AS rank
+                        FROM int.transaction_normalized tn
+                        WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
+                    )
+                    WHERE rank = 1
+                )
+            """
+        )
+
+        self.spark.sql(
+            """
+                CREATE OR REPLACE TEMPORARY VIEW transaction_latest as (
+                    SELECT * FROM (
+                        SELECT
+                            -- General update columns
+                            tn.award_id,
+                            tn.id,
+                            tn.type,
+                            tn.type_description,
+                            tn.awarding_agency_id,
+                            tn.action_date,
+                            tn.funding_agency_id,
+                            tn.last_modified_date,
+                            tn.period_of_performance_current_end_date,
+                            CASE
+                                WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
+                                WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
+                                WHEN tn.type IN ('06', '10')              THEN 'direct payment'
+                                WHEN tn.type IN ('07', '08')              THEN 'loans'
+                                WHEN tn.type = '09'                       THEN 'insurance'
+                                WHEN tn.type = '11'                       THEN 'other'
+                                WHEN tn.type LIKE 'IDV%%'                 THEN 'idv'
+                                ELSE NULL
+                            END AS category,
+                            tn.unique_award_key AS generated_unique_award_id,
+                            tn.is_fpds,
+                            -- FPDS Columns
+                            fpds.agency_id,
+                            fpds.referenced_idv_agency_iden,
+                            -- FABS Columns
+                            fabs.fain,
+                            -- Excecutive Compensation
+                            -- This might not be correct. in award_helpers.py some extra CTE logic is being done to 
+                            -- select executive compensation
+                            COALESCE(fpds.officer_1_amount, fabs.officer_1_amount),
+                            COALESCE(fpds.officer_1_name, fabs.officer_1_name),
+                            COALESCE(fpds.officer_2_amount, fabs.officer_2_amount),
+                            COALESCE(fpds.officer_2_name, fabs.officer_2_name),
+                            COALESCE(fpds.officer_3_amount, fabs.officer_3_amount),
+                            COALESCE(fpds.officer_3_name, fabs.officer_3_name),
+                            COALESCE(fpds.officer_4_amount, fabs.officer_4_amount),
+                            COALESCE(fpds.officer_4_name, fabs.officer_4_name),
+                            COALESCE(fpds.officer_5_amount, fabs.officer_5_amount),
+                            COALESCE(fpds.officer_5_name, fabs.officer_5_name),
+                            -- Other
+                            'DBR' AS data_source,
+                            -- Windowing Function
+                            ROW_NUMBER() OVER (
+                                PARTITION BY tn.award_id
+                                ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, 
+                                         tn.transaction_unique_id DESC
+                            ) as rank
+                        FROM int.transaction_normalized tn
+                        -- TODO: SHOULD THESE BE LEFT JOINS? --
+                        LEFT JOIN int.transaction_fpds fpds ON fpds.transaction_id = tn.id
+                        LEFT JOIN int.transaction_fabs fabs ON fabs.transaction_id = tn.id
+                        WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
+                    )
+                    WHERE rank = 1
+                )
+            """
+        )
+
+        self.spark.sql(
+            """
+                CREATE OR REPLACE TEMPORARY VIEW transaction_totals as (
+                    SELECT
+                        -- Transaction Normalized Fields
+                        tn.award_id,
+                        SUM(tn.federal_action_obligation)   AS total_obligation,
+                        SUM(tn.original_loan_subsidy_cost)  AS total_subsidy_cost,
+                        SUM(tn.funding_amount)              AS total_funding_amount,
+                        SUM(tn.face_value_loan_guarantee)   AS total_loan_value,
+                        SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount,
+                        SUM(tn.indirect_federal_sharing)    AS total_indirect_federal_sharing,
+                        -- Transaction FPDS Fields
+                        SUM(CAST(fpds.base_and_all_options_value AS NUMERIC)) AS total_base_and_options_value,
+                        SUM(CAST(fpds.base_exercised_options_val AS NUMERIC)) AS base_exercised_options_val
+                    FROM int.transaction_normalized tn
+                    LEFT JOIN int.transaction_fpds AS fpds ON tn.id = fpds.transaction_id
+                    WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
+                    GROUP BY tn.award_id
+                )
+            """
+        )
 
     def source_subquery_sql(self, transaction_type=None):
         def handle_column(col, bronze_table_name):
@@ -893,6 +1029,7 @@ class Command(BaseCommand):
         table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
         table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS
         table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
+        table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
         for destination_table, col_names in table_to_col_names_dict.items():
             call_command(
                 "create_delta_table",
