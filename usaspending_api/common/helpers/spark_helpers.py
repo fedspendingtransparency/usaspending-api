@@ -399,7 +399,7 @@ def get_es_config():  # pragma: no cover -- will be used eventually
     es_url = CONFIG.ES_URL
     url_parts, url_username, url_password = parse_http_url(es_url)
     ssl = url_parts.scheme == "https"
-    host = url_parts.host
+    host = url_parts.hostname
     port = url_parts.port if url_parts.port else "443" if ssl else "80"
     user = url_username or ""
     password = url_password or ""
