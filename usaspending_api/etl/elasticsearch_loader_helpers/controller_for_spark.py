@@ -32,12 +32,11 @@ def ensure_view_exists(view_name: str, spark: SparkSession) -> None:
     view_file_path = settings.APP_DIR / "database_scripts" / "etl" / f"{view_name}.sql"
 
     view_sql = view_file_path.read_text()
-    temp_view_select_sql = view_sql.replace("CREATE VIEW", "CREATE TEMP VIEW")
+    temp_view_select_sql = view_sql.replace("CREATE VIEW", "CREATE OR REPLACE TEMP VIEW")
     temp_view_select_sql = temp_view_select_sql.replace("::JSON", "::string")
     temp_view_select_sql = temp_view_select_sql.replace('"', "")
 
     spark.sql(f"""
-    CREATE OR REPLACE TEMP VIEW {view_name} AS
     {temp_view_select_sql}
     """)
 
