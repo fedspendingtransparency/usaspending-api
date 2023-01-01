@@ -156,6 +156,13 @@ class Controller:
         print(f"Processing {self.record_count} records over {self.config['partitions']} partitions")
         df = df.repartition(self.config["partitions"])
 
+        # TODO: this function and all of its transient functions/dependencies needs to be made pickle-able so that it
+        #  can be passed into DataFrame.rdd.mapPartitionsWithIndex. Main culprit seems to be load_data(...) and what
+        #  it uses.
+        #  - an example is if any code reachable by this function -- or imported by the module this function lives in,
+        #  or modules that module imports -- invokes Django settings.* to access a Django setting, it will fail. This
+        #  is because we would be trying to use Django settings that have not yet been instantiated
+        #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
         def process_partition(partition_idx: int, partition_data, task_dict: List[Dict]):
             records = [row.asDict() for row in partition_data]
             task = task_dict[partition_idx]
