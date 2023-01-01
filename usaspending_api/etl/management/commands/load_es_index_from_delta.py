@@ -101,7 +101,7 @@ class Command(BaseCommand):
         # Resolve Parameters
         delta_table = options["delta_table"]
         index_base_name = options["index_base_name"] or delta_table
-        index_name = f"{index_base_name}-{options['datetime_label']}"
+        index_name = f"{options['datetime_label']}-{index_base_name}"  # Our ES index-templates are: *base-name
         routing_field = options["routing_field"]
         doc_id_field = options["doc_id_field"]
 
