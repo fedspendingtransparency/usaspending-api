@@ -10,18 +10,23 @@ from ssl import CERT_NONE
 
 from elasticsearch_dsl.response import Response
 
+from usaspending_api.config import CONFIG
+
 logger = logging.getLogger("console")
 CLIENT = None
 ElasticsearchResponse = Optional[Union[dict, Response]]
 
 
-def instantiate_elasticsearch_client() -> Elasticsearch:
+def instantiate_elasticsearch_client(es_host=None) -> Elasticsearch:
     es_kwargs = {"timeout": 300}
 
-    if "https" in settings.ES_HOSTNAME:
+    if not es_host:
+        es_host = settings.ES_HOSTNAME or CONFIG.ES_URL
+
+    if "https" in es_host:
         es_kwargs.update({"use_ssl": True, "verify_certs": True, "ca_certs": certifi.where()})
 
-    return Elasticsearch(settings.ES_HOSTNAME, **es_kwargs)
+    return Elasticsearch(es_host, **es_kwargs)
 
 
 def create_es_client() -> Elasticsearch:

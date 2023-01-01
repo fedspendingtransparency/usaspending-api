@@ -7,7 +7,15 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec,
 
 logger = logging.getLogger("script")
 
-EXTRACT_SQL = """
+EXTRACT_ALL_NON_NULL_PARTITIONS_SQL = """
+    SELECT *
+    FROM "{sql_view}"
+    {optional_predicate} "{primary_key}" IS NOT NULL
+""".replace(
+    "\n", ""
+)
+
+EXTRACT_PARTITION_SQL = """
     SELECT *
     FROM "{sql_view}"
     {optional_predicate} "{primary_key}" BETWEEN {lower_bound} AND {upper_bound}
@@ -15,7 +23,7 @@ EXTRACT_SQL = """
     "\n", ""
 )
 
-EXTRACT_NULL_SQL = """
+EXTRACT_NULL_PARTITION_SQL = """
     SELECT *
     FROM "{sql_view}"
     {optional_predicate} "{primary_key}" IS NULL
@@ -46,9 +54,9 @@ def obtain_extract_sql(config: dict, is_null_partition: bool = False) -> str:
         config["optional_predicate"] += " AND "
 
     if is_null_partition:
-        sql = EXTRACT_NULL_SQL
+        sql = EXTRACT_NULL_PARTITION_SQL
     else:
-        sql = EXTRACT_SQL
+        sql = EXTRACT_PARTITION_SQL
     return sql.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
 
