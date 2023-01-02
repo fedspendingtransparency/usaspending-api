@@ -1,4 +1,3 @@
-import certifi
 import logging
 
 from typing import List, Dict, Tuple, Generator
@@ -6,7 +5,6 @@ from time import perf_counter
 from math import ceil
 
 from django.core.management import call_command
-from elasticsearch import Elasticsearch
 from pyspark.sql import SparkSession
 from django.conf import settings
 
@@ -16,12 +14,17 @@ from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
 from usaspending_api.settings import LOGGING
-from usaspending_api.etl.management.commands.elasticsearch_indexer import set_config, parse_cli_args
-from usaspending_api.etl.elasticsearch_loader_helpers.index_config import toggle_refresh_off, toggle_refresh_on, \
-    swap_aliases, set_final_index_config, create_index
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
+    toggle_refresh_off,
+    toggle_refresh_on,
+    swap_aliases,
+    set_final_index_config,
+    create_index,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log, gen_random_name
 from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import obtain_min_max_count_sql
-from usaspending_api.etl.elasticsearch_loader_helpers.load_data import load_data
+
+# from usaspending_api.etl.elasticsearch_loader_helpers.load_data import load_data
 
 logger = logging.getLogger("inc_load_es_index_from_delta")
 ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
@@ -37,9 +40,11 @@ def ensure_view_exists(view_name: str, spark: SparkSession) -> None:
     temp_view_select_sql = temp_view_select_sql.replace("::JSON", "::string")
     temp_view_select_sql = temp_view_select_sql.replace('"', "")
 
-    spark.sql(f"""
+    spark.sql(
+        f"""
     {temp_view_select_sql}
-    """)
+    """
+    )
 
 
 def transform_load(task: TaskSpec, extracted_data: List[Dict]) -> Tuple[int, int]:
@@ -60,7 +65,10 @@ def transform_load(task: TaskSpec, extracted_data: List[Dict]) -> Tuple[int, int
         #             logger.warning(format_log(msg, name=task.name))
         #             return
         if len(records) > 0:
-            success, fail = load_data(task, records, client)
+            # TODO: renable load_data once pickle-able
+            logger.info("SKIPPING load_data for testing purposes")
+            # success, fail = load_data(task, records, client)
+            success, fail = 0
         else:
             logger.info(format_log("No records to index", name=task.name))
             success, fail = 0, 0
@@ -85,7 +93,7 @@ def transform_load(task: TaskSpec, extracted_data: List[Dict]) -> Tuple[int, int
 
 def count_of_records_to_process_delta(config: dict, spark: SparkSession) -> Tuple[int, int, int]:
     start = perf_counter()
-    results = spark.sql(obtain_min_max_count_sql(config).replace('"', '')).collect()[0].asDict()
+    results = spark.sql(obtain_min_max_count_sql(config).replace('"', "")).collect()[0].asDict()
     min_id, max_id, count = results["min"], results["max"], results["count"]
     msg = f"Found {count:,} {config['data_type']} DB records, took {perf_counter() - start:.2f}s"
     logger.info(format_log(msg, action="Extract"))
@@ -153,8 +161,13 @@ class Controller:
         # lookback_date = '2022-10-30' # ~692k records
         # df = df.where(f"etl_update_date > '{lookback_date}'")
         # record_count = df.count()
-        print(f"Processing {self.record_count} records over {self.config['partitions']} partitions")
-        df = df.repartition(self.config["partitions"])
+        # TODO: Re-enable repartition after testing
+        print(
+            f"Processing {self.record_count} records over {df.rdd.getNumPartitions()} partitions"
+            f" [Skipping repartition to configured {self.config['partitions']} partitions for testing]"
+        )
+        # print(f"Processing {self.record_count} records over {self.config['partitions']} partitions")
+        # df = df.repartition(self.config["partitions"])
 
         # TODO: this function and all of its transient functions/dependencies needs to be made pickle-able so that it
         #  can be passed into DataFrame.rdd.mapPartitionsWithIndex. Main culprit seems to be load_data(...) and what
@@ -163,7 +176,7 @@ class Controller:
         #  or modules that module imports -- invokes Django settings.* to access a Django setting, it will fail. This
         #  is because we would be trying to use Django settings that have not yet been instantiated
         #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
-        def process_partition(partition_idx: int, partition_data, task_dict: List[Dict]):
+        def process_partition(partition_idx: int, partition_data, task_dict: Dict[int, TaskSpec]):
             records = [row.asDict() for row in partition_data]
             task = task_dict[partition_idx]
             success, fail = transform_load(task=task, extracted_data=records)
@@ -171,7 +184,8 @@ class Controller:
 
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: process_partition(partition_idx, partition_data, self.task_dict),
-            preservesPartitioning=True).collect()
+            preservesPartitioning=True,
+        ).collect()
 
         successes, failures = 0
         for sf in success_fail_stats:
@@ -212,8 +226,9 @@ class Controller:
         """Create the Task objects w/ the appropriate configuration"""
         name_gen = gen_random_name()
         task_offset = 1 if self.config["extra_null_partition"] else 0
-        task_dict = {j + task_offset: self.configure_task(j + task_offset, name_gen) for j in
-                     range(self.config["partitions"])}
+        task_dict = {
+            j + task_offset: self.configure_task(j + task_offset, name_gen) for j in range(self.config["partitions"])
+        }
         if self.config["extra_null_partition"]:
             task_dict[0] = self.configure_task(self.config["partitions"], name_gen, True)
 
@@ -246,6 +261,8 @@ class Controller:
 
     def run_deletes(self) -> None:
         raise NotImplementedError
+
+
 #         logger.info(format_log("Processing deletions"))
 #         client = instantiate_elasticsearch_client()
 #         if self.config["data_type"] == "award":
@@ -258,4 +275,3 @@ class Controller:
 #             update_last_load_date("es_deletes", last_db_delete_time)
 #         else:
 #             raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
-
