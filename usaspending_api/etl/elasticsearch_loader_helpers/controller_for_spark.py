@@ -170,12 +170,15 @@ class Controller:
         # print(f"Processing {self.record_count} records over {self.config['partitions']} partitions")
         # df = df.repartition(self.config["partitions"])
 
+        # Mst have a clean/detached copy of this dict, with no self ref, whose class has a reference of the
+        # SparkContext. SparkContext references CANNOT be pickled with cloudpickle
+        task_dict = self.tasks.copy()
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: process_partition(
                 partition_idx=partition_idx,
                 partition_data=partition_data,
                 #partition_data=None,#[row.asDict() for row in partition_data],
-                task_dict=self.tasks,
+                task_dict=task_dict,
             ),
             preservesPartitioning=True,
         ).collect()
