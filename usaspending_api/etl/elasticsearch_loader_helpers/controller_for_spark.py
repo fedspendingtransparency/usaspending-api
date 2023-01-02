@@ -172,15 +172,15 @@ class Controller:
 
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: process_partition(
-                partition_idx=partition_idx,
+                partition_idx=1,#partition_idx,
                 #partition_data,
-                partition_data=[row.asDict() for row in partition_data],
-                task_dict=self.tasks,
+                partition_data=None,#[row.asDict() for row in partition_data],
+                task_dict=None,#self.tasks,
             ),
             preservesPartitioning=True,
         ).collect()
 
-        successes, failures = 0
+        successes, failures = 0, 0
         for sf in success_fail_stats:
             successes += sf[0]
             failures += sf[1]
