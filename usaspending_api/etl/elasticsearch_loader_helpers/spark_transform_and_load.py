@@ -32,13 +32,9 @@ logger = logging.getLogger(__name__)
 def process_partition(partition_idx: int, partition_data, task_dict: Dict[int, TaskSpec]):
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     records = [row.asDict() for row in partition_data]
-    # records = partition_data
-    # task = task_dict[partition_idx]
+    task = task_dict[partition_idx]
     # # TODO: reenable after made pickle-able
     # # success, fail = transform_load(task=task, extracted_data=records)
-    logger.info(f"Would process {len(records)} records on partition #{partition_idx}")
-    # logger.info(f"Would process {len(records)} records on partition #{partition_idx} with name {task.name}")
-    logger.info(f"Logging in process_partition")
-    print(f"Printing in process_partition")
+    logger.info(f"Would process {len(records)} records on partition #{partition_idx} with name {task.name}")
     success, fail = 0, 0
     return [(success, fail)]
