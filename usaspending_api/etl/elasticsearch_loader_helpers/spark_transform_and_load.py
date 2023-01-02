@@ -20,7 +20,7 @@ from typing import Dict, List, Tuple
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
+#from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
 from usaspending_api.settings import LOGGING
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 #  or modules that module imports -- invokes Django settings.* to access a Django setting, it will fail. This
 #  is because we would be trying to use Django settings that have not yet been instantiated
 #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
-def process_partition(partition_idx: int, partition_data, task_dict: Dict[int, TaskSpec]):
+def process_partition(partition_idx: int, partition_data, task_dict): #Dict[int, TaskSpec]):
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     records = [row.asDict() for row in partition_data]
     task = task_dict[partition_idx]
@@ -43,7 +43,7 @@ def process_partition(partition_idx: int, partition_data, task_dict: Dict[int, T
     return [(success, fail)]
 
 
-def transform_load(task: TaskSpec, extracted_data: List[Dict]) -> Tuple[int, int]:
+def transform_load(task, extracted_data: List[Dict]) -> Tuple[int, int]:
     #     if abort.is_set():
     #         logger.warning(format_log(f"Skipping partition #{task.partition_number} due to previous error", name=task.name))
     #         return
@@ -85,3 +85,9 @@ def transform_load(task: TaskSpec, extracted_data: List[Dict]) -> Tuple[int, int
         msg = f"Partition #{task.partition_number} was successfully processed in {perf_counter() - start:.2f}s"
         logger.info(format_log(msg, name=task.name))
     return success, fail
+
+
+def format_log(msg: str, action: str = None, name: str = None) -> str:
+    """Helper function to format log statements"""
+    inner_str = f"[{action if action else 'main'}] {f'{name}' if name else ''}"
+    return f"{inner_str:<34} | {msg}"
