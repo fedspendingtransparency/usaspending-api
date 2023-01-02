@@ -172,7 +172,7 @@ class Controller:
 
         # Mst have a clean/detached copy of this dict, with no self ref, whose class has a reference of the
         # SparkContext. SparkContext references CANNOT be pickled with cloudpickle
-        task_dict = self.tasks.copy()
+        task_dict = {**self.tasks}
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: process_partition(
                 partition_idx=partition_idx,
