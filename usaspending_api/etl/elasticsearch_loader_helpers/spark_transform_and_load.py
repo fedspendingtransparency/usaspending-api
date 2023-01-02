@@ -20,7 +20,7 @@ from typing import Dict, List, Tuple
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.elasticsearch_loader_helpers import TaskSpec, format_log
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
 from usaspending_api.settings import LOGGING
 
 logger = logging.getLogger(__name__)
