@@ -176,10 +176,11 @@ class Controller:
         def show_data(partition_idx: int, partition_data):
             print(f"Hello from lambda partition#{partition_idx}")
             records = [row.asDict() for row in partition_data]
-            print(f"Showing 2 records of {len(records)} for partition #{partition_idx}")
+            record_count = len(records)
+            print(f"Showing 2 records of {record_count} for partition #{partition_idx}")
             print(records[0])
             print(records[1])
-            return [(1, 0)]
+            return [(record_count, 0)]
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: show_data(partition_idx, partition_data),
             # lambda partition_idx, partition_data: process_partition(
