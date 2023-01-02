@@ -13,6 +13,7 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
+from usaspending_api.etl.elasticsearch_loader_helpers.spark_transform_and_load import process_partition
 from usaspending_api.settings import LOGGING
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     toggle_refresh_off,
@@ -168,21 +169,6 @@ class Controller:
         )
         # print(f"Processing {self.record_count} records over {self.config['partitions']} partitions")
         # df = df.repartition(self.config["partitions"])
-
-        # TODO: this function and all of its transient functions/dependencies needs to be made pickle-able so that it
-        #  can be passed into DataFrame.rdd.mapPartitionsWithIndex. Main culprit seems to be load_data(...) and what
-        #  it uses.
-        #  - an example is if any code reachable by this function -- or imported by the module this function lives in,
-        #  or modules that module imports -- invokes Django settings.* to access a Django setting, it will fail. This
-        #  is because we would be trying to use Django settings that have not yet been instantiated
-        #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
-        def process_partition(partition_idx: int, partition_data, task_dict: Dict[int, TaskSpec]):
-            records = [row.asDict() for row in partition_data]
-            task = task_dict[partition_idx]
-            # TODO: reenable after made pickle-able
-            #success, fail = transform_load(task=task, extracted_data=records)
-            success, fail = 0
-            return [(success, fail)]
 
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: process_partition(partition_idx, partition_data, self.task_dict),
