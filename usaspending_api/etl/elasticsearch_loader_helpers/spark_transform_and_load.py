@@ -18,6 +18,7 @@ from typing import Dict
 
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.etl.elasticsearch_loader_helpers import TaskSpec
+from usaspending_api.etl.elasticsearch_loader_helpers.controller_for_spark import transform_load
 from usaspending_api.settings import LOGGING
 
 logger = logging.getLogger(__name__)
@@ -33,8 +34,8 @@ def process_partition(partition_idx: int, partition_data, task_dict: Dict[int, T
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     records = [row.asDict() for row in partition_data]
     task = task_dict[partition_idx]
-    # # TODO: reenable after made pickle-able
-    # # success, fail = transform_load(task=task, extracted_data=records)
+    # TODO: reenable after made pickle-able
+    success, fail = transform_load(task=task, extracted_data=records)
     logger.info(f"Would process {len(records)} records on partition #{partition_idx} with name {task.name}")
-    success, fail = 0, 0
+    #success, fail = 0, 0
     return [(success, fail)]
