@@ -180,8 +180,9 @@ class Controller:
         task_dict = {**self.tasks}
         def show_data(partition_idx: int, partition_data):
             print(f"Hello from lambda partition#{partition_idx}")
-            records = [row.asDict() for row in partition_data]
-            print(f"Showing 2 records for partition #{partition_idx}")
+            #records = [row.asDict() for row in partition_data]
+            records = list(partition_data)
+            print(f"Showing 2 records of {len(records)} for partition #{partition_idx}")
             print(records[0])
             print(records[1])
             return [(0, 0)]
