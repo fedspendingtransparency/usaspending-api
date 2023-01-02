@@ -177,7 +177,8 @@ class Controller:
             print(f"Hello from lambda partition#{partition_idx}")
             from pprint import pprint
             print(f"Converting {len(partition_data)} Rows to dict objects for partition #{partition_idx}")
-            records = [row.asDict() for row in partition_data]
+            partition_data_list = list(partition_data)
+            records = [row.asDict() for row in partition_data_list]
             print(f"Showing 2 records for partition #{partition_idx}")
             pprint(records[0])
             pprint(records[1])
