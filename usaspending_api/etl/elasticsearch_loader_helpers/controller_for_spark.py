@@ -171,7 +171,12 @@ class Controller:
         # df = df.repartition(self.config["partitions"])
 
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
-            lambda partition_idx, partition_data: process_partition(partition_idx, partition_data, self.task_dict),
+            lambda partition_idx, partition_data: process_partition(
+                partition_idx=partition_idx,
+                #partition_data,
+                partition_data=[row.asDict() for row in partition_data],
+                task_dict=self.tasks,
+            ),
             preservesPartitioning=True,
         ).collect()
 
