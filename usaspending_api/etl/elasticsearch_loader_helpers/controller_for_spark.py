@@ -179,7 +179,9 @@ class Controller:
         def process_partition(partition_idx: int, partition_data, task_dict: Dict[int, TaskSpec]):
             records = [row.asDict() for row in partition_data]
             task = task_dict[partition_idx]
-            success, fail = transform_load(task=task, extracted_data=records)
+            # TODO: reenable after made pickle-able
+            #success, fail = transform_load(task=task, extracted_data=records)
+            success, fail = 0
             return [(success, fail)]
 
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
