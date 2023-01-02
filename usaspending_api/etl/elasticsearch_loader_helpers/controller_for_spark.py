@@ -173,11 +173,15 @@ class Controller:
         # Mst have a clean/detached copy of this dict, with no self ref, whose class has a reference of the
         # SparkContext. SparkContext references CANNOT be pickled with cloudpickle
         task_dict = {**self.tasks}
-        def say_something():
+        def show_data(partition_idx: int, partition_data):
             print("Hello from lambda")
+            from pprint import pprint
+            records = [row.asDict() for row in partition_data]
+            print(f"Showing {len(records)} records for partition #{partition_idx}")
+            pprint(records)
             return [(0, 0)]
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
-            lambda partition_idx, partition_data: say_something(),
+            lambda partition_idx, partition_data: show_data(partition_idx, partition_data),
             # lambda partition_idx, partition_data: process_partition(
             #     partition_idx=partition_idx,
             #     partition_data=partition_data,
