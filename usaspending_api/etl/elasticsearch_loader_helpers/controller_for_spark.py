@@ -157,6 +157,7 @@ class Controller:
 
     def dispatch_tasks(self) -> None:
         extract_sql = obtain_non_null_partitions_sql(self.config)
+        extract_sql = extract_sql.replace('"', "")  # Spark SQL does not process quoted identifiers correctly
         print(f"Using extract_sql:\n{extract_sql}")
         df = self.spark.sql(extract_sql)
         # lookback_date = '2022-10-30' # ~692k records
