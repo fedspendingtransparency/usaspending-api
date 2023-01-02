@@ -180,13 +180,10 @@ class Controller:
         task_dict = {**self.tasks}
         def show_data(partition_idx: int, partition_data):
             print(f"Hello from lambda partition#{partition_idx}")
-            from pprint import pprint
-            partition_data_list = list(partition_data)
-            print(f"Converting {len(partition_data_list)} Rows to dict objects for partition #{partition_idx}")
-            records = [row.asDict() for row in partition_data_list]
+            records = [row.asDict() for row in partition_data]
             print(f"Showing 2 records for partition #{partition_idx}")
-            pprint(records[0])
-            pprint(records[1])
+            print(records[0])
+            print(records[1])
             return [(0, 0)]
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: show_data(partition_idx, partition_data),
