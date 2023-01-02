@@ -179,7 +179,7 @@ class Controller:
             print(f"Showing 2 records of {len(records)} for partition #{partition_idx}")
             print(records[0])
             print(records[1])
-            return [(0, 0)]
+            return [(1, 0)]
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: show_data(partition_idx, partition_data),
             # lambda partition_idx, partition_data: process_partition(
