@@ -161,14 +161,14 @@ class Controller:
         df = self.spark.sql(extract_sql)
         # lookback_date = '2022-10-30' # ~692k records
         # df = df.where(f"etl_update_date > '{lookback_date}'")
-        # record_count = df.count()
+        df_record_count = df.count()
         # TODO: Re-enable repartition after testing
         print(
-            f"Processing {self.record_count} records over {df.rdd.getNumPartitions()} partitions"
+            f"Processing {df_record_count} records over {df.rdd.getNumPartitions()} partitions"
             f" [Skipping repartition to configured {self.config['partitions']} partitions for testing]"
         )
         print(
-            f"Repartitioning {self.record_count} records over {df.rdd.getNumPartitions()} partitions into "
+            f"Repartitioning {df_record_count} records over {df.rdd.getNumPartitions()} partitions into "
             f"{self.config['partitions']} partitions to evently balance no more than {self.config['partition_size']} "
             f"records per partition."
         )
