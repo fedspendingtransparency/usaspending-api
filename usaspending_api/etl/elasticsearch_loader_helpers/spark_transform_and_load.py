@@ -13,12 +13,14 @@ Adding new imports to this module may inadvertently introduce a dependency that 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
 import logging
+from time import perf_counter
 
-from typing import Dict
+from typing import Dict, List, Tuple
 
+from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
-from usaspending_api.etl.elasticsearch_loader_helpers import TaskSpec
-from usaspending_api.etl.elasticsearch_loader_helpers.controller_for_spark import transform_load
+from usaspending_api.config import CONFIG
+from usaspending_api.etl.elasticsearch_loader_helpers import TaskSpec, format_log
 from usaspending_api.settings import LOGGING
 
 logger = logging.getLogger(__name__)
@@ -39,3 +41,47 @@ def process_partition(partition_idx: int, partition_data, task_dict: Dict[int, T
     logger.info(f"Would process {len(records)} records on partition #{partition_idx} with name {task.name}")
     #success, fail = 0, 0
     return [(success, fail)]
+
+
+def transform_load(task: TaskSpec, extracted_data: List[Dict]) -> Tuple[int, int]:
+    #     if abort.is_set():
+    #         logger.warning(format_log(f"Skipping partition #{task.partition_number} due to previous error", name=task.name))
+    #         return
+
+    start = perf_counter()
+    msg = f"Started processing on partition #{task.partition_number}: {task.name}"
+    logger.info(format_log(msg, name=task.name))
+
+    client = instantiate_elasticsearch_client(CONFIG.ES_URL)
+    try:
+        # extracted_data = extract_records(task)
+        records = task.transform_func(task, extracted_data)
+        #         if abort.is_set():
+        #             f"Prematurely ending partition #{task.partition_number} due to error in another process"
+        #             logger.warning(format_log(msg, name=task.name))
+        #             return
+        if len(records) > 0:
+            # TODO: renable load_data once pickle-able
+            logger.info("SKIPPING load_data for testing purposes")
+            # success, fail = load_data(task, records, client)
+            success, fail = 0, 0
+        else:
+            logger.info(format_log("No records to index", name=task.name))
+            success, fail = 0, 0
+    #         with total_doc_success.get_lock():
+    #             total_doc_success.value += success
+    #         with total_doc_fail.get_lock():
+    #             total_doc_fail.value += fail
+    except Exception as exc:
+        #         if abort.is_set():
+        #             msg = f"Partition #{task.partition_number} failed after an error was previously encountered"
+        #             logger.warning(format_log(msg, name=task.name))
+        #         else:
+        logger.exception(format_log(f"{task.name} failed!", name=task.name), exc)
+        raise exc
+    #             abort.set()
+
+    else:
+        msg = f"Partition #{task.partition_number} was successfully processed in {perf_counter() - start:.2f}s"
+        logger.info(format_log(msg, name=task.name))
+    return success, fail
