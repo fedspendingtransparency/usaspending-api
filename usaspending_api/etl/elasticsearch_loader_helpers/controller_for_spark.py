@@ -175,7 +175,7 @@ class Controller:
                 partition_idx=partition_idx,
                 partition_data=partition_data,
                 #partition_data=None,#[row.asDict() for row in partition_data],
-                task_dict=None,#self.tasks,
+                task_dict=self.tasks,
             ),
             preservesPartitioning=True,
         ).collect()
