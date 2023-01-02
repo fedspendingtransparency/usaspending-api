@@ -174,11 +174,13 @@ class Controller:
         # SparkContext. SparkContext references CANNOT be pickled with cloudpickle
         task_dict = {**self.tasks}
         def show_data(partition_idx: int, partition_data):
-            print("Hello from lambda")
+            print(f"Hello from lambda partition#{partition_idx}")
             from pprint import pprint
+            print(f"Converting {len(partition_data)} Rows to dict objects for partition #{partition_idx}")
             records = [row.asDict() for row in partition_data]
-            print(f"Showing {len(records)} records for partition #{partition_idx}")
-            pprint(records)
+            print(f"Showing 2 records for partition #{partition_idx}")
+            pprint(records[0])
+            pprint(records[1])
             return [(0, 0)]
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
             lambda partition_idx, partition_data: show_data(partition_idx, partition_data),
