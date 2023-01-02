@@ -167,10 +167,15 @@ class Controller:
             f"Processing {self.record_count} records over {df.rdd.getNumPartitions()} partitions"
             f" [Skipping repartition to configured {self.config['partitions']} partitions for testing]"
         )
-        # print(f"Processing {self.record_count} records over {self.config['partitions']} partitions")
-        # df = df.repartition(self.config["partitions"])
+        print(
+            f"Repartitioning {self.record_count} records over {df.rdd.getNumPartitions()} partitions into "
+            f"{self.config['partitions']} partitions to evently balance no more than {self.config['partition_size']} "
+            f"records per partition."
+        )
+        df = df.repartition(self.config["partitions"])
+        print(f"Processing {self.record_count} records over {self.config['partitions']} partitions")
 
-        # Mst have a clean/detached copy of this dict, with no self ref, whose class has a reference of the
+        # Must have a clean/detached copy of this dict, with no self ref, whose class has a reference of the
         # SparkContext. SparkContext references CANNOT be pickled with cloudpickle
         task_dict = {**self.tasks}
         def show_data(partition_idx: int, partition_data):
