@@ -444,7 +444,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def get_recipient_hash_with_level(self, award_doc):
         recipient_info = award_doc.get("recipient_agg_key").split("/")
         recipient_hash = recipient_info[0] if recipient_info else None
-        if len(recipient_info) > 1 and recipient_info[1].upper() != 'NONE':
+        if len(recipient_info) > 1 and recipient_info[1].upper() != "NONE":
             recipient_levels = literal_eval(recipient_info[1])
         else:
             recipient_levels = []
