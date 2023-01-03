@@ -635,6 +635,8 @@ def subaward_annotations(filters: dict):
 
 
 def object_class_program_activity_annotations(filters: dict):
+    """Annotated columns that are SUMmed in account_download.py"""
+
     annotation_fields = {
         "USSGL480100_undelivered_orders_obligations_unpaid": "USSGL480100_undelivered_orders_obligations_unpaid",
         "USSGL480100_undelivered_orders_obligations_unpaid_FYB": "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
