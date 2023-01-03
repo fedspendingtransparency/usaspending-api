@@ -13,9 +13,11 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.spark_transform_and_load import show_partition_data
+from usaspending_api.etl.elasticsearch_loader_helpers.spark_transform_and_load import process_partition
+from usaspending_api.etl.spark_es_load import show_partition_data
 from usaspending_api.settings import LOGGING
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
+    toggle_refresh_off,
     toggle_refresh_on,
     swap_aliases,
     set_final_index_config,
