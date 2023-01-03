@@ -7,7 +7,6 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 url = "/api/v2/disaster/agency/count/"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_agency_count_success(client, monkeypatch, disaster_account_data, helpers, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -30,7 +29,6 @@ def test_agency_count_success(client, monkeypatch, disaster_account_data, helper
     assert resp.data["count"] == 0
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_agency_count_with_award_types(
     client, monkeypatch, faba_with_toptier_agencies, helpers, elasticsearch_award_index
