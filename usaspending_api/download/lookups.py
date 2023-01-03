@@ -44,6 +44,7 @@ from usaspending_api.download.helpers.download_annotation_functions import (
     idv_order_annotations,
     idv_transaction_annotations,
     transaction_search_annotations,
+    object_class_program_activity_annotations,
 )
 
 
@@ -136,6 +137,7 @@ VALUE_MAPPINGS = {
         "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "filter_function": account_download_filter,
+        "annotations_function": object_class_program_activity_annotations,
     },
     "award_financial": {
         "source_type": "account",

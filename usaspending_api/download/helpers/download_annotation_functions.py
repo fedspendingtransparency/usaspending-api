@@ -632,3 +632,38 @@ def subaward_annotations(filters: dict):
         ),
     }
     return annotation_fields
+
+
+def object_class_program_activity_annotations(filters: dict):
+    annotation_fields = {
+        "USSGL480100_undelivered_orders_obligations_unpaid": "USSGL480100_undelivered_orders_obligations_unpaid",
+        "USSGL480100_undelivered_orders_obligations_unpaid_FYB": "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
+        "USSGL480200_undelivered_orders_obligations_prepaid_advanced": "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
+        "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB": "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
+        "USSGL483100_undelivered_orders_obligations_transferred_unpaid": "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
+        "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced": "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
+        "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig": "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig",
+        "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid": "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
+        "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid": "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
+        "USSGL490100_delivered_orders_obligations_unpaid": "USSGL490100_delivered_orders_obligations_unpaid",
+        "USSGL490100_delivered_orders_obligations_unpaid_FYB": "USSGL490100_delivered_orders_obligations_unpaid_FYB",
+        "USSGL490200_delivered_orders_obligations_paid": "USSGL490200_delivered_orders_obligations_paid",
+        "USSGL490800_authority_outlayed_not_yet_disbursed": "USSGL490800_authority_outlayed_not_yet_disbursed",
+        "USSGL490800_authority_outlayed_not_yet_disbursed_FYB": "USSGL490800_authority_outlayed_not_yet_disbursed_FYB",
+        "USSGL493100_delivered_orders_obligations_transferred_unpaid": "USSGL493100_delivered_orders_obligations_transferred_unpaid",
+        "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig": "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig",
+        "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid": "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
+        "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid": "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
+        "deobligations_or_recoveries_or_refunds_from_prior_year": "deobligations_or_recoveries_or_refunds_from_prior_year",
+        "gross_outlay_amount_FYB": "gross_outlay_amount_FYB",
+        "gross_outlays_delivered_orders_paid_total": "gross_outlays_delivered_orders_paid_total",
+        "gross_outlays_delivered_orders_paid_total_FYB": "gross_outlays_delivered_orders_paid_total_FYB",
+        "gross_outlays_undelivered_orders_prepaid_total": "gross_outlays_undelivered_orders_prepaid_total",
+        "gross_outlays_undelivered_orders_prepaid_total_FYB": "gross_outlays_undelivered_orders_prepaid_total_FYB",
+        "obligations_delivered_orders_unpaid_total": "obligations_delivered_orders_unpaid_total",
+        "obligations_delivered_orders_unpaid_total_FYB": "obligations_delivered_orders_unpaid_total_FYB",
+        "obligations_incurred": "obligations_incurred",
+        "obligations_undelivered_orders_unpaid_total": "obligations_undelivered_orders_unpaid_total",
+        "obligations_undelivered_orders_unpaid_total_FYB": "obligations_undelivered_orders_unpaid_total_FYB",
+    }
+    return annotation_fields
