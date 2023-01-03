@@ -44,7 +44,7 @@ def show_partition_data(partition_idx: int, partition_data):
 #  or modules that module imports -- invokes Django settings.* to access a Django setting, it will fail. This
 #  is because we would be trying to use Django settings that have not yet been instantiated
 #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
-def process_partition(partition_idx: int, partition_data, task_dict): #Dict[int, TaskSpec]):
+def process_partition(partition_idx: int, partition_data, task_name):#task_dict): #Dict[int, TaskSpec]):
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     logger.info(f"Hello from process_partition. Processing partition#{partition_idx}")
     print(f"Hello from process_partition. Processing partition#{partition_idx}")
@@ -52,14 +52,14 @@ def process_partition(partition_idx: int, partition_data, task_dict): #Dict[int,
     records_len = len(records)
     logger.info(f"{records_len} records to process on partition#{partition_idx}")
     print(f"{records_len} records to process on partition#{partition_idx}")
-    task = task_dict[partition_idx]
-    logger.info(f"Task {task.name} processing data on partition#{partition_idx}")
-    print(f"Task {task.name} processing data on partition#{partition_idx}")
+    #task = task_dict[partition_idx]
+    logger.info(f"Task {task_name} processing data on partition#{partition_idx}")
+    print(f"Task {task_name} processing data on partition#{partition_idx}")
     # TODO: reenable after made pickle-able
-    success, fail = transform_load(task=task, extracted_data=records)
-    logger.info(f"Would process {records_len} records on partition #{partition_idx} with name {task.name}")
-    print(f"Would process {records_len} records on partition #{partition_idx} with name {task.name}")
-    #success, fail = 0, 0
+    #success, fail = transform_load(task=task, extracted_data=records)
+    logger.info(f"Would process {records_len} records on partition #{partition_idx} with name {task_name}")
+    print(f"Would process {records_len} records on partition #{partition_idx} with name {task_name}")
+    success, fail = records_len, 0
     return [(success, fail)]
 
 
