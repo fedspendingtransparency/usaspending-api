@@ -25,6 +25,18 @@ from usaspending_api.settings import LOGGING
 
 logger = logging.getLogger(__name__)
 
+
+def show_partition_data(partition_idx: int, partition_data):
+    """Dummy RDD-mappable function that works without pickle/dependency-initialization errors"""
+    print(f"Hello from lambda partition#{partition_idx}")
+    records = [row.asDict() for row in partition_data]
+    record_count = len(records)
+    print(f"Showing 2 records of {record_count} for partition #{partition_idx}")
+    print(records[0])
+    print(records[1])
+    return [(record_count, 0)]
+
+
 # TODO: this function and all of its transient functions/dependencies needs to be made pickle-able so that it
 #  can be passed into DataFrame.rdd.mapPartitionsWithIndex. Main culprit seems to be load_data(...) and what
 #  it uses.

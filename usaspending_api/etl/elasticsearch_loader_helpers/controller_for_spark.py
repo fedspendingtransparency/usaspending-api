@@ -13,7 +13,8 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.elasticsearch_loader_helpers.spark_transform_and_load import process_partition
+from usaspending_api.etl.elasticsearch_loader_helpers.spark_transform_and_load import process_partition, \
+    show_partition_data
 from usaspending_api.settings import LOGGING
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     toggle_refresh_off,
@@ -173,16 +174,16 @@ class Controller:
         # Must have a clean/detached copy of this dict, with no self ref, whose class has a reference of the
         # SparkContext. SparkContext references CANNOT be pickled with cloudpickle
         task_dict = {**self.tasks}
-        def show_data(partition_idx: int, partition_data):
-            print(f"Hello from lambda partition#{partition_idx}")
-            records = [row.asDict() for row in partition_data]
-            record_count = len(records)
-            print(f"Showing 2 records of {record_count} for partition #{partition_idx}")
-            print(records[0])
-            print(records[1])
-            return [(record_count, 0)]
+        # def show_data(partition_idx: int, partition_data):
+        #     print(f"Hello from lambda partition#{partition_idx}")
+        #     records = [row.asDict() for row in partition_data]
+        #     record_count = len(records)
+        #     print(f"Showing 2 records of {record_count} for partition #{partition_idx}")
+        #     print(records[0])
+        #     print(records[1])
+        #     return [(record_count, 0)]
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
-            lambda partition_idx, partition_data: show_data(partition_idx, partition_data),
+            lambda partition_idx, partition_data: show_partition_data(partition_idx, partition_data),
             # lambda partition_idx, partition_data: process_partition(
             #     partition_idx=partition_idx,
             #     partition_data=partition_data,
