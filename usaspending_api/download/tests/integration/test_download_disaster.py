@@ -39,25 +39,61 @@ def awards_and_transactions():
 
     # Awards
     award1 = baker.make(
-        "search.AwardSearch", award_id=123, type="07", total_loan_value=3, generated_unique_award_id="ASST_NEW_1"
+        "search.AwardSearch",
+        award_id=123,
+        type="07",
+        total_loan_value=3,
+        generated_unique_award_id="ASST_NEW_1",
+        action_date="2020-01-01",
     )
     award2 = baker.make(
-        "search.AwardSearch", award_id=344, type="07", total_loan_value=30, generated_unique_award_id="ASST_NEW_2"
+        "search.AwardSearch",
+        award_id=344,
+        type="07",
+        total_loan_value=30,
+        generated_unique_award_id="ASST_NEW_2",
+        action_date="2020-01-01",
     )
     award3 = baker.make(
-        "search.AwardSearch", award_id=809, type="08", total_loan_value=300, generated_unique_award_id="ASST_NEW_3"
+        "search.AwardSearch",
+        award_id=809,
+        type="08",
+        total_loan_value=300,
+        generated_unique_award_id="ASST_NEW_3",
+        action_date="2020-01-01",
     )
     award4 = baker.make(
-        "search.AwardSearch", award_id=110, type="B", total_loan_value=0, generated_unique_award_id="CONT_NEW_1"
+        "search.AwardSearch",
+        award_id=110,
+        type="B",
+        total_loan_value=0,
+        generated_unique_award_id="CONT_NEW_1",
+        action_date="2020-01-01",
     )
     award5 = baker.make(
-        "search.AwardSearch", award_id=130, type="A", total_loan_value=0, generated_unique_award_id="CONT_NEW_2"
+        "search.AwardSearch",
+        award_id=130,
+        type="A",
+        total_loan_value=0,
+        generated_unique_award_id="CONT_NEW_2",
+        action_date="2020-01-01",
     )
     award6 = baker.make(
-        "search.AwardSearch", award_id=391, type="C", total_loan_value=0, generated_unique_award_id="CONT_NEW_3"
+        "search.AwardSearch",
+        "search.AwardSearch",
+        award_id=391,
+        type="C",
+        total_loan_value=0,
+        generated_unique_award_id="CONT_NEW_3",
+        action_date="2020-01-01",
     )
     award7 = baker.make(
-        "search.AwardSearch", award_id=398, type="D", total_loan_value=0, generated_unique_award_id="CONT_NEW_4"
+        "search.AwardSearch",
+        award_id=398,
+        type="D",
+        total_loan_value=0,
+        generated_unique_award_id="CONT_NEW_4",
+        action_date="2020-01-01",
     )
 
     # Disaster Emergency Fund Code
@@ -375,7 +411,6 @@ def awards_and_transactions():
     update_awards()
 
 
-@pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
 def test_csv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -398,7 +433,6 @@ def test_csv_download_success(client, monkeypatch, awards_and_transactions, elas
     assert re.match(r".*COVID-19_Profile_2021-09-20_H20M11S49647843.zip", resp_json["file_url"])
 
 
-@pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
 def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -410,7 +444,6 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
     assert resp_json["download_request"]["file_format"] == "tsv"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
 def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -422,7 +455,6 @@ def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, el
     assert resp_json["download_request"]["file_format"] == "pstxt"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db(transaction=True)
 def test_download_failure_with_two_defc(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)

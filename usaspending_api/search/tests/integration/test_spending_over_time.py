@@ -51,6 +51,7 @@ def spending_over_time_test_data():
             piid=f"piid_{transaction_id}" if is_fpds else None,
             total_obligation=total_obligation,
             type=contract_award_type if is_fpds else grant_award_type,
+            action_date="2020-01-01",
         )
 
         # Federal, Treasury, and Financial Accounts
@@ -1035,7 +1036,7 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
     baker.make(
         "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
     )
-    baker.make("search.AwardSearch", award_id=99, total_obligation=20, piid="0001")
+    baker.make("search.AwardSearch", award_id=99, total_obligation=20, piid="0001", action_date="2020-01-01")
     baker.make(
         "search.TransactionSearch",
         transaction_id=99,
