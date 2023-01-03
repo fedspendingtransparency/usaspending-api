@@ -183,12 +183,12 @@ class Controller:
         #     print(records[1])
         #     return [(record_count, 0)]
         success_fail_stats = df.rdd.mapPartitionsWithIndex(
-            lambda partition_idx, partition_data: show_partition_data(partition_idx, partition_data),
-            # lambda partition_idx, partition_data: process_partition(
-            #     partition_idx=partition_idx,
-            #     partition_data=partition_data,
-            #     task_dict=task_dict,
-            # ),
+            # lambda partition_idx, partition_data: show_partition_data(partition_idx, partition_data),
+            lambda partition_idx, partition_data: process_partition(
+                partition_idx=partition_idx,
+                partition_data=partition_data,
+                task_dict=task_dict,
+            ),
             preservesPartitioning=True,
         ).collect()
 
