@@ -46,11 +46,15 @@ def show_partition_data(partition_idx: int, partition_data):
 #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
 def process_partition(partition_idx: int, partition_data, task_dict): #Dict[int, TaskSpec]):
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
+    logger.info(f"Hello from process_partition. Processing partition#{partition_idx}")
     records = [row.asDict() for row in partition_data]
+    records_len = len(records)
+    logger.info(f"{records_len} records to process on partition#{partition_idx}")
     task = task_dict[partition_idx]
+    logger.info(f"Task {task.name} processing data on partition#{partition_idx}")
     # TODO: reenable after made pickle-able
     success, fail = transform_load(task=task, extracted_data=records)
-    logger.info(f"Would process {len(records)} records on partition #{partition_idx} with name {task.name}")
+    logger.info(f"Would process {records_len} records on partition #{partition_idx} with name {task.name}")
     #success, fail = 0, 0
     return [(success, fail)]
 
