@@ -187,7 +187,7 @@ class Controller:
             lambda partition_idx, partition_data: process_partition(
                 partition_idx=partition_idx,
                 partition_data=partition_data,
-                task_name=task_dict[partition_idx].name,
+                #task_name=task_dict[partition_idx].name,
             ),
             preservesPartitioning=True,
         ).collect()

@@ -44,7 +44,7 @@ def show_partition_data(partition_idx: int, partition_data):
 #  or modules that module imports -- invokes Django settings.* to access a Django setting, it will fail. This
 #  is because we would be trying to use Django settings that have not yet been instantiated
 #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
-def process_partition(partition_idx: int, partition_data, task_name):#task_dict): #Dict[int, TaskSpec]):
+def process_partition(partition_idx: int, partition_data, task_name="unknown_task"):#task_dict): #Dict[int, TaskSpec]):
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     logger.info(f"Hello from process_partition. Processing partition#{partition_idx}")
     print(f"Hello from process_partition. Processing partition#{partition_idx}")
