@@ -13,14 +13,18 @@ Adding new imports to this module may inadvertently introduce a dependency that 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
 import logging
+import os
 from time import perf_counter
 
 from typing import Dict, List, Tuple
+
+from django import setup as django_setup
 
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
 #from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
+from usaspending_api.etl.elasticsearch_loader_helpers import TaskSpec
 from usaspending_api.settings import LOGGING
 
 logger = logging.getLogger(__name__)
@@ -36,6 +40,14 @@ def show_partition_data(partition_idx: int, partition_data):
     print(records[1])
     return [(record_count, 0)]
 
+def init_django():
+    # Set Runtime Env
+    os.environ["ENV_CODE"] = "qat"
+
+    # Setup Django
+    os.environ["DJANGO_SETTINGS_MODULE"] = "usaspending_api.settings"
+    django_setup()
+
 
 # TODO: this function and all of its transient functions/dependencies needs to be made pickle-able so that it
 #  can be passed into DataFrame.rdd.mapPartitionsWithIndex. Main culprit seems to be load_data(...) and what
@@ -44,7 +56,8 @@ def show_partition_data(partition_idx: int, partition_data):
 #  or modules that module imports -- invokes Django settings.* to access a Django setting, it will fail. This
 #  is because we would be trying to use Django settings that have not yet been instantiated
 #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
-def process_partition(partition_idx: int, partition_data, task_name="unknown"):#task_dict): #Dict[int, TaskSpec]):
+def process_partition(partition_idx: int, partition_data, task: TaskSpec):
+    init_django()
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     logger.info(f"Hello from process_partition. Processing partition#{partition_idx}")
     print(f"Hello from process_partition. Processing partition#{partition_idx}")
