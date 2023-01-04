@@ -80,7 +80,6 @@ def awards_and_transactions():
     )
     award6 = baker.make(
         "search.AwardSearch",
-        "search.AwardSearch",
         award_id=391,
         type="C",
         total_loan_value=0,
