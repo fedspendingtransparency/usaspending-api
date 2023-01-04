@@ -24,7 +24,7 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
 from usaspending_api.config import CONFIG
 #from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
-from usaspending_api.etl.elasticsearch_loader_helpers import TaskSpec
+from usaspending_api.etl.elasticsearch_loader_helpers import TaskSpec, load_data
 from usaspending_api.settings import LOGGING
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,6 @@ def process_partition(partition_idx: int, partition_data, task: TaskSpec):
     #task = task_dict[partition_idx]
     logger.info(f"Task {task_name} processing data on partition#{partition_idx}")
     print(f"Task {task_name} processing data on partition#{partition_idx}")
-    # TODO: reenable after made pickle-able
     success, fail = transform_load(task=task, extracted_data=records)
     logger.info(f"Would process {records_len} records on partition #{partition_idx} with name {task_name}")
     print(f"Would process {records_len} records on partition #{partition_idx} with name {task_name}")
@@ -89,19 +88,16 @@ def transform_load(task, extracted_data: List[Dict]) -> Tuple[int, int]:
     client = instantiate_elasticsearch_client(CONFIG.ES_URL)
     try:
         # extracted_data = extract_records(task)
-        #records = task.transform_func(task, extracted_data)
-        # TODO: renable task.transform_func after made pickle-able
-        logger.info("SKIPPING transform_func for testing purposes")
-        records = []
+        records = task.transform_func(task, extracted_data)
         #         if abort.is_set():
         #             f"Prematurely ending partition #{task.partition_number} due to error in another process"
         #             logger.warning(format_log(msg, name=task.name))
         #             return
         if len(records) > 0:
-            # TODO: renable load_data once pickle-able
-            logger.info("SKIPPING load_data for testing purposes")
-            # success, fail = load_data(task, records, client)
-            success, fail = 0, 0
+            # # TODO: renable load_data once pickle-able
+            # logger.info("SKIPPING load_data for testing purposes")
+            # success, fail = 0, 0
+            success, fail = load_data(task, records, client)
         else:
             logger.info(format_log("No records to index", name=task.name))
             success, fail = 0, 0
