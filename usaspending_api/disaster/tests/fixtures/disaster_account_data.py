@@ -440,8 +440,12 @@ def disaster_account_data():
         total_loan_value=333,
         type="07",
         funding_agency_id=ag1.id,
+        funding_toptier_agency_code="007",
         latest_transaction_id=10,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
+        disaster_emergency_fund_codes=["L", "O"],
+        total_covid_obligation=11080,
+        total_covid_outlay=11020,
     )  # Loan
     a2 = baker.make(
         "search.AwardSearch",
@@ -449,8 +453,12 @@ def disaster_account_data():
         total_loan_value=444,
         type="02",
         funding_agency_id=ag2.id,
+        funding_toptier_agency_code="008",
         latest_transaction_id=20,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
+        disaster_emergency_fund_codes=["O"],
+        total_covid_obligation=2000000,
+        total_covid_outlay=20,
     )  # Block Grant - subtier sister to a4
     a3 = baker.make(
         "search.AwardSearch",
@@ -458,8 +466,12 @@ def disaster_account_data():
         total_loan_value=444,
         type="A",
         funding_agency_id=ag3.id,
+        funding_toptier_agency_code="008",
         latest_transaction_id=30,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
+        disaster_emergency_fund_codes=["M", "P", "N", "O", "Q"],
+        total_covid_obligation=22222222,
+        total_covid_outlay=222204,
     )  # BPA Call
     a4 = baker.make(
         "search.AwardSearch",
@@ -467,8 +479,12 @@ def disaster_account_data():
         total_loan_value=555,
         type="02",
         funding_agency_id=ag3.id,
+        funding_toptier_agency_code="008",
         latest_transaction_id=40,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
+        disaster_emergency_fund_codes=["O"],
+        total_covid_obligation=200000000,
+        total_covid_outlay=-2,
     )  # Block Grant - subtier sister to a2
     a5 = baker.make(
         "search.AwardSearch",
@@ -476,8 +492,12 @@ def disaster_account_data():
         total_loan_value=666,
         type="02",
         funding_agency_id=ag4.id,
+        funding_toptier_agency_code="010",
         latest_transaction_id=50,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
+        disaster_emergency_fund_codes=["L"],
+        total_covid_obligation=1000,
+        total_covid_outlay=1000,
     )
 
     baker.make(
