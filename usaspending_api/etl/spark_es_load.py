@@ -60,7 +60,7 @@ def transform_load(task, extracted_data: List[Dict]) -> Tuple[int, int]:
     msg = f"Started processing on partition #{task.partition_number}: {task.name}"
     logger.info(format_log(msg, name=task.name))
 
-    client = instantiate_elasticsearch_client(CONFIG.ES_URL)
+    client = instantiate_elasticsearch_client()
     try:
         # extracted_data = extract_records(task)
         records = task.transform_func(task, extracted_data)

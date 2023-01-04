@@ -396,7 +396,7 @@ def get_es_config():  # pragma: no cover -- will be used eventually
         index_config["es.mapping.routing"] = routing  # for index routing key
         index_config["es.mapping.id"] = doc_id        # for _id field of indexed documents
     """
-    es_url = CONFIG.ES_URL
+    es_url = CONFIG.ES_HOSTNAME
     url_parts, url_username, url_password = parse_http_url(es_url)
     ssl = url_parts.scheme == "https"
     host = url_parts.hostname

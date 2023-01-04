@@ -131,7 +131,7 @@ class Command(BaseCommand):
         # Setup Logger
         self.logger = get_jvm_logger(spark, __name__)
 
-        elasticsearch_client = instantiate_elasticsearch_client(CONFIG.ES_URL)
+        elasticsearch_client = instantiate_elasticsearch_client()
         config = parse_cli_args(options, elasticsearch_client)
 
         start = perf_counter()

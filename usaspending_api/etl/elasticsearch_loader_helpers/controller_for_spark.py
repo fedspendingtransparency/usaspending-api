@@ -58,7 +58,7 @@ def transform_load(task: TaskSpec, extracted_data: List[Dict]) -> Tuple[int, int
     msg = f"Started processing on partition #{task.partition_number}: {task.name}"
     logger.info(format_log(msg, name=task.name))
 
-    client = instantiate_elasticsearch_client(CONFIG.ES_URL)
+    client = instantiate_elasticsearch_client()
     try:
         # extracted_data = extract_records(task)
         records = task.transform_func(task, extracted_data)
@@ -265,7 +265,7 @@ class Controller:
     #         return lower_bound, upper_bound
 
     def run_deletes(self) -> None:
-        raise NotImplementedError
+        raise NotImplementedError  # No need to differentiate this command with Spark-based impl. Just use the original
 
 
 #         logger.info(format_log("Processing deletions"))

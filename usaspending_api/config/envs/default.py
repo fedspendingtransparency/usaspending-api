@@ -51,7 +51,7 @@ class DefaultConfig(BaseSettings):
         BROKER_DB_PASSWORD: Password for the user used to connect to the Broker DB
         BROKER_DB_HOST: Host on which to to connect to the Broker DB
         BROKER_DB_PORT: Port on which to connect to the Broker DB
-        ES_URL: (optional, but preferred) Full URL to Elasticsearch cluster that can be used to override the
+        ES_HOSTNAME: (optional, but preferred) Full URL to Elasticsearch cluster that can be used to override the
                 URL-by-parts
         ES_SCHEME: "http" or "https". Defaults to "https:
         ES_HOST: Host on which to connect to the USAspending Elasticsearch cluster
@@ -177,7 +177,7 @@ class DefaultConfig(BaseSettings):
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
-    ES_URL: str = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
+    ES_HOSTNAME: str = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
     ES_SCHEME: str = "https"
     ES_HOST: str = ENV_SPECIFIC_OVERRIDE
     ES_PORT: str = None
@@ -188,8 +188,8 @@ class DefaultConfig(BaseSettings):
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     @root_validator
-    def _ES_URL_and_parts_factory(cls, values):
-        """A root validator to backfill ES_URL and ES_* part config vars and validate that they are
+    def _ES_HOSTNAME_and_parts_factory(cls, values):
+        """A root validator to backfill ES_HOSTNAME and ES_* part config vars and validate that they are
         all consistent.
 
         - Serves as a factory function to fill out all places where we track the ES URL as both one
@@ -199,7 +199,7 @@ class DefaultConfig(BaseSettings):
         """
         # noinspection PyArgumentList
         cls._validate_http_url(
-            cls=cls, values=values, url_conf_name="ES_URL", resource_conf_prefix="ES", required=False
+            cls=cls, values=values, url_conf_name="ES_HOSTNAME", resource_conf_prefix="ES", required=False
         )
         return values
 
