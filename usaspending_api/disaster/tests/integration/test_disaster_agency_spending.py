@@ -288,7 +288,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
 @pytest.mark.django_db
 def test_individual_defc_filter(client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 30)
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_spending_endpoint(
         client, url, award_type_codes=["A"], def_codes=["Q"], spending_type="award"
     )
