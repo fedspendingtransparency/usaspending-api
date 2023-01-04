@@ -7,7 +7,7 @@ url = "/api/v2/disaster/object_class/count/"
 
 @pytest.mark.django_db
 def test_object_class_count_success(client, monkeypatch, disaster_account_data, helpers):
-    helpers.patch_datetime_now(monkeypatch, datetime.dateime.now().year + 1, 12, 31)
+    helpers.patch_datetime_now(monkeypatch, datetime.datetime.now().year + 1, 12, 31)
 
     resp = helpers.post_for_count_endpoint(client, url, ["L", "M", "N", "O", "P"])
     assert resp.status_code == status.HTTP_200_OK
