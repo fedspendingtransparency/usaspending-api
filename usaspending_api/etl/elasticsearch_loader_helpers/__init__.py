@@ -1,3 +1,6 @@
+from django import setup as django_setup
+django_setup()
+
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     delete_docs_by_unique_key,
     delete_awards,
