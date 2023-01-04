@@ -12,6 +12,10 @@ Adding new imports to this module may inadvertently introduce a dependency that 
 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
+from django import setup as django_setup
+# NOTE: ENV VAR NAMED DJANGO_SETTINGS_MODULE must be set for setup to work (e.g. to usaspending_api.settings)
+django_setup()
+
 import logging
 import os
 from time import perf_counter
