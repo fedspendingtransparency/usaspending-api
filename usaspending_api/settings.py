@@ -144,7 +144,8 @@ ES_TRANSACTIONS_QUERY_ALIAS_PREFIX = "transaction-query"
 ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
 ES_TIMEOUT = 90
 ES_REPOSITORY = ""
-ES_ROUTING_FIELD = "recipient_agg_key"
+# TODO: set back to other key after testing
+ES_ROUTING_FIELD = "recipient_hash" #"recipient_agg_key"
 
 # Grants API
 GRANTS_API_KEY = os.environ.get("GRANTS_API_KEY")

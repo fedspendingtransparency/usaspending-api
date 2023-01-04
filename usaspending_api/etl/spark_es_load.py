@@ -23,7 +23,7 @@ from usaspending_api.config import CONFIG
 from usaspending_api.etl.elasticsearch_loader_helpers import TaskSpec, load_data, format_log
 from usaspending_api.settings import LOGGING
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("script")
 
 
 def show_partition_data(partition_idx: int, partition_data):
