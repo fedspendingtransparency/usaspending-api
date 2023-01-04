@@ -65,7 +65,7 @@ def process_partition(partition_idx: int, partition_data, task: TaskSpec):
     records_len = len(records)
     logger.info(f"{records_len} records to process on partition#{partition_idx}")
     print(f"{records_len} records to process on partition#{partition_idx}")
-    #task_name = task.name
+    task_name = task.name
     #task = task_dict[partition_idx]
     logger.info(f"Task {task_name} processing data on partition#{partition_idx}")
     print(f"Task {task_name} processing data on partition#{partition_idx}")
