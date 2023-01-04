@@ -12,10 +12,6 @@ Adding new imports to this module may inadvertently introduce a dependency that 
 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
-from django import setup as django_setup
-# NOTE: ENV VAR NAMED DJANGO_SETTINGS_MODULE must be set for setup to work (e.g. to usaspending_api.settings)
-django_setup()
-
 import logging
 import os
 from time import perf_counter
@@ -60,7 +56,7 @@ def init_django():
 #  or modules that module imports -- invokes Django settings.* to access a Django setting, it will fail. This
 #  is because we would be trying to use Django settings that have not yet been instantiated
 #  - especially need to make sure no code from here accesses the SparkSession or SparkContext under that session
-def process_partition(partition_idx: int, partition_data, task_name): #TaskSpec):
+def process_partition(partition_idx: int, partition_data, task: TaskSpec):
     #django_setup()
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     logger.info(f"Hello from process_partition. Processing partition#{partition_idx}")
@@ -69,15 +65,15 @@ def process_partition(partition_idx: int, partition_data, task_name): #TaskSpec)
     records_len = len(records)
     logger.info(f"{records_len} records to process on partition#{partition_idx}")
     print(f"{records_len} records to process on partition#{partition_idx}")
-    #task_name = task.name
+    task_name = task.name
     #task = task_dict[partition_idx]
     logger.info(f"Task {task_name} processing data on partition#{partition_idx}")
     print(f"Task {task_name} processing data on partition#{partition_idx}")
     # TODO: reenable after made pickle-able
-    #success, fail = transform_load(task=task, extracted_data=records)
+    success, fail = transform_load(task=task, extracted_data=records)
     logger.info(f"Would process {records_len} records on partition #{partition_idx} with name {task_name}")
     print(f"Would process {records_len} records on partition #{partition_idx} with name {task_name}")
-    success, fail = records_len, 0
+    #success, fail = records_len, 0
     return [(success, fail)]
 
 

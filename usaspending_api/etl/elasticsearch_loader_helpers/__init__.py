@@ -1,3 +1,16 @@
+from django.apps import apps
+from django import setup as django_setup
+
+# Ensure Django is setup before importing/using ths module. Why? -->
+# This module is used by other application functions, which are pickled and transported to worker machines
+# in a distributed/cluster computing configuration (Spark workers). As the code lands there, no prior setup or
+# dependencies are established, so setup of things like Django needs to be re-initialized before the code is run.
+# Due to the way the function requires classes and functions under this module, this __init__ module is always run
+# before any other entrypoint code can be invoked.
+if not apps.ready:  # an indicator of whether Django has already been setup in this running process
+    # NOTE: ENV VAR NAMED DJANGO_SETTINGS_MODULE must be set for setup to work (e.g. to usaspending_api.settings)
+    django_setup()
+
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     delete_docs_by_unique_key,
     delete_awards,
