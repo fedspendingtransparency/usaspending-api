@@ -1,5 +1,5 @@
 import pytest
-import datetime
+
 from model_bakery import baker
 
 
@@ -40,7 +40,7 @@ def disaster_account_data():
         submission_fiscal_year=2022,
         submission_fiscal_quarter=3,
         submission_fiscal_month=8,
-        submission_reveal_date=f"{datetime.datetime.now().year + 1}-12-31",
+        submission_reveal_date=f"2022-12-31",
     )
     dsws3 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
