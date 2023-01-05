@@ -1532,7 +1532,6 @@ class TestAwardIdLookup:
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
         assert equal_datasets([{"award_id": partially_deleted_award_id}], delta_data, "")
 
-
     @mark.django_db(transaction=True, reset_sequences=True)
     def test_happy_path_scenarios_with_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
