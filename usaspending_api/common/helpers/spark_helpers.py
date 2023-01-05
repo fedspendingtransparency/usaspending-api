@@ -559,10 +559,12 @@ def clean_postgres_sql_for_spark_sql(
     # Treat these type casts as string in Spark SQL
     spark_sql = re.sub(fr"::text|::json", fr"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
-    for vw in global_temp_view_proxies:
-        spark_sql = re.sub(fr"FROM\s+{vw}", fr"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+    if global_temp_view_proxies:
+        for vw in global_temp_view_proxies:
+            spark_sql = re.sub(fr"FROM\s+{vw}", fr"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
-    for old, new in identifier_replacements.items():
-        spark_sql = re.sub(fr"(\s+|^){old}(\s+|$)", fr" {new}", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+    if identifier_replacements:
+        for old, new in identifier_replacements.items():
+            spark_sql = re.sub(fr"(\s+|^){old}(\s+|$)", fr" {new}", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     return spark_sql
