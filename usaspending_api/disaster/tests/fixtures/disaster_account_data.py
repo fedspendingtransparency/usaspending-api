@@ -441,11 +441,16 @@ def disaster_account_data():
         type="07",
         funding_agency_id=ag1.id,
         funding_toptier_agency_code="007",
+        funding_subtier_agency_code="1007",
         latest_transaction_id=10,
         action_date="2020-10-01",
         disaster_emergency_fund_codes=["L", "O"],
-        total_covid_obligation=11080,
-        total_covid_outlay=11020,
+        total_covid_obligation=2000,
+        total_covid_outlay=20000,
+        covid_spending_by_defc=[
+            {"defc": "L", "outlay": 10000, "obligation": 1000},
+            {"defc": "O", "outlay": 10000, "obligation": 1000},
+        ],
     )  # Loan
     a2 = baker.make(
         "search.AwardSearch",
@@ -454,11 +459,15 @@ def disaster_account_data():
         type="02",
         funding_agency_id=ag2.id,
         funding_toptier_agency_code="008",
+        funding_subtier_agency_code="1008",
         latest_transaction_id=20,
         action_date="2020-10-01",
         disaster_emergency_fund_codes=["O"],
         total_covid_obligation=2000000,
         total_covid_outlay=20,
+        covid_spending_by_defc=[
+            {"defc": "O", "outlay": 20, "obligation": 2000000},
+        ],
     )  # Block Grant - subtier sister to a4
     a3 = baker.make(
         "search.AwardSearch",
@@ -467,11 +476,16 @@ def disaster_account_data():
         type="A",
         funding_agency_id=ag3.id,
         funding_toptier_agency_code="008",
+        funding_subtier_agency_code="2008",
         latest_transaction_id=30,
         action_date="2020-10-01",
         disaster_emergency_fund_codes=["M", "P", "N", "O", "Q"],
         total_covid_obligation=22222222,
         total_covid_outlay=222204,
+        covid_spending_by_defc=[
+            {"defc": "Q", "outlay": 2, "obligation": 2},
+            {"defc": "L", "outlay": 20000, "obligation": 2000},
+        ],
     )  # BPA Call
     a4 = baker.make(
         "search.AwardSearch",
@@ -480,11 +494,15 @@ def disaster_account_data():
         type="02",
         funding_agency_id=ag3.id,
         funding_toptier_agency_code="008",
+        funding_subtier_agency_code="2008",
         latest_transaction_id=40,
         action_date="2020-10-01",
         disaster_emergency_fund_codes=["O"],
         total_covid_obligation=200000000,
         total_covid_outlay=-2,
+        covid_spending_by_defc=[
+            {"defc": "O", "outlay": -2, "obligation": 200000000},
+        ],
     )  # Block Grant - subtier sister to a2
     a5 = baker.make(
         "search.AwardSearch",
@@ -492,7 +510,8 @@ def disaster_account_data():
         total_loan_value=666,
         type="02",
         funding_agency_id=ag4.id,
-        funding_toptier_agency_code="010",
+        funding_toptier_agency_code="009",
+        funding_subtier_agency_code="3008",
         latest_transaction_id=50,
         action_date="2020-10-01",
         disaster_emergency_fund_codes=["L"],
