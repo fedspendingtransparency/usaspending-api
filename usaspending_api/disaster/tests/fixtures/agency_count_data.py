@@ -10,12 +10,20 @@ from usaspending_api.references.models import Agency
 @pytest.fixture
 def faba_with_toptier_agencies(award_count_sub_schedule, award_count_submission, defc_codes):
     toptier_agency(1)
-    award1 = award_with_toptier_agency(1)
+    award1 = award_with_toptier_agency(1, 8, 0)
 
     toptier_agency(2)
-    award2 = award_with_toptier_agency(2)
+    award2 = award_with_toptier_agency(2, 0, 7)
     award3 = baker.make(
-        "search.AwardSearch", award_id=1, type="A", funding_agency_id=Agency.objects.first().id, total_loan_value=0
+        "search.AwardSearch",
+        award_id=1,
+        type="A",
+        funding_agency_id=Agency.objects.first().id,
+        total_loan_value=0,
+        disaster_emergency_fund_codes=["M"],
+        total_covid_obligation=8,
+        total_covid_outlay=0,
+        covid_spending_by_defc=[{"defc": "M", "outlay": 0, "obligaton": 8}],
     )
 
     faba_for_award(award1, 8, 0)
@@ -95,7 +103,7 @@ def toptier_agency(id):
     )
 
 
-def award_with_toptier_agency(id):
+def award_with_toptier_agency(id, toa=0, outlay=0):
     agency = baker.make("references.Agency", toptier_agency_id=id, toptier_flag=True)
     a1 = baker.make(
         "search.AwardSearch",
@@ -104,6 +112,10 @@ def award_with_toptier_agency(id):
         funding_agency_id=agency.id,
         total_loan_value=0,
         latest_transaction_id=id,
+        disaster_emergency_fund_codes=["M"],
+        total_covid_obligation=toa,
+        total_covid_outlay=outlay,
+        covid_spending_by_defc=[{"defc": "M", "outlay": outlay, "obligaton": toa}]
     )
     baker.make(
         "search.TransactionSearch",
