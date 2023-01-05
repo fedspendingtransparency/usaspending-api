@@ -345,7 +345,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
                 format_log(
                     "Partition-processing task logs will be embedded in executor stderr logs, and not appear here.")
             )
-            df = df.repartition(self.config["partitions"], )
+            df = df.repartition(self.config["partitions"], partition_field)
         else:
             msg = (
                 f"Repartitioning {df_record_count} records from {df.rdd.getNumPartitions()} partitions into "
