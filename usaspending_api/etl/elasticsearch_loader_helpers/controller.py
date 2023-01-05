@@ -232,7 +232,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         self.spark_created_by_command = spark_created_by_command
 
     def ensure_view_exists(self, sql_view_name: str, force_recreate=True) -> None:
-        view_exists = len(list(self.spark.sql(f"show views like {sql_view_name}").collect())) == 1
+        view_exists = len(list(self.spark.sql(f"show views like '{sql_view_name}'").collect())) == 1
         if view_exists and not force_recreate:
             return
 

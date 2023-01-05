@@ -73,6 +73,16 @@ def obtain_non_null_partitions_sql(config: Dict):
     return sql.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
 
+def obtain_null_partition_sql(config: Dict):
+    if not config.get("optional_predicate"):
+        config["optional_predicate"] = "WHERE"
+    else:
+        config["optional_predicate"] += " AND "
+
+    sql = EXTRACT_NULL_PARTITION_SQL
+    return sql.format(**config).format(**config)  # fugly. Allow string values to have expressions
+
+
 def count_of_records_to_process(config: dict) -> Tuple[int, int, int]:
     start = perf_counter()
     results = execute_sql_statement(obtain_min_max_count_sql(config), True, config["verbose"])[0]
