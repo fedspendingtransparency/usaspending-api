@@ -18,12 +18,13 @@ def faba_with_toptier_agencies(award_count_sub_schedule, award_count_submission,
         "search.AwardSearch",
         award_id=1,
         type="A",
-        funding_agency_id=Agency.objects.first().id,
+        funding_agency_id=1,
         total_loan_value=0,
         disaster_emergency_fund_codes=["M"],
         total_covid_obligation=8,
         total_covid_outlay=0,
         covid_spending_by_defc=[{"defc": "M", "outlay": 0, "obligaton": 8}],
+        action_date="2020-10-01",
     )
 
     faba_for_award(award1, 8, 0)
@@ -115,7 +116,8 @@ def award_with_toptier_agency(id, toa=0, outlay=0):
         disaster_emergency_fund_codes=["M"],
         total_covid_obligation=toa,
         total_covid_outlay=outlay,
-        covid_spending_by_defc=[{"defc": "M", "outlay": outlay, "obligaton": toa}]
+        covid_spending_by_defc=[{"defc": "M", "outlay": outlay, "obligaton": toa}],
+        action_date="2020-10-01",
     )
     baker.make(
         "search.TransactionSearch",
