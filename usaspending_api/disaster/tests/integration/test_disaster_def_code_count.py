@@ -1,5 +1,5 @@
 import pytest
-
+import datetime
 from rest_framework import status
 
 url = "/api/v2/disaster/def_code/count/"
@@ -7,7 +7,7 @@ url = "/api/v2/disaster/def_code/count/"
 
 @pytest.mark.django_db
 def test_def_code_count_success(client, monkeypatch, disaster_account_data, helpers):
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    helpers.patch_datetime_now(monkeypatch, datetime.datetime.now().year + 1, 12, 31)
     helpers.reset_dabs_cache()
 
     resp = helpers.post_for_count_endpoint(client, url, ["L", "M", "N", "O", "P"])
