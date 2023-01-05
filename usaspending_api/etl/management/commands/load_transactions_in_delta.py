@@ -80,7 +80,7 @@ class Command(BaseCommand):
             help="The silver delta table that should be updated from the bronze delta data.",
             choices=[
                 "award_id_lookup",
-                "awards"
+                "awards",
                 "initial_run",
                 "transaction_fabs",
                 "transaction_fpds",
@@ -296,13 +296,13 @@ class Command(BaseCommand):
     def update_awards(self):
         load_datetime = datetime.now(timezone.utc)
 
-        set_insert_ignored_columns = ["subaward_count", "total_subaward_amount", "create_date", "update_date"]
-        subquery_ignored_columns = set_insert_ignored_columns + ["id"]
+        insert_special_columns = ["subaward_count", "total_subaward_amount", "create_date", "update_date"]
+        set_subquery_ignored_columns = insert_special_columns + ["id"]
 
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
         # between the query parts or in int.award_ids_delete_modified.
         subquery = f"""
-            WITH 
+            WITH
             award_ids_to_update AS (
                 SELECT DISTINCT(award_id)
                 FROM int.award_id_lookup
@@ -322,7 +322,7 @@ class Command(BaseCommand):
                         tn.period_of_performance_start_date,
                         ROW_NUMBER() OVER (
                             PARTITION BY tn.award_id
-                            ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC, 
+                            ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC,
                                      tn.transaction_unique_id ASC
                         ) AS rank
                     FROM int.transaction_normalized AS tn
@@ -347,7 +347,7 @@ class Command(BaseCommand):
                             ELSE NULL
                         END AS category,
                         tn.action_date AS certified_date,
-                        CASE 
+                        CASE
                             WHEN month(tn.action_date) > 9 THEN year(tn.action_date) + 1
                             ELSE year(tn.action_date)
                         END AS fiscal_year,
@@ -369,7 +369,7 @@ class Command(BaseCommand):
                         fabs.fain,
                         fabs.uri,
                         -- Excecutive Compensation
-                        -- This might not be correct. in award_helpers.py some extra CTE logic is being done to 
+                        -- This might not be correct. In award_helpers.py some extra CTE logic is being done to
                         -- select executive compensation
                         COALESCE(fpds.officer_1_amount, fabs.officer_1_amount) AS officer_1_amount,
                         COALESCE(fpds.officer_1_name, fabs.officer_1_name)     AS officer_1_name,
@@ -386,7 +386,7 @@ class Command(BaseCommand):
                         -- Windowing Function
                         ROW_NUMBER() OVER (
                             PARTITION BY tn.award_id
-                            ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, 
+                            ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC,
                                      tn.transaction_unique_id DESC
                         ) as rank
                     FROM int.transaction_normalized AS tn
@@ -414,30 +414,30 @@ class Command(BaseCommand):
                 WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
                 GROUP BY tn.award_id
             )
-            SELECT latest.id, {", ".join([col_name 
-                                          for col_name in AWARDS_COLUMNS if col_name not in subquery_ignored_columns])}
+            SELECT latest.id, {", ".join([col_name
+                                          for col_name in AWARDS_COLUMNS
+                                          if col_name not in set_subquery_ignored_columns])}
             FROM transaction_latest AS latest
             INNER JOIN transaction_earliest AS earliest ON latest.id = earliest.id
             INNER JOIN transaction_totals AS totals on latest.id = totals.id
         """
 
-        # On set, create_date will not be changed and update_date will be set below.  All other column
-        # values will come from the subquery.
+        # On set, create_date will not be changed and update_date will be set below.  The subaward columns will not
+        # be changed, and id is used to match.  All other column values will come from the subquery.
         set_cols = [
             f"int.awards.{col_name} = source_subquery.{col_name}"
-            for col_name in AWARDS_COLUMNS if col_name not in set_insert_ignored_columns
+            for col_name in AWARDS_COLUMNS
+            if col_name not in set_subquery_ignored_columns
         ]
         set_cols.append(f"""int.awards.update_date = '{load_datetime.isoformat(" ")}'""")
 
-        # Move set_insert_ignored_columns to the end of the list of column names for ease of handling
+        # Move insert_special_columns to the end of the list of column names for ease of handling
         # during record insert
-        insert_col_name_list = [
-            col_name for col_name in AWARDS_COLUMNS if col_name not in set_insert_ignored_columns
-        ]
-        insert_col_name_list.extend(set_insert_ignored_columns)
+        insert_col_name_list = [col_name for col_name in AWARDS_COLUMNS if col_name not in insert_special_columns]
+        insert_col_name_list.extend(insert_special_columns)
         insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
 
-        # On insert, all values except for those in set_insert_ignored_columns will come from the subquery
+        # On insert, all values except for those in insert_special_columns will come from the subquery
         insert_value_list = insert_col_name_list[:-4]
         insert_value_list.extend(["NULL"] * 2)
         insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
@@ -724,22 +724,23 @@ class Command(BaseCommand):
             )
 
         load_datetime = datetime.now(timezone.utc)
+        special_columns = ["create_date", "update_date"]
 
         # On set, create_date will not be changed and update_date will be set below.  All other column
         # values will come from the subquery.
         set_cols = [
             f"int.transaction_normalized.{col_name} = source_subquery.{col_name}"
             for col_name in TRANSACTION_NORMALIZED_COLUMNS
-            if col_name not in ("create_date", "update_date")
+            if col_name not in (special_columns + ["id"])
         ]
         set_cols.append(f"""int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'""")
 
         # Move create_date and update_date to the end of the list of column names for ease of handling
         # during record insert
         insert_col_name_list = [
-            col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in ("create_date", "update_date")
+            col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in special_columns
         ]
-        insert_col_name_list.extend(["create_date", "update_date"])
+        insert_col_name_list.extend(special_columns)
         insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
 
         # On insert, all values except for create_date and update_date will come from the subquery
