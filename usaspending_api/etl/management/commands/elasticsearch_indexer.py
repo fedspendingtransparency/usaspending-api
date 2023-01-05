@@ -199,9 +199,10 @@ def parse_cli_args(options: dict, es_client) -> dict:
     )
 
     if config["is_incremental_load"] or config["deletes_only"]:
-        if config["index_name"]:
-            logger.info(format_log(f"Ignoring provided index name, using alias '{config['write_alias']}' for safety"))
-        config["index_name"] = config["write_alias"]
+        # TODO: remove write-alias override after testing
+        # if config["index_name"]:
+        #     logger.info(format_log(f"Ignoring provided index name, using alias '{config['write_alias']}' for safety"))
+        # config["index_name"] = config["write_alias"]
         if not es_client.cat.aliases(name=config["write_alias"]):
             logger.error(f"Write alias '{config['write_alias']}' is missing")
             raise SystemExit(1)
