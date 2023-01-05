@@ -319,15 +319,6 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         logger.info(format_log(f"Using extract_sql:\n{extract_sql}", action="Extract"))
         df = self.spark.sql(extract_sql)
         df_record_count = df.count()  # safe to doublecheck the count of the *actual* data being processed
-        msg = (
-            f"Repartitioning {df_record_count} records from {df.rdd.getNumPartitions()} partitions into "
-            f"{self.config['partitions']} partitions to evenly balance no more than {self.config['partition_size']} "
-            f"records per partition. Then handing each partition to available executors for processing."
-        )
-        logger.info(format_log(msg))
-        logger.info(
-            format_log("Partition-processing task logs will be embedded in executor stderr logs, and not appear here.")
-        )
 
         if self.config["extra_null_partition"]:
             # Data which may have a "NULL Partition" is parent-child grouped data, where child records are grouped by
@@ -338,8 +329,35 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             # For this to happen, ALL data for a parent document (primar_key) must exist in the same partition of
             # data being transformed and loaded. This can be achieved by providing the grouping to repartition,
             # so all records with that same value will end up in the same partition
-            df = df.repartition(self.config["partitions"], self.config["primary_key"])
+            partition_field = self.config["primary_key"]
+            msg = (
+                f"Repartitioning {df_record_count} records from {df.rdd.getNumPartitions()} partitions into "
+                f"{self.config['partitions']} partitions. Repartitioning by the {partition_field} field so that all "
+                f"records that share the same value for this field will be in the same partition to support nesting "
+                f"all child documents under the parent record. Partitions should generally be less than "
+                f"{self.config['partition_size']} records. Exceptions are if a parent has more than "
+                f"{self.config['partition_size']} child documents, and the 'NULL partition', which is all child "
+                f"documents that have NULL for the {partition_field} field. Then handing each partition to available "
+                f"executors for processing."
+            )
+            logger.info(format_log(msg))
+            logger.info(
+                format_log(
+                    "Partition-processing task logs will be embedded in executor stderr logs, and not appear here.")
+            )
+            df = df.repartition(self.config["partitions"], )
         else:
+            msg = (
+                f"Repartitioning {df_record_count} records from {df.rdd.getNumPartitions()} partitions into "
+                f"{self.config['partitions']} partitions to evenly balance no more than "
+                f"{self.config['partition_size']} "
+                f"records per partition. Then handing each partition to available executors for processing."
+            )
+            logger.info(format_log(msg))
+            logger.info(
+                format_log(
+                    "Partition-processing task logs will be embedded in executor stderr logs, and not appear here.")
+            )
             df = df.repartition(self.config["partitions"])
 
         # Create a clean/detached copy of this dict. Referencing self within the lambda will attempt to pickle the
