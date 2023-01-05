@@ -79,7 +79,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             "--processes",
             type=int,
             help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100. If running on Spark, "
-                 "this will be replaced by the number of executors on the configured Spark cluster",
+            "this will be replaced by the number of executors on the configured Spark cluster",
             default=10,
             choices=range(1, 101),
             metavar="[1-100]",

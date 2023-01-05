@@ -48,6 +48,7 @@ _USAS_RDS_REF_TABLES = [
     Office,
     PopCongressionalDistrict,
     PopCounty,
+    PSC,
     RefCountryCode,
     RefProgramActivity,
     StateData,
