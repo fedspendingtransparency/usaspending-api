@@ -12,6 +12,7 @@ from pyspark.sql import SparkSession
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
+from usaspending_api.common.etl.spark import build_ref_table_name_list
 from usaspending_api.common.helpers.spark_helpers import clean_postgres_sql_for_spark_sql
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
@@ -255,7 +256,21 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         # Find/replace SQL strings in Postgres-based SQL to make it Spark SQL compliant
         # WARNING: If the SQL changes, it must be tested to still be Spark SQL compliant, and changes here may be needed
         temp_view_select_sql = view_sql.replace(f"DROP VIEW IF EXISTS {sql_view_name};", "")
-        temp_view_select_sql = clean_postgres_sql_for_spark_sql(temp_view_select_sql)
+
+        identifier_replacements = {}
+        if self.config["load_type"] == "transaction":
+            identifier_replacements["transaction_search"] = "rpt.transaction_search"
+        elif self.config["load_type"] == "award":
+            identifier_replacements["award_search"] = "rpt.award_search"
+        elif self.config["load_type"] == "covid19-faba":
+            identifier_replacements["financial_awards_by_accounts"] = "raw.financial_awards_by_accounts"
+            identifier_replacements["vw_awards"] = "int.awards"
+        else:
+            raise ValueError(
+                f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
+            )
+
+        temp_view_select_sql = clean_postgres_sql_for_spark_sql(temp_view_select_sql, build_ref_table_name_list())
 
         self.spark.sql(
             f"""

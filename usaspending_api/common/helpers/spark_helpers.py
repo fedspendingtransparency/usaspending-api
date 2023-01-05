@@ -8,7 +8,8 @@ import inspect
 import logging
 import os
 import sys
-from typing import Optional, Union
+import re
+from typing import Optional, Union, List, Dict
 
 from py4j.java_gateway import (
     JavaGateway,
@@ -533,21 +534,35 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
     ]
 
 
-def clean_postgres_sql_for_spark_sql(postgres_sql_str: str):
+def clean_postgres_sql_for_spark_sql(
+    postgres_sql_str: str, global_temp_view_proxies: List[str] = None, identifier_replacements: Dict[str, str] = None
+):
     """Convert some of the known-to-be-problematic PostgreSQL syntax, which is not compliant with Spark SQL,
     to an acceptable and compliant Spark SQL alternative.
 
     CAUTION: There is no guarantee that this will convert everything, AND some liberties are taken here to convert
     incompatible data types like JSON to string. USE AT YOUR OWN RISK and make sure its transformations fit your use
     case!
+
+    Arguments:
+        postgres_sql_str (str): the SQL string to clean
+        global_temp_view_proxies (List[str]): list of table names that should be prepended with the global_temp
+            schema if they exist in the hive metastore as a GLOBAL TEMPORARY VIEW
+        identifier_replacements (Dict[str, str]): given names (dict keys), that if found (preceded by whitespace)
+            will be replaced with the provided alternate name (dict value)
+
     """
     # Spark SQL does not like double-quoted identifiers
     spark_sql = postgres_sql_str.replace('"', "")
-    spark_sql = spark_sql.replace("CREATE VIEW", "CREATE OR REPLACE TEMP VIEW")
+    spark_sql = re.sub(fr"CREATE VIEW", fr"CREATE OR REPLACE TEMP VIEW", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     # Treat these type casts as string in Spark SQL
-    spark_sql = spark_sql.replace("::text", "::string")
-    spark_sql = spark_sql.replace("::TEXT", "::string")
-    spark_sql = spark_sql.replace("::json", "::string")
-    spark_sql = spark_sql.replace("::JSON", "::string")
+    spark_sql = re.sub(fr"::text|::json", fr"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+
+    for vw in global_temp_view_proxies:
+        spark_sql = re.sub(fr"FROM\s+{vw}", fr"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+
+    for old, new in identifier_replacements.items():
+        spark_sql = re.sub(fr"(\s+|^){old}(\s+|$)", fr" {new}", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+
     return spark_sql

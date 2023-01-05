@@ -30,28 +30,31 @@ from usaspending_api.references.models import (
     PopCounty,
     PopCongressionalDistrict,
     DisasterEmergencyFundCode,
+    RefProgramActivity,
+    ObjectClass,
 )
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
-    Cfda,
     Agency,
-    ToptierAgency,
-    SubtierAgency,
-    NAICS,
-    Office,
-    PSC,
-    RefCountryCode,
+    Cfda,
     CityCountyStateCode,
-    PopCounty,
-    PopCongressionalDistrict,
-    StateData,
-    FederalAccount,
-    TreasuryAppropriationAccount,
-    DisasterEmergencyFundCode,
-    SubmissionAttributes,
     DABSSubmissionWindowSchedule,
+    DisasterEmergencyFundCode,
+    FederalAccount,
+    NAICS,
+    ObjectClass,
+    Office,
+    PopCongressionalDistrict,
+    PopCounty,
+    RefCountryCode,
+    RefProgramActivity,
+    StateData,
+    SubmissionAttributes,
+    SubtierAgency,
+    ToptierAgency,
+    TreasuryAppropriationAccount,
 ]
 
 
@@ -497,13 +500,17 @@ def convert_array_cols_to_string(
     return df_no_arrays
 
 
+def build_ref_table_name_list():
+    return [rds_ref_table._meta.db_table for rds_ref_table in _USAS_RDS_REF_TABLES]
+
+
 def create_ref_temp_views(spark: SparkSession):
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Note: They will all be listed under global_temp.{table_name}
     """
     logger = get_jvm_logger(spark)
     jdbc_conn_props = get_jdbc_connection_properties()
-    rds_ref_tables = [rds_ref_table._meta.db_table for rds_ref_table in _USAS_RDS_REF_TABLES]
+    rds_ref_tables = build_ref_table_name_list()
 
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
     for ref_rdf_table in rds_ref_tables:
