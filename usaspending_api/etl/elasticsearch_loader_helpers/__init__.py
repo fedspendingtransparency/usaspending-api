@@ -20,8 +20,8 @@ from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
     count_of_records_to_process,
     count_of_records_to_process_in_delta,
     extract_records,
-    obtain_extract_sql,
-    obtain_non_null_partitions_sql,
+    obtain_extract_partition_sql,
+    obtain_extract_all_partitions_sql,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     create_award_type_aliases,
@@ -68,8 +68,8 @@ __all__ = [
     "format_log",
     "gen_random_name",
     "load_data",
-    "obtain_extract_sql",
-    "obtain_non_null_partitions_sql",
+    "obtain_extract_partition_sql",
+    "obtain_extract_all_partitions_sql",
     "set_final_index_config",
     "swap_aliases",
     "take_snapshot",

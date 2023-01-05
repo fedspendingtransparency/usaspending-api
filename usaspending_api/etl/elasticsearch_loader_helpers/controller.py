@@ -22,14 +22,15 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     format_log,
     gen_random_name,
     load_data,
-    obtain_extract_sql,
-    obtain_non_null_partitions_sql,
+    obtain_extract_partition_sql,
+    obtain_extract_all_partitions_sql,
     set_final_index_config,
     swap_aliases,
     TaskSpec,
     toggle_refresh_on,
 )
 from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
+from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import obtain_null_partition_sql
 
 logger = logging.getLogger("script")
 
@@ -189,7 +190,7 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
     def configure_task(self, partition_number: int, task_name: str, is_null_partition: bool = False) -> TaskSpec:
         lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
         sql_config = {**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}}
-        sql_str = obtain_extract_sql(sql_config, is_null_partition)
+        sql_str = obtain_extract_partition_sql(sql_config, is_null_partition)
 
         return self._construct_task_spec(partition_number, task_name, sql_str)
 
@@ -272,7 +273,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         return self._construct_task_spec(partition_number, task_name, extract_sql_str=None)
 
     def dispatch_tasks(self) -> None:
-        extract_sql = obtain_non_null_partitions_sql(self.config)
+        extract_sql = obtain_extract_all_partitions_sql(self.config)
         extract_sql = extract_sql.replace('"', "")  # Spark SQL does not process quoted identifiers correctly
         logger.info(format_log(f"Using extract_sql:\n{extract_sql}", action="Extract"))
         df = self.spark.sql(extract_sql)
@@ -310,6 +311,10 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         logger.info(format_log(msg))
 
     def run_deletes(self) -> None:
+        # TODO: Need to implement this
+        #  Because the delete strategy currently queries the PG DB awards table, it expects the data to have landed and
+        #  been refreshed in those PG DB tables. That won't yet be the case if running in parallel to the DB data
+        #  refreshing. So the award query needs to be retargeted at Delta Lake
         raise NotImplementedError(
             "Deletes don't use parallelism or Delta Lake data, so Spark is not needed. Use the standard (non-Spark) "
             "elasticsearch_indexer command to run deletes. "

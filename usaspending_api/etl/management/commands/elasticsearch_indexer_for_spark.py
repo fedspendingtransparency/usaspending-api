@@ -16,8 +16,9 @@ class Command(AbstractElasticsearchIndexer):
     """Parallelized Spark-based ETL script for indexing Delta Lake data into Elasticsearch
 
     NOTE: Careful choosing how many executors to run, as the ES cluster can be easily overwhelmed.
-    32 executors processing 10,000 record partitions seems to work for a 5-node ES cluster. Increasing the ES
-    cluster node count did not increase indexing speed, only doubling data node instance sizes did.
+    32 executors processing 10,000 record partitions seems to work for a 5-node ES cluster. 48 also,
+    but might be pushing it.Increasing the ES cluster node count did not increase indexing speed, only doubling data
+    node instance sizes did.
     """
 
     def create_controller(self, config: dict) -> AbstractElasticsearchIndexerController:
