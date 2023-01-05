@@ -329,7 +329,18 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             format_log("Partition-processing task logs will be embedded in executor stderr logs, and not appear here.")
         )
 
-        df = df.repartition(self.config["partitions"])
+        if self.config["extra_null_partition"]:
+            # Data which may have a "NULL Partition" is parent-child grouped data, where child records are grouped by
+            # the config["primary_key"], which is the PK field of the parent records.
+            # It is imperative that only 1 indexing operation per parent document (per primary_key value) happen,
+            # and encompass all of its nested child documents, otherwise subsequent indexing of that parent document
+            # will overwrite the prior documents.
+            # For this to happen, ALL data for a parent document (primar_key) must exist in the same partition of
+            # data being transformed and loaded. This can be achieved by providing the grouping to repartition,
+            # so all records with that same value will end up in the same partition
+            df = df.repartition(self.config["partitions"], self.config["primary_key"])
+        else:
+            df = df.repartition(self.config["partitions"])
 
         # Create a clean/detached copy of this dict. Referencing self within the lambda will attempt to pickle the
         # self object, which has a reference to the SparkContext. SparkContext references CANNOT be pickled
