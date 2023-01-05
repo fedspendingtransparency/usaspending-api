@@ -561,7 +561,12 @@ def clean_postgres_sql_for_spark_sql(
 
     if global_temp_view_proxies:
         for vw in global_temp_view_proxies:
-            spark_sql = re.sub(fr"FROM\s+{vw}", fr"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+            spark_sql = re.sub(
+                fr"FROM\s+{vw}", fr"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+            )
+            spark_sql = re.sub(
+                fr"JOIN\s+{vw}", fr"JOIN global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+            )
 
     if identifier_replacements:
         for old, new in identifier_replacements.items():

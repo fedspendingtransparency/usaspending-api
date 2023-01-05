@@ -270,7 +270,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
             )
 
-        temp_view_select_sql = clean_postgres_sql_for_spark_sql(temp_view_select_sql, build_ref_table_name_list())
+        temp_view_select_sql = clean_postgres_sql_for_spark_sql(
+            temp_view_select_sql, build_ref_table_name_list(), identifier_replacements
+        )
 
         self.spark.sql(
             f"""
