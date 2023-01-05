@@ -132,9 +132,26 @@ class AbstractElasticsearchIndexerController(ABC):
     def dispatch_tasks(self) -> None:
         pass
 
-    @abstractmethod
     def run_deletes(self) -> None:
+        logger.info(format_log("Processing deletions"))
+        if self.config["data_type"] == "award":
+            self._run_award_deletes()
+        elif self.config["data_type"] == "transaction":
+            self._run_transaction_deletes()
+        else:
+            raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
+
+    @abstractmethod
+    def _run_award_deletes(self):
         pass
+
+    def _run_transaction_deletes(self):
+        client = instantiate_elasticsearch_client()
+        delete_transactions(client, self.config)
+        # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
+        # ensures all records deleted since either job was run are taken into account
+        last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
+        update_last_load_date("es_deletes", last_db_delete_time)
 
     def complete_process(self) -> None:
         client = instantiate_elasticsearch_client()
@@ -206,19 +223,9 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
         if _abort.is_set():
             raise RuntimeError("One or more partitions failed!")
 
-    def run_deletes(self) -> None:
-        logger.info(format_log("Processing deletions"))
+    def _run_award_deletes(self):
         client = instantiate_elasticsearch_client()
-        if self.config["data_type"] == "award":
-            delete_awards(client, self.config)
-        elif self.config["data_type"] == "transaction":
-            delete_transactions(client, self.config)
-            # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
-            # ensures all records deleted since either job was run are taken into account
-            last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
-            update_last_load_date("es_deletes", last_db_delete_time)
-        else:
-            raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
+        delete_awards(client, self.config)
 
     def cleanup(self) -> None:
         pass
@@ -310,15 +317,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         msg = f"Total documents indexed: {successes}, total document fails: {failures}"
         logger.info(format_log(msg))
 
-    def run_deletes(self) -> None:
-        # TODO: Need to implement this
-        #  Because the delete strategy currently queries the PG DB awards table, it expects the data to have landed and
-        #  been refreshed in those PG DB tables. That won't yet be the case if running in parallel to the DB data
-        #  refreshing. So the award query needs to be retargeted at Delta Lake
-        raise NotImplementedError(
-            "Deletes don't use parallelism or Delta Lake data, so Spark is not needed. Use the standard (non-Spark) "
-            "elasticsearch_indexer command to run deletes. "
-        )
+    def _run_award_deletes(self):
+        client = instantiate_elasticsearch_client()
+        delete_awards(client, self.config, spark=self.spark)
 
     def cleanup(self) -> None:
         if self.spark_created_by_command:

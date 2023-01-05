@@ -9,6 +9,7 @@ from typing import Optional, Dict, Union, Any
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
+from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, get_latest_load_date
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
@@ -235,7 +236,9 @@ def _lookup_deleted_award_keys(
     return award_key_list
 
 
-def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB Deletes") -> int:
+def delete_awards(
+    client: Elasticsearch, config: dict, task_id: str = "Sync DB Deletes", spark: SparkSession = None
+) -> int:
     """Delete all awards in the Elasticsearch awards index that were deleted in the source database.
 
     This performs the deletes of award documents in ES in a series of batches, as there could be many. Millions of
@@ -280,7 +283,7 @@ def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB D
         format_log(f"Derived {award_keys_len} award keys from transactions in ES", action="Delete", name=task_id)
     )
 
-    deleted_award_kvs = _check_awards_for_deletes(award_keys)
+    deleted_award_kvs = _check_awards_for_deletes(award_keys, spark)
     deleted_award_kvs_len = len(deleted_award_kvs)
     if deleted_award_kvs_len == 0:
         # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
@@ -415,7 +418,7 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
     return deleted_keys
 
 
-def _check_awards_for_deletes(id_list: list) -> list:
+def _check_awards_for_deletes(id_list: list, spark: SparkSession = None, awards_table: str = "vw_awards") -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
     formatted_value_ids = ""
     for x in id_list:
@@ -424,7 +427,15 @@ def _check_awards_for_deletes(id_list: list) -> list:
     sql = """
         SELECT x.generated_unique_award_id
         FROM (values {ids}) AS x(generated_unique_award_id)
-        LEFT JOIN vw_awards a ON a.generated_unique_award_id = x.generated_unique_award_id
+        LEFT JOIN {awards_table} a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id IS NULL"""
 
-    return execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
+    if spark:  # then use spark against a Delta Table
+        awards_table = "rpt.awards"
+        results = list(spark.sql(sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table)).collect())
+    else:
+        results = execute_sql_statement(
+            sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table), results=True
+        )
+
+    return results
