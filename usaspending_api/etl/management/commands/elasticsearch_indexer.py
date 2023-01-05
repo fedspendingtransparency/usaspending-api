@@ -1,5 +1,6 @@
 import logging
 
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -7,10 +8,11 @@ from time import perf_counter
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists, drop_etl_view
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import drop_etl_view
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    Controller,
+    AbstractElasticsearchIndexerController,
+    PostgresElasticsearchIndexerController,
     execute_sql_statement,
     format_log,
     toggle_refresh_off,
@@ -28,20 +30,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
 logger = logging.getLogger("script")
 
 
-class Command(BaseCommand):
-    """Parallelized ETL script for indexing SQL data into Elasticsearch
-
-    1. DB extraction should be very fast if the query is straightforward.
-        We have seen 1-2 seconds or less per 10k rows on a db.r5.4xl instance with 10K IOPS
-    2. Generally speaking, parallelization performance is largely based on number of vCPUs available to the
-        pool of parallel processes. Ideally have 1 vCPU per process. This is mostly true for CPU-heavy tasks.
-        If the ETL is primarily I/O then the number of processes per vCPU can be significantly increased.
-    3. Elasticsearch indexing appears to become a bottleneck when the prior 2 parts are taken care of.
-        Further simplifying SQL, increasing the DB size, and increasing the worker node vCPUs/memory
-        yielded the same overall runtime, due to ES indexing backpressure. Presumably adding more
-        nodes, or increasing node size in the ES cluster may reduce this pressure, but not (yet) tested.
-    """
-
+class AbstractElasticsearchIndexer(ABC, BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--process-deletes",
@@ -116,26 +105,26 @@ class Command(BaseCommand):
         start_msg = "target index: {index_name} | Starting from: {starting_date}"
         logger.info(format_log(start_msg.format(**config)))
 
-        ensure_view_exists(config["sql_view"], force=True)
         error_addition = ""
-        loader = Controller(config)
+        controller = self.create_controller(config)
+        controller.ensure_view_exists(config["sql_view"])
 
         if config["is_incremental_load"]:
             toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
 
         try:
             if config["process_deletes"]:
-                loader.run_deletes()
+                controller.run_deletes()
 
             if not config["deletes_only"]:
-                loader.prepare_for_etl()
-                loader.dispatch_tasks()
+                controller.prepare_for_etl()
+                controller.dispatch_tasks()
         except Exception as e:
             logger.error(f"{str(e)}")
             error_addition = "before encountering a problem during execution.... "
             raise SystemExit(1)
         else:
-            loader.complete_process()
+            controller.complete_process()
             if config["drop_db_view"]:
                 logger.info(format_log(f"Dropping SQL view '{config['sql_view']}'"))
                 drop_etl_view(config["sql_view"], True)
@@ -145,10 +134,33 @@ class Command(BaseCommand):
             logger.info(format_log(headers))
             logger.info(format_log(msg))
             logger.info(format_log(headers))
+            controller.cleanup()
 
         # Used to help pipeline determine when job passed but needs attention
         if config["raise_status_code_3"]:
             raise SystemExit(3)
+
+    @abstractmethod
+    def create_controller(self, config: dict) -> AbstractElasticsearchIndexerController:
+        pass
+
+
+class Command(AbstractElasticsearchIndexer):
+    """Parallelized ETL script for indexing PostgreSQL data into Elasticsearch
+
+    1. DB extraction should be very fast if the query is straightforward.
+        We have seen 1-2 seconds or less per 10k rows on a db.r5.4xl instance with 10K IOPS
+    2. Generally speaking, parallelization performance is largely based on number of vCPUs available to the
+        pool of parallel processes. Ideally have 1 vCPU per process. This is mostly true for CPU-heavy tasks.
+        If the ETL is primarily I/O then the number of processes per vCPU can be significantly increased.
+    3. Elasticsearch indexing appears to become a bottleneck when the prior 2 parts are taken care of.
+        Further simplifying SQL, increasing the DB size, and increasing the worker node vCPUs/memory
+        yielded the same overall runtime, due to ES indexing backpressure. Presumably adding more
+        nodes, or increasing node size in the ES cluster may reduce this pressure, but not (yet) tested.
+    """
+
+    def create_controller(self, config: dict) -> AbstractElasticsearchIndexerController:
+        return PostgresElasticsearchIndexerController(config)
 
 
 def parse_cli_args(options: dict, es_client) -> dict:
