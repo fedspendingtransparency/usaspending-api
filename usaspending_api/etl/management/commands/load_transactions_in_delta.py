@@ -16,7 +16,11 @@ from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fabs,
     get_business_categories_fpds,
 )
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.broker.helpers.last_load_date import (
+    get_earliest_load_date,
+    get_last_load_date,
+    update_last_load_date,
+)
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
@@ -93,14 +97,10 @@ class Command(BaseCommand):
             self.spark_s3_bucket = options["spark_s3_bucket"]
             self.no_initial_copy = options["no_initial_copy"]
 
-            # Capture minimum last load date of the source tables to update the "last_load_date" after completion
-            last_procure_load = get_last_load_date("source_procurement_transaction")
-            last_assist_load = get_last_load_date("source_assistance_transaction")
-            if last_procure_load is None:
-                last_procure_load = datetime.utcfromtimestamp(0)
-            if last_assist_load is None:
-                last_assist_load = datetime.utcfromtimestamp(0)
-            next_last_load = min(last_assist_load, last_procure_load)
+            # Capture earliest last load date of the source tables to update the "last_load_date" after completion
+            next_last_load = get_earliest_load_date(
+                ("source_procurement_transaction", "source_assistance_transaction"), datetime.utcfromtimestamp(0)
+            )
 
             if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
@@ -223,54 +223,58 @@ class Command(BaseCommand):
 
     def source_subquery_sql(self, transaction_type=None):
         def handle_column(col, bronze_table_name):
+            # Require a separator for mmddYYYY, but not for YYYYmmdd, or there is no way to tell them apart
+            #   from just regexp, and only YYYYmmdd has been seen without a separator.
+            # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
+            #   and the timestamp allows for an optional UTC offset.  In any case, the timestamp is ignored, though.
+            regexp_mmddYYYY = (
+                r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+            )
+            regexp_YYYYmmdd = (
+                r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+            )
+
             if col.handling == "cast":
                 return f"CAST({bronze_table_name}.{col.source} AS {col.delta_type}) AS {col.dest_name}"
             elif col.handling == "literal":
                 # Use col.source directly as the value
                 return f"{col.source} AS {col.dest_name}"
-            elif col.handling in ("parse_string_date", "truncate_string_date"):
-                # Require a separator for mmddYYYY, but not for YYYYmmdd, or there is no way to tell them apart
-                # from just regexp.
-                regexp_mmddYYYY = (
-                    r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
-                )
-                regexp_YYYYmmdd = (
-                    r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
-                )
-                if col.handling == "parse_string_date":
-                    return f"""
-                        CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
-                                  THEN CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
-                                             || '-' ||
-                                             regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
-                                             || '-' ||
-                                             regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
-                                            AS DATE)
-                             ELSE CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
-                                        || '-' ||
-                                        regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
-                                        || '-' ||
-                                        regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
-                                       AS DATE)
-                        END AS {col.dest_name}
-                    """
-                else:
-                    # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
-                    # even though they remain as strings
-                    return f"""
-                        CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
-                                  THEN (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
-                                        || '-' ||
-                                        regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
-                                        || '-' ||
-                                        regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
-                             ELSE (regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
-                                   || '-' ||
-                                   regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
-                                   || '-' ||
-                                   regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
-                        END AS {col.dest_name}
-                    """
+            elif col.handling == "parse_string_date":
+                # These are string fields that actually hold DATES/TIMESTAMPS and need to be cast as dates.
+                # However, they may not be properly parsed when calling CAST(... AS DATE).
+                return f"""
+                    CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
+                              THEN CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
+                                         || '-' ||
+                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
+                                         || '-' ||
+                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
+                                        AS DATE)
+                         ELSE CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
+                                    || '-' ||
+                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
+                                    || '-' ||
+                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
+                                   AS DATE)
+                    END AS {col.dest_name}
+                """
+            elif col.handling == "truncate_string_date":
+                # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
+                # even though they remain as strings
+                return f"""
+                    CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
+                              THEN (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
+                                    || '-' ||
+                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
+                                    || '-' ||
+                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
+                         ELSE (regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
+                               || '-' ||
+                               regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
+                               || '-' ||
+                               regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
+                    END AS {col.dest_name}
+                """
             elif col.delta_type.upper() == "STRING":
                 # Capitalize all string values
                 return f"ucase({bronze_table_name}.{col.source}) AS {col.dest_name}"
@@ -425,14 +429,14 @@ class Command(BaseCommand):
                 "etl_level."
             )
 
-        # {} expressions in f-strings can't contain backslashes, so need to be a little creative to get \n
-        # into {} expression (see
-        # https://stackoverflow.com/questions/67680296/syntaxerror-f-string-expression-part-cannot-include-a-backslash
-        # and https://martinheinz.dev/blog/70, section 'Nested F-Strings')
+        # Since the select columns may have complicated logic, put them on separate lines for debugging.
+        # However, strings inside {} expressions in f-strings can't contain backslashes, so will join them first
+        # before inserting into overall sql statement.
+        select_columns_str = ",\n    ".join(select_columns)
         sql = f"""
             SELECT
                 transaction_id_lookup.transaction_id AS {id_col_name},
-                {","f'{chr(10)}    '.join(select_columns)}
+                {select_columns_str}
             FROM {bronze_table_name}
             INNER JOIN int.transaction_id_lookup ON (
                 {bronze_table_name}.{unique_id} = transaction_id_lookup.{unique_id}

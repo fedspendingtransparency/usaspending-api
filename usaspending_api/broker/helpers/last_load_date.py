@@ -45,7 +45,7 @@ def get_earliest_load_date(keys, default=None):
     default will be returned if no last_load_date is found for any of the supplied
     keys
     """
-    earliest_date = default
+    earliest_date = None
 
     for key in keys:
         key_date = get_last_load_date(key)
@@ -58,6 +58,7 @@ def get_earliest_load_date(keys, default=None):
 
     if earliest_date is None:
         logger.warning(f"No earliest load date could be calculated because no dates for keys `{keys}` were found!")
+        return default
 
     return earliest_date
 
