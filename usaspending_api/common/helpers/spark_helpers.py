@@ -14,7 +14,6 @@ from py4j.java_gateway import (
     JavaGateway,
 )
 from py4j.protocol import Py4JJavaError
-from pydantic import AnyHttpUrl
 from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
 from pyspark.find_spark_home import _find_spark_home

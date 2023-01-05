@@ -114,7 +114,7 @@ class DefaultConfig(BaseSettings):
                 url_conf_name=url_conf_name,
                 resource_conf_prefix=resource_conf_prefix,
                 values=values,
-                required_parts=["USER", "PASSWORD", "HOST", "PORT", "NAME"]
+                required_parts=["USER", "PASSWORD", "HOST", "PORT", "NAME"],
             )
 
             if enough_parts:
@@ -225,7 +225,7 @@ class DefaultConfig(BaseSettings):
                 url_conf_name=url_conf_name,
                 resource_conf_prefix=resource_conf_prefix,
                 values=values,
-                required_parts=["SCHEME", "HOST", "PORT"]
+                required_parts=["SCHEME", "HOST", "PORT"],
             )
 
             if enough_parts:

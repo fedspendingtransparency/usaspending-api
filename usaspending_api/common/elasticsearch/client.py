@@ -10,8 +10,6 @@ from ssl import CERT_NONE
 
 from elasticsearch_dsl.response import Response
 
-from usaspending_api.config import CONFIG
-
 logger = logging.getLogger("console")
 CLIENT = None
 ElasticsearchResponse = Optional[Union[dict, Response]]

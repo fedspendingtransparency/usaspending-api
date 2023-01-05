@@ -30,7 +30,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     toggle_refresh_on,
 )
 from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
-from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import obtain_null_partition_sql
 
 logger = logging.getLogger("script")
 
