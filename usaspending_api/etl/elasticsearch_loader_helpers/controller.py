@@ -12,7 +12,7 @@ from pyspark.sql import SparkSession
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
-from usaspending_api.common.etl.spark import build_ref_table_name_list
+from usaspending_api.common.etl.spark import build_ref_table_name_list, create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import clean_postgres_sql_for_spark_sql
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
@@ -248,6 +248,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         view_exists = len(list(self.spark.sql(f"show views like '{sql_view_name}'").collect())) == 1
         if view_exists and not force_recreate:
             return
+
+        # Ensure reference tables the TEMP VIEW may depend on exist
+        create_ref_temp_views(self.spark)
 
         view_file_path = settings.APP_DIR / "database_scripts" / "etl" / f"{sql_view_name}.sql"
 
