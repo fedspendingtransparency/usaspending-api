@@ -64,9 +64,6 @@ def obtain_extract_partition_sql(config: dict, is_null_partition: bool = False) 
 
 
 def obtain_extract_all_partitions_sql(config: Dict):
-    if not config.get("optional_predicate"):
-        config["optional_predicate"] = "WHERE"
-
     sql = EXTRACT_ALL_PARTITIONS_SQL
     return sql.format(**config).format(**config)  # fugly. Allow string values to have expressions
 
