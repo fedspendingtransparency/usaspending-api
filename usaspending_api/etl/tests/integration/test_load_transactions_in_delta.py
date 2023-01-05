@@ -412,6 +412,10 @@ class TestInitialRun:
             expected_last_load_award_id_lookup,
         )
 
+        # int.award_ids_delete_modified should exist, but be empty
+        actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.award_ids_delete_modified").collect()[0]["count"]
+        assert actual_count == 0
+
         # Make sure int.transaction_[normalized,fabs,fpds] tables have been created and have the expected sizes.
         for table_name, expected_count, expected_last_load, col_names in zip(
             (f"transaction_{t}" for t in ("normalized", "fabs", "fpds")),
@@ -1355,7 +1359,7 @@ class TestAwardIdLookup:
         }
         TestInitialRun.verify(spark, [], [], **kwargs)
 
-        # Then, call load_transactions_in_delta with etl-level of transaction_id_lookup.
+        # Then, call load_transactions_in_delta with etl-level of award_id_lookup.
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # The expected award_id_lookup table should be the same as in TestInitialRunWithPostgresLoader,
@@ -1376,11 +1380,12 @@ class TestAwardIdLookup:
         expected_initial_transaction_id_lookup,
         expected_initial_award_id_lookup,
         expected_award_id_lookup_pops,
+        partially_deleted_award_id,
     ):
         # 1. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
         # initial_run, then award_id_lookup
 
-        # Since these tests only care about the condition of the transaction_id_lookup table after various
+        # Since these tests only care about the condition of the award_id_lookup table after various
         # operations, only load the essential tables to Delta, and don't copy the raw transaction tables to int.
         TestInitialRun.initial_run(
             s3_data_bucket, execute_pg_loader, load_other_raw_tables=load_other_raw_tables, initial_copy=False
@@ -1398,7 +1403,7 @@ class TestAwardIdLookup:
         }
         TestInitialRun.verify(spark, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup, **kwargs)
 
-        # 2. Test deleting the transaction(s) with the last award ID(s) from the appropriate raw table,
+        # 2. Test deleting the transactions with the last award ID from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of award_id_lookup
         spark.sql(
             """
@@ -1417,7 +1422,7 @@ class TestAwardIdLookup:
         expected_award_id_lookup.pop()
         assert equal_datasets(expected_award_id_lookup, delta_data, "")
 
-        # Also, make sure award_id_seq hasn't gone backwards
+        # Make sure award_id_seq hasn't gone backwards
         with connection.cursor() as cursor:
             cursor.execute("SELECT nextval('award_id_seq')")
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
@@ -1428,6 +1433,11 @@ class TestAwardIdLookup:
         # so that the next call to nextval() will return the same value as previously.
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_award_id}, false)")
+
+        # Also, test that int.award_ids_delete_modified is still empty, since all transactions associated with the
+        # final award were deleted.
+        actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.award_ids_delete_modified").collect()[0]["count"]
+        assert actual_count == 0
 
         # 3. Test for a single inserted transaction, and another call to load_transaction_in_delta with etl-level of
         # award_id_lookup.
@@ -1465,8 +1475,14 @@ class TestAwardIdLookup:
         # source_procurement_transaction table, which has not been updated since the initial load of both tables.
         assert get_last_load_date("award_id_lookup") == initial_source_table_load_datetime
 
+        # Also, test that int.award_ids_delete_modified is still empty, since no transactions were deleted since
+        # the last check.
+        actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.award_ids_delete_modified").collect()[0]["count"]
+        assert actual_count == 0
+
         # 4. Make inserts to and deletes from the raw tables, call load_transaction_in_delta with etl-level of
-        # award_id_lookup, and test that the results are as expected.
+        # award_id_lookup, and test that the results are as expected, and that int.award_ids_delete_modified has
+        # tracked the appropriate delete.
         last_procure_load_datetime = datetime.now(timezone.utc)
         insert_datetime = last_procure_load_datetime + timedelta(minutes=-15)
         procure = deepcopy(new_procure)
@@ -1480,7 +1496,7 @@ class TestAwardIdLookup:
         spark.sql(
             """
             DELETE FROM raw.published_fabs
-            WHERE published_fabs_id = 2 OR published_fabs_id = 3
+            WHERE published_fabs_id = 2
         """
         )
         spark.sql(
@@ -1511,6 +1527,12 @@ class TestAwardIdLookup:
 
         assert get_last_load_date("award_id_lookup") == last_assist_load_datetime
 
+        # Verify award_ids_delete_modified table
+        query = "SELECT * FROM int.award_ids_delete_modified ORDER BY award_id"
+        delta_data = [row.asDict() for row in spark.sql(query).collect()]
+        assert equal_datasets([{"award_id": partially_deleted_award_id}], delta_data, "")
+
+
     @mark.django_db(transaction=True, reset_sequences=True)
     def test_happy_path_scenarios_with_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
@@ -1522,7 +1544,8 @@ class TestAwardIdLookup:
             ("transaction_normalized", "awards"),
             TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup,
             TestInitialRunWithPostgresLoader.expected_initial_award_id_lookup,
-            (1, 1, 3),
+            (1, 4),
+            2,
         )
 
     @mark.django_db(transaction=True)
@@ -1545,7 +1568,8 @@ class TestAwardIdLookup:
             load_other_raw_tables,
             TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
             TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup,
-            (3, 1, 1),
+            (3, 1),
+            2,
         )
 
 
