@@ -55,6 +55,7 @@ class AbstractElasticsearchIndexerController(ABC):
     def ensure_view_exists(self, sql_view_name: str, force_recreate=True) -> None:
         pass
 
+    @abstractmethod
     def prepare_for_etl(self) -> None:
         logger.info(format_log("Assessing data to process"))
         self.record_count, self.min_id, self.max_id = self._count_of_records_to_process(self.config)
@@ -203,6 +204,9 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
         upper_bound = min(lower_bound + partition_size - 1, self.max_id)
         return lower_bound, upper_bound
 
+    def prepare_for_etl(self) -> None:
+        super().prepare_for_etl()
+
     def configure_task(self, partition_number: int, task_name: str, is_null_partition: bool = False) -> TaskSpec:
         lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
         sql_config = {**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}}
@@ -272,6 +276,17 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             "Delta Lake data is extracted into a Spark DataFrame that is partitioned. No need to get each partition "
             "by ID ranges."
         )
+
+    def prepare_for_etl(self) -> None:
+        spark_executors = self.spark.sparkContext.defaultParallelism
+        logger.info(
+            format_log(
+                f"Overriding specified --processes and setting to configured executors "
+                f"on the Spark cluster = {spark_executors}"
+            )
+        )
+        self.config["processes"] = self.spark.sparkContext.defaultParallelism
+        super().prepare_for_etl()
 
     def configure_task(self, partition_number: int, task_name: str, is_null_partition: bool = False) -> TaskSpec:
         # Spark-based approach maps indexing functions to partitions of data, rather than extracting and processing
