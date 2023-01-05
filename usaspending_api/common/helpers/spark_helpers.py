@@ -531,3 +531,23 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
         for (k, v) in {str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()}.items()
         if config_key_contains in k
     ]
+
+
+def clean_postgres_sql_for_spark_sql(postgres_sql_str: str):
+    """Convert some of the known-to-be-problematic PostgreSQL syntax, which is not compliant with Spark SQL,
+    to an acceptable and compliant Spark SQL alternative.
+
+    CAUTION: There is no guarantee that this will convert everything, AND some liberties are taken here to convert
+    incompatible data types like JSON to string. USE AT YOUR OWN RISK and make sure its transformations fit your use
+    case!
+    """
+    # Spark SQL does not like double-quoted identifiers
+    spark_sql = postgres_sql_str.replace('"', "")
+    spark_sql = spark_sql.replace("CREATE VIEW", "CREATE OR REPLACE TEMP VIEW")
+
+    # Treat these type casts as string in Spark SQL
+    spark_sql = spark_sql.replace("::text", "::string")
+    spark_sql = spark_sql.replace("::TEXT", "::string")
+    spark_sql = spark_sql.replace("::json", "::string")
+    spark_sql = spark_sql.replace("::JSON", "::string")
+    return spark_sql

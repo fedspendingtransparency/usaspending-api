@@ -12,6 +12,7 @@ from pyspark.sql import SparkSession
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
+from usaspending_api.common.helpers.spark_helpers import clean_postgres_sql_for_spark_sql
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
     count_of_records_to_process_in_delta,
@@ -254,9 +255,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         # Find/replace SQL strings in Postgres-based SQL to make it Spark SQL compliant
         # WARNING: If the SQL changes, it must be tested to still be Spark SQL compliant, and changes here may be needed
         temp_view_select_sql = view_sql.replace(f"DROP VIEW IF EXISTS {sql_view_name};", "")
-        temp_view_select_sql = temp_view_select_sql.replace("CREATE VIEW", "CREATE OR REPLACE TEMP VIEW")
-        temp_view_select_sql = temp_view_select_sql.replace("::JSON", "::string")
-        temp_view_select_sql = temp_view_select_sql.replace('"', "")
+        temp_view_select_sql = clean_postgres_sql_for_spark_sql(temp_view_select_sql)
 
         self.spark.sql(
             f"""
@@ -295,7 +294,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
 
     def dispatch_tasks(self) -> None:
         extract_sql = obtain_extract_all_partitions_sql(self.config)
-        extract_sql = extract_sql.replace('"', "")  # Spark SQL does not process quoted identifiers correctly
+        extract_sql = clean_postgres_sql_for_spark_sql(extract_sql)
         logger.info(format_log(f"Using extract_sql:\n{extract_sql}", action="Extract"))
         df = self.spark.sql(extract_sql)
         df_record_count = df.count()  # safe to doublecheck the count of the *actual* data being processed
