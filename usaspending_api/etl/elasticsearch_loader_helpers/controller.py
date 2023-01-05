@@ -363,8 +363,6 @@ def extract_transform_load(task: TaskSpec) -> None:
 
 
 def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[int, int]]:
-    # TODO: figure out if this logging is needed
-    # ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     start = perf_counter()
     msg = f"Started processing on partition #{task.partition_number}: {task.name}"
     logger.info(format_log(msg, name=task.name))
