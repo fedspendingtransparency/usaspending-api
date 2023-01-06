@@ -1,7 +1,7 @@
 from usaspending_api.common.data_classes import TransactionColumn
 
 TRANSACTION_FABS_COLUMN_INFO = [
-    TransactionColumn("action_date", "action_date", "STRING", "truncate_string_date"),
+    TransactionColumn("action_date", "action_date", "STRING", "string_datetime_remove_timestamp"),
     TransactionColumn("action_type", "action_type", "STRING"),
     TransactionColumn("action_type_description", "action_type_description", "STRING"),
     TransactionColumn("afa_generated_unique", "afa_generated_unique", "STRING"),
@@ -116,7 +116,7 @@ transaction_fabs_sql_string = rf"""
 
 # Mapping from raw.published_fabs to int.transaction_normalized columns, where a simple mapping exists
 FABS_TO_NORMALIZED_COLUMN_INFO = [
-    TransactionColumn("action_date", "action_date", "DATE", "parse_string_date"),
+    TransactionColumn("action_date", "action_date", "DATE", "parse_string_datetime_to_date"),
     TransactionColumn("action_type", "action_type", "STRING"),
     TransactionColumn("action_type_description", "action_type_description", "STRING"),
     TransactionColumn("certified_date", "NULL", "DATE", "literal"),

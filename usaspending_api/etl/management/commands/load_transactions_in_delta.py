@@ -239,7 +239,7 @@ class Command(BaseCommand):
             elif col.handling == "literal":
                 # Use col.source directly as the value
                 return f"{col.source} AS {col.dest_name}"
-            elif col.handling == "parse_string_date":
+            elif col.handling == "parse_string_datetime_to_date":
                 # These are string fields that actually hold DATES/TIMESTAMPS and need to be cast as dates.
                 # However, they may not be properly parsed when calling CAST(... AS DATE).
                 return f"""
@@ -258,7 +258,7 @@ class Command(BaseCommand):
                                    AS DATE)
                     END AS {col.dest_name}
                 """
-            elif col.handling == "truncate_string_date":
+            elif col.handling == "string_datetime_remove_timestamp":
                 # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
                 # even though they remain as strings
                 return f"""
