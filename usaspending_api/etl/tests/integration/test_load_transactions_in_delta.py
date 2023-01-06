@@ -270,10 +270,8 @@ def load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_raw
 class TestInitialRun:
     @staticmethod
     def initial_run(
-        s3_data_bucket, execute_pg_loader=True, load_source_tables=True, load_other_raw_tables=None, initial_copy=True
+        s3_data_bucket, load_source_tables=True, load_other_raw_tables=None, initial_copy=True
     ):
-        if execute_pg_loader:
-            execute_pg_transaction_loader()
         load_tables_to_delta(s3_data_bucket, load_source_tables, load_other_raw_tables)
         call_params = ["load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_data_bucket]
         if not initial_copy:
@@ -429,7 +427,7 @@ class TestInitialRun:
     ):
         # 1. Call initial run with no raw tables, except for published_fabs and detached_award_procurement.
         # Also, don't do initial copy of tables
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False, initial_copy=False)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
         kwargs = {
             "expected_last_load_transaction_id_lookup": BEGINNING_OF_TIME,
             "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
@@ -447,7 +445,7 @@ class TestInitialRun:
                 "create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_unittest_data_bucket
             )
         # Don't reload the source tables, though.
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False, False)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, False)
         TestInitialRun.verify(spark, [], [], **kwargs)
 
 
@@ -920,7 +918,7 @@ class TestInitialRunNoPostgresLoader:
         ]
         # Don't call Postgres loader, though.
         TestInitialRun.initial_run(
-            s3_unittest_data_bucket, False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
+            s3_unittest_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
         kwargs = {
             "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
@@ -944,7 +942,7 @@ class TestInitialRunNoPostgresLoader:
                 s3_unittest_data_bucket,
             )
         # Don't call Postgres loader or reload any of the tables
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False, False)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, False)
         kwargs["expected_last_load_transaction_normalized"] = initial_source_table_load_datetime
         TestInitialRun.verify(
             spark,
@@ -963,7 +961,7 @@ class TestInitialRunNoPostgresLoader:
             TableLoadInfo(spark, "transaction_fpds", self.initial_transaction_fpds),
         ]
         # Don't call Postgres loader or re-load the source tables, though.
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False, False, load_other_raw_tables)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, False, load_other_raw_tables)
         kwargs["expected_last_load_transaction_fabs"] = initial_source_table_load_datetime
         kwargs["expected_last_load_transaction_fpds"] = initial_source_table_load_datetime
         TestInitialRun.verify(
@@ -1003,7 +1001,7 @@ class TestTransactionIdLookup:
 
         # Then, call load_transactions_in_delta with etl-level of initial_run and verify.
         # Don't reload the source tables, and don't do initial copy of transaction tables, though.
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False, initial_copy=False)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
         kwargs = {
             "expected_last_load_transaction_id_lookup": BEGINNING_OF_TIME,
             "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
@@ -1032,7 +1030,6 @@ class TestTransactionIdLookup:
         self,
         spark,
         s3_data_bucket,
-        execute_pg_loader,
         load_other_raw_tables,
         expected_initial_transaction_id_lookup,
         expected_initial_award_id_lookup,
@@ -1044,7 +1041,7 @@ class TestTransactionIdLookup:
         # Since these tests only care about the condition of the transaction_id_lookup table after various
         # operations, only load the essential tables to Delta, and don't copy the raw transaction tables to int.
         TestInitialRun.initial_run(
-            s3_data_bucket, execute_pg_loader, load_other_raw_tables=load_other_raw_tables, initial_copy=False
+            s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
@@ -1186,7 +1183,6 @@ class TestTransactionIdLookup:
         self.happy_path_test_core(
             spark,
             s3_unittest_data_bucket,
-            False,
             load_other_raw_tables,
             TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
             TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup,
@@ -1220,7 +1216,7 @@ class TestAwardIdLookup:
 
         # Then, call load_transactions_in_delta with etl-level of initial_run and verify.
         # Don't reload the source tables, and don't do initial copy of transaction tables, though.
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False, initial_copy=False)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
         kwargs = {
             "expected_last_load_transaction_id_lookup": BEGINNING_OF_TIME,
             "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
@@ -1246,7 +1242,6 @@ class TestAwardIdLookup:
         self,
         spark,
         s3_data_bucket,
-        execute_pg_loader,
         load_other_raw_tables,
         expected_initial_transaction_id_lookup,
         expected_initial_award_id_lookup,
@@ -1258,7 +1253,7 @@ class TestAwardIdLookup:
         # Since these tests only care about the condition of the transaction_id_lookup table after various
         # operations, only load the essential tables to Delta, and don't copy the raw transaction tables to int.
         TestInitialRun.initial_run(
-            s3_data_bucket, execute_pg_loader, load_other_raw_tables=load_other_raw_tables, initial_copy=False
+            s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
@@ -1402,7 +1397,6 @@ class TestAwardIdLookup:
         self.happy_path_test_core(
             spark,
             s3_unittest_data_bucket,
-            False,
             load_other_raw_tables,
             TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
             TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup,
@@ -1453,7 +1447,7 @@ class TransactionFabsFpdsCore:
         # 2. Call load_transactions_in_delta with etl-level of initial_run first, but without first loading
         # raw.transaction_normalized or raw.awards.  Then immediately call load_transactions_in_delta with
         # etl-level of transaction_f[ab|pd]s.
-        TestInitialRun.initial_run(self.s3_data_bucket, False)
+        TestInitialRun.initial_run(self.s3_data_bucket)
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Verify the transaction and award id lookup tables and other int transaction tables.  They should all be empty.
@@ -1515,7 +1509,6 @@ class TransactionFabsFpdsCore:
 
     def unexpected_paths_test_core(
         self,
-        execute_pg_loader,
         load_other_raw_tables,
         expected_initial_transaction_id_lookup,
     ):
@@ -1523,7 +1516,7 @@ class TransactionFabsFpdsCore:
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
         # Then immediately call load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
         TestInitialRun.initial_run(
-            self.s3_data_bucket, execute_pg_loader, load_other_raw_tables=load_other_raw_tables, initial_copy=False
+            self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
@@ -1624,7 +1617,6 @@ class TransactionFabsFpdsCore:
     @staticmethod
     def unexpected_paths_no_pg_loader_test(transaction_fabs_fpds_core):
         transaction_fabs_fpds_core.unexpected_paths_test_core(
-            False,
             [
                 TableLoadInfo(
                     transaction_fabs_fpds_core.spark,
@@ -1637,7 +1629,6 @@ class TransactionFabsFpdsCore:
 
     def happy_paths_test_core(
         self,
-        execute_pg_loader,
         load_other_raw_tables,
         expected_initial_transaction_id_lookup,
         expected_initial_award_id_lookup,
@@ -1647,7 +1638,7 @@ class TransactionFabsFpdsCore:
     ):
         # 1, Test calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s after calling with
         # etl-levels of initial_run and transaction_id_lookup.
-        TestInitialRun.initial_run(self.s3_data_bucket, execute_pg_loader, load_other_raw_tables=load_other_raw_tables)
+        TestInitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables)
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
@@ -1769,7 +1760,6 @@ class TransactionFabsFpdsCore:
         expected_transaction_fabs_fpds_append,
     ):
         transaction_fabs_fpds_core.happy_paths_test_core(
-            False,
             (
                 TableLoadInfo(
                     transaction_fabs_fpds_core.spark,
