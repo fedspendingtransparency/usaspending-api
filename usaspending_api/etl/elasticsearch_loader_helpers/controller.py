@@ -147,13 +147,9 @@ class AbstractElasticsearchIndexerController(ABC):
     def _run_award_deletes(self):
         pass
 
+    @abstractmethod
     def _run_transaction_deletes(self):
-        client = instantiate_elasticsearch_client()
-        delete_transactions(client, self.config)
-        # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
-        # ensures all records deleted since either job was run are taken into account
-        last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
-        update_last_load_date("es_deletes", last_db_delete_time)
+        pass
 
     def complete_process(self) -> None:
         client = instantiate_elasticsearch_client()
@@ -231,6 +227,14 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
     def _run_award_deletes(self):
         client = instantiate_elasticsearch_client()
         delete_awards(client, self.config)
+
+    def _run_transaction_deletes(self):
+        client = instantiate_elasticsearch_client()
+        delete_transactions(client, self.config)
+        # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
+        # ensures all records deleted since either job was run are taken into account
+        last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
+        update_last_load_date("es_deletes", last_db_delete_time)
 
     def cleanup(self) -> None:
         pass
@@ -343,7 +347,8 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             logger.info(format_log(msg))
             logger.info(
                 format_log(
-                    "Partition-processing task logs will be embedded in executor stderr logs, and not appear here.")
+                    "Partition-processing task logs will be embedded in executor stderr logs, and not appear here."
+                )
             )
             df = df.repartition(self.config["partitions"], partition_field)
         else:
@@ -356,7 +361,8 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             logger.info(format_log(msg))
             logger.info(
                 format_log(
-                    "Partition-processing task logs will be embedded in executor stderr logs, and not appear here.")
+                    "Partition-processing task logs will be embedded in executor stderr logs, and not appear here."
+                )
             )
             df = df.repartition(self.config["partitions"])
 
@@ -382,7 +388,16 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
 
     def _run_award_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_awards(client, self.config, spark=self.spark)
+        delete_awards(client, self.config, "transaction_fabs", "transaction_fpds", spark=self.spark)
+
+    def _run_transaction_deletes(self):
+        client = instantiate_elasticsearch_client()
+        delete_transactions(client, self.config, "transaction_fabs", "transaction_fpds")
+        # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
+        # ensures all records deleted since either job was run are taken into account
+        # Using the loaded-from-DELTA-tables dates here, not the postgres table load dates
+        last_db_delete_time = get_earliest_load_date(["transaction_fabs", "transaction_fpds"])
+        update_last_load_date("es_deletes", last_db_delete_time)
 
     def cleanup(self) -> None:
         if self.spark_created_by_command:

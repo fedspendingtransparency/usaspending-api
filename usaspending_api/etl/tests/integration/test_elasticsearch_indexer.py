@@ -212,7 +212,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     # Also override SQL function listed in config object with the mock one
     es_etl_config["execute_sql_func"] = mock_execute_sql
     ensure_view_exists(es_etl_config["sql_view"], force=True)
-    loader = PostgresElasticsearchIndexerController(es_etl_config),
+    loader = (PostgresElasticsearchIndexerController(es_etl_config),)
     assert loader.__class__.__name__ == "PostgresElasticsearchIndexerController"
     loader.prepare_for_etl()
     loader.dispatch_tasks()
