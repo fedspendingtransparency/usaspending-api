@@ -256,6 +256,10 @@ def delete_awards(
         client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
         config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
         task_id (str): label for this sub-step of the ETL
+        spark (SparkSession): provided SparkSession to be used in a Spark Cluster runtime to interact with Delta Lake
+            tables as the basis of discovering award records that are no longer in the table and should be deleted.
+            Presence of this variable is a marker for whether the Postgres awards table or Delta awards table should
+            be interrogated.
 
     Returns: Number of ES docs deleted in the index
     """
@@ -431,7 +435,7 @@ def _check_awards_for_deletes(id_list: list, spark: SparkSession = None, awards_
         WHERE a.generated_unique_award_id IS NULL"""
 
     if spark:  # then use spark against a Delta Table
-        awards_table = "rpt.awards"
+        awards_table = "int.awards"
         results = list(spark.sql(sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table)).collect())
     else:
         results = execute_sql_statement(
