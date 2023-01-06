@@ -17,7 +17,11 @@ from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fabs,
     get_business_categories_fpds,
 )
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.broker.helpers.last_load_date import (
+    get_last_load_date,
+    update_last_load_date,
+    get_earliest_load_date,
+)
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
@@ -109,13 +113,9 @@ class Command(BaseCommand):
             self.no_initial_copy = options["no_initial_copy"]
 
             # Capture minimum last load date of the source tables to update the "last_load_date" after completion
-            last_procure_load = get_last_load_date("source_procurement_transaction")
-            last_assist_load = get_last_load_date("source_assistance_transaction")
-            if last_procure_load is None:
-                last_procure_load = datetime.utcfromtimestamp(0)
-            if last_assist_load is None:
-                last_assist_load = datetime.utcfromtimestamp(0)
-            next_last_load = min(last_assist_load, last_procure_load)
+            next_last_load = get_earliest_load_date("source_procurement_transaction", "source_assistance_transaction")
+            if not next_last_load:
+                next_last_load = datetime.utcfromtimestamp(0)
 
             if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
@@ -1004,6 +1004,8 @@ class Command(BaseCommand):
 
         if set_last_load_date:
             update_last_load_date(destination_table, next_last_load)
+            # es_deletes should remain in lockstep with transaction load dates, so if they are reset, it should be reset
+            update_last_load_date("es_deletes", next_last_load)
 
         # award_id_lookup
         destination_table = "award_id_lookup"
@@ -1130,6 +1132,8 @@ class Command(BaseCommand):
 
         if set_last_load_date:
             update_last_load_date(destination_table, next_last_load)
+            # es_deletes should remain in lockstep with transaction load dates, so if they are reset, it should be reset
+            update_last_load_date("es_deletes", next_last_load)
 
         # Need a table to keep track of awards in which some, but not all, transactions are deleted.
         destination_table = "award_ids_delete_modified"
@@ -1193,3 +1197,6 @@ class Command(BaseCommand):
                     ).collect()[0]["count"]
                     if count > 0:
                         update_last_load_date(destination_table, next_last_load)
+                        # es_deletes should remain in lockstep with transaction load dates, so if they are reset,
+                        # it should be reset
+                        update_last_load_date("es_deletes", next_last_load)
