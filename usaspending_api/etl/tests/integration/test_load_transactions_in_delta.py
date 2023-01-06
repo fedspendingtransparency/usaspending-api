@@ -189,26 +189,6 @@ def populate_initial_source_tables_pg():
         baker.make("broker.ExternalDataLoadDate", last_load_date=BEGINNING_OF_TIME, external_data_type=edt)
 
 
-def execute_pg_transaction_loader():
-    # Before calling the loader, make sure to set up the ExternalDataType and ExternalDataLoadDate entries for
-    # the corresponding table
-    edt = baker.make(
-        "broker.ExternalDataType",
-        name="fabs",
-        external_data_type_id=2,
-    )
-    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt)
-    call_command("fabs_nightly_loader", "--reload-all")
-
-    edt = baker.make(
-        "broker.ExternalDataType",
-        name="fpds",
-        external_data_type_id=1,
-    )
-    baker.make("broker.ExternalDataLoadDate", last_load_date="1970-01-01", external_data_type=edt)
-    call_command("load_fpds_transactions", "--reload-all")
-
-
 @dataclass
 class TableLoadInfo:
     spark: SparkSession
@@ -471,7 +451,9 @@ class TestInitialRun:
         TestInitialRun.verify(spark, [], [], **kwargs)
 
 
-class TestInitialRunWithPostgresLoader:
+# Even though all the tests that use the Postgres loader have been removed, these variables are still
+# needed for some tests.
+class InitialRunWithPostgresLoader:
     expected_initial_transaction_id_lookup = [
         {
             "transaction_id": id,
@@ -534,99 +516,6 @@ class TestInitialRunWithPostgresLoader:
         }
         for procure in initial_procures
     ]
-
-    # Although transaction_normalized and source[assistance,procurement]_transaction django models say that
-    # the unique_award_key can be NULL, actually trying to propagate a NULL in this field from one of the source
-    # tables will kill the Postgres transaction loader, so only testing for NULLs in this field originating in Delta.
-    @mark.django_db(transaction=True, reset_sequences=True)
-    def test_nulls_in_trans_norm_unique_award_key_from_delta(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
-    ):
-        execute_pg_transaction_loader()
-        load_tables_to_delta(s3_unittest_data_bucket, load_other_raw_tables=["transaction_normalized"])
-
-        spark.sql(
-            """
-            UPDATE raw.transaction_normalized
-            SET unique_award_key = NULL
-            WHERE id = 4
-        """
-        )
-
-        with raises(ValueError, match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
-            call_command(
-                "load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_unittest_data_bucket
-            )
-
-        spark.sql(
-            """
-            UPDATE raw.transaction_normalized
-            SET unique_award_key = NULL
-            WHERE id = 5
-        """
-        )
-
-        with raises(ValueError, match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
-            call_command(
-                "load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_unittest_data_bucket
-            )
-
-    @mark.django_db(transaction=True, reset_sequences=True)
-    def test_happy_path_scenarios(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
-    ):
-        # 1. Call initial_run, but set initial-copy to False
-
-        # When calling without initial load of int tables, only load essential tables to Delta
-        TestInitialRun.initial_run(
-            s3_unittest_data_bucket, load_other_raw_tables=("transaction_normalized", "awards"), initial_copy=False
-        )
-        kwargs = {
-            "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
-        }
-        TestInitialRun.verify(
-            spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, **kwargs
-        )
-
-        # 2. Call initial_run with initial-copy, but have empty raw.transaction_f[ab|pd]s tables
-        destination_tables = ("transaction_fabs", "transaction_fpds")
-        for destination_table in destination_tables:
-            call_command(
-                "create_delta_table",
-                "--destination-table",
-                destination_table,
-                "--spark-s3-bucket",
-                s3_unittest_data_bucket,
-            )
-        # Don't call Postgres loader again or reload any of the tables
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False, False)
-        kwargs["expected_last_load_transaction_normalized"] = initial_source_table_load_datetime
-        TestInitialRun.verify(
-            spark,
-            self.expected_initial_transaction_id_lookup,
-            self.expected_initial_award_id_lookup,
-            len(initial_assists) + len(initial_procures),
-            **kwargs,
-        )
-
-        # 3. Call initial_run with initial-copy, and have all raw tables populated
-        # Also, don't call Postgres loader again or reload the source tables again
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False, False, destination_tables)
-        kwargs["expected_last_load_transaction_fabs"] = initial_source_table_load_datetime
-        kwargs["expected_last_load_transaction_fpds"] = initial_source_table_load_datetime
-        TestInitialRun.verify(
-            spark,
-            self.expected_initial_transaction_id_lookup,
-            self.expected_initial_award_id_lookup,
-            len(initial_assists) + len(initial_procures),
-            len(initial_assists),
-            len(initial_procures),
-            **kwargs,
-        )
 
 
 class TestInitialRunNoPostgresLoader:
@@ -1127,10 +1016,10 @@ class TestTransactionIdLookup:
         # Then, call load_transactions_in_delta with etl-level of transaction_id_lookup.
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
-        # The expected transaction_id_lookup table should be the same as in TestInitialRunWithPostgresLoader,
+        # The expected transaction_id_lookup table should be the same as in InitialRunWithPostgresLoader,
         # but all of the transaction ids should be 1 larger than expected there.
         expected_transaction_id_lookup = deepcopy(
-            TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
+            InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
         )
         for item in expected_transaction_id_lookup:
             item["transaction_id"] += 1
@@ -1281,20 +1170,6 @@ class TestTransactionIdLookup:
 
         assert get_last_load_date("transaction_id_lookup") == last_assist_load_datetime
 
-    @mark.django_db(transaction=True, reset_sequences=True)
-    def test_happy_path_scenarios_with_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
-    ):
-        self.happy_path_test_core(
-            spark,
-            s3_unittest_data_bucket,
-            True,
-            ("transaction_normalized", "awards"),
-            TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup,
-            TestInitialRunWithPostgresLoader.expected_initial_award_id_lookup,
-            (1, 1, 3),
-        )
-
     @mark.django_db(transaction=True)
     def test_happy_path_scenarios_no_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
@@ -1360,7 +1235,7 @@ class TestAwardIdLookup:
 
         # The expected award_id_lookup table should be the same as in TestInitialRunWithPostgresLoader,
         # but all of the award ids should be 1 larger than expected there.
-        expected_award_id_lookup = deepcopy(TestInitialRunWithPostgresLoader.expected_initial_award_id_lookup)
+        expected_award_id_lookup = deepcopy(InitialRunWithPostgresLoader.expected_initial_award_id_lookup)
         for item in expected_award_id_lookup:
             item["award_id"] += 1
         # Also, the last load date for the award_id_lookup table should be updated to the date of the initial loads.
@@ -1511,20 +1386,6 @@ class TestAwardIdLookup:
 
         assert get_last_load_date("award_id_lookup") == last_assist_load_datetime
 
-    @mark.django_db(transaction=True, reset_sequences=True)
-    def test_happy_path_scenarios_with_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
-    ):
-        self.happy_path_test_core(
-            spark,
-            s3_unittest_data_bucket,
-            True,
-            ("transaction_normalized", "awards"),
-            TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup,
-            TestInitialRunWithPostgresLoader.expected_initial_award_id_lookup,
-            (1, 1, 3),
-        )
-
     @mark.django_db(transaction=True)
     def test_happy_path_scenarios_no_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
@@ -1618,10 +1479,10 @@ class TransactionFabsFpdsCore:
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
-        # The expected transaction_id_lookup table should be the same as in TestInitialRunWithPostgresLoader,
+        # The expected transaction_id_lookup table should be the same as in InitialRunWithPostgresLoader,
         # but all of the transaction ids should be 1 larger than expected there.
         expected_transaction_id_lookup = deepcopy(
-            TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
+            InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
         )
         for item in expected_transaction_id_lookup:
             item["transaction_id"] += 1
@@ -1640,7 +1501,7 @@ class TransactionFabsFpdsCore:
         )
 
         # Verify key fields in transaction_f[ab|pd]s table.  Note that the transaction_ids should be 1 more than
-        # in those from TestInitialRunWithPostgresLoader
+        # in those from InitialRunWithPostgresLoader
         query = f"SELECT {', '.join(self.compare_fields)} FROM int.{self.etl_level} ORDER BY {self.pk_field}"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
 
@@ -1761,13 +1622,7 @@ class TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
     @staticmethod
-    def test_unexpected_paths_with_pg_loader(transaction_fabs_fpds_core):
-        transaction_fabs_fpds_core.unexpected_paths_test_core(
-            True, ["transaction_normalized"], TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
-        )
-
-    @staticmethod
-    def test_unexpected_paths_no_pg_loader(transaction_fabs_fpds_core):
+    def unexpected_paths_no_pg_loader_test(transaction_fabs_fpds_core):
         transaction_fabs_fpds_core.unexpected_paths_test_core(
             False,
             [
@@ -1906,24 +1761,7 @@ class TransactionFabsFpdsCore:
         assert get_last_load_date(self.etl_level) == initial_source_table_load_datetime
 
     @staticmethod
-    def test_happy_paths_with_pg_loader(
-        transaction_fabs_fpds_core,
-        expected_transaction_id_lookup_pops,
-        expected_transaction_id_lookup_append,
-        expected_transaction_fabs_fpds_append,
-    ):
-        transaction_fabs_fpds_core.happy_paths_test_core(
-            True,
-            ("transaction_normalized", transaction_fabs_fpds_core.etl_level, "awards"),
-            TestInitialRunWithPostgresLoader.expected_initial_transaction_id_lookup,
-            TestInitialRunWithPostgresLoader.expected_initial_award_id_lookup,
-            expected_transaction_id_lookup_pops,
-            expected_transaction_id_lookup_append,
-            expected_transaction_fabs_fpds_append,
-        )
-
-    @staticmethod
-    def test_happy_paths_no_pg_loader(
+    def happy_paths_no_pg_loader_test(
         transaction_fabs_fpds_core,
         initial_transaction_fabs_fpds,
         expected_transaction_id_lookup_pops,
@@ -1962,7 +1800,7 @@ class TestTransactionFabs:
     usas_source_table_name = "published_fabs"
     broker_source_table_name = "source_assistance_transaction"
     baker_table = "transactions.SourceAssistanceTransaction"
-    compare_fields = TestInitialRunWithPostgresLoader.expected_initial_transaction_fabs[0].keys()
+    compare_fields = InitialRunWithPostgresLoader.expected_initial_transaction_fabs[0].keys()
     new_afa_generated_unique = "award_assist_0004_trans_0001"
     new_unique_award_key = "award_assist_0004"
     baker_kwargs = {
@@ -2003,48 +1841,25 @@ class TestTransactionFabs:
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
     ):
         transaction_fabs_fpds_core = self.generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, TestInitialRunWithPostgresLoader.expected_initial_transaction_fabs
+            spark, s3_unittest_data_bucket, InitialRunWithPostgresLoader.expected_initial_transaction_fabs
         )
         transaction_fabs_fpds_core.unexpected_paths_source_tables_only_test_core()
-
-    @mark.django_db(transaction=True, reset_sequences=True)
-    def test_unexpected_paths_with_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
-    ):
-        TransactionFabsFpdsCore.test_unexpected_paths_with_pg_loader(
-            self.generate_transaction_fabs_fpds_core(
-                spark, s3_unittest_data_bucket, TestInitialRunWithPostgresLoader.expected_initial_transaction_fabs
-            )
-        )
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_no_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
     ):
-        TransactionFabsFpdsCore.test_unexpected_paths_no_pg_loader(
+        TransactionFabsFpdsCore.unexpected_paths_no_pg_loader_test(
             self.generate_transaction_fabs_fpds_core(
                 spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fabs
             )
-        )
-
-    @mark.django_db(transaction=True, reset_sequences=True)
-    def test_happy_paths_with_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
-    ):
-        TransactionFabsFpdsCore.test_happy_paths_with_pg_loader(
-            self.generate_transaction_fabs_fpds_core(
-                spark, s3_unittest_data_bucket, TestInitialRunWithPostgresLoader.expected_initial_transaction_fabs
-            ),
-            (1, 1),
-            self.expected_transaction_id_lookup_append,
-            self.expected_transaction_fabs_fpds_append,
         )
 
     @mark.django_db(transaction=True)
     def test_happy_paths_no_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
     ):
-        TransactionFabsFpdsCore.test_happy_paths_no_pg_loader(
+        TransactionFabsFpdsCore.happy_paths_no_pg_loader_test(
             self.generate_transaction_fabs_fpds_core(
                 spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fabs
             ),
@@ -2062,7 +1877,7 @@ class TestTransactionFpds:
     usas_source_table_name = "detached_award_procurement"
     broker_source_table_name = "source_procurement_transaction"
     baker_table = "transactions.SourceProcurementTransaction"
-    compare_fields = TestInitialRunWithPostgresLoader.expected_initial_transaction_fpds[0].keys()
+    compare_fields = InitialRunWithPostgresLoader.expected_initial_transaction_fpds[0].keys()
     new_detached_award_proc_unique = "award_procure_0004_trans_0001"
     new_unique_award_key = "award_procure_0004"
     baker_kwargs = {
@@ -2101,48 +1916,25 @@ class TestTransactionFpds:
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
     ):
         transaction_fabs_fpds_core = self.generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, TestInitialRunWithPostgresLoader.expected_initial_transaction_fpds
+            spark, s3_unittest_data_bucket, InitialRunWithPostgresLoader.expected_initial_transaction_fpds
         )
         transaction_fabs_fpds_core.unexpected_paths_source_tables_only_test_core()
-
-    @mark.django_db(transaction=True, reset_sequences=True)
-    def test_unexpected_paths_with_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
-    ):
-        TransactionFabsFpdsCore.test_unexpected_paths_with_pg_loader(
-            self.generate_transaction_fabs_fpds_core(
-                spark, s3_unittest_data_bucket, TestInitialRunWithPostgresLoader.expected_initial_transaction_fpds
-            )
-        )
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_no_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
     ):
-        TransactionFabsFpdsCore.test_unexpected_paths_no_pg_loader(
+        TransactionFabsFpdsCore.unexpected_paths_no_pg_loader_test(
             self.generate_transaction_fabs_fpds_core(
                 spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fpds
             )
-        )
-
-    @mark.django_db(transaction=True, reset_sequences=True)
-    def test_happy_paths_with_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
-    ):
-        TransactionFabsFpdsCore.test_happy_paths_with_pg_loader(
-            self.generate_transaction_fabs_fpds_core(
-                spark, s3_unittest_data_bucket, TestInitialRunWithPostgresLoader.expected_initial_transaction_fpds
-            ),
-            (6, 6),
-            self.expected_transaction_id_lookup_append,
-            self.expected_transaction_fabs_fpds_append,
         )
 
     @mark.django_db(transaction=True)
     def test_happy_paths_no_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
     ):
-        TransactionFabsFpdsCore.test_happy_paths_no_pg_loader(
+        TransactionFabsFpdsCore.happy_paths_no_pg_loader_test(
             self.generate_transaction_fabs_fpds_core(
                 spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fpds
             ),
