@@ -9,20 +9,23 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture(db):
-    baker.make("awards.TransactionNormalized", id=1, action_date="2010-10-01", award_id=1, is_fpds=True, type="A")
     baker.make(
-        "awards.TransactionFPDS",
+        "search.TransactionSearch",
+        is_fpds=True,
         transaction_id=1,
-        legal_entity_city_name="BURBANK",
-        legal_entity_country_code="USA",
-        legal_entity_state_code="CA",
-        legal_entity_county_code="000",
+        award_id=1,
+        action_date="2010-10-01",
+        type="A",
+        recipient_location_city_name="BURBANK",
+        recipient_location_country_code="USA",
+        recipient_location_state_code="CA",
+        recipient_location_county_code="000",
         piid="piiiiid",
-        place_of_perform_city_name="AUSTIN",
-        place_of_performance_state="TX",
-        place_of_perform_country_c="USA",
+        pop_city_name="AUSTIN",
+        pop_state_code="TX",
+        pop_country_code="USA",
     )
-    baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
+    baker.make("search.AwardSearch", award_id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=1,

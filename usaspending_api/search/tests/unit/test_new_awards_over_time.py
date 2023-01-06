@@ -69,126 +69,121 @@ def add_award_recipients(db):
     )
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2009, 5, 30),
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2009, 5, 30),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
+            recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         )
         baker.make(
-            "awards.TransactionNormalized",
-            id=i,
+            "search.TransactionSearch",
+            transaction_id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2009, 5, 30),
-        )
-        baker.make(
-            "awards.TransactionFPDS",
-            awardee_or_recipient_uei="HX3VU12NNWN9",
-            ultimate_parent_uei=None,
-            transaction_id=i,
-            action_date=datetime(2009, 5, 30),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
         )
     current_id += new_award_count
     new_award_count = 3
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2009, 5, 1),
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2009, 5, 1),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
+            recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         )
         baker.make(
-            "awards.TransactionNormalized",
-            id=i,
+            "search.TransactionSearch",
+            transaction_id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2009, 5, 1),
-        )
-        baker.make(
-            "awards.TransactionFPDS",
-            awardee_or_recipient_uei="HX3VU12NNWN9",
-            ultimate_parent_uei=None,
-            transaction_id=i,
-            action_date=datetime(2009, 5, 1),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
         )
     current_id += new_award_count
     new_award_count = 1
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2009, 7, 2),
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2009, 7, 2),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
+            recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         )
         baker.make(
-            "awards.TransactionNormalized",
-            id=i,
+            "search.TransactionSearch",
+            transaction_id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2009, 7, 2),
-        )
-        baker.make(
-            "awards.TransactionFPDS",
-            awardee_or_recipient_uei="HX3VU12NNWN9",
-            ultimate_parent_uei=None,
-            transaction_id=i,
-            action_date=datetime(2009, 7, 2),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
         )
     current_id += new_award_count
     new_award_count = 2
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2008, 1, 10),
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2008, 1, 10),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
+            recipient_hash="63248e89-7fb7-2d51-4085-8163798379d9",
         )
         baker.make(
-            "awards.TransactionNormalized",
-            id=i,
+            "search.TransactionSearch",
+            transaction_id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2008, 1, 10),
-        )
-        baker.make(
-            "awards.TransactionFPDS",
-            awardee_or_recipient_uei="HX3VU12NNWN9",
-            ultimate_parent_uei=None,
-            transaction_id=i,
-            action_date=datetime(2008, 1, 10),
+            recipient_uei="HX3VU12NNWN9",
+            parent_uei=None,
         )
     current_id += new_award_count
     new_award_count = 6
     for i in range(current_id, current_id + new_award_count):
         baker.make(
-            "awards.Award",
-            id=i,
+            "search.AwardSearch",
+            award_id=i,
             date_signed=datetime(2009, 7, 30),
             latest_transaction_id=i,
             earliest_transaction_id=i,
             type="A",
+            action_date=datetime(2009, 7, 30),
+            recipient_uei="K87WE4KQLBG4",
+            parent_uei=None,
+            recipient_hash="6a1765a8-6948-6ae8-ee2a-1cfc72de739d",
         )
         baker.make(
-            "awards.TransactionNormalized",
-            id=i,
+            "search.TransactionSearch",
+            transaction_id=i,
             award_id=i,
             is_fpds=True,
             action_date=datetime(2009, 7, 30),
-        )
-        baker.make(
-            "awards.TransactionFPDS",
-            awardee_or_recipient_uei="K87WE4KQLBG4",
-            ultimate_parent_uei=None,
-            transaction_id=i,
-            action_date=datetime(2009, 7, 30),
+            recipient_uei="K87WE4KQLBG4",
+            parent_uei=None,
         )
 
 

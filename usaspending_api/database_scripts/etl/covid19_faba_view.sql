@@ -91,5 +91,5 @@ CREATE VIEW covid19_faba_view AS
      LEFT JOIN federal_account fa ON fa.id = taa.federal_account_id
      LEFT JOIN ref_program_activity pa ON pa.id = faba.program_activity_id
      LEFT JOIN object_class oc ON oc.id = faba.object_class_id
-     LEFT JOIN awards awd ON awd.id = faba.award_id
+     LEFT JOIN vw_awards awd ON awd.id = faba.award_id
 ;

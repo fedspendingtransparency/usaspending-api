@@ -453,6 +453,7 @@ class TestInitialRun:
     # The unique_award_key field in transaction_normalized allows for NULLs in both Postgres and Delta,
     # so test for NULLs originating from both sources.
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_one_null_in_trans_norm_unique_award_key_from_pg(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -488,6 +489,7 @@ class TestInitialRun:
             )
 
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_multiple_nulls_in_trans_norm_unique_award_key_from_pg(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -539,6 +541,7 @@ class TestInitialRun:
             )
 
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_multiple_nulls_in_trans_norm_unique_award_key_from_delta(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -616,6 +619,7 @@ class TestInitialRun:
         TestInitialRun.happy_verify_award_ids(spark)
 
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_happy_path_and_run_twice(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -631,6 +635,7 @@ class TestInitialRun:
 
 class TestTransactionIdLookup:
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_scenarios(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -760,6 +765,7 @@ class TestTransactionIdLookup:
 
 class TestAwardIdLookup:
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_scenarios(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -937,6 +943,7 @@ class TestTransactionFabs:
     transaction_fabs_compare_fields = expected_initial_transaction_fabs[0].keys()
 
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_unexpected_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -1025,6 +1032,7 @@ class TestTransactionFabs:
         assert equal_datasets(expected_transaction_fabs, delta_data, "")
 
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_happy_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -1165,6 +1173,7 @@ class TestTransactionFpds:
     transaction_fpds_compare_fields = expected_initial_transaction_fpds[0].keys()
 
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_unexpected_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):
@@ -1252,6 +1261,7 @@ class TestTransactionFpds:
         assert equal_datasets(expected_transaction_fpds, delta_data, "")
 
     @mark.django_db(transaction=True)
+    @mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
     def test_happy_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_postgres_data
     ):

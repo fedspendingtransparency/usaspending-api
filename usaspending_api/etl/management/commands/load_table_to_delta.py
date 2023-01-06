@@ -60,7 +60,7 @@ TABLE_SPEC = {
     "awards": {
         "model": Award,
         "is_from_broker": False,
-        "source_table": "awards",
+        "source_table": "vw_awards",
         "source_database": "rpt",
         "destination_database": "raw",
         "swap_table": None,
@@ -111,7 +111,7 @@ TABLE_SPEC = {
     "transaction_fabs": {
         "model": TransactionFABS,
         "is_from_broker": False,
-        "source_table": "transaction_fabs",
+        "source_table": "vw_transaction_fabs",
         "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,
@@ -145,7 +145,7 @@ TABLE_SPEC = {
     "transaction_fpds": {
         "model": TransactionFPDS,
         "is_from_broker": False,
-        "source_table": "transaction_fpds",
+        "source_table": "vw_transaction_fpds",
         "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,
@@ -162,7 +162,7 @@ TABLE_SPEC = {
     "transaction_normalized": {
         "model": TransactionNormalized,
         "is_from_broker": False,
-        "source_table": "transaction_normalized",
+        "source_table": "vw_transaction_normalized",
         "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,

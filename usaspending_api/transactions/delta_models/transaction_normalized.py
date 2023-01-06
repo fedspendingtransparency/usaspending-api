@@ -8,15 +8,12 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "type_description": "STRING",
     "period_of_performance_start_date": "DATE",
     "period_of_performance_current_end_date": "DATE",
-    "action_date": "DATE NOT NULL",
+    "action_date": "DATE",
     "action_type": "STRING",
     "action_type_description": "STRING",
     "federal_action_obligation": "NUMERIC(23,2)",
     "modification_number": "STRING",
     "description": "STRING",
-    "drv_award_transaction_usaspend": "NUMERIC(23,2)",
-    "drv_current_total_award_value_amount_adjustment": "NUMERIC(23,2)",
-    "drv_potential_total_award_value_amount_adjustment": "NUMERIC(23,2)",
     "last_modified_date": "DATE",
     "certified_date": "DATE",
     "create_date": "TIMESTAMP",
@@ -30,7 +27,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "funding_amount": "NUMERIC(23,2)",
     "non_federal_funding_amount": "NUMERIC(23,2)",
     "unique_award_key": "STRING",
-    "business_categories": "ARRAY<STRING> NOT NULL",
+    "business_categories": "ARRAY<STRING>",
 }
 
 transaction_normalized_sql_string = rf"""

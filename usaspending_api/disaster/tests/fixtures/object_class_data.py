@@ -11,7 +11,7 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import _normal_awa
 def basic_faba_with_object_class(award_count_sub_schedule, award_count_submission, defc_codes):
     basic_object_class = major_object_class_with_children("001", [1])
 
-    award = _normal_award()
+    award = _normal_award(109)
 
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -156,8 +156,8 @@ def basic_fa_by_object_class_with_object_class_but_no_obligations(
 def faba_with_object_class_and_two_awards(award_count_sub_schedule, award_count_submission, defc_codes):
     basic_object_class = major_object_class_with_children("001", [1])
 
-    award1 = _normal_award()
-    award2 = _normal_award()
+    award1 = _normal_award(156)
+    award2 = _normal_award(212)
 
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -187,8 +187,8 @@ def faba_with_two_object_classes_and_two_awards(award_count_sub_schedule, award_
     object_class1 = major_object_class_with_children("001", [1])
     object_class2 = major_object_class_with_children("002", [2])
 
-    award1 = _normal_award()
-    award2 = _normal_award()
+    award1 = _normal_award(3)
+    award2 = _normal_award(4)
 
     baker.make(
         "awards.FinancialAccountsByAwards",

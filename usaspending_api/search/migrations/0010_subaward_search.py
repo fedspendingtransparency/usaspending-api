@@ -20,6 +20,7 @@ class Migration(migrations.Migration):
 
     operations = [
         CreateExtension('intarray'),
+        CreateExtension('pg_trgm'),
         migrations.CreateModel(
             name='SubawardSearch',
             fields=[

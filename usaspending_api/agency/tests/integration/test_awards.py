@@ -3,7 +3,7 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -39,103 +39,110 @@ def transaction_search_1():
     awarding_agency_2 = baker.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True)
 
     # Awards
-    award_contract = baker.make("awards.Award", category="contract")
-    award_idv = baker.make("awards.Award", category="idv")
-    award_grant = baker.make("awards.Award", category="grant")
-    award_loan = baker.make("awards.Award", category="loans")
-    award_dp = baker.make("awards.Award", category="direct payment")
+    award_contract = baker.make("search.AwardSearch", award_id=1, category="contract")
+    award_idv = baker.make("search.AwardSearch", award_id=2, category="idv")
+    award_grant = baker.make("search.AwardSearch", award_id=3, category="grant")
+    award_loan = baker.make("search.AwardSearch", award_id=4, category="loans")
+    award_dp = baker.make("search.AwardSearch", award_id=5, category="direct payment")
 
     baker.make(
-        TransactionNormalized,
-        id=1,
+        TransactionSearch,
+        transaction_id=1,
         award=award_contract,
         federal_action_obligation=101,
+        generated_pragmatic_obligation=101,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        fiscal_action_date="2021-07-01",
+        awarding_agency_id=awarding_agency_1.id,
         type="A",
-    )
-    baker.make(
-        TransactionFABS, transaction_id=1, awarding_agency_code="001", awarding_agency_name=toptier_agency_1.name
+        awarding_agency_code="001",
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     baker.make(
-        TransactionNormalized,
-        id=2,
+        TransactionSearch,
+        transaction_id=2,
         award=award_idv,
         federal_action_obligation=102,
+        generated_pragmatic_obligation=102,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        fiscal_action_date="2021-07-01",
+        awarding_agency_id=awarding_agency_1.id,
         type="IDV_A",
-    )
-    baker.make(
-        TransactionFABS, transaction_id=2, awarding_agency_code="001", awarding_agency_name=toptier_agency_1.name
+        awarding_agency_code="001",
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     baker.make(
-        TransactionNormalized,
-        id=3,
+        TransactionSearch,
+        transaction_id=3,
         award=award_grant,
         federal_action_obligation=103,
+        generated_pragmatic_obligation=103,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        fiscal_action_date="2021-07-01",
+        awarding_agency_id=awarding_agency_1.id,
         type="02",
-    )
-    baker.make(
-        TransactionFABS, transaction_id=3, awarding_agency_code="001", awarding_agency_name=toptier_agency_1.name
+        awarding_agency_code="001",
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     baker.make(
-        TransactionNormalized,
-        id=4,
+        TransactionSearch,
+        transaction_id=4,
         award=award_loan,
         federal_action_obligation=104,
+        generated_pragmatic_obligation=0,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        fiscal_action_date="2021-07-01",
+        awarding_agency_id=awarding_agency_1.id,
         type="08",
-    )
-    baker.make(
-        TransactionFABS, transaction_id=4, awarding_agency_code="001", awarding_agency_name=toptier_agency_1.name
+        awarding_agency_code="001",
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     baker.make(
-        TransactionNormalized,
-        id=5,
+        TransactionSearch,
+        transaction_id=5,
         award=award_dp,
         federal_action_obligation=105,
+        generated_pragmatic_obligation=105,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        fiscal_action_date="2021-07-01",
+        awarding_agency_id=awarding_agency_1.id,
         type="10",
-    )
-    baker.make(
-        TransactionFABS, transaction_id=5, awarding_agency_code="001", awarding_agency_name=toptier_agency_1.name
+        awarding_agency_code="001",
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     # Alternate Year
     baker.make(
-        TransactionNormalized,
-        id=6,
+        TransactionSearch,
+        transaction_id=6,
         award=award_idv,
         federal_action_obligation=300,
+        generated_pragmatic_obligation=300,
         action_date="2020-04-01",
-        awarding_agency=awarding_agency_1,
+        fiscal_action_date="2020-07-01",
+        awarding_agency_id=awarding_agency_1.id,
         type="IDV_A",
-    )
-    baker.make(
-        TransactionFABS, transaction_id=6, awarding_agency_code="001", awarding_agency_name=toptier_agency_1.name
+        awarding_agency_code="001",
+        awarding_toptier_agency_name=toptier_agency_1.name,
     )
 
     # Alternate Agency
     baker.make(
-        TransactionNormalized,
-        id=7,
+        TransactionSearch,
+        transaction_id=7,
         award=award_idv,
         federal_action_obligation=400,
+        generated_pragmatic_obligation=400,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_2,
+        fiscal_action_date="2021-07-01",
+        awarding_agency_id=awarding_agency_2.id,
         type="IDV_C",
-    )
-    baker.make(
-        TransactionFABS, transaction_id=7, awarding_agency_code="002", awarding_agency_name=toptier_agency_2.name
+        awarding_agency_code="002",
+        awarding_toptier_agency_name=toptier_agency_2.name,
     )
 
 

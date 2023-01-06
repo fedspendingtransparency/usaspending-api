@@ -190,8 +190,8 @@ select
     0
 
 from
-    awards c
-    left outer join awards p on
+    vw_awards c
+    left outer join vw_awards p on
         p.piid = c.parent_award_piid and
         p.fpds_agency_id = c.fpds_parent_agency_id and
         p.type like 'IDV%' and
@@ -232,8 +232,8 @@ from (
             sum(case when c.type like 'IDV%' then 0 else c.base_and_all_options_value end)::numeric(23, 2) direct_base_and_all_options_value,
             sum(case when c.type like 'IDV%' then 0 else c.base_exercised_options_val end)::numeric(23, 2) direct_base_exercised_options_val
         from
-            awards p
-            inner join awards c on
+            vw_awards p
+            inner join vw_awards c on
                 c.fpds_parent_agency_id = p.fpds_agency_id and
                 c.parent_award_piid = p.piid and
                 c.id != p.id

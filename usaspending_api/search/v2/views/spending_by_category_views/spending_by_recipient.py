@@ -65,7 +65,9 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         # Get the codes
         recipient_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        recipient_hashes = [bucket.get("key").split("/")[0] for bucket in recipient_info_buckets if bucket.get("key")]
+        recipient_hashes = [
+            bucket.get("key").split("/")[0] for bucket in recipient_info_buckets if bucket.get("key") != ""
+        ]
 
         # Get the current recipient info
         current_recipient_info = {}

@@ -58,7 +58,7 @@ def delete_stale_fpds(detached_award_procurement_ids):
 
         # Set backreferences from Awards to Transaction Normalized to null. These FKs will be updated later
         cursor.execute(
-            "update awards set latest_transaction_id = null, earliest_transaction_id = null "
+            "update award_search set latest_transaction_id = null, earliest_transaction_id = null "
             "where latest_transaction_id in ({ids}) or earliest_transaction_id in ({ids}) "
             "returning id".format(ids=txn_id_str)
         )
@@ -196,7 +196,7 @@ def _load_transactions(load_objects):
 
 def _matching_award(cursor, load_object):
     """ Try to find an award for this transaction to belong to by unique_award_key"""
-    find_matching_award_sql = "select id from awards where generated_unique_award_id = '{}'".format(
+    find_matching_award_sql = "select id from vw_awards where generated_unique_award_id = '{}'".format(
         load_object["transaction_fpds"]["unique_award_key"]
     )
     cursor.execute(find_matching_award_sql)
@@ -207,7 +207,7 @@ def _matching_award(cursor, load_object):
 def _lookup_existing_transaction(cursor, load_object):
     """find existing fpds transaction, if any"""
     find_matching_transaction_sql = (
-        "select transaction_id from transaction_fpds "
+        "select transaction_id from vw_transaction_fpds "
         "where detached_award_proc_unique = '{}'".format(load_object["transaction_fpds"]["detached_award_proc_unique"])
     )
     cursor.execute(find_matching_transaction_sql)

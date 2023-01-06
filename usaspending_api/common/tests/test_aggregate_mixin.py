@@ -11,6 +11,7 @@ from model_bakery import baker
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.mixins import AggregateQuerysetMixin
+from usaspending_api.search.models import AwardSearch
 
 
 @pytest.fixture()
@@ -34,10 +35,11 @@ def aggregate_models():
         datetime.date(2050, 7, 14),
     ]
     obligated_amts = [1000.01, 2000, None, 4000.02]
-
+    award_ids = [1, 2, 3, 4]
     # create awards
     award_recipe = Recipe(
-        Award,
+        AwardSearch,
+        award_id=cycle(award_ids),
         piid=cycle(award_piid),
         fain=cycle(award_fain),
         uri=cycle(award_uri),
@@ -52,9 +54,21 @@ def aggregate_models():
 
 @pytest.fixture
 def aggregate_models_with_nulls():
-    baker.make("awards.TransactionFPDS", transaction__federal_action_obligation=10, naics="ABCD", _quantity=3)
-    baker.make("awards.TransactionFPDS", transaction__federal_action_obligation=None, naics="WXYZ")
-    baker.make("awards.TransactionFABS", transaction__federal_action_obligation=10, cfda_number="10.001")
+    baker.make(
+        "search.TransactionSearch", transaction_id=1, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=2, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=3, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=4, is_fpds=True, federal_action_obligation=None, naics_code="WXYZ"
+    )
+    baker.make(
+        "search.TransactionSearch", transaction_id=5, is_fpds=False, federal_action_obligation=10, cfda_number="10.001"
+    )
 
 
 @pytest.mark.django_db

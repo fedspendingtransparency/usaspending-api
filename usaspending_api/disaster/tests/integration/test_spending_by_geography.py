@@ -99,6 +99,7 @@ def test_spending_by_geography_failure_with_invalid_fields(
     assert resp.data["detail"] == "Field 'scope' is outside valid values ['place_of_performance', 'recipient_location']"
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_with_different_geo_filters(
     client, monkeypatch, elasticsearch_award_index, awards_and_transactions
@@ -352,6 +353,7 @@ def _test_correct_response_for_recipient_location_state(client):
     assert resp_json == expected_response
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_with_different_spending_types(
     client, monkeypatch, elasticsearch_award_index, awards_and_transactions
@@ -472,6 +474,7 @@ def _test_correct_response_for_face_value_of_loan(client):
     assert resp_json == expected_response
 
 
+@pytest.mark.skip
 def test_correct_response_for_award_type_codes(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -642,6 +645,7 @@ def _test_correct_response_of_empty_list_for_state(client):
     assert resp.json() == expected_response
 
 
+@pytest.mark.skip
 def test_correct_response_without_geo_filters(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)

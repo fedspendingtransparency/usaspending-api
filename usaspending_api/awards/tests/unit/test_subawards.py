@@ -7,8 +7,8 @@ from usaspending_api.awards.v2.views.subawards import SubawardsViewSet
 
 
 def create_subaward_test_data(*subawards_data_list):
-    baker.make("awards.Award", id=88, generated_unique_award_id="generated_unique_award_id_for_88")
-    baker.make("awards.Award", id=99, generated_unique_award_id="generated_unique_award_id_for_99")
+    baker.make("search.AwardSearch", award_id=88, generated_unique_award_id="generated_unique_award_id_for_88")
+    baker.make("search.AwardSearch", award_id=99, generated_unique_award_id="generated_unique_award_id_for_99")
 
     for subaward in subawards_data_list:
         baker.make("search.SubawardSearch", **subaward)

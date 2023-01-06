@@ -3,6 +3,7 @@ from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_catego
 AWARD_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
+    "data_source": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "transaction_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "latest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "earliest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
@@ -151,6 +152,7 @@ award_search_load_sql_string = fr"""
     SELECT
   TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
+  awards.data_source AS data_source,
   awards.transaction_unique_id,
   awards.latest_transaction_id,
   awards.earliest_transaction_id,
@@ -289,7 +291,7 @@ award_search_load_sql_string = fr"""
   RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
 
-  COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
+  COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
   COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) AS pop_state_code,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
@@ -300,7 +302,7 @@ award_search_load_sql_string = fr"""
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)) AS pop_city_name,
-  COALESCE(transaction_fpds.place_of_perform_state_nam, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
+  COALESCE(transaction_fpds.place_of_perfor_state_desc, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
   POP_STATE_LOOKUP.fips AS pop_state_fips,
   POP_STATE_POPULATION.latest_population AS pop_state_population,
   POP_COUNTY_POPULATION.latest_population AS pop_county_population,
@@ -530,8 +532,5 @@ WHERE
         )
     )
     -- Make sure that we also pick up the current state of Pre2008 matview
-    OR (
-        latest_transaction.action_date >= '2000-10-01'
-        AND latest_transaction.action_date < '2007-10-01'
-    )
+    OR latest_transaction.action_date < '2007-10-01'
 """

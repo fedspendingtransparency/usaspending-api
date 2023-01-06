@@ -90,33 +90,46 @@ def sort_states_response(response_list):
 
 @pytest.fixture
 def state_data(db):
+    award_old = baker.make("search.AwardSearch", award_id=1, type="07")
+    award_old2 = baker.make("search.AwardSearch", award_id=2, type="08")
+
     baker.make(
-        "awards.TransactionNormalized",
-        assistance_data__place_of_perfor_state_code="TS",
-        assistance_data__place_of_perform_country_c="USA",
+        "search.TransactionSearch",
+        transaction_id=1,
+        award=award_old,
+        pop_state_code="TS",
+        pop_country_code="USA",
         federal_action_obligation=100000,
         action_date=TODAY.strftime("%Y-%m-%d"),
+        is_fpds=False,
     )
     baker.make(
-        "awards.TransactionNormalized",
-        assistance_data__place_of_perfor_state_code="TS",
-        assistance_data__place_of_perform_country_c="USA",
+        "search.TransactionSearch",
+        transaction_id=2,
+        award=award_old2,
+        pop_state_code="TS",
+        pop_country_code="USA",
         federal_action_obligation=100000,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+        is_fpds=False,
     )
     baker.make(
-        "awards.TransactionNormalized",
-        assistance_data__place_of_perfor_state_code="TD",
-        assistance_data__place_of_perform_country_c="USA",
+        "search.TransactionSearch",
+        transaction_id=3,
+        pop_state_code="TD",
+        pop_country_code="USA",
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
+        is_fpds=False,
     )
     baker.make(
-        "awards.TransactionNormalized",
-        assistance_data__place_of_perfor_state_code="TT",
-        assistance_data__place_of_perform_country_c="USA",
+        "search.TransactionSearch",
+        transaction_id=4,
+        pop_state_code="TT",
+        pop_country_code="USA",
         federal_action_obligation=1000,
         action_date=TODAY.strftime("%Y-%m-%d"),
+        is_fpds=False,
     )
     baker.make(
         "recipient.StateData",
@@ -176,83 +189,86 @@ def state_data(db):
 def state_view_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"01": {"code": "AB"}})
 
-    award_old = baker.make("awards.Award", type="A")
+    award_old = baker.make("search.AwardSearch", award_id=1, type="A")
 
-    award_cur = baker.make("awards.Award", type="B")
+    award_cur = baker.make("search.AwardSearch", award_id=2, type="B")
 
-    trans_old = baker.make(
-        "awards.TransactionNormalized",
-        award=award_old,
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=5,
+        award_id=award_old.award_id,
         type="A",
-        assistance_data__place_of_perfor_state_code="AB",
-        assistance_data__place_of_perform_country_c="USA",
+        pop_state_code="AB",
+        pop_country_code="USA",
         federal_action_obligation=10,
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
 
-    trans_cur = baker.make(
-        "awards.TransactionNormalized",
-        award=award_cur,
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=6,
+        award_id=award_cur.award_id,
         type="B",
-        assistance_data__place_of_perfor_state_code="AB",
-        assistance_data__place_of_perform_country_c="USA",
+        pop_state_code="AB",
+        pop_country_code="USA",
         federal_action_obligation=15,
         fiscal_year=generate_fiscal_year(TODAY),
         action_date=TODAY.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
-
-    baker.make("awards.TransactionFPDS", transaction=trans_old)
-    baker.make("awards.TransactionFPDS", transaction=trans_cur)
 
 
 @pytest.fixture
 def state_view_loan_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"01": {"code": "AB"}})
 
-    award_old = baker.make("awards.Award", type="07")
-    award_old2 = baker.make("awards.Award", type="08")
-    award_cur = baker.make("awards.Award", type="07")
+    award_old = baker.make("search.AwardSearch", award_id=1, type="07")
+    award_old2 = baker.make("search.AwardSearch", award_id=2, type="08")
+    award_cur = baker.make("search.AwardSearch", award_id=3, type="07")
 
-    trans_old = baker.make(
-        "awards.TransactionNormalized",
-        award=award_old,
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=7,
+        award_id=award_old.award_id,
         type="07",
-        assistance_data__place_of_perfor_state_code="AB",
-        assistance_data__place_of_perform_country_c="USA",
+        pop_state_code="AB",
+        pop_country_code="USA",
         original_loan_subsidy_cost=10,
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         face_value_loan_guarantee=1500,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
 
-    trans_old2 = baker.make(
-        "awards.TransactionNormalized",
-        award=award_old2,
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=8,
+        award_id=award_old2.award_id,
         type="08",
-        assistance_data__place_of_perfor_state_code="AB",
-        assistance_data__place_of_perform_country_c="USA",
+        pop_state_code="AB",
+        pop_country_code="USA",
         original_loan_subsidy_cost=15,
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         face_value_loan_guarantee=11,
         action_date=OUTSIDE_OF_LATEST.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
 
-    trans_cur = baker.make(
-        "awards.TransactionNormalized",
-        award=award_cur,
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=9,
+        award_id=award_cur.award_id,
         type="A",
-        assistance_data__place_of_perfor_state_code="AB",
-        assistance_data__place_of_perform_country_c="USA",
+        pop_state_code="AB",
+        pop_country_code="USA",
         federal_action_obligation=100,
         fiscal_year=generate_fiscal_year(OUTSIDE_OF_LATEST),
         face_value_loan_guarantee=2000,
         action_date=TODAY.strftime("%Y-%m-%d"),
+        is_fpds=True,
     )
-
-    baker.make("awards.TransactionFPDS", transaction=trans_old)
-    baker.make("awards.TransactionFPDS", transaction=trans_old2)
-    baker.make("awards.TransactionFPDS", transaction=trans_cur)
 
 
 @pytest.fixture()
@@ -341,7 +357,7 @@ def test_state_years_success(client, state_data):
     assert resp.data == expected_response
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_state_current_all_years_success(client, state_data):
     # test all years
     expected_response = EXPECTED_STATE.copy()

@@ -85,8 +85,8 @@ def multiple_awards_with_sibling_tas(db):
 def award(db, id):
     # most values are just defined in order to match on all the default filters; we aren't testing those here
     award = baker.make(
-        "awards.Award",
-        id=id,
+        "search.AwardSearch",
+        award_id=id,
         generated_unique_award_id=f"AWARD_{id}",
         type="D",
         date_signed=datetime(2017, 1, 1),
@@ -96,7 +96,7 @@ def award(db, id):
         fain="xyz",
         uri="abcxyx",
     )
-    baker.make("awards.TransactionNormalized", id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
+    baker.make("search.TransactionSearch", transaction_id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
 
 
 def agency(db, agency_id, toptier_code):

@@ -15,7 +15,7 @@ set
     business_categories = coalesce(tn.business_categories, '{}'::text[])
 
 from
-    awards a
+    vw_awards a
     left outer join transaction_normalized tn on tn.id = a.latest_transaction_id
 
 where
