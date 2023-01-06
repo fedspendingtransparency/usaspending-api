@@ -10,7 +10,7 @@ from usaspending_api.etl.management.helpers.recent_periods import retrieve_recen
 logger = logging.getLogger("script")
 
 TOUCH_AWARD_SQL = """
-UPDATE awards
+UPDATE award_search
 SET update_date = now()
 WHERE id IN (
     SELECT DISTINCT faba.award_id

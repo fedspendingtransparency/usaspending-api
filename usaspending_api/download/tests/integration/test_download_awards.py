@@ -6,7 +6,7 @@ from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
@@ -43,8 +43,8 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Awarding Agencies
-    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False)
-    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False)
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=True)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=True)
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -60,65 +60,55 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things")
 
     # Create Funding Agency
-    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=True)
 
     # Create Awards
-    award1 = baker.make("awards.Award", id=123, category="idv")
-    award2 = baker.make("awards.Award", id=456, category="contracts")
-    award3 = baker.make("awards.Award", id=789, category="assistance")
+    award1 = baker.make("search.AwardSearch", award_id=123, category="idv")
+    award2 = baker.make("search.AwardSearch", award_id=456, category="contracts")
+    award3 = baker.make("search.AwardSearch", award_id=789, category="assistance")
 
     # Create Transactions
-    trann1 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=1,
         award=award1,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa1,
+        awarding_agency_id=aa1.id,
         is_fpds=True,
+        piid="tc1piid",
+        awarding_agency_code="100",
+        awarding_toptier_agency_name="Bureau of Things",
+        awarding_subtier_agency_name="Bureau of Things",
     )
-    trann2 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=2,
         award=award2,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
+        awarding_agency_id=aa2.id,
         is_fpds=True,
+        piid="tc2piid",
+        awarding_agency_code="101",
+        awarding_toptier_agency_name="Bureau of Stuff",
+        awarding_subtier_agency_name="Bureau of Things",
     )
-    trann3 = baker.make(
-        TransactionNormalized,
+    baker.make(
+        TransactionSearch,
+        transaction_id=3,
         award=award3,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
+        awarding_agency_id=aa2.id,
         is_fpds=False,
-    )
-
-    # Create TransactionContract
-    baker.make(
-        TransactionFPDS,
-        transaction=trann1,
-        piid="tc1piid",
-        awarding_agency_name="Bureau of Things",
-        awarding_sub_tier_agency_n="Bureau of Things",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction=trann2,
-        piid="tc2piid",
-        awarding_agency_name="Bureau of Stuff",
-        awarding_sub_tier_agency_n="Bureau of Things",
-    )
-
-    # Create TransactionAssistance
-    baker.make(
-        TransactionFABS,
-        transaction=trann3,
         fain="ta1fain",
-        awarding_agency_name="Bureau of Stuff",
-        awarding_sub_tier_agency_n="Bureau of Things",
+        awarding_agency_code="101",
+        awarding_toptier_agency_name="Bureau of Stuff",
+        awarding_subtier_agency_name="Bureau of Things",
     )
 
     # Set latest_award for each award

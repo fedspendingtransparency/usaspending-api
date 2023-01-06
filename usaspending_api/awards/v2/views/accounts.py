@@ -30,7 +30,7 @@ ACCOUNTS_SQL = SQL(
         select  a.funding_agency_id,
                 nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
                 faba.treasury_account_id
-        from    awards a
+        from    vw_awards a
                 inner join financial_accounts_by_awards faba on faba.award_id = a.id
         where   {award_id_column} = {award_id}
     )

@@ -3,6 +3,7 @@ import pytest
 
 from model_bakery import baker
 
+from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
 
 
@@ -14,28 +15,31 @@ def test_award_update_from_latest_transaction():
     agency2 = baker.make("references.Agency")
 
     award = baker.make(
-        "awards.Award",
-        awarding_agency=agency1,
+        "search.AwardSearch",
+        award_id=1,
+        awarding_agency_id=agency1.id,
         period_of_performance_current_end_date=datetime.date(2016, 1, 1),
         description="original award",
         generated_unique_award_id="AWD_1",
     )
 
     # adding transaction with same info should not change award values
-    transaction = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
         award=award,
-        awarding_agency=award.awarding_agency,
+        awarding_agency_id=award.awarding_agency_id,
         period_of_performance_current_end_date=award.period_of_performance_current_end_date,
-        description=award.description,
+        transaction_description=award.description,
         action_date=datetime.date(2016, 2, 1),
-        unique_award_key="AWD_1",
+        generated_unique_award_id="AWD_1",
     )
+    transaction = TransactionNormalized.objects.filter(id=1).first()
 
     update_awards()
     award.refresh_from_db()
 
-    assert award.awarding_agency == agency1
+    assert award.awarding_agency_id == agency1.id
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
     assert award.description == "original award"
     assert award.latest_transaction == transaction
@@ -43,38 +47,39 @@ def test_award_update_from_latest_transaction():
     # adding an older transaction with different info updates award's total obligation amt and the description
     # (which is sourced from the earliest txn), but other info remains unchanged
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
+        transaction_id=2,
         award=award,
-        awarding_agency=agency2,
+        awarding_agency_id=agency2.id,
         period_of_performance_current_end_date=datetime.date(2017, 1, 1),
-        description="older description",
+        transaction_description="older description",
         action_date=datetime.date(2016, 1, 1),
-        unique_award_key="AWD_1",
+        generated_unique_award_id="AWD_1",
     )
     update_awards()
     award.refresh_from_db()
 
-    assert award.awarding_agency == agency1
+    assert award.awarding_agency_id == agency1.id
     assert award.period_of_performance_current_end_date == datetime.date(2016, 1, 1)
     assert award.description == "older description"
 
     # adding an newer transaction with different info updates award's total obligation amt and also overrides
     # other values
     baker.make(
-        "awards.TransactionNormalized",
-        id=999,
+        "search.TransactionSearch",
+        transaction_id=999,
         award=award,
-        awarding_agency=agency2,
+        awarding_agency_id=agency2.id,
         period_of_performance_current_end_date=datetime.date(2010, 1, 1),
-        description="new description",
+        transaction_description="new description",
         action_date=datetime.date(2017, 1, 1),
-        unique_award_key="AWD_1",
+        generated_unique_award_id="AWD_1",
     )
 
     update_awards()
     award.refresh_from_db()
 
-    assert award.awarding_agency == agency2
+    assert award.awarding_agency_id == agency2.id
     assert award.period_of_performance_current_end_date == datetime.date(2010, 1, 1)
     # award desc should still reflect the earliest txn
     assert award.description == "older description"
@@ -84,23 +89,25 @@ def test_award_update_from_latest_transaction():
 def test_award_update_from_earliest_transaction():
     """Test awards fields that should be updated with most earliest transaction info."""
 
-    award = baker.make("awards.Award", generated_unique_award_id="AWD_ALPHA")
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="AWD_ALPHA")
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
+        transaction_id=3,
         award=award,
         # since this is the award's first transaction,
         # the txn action_date will become the award
         # signed date
         action_date=datetime.date(2016, 1, 1),
-        unique_award_key="AWD_ALPHA",
+        generated_unique_award_id="AWD_ALPHA",
     )
 
     # adding later transaction should not change award values
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
+        transaction_id=4,
         award=award,
         action_date=datetime.date(2017, 1, 1),
-        unique_award_key="AWD_ALPHA",
+        generated_unique_award_id="AWD_ALPHA",
     )
 
     update_awards()
@@ -110,10 +117,11 @@ def test_award_update_from_earliest_transaction():
 
     # adding earlier transaction should update award values
     baker.make(
-        "awards.TransactionNormalized",
+        "search.TransactionSearch",
+        transaction_id=5,
         award=award,
         action_date=datetime.date(2010, 1, 1),
-        unique_award_key="AWD_ALPHA",
+        generated_unique_award_id="AWD_ALPHA",
     )
 
     update_awards()
@@ -126,14 +134,17 @@ def test_award_update_from_earliest_transaction():
 def test_award_update_obligated_amt():
     """Test that the award obligated amt updates as child transactions change."""
 
-    award = baker.make("awards.Award", total_obligation=1000, generated_unique_award_id="BIG_AGENCY_AWD_1")
-    baker.make(
-        "awards.TransactionNormalized",
-        award=award,
-        federal_action_obligation=1000,
-        _quantity=5,
-        unique_award_key="BIG_AGENCY_AWD_1",
+    award = baker.make(
+        "search.AwardSearch", award_id=1, total_obligation=1000, generated_unique_award_id="BIG_AGENCY_AWD_1"
     )
+    for i in range(5):
+        baker.make(
+            "search.TransactionSearch",
+            transaction_id=i + 1,
+            award=award,
+            federal_action_obligation=1000,
+            generated_unique_award_id="BIG_AGENCY_AWD_1",
+        )
 
     update_awards()
     award.refresh_from_db()
@@ -144,18 +155,22 @@ def test_award_update_obligated_amt():
 @pytest.mark.django_db
 def test_award_update_with_list():
     """Test optional parameter to update specific awards with txn data."""
-    awards = [baker.make("awards.Award", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(10)]
+    awards = [
+        baker.make("search.AwardSearch", award_id=i, total_obligation=0, generated_unique_award_id=f"AWARD_{i}")
+        for i in range(10)
+    ]
     test_award = awards[3]
 
     # test a single award update
-    baker.make(
-        "awards.TransactionNormalized",
-        award=test_award,
-        federal_action_obligation=1000,
-        _quantity=5,
-        unique_award_key=test_award.generated_unique_award_id,
-    )
-    count = update_awards((test_award.id,))
+    for i in range(5):
+        baker.make(
+            "search.TransactionSearch",
+            transaction_id=i + 1,
+            award=test_award,
+            federal_action_obligation=1000,
+            generated_unique_award_id=test_award.generated_unique_award_id,
+        )
+    count = update_awards((test_award.award_id,))
     test_award.refresh_from_db()
     # one award is updated
     assert count == 1
@@ -165,21 +180,23 @@ def test_award_update_with_list():
     assert awards[0].total_obligation == 0
 
     # test updating several awards
-    baker.make(
-        "awards.TransactionNormalized",
-        award=awards[0],
-        federal_action_obligation=2000,
-        _quantity=2,
-        unique_award_key=awards[0].generated_unique_award_id,
-    )
-    baker.make(
-        "awards.TransactionNormalized",
-        award=awards[1],
-        federal_action_obligation=-1000,
-        _quantity=3,
-        unique_award_key=awards[1].generated_unique_award_id,
-    )
-    count = update_awards((awards[0].id, awards[1].id))
+    for i in range(2):
+        baker.make(
+            "search.TransactionSearch",
+            transaction_id=i + 1,
+            award=awards[0],
+            federal_action_obligation=2000,
+            generated_unique_award_id=awards[0].generated_unique_award_id,
+        )
+    for i in range(3):
+        baker.make(
+            "search.TransactionSearch",
+            transaction_id=i + 3,
+            award=awards[1],
+            federal_action_obligation=-1000,
+            generated_unique_award_id=awards[1].generated_unique_award_id,
+        )
+    count = update_awards((awards[0].award_id, awards[1].award_id))
     awards[0].refresh_from_db()
     awards[1].refresh_from_db()
     # two awards are updated
@@ -197,22 +214,24 @@ def test_award_update_from_contract_transaction():
 
     # for contract type transactions, the base_and_all_options_value and base_exercised_options_val fields
     # should update the corresponding field on the award table
-    award = baker.make("awards.Award", generated_unique_award_id="EXAMPLE_AWARD_1")
-    txn = baker.make("awards.TransactionNormalized", award=award, unique_award_key="EXAMPLE_AWARD_1")
-    txn2 = baker.make("awards.TransactionNormalized", award=award, unique_award_key="EXAMPLE_AWARD_1")
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="EXAMPLE_AWARD_1")
     baker.make(
-        "awards.TransactionFPDS",
-        transaction=txn,
+        "search.TransactionSearch",
+        transaction_id=1,
+        is_fpds=True,
+        award=award,
         base_and_all_options_value=1000,
         base_exercised_options_val=100,
-        unique_award_key="EXAMPLE_AWARD_1",
+        generated_unique_award_id="EXAMPLE_AWARD_1",
     )
     baker.make(
-        "awards.TransactionFPDS",
-        transaction=txn2,
+        "search.TransactionSearch",
+        transaction_id=2,
+        is_fpds=True,
+        award=award,
         base_and_all_options_value=1001,
         base_exercised_options_val=101,
-        unique_award_key="EXAMPLE_AWARD_1",
+        generated_unique_award_id="EXAMPLE_AWARD_1",
     )
 
     update_procurement_awards()
@@ -225,42 +244,46 @@ def test_award_update_from_contract_transaction():
 @pytest.mark.django_db
 def test_award_update_contract_txn_with_list():
     """Test optional parameter to update specific awards from txn contract."""
-    awards = [baker.make("awards.Award", total_obligation=0, generated_unique_award_id=f"AWARD_{i}") for i in range(5)]
-    txn = baker.make(
-        "awards.TransactionNormalized", award=awards[0], unique_award_key=awards[0].generated_unique_award_id
-    )
+    awards = [
+        baker.make("search.AwardSearch", award_id=i, total_obligation=0, generated_unique_award_id=f"AWARD_{i}")
+        for i in range(5)
+    ]
     baker.make(
-        "awards.TransactionFPDS", transaction=txn, base_and_all_options_value=1000, base_exercised_options_val=100
+        "search.TransactionSearch",
+        transaction_id=10,
+        award=awards[0],
+        is_fpds=True,
+        base_and_all_options_value=1000,
+        base_exercised_options_val=100,
+        generated_unique_award_id=awards[0].generated_unique_award_id,
     )
     # single award is updated
-    count = update_procurement_awards((awards[0].id,))
+    count = update_procurement_awards((awards[0].award_id,))
     awards[0].refresh_from_db()
     assert count == 1
     assert awards[0].base_and_all_options_value == 1000
 
     # update multiple awards
-    txn1 = baker.make(
-        "awards.TransactionNormalized", award=awards[1], unique_award_key=awards[1].generated_unique_award_id
-    )
     baker.make(
-        "awards.TransactionFPDS",
-        transaction=txn1,
+        "search.TransactionSearch",
+        transaction_id=11,
+        is_fpds=True,
+        award=awards[1],
         base_and_all_options_value=4000,
         base_exercised_options_val=400,
-        unique_award_key=awards[1].generated_unique_award_id,
-    )
-    txn2 = baker.make(
-        "awards.TransactionNormalized", award=awards[2], unique_award_key=awards[2].generated_unique_award_id
+        generated_unique_award_id=awards[1].generated_unique_award_id,
     )
     baker.make(
-        "awards.TransactionFPDS",
-        transaction=txn2,
+        "search.TransactionSearch",
+        transaction_id=12,
+        is_fpds=True,
+        award=awards[2],
         base_and_all_options_value=5000,
         base_exercised_options_val=500,
-        unique_award_key=awards[2].generated_unique_award_id,
+        generated_unique_award_id=awards[2].generated_unique_award_id,
     )
     # multiple awards updated
-    count = update_procurement_awards((awards[1].id, awards[2].id))
+    count = update_procurement_awards((awards[1].award_id, awards[2].award_id))
     awards[1].refresh_from_db()
     awards[2].refresh_from_db()
     assert count == 2
@@ -274,16 +297,13 @@ def test_award_update_contract_txn_with_list():
 def test_award_update_contract_executive_comp():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = baker.make("awards.Award", generated_unique_award_id="AWARD_CONT_IDV")
-    txn = baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2011-10-01", unique_award_key="AWARD_CONT_IDV"
-    )
-    txn2 = baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="AWARD_CONT_IDV"
-    )
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="AWARD_CONT_IDV")
     baker.make(
-        "awards.TransactionFPDS",
-        transaction=txn,
+        "search.TransactionSearch",
+        transaction_id=13,
+        is_fpds=True,
+        award=award,
+        action_date="2011-10-01",
         officer_1_name="Professor Plum",
         officer_1_amount=1,
         officer_2_name="Mrs. White",
@@ -294,11 +314,14 @@ def test_award_update_contract_executive_comp():
         officer_4_amount=4,
         officer_5_name="Colonel Mustard",
         officer_5_amount=5,
-        unique_award_key="AWARD_CONT_IDV",
+        generated_unique_award_id="AWARD_CONT_IDV",
     )
     baker.make(
-        "awards.TransactionFPDS",
-        transaction=txn2,
+        "search.TransactionSearch",
+        transaction_id=14,
+        is_fpds=True,
+        award=award,
+        action_date="2012-10-01",
         officer_1_name="Jack Mustard",
         officer_1_amount=100,
         officer_2_name="Jacob Green",
@@ -309,7 +332,7 @@ def test_award_update_contract_executive_comp():
         officer_4_amount=400,
         officer_5_name="Victor Plum",
         officer_5_amount=500,
-        unique_award_key="AWARD_CONT_IDV",
+        generated_unique_award_id="AWARD_CONT_IDV",
     )
 
     update_procurement_awards()
@@ -320,10 +343,13 @@ def test_award_update_contract_executive_comp():
 
     # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
 
-    txn3 = baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="AWARD_CONT_IDV"
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=26,
+        award=award,
+        action_date="2013-10-01",
+        generated_unique_award_id="AWARD_CONT_IDV",
     )
-    baker.make("awards.TransactionFPDS", transaction=txn3, unique_award_key="AWARD_CONT_IDV")
 
     update_procurement_awards()
     award.refresh_from_db()
@@ -336,14 +362,13 @@ def test_award_update_contract_executive_comp():
 def test_award_update_assistance_executive_comp():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = baker.make("awards.Award", generated_unique_award_id="ASST_ONE")
-    txn = baker.make("awards.TransactionNormalized", award=award, action_date="2011-10-01", unique_award_key="ASST_ONE")
-    txn2 = baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="ASST_ONE"
-    )
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="ASST_ONE")
     baker.make(
-        "awards.TransactionFABS",
-        transaction=txn,
+        "search.TransactionSearch",
+        transaction_id=15,
+        is_fpds=False,
+        award=award,
+        action_date="2011-10-01",
         officer_1_name="Professor Plum",
         officer_1_amount=1,
         officer_2_name="Mrs. White",
@@ -354,11 +379,14 @@ def test_award_update_assistance_executive_comp():
         officer_4_amount=4,
         officer_5_name="Colonel Mustard",
         officer_5_amount=5,
-        unique_award_key="ASST_ONE",
+        generated_unique_award_id="ASST_ONE",
     )
     baker.make(
-        "awards.TransactionFABS",
-        transaction=txn2,
+        "search.TransactionSearch",
+        transaction_id=16,
+        is_fpds=False,
+        award=award,
+        action_date="2012-10-01",
         officer_1_name="Jack Mustard",
         officer_1_amount=100,
         officer_2_name="Jacob Green",
@@ -369,7 +397,7 @@ def test_award_update_assistance_executive_comp():
         officer_4_amount=400,
         officer_5_name="Victor Plum",
         officer_5_amount=500,
-        unique_award_key="ASST_ONE",
+        generated_unique_award_id="ASST_ONE",
     )
 
     update_assistance_awards()
@@ -380,10 +408,14 @@ def test_award_update_assistance_executive_comp():
 
     # Test that a newer transaction without Executive Comp data doesn't overwrite the award values
 
-    txn3 = baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="ASST_ONE"
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=17,
+        is_fpds=False,
+        award=award,
+        action_date="2013-10-01",
+        generated_unique_award_id="ASST_ONE",
     )
-    baker.make("awards.TransactionFABS", transaction=txn3, unique_award_key="ASST_ONE")
 
     update_assistance_awards()
     award.refresh_from_db()
@@ -396,36 +428,56 @@ def test_award_update_assistance_executive_comp():
 def test_award_update_transaction_fk():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = baker.make("awards.Award", generated_unique_award_id="FAKE_award_YELLOW_12")
-    txn1 = baker.make(
-        "awards.TransactionNormalized",
+    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="FAKE_award_YELLOW_12")
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=18,
         award=award,
         action_date="2011-10-01",
-        description="Original Desc",
+        transaction_description="Original Desc",
         modification_number="P0001",
-        unique_award_key="FAKE_award_YELLOW_12",
+        generated_unique_award_id="FAKE_award_YELLOW_12",
     )
     baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2012-10-01", unique_award_key="FAKE_award_YELLOW_12"
+        "search.TransactionSearch",
+        transaction_id=19,
+        award=award,
+        action_date="2012-10-01",
+        generated_unique_award_id="FAKE_award_YELLOW_12",
     )
     baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2013-10-01", unique_award_key="FAKE_award_YELLOW_12"
+        "search.TransactionSearch",
+        transaction_id=20,
+        award=award,
+        action_date="2013-10-01",
+        generated_unique_award_id="FAKE_award_YELLOW_12",
     )
     baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2014-10-01", unique_award_key="FAKE_award_YELLOW_12"
+        "search.TransactionSearch",
+        transaction_id=21,
+        award=award,
+        action_date="2014-10-01",
+        generated_unique_award_id="FAKE_award_YELLOW_12",
     )
     baker.make(
-        "awards.TransactionNormalized", award=award, action_date="2015-10-01", unique_award_key="FAKE_award_YELLOW_12"
+        "search.TransactionSearch",
+        transaction_id=22,
+        award=award,
+        action_date="2015-10-01",
+        generated_unique_award_id="FAKE_award_YELLOW_12",
     )
-    txn6 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=23,
         award=award,
         action_date="2016-10-01",
-        description="Last Desc",
+        transaction_description="Last Desc",
         modification_number="P0011",
         period_of_performance_current_end_date="2020-10-01",
-        unique_award_key="FAKE_award_YELLOW_12",
+        generated_unique_award_id="FAKE_award_YELLOW_12",
     )
+    txn1 = TransactionNormalized.objects.filter(id=18).first()
+    txn6 = TransactionNormalized.objects.filter(id=23).first()
 
     update_awards()
     award.refresh_from_db()
@@ -433,29 +485,31 @@ def test_award_update_transaction_fk():
     assert award.description == txn1.description
     assert award.earliest_transaction == txn1
     assert award.latest_transaction == txn6
-    assert award.date_signed.strftime("%Y-%m-%d") == txn1.action_date
-    assert award.certified_date.strftime("%Y-%m-%d") == txn6.action_date
-    assert (
-        award.period_of_performance_current_end_date.strftime("%Y-%m-%d") == txn6.period_of_performance_current_end_date
-    )
+    assert award.date_signed == txn1.action_date
+    assert award.certified_date == txn6.action_date
+    assert award.period_of_performance_current_end_date == txn6.period_of_performance_current_end_date
 
-    txn0 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=24,
         award=award,
         action_date=txn1.action_date,
-        description="Updated Original Desc",
+        transaction_description="Updated Original Desc",
         modification_number="P0000",
-        unique_award_key="FAKE_award_YELLOW_12",
+        generated_unique_award_id="FAKE_award_YELLOW_12",
     )
 
-    txn10 = baker.make(
-        "awards.TransactionNormalized",
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=25,
         award=award,
         action_date=txn6.action_date,
         modification_number="P1000",
         period_of_performance_current_end_date="2019-10-01",
-        unique_award_key="FAKE_award_YELLOW_12",
+        generated_unique_award_id="FAKE_award_YELLOW_12",
     )
+    txn0 = TransactionNormalized.objects.filter(id=24).first()
+    txn10 = TransactionNormalized.objects.filter(id=25).first()
 
     update_awards()
     award.refresh_from_db()
@@ -463,9 +517,6 @@ def test_award_update_transaction_fk():
     assert award.description == txn0.description
     assert award.earliest_transaction == txn0
     assert award.latest_transaction == txn10
-    assert award.date_signed.strftime("%Y-%m-%d") == txn1.action_date
-    assert award.certified_date.strftime("%Y-%m-%d") == txn6.action_date
-    assert (
-        award.period_of_performance_current_end_date.strftime("%Y-%m-%d")
-        == txn10.period_of_performance_current_end_date
-    )
+    assert award.date_signed == txn1.action_date
+    assert award.certified_date == txn6.action_date
+    assert award.period_of_performance_current_end_date == txn10.period_of_performance_current_end_date

@@ -444,7 +444,7 @@
     "      ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) END",
     "  ))::uuid",
     "LEFT OUTER JOIN",
-    "  awards ON (transaction_normalized.award_id = awards.id)",
+    "  vw_awards AS awards ON (transaction_normalized.award_id = awards.id)",
     "LEFT OUTER JOIN",
     "  agency AS AA ON (transaction_normalized.awarding_agency_id = AA.id)",
     "LEFT OUTER JOIN",

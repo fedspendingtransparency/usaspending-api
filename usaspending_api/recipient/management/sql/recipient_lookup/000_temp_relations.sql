@@ -56,10 +56,10 @@ CREATE MATERIALIZED VIEW public.temporary_transaction_recipients_view AS (
       ELSE 'fabs'::TEXT
       END AS source
   FROM
-    transaction_normalized AS tn
-  LEFT OUTER JOIN transaction_fpds AS fpds ON
+    vw_transaction_normalized AS tn
+  LEFT OUTER JOIN vw_transaction_fpds AS fpds ON
     (tn.id = fpds.transaction_id)
-  LEFT OUTER JOIN transaction_fabs AS fabs ON
+  LEFT OUTER JOIN vw_transaction_fabs AS fabs ON
     (tn.id = fabs.transaction_id)
   WHERE tn.action_date >= '2007-10-01'
   ORDER BY tn.action_date DESC

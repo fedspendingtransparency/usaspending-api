@@ -5,9 +5,8 @@ from copy import copy
 from datetime import datetime, timezone
 from django.db import connection, transaction
 
-from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
+from usaspending_api.awards.models import Award
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
-from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.date_helper import fy
@@ -16,6 +15,7 @@ from usaspending_api.etl.award_helpers import prune_empty_awards, update_awards,
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.models import Agency
+from usaspending_api.search.models import TransactionSearch
 
 
 logger = logging.getLogger("script")
@@ -55,13 +55,10 @@ def insert_all_new_fabs(all_new_to_insert):
 
 
 def insert_new_fabs(to_insert):
-    fabs_normalized_field_map = {
-        "type": "assistance_type",
-        "description": "award_description",
-        "funding_amount": "total_funding_amount",
-    }
-
     fabs_field_map = {
+        "type": "assistance_type",
+        "transaction_description": "award_description",
+        "funding_amount": "total_funding_amount",
         "officer_1_name": "high_comp_officer1_full_na",
         "officer_1_amount": "high_comp_officer1_amount",
         "officer_2_name": "high_comp_officer2_full_na",
@@ -96,8 +93,8 @@ def insert_new_fabs(to_insert):
 
         parent_txn_value_map = {
             "award": award,
-            "awarding_agency": awarding_agency,
-            "funding_agency": funding_agency,
+            "awarding_agency_id": awarding_agency.id if awarding_agency else None,
+            "funding_agency_id": funding_agency.id if funding_agency else None,
             "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
             "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
             "action_date": format_date(row["action_date"]),
@@ -107,48 +104,32 @@ def insert_new_fabs(to_insert):
             "business_categories": get_business_categories(row=row, data_type="fabs"),
         }
 
-        transaction_normalized_dict = load_data_into_model(
-            TransactionNormalized(),  # thrown away
+        financial_assistance_data = load_data_into_model(
+            TransactionSearch(),  # thrown away
             row,
-            field_map=fabs_normalized_field_map,
+            field_map=fabs_field_map,
             value_map=parent_txn_value_map,
             as_dict=True,
         )
 
-        financial_assistance_data = load_data_into_model(
-            TransactionFABS(), row, field_map=fabs_field_map, as_dict=True  # thrown away
-        )
-
-        # Hack to cut back on the number of warnings dumped to the log.
-        if financial_assistance_data["updated_at"] is not None:
-            financial_assistance_data["updated_at"] = cast_datetime_to_utc(financial_assistance_data["updated_at"])
-        if financial_assistance_data["created_at"] is not None:
-            financial_assistance_data["created_at"] = cast_datetime_to_utc(financial_assistance_data["created_at"])
-        if financial_assistance_data["modified_at"] is not None:
-            financial_assistance_data["modified_at"] = cast_datetime_to_utc(financial_assistance_data["modified_at"])
-
         afa_generated_unique = financial_assistance_data["afa_generated_unique"]
-        unique_fabs = TransactionFABS.objects.filter(afa_generated_unique=afa_generated_unique)
+        unique_fabs = TransactionSearch.objects.filter(is_fpds=False, afa_generated_unique=afa_generated_unique)
 
         if unique_fabs.first():
-            transaction_normalized_dict["update_date"] = datetime.now(timezone.utc)
-            transaction_normalized_dict["fiscal_year"] = fy(transaction_normalized_dict["action_date"])
+            financial_assistance_data["update_date"] = datetime.now(timezone.utc)
+            financial_assistance_data["fiscal_year"] = fy(financial_assistance_data["action_date"])
 
             # Update TransactionNormalized
-            TransactionNormalized.objects.filter(id=unique_fabs.first().transaction.id).update(
-                **transaction_normalized_dict
+            TransactionSearch.objects.filter(transaction_id=unique_fabs.first().transaction.id).update(
+                **financial_assistance_data
             )
 
             # Update TransactionFABS
             unique_fabs.update(**financial_assistance_data)
         else:
             # Create TransactionNormalized
-            transaction_normalized = TransactionNormalized(**transaction_normalized_dict)
-            transaction_normalized.save()
-
-            # Create TransactionFABS
-            transaction_fabs = TransactionFABS(transaction=transaction_normalized, **financial_assistance_data)
-            transaction_fabs.save()
+            transaction_search = TransactionSearch(**financial_assistance_data)
+            transaction_search.save()
 
     return update_award_ids
 

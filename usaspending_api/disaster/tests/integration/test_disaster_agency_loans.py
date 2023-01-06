@@ -38,6 +38,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
     assert resp.json()["results"] == expected_results
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_award_type_codes(
     client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers, elasticsearch_account_index

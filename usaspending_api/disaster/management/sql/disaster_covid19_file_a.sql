@@ -52,15 +52,23 @@ SELECT
     fa."account_title" AS "federal_account_name",
     gtas."disaster_emergency_fund_code" AS "disaster_emergency_fund_code",
     defc."public_law" AS "disaster_emergency_fund_name",
+    gtas."budget_authority_unobligated_balance_brought_forward_cpe" AS "budget_authority_unobligated_balance_brought_forward",
+    gtas."adjustments_to_unobligated_balance_brought_forward_fyb" AS "adjustments_to_unobligated_balance_brought_forward_fyb",
+    gtas."adjustments_to_unobligated_balance_brought_forward_cpe" AS "adjustments_to_unobligated_balance_brought_forward_cpe",
 
     gtas."budget_authority_appropriation_amount_cpe" AS "budget_authority_appropriated_amount",
+    gtas."borrowing_authority_amount" AS "borrowing_authority_amount",
+    gtas."contract_authority_amount" AS "contract_authority_amount",
+    gtas."spending_authority_from_offsetting_collections_amount" AS "spending_authority_from_offsetting_collections_amount",
     gtas."other_budgetary_resources_amount_cpe" AS "total_other_budgetary_resources_amount",
     gtas."total_budgetary_resources_cpe" AS "total_budgetary_resources",
     gtas."prior_year_paid_obligation_recoveries" AS "prior_year_paid_obligation_recoveries",
     gtas."anticipated_prior_year_obligation_recoveries" AS "anticipated_prior_year_obligation_recoveries",
     gtas."obligations_incurred_total_cpe" AS "obligations_incurred",
+    gtas."deobligations_or_recoveries_or_refunds_from_prior_year_cpe" AS "deobligations_or_recoveries_or_refunds_from_prior_year",
     gtas."unobligated_balance_cpe" AS "unobligated_balance",
-    gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount"
+    gtas."gross_outlay_amount_by_tas_cpe" AS "gross_outlay_amount",
+    gtas."status_of_budgetary_resources_total_cpe" AS "status_of_budgetary_resources_total"
 FROM gtas_sf133_balances gtas
 INNER JOIN latest_submissions_of_fy AS sub ON (gtas."fiscal_year" = sub."submission_fiscal_year" AND gtas."fiscal_period" = sub."submission_fiscal_month" AND sub."is_quarter" = False)
 INNER JOIN disaster_emergency_fund_code AS defc ON (gtas."disaster_emergency_fund_code" = defc."code")

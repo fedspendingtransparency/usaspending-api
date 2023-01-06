@@ -9,8 +9,8 @@ from usaspending_api.disaster.tests.fixtures.object_class_data import major_obje
 
 @pytest.fixture
 def basic_object_class_faba_with_loan_value(award_count_sub_schedule, award_count_submission, defc_codes):
-    award = _normal_award()
-    award_loan = _loan_award()
+    award = _normal_award(1)
+    award_loan = _loan_award(2)
 
     basic_object_class = major_object_class_with_children("001", [1])
 
@@ -41,8 +41,8 @@ def basic_object_class_faba_with_loan_value(award_count_sub_schedule, award_coun
 def basic_object_class_multiple_faba_with_loan_value_with_single_object_class(
     award_count_sub_schedule, award_count_submission, defc_codes
 ):
-    award1 = _loan_award()
-    award2 = _loan_award()
+    award1 = _loan_award(90)
+    award2 = _loan_award(123)
 
     object_class1 = major_object_class_with_children("001", [1])
 
@@ -73,8 +73,8 @@ def basic_object_class_multiple_faba_with_loan_value_with_single_object_class(
 def basic_object_class_multiple_faba_with_loan_value_with_two_object_classes(
     award_count_sub_schedule, award_count_submission, defc_codes
 ):
-    award1 = _loan_award()
-    award2 = _loan_award()
+    award1 = _loan_award(45)
+    award2 = _loan_award(87)
 
     object_class1 = major_object_class_with_children("001", [1])
     object_class2 = major_object_class_with_children("002", [2])
@@ -102,9 +102,9 @@ def basic_object_class_multiple_faba_with_loan_value_with_two_object_classes(
     )
 
 
-def _normal_award():
-    return baker.make("awards.Award", type="A", total_loan_value=0)
+def _normal_award(id: int):
+    return baker.make("search.AwardSearch", award_id=id, type="A", total_loan_value=0)
 
 
-def _loan_award():
-    return baker.make("awards.Award", type="07", total_loan_value=5)
+def _loan_award(id: int):
+    return baker.make("search.AwardSearch", award_id=id, type="07", total_loan_value=5)

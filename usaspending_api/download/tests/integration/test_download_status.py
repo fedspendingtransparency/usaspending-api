@@ -6,7 +6,7 @@ from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
@@ -64,68 +64,67 @@ def download_test_data(transactional_db):
     baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False)
 
     # Create Awards
-    award1 = baker.make("awards.Award", id=123, category="idv", generated_unique_award_id="CONT_IDV_NEW")
-    award2 = baker.make("awards.Award", id=456, category="contracts", generated_unique_award_id="CONT_AWD_NEW")
-    award3 = baker.make("awards.Award", id=789, category="assistance", generated_unique_award_id="ASST_NON_NEW")
+    award1 = baker.make(
+        "search.AwardSearch",
+        award_id=123,
+        category="idv",
+        generated_unique_award_id="CONT_IDV_NEW",
+        action_date="2020-01-01",
+    )
+    award2 = baker.make(
+        "search.AwardSearch",
+        award_id=456,
+        category="contracts",
+        generated_unique_award_id="CONT_AWD_NEW",
+        action_date="2020-01-01",
+    )
+    award3 = baker.make(
+        "search.AwardSearch",
+        award_id=789,
+        category="assistance",
+        generated_unique_award_id="ASST_NON_NEW",
+        action_date="2020-01-01",
+    )
 
     # Create Transactions
-    trann1 = baker.make(
-        TransactionNormalized,
-        id=1,
+    baker.make(
+        TransactionSearch,
+        transaction_id=1,
         award=award1,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa1,
-        unique_award_key="CONT_IDV_NEW",
+        awarding_agency_id=aa1.id,
+        generated_unique_award_id="CONT_IDV_NEW",
         is_fpds=True,
+        piid="tc1piid",
+        awarding_toptier_agency_name="Bureau of Things",
     )
-    trann2 = baker.make(
-        TransactionNormalized,
-        id=2,
+    baker.make(
+        TransactionSearch,
+        transaction_id=2,
         award=award2,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="CONT_AWD_NEW",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="CONT_AWD_NEW",
         is_fpds=True,
+        piid="tc2piid",
+        awarding_toptier_agency_name="Bureau of Stuff",
     )
-    trann3 = baker.make(
-        TransactionNormalized,
-        id=3,
+    baker.make(
+        TransactionSearch,
+        transaction_id=3,
         award=award3,
         action_date="2018-01-01",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="ASST_NON_NEW",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="ASST_NON_NEW",
         is_fpds=False,
-    )
-
-    # Create TransactionContract
-    baker.make(
-        TransactionFPDS,
-        transaction=trann1,
-        piid="tc1piid",
-        unique_award_key="CONT_IDV_NEW",
-        awarding_agency_name="Bureau of Things",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction=trann2,
-        piid="tc2piid",
-        unique_award_key="CONT_AWD_NEW",
-        awarding_agency_name="Bureau of Stuff",
-    )
-
-    # Create TransactionAssistance
-    baker.make(
-        TransactionFABS,
-        transaction=trann3,
         fain="ta1fain",
-        unique_award_key="ASST_NON_NEW",
-        awarding_agency_name="Bureau of Stuff",
+        awarding_toptier_agency_name="Bureau of Stuff",
     )
 
     # Set latest_award for each award

@@ -21,9 +21,19 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 @pytest.fixture
 def mock_tas_data(db):
 
-    a1 = baker.make("references.ToptierAgency", toptier_agency_id=99, name="Department of Pizza", abbreviation="DOP")
+    a1 = baker.make(
+        "references.ToptierAgency",
+        toptier_agency_id=99,
+        name="Department of Pizza",
+        toptier_code="DOP",
+        abbreviation="DOP",
+    )
     a2 = baker.make(
-        "references.SubtierAgency", subtier_agency_id=22, name="Department of Sub-Pizza", abbreviation="DOSP"
+        "references.SubtierAgency",
+        subtier_agency_id=22,
+        name="Department of Sub-Pizza",
+        abbreviation="DOSP",
+        subtier_code="DOSP",
     )
     baker.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
     baker.make(FederalAccount, id=1, parent_toptier_agency_id=99, agency_identifier="99", main_account_code="0001")
@@ -72,31 +82,62 @@ def mock_tas_data(db):
     baker.make(FinancialAccountsByAwards, treasury_account_id=3, award_id=3)
 
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         action_date="2010-10-01",
         award_id=1,
         is_fpds=True,
         type="A",
         awarding_agency_id=1,
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-        awarding_agency_name="Department of Pizza",
-        awarding_sub_tier_agency_n="Department of Sub-Pizza",
-        legal_entity_city_name="BURBANK",
-        legal_entity_country_code="USA",
-        legal_entity_state_code="CA",
+        awarding_agency_code="DOP",
+        awarding_toptier_agency_name="Department of Pizza",
+        awarding_sub_tier_agency_c="DOSP",
+        awarding_subtier_agency_name="Department of Sub-Pizza",
+        recipient_location_city_name="BURBANK",
+        recipient_location_country_code="USA",
+        recipient_location_state_code="CA",
         piid="piiiiid",
-        place_of_perform_city_name="AUSTIN",
-        place_of_performance_state="TX",
-        place_of_perform_country_c="USA",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_city_name="AUSTIN",
+        pop_state_code="TX",
+        tas_components=["aid=028main=8006ata=028sub=000bpoa=2011epoa=2013a=X"],
     )
 
-    baker.make("awards.Award", id=1, is_fpds=True, latest_transaction_id=1, piid="piid", type="A", awarding_agency_id=1)
-    baker.make("awards.Award", id=2, is_fpds=True, latest_transaction_id=1, piid="piid2", type="B")
-    baker.make("awards.Award", id=3, is_fpds=True, latest_transaction_id=1, piid="piid3", type="C")
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piid",
+        type="A",
+        awarding_agency_id=1,
+        tas_components="{aid=028main=8006ata=028sub=000bpoa=2011epoa=2013a=X}",
+        action_date="2020-01-01",
+        subaward_count=1,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piid2",
+        type="B",
+        tas_components="{aid=028main=8006ata=004sub=005bpoa=2012epoa=2013a=X}",
+        action_date="2020-01-01",
+        subaward_count=1,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piid3",
+        type="C",
+        tas_components="{aid=011main=8007ata=001sub=001bpoa=2001epoa=2002a=X}",
+        action_date="2020-01-01",
+        subaward_count=1,
+    )
 
     baker.make(
         "search.SubawardSearch",

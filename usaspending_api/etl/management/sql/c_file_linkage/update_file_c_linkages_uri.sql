@@ -5,9 +5,9 @@ WITH update_cte as (
     SET
         award_id = (
             SELECT
-                id
+                award_id
             FROM
-                awards AS aw
+                award_search AS aw
             WHERE
                 UPPER(aw.uri) = UPPER(faba.uri)
         )
@@ -23,7 +23,7 @@ WITH update_cte as (
                 AND faba_sub.award_id IS NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM awards AS aw_sub
+                    FROM award_search AS aw_sub
                     WHERE UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
                 ) = 1
                 {submission_id_clause}
@@ -31,11 +31,11 @@ WITH update_cte as (
     RETURNING award_id
 )
 UPDATE
-    awards
+    award_search a
 SET
     update_date = NOW()
 FROM
     update_cte
 WHERE
-    id = update_cte.award_id
+    a.award_id = update_cte.award_id
 ;

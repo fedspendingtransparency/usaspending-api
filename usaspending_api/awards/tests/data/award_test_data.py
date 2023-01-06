@@ -81,20 +81,19 @@ def award_from_id(award_id):
         toptier_agency_id=funding_toptier_agency.toptier_agency_id,
     )
 
-    transaction_normalized = baker.make("awards.TransactionNormalized", id=7000 + award_id, award_id=award_id)
-
     baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=transaction_normalized.id,
-        funding_agency_name="subtier_funding_agency_name_%s" % transaction_normalized.id,
+        "search.TransactionSearch",
+        transaction_id=7000 + award_id,
+        award_id=award_id,
+        funding_toptier_agency_name="subtier_funding_agency_name_%s" % (7000 + award_id),
         ordering_period_end_date="2018-01-%02d" % award_id,
-        awardee_or_recipient_uniqu="duns_%s" % (7000 + award_id),
+        recipient_unique_id="duns_%s" % (7000 + award_id),
         period_of_perf_potential_e="2018-08-%02d" % award_id,
     )
 
     baker.make(
-        "awards.Award",
-        id=award_id,
+        "search.AwardSearch",
+        award_id=award_id,
         generated_unique_award_id="GENERATED_UNIQUE_AWARD_ID_%s" % string_award_id,
         piid="piid_%s" % string_award_id,
         type_description="type_description_%s" % string_award_id,
@@ -102,7 +101,7 @@ def award_from_id(award_id):
         fpds_agency_id="fpds_agency_id_%s" % string_award_id,
         awarding_agency_id=awarding_agency.id if award_id % 3 == 1 else None,
         funding_agency_id=funding_agency.id if (award_id + 1) % 2 == 1 else None,
-        latest_transaction_id=transaction_normalized.id,
+        latest_transaction_id=7000 + award_id,
         total_obligation=100000 + award_id,
         base_and_all_options_value=500000 + award_id,
         period_of_performance_current_end_date="2018-03-%02d" % award_id,

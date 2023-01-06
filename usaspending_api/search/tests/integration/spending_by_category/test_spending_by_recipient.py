@@ -11,23 +11,22 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
-def _make_fpds_transaction(id, award_id, obligation, action_date, recipient_duns, recipient_name):
-    # Transaction Normalized
+def _make_fpds_transaction(
+    id, award_id, obligation, action_date, recipient_duns, recipient_name, recipient_hash, piid=None
+):
+    # Transaction Search
     baker.make(
-        "awards.TransactionNormalized",
-        id=id,
+        "search.TransactionSearch",
+        transaction_id=id,
         is_fpds=True,
         award_id=award_id,
         federal_action_obligation=obligation,
+        generated_pragmatic_obligation=obligation,
         action_date=action_date,
-    )
-
-    # Transaction FPDS
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=id,
-        awardee_or_recipient_uniqu=recipient_duns,
-        awardee_or_recipient_legal=recipient_name,
+        recipient_unique_id=recipient_duns,
+        recipient_name=recipient_name,
+        recipient_hash=recipient_hash,
+        piid=piid,
     )
 
 
@@ -70,25 +69,25 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     baker.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
     baker.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
 
-    # Transaction FPDS
-    _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1")
-    _make_fpds_transaction(2, 3, 7.00, "2020-02-02", "111", "Biz 1")
-    _make_fpds_transaction(3, 3, 3.00, "2020-03-03", "111", "Biz 1")
-    _make_fpds_transaction(4, 2, 2.00, "2020-01-02", "111", "Biz 1")
-    _make_fpds_transaction(5, 2, 3.00, "2020-02-03", "111", "Biz 1")
-    _make_fpds_transaction(6, 2, 5.00, "2020-03-04", "111", "Biz 1")
-    _make_fpds_transaction(7, 2, 6.00, "2020-01-03", "222", "Biz 2")
-    _make_fpds_transaction(8, 2, 3.00, "2020-02-04", "222", "Biz 2")
-    _make_fpds_transaction(9, 3, 2.00, "2020-03-05", "222", "Biz 2")
-    _make_fpds_transaction(10, 3, 3.00, "2020-01-04", "222", "Biz 2")
-    _make_fpds_transaction(11, 3, 4.00, "2020-02-05", "222", "Biz 2")
-    _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2")
-
     # Awards
     # Jam a routing key value into the piid field, and use the derived piid value for routing documents to shards later
-    baker.make("awards.Award", id=1, latest_transaction_id=12, piid="shard_zero")
-    baker.make("awards.Award", id=2, latest_transaction_id=6, piid="shard_one")
-    baker.make("awards.Award", id=3, latest_transaction_id=9, piid="shard_two")
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=12, piid="shard_zero")
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=6, piid="shard_one")
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=9, piid="shard_two")
+
+    # Transaction FPDS
+    _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1", recipient1, "shard_zero")
+    _make_fpds_transaction(2, 3, 7.00, "2020-02-02", "111", "Biz 1", recipient1, "shard_two")
+    _make_fpds_transaction(3, 3, 3.00, "2020-03-03", "111", "Biz 1", recipient1, "shard_two")
+    _make_fpds_transaction(4, 2, 2.00, "2020-01-02", "111", "Biz 1", recipient1, "shard_one")
+    _make_fpds_transaction(5, 2, 3.00, "2020-02-03", "111", "Biz 1", recipient1, "shard_one")
+    _make_fpds_transaction(6, 2, 5.00, "2020-03-04", "111", "Biz 1", recipient1, "shard_one")
+    _make_fpds_transaction(7, 2, 6.00, "2020-01-03", "222", "Biz 2", recipient2, "shard_one")
+    _make_fpds_transaction(8, 2, 3.00, "2020-02-04", "222", "Biz 2", recipient2, "shard_one")
+    _make_fpds_transaction(9, 3, 2.00, "2020-03-05", "222", "Biz 2", recipient2, "shard_two")
+    _make_fpds_transaction(10, 3, 3.00, "2020-01-04", "222", "Biz 2", recipient2, "shard_two")
+    _make_fpds_transaction(11, 3, 4.00, "2020-02-05", "222", "Biz 2", recipient2, "shard_two")
+    _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2", recipient2, "shard_zero")
 
     # Push DB data into the test ES cluster
     # NOTE: Force routing of documents by the piid field, which will separate them int 3 groups, leading to an
@@ -164,23 +163,23 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     baker.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
 
     # Transaction FPDS
-    _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1")
-    _make_fpds_transaction(2, 3, 7.00, "2020-02-02", "111", "Biz 1")
-    _make_fpds_transaction(3, 3, 3.00, "2020-03-03", "111", "Biz 1")
-    _make_fpds_transaction(4, 2, 2.00, "2020-01-02", "111", "Biz 1")
-    _make_fpds_transaction(5, 2, 3.00, "2020-02-03", "111", "Biz 1")
-    _make_fpds_transaction(6, 2, 5.00, "2020-03-04", "111", "Biz 1")
-    _make_fpds_transaction(7, 2, 6.00, "2020-01-03", "222", "Biz 2")
-    _make_fpds_transaction(8, 2, 3.00, "2020-02-04", "222", "Biz 2")
-    _make_fpds_transaction(9, 3, 2.00, "2020-03-05", "222", "Biz 2")
-    _make_fpds_transaction(10, 3, 3.00, "2020-01-04", "222", "Biz 2")
-    _make_fpds_transaction(11, 3, 4.00, "2020-02-05", "222", "Biz 2")
-    _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2")
+    _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(2, 3, 7.00, "2020-02-02", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(3, 3, 3.00, "2020-03-03", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(4, 2, 2.00, "2020-01-02", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(5, 2, 3.00, "2020-02-03", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(6, 2, 5.00, "2020-03-04", "111", "Biz 1", recipient1)
+    _make_fpds_transaction(7, 2, 6.00, "2020-01-03", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(8, 2, 3.00, "2020-02-04", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(9, 3, 2.00, "2020-03-05", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(10, 3, 3.00, "2020-01-04", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(11, 3, 4.00, "2020-02-05", "222", "Biz 2", recipient2)
+    _make_fpds_transaction(12, 1, 13.00, "2020-03-06", "222", "Biz 2", recipient2)
 
     # Awards
-    baker.make("awards.Award", id=1, latest_transaction_id=12)
-    baker.make("awards.Award", id=2, latest_transaction_id=6)
-    baker.make("awards.Award", id=3, latest_transaction_id=9)
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=12)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=6)
+    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=9)
 
     # Push DB data into the test ES cluster
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
@@ -238,17 +237,32 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "amount": 5000000.0,
                 "code": "Recipient not provided",
                 "name": "MULTIPLE RECIPIENTS",
-                "recipient_id": None,
+                "recipient_id": "64af1cb7-993c-b64b-1c58-f5289af014c0-R",
             },
-            {"amount": 550000.0, "code": "123456789", "name": None, "recipient_id": None},
-            {"amount": 5000.0, "code": "096354360", "name": "MULTIPLE RECIPIENTS", "recipient_id": None},
+            {
+                "amount": 550000.0,
+                "code": "123456789",
+                "name": None,
+                "recipient_id": "f1400310-181e-9a06-ac94-0d80a819bb5e-R",
+            },
+            {
+                "amount": 5000.0,
+                "code": "096354360",
+                "name": "MULTIPLE RECIPIENTS",
+                "recipient_id": "b1bcf17e-d0dc-d9ad-866c-ca262cb05029-R",
+            },
             {
                 "amount": 500.0,
                 "code": "987654321",
                 "name": "RECIPIENT 3",
                 "recipient_id": "3523fd0b-c1f0-ddac-e217-7b7b25fad06f-C",
             },
-            {"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None},
+            {
+                "amount": 50.0,
+                "code": "456789123",
+                "name": "RECIPIENT 2",
+                "recipient_id": "7976667a-dd95-2b65-5f4e-e340c686a346-R",
+            },
             {
                 "amount": 5.0,
                 "code": "Recipient not provided",
@@ -295,7 +309,14 @@ def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transactio
         "category": "recipient_duns",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 50.0, "code": "456789123", "name": "RECIPIENT 2", "recipient_id": None}],
+        "results": [
+            {
+                "amount": 50.0,
+                "code": "456789123",
+                "name": "RECIPIENT 2",
+                "recipient_id": "7976667a-dd95-2b65-5f4e-e340c686a346-R",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"

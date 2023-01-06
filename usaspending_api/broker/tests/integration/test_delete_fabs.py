@@ -1,38 +1,73 @@
 import pytest
 
 from model_bakery import baker
-from usaspending_api.awards.models import Award, TransactionNormalized, TransactionFABS
+
+from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, Award
 from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
 from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
 def test_delete_fabs_success():
     """ Testing delete fabs works properly """
 
     # Award/Transaction deleted based on 1-1 transaction
-    baker.make(Award, id=1, generated_unique_award_id="TEST_AWARD_1")
-    baker.make(TransactionNormalized, id=1, award_id=1, unique_award_key="TEST_AWARD_1")
-    baker.make(TransactionFABS, transaction_id=1, published_fabs_id=301, unique_award_key="TEST_AWARD_1")
+    baker.make(AwardSearch, award_id=1, generated_unique_award_id="TEST_AWARD_1")
+    baker.make(
+        TransactionSearch,
+        transaction_id=1,
+        is_fpds=False,
+        published_fabs_id=301,
+        award_id=1,
+        generated_unique_award_id="TEST_AWARD_1",
+    )
 
     # Award kept despite having one of their associated transactions removed
-    baker.make(Award, id=2, generated_unique_award_id="TEST_AWARD_2")
-    baker.make(TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2")
-    baker.make(TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2")
-    baker.make(TransactionFABS, transaction_id=2, published_fabs_id=302, unique_award_key="TEST_AWARD_2")
-    baker.make(TransactionFABS, transaction_id=3, published_fabs_id=303, unique_award_key="TEST_AWARD_2")
+    baker.make(AwardSearch, award_id=2, generated_unique_award_id="TEST_AWARD_2")
+    baker.make(
+        TransactionSearch,
+        transaction_id=2,
+        is_fpds=False,
+        published_fabs_id=302,
+        award_id=2,
+        action_date="2019-01-01",
+        generated_unique_award_id="TEST_AWARD_2",
+    )
+    baker.make(
+        TransactionSearch,
+        transaction_id=3,
+        is_fpds=False,
+        published_fabs_id=303,
+        award_id=2,
+        action_date="2019-01-02",
+        generated_unique_award_id="TEST_AWARD_2",
+    )
 
     # Award/Transaction untouched at all as control
-    baker.make(Award, id=3, generated_unique_award_id="TEST_AWARD_3")
-    baker.make(TransactionNormalized, id=4, award_id=3, unique_award_key="TEST_AWARD_3")
-    baker.make(TransactionFABS, transaction_id=4, published_fabs_id=304, unique_award_key="TEST_AWARD_3")
+    baker.make(AwardSearch, award_id=3, generated_unique_award_id="TEST_AWARD_3")
+    baker.make(
+        TransactionSearch,
+        transaction_id=4,
+        is_fpds=False,
+        published_fabs_id=304,
+        award_id=3,
+        generated_unique_award_id="TEST_AWARD_3",
+    )
 
     # Award is not deleted; old transaction deleted; new transaction uses old award
-    baker.make(Award, id=4, generated_unique_award_id="TEST_AWARD_4")
-    baker.make(TransactionNormalized, id=5, award_id=4, unique_award_key="TEST_AWARD_4")
-    baker.make(TransactionFABS, transaction_id=5, published_fabs_id=305, unique_award_key="TEST_AWARD_4")
+    baker.make(AwardSearch, award_id=4, generated_unique_award_id="TEST_AWARD_4")
+    baker.make(
+        TransactionSearch,
+        transaction_id=5,
+        is_fpds=False,
+        published_fabs_id=305,
+        award_id=4,
+        generated_unique_award_id="TEST_AWARD_4",
+    )
     baker.make(
         SourceAssistanceTransaction,
         published_fabs_id=306,

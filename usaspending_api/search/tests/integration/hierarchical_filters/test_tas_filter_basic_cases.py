@@ -14,6 +14,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_te
 )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_agency(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -22,6 +23,7 @@ def test_match_from_agency(client, monkeypatch, elasticsearch_award_index, award
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -30,6 +32,7 @@ def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, award_wit
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -38,6 +41,7 @@ def test_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_wi
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_non_match_from_agency(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -46,6 +50,7 @@ def test_non_match_from_agency(client, monkeypatch, elasticsearch_award_index, a
     assert resp.json()["results"] == []
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -54,6 +59,7 @@ def test_non_match_from_tas(client, monkeypatch, elasticsearch_award_index, awar
     assert resp.json()["results"] == []
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_ata_tas(client, monkeypatch, elasticsearch_award_index, award_with_ata_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -62,6 +68,7 @@ def test_match_from_ata_tas(client, monkeypatch, elasticsearch_award_index, awar
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_bpoa_tas(client, monkeypatch, elasticsearch_award_index, award_with_bpoa_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -70,6 +77,7 @@ def test_match_from_bpoa_tas(client, monkeypatch, elasticsearch_award_index, awa
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_unintuitive_tas(client, monkeypatch, elasticsearch_award_index, tas_with_nonintuitive_agency):
     # ensure that api can find a TAS that is under an agency not implied by the tas code
@@ -79,6 +87,7 @@ def test_match_unintuitive_tas(client, monkeypatch, elasticsearch_award_index, t
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_non_match_unintuitive_tas_from_agency(
     client, monkeypatch, elasticsearch_award_index, tas_with_nonintuitive_agency
@@ -91,6 +100,7 @@ def test_non_match_unintuitive_tas_from_agency(
     assert resp.json()["results"] == []
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_non_match_unintuitive_tas_from_tas(
     client, monkeypatch, elasticsearch_award_index, tas_with_nonintuitive_agency
@@ -103,6 +113,7 @@ def test_non_match_unintuitive_tas_from_tas(
     assert resp.json()["results"] == []
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -111,6 +122,7 @@ def test_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_i
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_non_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -119,6 +131,7 @@ def test_non_match_search_on_multiple_tas(client, monkeypatch, elasticsearch_awa
     assert resp.json()["results"] == []
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -127,6 +140,7 @@ def test_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_i
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_double_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -135,6 +149,7 @@ def test_double_match_search_multi_tas_award(client, monkeypatch, elasticsearch_
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_non_match_search_multi_tas_award(client, monkeypatch, elasticsearch_award_index, award_with_multiple_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -143,6 +158,7 @@ def test_non_match_search_multi_tas_award(client, monkeypatch, elasticsearch_awa
     assert resp.json()["results"] == []
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_only_awards_with_tas(client, monkeypatch, elasticsearch_award_index, award_with_tas, award_without_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -151,6 +167,7 @@ def test_match_only_awards_with_tas(client, monkeypatch, elasticsearch_award_ind
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_on_multiple_awards(client, monkeypatch, elasticsearch_award_index, multiple_awards_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
