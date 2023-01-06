@@ -269,9 +269,7 @@ def load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_raw
 
 class TestInitialRun:
     @staticmethod
-    def initial_run(
-        s3_data_bucket, load_source_tables=True, load_other_raw_tables=None, initial_copy=True
-    ):
+    def initial_run(s3_data_bucket, load_source_tables=True, load_other_raw_tables=None, initial_copy=True):
         load_tables_to_delta(s3_data_bucket, load_source_tables, load_other_raw_tables)
         call_params = ["load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_data_bucket]
         if not initial_copy:
@@ -1016,9 +1014,7 @@ class TestTransactionIdLookup:
 
         # The expected transaction_id_lookup table should be the same as in InitialRunWithPostgresLoader,
         # but all of the transaction ids should be 1 larger than expected there.
-        expected_transaction_id_lookup = deepcopy(
-            InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
-        )
+        expected_transaction_id_lookup = deepcopy(InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup)
         for item in expected_transaction_id_lookup:
             item["transaction_id"] += 1
         # Also, the last load date for the transaction_id_lookup table should be updated to the date of the
@@ -1040,9 +1036,7 @@ class TestTransactionIdLookup:
 
         # Since these tests only care about the condition of the transaction_id_lookup table after various
         # operations, only load the essential tables to Delta, and don't copy the raw transaction tables to int.
-        TestInitialRun.initial_run(
-            s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
-        )
+        TestInitialRun.initial_run(s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
         # With no deletes or inserts yet, the transaction_id_lookup table should be the same as after the initial run.
@@ -1252,9 +1246,7 @@ class TestAwardIdLookup:
 
         # Since these tests only care about the condition of the transaction_id_lookup table after various
         # operations, only load the essential tables to Delta, and don't copy the raw transaction tables to int.
-        TestInitialRun.initial_run(
-            s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
-        )
+        TestInitialRun.initial_run(s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # With no deletes or inserts, the award_id_lookup table should be the same as after the initial run.
@@ -1475,9 +1467,7 @@ class TransactionFabsFpdsCore:
 
         # The expected transaction_id_lookup table should be the same as in InitialRunWithPostgresLoader,
         # but all of the transaction ids should be 1 larger than expected there.
-        expected_transaction_id_lookup = deepcopy(
-            InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
-        )
+        expected_transaction_id_lookup = deepcopy(InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup)
         for item in expected_transaction_id_lookup:
             item["transaction_id"] += 1
         # Also, the last load date of the transaction_id_lookup table and of the table whose etl_level is being
@@ -1515,9 +1505,7 @@ class TransactionFabsFpdsCore:
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, making sure to load
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
         # Then immediately call load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
-        TestInitialRun.initial_run(
-            self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
-        )
+        TestInitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
