@@ -186,7 +186,9 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("officer_4_name", "high_comp_officer4_full_na", "STRING"),
     TransactionColumn("officer_5_amount", "high_comp_officer5_amount", "NUMERIC(23,2)", "cast"),
     TransactionColumn("officer_5_name", "high_comp_officer5_full_na", "STRING"),
-    TransactionColumn("ordering_period_end_date", "ordering_period_end_date", "STRING", "string_datetime_remove_timestamp"),
+    TransactionColumn(
+        "ordering_period_end_date", "ordering_period_end_date", "STRING", "string_datetime_remove_timestamp"
+    ),
     TransactionColumn("organizational_type", "organizational_type", "STRING"),
     TransactionColumn("other_minority_owned_busin", "other_minority_owned_busin", "BOOLEAN"),
     TransactionColumn("other_not_for_profit_organ", "other_not_for_profit_organ", "BOOLEAN"),

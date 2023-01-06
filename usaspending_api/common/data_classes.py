@@ -34,10 +34,5 @@ class TransactionColumn:
     source: Optional[str]
     delta_type: str
     handling: Literal[
-        "cast",
-        "leave_null",
-        "literal",
-        "normal",
-        "parse_string_datetime_to_date",
-        "string_datetime_remove_timestamp"
+        "cast", "leave_null", "literal", "normal", "parse_string_datetime_to_date", "string_datetime_remove_timestamp"
     ] = "normal"
