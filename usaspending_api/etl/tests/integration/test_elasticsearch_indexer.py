@@ -384,7 +384,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg: deleted_tx,
+        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_awards_count = Award.objects.count()
@@ -424,7 +424,7 @@ def test_delete_awards_zero_for_unmatched_transactions(
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg: {
+        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: {
             "unmatchable_tx_key1": {"timestamp": delete_time},
             "unmatchable_tx_key2": {"timestamp": delete_time},
             "unmatchable_tx_key3": {"timestamp": delete_time},
@@ -463,7 +463,7 @@ def test_delete_one_assistance_award(
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg: deleted_tx,
+        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_awards_count = Award.objects.count()
@@ -502,7 +502,7 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg: deleted_tx,
+        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_tx_count = TransactionNormalized.objects.count()
