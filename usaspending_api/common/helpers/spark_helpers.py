@@ -557,6 +557,8 @@ def clean_postgres_sql_for_spark_sql(
     spark_sql = re.sub(fr"CREATE VIEW", fr"CREATE OR REPLACE TEMP VIEW", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     # Treat these type casts as string in Spark SQL
+    # NOTE: If replacing a ::JSON cast, be sure that the string data coming from delta is treated as needed (e.g. as
+    # JSON or converted to JSON or a dict) on the receiving side, and not just left as a string
     spark_sql = re.sub(fr"::text|::json", fr"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     if global_temp_view_proxies:

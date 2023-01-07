@@ -8,7 +8,7 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from pathlib import Path
 from random import choice
-from typing import Any, Generator, List, Optional, Union, Dict
+from typing import Any, Generator, List, Optional, Union
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
