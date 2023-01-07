@@ -39,14 +39,12 @@ def chunks(items: List[Any], size: int) -> List[Any]:
         yield items[i : i + size]
 
 
-#def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
-def convert_postgres_json_array_to_list(json_array) -> Optional[List]:
+def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
     """
     Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
     in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
     converted back into a formatted string.
     """
-    json_array = json.loads(json_array)
     if json_array is None or len(json_array) == 0:
         return None
     result = []
