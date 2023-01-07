@@ -99,7 +99,7 @@ SELECT
   "tas_components",
   "disaster_emergency_fund_codes",
   --"covid_spending_by_defc"::JSON,
-  from_json(covid_spending_by_defc, 'ARRAY<STRUCT<defc: STRING, outlay: DECIMAL(23,2), obligation: DECIMAL(23,2)>>', map('mode', 'FAILFAST')),
+  from_json(covid_spending_by_defc, 'ARRAY<STRUCT<defc: STRING, outlay: DECIMAL(23,2), obligation: DECIMAL(23,2)>>', map('mode', 'FAILFAST')) as covid_spending_by_defc,
   "total_covid_outlay",
   "total_covid_obligation"
 
