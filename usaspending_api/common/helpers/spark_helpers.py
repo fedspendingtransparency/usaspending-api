@@ -557,8 +557,7 @@ def clean_postgres_sql_for_spark_sql(
     spark_sql = re.sub(fr"CREATE VIEW", fr"CREATE OR REPLACE TEMP VIEW", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     # Treat these type casts as string in Spark SQL
-    # spark_sql = re.sub(fr"::text|::json", fr"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
-    spark_sql = re.sub(fr"::text", fr"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+    spark_sql = re.sub(fr"::text|::json", fr"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     if global_temp_view_proxies:
         for vw in global_temp_view_proxies:
