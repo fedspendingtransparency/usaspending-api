@@ -110,7 +110,8 @@ SELECT
   "funding_subtier_agency_abbreviation",
   "tas_paths",
   "tas_components",
-  "federal_accounts"::JSON,
+  --"federal_accounts"::JSON,
+  from_json(federal_accounts, 'ARRAY<STRUCT<id: BIGINT, account_title: STRING, federal_account_code: STRING>>')
   "disaster_emergency_fund_codes"
 FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';
