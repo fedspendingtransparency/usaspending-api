@@ -8,7 +8,7 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from pathlib import Path
 from random import choice
-from typing import Any, Generator, List, Optional
+from typing import Any, Generator, List, Optional, Union, Dict
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -39,16 +39,74 @@ def chunks(items: List[Any], size: int) -> List[Any]:
         yield items[i : i + size]
 
 
-def convert_postgres_json_array_to_list(json_array: dict) -> Optional[List]:
+def convert_json_data_to_str(json_data: Union[dict, list, str]) -> Optional[str]:
     """
-    Postgres JSON arrays (jsonb) are stored in CSVs as strings. Since we want to avoid nested types
-    in Elasticsearch the JSON arrays are converted to dictionaries to make parsing easier and then
-    converted back into a formatted string.
+    Convert provided JSON-compatible data (dict, list, or str data) into a string representation of a dict so that it
+    can be used as the content for an Elasticsearch nested object type.
+
+    Do so by first getting any provided format into a format consumable by json.dumps()
     """
-    if json_array is None or len(json_array) == 0:
+    if json_data is None or len(json_data) == 0:
+        return None
+
+    # Figure out what type it is, then get it into dict format
+    if isinstance(json_data, str):
+        json_data = json.loads(json_data)  # try parsing as JSON if str provided
+    elif isinstance(json_data, dict):
+        pass  # already json.dumps() consumable (a dict)
+    elif isinstance(json_data, list):
+        if isinstance(json_data[0], dict):
+            pass  # already json.dumps() consumable (list of dicts)
+        elif isinstance(json_data[0], str):
+            # Convert to list of dicts to make it json.dumps() consumable
+            json_data = [json.loads(j) for j in json_data]
+        else:
+            raise ValueError(
+                f"Cannot parse json_data provided as JSON (It is a list, but not a list of str or dict): {json_data}"
+            )
+    else:
+        raise ValueError(f"Cannot parse json_data provided as JSON (not a dict, str, or list): {json_data}")
+
+    if json_data is None or len(json_data) == 0:  # again, in case it parsed empty
+        return None
+    result = json.dumps(json_data, sort_keys=True)
+    return result
+
+
+def convert_json_array_to_list_of_str(json_data: Union[list, str]) -> Optional[List[str]]:
+    """
+    Convert provided data (list, or str data) into a string representation of an array of JSON objects
+    so that it can be used as array of values for an Elasticsearch field.
+
+    We do this for some index fields to avoid nested types in Elasticsearch, and instead store raw stringified JSON as
+    array values for a field, and deal with the JSON on the client side or with regex searches. The JSON arrays are
+    converted to dictionaries to make parsing easier and then converted back into a formatted string.
+    """
+    if json_data is None or len(json_data) == 0:
+        return None
+
+    # Figure out what type it is, then get it into dict format
+    if isinstance(json_data, str):
+        json_data = json.loads(json_data)  # try parsing as JSON if str provided
+        if not isinstance(json_data, list):
+            raise ValueError(f"Parse str data did not yield an array of JSON objects as expected: {json_data}")
+    elif isinstance(json_data, list):
+        if isinstance(json_data[0], dict):
+            pass  # already json.dumps() consumable (list of dicts)
+        elif isinstance(json_data[0], str):
+            # Convert to list of dicts to make it json.dumps() consumable
+            json_data = [json.loads(j) for j in json_data]
+        else:
+            raise ValueError(
+                f"Cannot parse json_data provided as JSON (It is a list, but not a list of str or dict): {json_data}"
+            )
+    else:
+        raise ValueError(f"Cannot parse json_data provided as JSON (not a dict, str, or list): {json_data}")
+
+    if json_data is None or len(json_data) == 0:  # again, in case it parsed empty
         return None
     result = []
-    for j in json_array:
+    for j in json_data:
         result.append(json.dumps(j, sort_keys=True))
     return result
 
