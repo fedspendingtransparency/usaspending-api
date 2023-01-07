@@ -7,7 +7,7 @@ from typing import Callable, Dict, List, Optional
 from usaspending_api.etl.elasticsearch_loader_helpers import aggregate_key_functions as funcs
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     convert_json_array_to_list_of_str,
-    convert_json_data_to_str,
+    convert_json_data_to_dict,
     format_log,
     TaskSpec,
 )
@@ -18,7 +18,7 @@ logger = logging.getLogger("script")
 
 def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {
-        "covid_spending_by_defc": convert_json_data_to_str,
+        "covid_spending_by_defc": convert_json_data_to_dict,
     }
     agg_key_creations = {
         "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],

@@ -39,9 +39,9 @@ def chunks(items: List[Any], size: int) -> List[Any]:
         yield items[i : i + size]
 
 
-def convert_json_data_to_str(json_data: Union[dict, list, str]) -> Optional[str]:
+def convert_json_data_to_dict(json_data: Union[dict, list, str]) -> Optional[Union[dict, List[dict]]]:
     """
-    Convert provided JSON-compatible data (dict, list, or str data) into a string representation of a dict so that it
+    Convert provided JSON-compatible data (dict, list, or str data) into a dict so that it
     can be used as the content for an Elasticsearch nested object type.
 
     Do so by first getting any provided format into a format consumable by json.dumps()
@@ -50,13 +50,13 @@ def convert_json_data_to_str(json_data: Union[dict, list, str]) -> Optional[str]
         return None
 
     # Figure out what type it is, then get it into dict format
-    if isinstance(json_data, str):
+    if isinstance(json_data, dict):
+        pass  # dict already
+    elif isinstance(json_data, str):
         json_data = json.loads(json_data)  # try parsing as JSON if str provided
-    elif isinstance(json_data, dict):
-        pass  # already json.dumps() consumable (a dict)
     elif isinstance(json_data, list):
         if isinstance(json_data[0], dict):
-            pass  # already json.dumps() consumable (list of dicts)
+            pass  # list of dicts is ok
         elif isinstance(json_data[0], str):
             # Convert to list of dicts to make it json.dumps() consumable
             json_data = [json.loads(j) for j in json_data]
@@ -67,10 +67,7 @@ def convert_json_data_to_str(json_data: Union[dict, list, str]) -> Optional[str]
     else:
         raise ValueError(f"Cannot parse json_data provided as JSON (not a dict, str, or list): {json_data}")
 
-    if json_data is None or len(json_data) == 0:  # again, in case it parsed empty
-        return None
-    result = json.dumps(json_data, sort_keys=True)
-    return result
+    return json_data
 
 
 def convert_json_array_to_list_of_str(json_data: Union[list, str]) -> Optional[List[str]]:
