@@ -113,7 +113,7 @@ class Command(BaseCommand):
             self.no_initial_copy = options["no_initial_copy"]
 
             # Capture minimum last load date of the source tables to update the "last_load_date" after completion
-            next_last_load = get_earliest_load_date("source_procurement_transaction", "source_assistance_transaction")
+            next_last_load = get_earliest_load_date(["source_procurement_transaction", "source_assistance_transaction"])
             if not next_last_load:
                 next_last_load = datetime.utcfromtimestamp(0)
 
