@@ -66,8 +66,8 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         office_codes = []
         for bucket in buckets:
             office_codes.extend([child.get("key") for child in bucket.get("offices").get("buckets")])
-            # remove any potential dups
-            office_codes = set(list(office_codes))
+        # remove any potential dups
+        office_codes = set(list(office_codes))
 
         # Get the current recipient info
         current_office_info = {}
