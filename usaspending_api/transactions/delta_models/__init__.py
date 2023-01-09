@@ -5,10 +5,12 @@ from usaspending_api.transactions.delta_models.detached_award_procurement import
 
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     TRANSACTION_FABS_COLUMNS,
+    TRANSACTION_FABS_VIEW_COLUMNS,
     transaction_fabs_sql_string,
 )
 from usaspending_api.transactions.delta_models.transaction_fpds import (
     TRANSACTION_FPDS_COLUMNS,
+    TRANSACTION_FPDS_VIEW_COLUMNS,
     transaction_fpds_sql_string,
 )
 from usaspending_api.transactions.delta_models.transaction_normalized import (
@@ -41,8 +43,10 @@ from usaspending_api.transactions.delta_models.published_fabs import (
 
 __all__ = [
     "TRANSACTION_FABS_COLUMNS",
+    "TRANSACTION_FABS_VIEW_COLUMNS",
     "transaction_fabs_sql_string",
     "TRANSACTION_FPDS_COLUMNS",
+    "TRANSACTION_FPDS_VIEW_COLUMNS",
     "transaction_fpds_sql_string",
     "TRANSACTION_NORMALIZED_COLUMNS",
     "transaction_normalized_sql_string",

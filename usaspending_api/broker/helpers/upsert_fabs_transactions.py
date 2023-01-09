@@ -91,11 +91,6 @@ def insert_new_fabs(to_insert):
         # Append row to list of Awards updated
         update_award_ids.append(award.id)
 
-        try:
-            last_mod_date = datetime.strptime(str(row["modified_at"]), "%Y-%m-%d %H:%M:%S.%f").date()
-        except ValueError:
-            last_mod_date = datetime.strptime(str(row["modified_at"]), "%Y-%m-%d %H:%M:%S").date()
-
         parent_txn_value_map = {
             "award": award,
             "awarding_agency_id": awarding_agency.id if awarding_agency else None,
@@ -103,7 +98,7 @@ def insert_new_fabs(to_insert):
             "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
             "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
             "action_date": format_date(row["action_date"]),
-            "last_modified_date": last_mod_date,
+            "last_modified_date": row["modified_at"].date() if row["modified_at"] is not None else None,
             "type_description": row["assistance_type_desc"],
             "transaction_unique_id": row["afa_generated_unique"],
             "business_categories": get_business_categories(row=row, data_type="fabs"),
