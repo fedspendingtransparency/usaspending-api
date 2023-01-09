@@ -231,7 +231,8 @@ class ElasticsearchDisasterBase(DisasterBase):
             raise ForbiddenException(
                 "Current filters return too many unique items. Narrow filters to return results or use downloads."
             )
-
+        if sub_bucket_count == 0:
+            return None
         # Sub-aggregation to append to primary agg
         sub_group_by_sub_agg_key_values.update(
             {
