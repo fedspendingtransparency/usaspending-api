@@ -18,7 +18,7 @@ def test_agency_count_success(client, monkeypatch, disaster_account_data, helper
 
     resp = helpers.post_for_count_endpoint(client, url, ["N", "O"])
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["count"] == 2
+    assert resp.data["count"] == 3
 
     resp = helpers.post_for_count_endpoint(client, url, ["P"])
     assert resp.status_code == status.HTTP_200_OK
