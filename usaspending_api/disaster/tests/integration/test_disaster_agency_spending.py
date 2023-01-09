@@ -127,7 +127,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 30)
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["A", "07", "02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
+        client, url, award_type_codes=["A", "07", "02"], def_codes=["O"], spending_type="award"
     )
     expected_results = [
         {
@@ -197,7 +197,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["A"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
+        client, url, award_type_codes=["A"], def_codes=["O"], spending_type="award"
     )
     expected_results = [
         {
@@ -224,7 +224,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["02"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
+        client, url, award_type_codes=["02"], def_codes=["O"], spending_type="award"
     )
     expected_results = [
         {

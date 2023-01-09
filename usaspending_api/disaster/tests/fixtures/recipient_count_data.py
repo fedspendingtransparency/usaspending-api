@@ -46,7 +46,15 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
             latest_transaction_id=transaction_fpds.transaction_id,
             type="A",
             is_fpds=True,
-            action_date="2020-01-01",
+            action_date="2020-10-01",
+            recipient_hash="053cca9b-ad9c-09ee-4b4b-243fa59f0be2",
+            recipient_uei="fpds",
+            recipient_name="Recipient FPDS",
+            recipient_levels=["R"],
+            disaster_emergency_fund_codes=["M"],
+            total_covid_outlay=8,
+            total_covid_obligation=0,
+            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
     baker.make(
@@ -84,11 +92,16 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
             award_id=200,
             latest_transaction_id=transaction_fpds_1.transaction_id,
             type="A",
-            action_date="2020-01-01",
+            action_date="2020-10-01",
             is_fpds=True,
             recipient_unique_id="1",
             recipient_hash="053cca9b-ad9c-09ee-4b4b-243fa59f0be2",
             recipient_uei="fpds",
+            recipient_name="Recipient A",
+            disaster_emergency_fund_codes=["M"],
+            total_covid_outlay=8,
+            total_covid_obligation=0,
+            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -129,6 +142,11 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
             recipient_uei="2",
             recipient_hash="dfdbbb4f-1a81-1232-84b0-341e93d0acb1",
             recipient_levels=["R"],
+            recipient_name="Recipient 2",
+            disaster_emergency_fund_codes=["M"],
+            total_covid_outlay=8,
+            total_covid_obligation=0,
+            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -162,8 +180,14 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
             award_id=400,
             latest_transaction_id=transaction_fpds_1.transaction_id,
             type="A",
-            action_date="2020-01-01",
+            action_date="2020-10-01",
             recipient_unique_id="1",
+            recipient_hash="1f1f91da-98b8-6f14-c662-55137ba8adec",
+            recipient_name="Recipient 1",
+            disaster_emergency_fund_codes=["M"],
+            total_covid_outlay=8,
+            total_covid_obligation=0,
+            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
     transaction_fpds_2 = baker.make(
@@ -181,8 +205,14 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
             award_id=500,
             latest_transaction_id=transaction_fpds_2.transaction_id,
             type="A",
-            action_date="2020-01-01",
+            action_date="2020-10-01",
             recipient_unique_id="1",
+            recipient_hash="1f1f91da-98b8-6f14-c662-55137ba8adec",
+            recipient_name="Recipient 1",
+            disaster_emergency_fund_codes=["M"],
+            total_covid_outlay=8,
+            total_covid_obligation=0,
+            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -199,6 +229,7 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
         is_fpds=True,
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_unique_id="123",
+        recipient_hash="01c03484-d1bd-41cc-2aca-4b427a2d0611",
     )
     _normal_faba(
         baker.make(
@@ -206,10 +237,15 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
             award_id=600,
             latest_transaction_id=transaction_fpds_1.transaction_id,
             type="A",
-            action_date="2020-01-01",
+            action_date="2020-10-01",
             is_fpds=True,
             recipient_name="MULTIPLE RECIPIENTS",
             recipient_unique_id="123",
+            recipient_hash="01c03484-d1bd-41cc-2aca-4b427a2d0611",
+            disaster_emergency_fund_codes=["M"],
+            total_covid_outlay=8,
+            total_covid_obligation=0,
+            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -230,10 +266,15 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
             award_id=700,
             latest_transaction_id=transaction_fpds_2.transaction_id,
             type="A",
-            action_date="2020-01-01",
+            action_date="2020-10-01",
             is_fpds=True,
             recipient_name="MULTIPLE RECIPIENTS",
             recipient_unique_id="456",
+            recipient_hash="1c4e7c2a-efe3-1b7e-2190-6f4487f808ac",
+            disaster_emergency_fund_codes=["M"],
+            total_covid_outlay=8,
+            total_covid_obligation=0,
+            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -389,11 +430,15 @@ def _normal_fabs(id):
         latest_transaction_id=id,
         type="07",
         is_fpds=False,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
         recipient_uei="1",
         recipient_hash="c229f674-92c9-1128-7bdf-292fb3e4226b",
         recipient_name="Recipient 1",
         recipient_levels=["R"],
+        disaster_emergency_fund_codes=["M"],
+        total_covid_outlay=8,
+        total_covid_obligation=0,
+        covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
     )
     baker.make(
         "search.TransactionSearch",

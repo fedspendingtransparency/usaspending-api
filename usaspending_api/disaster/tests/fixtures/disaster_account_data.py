@@ -444,12 +444,11 @@ def disaster_account_data():
         funding_subtier_agency_code="1007",
         latest_transaction_id=10,
         action_date="2020-10-01",
-        disaster_emergency_fund_codes=["L", "O"],
+        disaster_emergency_fund_codes=["O"],
         total_covid_obligation=2000,
         total_covid_outlay=20000,
         covid_spending_by_defc=[
             {"defc": "O", "outlay": 20000, "obligation": 2000},
-            {"defc": "L", "outlay": 20, "obligation": 80},
         ],
     )  # Loan
     a2 = baker.make(
@@ -480,14 +479,14 @@ def disaster_account_data():
         latest_transaction_id=30,
         action_date="2020-10-01",
         disaster_emergency_fund_codes=["M", "P", "N", "O", "Q"],
-        total_covid_obligation=22222222,
-        total_covid_outlay=222204,
+        total_covid_obligation=20200222,
+        total_covid_outlay=2200204,
         covid_spending_by_defc=[
             {"defc": "Q", "outlay": 2, "obligation": 2},
             {"defc": "M", "outlay": 2000000, "obligation": 20},
-            {"defc": "N", "outlay": 2200, "obligation": 220000},
+            {"defc": "N", "outlay": 200, "obligation": 200000},
             {"defc": "O", "outlay": 2, "obligation": 20000000},
-            {"defc": "P", "outlay": 200000, "obligation": 200}
+            {"defc": "P", "outlay": 200000, "obligation": 200},
         ],
     )  # BPA Call
     a4 = baker.make(
@@ -504,7 +503,7 @@ def disaster_account_data():
         total_covid_obligation=200000000,
         total_covid_outlay=-2,
         covid_spending_by_defc=[
-            {"defc": "O", "outlay": -2, "obligation": 200000000},
+            {"defc": "O", "outlay": 200000000, "obligation": -2},
         ],
     )  # Block Grant - subtier sister to a2
     a5 = baker.make(
@@ -517,7 +516,7 @@ def disaster_account_data():
         funding_subtier_agency_code="3008",
         latest_transaction_id=50,
         action_date="2020-10-01",
-        disaster_emergency_fund_codes=["L"],
+        disaster_emergency_fund_codes=["O"],
         total_covid_obligation=1000,
         total_covid_outlay=1000,
         covid_spending_by_defc=[
