@@ -235,14 +235,14 @@ class Command(BaseCommand):
             )
 
             if col.handling == "cast":
-                return f"CAST({bronze_table_name}.{col.source} AS {col.delta_type}) AS {col.dest_name}"
+                retval = f"CAST({bronze_table_name}.{col.source} AS {col.delta_type}) AS {col.dest_name}"
             elif col.handling == "literal":
                 # Use col.source directly as the value
-                return f"{col.source} AS {col.dest_name}"
+                retval = f"{col.source} AS {col.dest_name}"
             elif col.handling == "parse_string_datetime_to_date":
                 # These are string fields that actually hold DATES/TIMESTAMPS and need to be cast as dates.
                 # However, they may not be properly parsed when calling CAST(... AS DATE).
-                return f"""
+                retval = f"""
                     CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
                               THEN CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
                                          || '-' ||
@@ -261,7 +261,7 @@ class Command(BaseCommand):
             elif col.handling == "string_datetime_remove_timestamp":
                 # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
                 # even though they remain as strings
-                return f"""
+                retval = f"""
                     CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
                               THEN (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
                                     || '-' ||
@@ -277,12 +277,14 @@ class Command(BaseCommand):
                 """
             elif col.delta_type.upper() == "STRING":
                 # Capitalize all string values
-                return f"ucase({bronze_table_name}.{col.source}) AS {col.dest_name}"
+                retval = f"ucase({bronze_table_name}.{col.source}) AS {col.dest_name}"
             elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
                 # Unless specified, convert any nulls to false for boolean columns
-                return f"COALESCE({bronze_table_name}.{col.source}, FALSE) AS {col.dest_name}"
+                retval = f"COALESCE({bronze_table_name}.{col.source}, FALSE) AS {col.dest_name}"
             else:
-                return f"{bronze_table_name}.{col.source} AS {col.dest_name}"
+                retval = f"{bronze_table_name}.{col.source} AS {col.dest_name}"
+
+            return retval
 
         def select_columns_transaction_fabs_fpds(bronze_table_name):
             if self.etl_level == "transaction_fabs":
