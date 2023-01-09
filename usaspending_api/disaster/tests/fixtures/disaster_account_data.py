@@ -448,8 +448,8 @@ def disaster_account_data():
         total_covid_obligation=2000,
         total_covid_outlay=20000,
         covid_spending_by_defc=[
-            {"defc": "L", "outlay": 10000, "obligation": 1000},
-            {"defc": "O", "outlay": 10000, "obligation": 1000},
+            {"defc": "O", "outlay": 20000, "obligation": 2000},
+            {"defc": "L", "outlay": 20, "obligation": 80},
         ],
     )  # Loan
     a2 = baker.make(
@@ -484,7 +484,10 @@ def disaster_account_data():
         total_covid_outlay=222204,
         covid_spending_by_defc=[
             {"defc": "Q", "outlay": 2, "obligation": 2},
-            {"defc": "L", "outlay": 20000, "obligation": 2000},
+            {"defc": "M", "outlay": 2000000, "obligation": 20},
+            {"defc": "N", "outlay": 2200, "obligation": 220000},
+            {"defc": "O", "outlay": 2, "obligation": 20000000},
+            {"defc": "P", "outlay": 200000, "obligation": 200}
         ],
     )  # BPA Call
     a4 = baker.make(
@@ -517,6 +520,9 @@ def disaster_account_data():
         disaster_emergency_fund_codes=["L"],
         total_covid_obligation=1000,
         total_covid_outlay=1000,
+        covid_spending_by_defc=[
+            {"defc": "O", "outlay": 1000, "obligation": 1000},
+        ],
     )
 
     baker.make(
