@@ -11,6 +11,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import ArrayType, StringType
 from pyspark.sql.utils import AnalysisException
 
+from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
 from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fabs,
@@ -61,6 +62,19 @@ class Command(BaseCommand):
     no_initial_copy: bool
     logger: logging.Logger
     spark: SparkSession
+    award_id_lookup_delete_subquery: str = """
+        SELECT aidlu.transaction_unique_id AS id_to_remove
+        FROM int.award_id_lookup AS aidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
+            aidlu.detached_award_procurement_id = dap.detached_award_procurement_id
+        )
+        WHERE aidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_procurement_id IS NULL
+        UNION ALL
+        SELECT aidlu.transaction_unique_id AS id_to_remove
+        FROM int.award_id_lookup AS aidlu LEFT JOIN raw.published_fabs AS pfabs ON (
+            aidlu.published_fabs_id = pfabs.published_fabs_id
+        )
+        WHERE aidlu.published_fabs_id IS NOT NULL AND pfabs.published_fabs_id IS NULL
+    """
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -70,6 +84,7 @@ class Command(BaseCommand):
             help="The silver delta table that should be updated from the bronze delta data.",
             choices=[
                 "award_id_lookup",
+                "awards",
                 "initial_run",
                 "transaction_fabs",
                 "transaction_fpds",
@@ -103,12 +118,20 @@ class Command(BaseCommand):
             )
 
             if self.etl_level == "initial_run":
-                self.logger.info("Running initial setup for transaction_id_lookup and award_id_lookup tables")
+                self.logger.info("Running initial setup")
                 self.initial_run(next_last_load)
                 return
 
+            if self.etl_level == "award_id_lookup":
+                self.logger.info(f"Running pre-delete SQL for '{self.etl_level}' ETL")
+                possibly_modified_award_ids = self.award_id_lookup_pre_delete()
+
             self.logger.info(f"Running delete SQL for '{self.etl_level}' ETL")
             self.spark.sql(self.delete_records_sql())
+
+            if self.etl_level == "award_id_lookup":
+                self.logger.info(f"Running post-delete SQL for '{self.etl_level}' ETL")
+                self.award_id_lookup_post_delete(possibly_modified_award_ids)
 
             last_etl_date = get_last_load_date(self.etl_level)
             if last_etl_date is None:
@@ -128,6 +151,8 @@ class Command(BaseCommand):
                 create_ref_temp_views(self.spark)
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fabs"))
                 self.spark.sql(self.transaction_normalized_merge_into_sql("fpds"))
+            elif self.etl_level == "awards":
+                self.update_awards()
 
             update_last_load_date(self.etl_level, next_last_load)
 
@@ -168,6 +193,23 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
+    def award_id_lookup_pre_delete(self):
+        """
+        Return a list of the award ids corresponding to the transaction_unique_ids that are about to be deleted.
+        """
+        sql = f"""
+            WITH txns_to_delete AS (
+                {self.award_id_lookup_delete_subquery}
+            )
+            SELECT DISTINCT(award_id) AS award_id
+            FROM int.award_id_lookup AS aidlu INNER JOIN txns_to_delete AS to_del ON (
+                aidlu.transaction_unique_id = to_del.id_to_remove
+            )
+        """
+
+        possibly_modified_award_ids = [str(row["award_id"]) for row in self.spark.sql(sql).collect()]
+        return possibly_modified_award_ids
+
     def delete_records_sql(self):
         if self.etl_level == "transaction_id_lookup":
             id_col = "transaction_id"
@@ -186,19 +228,7 @@ class Command(BaseCommand):
             """
         elif self.etl_level == "award_id_lookup":
             id_col = "transaction_unique_id"
-            subquery = """
-                SELECT aidlu.transaction_unique_id AS id_to_remove
-                FROM int.award_id_lookup AS aidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
-                    aidlu.detached_award_procurement_id = dap.detached_award_procurement_id
-                )
-                WHERE aidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_procurement_id IS NULL
-                UNION ALL
-                SELECT aidlu.transaction_unique_id AS id_to_remove
-                FROM int.award_id_lookup AS aidlu LEFT JOIN raw.published_fabs AS pfabs ON (
-                    aidlu.published_fabs_id = pfabs.published_fabs_id
-                )
-                WHERE aidlu.published_fabs_id IS NOT NULL AND pfabs.published_fabs_id IS NULL
-            """
+            subquery = self.award_id_lookup_delete_subquery
         elif self.etl_level in ("transaction_fabs", "transaction_fpds", "transaction_normalized"):
             id_col = "id" if self.etl_level == "transaction_normalized" else "transaction_id"
             subquery = f"""
@@ -207,6 +237,13 @@ class Command(BaseCommand):
                     {self.etl_level}.{id_col} = transaction_id_lookup.transaction_id
                 )
                 WHERE {self.etl_level}.{id_col} IS NOT NULL AND transaction_id_lookup.transaction_id IS NULL
+            """
+        elif self.etl_level == "awards":
+            id_col = "id"
+            subquery = f"""
+                SELECT awards.id AS id_to_remove
+                FROM int.awards LEFT JOIN int.award_id_lookup ON awards.id = award_id_lookup.award_id
+                WHERE awards.id IS NOT NULL AND award_id_lookup.award_id IS NULL
             """
 
         sql = f"""
@@ -220,6 +257,236 @@ class Command(BaseCommand):
         """
 
         return sql
+
+    def award_id_lookup_post_delete(self, possibly_modified_award_ids):
+        """
+        Now that deletion from the award_id_lookup table is done, we need to figure out which awards in
+        possibly_modified_award_ids remain.
+        """
+
+        # Of those possibly_modified_award_ids, find those that remain after deleting transactions.  Those are
+        #   the award_ids which have had some, but not all, transactions deleted from them.
+        # This function will always append to int.award_ids_delete_modified because award_id_lookup ETL
+        #   level could be run more than once before awards ETL level is run.
+        # Avoid SQL error if possibly_modified_award_ids is empty
+        if possibly_modified_award_ids:
+            self.spark.sql(
+                f"""
+                    INSERT INTO int.award_ids_delete_modified
+                        SELECT award_id
+                        FROM int.award_id_lookup
+                        WHERE award_id IN ({", ".join(possibly_modified_award_ids)})
+                """
+            )
+
+    def update_awards(self):
+        load_datetime = datetime.now(timezone.utc)
+
+        insert_special_columns = ["subaward_count", "total_subaward_amount", "create_date", "update_date"]
+        set_subquery_ignored_columns = insert_special_columns + ["id"]
+
+        # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
+        # between the query parts or in int.award_ids_delete_modified.
+        subquery = f"""
+            WITH
+            award_ids_to_update AS (
+                SELECT DISTINCT(award_id)
+                FROM int.award_id_lookup
+                WHERE transaction_unique_id IN (SELECT transaction_unique_id
+                                                FROM int.transaction_normalized
+                                                WHERE update_date >= '{self.last_etl_date}')
+                UNION
+                SELECT award_id FROM int.award_ids_delete_modified
+            ),
+            transaction_earliest AS (
+                SELECT * FROM (
+                    SELECT
+                        tn.award_id AS id,
+                        tn.id AS earliest_transaction_id,
+                        tn.action_date AS date_signed,
+                        tn.description,
+                        tn.period_of_performance_start_date,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY tn.award_id
+                            /* NOTE: In Postgres, the default sorting order sorts NULLs as larger than all other values.
+                               However, in Spark, the default sorting order sorts NULLs as smaller than all other
+                               values.  In the Postgres transaction loader the default sorting behavior was used, so to
+                               be consistent with the behavior of the previous loader, we need to reverse the default
+                               Spark NULL sorting behavior for any field that can be NULL. */
+                            ORDER BY tn.award_id, tn.action_date ASC NULLS LAST, tn.modification_number ASC NULLS LAST,
+                                     tn.transaction_unique_id ASC
+                        ) AS rank
+                    FROM int.transaction_normalized AS tn
+                    WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
+                )
+                WHERE rank = 1
+            ),
+            transaction_latest as (
+                SELECT * FROM (
+                    SELECT
+                        -- General update columns (id at top, rest alphabetically by alias/name)
+                        tn.award_id AS id,
+                        tn.awarding_agency_id,
+                        CASE
+                            WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
+                            WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
+                            WHEN tn.type IN ('06', '10')              THEN 'direct payment'
+                            WHEN tn.type IN ('07', '08')              THEN 'loans'
+                            WHEN tn.type = '09'                       THEN 'insurance'
+                            WHEN tn.type = '11'                       THEN 'other'
+                            WHEN tn.type LIKE 'IDV%%'                 THEN 'idv'
+                            ELSE NULL
+                        END AS category,
+                        tn.action_date AS certified_date,
+                        CASE
+                            WHEN month(tn.action_date) > 9 THEN year(tn.action_date) + 1
+                            ELSE year(tn.action_date)
+                        END AS fiscal_year,
+                        tn.funding_agency_id,
+                        tn.unique_award_key AS generated_unique_award_id,
+                        tn.is_fpds,
+                        tn.last_modified_date,
+                        tn.id AS latest_transaction_id,
+                        tn.period_of_performance_current_end_date,
+                        tn.transaction_unique_id,
+                        tn.type,
+                        tn.type_description,
+                        -- FPDS Columns
+                        fpds.agency_id AS fpds_agency_id,
+                        fpds.referenced_idv_agency_iden AS fpds_parent_agency_id,
+                        fpds.parent_award_id AS parent_award_piid,
+                        fpds.piid,
+                        -- FABS Columns
+                        fabs.fain,
+                        fabs.uri,
+                        -- Excecutive Compensation
+                        -- This might not be correct. In award_helpers.py some extra CTE logic is being done to
+                        -- select executive compensation
+                        COALESCE(fpds.officer_1_amount, fabs.officer_1_amount) AS officer_1_amount,
+                        COALESCE(fpds.officer_1_name, fabs.officer_1_name)     AS officer_1_name,
+                        COALESCE(fpds.officer_2_amount, fabs.officer_2_amount) AS officer_2_amount,
+                        COALESCE(fpds.officer_2_name, fabs.officer_2_name)     AS officer_2_name,
+                        COALESCE(fpds.officer_3_amount, fabs.officer_3_amount) AS officer_3_amount,
+                        COALESCE(fpds.officer_3_name, fabs.officer_3_name)     AS officer_3_name,
+                        COALESCE(fpds.officer_4_amount, fabs.officer_4_amount) AS officer_4_amount,
+                        COALESCE(fpds.officer_4_name, fabs.officer_4_name)     AS officer_4_name,
+                        COALESCE(fpds.officer_5_amount, fabs.officer_5_amount) AS officer_5_amount,
+                        COALESCE(fpds.officer_5_name, fabs.officer_5_name)     AS officer_5_name,
+                        -- Other
+                        'DBR' AS data_source,
+                        -- Windowing Function
+                        ROW_NUMBER() OVER (
+                            PARTITION BY tn.award_id
+                            -- See note in transaction_earliest about NULL ordering.
+                            ORDER BY tn.award_id, tn.action_date DESC NULLS FIRST,
+                                     tn.modification_number DESC NULLS FIRST, tn.transaction_unique_id DESC
+                        ) as rank
+                    FROM int.transaction_normalized AS tn
+                    LEFT JOIN int.transaction_fpds AS fpds ON fpds.transaction_id = tn.id
+                    LEFT JOIN int.transaction_fabs AS fabs ON fabs.transaction_id = tn.id
+                    WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
+                )
+                WHERE rank = 1
+            ),
+            -- For executive compensation information, we want the latest transaction for each award
+            -- for which there is at least an officer_1_name.
+            transaction_ec AS (
+                SELECT * FROM (
+                    SELECT
+                        tn.award_id AS id,
+                        COALESCE(fpds.officer_1_amount, fabs.officer_1_amount) AS officer_1_amount,
+                        COALESCE(fpds.officer_1_name, fabs.officer_1_name)     AS officer_1_name,
+                        COALESCE(fpds.officer_2_amount, fabs.officer_2_amount) AS officer_2_amount,
+                        COALESCE(fpds.officer_2_name, fabs.officer_2_name)     AS officer_2_name,
+                        COALESCE(fpds.officer_3_amount, fabs.officer_3_amount) AS officer_3_amount,
+                        COALESCE(fpds.officer_3_name, fabs.officer_3_name)     AS officer_3_name,
+                        COALESCE(fpds.officer_4_amount, fabs.officer_4_amount) AS officer_4_amount,
+                        COALESCE(fpds.officer_4_name, fabs.officer_4_name)     AS officer_4_name,
+                        COALESCE(fpds.officer_5_amount, fabs.officer_5_amount) AS officer_5_amount,
+                        COALESCE(fpds.officer_5_name, fabs.officer_5_name)     AS officer_5_name,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY tn.award_id
+                            -- See note in transaction_earliest about NULL ordering.
+                            ORDER BY tn.award_id, tn.action_date DESC NULLS FIRST,
+                                     tn.modification_number DESC NULLS FIRST, tn.transaction_unique_id DESC
+                        ) as rank
+                    FROM int.transaction_normalized AS tn
+                    LEFT JOIN int.transaction_fpds AS fpds ON fpds.transaction_id = tn.id
+                    LEFT JOIN int.transaction_fabs AS fabs ON fabs.transaction_id = tn.id
+                    WHERE
+                         tn.award_id IN (SELECT * FROM award_ids_to_update)
+                         AND (fpds.officer_1_name IS NOT NULL OR fabs.officer_1_name IS NOT NULL)
+                )
+                WHERE rank = 1
+            ),
+            transaction_totals AS (
+                SELECT
+                    -- Transaction Normalized Fields
+                    tn.award_id AS id,
+                    SUM(tn.federal_action_obligation)   AS total_obligation,
+                    SUM(tn.original_loan_subsidy_cost)  AS total_subsidy_cost,
+                    SUM(tn.funding_amount)              AS total_funding_amount,
+                    SUM(tn.face_value_loan_guarantee)   AS total_loan_value,
+                    SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount,
+                    SUM(tn.indirect_federal_sharing)    AS total_indirect_federal_sharing,
+                    -- Transaction FPDS Fields
+                    SUM(CAST(fpds.base_and_all_options_value AS NUMERIC)) AS base_and_all_options_value,
+                    SUM(CAST(fpds.base_exercised_options_val AS NUMERIC)) AS base_exercised_options_val
+                FROM int.transaction_normalized AS tn
+                LEFT JOIN int.transaction_fpds AS fpds ON tn.id = fpds.transaction_id
+                WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
+                GROUP BY tn.award_id
+            )
+            SELECT latest.id, {", ".join([col_name
+                                          for col_name in AWARDS_COLUMNS
+                                          if col_name not in set_subquery_ignored_columns])}
+            FROM transaction_latest AS latest
+            INNER JOIN transaction_earliest AS earliest ON latest.id = earliest.id
+            INNER JOIN transaction_ec AS ec ON latest.id = ec.id
+            INNER JOIN transaction_totals AS totals on latest.id = totals.id
+        """
+
+        # On set, create_date will not be changed and update_date will be set below.  The subaward columns will not
+        # be changed, and id is used to match.  All other column values will come from the subquery.
+        set_cols = [
+            f"int.awards.{col_name} = source_subquery.{col_name}"
+            for col_name in AWARDS_COLUMNS
+            if col_name not in set_subquery_ignored_columns
+        ]
+        set_cols.append(f"""int.awards.update_date = '{load_datetime.isoformat(" ")}'""")
+
+        # Move insert_special_columns to the end of the list of column names for ease of handling
+        # during record insert
+        insert_col_name_list = [col_name for col_name in AWARDS_COLUMNS if col_name not in insert_special_columns]
+        insert_col_name_list.extend(insert_special_columns)
+        insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
+
+        # On insert, all values except for those in insert_special_columns will come from the subquery
+        insert_value_list = insert_col_name_list[:-4]
+        insert_value_list.extend(["NULL"] * 2)
+        insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
+        insert_values = ", ".join([value for value in insert_value_list])
+
+        sql = f"""
+            MERGE INTO int.awards
+            USING (
+                {subquery}
+            ) AS source_subquery
+            ON awards.id = source_subquery.id
+            WHEN MATCHED
+                THEN UPDATE SET
+                {", ".join(set_cols)}
+            WHEN NOT MATCHED
+                THEN INSERT
+                    ({insert_col_names})
+                    VALUES ({insert_values})
+        """
+
+        self.spark.sql(sql)
+
+        # Now that the award table update is done, we can empty the award_ids_delete_modified table.
+        # Note that an external table can't be TRUNCATED; use blanket DELETE instead.
+        self.spark.sql("DELETE FROM int.award_ids_delete_modified")
 
     def source_subquery_sql(self, transaction_type=None):
         def handle_column(col, bronze_table_name):
@@ -487,22 +754,23 @@ class Command(BaseCommand):
             )
 
         load_datetime = datetime.now(timezone.utc)
+        special_columns = ["create_date", "update_date"]
 
         # On set, create_date will not be changed and update_date will be set below.  All other column
         # values will come from the subquery.
         set_cols = [
             f"int.transaction_normalized.{col_name} = source_subquery.{col_name}"
             for col_name in TRANSACTION_NORMALIZED_COLUMNS
-            if col_name not in ("create_date", "update_date")
+            if col_name not in (special_columns + ["id"])
         ]
         set_cols.append(f"""int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'""")
 
         # Move create_date and update_date to the end of the list of column names for ease of handling
         # during record insert
         insert_col_name_list = [
-            col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in ("create_date", "update_date")
+            col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in special_columns
         ]
-        insert_col_name_list.extend(["create_date", "update_date"])
+        insert_col_name_list.extend(special_columns)
         insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
 
         # On insert, all values except for create_date and update_date will come from the subquery
@@ -700,7 +968,7 @@ class Command(BaseCommand):
         self.logger.info(f"Creating database {destination_database}, if not already existing.")
         self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {destination_database};")
 
-        self.logger.info("Creating transaction_id_lookup table")
+        self.logger.info(f"Creating {destination_table} table")
         self.spark.sql(
             f"""
                 CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
@@ -766,6 +1034,8 @@ class Command(BaseCommand):
 
         if set_last_load_date:
             update_last_load_date(destination_table, next_last_load)
+            # es_deletes should remain in lockstep with transaction load dates, so if they are reset, it should be reset
+            update_last_load_date("es_deletes", next_last_load)
 
         # award_id_lookup
         destination_table = "award_id_lookup"
@@ -795,7 +1065,7 @@ class Command(BaseCommand):
                     "raw.transaction_normalized!"
                 )
 
-        self.logger.info("Creating award_id_lookup table")
+        self.logger.info(f"Creating {destination_table} table")
         self.spark.sql(
             f"""
                 CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
@@ -892,13 +1162,32 @@ class Command(BaseCommand):
 
         if set_last_load_date:
             update_last_load_date(destination_table, next_last_load)
+            # es_deletes should remain in lockstep with transaction load dates, so if they are reset, it should be reset
+            update_last_load_date("es_deletes", next_last_load)
 
-        # Create tables in 'int' database
+        # Need a table to keep track of awards in which some, but not all, transactions are deleted.
+        destination_table = "award_ids_delete_modified"
+
+        self.logger.info(f"Creating {destination_table} table")
+        self.spark.sql(
+            f"""
+                CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
+                    award_id LONG NOT NULL
+                )
+                USING DELTA
+                LOCATION 's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
+            """
+        )
+
+        # Nothing to add to this table here.
+
+        # Create other tables in 'int' database
         self.logger.info("Creating tables in new database location")
         table_to_col_names_dict = {}
         table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
         table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS
         table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
+        table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
         for destination_table, col_names in table_to_col_names_dict.items():
             call_command(
                 "create_delta_table",
@@ -938,3 +1227,6 @@ class Command(BaseCommand):
                     ).collect()[0]["count"]
                     if count > 0:
                         update_last_load_date(destination_table, next_last_load)
+                        # es_deletes should remain in lockstep with transaction load dates, so if they are reset,
+                        # it should be reset
+                        update_last_load_date("es_deletes", next_last_load)
