@@ -54,13 +54,13 @@ last_periods_covid_awards AS (
 )
 {operation_sql}
 WHERE
-    award_id IN (
+    id IN (
         SELECT
             *
         FROM
             last_periods_covid_awards
     )
-    AND award_id IN (
+    AND id IN (
         SELECT
             award_id
         FROM

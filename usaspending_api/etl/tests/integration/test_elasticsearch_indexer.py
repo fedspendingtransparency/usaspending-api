@@ -219,7 +219,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     es_awards = client.search(index=elasticsearch_award_index.index_name)
-    updated_award = [a for a in es_awards["hits"]["hits"] if a["_source"]["award_id"] == awd.id][0]
+    updated_award = [a for a in es_awards["hits"]["hits"] if a["_source"]["award_id"] == awd.award_id][0]
     assert int(updated_award["_source"]["total_obligation"]) == 9999
 
 
