@@ -359,19 +359,6 @@ class Command(BaseCommand):
                         -- FABS Columns
                         fabs.fain,
                         fabs.uri,
-                        -- Excecutive Compensation
-                        -- This might not be correct. In award_helpers.py some extra CTE logic is being done to
-                        -- select executive compensation
-                        COALESCE(fpds.officer_1_amount, fabs.officer_1_amount) AS officer_1_amount,
-                        COALESCE(fpds.officer_1_name, fabs.officer_1_name)     AS officer_1_name,
-                        COALESCE(fpds.officer_2_amount, fabs.officer_2_amount) AS officer_2_amount,
-                        COALESCE(fpds.officer_2_name, fabs.officer_2_name)     AS officer_2_name,
-                        COALESCE(fpds.officer_3_amount, fabs.officer_3_amount) AS officer_3_amount,
-                        COALESCE(fpds.officer_3_name, fabs.officer_3_name)     AS officer_3_name,
-                        COALESCE(fpds.officer_4_amount, fabs.officer_4_amount) AS officer_4_amount,
-                        COALESCE(fpds.officer_4_name, fabs.officer_4_name)     AS officer_4_name,
-                        COALESCE(fpds.officer_5_amount, fabs.officer_5_amount) AS officer_5_amount,
-                        COALESCE(fpds.officer_5_name, fabs.officer_5_name)     AS officer_5_name,
                         -- Other
                         'DBR' AS data_source,
                         -- Windowing Function
