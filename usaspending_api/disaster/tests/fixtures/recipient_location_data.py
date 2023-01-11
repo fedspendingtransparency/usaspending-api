@@ -138,7 +138,7 @@ def awards_and_transactions():
         recipient_name="MULTIPLE RECIPIENTS",
         recipient_unique_id="096354360",
         recipient_hash="5bf6217b-4a70-da67-1351-af6ab2e0a4b3",
-        recipient_levels=None,
+        recipient_levels=["R"],
         disaster_emergency_fund_codes=["M"],
         total_covid_outlay=10000,
         total_covid_obligation=20000,
@@ -674,7 +674,7 @@ def awards_and_transactions():
     baker.make(
         "recipient.RecipientLookup",
         legal_business_name="MULTIPLE RECIPIENTS",
-        recipient_hash="9d74a2f6-89d7-d613-bf98-cee691944669",
+        recipient_hash="5bf6217b-4a70-da67-1351-af6ab2e0a4b3",
         duns="096354360",
     )
     baker.make(

@@ -33,15 +33,21 @@ def award_with_tas(db):
 def _award_with_tas(indexes, award_id=1, toptier_code=None):
     tas_components = []
     tas_paths = []
-    count = 1
+    count = 0
     for i in indexes:
         index = i
         if toptier_code is None:
             toptier_code = TAS_DICTIONARIES[index]["aid"]
+        existing_ta = ToptierAgency.objects.filter(toptier_code=toptier_code).first()
+        ta = (
+            baker.make("references.ToptierAgency", toptier_agency_id=count + award_id, toptier_code=toptier_code)
+            if existing_ta is None
+            else existing_ta
+        )
         fa = baker.make(
             "accounts.FederalAccount",
             id=index,
-            parent_toptier_agency_id=count + award_id,
+            parent_toptier_agency_id=ta.toptier_agency_id,
             agency_identifier=TAS_DICTIONARIES[index]["aid"],
             main_account_code=TAS_DICTIONARIES[index]["main"],
             federal_account_code=f"{TAS_DICTIONARIES[index]['aid']}-{TAS_DICTIONARIES[index]['main']}",
@@ -67,10 +73,6 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
             ),
             federal_account_id=fa.id,
         )
-        if len(ToptierAgency.objects.filter(toptier_code=toptier_code)) == 0:
-            ta = baker.make("references.ToptierAgency", toptier_agency_id=count + award_id, toptier_code=toptier_code)
-        else:
-            ta = ToptierAgency.objects.get(toptier_code=toptier_code)
         baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
         tas_components.append(
             f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability}epoa{tas.ending_period_of_availability}=a={tas.availability_type_code}"
@@ -82,11 +84,11 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
     baker.make(
         "search.AwardSearch",
         award_id=award_id,
-        generated_unique_award_id="AWARD_1",
+        generated_unique_award_id=f"AWARD_{award_id}",
         type="D",
         date_signed=datetime(2017, 1, 1),
         category="contracts",
-        latest_transaction_id=1001,
+        latest_transaction_id=1000 + award_id,
         piid="abcdefg",
         display_award_id="abcdefg",
         fain="xyz",
@@ -94,6 +96,7 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
         action_date=datetime(2017, 12, 1),
         tas_components=tas_components,
         tas_paths=tas_paths,
+        treasury_account_identifiers=indexes,
     )
 
 
@@ -126,10 +129,6 @@ def award_without_tas(db):
 def multiple_awards_with_tas(db):
     _award_with_tas([BASIC_TAS], award_id=1)
     _award_with_tas([ATA_TAS], award_id=2)
-    # award(db, 1)
-    # tas_with_agency(db, 1, BASIC_TAS)
-    # award(db, 2)
-    # tas_with_agency(db, 2, ATA_TAS)
 
 
 @pytest.fixture

@@ -172,7 +172,7 @@ def _test_correct_response_for_pop_district(client):
         "spending_type": "obligation",
         "results": [
             {
-                "amount": 2000.0,
+                "amount": 20000.0,
                 "award_count": 1,
                 "display_name": "SC-10",
                 "per_capita": None,
@@ -221,7 +221,7 @@ def _test_correct_response_for_pop_state(client):
             {
                 "amount": 2200.0,
                 "display_name": "Washington",
-                "per_capita": 0.202,
+                "per_capita": 0.22,
                 "population": 10000,
                 "shape_code": "WA",
                 "award_count": 2,
@@ -788,7 +788,7 @@ def _test_correct_response_for_pop_state_without_geo_filters(client):
                 "amount": 2200.0,
                 "award_count": 2,
                 "display_name": "Washington",
-                "per_capita": 0.202,
+                "per_capita": 0.22,
                 "population": 10000,
                 "shape_code": "WA",
             },
