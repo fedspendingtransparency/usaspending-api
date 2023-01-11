@@ -230,7 +230,6 @@ def test_constraint_validation(caplog, monkeypatch):
             assert False, "No exception was raised"
 
 
-@mark.skip
 @mark.django_db()
 def test_column_validation(caplog, monkeypatch):
     monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
@@ -266,7 +265,6 @@ def test_column_validation(caplog, monkeypatch):
             assert False, "No exception was raised"
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_happy_path(monkeypatch, tmp_path_factory):
     # Create the Award records for testing with Foreign Keys

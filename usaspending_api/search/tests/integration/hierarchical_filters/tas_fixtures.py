@@ -3,6 +3,7 @@ from model_bakery import baker
 from datetime import datetime
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.references.models import ToptierAgency
 
 UNINTUITIVE_AGENCY = "898"
 # ensures that tests aren't failing for having the wrong TAS. We trust functionality of tas_rendering_label_to_component_dictionary because it is tested elsewhere
@@ -26,36 +27,94 @@ TAS_DICTIONARIES = [
 
 @pytest.fixture
 def award_with_tas(db):
-    award(db, 1)
-    tas_with_agency(db, 1, BASIC_TAS)
+    _award_with_tas([BASIC_TAS])
+
+
+def _award_with_tas(indexes, award_id=1, toptier_code=None):
+    tas_components = []
+    tas_paths = []
+    count = 1
+    for i in indexes:
+        index = i
+        if toptier_code is None:
+            toptier_code = TAS_DICTIONARIES[index]["aid"]
+        fa = baker.make(
+            "accounts.FederalAccount",
+            id=index,
+            parent_toptier_agency_id=count + award_id,
+            agency_identifier=TAS_DICTIONARIES[index]["aid"],
+            main_account_code=TAS_DICTIONARIES[index]["main"],
+            federal_account_code=f"{TAS_DICTIONARIES[index]['aid']}-{TAS_DICTIONARIES[index]['main']}",
+        )
+        tas = baker.make(
+            "accounts.TreasuryAppropriationAccount",
+            treasury_account_identifier=index,
+            allocation_transfer_agency_id=TAS_DICTIONARIES[index].get("ata"),
+            agency_id=TAS_DICTIONARIES[index]["aid"],
+            main_account_code=TAS_DICTIONARIES[index]["main"],
+            sub_account_code=TAS_DICTIONARIES[index]["sub"],
+            availability_type_code=TAS_DICTIONARIES[index].get("a"),
+            beginning_period_of_availability=TAS_DICTIONARIES[index].get("bpoa"),
+            ending_period_of_availability=TAS_DICTIONARIES[index].get("epoa"),
+            tas_rendering_label=TreasuryAppropriationAccount.generate_tas_rendering_label(
+                TAS_DICTIONARIES[index].get("ata"),
+                TAS_DICTIONARIES[index]["aid"],
+                TAS_DICTIONARIES[index].get("a"),
+                TAS_DICTIONARIES[index].get("bpoa"),
+                TAS_DICTIONARIES[index].get("epoa"),
+                TAS_DICTIONARIES[index]["main"],
+                TAS_DICTIONARIES[index]["sub"],
+            ),
+            federal_account_id=fa.id,
+        )
+        if len(ToptierAgency.objects.filter(toptier_code=toptier_code)) == 0:
+            ta = baker.make("references.ToptierAgency", toptier_agency_id=count + award_id, toptier_code=toptier_code)
+        else:
+            ta = ToptierAgency.objects.get(toptier_code=toptier_code)
+        baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
+        tas_components.append(
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability}epoa{tas.ending_period_of_availability}=a={tas.availability_type_code}"
+        )
+        tas_paths.append(
+            f"agency={ta.toptier_code}faaid={fa.agency_identifier}famain={fa.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability}epoa={tas.ending_period_of_availability}a={tas.availability_type_code}"
+        )
+        count = count + 1
+    baker.make(
+        "search.AwardSearch",
+        award_id=award_id,
+        generated_unique_award_id="AWARD_1",
+        type="D",
+        date_signed=datetime(2017, 1, 1),
+        category="contracts",
+        latest_transaction_id=1001,
+        piid="abcdefg",
+        display_award_id="abcdefg",
+        fain="xyz",
+        uri="abcxyx",
+        action_date=datetime(2017, 12, 1),
+        tas_components=tas_components,
+        tas_paths=tas_paths,
+    )
 
 
 @pytest.fixture
 def award_with_bpoa_tas(db):
-    award(db, 1)
-    tas_with_agency(db, 1, BPOA_TAS)
+    _award_with_tas([BPOA_TAS])
 
 
 @pytest.fixture
 def award_with_ata_tas(db):
-    award(db, 1)
-    tas_with_agency(db, 1, ATA_TAS)
+    _award_with_tas([ATA_TAS])
 
 
 @pytest.fixture
 def tas_with_nonintuitive_agency(db):
-    award(db, 1)
-    agency(db, 1, UNINTUITIVE_AGENCY)  # none of the tas have ata or aid 898
-    tas_with_fa(db, award_id=1, agency=1, index=BASIC_TAS)
+    _award_with_tas([BASIC_TAS], toptier_code=UNINTUITIVE_AGENCY)
 
 
 @pytest.fixture
 def award_with_multiple_tas(db):
-    award(db, 1)
-    agency(db, 1, TAS_DICTIONARIES[BASIC_TAS]["aid"])
-    agency(db, 2, TAS_DICTIONARIES[ATA_TAS]["ata"])
-    tas_with_fa(db, award_id=1, agency=1, index=BASIC_TAS)
-    tas_with_fa(db, award_id=1, agency=2, index=ATA_TAS)
+    _award_with_tas([BASIC_TAS, ATA_TAS])
 
 
 @pytest.fixture
@@ -65,10 +124,12 @@ def award_without_tas(db):
 
 @pytest.fixture
 def multiple_awards_with_tas(db):
-    award(db, 1)
-    tas_with_agency(db, 1, BASIC_TAS)
-    award(db, 2)
-    tas_with_agency(db, 2, ATA_TAS)
+    _award_with_tas([BASIC_TAS], award_id=1)
+    _award_with_tas([ATA_TAS], award_id=2)
+    # award(db, 1)
+    # tas_with_agency(db, 1, BASIC_TAS)
+    # award(db, 2)
+    # tas_with_agency(db, 2, ATA_TAS)
 
 
 @pytest.fixture
@@ -95,6 +156,7 @@ def award(db, id):
         piid="abcdefg",
         fain="xyz",
         uri="abcxyx",
+        action_date=datetime(2017, 12, 1),
     )
     baker.make("search.TransactionSearch", transaction_id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
 
