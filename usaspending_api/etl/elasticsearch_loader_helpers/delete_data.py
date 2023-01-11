@@ -463,7 +463,9 @@ def _check_awards_for_deletes(id_list: list, spark: SparkSession = None, awards_
         WHERE a.generated_unique_award_id IS NULL"""
 
     if spark:  # then use spark against a Delta Table
-        awards_table = "int.awards"
+        # TODO: This needs to be replaced with int.awards once that delta table becomes active
+        #awards_table = "int.awards"
+        awards_table = "raw.awards"
         results = list(spark.sql(sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table)).collect())
     else:
         results = execute_sql_statement(
