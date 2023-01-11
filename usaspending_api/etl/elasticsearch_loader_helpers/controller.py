@@ -226,11 +226,11 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
 
     def _run_award_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_awards(client, self.config)
+        delete_awards(client=client, config=self.config)
 
     def _run_transaction_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_transactions(client, self.config)
+        delete_transactions(client=client, config=self.config)
         # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
         # ensures all records deleted since either job was run are taken into account
         last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
@@ -388,11 +388,22 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
 
     def _run_award_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_awards(client, self.config, "transaction_fabs", "transaction_fpds", spark=self.spark)
+        delete_awards(
+            client=client,
+            config=self.config,
+            fabs_external_data_load_date_key="transaction_fabs",
+            fpds_external_data_load_date_key="transaction_fpds",
+            spark=self.spark,
+        )
 
     def _run_transaction_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_transactions(client, self.config, "transaction_fabs", "transaction_fpds")
+        delete_transactions(
+            client=client,
+            config=self.config,
+            fabs_external_data_load_date_key="transaction_fabs",
+            fpds_external_data_load_date_key="transaction_fpds",
+        )
         # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
         # ensures all records deleted since either job was run are taken into account
         # Using the loaded-from-DELTA-tables dates here, not the postgres table load dates
