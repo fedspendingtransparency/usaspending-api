@@ -54,13 +54,13 @@ last_periods_covid_awards AS (
 )
 {operation_sql}
 WHERE
-    id IN (
+    award_id IN (
         SELECT
             *
         FROM
             last_periods_covid_awards
     )
-    AND id IN (
+    AND award_id IN (
         SELECT
             award_id
         FROM
@@ -117,7 +117,7 @@ COUNT_OPERATION_SQL = """
 SELECT
     count(*)
 FROM
-    vw_awards AS award_to_update_count
+    award_search AS award_to_update_count
 """
 
 

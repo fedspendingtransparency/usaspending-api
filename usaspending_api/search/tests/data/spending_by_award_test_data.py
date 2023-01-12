@@ -69,6 +69,24 @@ def spending_by_award_test_data():
         awarding_agency_id=1,
         funding_agency_id=1,
         total_obligation=999999.00,
+        action_date="2020-10-01",
+        is_fpds=True,
+        business_categories=["business_category_1_3"],
+        pop_state_code="VA",
+        pop_country_code="USA",
+        pop_county_code="013",
+        pop_city_name="ARLINGTON",
+        recipient_location_state_code="VA",
+        recipient_location_country_code="USA",
+        recipient_location_county_code="013",
+        recipient_location_city_name="ARLINGTON",
+        naics_code="112233",
+        product_or_service_code="PSC1",
+        type_of_contract_pricing="contract_pricing_test",
+        type_set_aside="type_set_aside_test",
+        extent_competed="extent_competed_test",
+        recipient_uei="testuei",
+        parent_uei="test_parent_uei",
     )
     award_2 = baker.make(
         "search.AwardSearch",
@@ -81,6 +99,15 @@ def spending_by_award_test_data():
         generated_unique_award_id="CONT_AWD_TESTING_2",
         date_signed="2009-01-01",
         total_obligation=9016.00,
+        action_date="2020-10-01",
+        is_fpds=True,
+        pop_state_code="VA",
+        pop_country_code="USA",
+        pop_county_code="012",
+        recipient_location_state_code="VA",
+        recipient_location_country_code="USA",
+        recipient_location_county_code="012",
+        naics_code="112244",
     )
     award_3 = baker.make(
         "search.AwardSearch",
@@ -93,6 +120,9 @@ def spending_by_award_test_data():
         generated_unique_award_id="CONT_AWD_TESTING_3",
         date_signed="2010-01-01",
         total_obligation=500000001.00,
+        action_date="2019-01-01",
+        is_fpds=True,
+        business_categories=["business_category_2_8"],
     )
     award_4 = baker.make(
         "search.AwardSearch",
@@ -105,6 +135,10 @@ def spending_by_award_test_data():
         generated_unique_award_id="ASST_NON_TESTING_4",
         date_signed="2019-01-01",
         total_obligation=12.00,
+        action_date="2019-10-1",
+        is_fpds=False,
+        cfda_number="10.331",
+        recipient_unique_id="duns_1001",
     )
     award_5 = baker.make(
         "search.AwardSearch",
@@ -117,6 +151,8 @@ def spending_by_award_test_data():
         generated_unique_award_id="CONT_AWD_TESTING_5",
         date_signed="2019-01-01",
         total_obligation=120,
+        action_date="2019-10-1",
+        is_fpds=True,
     )
 
     # Toptier Agency
