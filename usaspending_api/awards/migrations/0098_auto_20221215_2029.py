@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                     name='award',
                     field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
                                             related_name='financial_set', to='search.awardsearch'),
-                ),
+                )
             ]
         ),
         migrations.RunSQL(
@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                     name='award',
                     field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True,
                                                serialize=False, to='search.awardsearch'),
-                ),
+                )
             ]
         ),
         migrations.RunSQL(
