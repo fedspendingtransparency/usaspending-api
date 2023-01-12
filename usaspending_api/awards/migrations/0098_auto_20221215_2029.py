@@ -18,15 +18,29 @@ class Migration(migrations.Migration):
             name='award',
             options={'managed': False},
         ),
-        migrations.AlterField(
-            model_name='financialaccountsbyawards',
-            name='award',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='financial_set', to='search.awardsearch'),
+        migrations.RunSQL(
+            sql="ALTER TABLE financial_accounts_by_awards DROP CONSTRAINT financial_accounts_by_awards_award_id_eb90a5fa_fk_awards_id",
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='financialaccountsbyawards',
+                    name='award',
+                    field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
+                                            related_name='financial_set', to='search.awardsearch'),
+                ),
+            ]
         ),
-        migrations.AlterField(
-            model_name='parentaward',
-            name='award',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='search.awardsearch'),
+        migrations.RunSQL(
+            sql="ALTER TABLE rpt.parent_award DROP CONSTRAINT parent_award_award_id_97f76a63_fk_awards_id",
+            reverse_sql="",
+            state_operations=[
+                migrations.AlterField(
+                    model_name='parentaward',
+                    name='award',
+                    field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True,
+                                               serialize=False, to='search.awardsearch'),
+                ),
+            ]
         ),
         migrations.RunSQL(
             sql=vw_awards_sql,
