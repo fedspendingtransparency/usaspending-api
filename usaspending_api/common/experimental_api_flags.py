@@ -46,7 +46,7 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
     # without disrupting the primary request
     try:
         if request.method == "GET":
-            '''
+            """
             ***************** Warning *****************
             Possible Server-Side Request Forgery (SSRF) attack!
             Path:
@@ -56,10 +56,10 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
             	File: experimental_api_flags.py, Line: 49
             		requests.get(url, data, headers=headers, timeout=0.01)
             		Tainted information is used in a sink.
-            '''
+            """
             requests.get(url, data, headers=headers, timeout=0.01)
         elif request.method == "POST":
-            '''
+            """
             ***************** Warning *****************
             Possible Server-Side Request Forgery (SSRF) attack!
             Path:
@@ -69,7 +69,7 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
             	File: experimental_api_flags.py, Line: 51
             		requests.post(url, data, headers=headers, timeout=0.01)
             		Tainted information is used in a sink.
-            '''
+            """
             requests.post(url, data, headers=headers, timeout=0.01)
         else:
             pass
