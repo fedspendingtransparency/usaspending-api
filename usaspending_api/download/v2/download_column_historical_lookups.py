@@ -1880,86 +1880,98 @@ query_paths = {
                 ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("obligations_incurred", "obligations_incurred"),
-                ("obligations_undelivered_orders_unpaid_total", "obligations_undelivered_orders_unpaid_total_cpe"),
-                ("obligations_undelivered_orders_unpaid_total_FYB", "obligations_undelivered_orders_unpaid_total_fyb"),
+                ("obligations_undelivered_orders_unpaid_total", None),  # annotated in download_annotation_functions.py
+                (
+                    "obligations_undelivered_orders_unpaid_total_FYB",
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL480100_undelivered_orders_obligations_unpaid",
-                    "ussgl480100_undelivered_orders_obligations_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
-                    "ussgl480100_undelivered_orders_obligations_unpaid_fyb",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
-                    "ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe",
-                ),
-                ("obligations_delivered_orders_unpaid_total", "obligations_delivered_orders_unpaid_total_cpe"),
-                ("obligations_delivered_orders_unpaid_total_FYB", "obligations_delivered_orders_unpaid_total_cpe"),
+                    None,
+                ),  # annotated in download_annotation_functions.py
+                ("obligations_delivered_orders_unpaid_total", None),  # annotated in download_annotation_functions.py
+                (
+                    "obligations_delivered_orders_unpaid_total_FYB",
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL490100_delivered_orders_obligations_unpaid",
-                    "ussgl490100_delivered_orders_obligations_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL490100_delivered_orders_obligations_unpaid_FYB",
-                    "ussgl490100_delivered_orders_obligations_unpaid_fyb",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
-                    "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_FYB_to_period_end",
                 ),  # Column is annotated in account_download.py
-                ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
+                ("gross_outlay_amount_FYB", None),  # annotated in download_annotation_functions.py
                 (
                     "gross_outlays_undelivered_orders_prepaid_total",
-                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "gross_outlays_undelivered_orders_prepaid_total_FYB",
-                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
-                    "gross_outlays_delivered_orders_paid_total_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
-                    "gross_outlays_delivered_orders_paid_total_fyb",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
-                    "ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe",
-                ),
-                ("gross_outlays_delivered_orders_paid_total", "gross_outlays_delivered_orders_paid_total_cpe"),
-                ("gross_outlays_delivered_orders_paid_total_FYB", "gross_outlays_delivered_orders_paid_total_fyb"),
-                ("USSGL490200_delivered_orders_obligations_paid", "ussgl490200_delivered_orders_obligations_paid_cpe"),
+                    None,
+                ),  # annotated in download_annotation_functions.py
+                ("gross_outlays_delivered_orders_paid_total", None),  # annotated in download_annotation_functions.py
+                (
+                    "gross_outlays_delivered_orders_paid_total_FYB",
+                    None,
+                ),  # annotated in download_annotation_functions.py
+                (
+                    "USSGL490200_delivered_orders_obligations_paid",
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL490800_authority_outlayed_not_yet_disbursed",
-                    "ussgl490800_authority_outlayed_not_yet_disbursed_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL490800_authority_outlayed_not_yet_disbursed_FYB",
-                    "ussgl490800_authority_outlayed_not_yet_disbursed_fyb",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
-                    "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
-                    "deobligations_recoveries_refund_pri_program_object_class_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig",
-                    "ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig",
-                    "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
@@ -1970,16 +1982,16 @@ query_paths = {
                 ),  # Column is annotated in account_download.py
                 (
                     "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
-                    "ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL493100_delivered_orders_obligations_transferred_unpaid",
-                    "ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
-                    "ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
