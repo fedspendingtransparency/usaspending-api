@@ -1,5 +1,3 @@
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
-
 AWARD_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
