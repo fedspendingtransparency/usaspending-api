@@ -522,15 +522,4 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
-WHERE
-    -- Make sure that the data matches the different Award Type matviews' current state
-    (
-        latest_transaction.action_date >= '2007-10-01'
-        AND (
-            awards.type IN ({str(list(all_awards_types_to_category)).replace("[", "").replace("]", "")})
-            OR awards.type LIKE 'IDV%'
-        )
-    )
-    -- Make sure that we also pick up the current state of Pre2008 matview
-    OR latest_transaction.action_date < '2007-10-01'
 """
