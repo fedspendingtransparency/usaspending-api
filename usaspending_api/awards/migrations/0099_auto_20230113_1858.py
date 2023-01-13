@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql=[
-                'CREATE INDEX source_assistance_transaction_afa_generated_unique_upper_key ON raw.source_assistance_transaction (UPPER(afa_generated_unique))',
+                'CREATE UNIQUE INDEX source_assistance_transaction_afa_generated_unique_upper_key ON raw.source_assistance_transaction (UPPER(afa_generated_unique))',
             ],
             reverse_sql=[
                 'DROP INDEX source_assistance_transaction_afa_generated_unique_upper_key'
