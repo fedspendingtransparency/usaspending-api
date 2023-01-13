@@ -46,30 +46,10 @@ def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
     # without disrupting the primary request
     try:
         if request.method == "GET":
-            """
-            ***************** Warning *****************
-            Possible Server-Side Request Forgery (SSRF) attack!
-            Path:
-            	File: experimental_api_flags.py, Line: 35
-            		url = request.build_absolute_uri()
-            		Variable url is assigned a tainted value from an external source.
-            	File: experimental_api_flags.py, Line: 49
-            		requests.get(url, data, headers=headers, timeout=0.01)
-            		Tainted information is used in a sink.
-            """
+            # Possible Server-Side Request Forgery (SSRF) attack!
             requests.get(url, data, headers=headers, timeout=0.01)
         elif request.method == "POST":
-            """
-            ***************** Warning *****************
-            Possible Server-Side Request Forgery (SSRF) attack!
-            Path:
-            	File: experimental_api_flags.py, Line: 35
-            		url = request.build_absolute_uri()
-            		Variable url is assigned a tainted value from an external source.
-            	File: experimental_api_flags.py, Line: 51
-            		requests.post(url, data, headers=headers, timeout=0.01)
-            		Tainted information is used in a sink.
-            """
+            # Possible Server-Side Request Forgery (SSRF) attack!
             requests.post(url, data, headers=headers, timeout=0.01)
         else:
             pass
