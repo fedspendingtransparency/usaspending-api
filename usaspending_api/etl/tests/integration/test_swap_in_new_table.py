@@ -313,8 +313,8 @@ def test_happy_path():
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
-                "ALTER TABLE test_table ADD CONSTRAINT test_table_award_fk FOREIGN KEY (col2) REFERENCES awards (id);"
-                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
+                "ALTER TABLE test_table ADD CONSTRAINT test_table_award_fk FOREIGN KEY (col2) REFERENCES award_search (award_id);"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES award_search (award_id);"
                 "CREATE OR REPLACE VIEW vw_test_table AS SELECT * FROM test_table;"
             )
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key")
@@ -335,7 +335,7 @@ def test_happy_path():
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
-                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES award_search (award_id);"
                 "CREATE OR REPLACE VIEW vw_test_table AS SELECT * FROM test_table;"
             )
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key", "--keep-old-data")

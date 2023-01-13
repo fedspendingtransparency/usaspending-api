@@ -2,7 +2,7 @@ import pytest
 from model_bakery import baker
 from datetime import datetime
 
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from usaspending_api.references.models import ToptierAgency
 
 UNINTUITIVE_AGENCY = "898"
@@ -44,14 +44,22 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
             if existing_ta is None
             else existing_ta
         )
-        fa = baker.make(
-            "accounts.FederalAccount",
-            id=index,
-            parent_toptier_agency_id=ta.toptier_agency_id,
-            agency_identifier=TAS_DICTIONARIES[index]["aid"],
-            main_account_code=TAS_DICTIONARIES[index]["main"],
-            federal_account_code=f"{TAS_DICTIONARIES[index]['aid']}-{TAS_DICTIONARIES[index]['main']}",
+        existing_fa = FederalAccount.objects.filter(
+            agency_identifier=TAS_DICTIONARIES[index]["aid"], main_account_code=TAS_DICTIONARIES[index]["main"]
+        ).first()
+        fa = (
+            baker.make(
+                "accounts.FederalAccount",
+                id=index,
+                parent_toptier_agency_id=ta.toptier_agency_id,
+                agency_identifier=TAS_DICTIONARIES[index]["aid"],
+                main_account_code=TAS_DICTIONARIES[index]["main"],
+                federal_account_code=f"{TAS_DICTIONARIES[index]['aid']}-{TAS_DICTIONARIES[index]['main']}",
+            )
+            if existing_fa is None
+            else existing_fa
         )
+
         tas = baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=index,
@@ -133,13 +141,16 @@ def multiple_awards_with_tas(db):
 
 @pytest.fixture
 def multiple_awards_with_sibling_tas(db):
-    award(db, 1)
-    agency(db, 1, TAS_DICTIONARIES[SISTER_TAS[0]]["aid"])
-    tas_with_fa(db, award_id=1, agency=1, index=SISTER_TAS[0])
-    award(db, 2)
-    tas(db, award_id=2, fa_id=1, index=SISTER_TAS[1])
-    award(db, 3)
-    tas(db, award_id=3, fa_id=1, index=SISTER_TAS[2])
+    _award_with_tas([SISTER_TAS[0]], award_id=1)
+    _award_with_tas([SISTER_TAS[1]], award_id=2)
+    _award_with_tas([SISTER_TAS[2]], award_id=2)
+    # award(db, 1)
+    # agency(db, 1, TAS_DICTIONARIES[SISTER_TAS[0]]["aid"])
+    # tas_with_fa(db, award_id=1, agency=1, index=SISTER_TAS[0])
+    # award(db, 2)
+    # tas(db, award_id=2, fa_id=1, index=SISTER_TAS[1])
+    # award(db, 3)
+    # tas(db, award_id=3, fa_id=1, index=SISTER_TAS[2])
 
 
 def award(db, id):

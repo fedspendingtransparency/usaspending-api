@@ -523,6 +523,8 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
         generated_unique_award_id="ASST_NON_TESTING_4",
         date_signed="2019-01-01",
         total_obligation=12.00,
+        naics_code="222233",
+        action_date="2019-01-01",
     )
 
     baker.make(
