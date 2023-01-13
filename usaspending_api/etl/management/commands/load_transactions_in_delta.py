@@ -62,18 +62,20 @@ class Command(BaseCommand):
     no_initial_copy: bool
     logger: logging.Logger
     spark: SparkSession
+    # See comments in delete_records_sql, transaction_id_lookup ETL level, for more info about logic in the
+    # query below.
     award_id_lookup_delete_subquery: str = """
         SELECT aidlu.transaction_unique_id AS id_to_remove
         FROM int.award_id_lookup AS aidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
-            aidlu.detached_award_procurement_id = dap.detached_award_procurement_id
+            aidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique)
         )
-        WHERE aidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_procurement_id IS NULL
+        WHERE aidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_proc_unique IS NULL
         UNION ALL
         SELECT aidlu.transaction_unique_id AS id_to_remove
         FROM int.award_id_lookup AS aidlu LEFT JOIN raw.published_fabs AS pfabs ON (
-            aidlu.published_fabs_id = pfabs.published_fabs_id
+            aidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique)
         )
-        WHERE aidlu.published_fabs_id IS NOT NULL AND pfabs.published_fabs_id IS NULL
+        WHERE aidlu.published_fabs_id IS NOT NULL AND pfabs.afa_generated_unique IS NULL
     """
 
     def add_arguments(self, parser):
@@ -215,16 +217,30 @@ class Command(BaseCommand):
             id_col = "transaction_id"
             subquery = """
                 SELECT transaction_id AS id_to_remove
+                /* Joining on tidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique) for consistency with
+                   fabs records, even though fpds records *shouldn't* update the same way as fabs records might (see
+                   comment below). */
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
-                    tidlu.detached_award_procurement_id = dap.detached_award_procurement_id
+                    tidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique)
                 )
-                WHERE tidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_procurement_id IS NULL
+                /* Need to make sure tidlu.detached_award_procurement_id is not NULL to avoid having this part of the
+                   query think that everything in transaction_id_lookup that corresponds to a fabs transaction needs
+                   to be deleted. */
+                WHERE tidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_proc_unique IS NULL
                 UNION ALL
                 SELECT transaction_id AS id_to_remove
+                /* Need to join on tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique) rather than on
+                   tidlu.published_fabs_id = pfabs.published_fabs_id because a newer record with a different 
+                   published_fabs_id could come in with the same afa_generated_unique as a prior record, as an update
+                   to the transaction.  When this happens, the older record should also be deleted from the 
+                   raw.published_fabs table, but we don't actually want to delete the record in the lookup table
+                   because that transaction is still valid. */
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.published_fabs AS pfabs ON (
-                    tidlu.published_fabs_id = pfabs.published_fabs_id
+                    tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique)
                 )
-                WHERE tidlu.published_fabs_id IS NOT NULL AND pfabs.published_fabs_id IS NULL
+                /* Same logic as above as to why we need to check that tidlu.published_fabs_id is not NULL to avoid
+                   deleting all of the fpds records.  */
+                WHERE tidlu.published_fabs_id IS NOT NULL AND pfabs.afa_generated_unique IS NULL
             """
         elif self.etl_level == "award_id_lookup":
             id_col = "transaction_unique_id"
@@ -472,7 +488,7 @@ class Command(BaseCommand):
         self.spark.sql(sql)
 
         # Now that the award table update is done, we can empty the award_ids_delete_modified table.
-        # Note that an external table can't be TRUNCATED; use blanket DELETE instead.
+        # Note that an external (unmanaged) table can't be TRUNCATED; use blanket DELETE instead.
         self.spark.sql("DELETE FROM int.award_ids_delete_modified")
 
     def source_subquery_sql(self, transaction_type=None):
@@ -1063,7 +1079,7 @@ class Command(BaseCommand):
                     detached_award_procurement_id INTEGER,
                     published_fabs_id INTEGER,
                     -- transaction_unique_id *shouldn't* be NULL in the query used to populate this table.
-                    -- However, at least in qat, there are awards that don't actually match any tranactions,
+                    -- However, at least in qat, there are awards that don't actually match any transactions,
                     -- and we want all awards to be listed in this table, so, for now, at least, leaving off
                     -- the NOT NULL constraint from transaction_unique_id
                     transaction_unique_id STRING,
