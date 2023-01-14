@@ -251,3 +251,157 @@ def test_data_transfer_from_broker(load_broker_data):
             "funding-opportunity-number",
             123456,
         )
+
+def test_correction_overwrites_when_afa_casing_is_different(load_broker_data):
+    """Verify that if a correction comes in for a FABS record that has the same case-INSENSITIVE afa_generated_unique
+    key, but in fact has different letter-casing than the original, that it will STILL replace the record and put its
+    values in as the new values"""
+    call_command("transfer_assistance_records", "--reload-all")
+    table = SourceAssistanceTransaction().table_name
+
+    with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS - 1, "Inactive Record Copied!"
+
+    # Update one of the loaded broker records to be a correction that changes the casing of afa_generated_unique and
+    # one other field's value
+    original_afa = "9100_P033A173267_-none-_84.033_3"
+    case_change_afa = "9100_P033a173267_-none-_84.033_3"
+    update_fabs_record = f"""
+        UPDATE "{BROKER_TABLE}"
+        SET 
+            "updated_at" = NOW(),
+            "is_active" = FALSE
+        WHERE
+            "afa_generated_unique" = E'{original_afa}'
+        ;
+    """
+
+    insert_corrected_fabs_record = f"""
+INSERT INTO "{BROKER_TABLE}"
+    ("created_at","updated_at","published_fabs_id","action_date","action_type","assistance_type","award_description","awardee_or_recipient_legal","awardee_or_recipient_uniqu","awarding_agency_code","awarding_office_code","awarding_sub_tier_agency_c","award_modification_amendme","business_funds_indicator","business_types","cfda_number","correction_delete_indicatr","face_value_loan_guarantee","fain","federal_action_obligation","fiscal_year_and_quarter_co","funding_agency_code","funding_office_code","funding_sub_tier_agency_co","legal_entity_address_line1","legal_entity_address_line2","legal_entity_address_line3","legal_entity_country_code","legal_entity_foreign_city","legal_entity_foreign_posta","legal_entity_foreign_provi","legal_entity_zip5","legal_entity_zip_last4","non_federal_funding_amount","original_loan_subsidy_cost","period_of_performance_curr","period_of_performance_star","place_of_performance_code","place_of_performance_congr","place_of_perform_country_c","place_of_performance_forei","place_of_performance_zip4a","record_type","sai_number","uri","legal_entity_congressional","total_funding_amount","cfda_title","awarding_agency_name","awarding_sub_tier_agency_n","funding_agency_name","funding_sub_tier_agency_na","is_historical","place_of_perform_county_na","place_of_perform_state_nam","place_of_performance_city","legal_entity_city_name","legal_entity_county_code","legal_entity_county_name","legal_entity_state_code","legal_entity_state_name","modified_at","afa_generated_unique","is_active","awarding_office_name","funding_office_name","legal_entity_city_code","legal_entity_foreign_descr","legal_entity_country_name","place_of_perform_country_n","place_of_perform_county_co","submission_id","place_of_perfor_state_code","place_of_performance_zip5","place_of_perform_zip_last4","business_categories","action_type_description","assistance_type_desc","business_funds_ind_desc","business_types_desc","correction_delete_ind_desc","record_type_description","ultimate_parent_legal_enti","ultimate_parent_unique_ide","unique_award_key","high_comp_officer1_amount","high_comp_officer1_full_na","high_comp_officer2_amount","high_comp_officer2_full_na","high_comp_officer3_amount","high_comp_officer3_full_na","high_comp_officer4_amount","high_comp_officer4_full_na","high_comp_officer5_amount","high_comp_officer5_full_na","place_of_performance_scope","uei","ultimate_parent_uei","funding_opportunity_goals","funding_opportunity_number","indirect_federal_sharing")
+VALUES
+    (E'2017-09-16 22:22:42.760993',NOW(),40961579,E'07/12/2017',E'C',E'06',E'UNKNOWN TITLE',E'Columbus State Community College',NULL,E'091',NULL,E'9100',E'3',E'NON',E'06',E'84.033',E'C',0,E'P033A173267',520000,NULL,E'091',NULL,NULL,E'550 E Spring St',NULL,NULL,E'USA',NULL,NULL,NULL,E'43215',E'1722',0,0,E'08/31/2023',NULL,E'OH18000',E'03',E'USA',NULL,E'432151722',2,NULL,NULL,E'03',E'520000.0',E'Federal Work-Study Program',E'Department of Education (ED)',E'Department of Education',E'EDUCATION, DEPARTMENT OF (9100)',NULL,TRUE,E'Delaware',E'Ohio',E'COLUMBUS',E'Columbus',E'049',E'Franklin',E'OH',E'Ohio',E'2017-07-21 00:00:00',E'9100_P033A173267_-none-_84.033_3',TRUE,NULL,NULL,NULL,NULL,E'UNITED STATES',E'UNITED STATES',E'041',NULL,E'OH',E'43215',E'1722',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'ASST_NON_P033A173267_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'Single ZIP Code',E'awardee-uei',E'parent-uei',E'funding-opportunity-goals',E'funding-opportunity-number',123456)
+    ;
+    """
+    with connections["data_broker"].cursor() as cursor:
+        cursor.execute(update_fabs_record)
+        cursor.execute(insert_corrected_fabs_record)
+        cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
+        assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS + 1
+
+    # Transfer all the records again
+    call_command("transfer_assistance_records", "--reload-all")
+
+    with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        assert (
+                cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS - 1
+        ), "Reload of correction caused errant additional records"
+
+    cursor.execute(f"SELECT * FROM {table} WHERE afa_generated_unique = '{original_afa}'")
+    assert len(cursor.fetchall()[0]) == 0
+    cursor.execute(f"SELECT * FROM {table} WHERE afa_generated_unique = '{case_change_afa}'")
+    assert cursor.fetchall()[0] == (
+        40961579,
+        case_change_afa,
+        "07/12/2017",
+        "C",
+        None,
+        "06",
+        None,
+        "UNKNOWN TITLE",
+        "3",
+        "Columbus State Community College",
+        None,
+        "091",
+        "Department of Education (ED)",
+        None,
+        None,
+        "9100",
+        "Department of Education",
+        None,
+        None,
+        "NON",
+        "06",
+        None,
+        "84.033",
+        "Federal Work-Study Program",
+        None,
+        "C",  # New Correction value for correction_delete_indicatr
+        datetime.datetime(2017, 9, 16, 22, 22, 42, 760993),
+        Decimal("0"),
+        "P033A173267",
+        Decimal("520000"),
+        None,
+        "091",
+        "EDUCATION, DEPARTMENT OF (9100)",
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        True,
+        True,
+        "550 E Spring St",
+        None,
+        None,
+        None,
+        "Columbus",
+        "03",
+        "USA",
+        "UNITED STATES",
+        "049",
+        "Franklin",
+        None,
+        None,
+        None,
+        None,
+        "OH",
+        "Ohio",
+        "43215",
+        "1722",
+        datetime.datetime(2017, 7, 21, 0, 0),
+        Decimal("0"),
+        Decimal("0"),
+        "08/31/2023",
+        None,
+        "OH",
+        "USA",
+        "UNITED STATES",
+        "041",
+        "Delaware",
+        "Ohio",
+        "1722",
+        "COLUMBUS",
+        "OH18000",
+        "03",
+        None,
+        "432151722",
+        "43215",
+        "Single ZIP Code",
+        2,
+        None,
+        None,
+        None,
+        "520000.0",
+        None,
+        None,
+        "ASST_NON_P033A173267_9100",
+        datetime.datetime(2017, 9, 16, 22, 22, 42, 760993),
+        None,
+        "awardee-uei",
+        "parent-uei",
+        "funding-opportunity-goals",
+        "funding-opportunity-number",
+        123456,
+    )
