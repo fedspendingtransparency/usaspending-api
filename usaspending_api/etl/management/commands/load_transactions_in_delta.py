@@ -69,13 +69,13 @@ class Command(BaseCommand):
         FROM int.award_id_lookup AS aidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
             aidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique)
         )
-        WHERE aidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_proc_unique IS NULL
+        WHERE aidlu.is_fpds = TRUE AND dap.detached_award_proc_unique IS NULL
         UNION ALL
         SELECT aidlu.transaction_unique_id AS id_to_remove
         FROM int.award_id_lookup AS aidlu LEFT JOIN raw.published_fabs AS pfabs ON (
             aidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique)
         )
-        WHERE aidlu.published_fabs_id IS NOT NULL AND pfabs.afa_generated_unique IS NULL
+        WHERE aidlu.is_fpds = FALSE AND pfabs.afa_generated_unique IS NULL
     """
 
     def add_arguments(self, parser):
@@ -223,10 +223,9 @@ class Command(BaseCommand):
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
                     tidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique)
                 )
-                /* Need to make sure tidlu.detached_award_procurement_id is not NULL to avoid having this part of the
-                   query think that everything in transaction_id_lookup that corresponds to a fabs transaction needs
-                   to be deleted. */
-                WHERE tidlu.detached_award_procurement_id IS NOT NULL AND dap.detached_award_proc_unique IS NULL
+                /* Need to make sure tidlu.is_fpds is TRUE to avoid having this part of the query think that everything
+                   in transaction_id_lookup that corresponds to a fabs transaction needs to be deleted. */
+                WHERE tidlu.is_fpds = TRUE AND dap.detached_award_proc_unique IS NULL
                 UNION ALL
                 SELECT transaction_id AS id_to_remove
                 /* Need to join on tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique) rather than on
@@ -238,9 +237,9 @@ class Command(BaseCommand):
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.published_fabs AS pfabs ON (
                     tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique)
                 )
-                /* Same logic as above as to why we need to check that tidlu.published_fabs_id is not NULL to avoid
+                /* Same logic as above as to why we need to check that tidlu.is_fpds is FALSE to avoid
                    deleting all of the fpds records.  */
-                WHERE tidlu.published_fabs_id IS NOT NULL AND pfabs.afa_generated_unique IS NULL
+                WHERE tidlu.is_fpds = FALSE AND pfabs.afa_generated_unique IS NULL
             """
         elif self.etl_level == "award_id_lookup":
             id_col = "transaction_unique_id"
@@ -653,23 +652,23 @@ class Command(BaseCommand):
 
         if self.etl_level == "transaction_fabs":
             bronze_table_name = "raw.published_fabs"
-            unique_id = "published_fabs_id"
+            unique_id = "afa_generated_unique"
             id_col_name = "transaction_id"
             select_columns = select_columns_transaction_fabs_fpds(bronze_table_name)
             additional_joins = ""
         elif self.etl_level == "transaction_fpds":
             bronze_table_name = "raw.detached_award_procurement"
-            unique_id = "detached_award_procurement_id"
+            unique_id = "detached_award_proc_unique"
             id_col_name = "transaction_id"
             select_columns = select_columns_transaction_fabs_fpds(bronze_table_name)
             additional_joins = ""
         elif self.etl_level == "transaction_normalized":
             if transaction_type == "fabs":
                 bronze_table_name = "raw.published_fabs"
-                unique_id = "published_fabs_id"
+                unique_id = "afa_generated_unique"
             elif transaction_type == "fpds":
                 bronze_table_name = "raw.detached_award_procurement"
-                unique_id = "detached_award_procurement_id"
+                unique_id = "detached_award_proc_unique"
             else:
                 raise ValueError(
                     f"Invalid value for 'transaction_type': {transaction_type}; " "must select either: 'fabs' or 'fpds'"
@@ -679,7 +678,7 @@ class Command(BaseCommand):
             select_columns = select_columns_transaction_normalized(bronze_table_name)
             additional_joins = f"""
                 INNER JOIN int.award_id_lookup AS award_id_lookup ON (
-                    {bronze_table_name}.{unique_id} = award_id_lookup.{unique_id}
+                    ucase({bronze_table_name}.{unique_id}) = award_id_lookup.transaction_unique_id
                 )
                 LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
                     funding_subtier_agency.subtier_code = {bronze_table_name}.funding_sub_tier_agency_co
@@ -711,7 +710,7 @@ class Command(BaseCommand):
                 {select_columns_str}
             FROM {bronze_table_name}
             INNER JOIN int.transaction_id_lookup ON (
-                {bronze_table_name}.{unique_id} = transaction_id_lookup.{unique_id}
+                ucase({bronze_table_name}.{unique_id}) = transaction_id_lookup.transaction_unique_id
             )
             {additional_joins}
             WHERE {bronze_table_name}.updated_at >= '{self.last_etl_date}'
@@ -809,12 +808,12 @@ class Command(BaseCommand):
         self.spark.sql(
             f"""
             WITH dap_filtered AS (
-                SELECT detached_award_procurement_id, detached_award_proc_unique
+                SELECT detached_award_proc_unique
                 FROM raw.detached_award_procurement
                 WHERE updated_at >= '{self.last_etl_date}'
             ),
             pfabs_filtered AS (
-                SELECT published_fabs_id, afa_generated_unique
+                SELECT afa_generated_unique
                 FROM raw.published_fabs
                 WHERE updated_at >= '{self.last_etl_date}'
             )
@@ -823,34 +822,31 @@ class Command(BaseCommand):
                 {previous_max_id} + ROW_NUMBER() OVER (
                     ORDER BY all_new_transactions.transaction_unique_id
                 ) AS transaction_id,
-                all_new_transactions.detached_award_procurement_id,
-                all_new_transactions.published_fabs_id,
+                all_new_transactions.is_fpds,
                 all_new_transactions.transaction_unique_id
             FROM (
                 (
                     SELECT
-                        dap.detached_award_procurement_id,
-                        NULL AS published_fabs_id,
+                        TRUE AS is_fpds,
                         -- The transaction loader code will convert this to upper case, so use that version here.
                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id
                     FROM
                          dap_filtered AS dap LEFT JOIN int.transaction_id_lookup AS tidlu ON (
-                            dap.detached_award_procurement_id = tidlu.detached_award_procurement_id
+                            ucase(dap.detached_award_proc_unique) = tidlu.transaction_unique_id
                          )
-                    WHERE tidlu.detached_award_procurement_id IS NULL
+                    WHERE tidlu.transaction_unique_id IS NULL
                 )
                 UNION ALL
                 (
                     SELECT
-                        NULL AS detached_award_procurement_id,
-                        pfabs.published_fabs_id,
+                        FALSE AS is_fpds,
                         -- The transaction loader code will convert this to upper case, so use that version here.
                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id
                     FROM
                         pfabs_filtered AS pfabs LEFT JOIN int.transaction_id_lookup AS tidlu ON (
-                            pfabs.published_fabs_id = tidlu.published_fabs_id
+                            ucase(pfabs.afa_generated_unique) = tidlu.transaction_unique_id
                          )
-                    WHERE tidlu.published_fabs_id IS NULL
+                    WHERE tidlu.transaction_unique_id IS NULL
                 )
             ) AS all_new_transactions
         """
@@ -888,12 +884,12 @@ class Command(BaseCommand):
         self.spark.sql(
             f"""
             WITH dap_filtered AS (
-                SELECT detached_award_procurement_id, detached_award_proc_unique, unique_award_key
+                SELECT detached_award_proc_unique, unique_award_key
                 FROM raw.detached_award_procurement
                 WHERE updated_at >= '{self.last_etl_date}'
             ),
             pfabs_filtered AS (
-                SELECT published_fabs_id, afa_generated_unique, unique_award_key
+                SELECT afa_generated_unique, unique_award_key
                 FROM raw.published_fabs
                 WHERE updated_at >= '{self.last_etl_date}'
             )
@@ -902,15 +898,13 @@ class Command(BaseCommand):
                 {previous_max_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
                     ORDER BY all_new_awards.unique_award_key
                 ) AS award_id,
-                all_new_awards.detached_award_procurement_id,
-                all_new_awards.published_fabs_id,
+                all_new_awards.is_fpds,
                 all_new_awards.transaction_unique_id,
                 all_new_awards.unique_award_key AS generated_unique_award_id
             FROM (
                 (
                     SELECT
-                        dap.detached_award_procurement_id,
-                        NULL AS published_fabs_id,
+                        TRUE AS is_fpds,
                         -- The transaction loader code will convert these to upper case, so use those versions here.
                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
                         ucase(dap.unique_award_key) AS unique_award_key
@@ -923,8 +917,7 @@ class Command(BaseCommand):
                 UNION ALL
                 (
                     SELECT
-                        NULL AS detached_award_procurement_id,
-                        pfabs.published_fabs_id,
+                        FALSE AS is_fpds,
                         -- The transaction loader code will convert these to upper case, so use those versions here.
                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
                         ucase(pfabs.unique_award_key) AS unique_award_key
@@ -976,8 +969,9 @@ class Command(BaseCommand):
             f"""
                 CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
                     transaction_id LONG NOT NULL,
-                    detached_award_procurement_id INTEGER,
-                    published_fabs_id INTEGER,
+                    -- The is_fpds flag is needed in this table to allow the transaction_id_lookup ETL level to choose
+                    -- the correct rows for deleting.
+                    is_fpds BOOLEAN NOT NULL,
                     transaction_unique_id STRING NOT NULL
                 )
                 USING DELTA
@@ -994,6 +988,9 @@ class Command(BaseCommand):
                 self.logger.warn(
                     "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
                 )
+
+                # Without a raw.transaction_normalized table, can't get a maximum id from it, either.
+                max_id = None
             else:
                 # Don't try to handle anything else
                 raise e
@@ -1007,23 +1004,30 @@ class Command(BaseCommand):
                 INSERT OVERWRITE {destination_database}.{destination_table}
                     SELECT
                         tn.id AS transaction_id,
-                        dap.detached_award_procurement_id,
-                        pfabs.published_fabs_id,
+                        TRUE AS is_fpds,
                         tn.transaction_unique_id
-                    FROM raw.transaction_normalized AS tn
-                    LEFT JOIN raw.detached_award_procurement AS dap ON (
+                    FROM raw.transaction_normalized AS tn INNER JOIN raw.detached_award_procurement AS dap ON (
                         tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
                     )
-                    LEFT JOIN raw.published_fabs AS pfabs ON (
+                    UNION ALL
+                    SELECT
+                        tn.id AS transaction_id,
+                        FALSE AS is_fpds,
+                        tn.transaction_unique_id
+                    FROM raw.transaction_normalized AS tn INNER JOIN raw.published_fabs AS pfabs ON (
                         tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
                     )
                 """
             )
 
-        self.logger.info("Updating transaction_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(transaction_id) AS max_id FROM {destination_database}.{destination_table}"
-        ).collect()[0]["max_id"]
+            self.logger.info("Updating transaction_id_seq to the max transaction_id value")
+            # Make sure to get the maximum transaction id from the raw table in case there are records in
+            # raw.transaction_normalized that don't correspond to a record in either of the source tables.
+            # This way, new transaction_ids won't repeat the ids of any of those "orphaned" transaction records.
+            max_id = self.spark.sql(
+                f"SELECT MAX(id) AS max_id FROM raw.transaction_normalized"
+            ).collect()[0]["max_id"]
+
         if max_id is None:
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the transaction IDs
             # will start at 2.
@@ -1073,11 +1077,10 @@ class Command(BaseCommand):
             f"""
                 CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
                     award_id LONG NOT NULL,
-                    -- detached_award_procurement_id and published_fabs_id are needed in this table to allow
-                    -- the award_id_lookup ETL level to choose the correct rows for deleting so that it can
-                    -- be run in parallel with the transaction_id_lookup ETL level
-                    detached_award_procurement_id INTEGER,
-                    published_fabs_id INTEGER,
+                    -- The is_fpds flag is needed in this table to allow the award_id_lookup ETL level to choose
+                    -- the correct rows for deleting so that it can be run in parallel with the transaction_id_lookup
+                    -- ETL level
+                    is_fpds BOOLEAN NOT NULL,
                     -- transaction_unique_id *shouldn't* be NULL in the query used to populate this table.
                     -- However, at least in qat, there are awards that don't actually match any transactions,
                     -- and we want all awards to be listed in this table, so, for now, at least, leaving off
@@ -1097,6 +1100,9 @@ class Command(BaseCommand):
             if re.match(r"Table or view not found: raw\.awards", e.desc):
                 # In this case, we just don't populate award_id_lookup
                 self.logger.warn("Skipping population of award_id_lookup table; no raw.awards table.")
+
+                # Without a raw.awards table, can't get a maximum id from it, either.
+                max_id = None
             else:
                 # Don't try to handle anything else
                 raise e
@@ -1110,16 +1116,14 @@ class Command(BaseCommand):
                 INSERT OVERWRITE {destination_database}.{destination_table}
                     SELECT
                         existing_awards.id AS award_id,
-                        existing_awards.detached_award_procurement_id,
-                        existing_awards.published_fabs_id,
+                        existing_awards.is_fpds,
                         existing_awards.transaction_unique_id,
                         existing_awards.generated_unique_award_id
                     FROM (
                         (
                             SELECT
                                 aw.id,
-                                dap.detached_award_procurement_id,
-                                NULL AS published_fabs_id,
+                                TRUE AS is_fpds,
                                 -- The transaction loader code will convert this to upper case, so use that
                                 -- version here.
                                 ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
@@ -1133,8 +1137,7 @@ class Command(BaseCommand):
                         (
                             SELECT
                                 aw.id,
-                                NULL AS detached_award_procurement_id,
-                                pfabs.published_fabs_id,
+                                FALSE AS is_fpds,
                                 -- The transaction loader code will convert this to upper case, so use that
                                 -- version here.
                                 ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
@@ -1148,10 +1151,12 @@ class Command(BaseCommand):
                 """
             )
 
-        self.logger.info("Updating award_id_seq to the new max_id value")
-        max_id = self.spark.sql(
-            f"SELECT MAX(award_id) AS max_id FROM {destination_database}.{destination_table}"
-        ).collect()[0]["max_id"]
+            self.logger.info("Updating award_id_seq to the max award_id value")
+            # As for transaction_id_seq, make sure to get the maximum award id from the raw table in case there are
+            # records in raw.awards that don't correspond to any records in either of the source tables.
+            # This way, new award_ids won't repeat the ids of any of those "orphaned" award records.
+            max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.awards").collect()[0]["max_id"]
+
         if max_id is None:
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs
             # will start at 2.
