@@ -189,16 +189,21 @@ class Command(BaseCommand):
             sql_table_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
         ]
 
-        sql_view_template = "ALTER VIEW {old_view_name} RENAME TO {new_view_name};"
+        sql_view_template = "ALTER {mv_s}VIEW {old_view_name} RENAME TO {new_view_name};"
         for dep_view in self.dep_views:
+            mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
             rename_sql.extend(
                 [
                     sql_view_template.format(
-                        old_view_name=dep_view["dep_view_fullname"], new_view_name=f"{dep_view['dep_view_name']}_old"
+                        mv_s=mv_s,
+                        old_view_name=dep_view["dep_view_fullname"],
+                        new_view_name=f"{dep_view['dep_view_name']}_old",
                     ),
-                    f"ALTER VIEW temp.{dep_view['dep_view_name']}_temp SET SCHEMA {dep_view['dep_view_schema']};",
+                    f"ALTER {mv_s}VIEW temp.{dep_view['dep_view_name']}_temp SET SCHEMA {dep_view['dep_view_schema']};",
                     sql_view_template.format(
-                        old_view_name=f"{dep_view['dep_view_fullname']}_temp", new_view_name=dep_view["dep_view_name"]
+                        mv_s=mv_s,
+                        old_view_name=f"{dep_view['dep_view_fullname']}_temp",
+                        new_view_name=dep_view["dep_view_name"],
                     ),
                 ]
             )
@@ -222,8 +227,9 @@ class Command(BaseCommand):
 
     def drop_old_views(self, cursor):
         for dep_view in self.dep_views:
+            mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
             logger.info(f"Dropping old dependent view: {dep_view['dep_view_fullname']}_old")
-            cursor.execute(f"DROP VIEW {dep_view['dep_view_fullname']}_old;")
+            cursor.execute(f"DROP {mv_s}VIEW {dep_view['dep_view_fullname']}_old;")
 
     def extra_sql(self, cursor):
         cursor.execute(f"ANALYZE VERBOSE {self.curr_table_name}")
@@ -313,7 +319,8 @@ class Command(BaseCommand):
                 dependent_ns.nspname AS dep_view_schema,
                 dependent_view.relname AS dep_view_name,
                 CONCAT(dependent_ns.nspname, '.', dependent_view.relname) as dep_view_fullname,
-                RTRIM(pg_get_viewdef(CONCAT(dependent_ns.nspname, '.', dependent_view.relname), TRUE), ';') AS dep_view_sql
+                RTRIM(pg_get_viewdef(CONCAT(dependent_ns.nspname, '.', dependent_view.relname), TRUE), ';') AS dep_view_sql,
+                dependent_view.relkind = 'm' AS is_matview
             FROM pg_depend
             JOIN pg_rewrite ON pg_depend.objid = pg_rewrite.oid
             JOIN pg_class as dependent_view ON pg_rewrite.ev_class = dependent_view.oid
@@ -329,7 +336,8 @@ class Command(BaseCommand):
                 CONCAT(source_ns.nspname, '.', source_table.relname),
                 dependent_ns.nspname,
                 dependent_view.relname,
-                CONCAT(dependent_ns.nspname, '.', dependent_view.relname);
+                CONCAT(dependent_ns.nspname, '.', dependent_view.relname),
+                dependent_view.relkind;
         """
         cursor.execute(detect_dep_view_sql)
         dep_views = ordered_dictionary_fetcher(cursor)
@@ -341,7 +349,8 @@ class Command(BaseCommand):
             #       the recreated views will automatically update and stay pointed to it in the swap via postgres
             logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}_temp")
             dep_view_sql = dep_view["dep_view_sql"].replace(self.curr_table_name, self.temp_table_name)
-            cursor.execute(f"CREATE VIEW temp.{dep_view['dep_view_name']}_temp AS ({dep_view_sql});")
+            mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
+            cursor.execute(f"CREATE {mv_s}VIEW temp.{dep_view['dep_view_name']}_temp AS ({dep_view_sql});")
 
     def validate_foreign_keys(self, cursor):
         logger.info("Verifying that Foreign Key constraints are not found")
