@@ -252,6 +252,7 @@ def test_data_transfer_from_broker(load_broker_data):
             123456,
         )
 
+
 def test_correction_overwrites_when_afa_casing_is_different(load_broker_data):
     """Verify that if a correction comes in for a FABS record that has the same case-INSENSITIVE afa_generated_unique
     key, but in fact has different letter-casing than the original, that it will STILL replace the record and put its
@@ -269,7 +270,7 @@ def test_correction_overwrites_when_afa_casing_is_different(load_broker_data):
     case_change_afa = "9100_P033a173267_-none-_84.033_3"
     update_fabs_record = f"""
         UPDATE "{BROKER_TABLE}"
-        SET 
+        SET
             "updated_at" = NOW(),
             "is_active" = FALSE
         WHERE
@@ -296,7 +297,7 @@ VALUES
     with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
         cursor.execute(f"SELECT COUNT(*) FROM {table}")
         assert (
-                cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS - 1
+            cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS - 1
         ), "Reload of correction caused errant additional records"
 
     cursor.execute(f"SELECT * FROM {table} WHERE afa_generated_unique = '{original_afa}'")
