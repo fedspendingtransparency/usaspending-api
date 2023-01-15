@@ -301,10 +301,14 @@ VALUES
             cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS - 1
         ), "Reload of correction caused errant additional records"
 
+        cursor.execute(f"SELECT * FROM {table} WHERE UPPER(afa_generated_unique) = '{original_afa.upper()}'")
+        assert len(cursor.fetchall()) == 1
         cursor.execute(f"SELECT * FROM {table} WHERE afa_generated_unique = '{original_afa}'")
-        assert len(cursor.fetchall()[0]) == 0
+        assert len(cursor.fetchall()) == 0
         cursor.execute(f"SELECT * FROM {table} WHERE afa_generated_unique = '{case_change_afa}'")
-        assert cursor.fetchall()[0] == (
+        results = cursor.fetchall()
+        assert len(results) == 1
+        assert results[0] == (
             new_published_fabs_id,
             case_change_afa,
             "07/12/2017",
