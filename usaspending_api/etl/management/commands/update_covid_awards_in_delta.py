@@ -72,7 +72,11 @@ FROM
 
 class Command(BaseCommand):
 
-    help = ("", "")
+    help = (
+        "This command updates the `update_date` field on the `int.awards` table in Delta Lake for",
+        "awards that had Covid data in the previous two submission periods when a new submission period",
+        "is revealed. This is to signal to Elasticsearch that the award records should be reindexed.",
+    )
 
     spark: SparkSession
 
