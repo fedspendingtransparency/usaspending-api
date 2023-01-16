@@ -72,10 +72,7 @@ FROM
 
 class Command(BaseCommand):
 
-    help = (
-        "",
-        ""
-    )
+    help = ("", "")
 
     spark: SparkSession
 
@@ -134,7 +131,7 @@ class Command(BaseCommand):
                 this_quarters_year=periods["this_quarter"]["year"],
                 this_quarters_month=periods["this_quarter"]["month"],
                 submission_reveal_date=periods["this_month"]["submission_reveal_date"],
-                operation_sql=operation_sql
+                operation_sql=operation_sql,
             )
         )
 
@@ -144,6 +141,9 @@ class Command(BaseCommand):
                 f"There are {count:,} award records which should be reloaded into Elasticsearch for data consistency."
             )
         else:
+            logger.info(
+                f"{count:,} award records were updated and will be reloaded into Elasticsearch for data consistency."
+            )
 
         if spark_created_by_command:
             self.spark.stop()
