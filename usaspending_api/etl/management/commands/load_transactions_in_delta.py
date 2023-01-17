@@ -229,9 +229,9 @@ class Command(BaseCommand):
                 UNION ALL
                 SELECT transaction_id AS id_to_remove
                 /* Need to join on tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique) rather than on
-                   tidlu.published_fabs_id = pfabs.published_fabs_id because a newer record with a different 
+                   tidlu.published_fabs_id = pfabs.published_fabs_id because a newer record with a different
                    published_fabs_id could come in with the same afa_generated_unique as a prior record, as an update
-                   to the transaction.  When this happens, the older record should also be deleted from the 
+                   to the transaction.  When this happens, the older record should also be deleted from the
                    raw.published_fabs table, but we don't actually want to delete the record in the lookup table
                    because that transaction is still valid. */
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.published_fabs AS pfabs ON (
@@ -1024,9 +1024,7 @@ class Command(BaseCommand):
             # Make sure to get the maximum transaction id from the raw table in case there are records in
             # raw.transaction_normalized that don't correspond to a record in either of the source tables.
             # This way, new transaction_ids won't repeat the ids of any of those "orphaned" transaction records.
-            max_id = self.spark.sql(
-                f"SELECT MAX(id) AS max_id FROM raw.transaction_normalized"
-            ).collect()[0]["max_id"]
+            max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.transaction_normalized").collect()[0]["max_id"]
 
         if max_id is None:
             # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the transaction IDs
