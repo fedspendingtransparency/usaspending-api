@@ -13,6 +13,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     last_load_record = "source_procurement_transaction"
     lookback_minutes = 0
     shared_pk = "detached_award_proc_unique"
+    is_case_insensitive_pk_match = False
     working_file_prefix = "procurement_load_ids"
     broker_full_select_sql = 'SELECT "{id}" FROM "{table}"'
     broker_incremental_select_sql = 'SELECT "{id}" FROM "{table}" {optional_predicate}'
