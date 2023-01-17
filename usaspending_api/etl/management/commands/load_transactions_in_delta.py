@@ -67,15 +67,15 @@ class Command(BaseCommand):
     award_id_lookup_delete_subquery: str = """
         SELECT aidlu.transaction_unique_id AS id_to_remove
         FROM int.award_id_lookup AS aidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
-            aidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+            aidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique) AND aidlu.is_fpds = TRUE
         )
-        WHERE aidlu.is_fpds = TRUE AND dap.detached_award_proc_unique IS NULL
+        WHERE dap.detached_award_proc_unique IS NULL
         UNION ALL
         SELECT aidlu.transaction_unique_id AS id_to_remove
         FROM int.award_id_lookup AS aidlu LEFT JOIN raw.published_fabs AS pfabs ON (
-            aidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+            aidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique) AND aidlu.is_fpds = FALSE
         )
-        WHERE aidlu.is_fpds = FALSE AND pfabs.afa_generated_unique IS NULL
+        WHERE pfabs.afa_generated_unique IS NULL
     """
 
     def add_arguments(self, parser):
@@ -218,28 +218,28 @@ class Command(BaseCommand):
             subquery = """
                 SELECT transaction_id AS id_to_remove
                 /* Joining on tidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique) for consistency with
-                   fabs records, even though fpds records *shouldn't* update the same way as fabs records might (see
-                   comment below). */
+                     fabs records, even though fpds records *shouldn't* update the same way as fabs records might (see
+                     comment below).
+                   Need to make sure tidlu.is_fpds is TRUE to avoid having this part of the query think that everything
+                     in transaction_id_lookup that corresponds to a fabs transaction needs to be deleted. */
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.detached_award_procurement AS dap ON (
-                    tidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+                    tidlu.transaction_unique_id = ucase(dap.detached_award_proc_unique) AND tidlu.is_fpds = TRUE
                 )
-                /* Need to make sure tidlu.is_fpds is TRUE to avoid having this part of the query think that everything
-                   in transaction_id_lookup that corresponds to a fabs transaction needs to be deleted. */
-                WHERE tidlu.is_fpds = TRUE AND dap.detached_award_proc_unique IS NULL
+                WHERE dap.detached_award_proc_unique IS NULL
                 UNION ALL
                 SELECT transaction_id AS id_to_remove
                 /* Need to join on tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique) rather than on
-                   tidlu.published_fabs_id = pfabs.published_fabs_id because a newer record with a different
-                   published_fabs_id could come in with the same afa_generated_unique as a prior record, as an update
-                   to the transaction.  When this happens, the older record should also be deleted from the
-                   raw.published_fabs table, but we don't actually want to delete the record in the lookup table
-                   because that transaction is still valid. */
+                     tidlu.published_fabs_id = pfabs.published_fabs_id because a newer record with a different
+                     published_fabs_id could come in with the same afa_generated_unique as a prior record, as an update
+                     to the transaction.  When this happens, the older record should also be deleted from the
+                     raw.published_fabs table, but we don't actually want to delete the record in the lookup table
+                     because that transaction is still valid.
+                   Same logic as above as to why we need to check that tidlu.is_fpds is FALSE to avoid
+                     deleting all of the fpds records.  */ 
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.published_fabs AS pfabs ON (
-                    tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+                    tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique) AND tidlu.is_fpds = FALSE
                 )
-                /* Same logic as above as to why we need to check that tidlu.is_fpds is FALSE to avoid
-                   deleting all of the fpds records.  */
-                WHERE tidlu.is_fpds = FALSE AND pfabs.afa_generated_unique IS NULL
+                WHERE pfabs.afa_generated_unique IS NULL
             """
         elif self.etl_level == "award_id_lookup":
             id_col = "transaction_unique_id"
@@ -831,8 +831,10 @@ class Command(BaseCommand):
                         -- The transaction loader code will convert this to upper case, so use that version here.
                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id
                     FROM
+                        -- Add extra check on is_fpds in the join for the possibility of speeding up the query due
+                        -- to possibly ignoring the FABS record before doing the join.
                          dap_filtered AS dap LEFT JOIN int.transaction_id_lookup AS tidlu ON (
-                            ucase(dap.detached_award_proc_unique) = tidlu.transaction_unique_id
+                            ucase(dap.detached_award_proc_unique) = tidlu.transaction_unique_id AND tidlu.is_fpds = TRUE
                          )
                     WHERE tidlu.transaction_unique_id IS NULL
                 )
@@ -843,8 +845,9 @@ class Command(BaseCommand):
                         -- The transaction loader code will convert this to upper case, so use that version here.
                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id
                     FROM
+                        -- Same logic as above for adding is_fpds check here.
                         pfabs_filtered AS pfabs LEFT JOIN int.transaction_id_lookup AS tidlu ON (
-                            ucase(pfabs.afa_generated_unique) = tidlu.transaction_unique_id
+                            ucase(pfabs.afa_generated_unique) = tidlu.transaction_unique_id AND tidlu.is_fpds = FALSE
                          )
                     WHERE tidlu.transaction_unique_id IS NULL
                 )
@@ -909,8 +912,10 @@ class Command(BaseCommand):
                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
                         ucase(dap.unique_award_key) AS unique_award_key
                     FROM
+                         -- Add extra check on is_fpds in the join for the possibility of speeding up the query due
+                         -- to possibly ignoring the FABS record before doing the join.
                          dap_filtered AS dap LEFT JOIN int.award_id_lookup AS aidlu ON (
-                            ucase(dap.detached_award_proc_unique) = aidlu.transaction_unique_id
+                            ucase(dap.detached_award_proc_unique) = aidlu.transaction_unique_id AND aidlu.is_fpds = TRUE
                          )
                     WHERE aidlu.transaction_unique_id IS NULL
                 )
@@ -922,8 +927,9 @@ class Command(BaseCommand):
                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
                         ucase(pfabs.unique_award_key) AS unique_award_key
                     FROM
+                        -- Same logic as above for adding is_fpds check here.
                         pfabs_filtered AS pfabs LEFT JOIN int.award_id_lookup AS aidlu ON (
-                            ucase(pfabs.afa_generated_unique) = aidlu.transaction_unique_id
+                            ucase(pfabs.afa_generated_unique) = aidlu.transaction_unique_id AND aidlu.is_fpds = FALSE
                          )
                     WHERE aidlu.transaction_unique_id IS NULL
                 )
@@ -1105,7 +1111,7 @@ class Command(BaseCommand):
                 # Don't try to handle anything else
                 raise e
         else:
-            # Insert existing transactions into the lookup table
+            # Insert existing transactions and their corresponding award_ids into the lookup table
             self.logger.info("Populating award_id_lookup table from raw.awards")
             # Once again we have to match on the upper-cased versions of the strings from published_fabs
             # and detached_award_procurement.
