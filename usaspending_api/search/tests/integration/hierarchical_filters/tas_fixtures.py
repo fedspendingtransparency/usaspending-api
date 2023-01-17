@@ -45,14 +45,14 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
         if toptier_code is None:
             toptier_code = aid
         existing_ta = ToptierAgency.objects.filter(toptier_code=toptier_code).first()
-        ta = (
-            baker.make("references.ToptierAgency", toptier_agency_id=count + award_id, toptier_code=toptier_code)
-            if existing_ta is None
-            else existing_ta
-        )
+        if existing_ta is None:
+            ta = baker.make("references.ToptierAgency", toptier_agency_id=count + award_id, toptier_code=toptier_code)
+
+        else:
+            ta = existing_ta
         existing_fa = FederalAccount.objects.filter(agency_identifier=aid, main_account_code=main).first()
-        fa = (
-            baker.make(
+        if existing_fa is None:
+            fa = baker.make(
                 "accounts.FederalAccount",
                 id=index,
                 parent_toptier_agency_id=ta.toptier_agency_id,
@@ -60,9 +60,8 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
                 main_account_code=main,
                 federal_account_code=f"{aid}-{main}",
             )
-            if existing_fa is None
-            else existing_fa
-        )
+        else:
+            fa = existing_fa
         baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=index,
@@ -84,13 +83,13 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
             ),
             federal_account_id=fa.id,
         )
-
         baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
-        tas_components.append(f"aid={aid}main={main}ata={ata}sub={sub}bpoa={bpoa}epoa{epoa}=a={a}")
+        tas_components.append(f"aid={aid}main={main}ata={ata or ''}sub={sub}bpoa={bpoa or ''}epoa{epoa or ''}=a={a}")
         tas_paths.append(
-            f"agency={aid}faaid={aid}famain={fa.main_account_code}aid={aid}main={main}ata={ata}sub={sub}bpoa={bpoa}epoa={epoa}a={a}"
+            f"agency={aid}faaid={aid}famain={fa.main_account_code}aid={aid}main={main}ata={ata or ''}sub={sub}bpoa={bpoa or ''}epoa={epoa or ''}a={a}"
         )
         count = count + 1
+    print(f"AWARD_{award_id}: {tas_paths}")
     baker.make(
         "search.AwardSearch",
         award_id=award_id,
@@ -145,14 +144,7 @@ def multiple_awards_with_tas(db):
 def multiple_awards_with_sibling_tas(db):
     _award_with_tas([SISTER_TAS[0]], award_id=1)
     _award_with_tas([SISTER_TAS[1]], award_id=2)
-    _award_with_tas([SISTER_TAS[2]], award_id=2)
-    # award(db, 1)
-    # agency(db, 1, TAS_DICTIONARIES[SISTER_TAS[0]]["aid"])
-    # tas_with_fa(db, award_id=1, agency=1, index=SISTER_TAS[0])
-    # award(db, 2)
-    # tas(db, award_id=2, fa_id=1, index=SISTER_TAS[1])
-    # award(db, 3)
-    # tas(db, award_id=3, fa_id=1, index=SISTER_TAS[2])
+    _award_with_tas([SISTER_TAS[2]], award_id=3)
 
 
 def award(db, id):
