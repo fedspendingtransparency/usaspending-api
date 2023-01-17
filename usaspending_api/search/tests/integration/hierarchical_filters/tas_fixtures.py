@@ -92,7 +92,6 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
             f"agency={aid}faaid={aid}famain={fa.main_account_code}aid={aid}main={main}ata={ata}sub={sub}bpoa={bpoa}epoa={epoa}a={a}"
         )
         count = count + 1
-    print(tas_paths)
     baker.make(
         "search.AwardSearch",
         award_id=award_id,
