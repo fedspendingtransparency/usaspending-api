@@ -34,7 +34,7 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
     tas_components = []
     tas_paths = []
     count = 0
-    for i in indexes:
+    for index in indexes:
         aid = TAS_DICTIONARIES[index]["aid"]
         ata = TAS_DICTIONARIES[index].get("ata")
         main = TAS_DICTIONARIES[index]["main"]
@@ -42,7 +42,6 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
         bpoa = TAS_DICTIONARIES[index].get("bpoa")
         epoa = TAS_DICTIONARIES[index].get("epoa")
         a = TAS_DICTIONARIES[index].get("a")
-        index = i
         if toptier_code is None:
             toptier_code = aid
         existing_ta = ToptierAgency.objects.filter(toptier_code=toptier_code).first()
