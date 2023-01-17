@@ -35,60 +35,64 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
     tas_paths = []
     count = 0
     for i in indexes:
+        aid = TAS_DICTIONARIES[index]["aid"]
+        ata = TAS_DICTIONARIES[index].get("ata")
+        main = TAS_DICTIONARIES[index]["main"]
+        sub = TAS_DICTIONARIES[index]["sub"]
+        bpoa = TAS_DICTIONARIES[index].get("bpoa")
+        epoa = TAS_DICTIONARIES[index].get("epoa")
+        a = TAS_DICTIONARIES[index].get("a")
         index = i
         if toptier_code is None:
-            toptier_code = TAS_DICTIONARIES[index]["aid"]
+            toptier_code = aid
         existing_ta = ToptierAgency.objects.filter(toptier_code=toptier_code).first()
         ta = (
             baker.make("references.ToptierAgency", toptier_agency_id=count + award_id, toptier_code=toptier_code)
             if existing_ta is None
             else existing_ta
         )
-        existing_fa = FederalAccount.objects.filter(
-            agency_identifier=TAS_DICTIONARIES[index]["aid"], main_account_code=TAS_DICTIONARIES[index]["main"]
-        ).first()
+        existing_fa = FederalAccount.objects.filter(agency_identifier=aid, main_account_code=main).first()
         fa = (
             baker.make(
                 "accounts.FederalAccount",
                 id=index,
                 parent_toptier_agency_id=ta.toptier_agency_id,
-                agency_identifier=TAS_DICTIONARIES[index]["aid"],
-                main_account_code=TAS_DICTIONARIES[index]["main"],
-                federal_account_code=f"{TAS_DICTIONARIES[index]['aid']}-{TAS_DICTIONARIES[index]['main']}",
+                agency_identifier=aid,
+                main_account_code=main,
+                federal_account_code=f"{aid}-{main}",
             )
             if existing_fa is None
             else existing_fa
         )
-
-        tas = baker.make(
+        baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=index,
-            allocation_transfer_agency_id=TAS_DICTIONARIES[index].get("ata"),
-            agency_id=TAS_DICTIONARIES[index]["aid"],
-            main_account_code=TAS_DICTIONARIES[index]["main"],
-            sub_account_code=TAS_DICTIONARIES[index]["sub"],
-            availability_type_code=TAS_DICTIONARIES[index].get("a"),
-            beginning_period_of_availability=TAS_DICTIONARIES[index].get("bpoa"),
-            ending_period_of_availability=TAS_DICTIONARIES[index].get("epoa"),
+            allocation_transfer_agency_id=ata,
+            agency_id=aid,
+            main_account_code=main,
+            sub_account_code=sub,
+            availability_type_code=a,
+            beginning_period_of_availability=bpoa,
+            ending_period_of_availability=epoa,
             tas_rendering_label=TreasuryAppropriationAccount.generate_tas_rendering_label(
-                TAS_DICTIONARIES[index].get("ata"),
-                TAS_DICTIONARIES[index]["aid"],
-                TAS_DICTIONARIES[index].get("a"),
-                TAS_DICTIONARIES[index].get("bpoa"),
-                TAS_DICTIONARIES[index].get("epoa"),
-                TAS_DICTIONARIES[index]["main"],
-                TAS_DICTIONARIES[index]["sub"],
+                ata,
+                aid,
+                a,
+                bpoa,
+                epoa,
+                main,
+                sub,
             ),
             federal_account_id=fa.id,
         )
+
         baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
-        tas_components.append(
-            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability}epoa{tas.ending_period_of_availability}=a={tas.availability_type_code}"
-        )
+        tas_components.append(f"aid={aid}main={main}ata={ata}sub={sub}bpoa={bpoa}epoa{epoa}=a={a}")
         tas_paths.append(
-            f"agency={ta.toptier_code}faaid={fa.agency_identifier}famain={fa.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability}epoa={tas.ending_period_of_availability}a={tas.availability_type_code}"
+            f"agency={aid}faaid={aid}famain={fa.main_account_code}aid={aid}main={main}ata={ata}sub={sub}bpoa={bpoa}epoa={epoa}a={a}"
         )
         count = count + 1
+    print(tas_paths)
     baker.make(
         "search.AwardSearch",
         award_id=award_id,
