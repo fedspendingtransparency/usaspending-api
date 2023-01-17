@@ -13,6 +13,7 @@ class Command(AgnosticTransactionLoader, BaseCommand):
     last_load_record = "source_assistance_transaction"
     lookback_minutes = 15
     shared_pk = "afa_generated_unique"
+    is_case_insensitive_pk_match = True
     working_file_prefix = "assistance_load_ids"
     broker_full_select_sql = 'SELECT "{id}" FROM "{table}" WHERE "is_active" IS TRUE'
     broker_incremental_select_sql = """
