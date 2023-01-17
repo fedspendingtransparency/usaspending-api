@@ -74,6 +74,7 @@ def spending_by_award_test_data():
         funding_toptier_agency_code="ABC",
         funding_toptier_agency_name="TOPTIER AGENCY 1",
         total_obligation=999999.00,
+        award_amount=999999.00,
         action_date="2020-10-01",
         is_fpds=True,
         business_categories=["business_category_1_3"],
@@ -97,7 +98,7 @@ def spending_by_award_test_data():
         total_covid_outlay=100,
         covid_spending_by_defc=[{"defc": "L", "outlay": 100, "obligation": 100}],
         tas_paths=["aid=097main=4930"],
-        tas_components=["aid=097main=4930"],
+        tas_components=["aid=097main=4930ata=sub=bpoa=epoa=a="],
     )
     award_2 = baker.make(
         "search.AwardSearch",
@@ -111,6 +112,7 @@ def spending_by_award_test_data():
         generated_unique_award_id="CONT_AWD_TESTING_2",
         date_signed="2009-01-01",
         total_obligation=9016.00,
+        award_amount=9016.00,
         action_date="2020-10-01",
         is_fpds=True,
         pop_state_code="VA",
@@ -133,6 +135,7 @@ def spending_by_award_test_data():
         generated_unique_award_id="CONT_AWD_TESTING_3",
         date_signed="2010-01-01",
         total_obligation=500000001.00,
+        award_amount=500000001.00,
         action_date="2019-01-01",
         is_fpds=True,
         business_categories=["business_category_2_8"],
@@ -149,10 +152,15 @@ def spending_by_award_test_data():
         generated_unique_award_id="ASST_NON_TESTING_4",
         date_signed="2019-01-01",
         total_obligation=12.00,
+        award_amount=12.00,
         action_date="2019-10-1",
         is_fpds=False,
         cfda_number="10.331",
+        cfdas=["{\"cfda_number\":\"10.331\"}"],
         recipient_unique_id="duns_1001",
+        recipient_name="recipient_name_for_award_1001",
+        recipient_hash="51c7c0ad-a793-de3f-72ba-be5c2895a9ca",
+        recipient_levels=["R"],
     )
     award_5 = baker.make(
         "search.AwardSearch",
@@ -166,10 +174,11 @@ def spending_by_award_test_data():
         generated_unique_award_id="CONT_AWD_TESTING_5",
         date_signed="2019-01-01",
         total_obligation=120,
+        award_amount=120,
         action_date="2019-10-1",
         is_fpds=True,
         tas_paths=["aid=097main=4930"],
-        tas_components=["aid=097main=4930"],
+        tas_components=["aid=097main=4930ata=sub=bpoa=epoa=a="],
     )
 
     # Toptier Agency
