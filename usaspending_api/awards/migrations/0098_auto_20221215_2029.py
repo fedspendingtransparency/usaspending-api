@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 migrations.AlterField(
                     model_name='financialaccountsbyawards',
                     name='award',
-                    field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
+                    field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL,
                                             related_name='financial_set', to='search.awardsearch'),
                 )
             ]
