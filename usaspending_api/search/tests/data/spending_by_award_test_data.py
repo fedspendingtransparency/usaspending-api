@@ -156,7 +156,7 @@ def spending_by_award_test_data():
         action_date="2019-10-1",
         is_fpds=False,
         cfda_number="10.331",
-        cfdas=["{\"cfda_number\":\"10.331\"}"],
+        cfdas=['{"cfda_number":"10.331"}'],
         recipient_unique_id="duns_1001",
         recipient_name="recipient_name_for_award_1001",
         recipient_hash="51c7c0ad-a793-de3f-72ba-be5c2895a9ca",
@@ -179,6 +179,10 @@ def spending_by_award_test_data():
         is_fpds=True,
         tas_paths=["aid=097main=4930"],
         tas_components=["aid=097main=4930ata=sub=bpoa=epoa=a="],
+        disaster_emergency_fund_codes=["Q"],
+        total_covid_outlay=0,
+        total_covid_obligation=0,
+        covid_spending_by_defc=[{"defc": "Q", "outlay": 0, "obligation": 0}],
     )
 
     # Toptier Agency
