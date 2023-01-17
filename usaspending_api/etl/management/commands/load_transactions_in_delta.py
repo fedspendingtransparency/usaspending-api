@@ -235,7 +235,7 @@ class Command(BaseCommand):
                      raw.published_fabs table, but we don't actually want to delete the record in the lookup table
                      because that transaction is still valid.
                    Same logic as above as to why we need to check that tidlu.is_fpds is FALSE to avoid
-                     deleting all of the fpds records.  */ 
+                     deleting all of the fpds records.  */
                 FROM int.transaction_id_lookup AS tidlu LEFT JOIN raw.published_fabs AS pfabs ON (
                     tidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique) AND tidlu.is_fpds = FALSE
                 )
