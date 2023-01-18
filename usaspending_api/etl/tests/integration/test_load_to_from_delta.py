@@ -173,6 +173,17 @@ def populate_usas_data(populate_broker_data):
     defc_m = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19", _fill_optional=True)
     defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
 
+    # Create account data
+    federal_account = baker.make(
+        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
+    )
+    tas = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        federal_account=federal_account,
+        allocation_transfer_agency_id=None,
+        _fill_optional=True,
+    )
+
     # Create awards and transactions
     asst_award = baker.make(
         "search.AwardSearch",
@@ -193,6 +204,28 @@ def populate_usas_data(populate_broker_data):
         piid=None,
         subaward_count=0,
         transaction_unique_id=1,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        cfda_number="12.456",
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="FABS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        total_funding_amount="2.23",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_county_code="001",
+        recipient_location_county_name="COUNTY NAME",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_county_code="001",
+        pop_county_name="COUNTY NAME",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -211,6 +244,28 @@ def populate_usas_data(populate_broker_data):
         uri=None,
         subaward_count=0,
         transaction_unique_id=2,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        cfda_number="12.456",
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="FABS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        total_funding_amount="2.23",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_county_code="001",
+        recipient_location_county_name="COUNTY NAME",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_county_code="001",
+        pop_county_name="COUNTY NAME",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -232,6 +287,24 @@ def populate_usas_data(populate_broker_data):
         uri=None,
         subaward_count=0,
         transaction_unique_id=3,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        is_fpds=True,
+        naics_code="123456",
+        product_or_service_code="12",
+        recipient_uei="FPDSUEI12345",
+        recipient_unique_id="FPDSDUNS12345",
+        recipient_name="FPDS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        ordering_period_end_date="2020-07-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
     )
 
     baker.make(
@@ -483,16 +556,7 @@ def populate_usas_data(populate_broker_data):
         submission_id=33.00,
         _fill_optional=True,
     )
-    # Create account data
-    federal_account = baker.make(
-        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
-    )
-    tas = baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account=federal_account,
-        allocation_transfer_agency_id=None,
-        _fill_optional=True,
-    )
+
     dabs = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01")
     sa = baker.make("submissions.SubmissionAttributes", reporting_period_start="2020-04-02", submission_window=dabs)
 
