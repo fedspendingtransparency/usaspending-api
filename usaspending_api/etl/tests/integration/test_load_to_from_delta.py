@@ -234,6 +234,7 @@ def populate_usas_data(populate_broker_data):
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,
+        transaction_unique_id=1,
         afa_generated_unique=1,
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
@@ -281,6 +282,7 @@ def populate_usas_data(populate_broker_data):
     baker.make(
         "search.TransactionSearch",
         transaction_id=2,
+        transaction_unique_id=2,
         afa_generated_unique=2,
         action_date="2020-04-01",
         fiscal_action_date="2020-07-01",
@@ -329,6 +331,7 @@ def populate_usas_data(populate_broker_data):
     baker.make(
         "search.TransactionSearch",
         transaction_id=3,
+        transaction_unique_id=3,
         detached_award_procurement_id=3,
         action_date="2020-07-01",
         fiscal_action_date="2020-10-01",
@@ -370,6 +373,7 @@ def populate_usas_data(populate_broker_data):
     baker.make(
         "search.TransactionSearch",
         transaction_id=4,
+        transaction_unique_id=4,
         detached_award_procurement_id=4,
         action_date="2020-10-01",
         fiscal_action_date="2021-01-01",
@@ -411,6 +415,7 @@ def populate_usas_data(populate_broker_data):
     baker.make(
         "search.TransactionSearch",
         transaction_id=434,
+        transaction_unique_id=434,
         detached_award_procurement_id=434,
         is_fpds=True,
         award_id=cont_award2.award_id,
