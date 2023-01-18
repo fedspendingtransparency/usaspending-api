@@ -191,6 +191,7 @@ def populate_usas_data(populate_broker_data):
         fain="FAIN",
         uri="URI",
         piid=None,
+        subaward_count=0,
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -207,6 +208,7 @@ def populate_usas_data(populate_broker_data):
         piid="PIID",
         fain=None,
         uri=None,
+        subaward_count=0,
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -226,6 +228,7 @@ def populate_usas_data(populate_broker_data):
         piid="PIID",
         fain=None,
         uri=None,
+        subaward_count=0,
     )
 
     baker.make(
@@ -814,6 +817,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         total_obligation=100.00,
         total_subsidy_cost=100.00,
         type_description="Direct Loan",
+        subaward_count=0,
     )
     baker.make(
         "search.TransactionSearch",
@@ -821,7 +825,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         afa_generated_unique=1001,
         action_date="2021-01-01",
         fiscal_action_date="2021-04-01",
-        award_id=new_award.id,
+        award_id=new_award.award_id,
         is_fpds=False,
         type="07",
         last_modified_date="2021-01-01",
@@ -1099,8 +1103,8 @@ def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_d
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("search.TransactionSearch", transaction_id="1", is_fpds=True, _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", is_fpds=True, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", award_id=1, is_fpds=True, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", award_id=2, is_fpds=True, _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
 
 
@@ -1108,8 +1112,8 @@ def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_b
 def test_load_table_to_from_delta_for_transaction_normalized(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", award_id=1, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", award_id=2, _fill_optional=True)
     verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
 
 
@@ -1173,8 +1177,8 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
 def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", award_id=1, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", award_id=2, _fill_optional=True)
     verify_delta_table_loaded_to_delta(
         spark,
         "transaction_normalized",

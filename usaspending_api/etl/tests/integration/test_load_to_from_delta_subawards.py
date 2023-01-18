@@ -14,7 +14,6 @@ from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
 )
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_subawards(
     spark,
