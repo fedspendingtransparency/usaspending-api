@@ -47,7 +47,6 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
         existing_ta = ToptierAgency.objects.filter(toptier_code=toptier_code).first()
         if existing_ta is None:
             ta = baker.make("references.ToptierAgency", toptier_agency_id=count + award_id, toptier_code=toptier_code)
-
         else:
             ta = existing_ta
         existing_fa = FederalAccount.objects.filter(agency_identifier=aid, main_account_code=main).first()
@@ -86,7 +85,7 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
         baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
         tas_components.append(f"aid={aid}main={main}ata={ata or ''}sub={sub}bpoa={bpoa or ''}epoa{epoa or ''}=a={a}")
         tas_paths.append(
-            f"agency={aid}faaid={aid}famain={fa.main_account_code}aid={aid}main={main}ata={ata or ''}sub={sub}bpoa={bpoa or ''}epoa={epoa or ''}a={a}"
+            f"agency={ta.toptier_code}faaid={aid}famain={fa.main_account_code}aid={aid}main={main}ata={ata or ''}sub={sub}bpoa={bpoa or ''}epoa={epoa or ''}a={a}"
         )
         count = count + 1
     baker.make(
