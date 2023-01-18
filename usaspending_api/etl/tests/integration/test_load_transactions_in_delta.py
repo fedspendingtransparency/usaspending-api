@@ -460,16 +460,14 @@ class InitialRunWithPostgresLoader:
     expected_initial_transaction_id_lookup = [
         {
             "transaction_id": id,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[id - 1]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[id - 1]["afa_generated_unique"].upper(),
         }
         for id in range(1, len(initial_assists) + 1)
     ] + [
         {
             "transaction_id": id,
-            "detached_award_procurement_id": initial_procures[id - 6]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[id - 6]["detached_award_proc_unique"].upper(),
         }
         for id in range(len(initial_assists) + 1, len(initial_assists) + len(initial_procures) + 1)
@@ -478,8 +476,7 @@ class InitialRunWithPostgresLoader:
     expected_initial_award_id_lookup = [
         {
             "award_id": int(assist["unique_award_key"].split("_")[-1]),
-            "detached_award_procurement_id": None,
-            "published_fabs_id": assist["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": assist["afa_generated_unique"].upper(),
             "generated_unique_award_id": assist["unique_award_key"].upper(),
         }
@@ -490,8 +487,7 @@ class InitialRunWithPostgresLoader:
                 int(procure["unique_award_key"].split("_")[-1])
                 + max([int(assist["unique_award_key"].split("_")[-1]) for assist in initial_assists])
             ),
-            "detached_award_procurement_id": procure["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": procure["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": procure["unique_award_key"].upper(),
         }
@@ -525,62 +521,52 @@ class TestInitialRunNoPostgresLoader:
     expected_initial_transaction_id_lookup = [
         {
             "transaction_id": 1,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[0]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 2,
-            "detached_award_procurement_id": initial_procures[0]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
         },
         {
             "transaction_id": 3,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[1]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 4,
-            "detached_award_procurement_id": initial_procures[1]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
         },
         {
             "transaction_id": 5,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[2]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 6,
-            "detached_award_procurement_id": initial_procures[2]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
         },
         {
             "transaction_id": 7,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[3]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 8,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[4]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 9,
-            "detached_award_procurement_id": initial_procures[3]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
         },
         {
             "transaction_id": 10,
-            "detached_award_procurement_id": initial_procures[4]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
         },
     ]
@@ -588,71 +574,61 @@ class TestInitialRunNoPostgresLoader:
     expected_initial_award_id_lookup = [
         {
             "award_id": 1,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[0]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[0]["unique_award_key"].upper(),
         },
         {
             "award_id": 2,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[1]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[1]["unique_award_key"].upper(),
         },
         {
             "award_id": 2,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[2]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[2]["unique_award_key"].upper(),
         },
         {
             "award_id": 3,
-            "detached_award_procurement_id": initial_procures[0]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[0]["unique_award_key"].upper(),
         },
         {
             "award_id": 4,
-            "detached_award_procurement_id": initial_procures[1]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[1]["unique_award_key"].upper(),
         },
         {
             "award_id": 4,
-            "detached_award_procurement_id": initial_procures[2]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[2]["unique_award_key"].upper(),
         },
         {
             "award_id": 5,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[3]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[3]["unique_award_key"].upper(),
         },
         {
             "award_id": 5,
-            "detached_award_procurement_id": None,
-            "published_fabs_id": initial_assists[4]["published_fabs_id"],
+            "is_fpds": False,
             "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
             "generated_unique_award_id": initial_assists[4]["unique_award_key"].upper(),
         },
         {
             "award_id": 6,
-            "detached_award_procurement_id": initial_procures[3]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[3]["unique_award_key"].upper(),
         },
         {
             "award_id": 6,
-            "detached_award_procurement_id": initial_procures[4]["detached_award_procurement_id"],
-            "published_fabs_id": None,
+            "is_fpds": True,
             "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": initial_procures[4]["unique_award_key"].upper(),
         },
@@ -1111,8 +1087,7 @@ class TestTransactionIdLookup:
         expected_transaction_id_lookup.append(
             {
                 "transaction_id": 11,
-                "detached_award_procurement_id": None,
-                "published_fabs_id": new_assist["published_fabs_id"],
+                "is_fpds": False,
                 "transaction_unique_id": new_assist["afa_generated_unique"].upper(),
             }
         )
@@ -1159,8 +1134,7 @@ class TestTransactionIdLookup:
         expected_transaction_id_lookup.append(
             {
                 "transaction_id": 12,
-                "detached_award_procurement_id": new_procure["detached_award_procurement_id"],
-                "published_fabs_id": None,
+                "is_fpds": True,
                 "transaction_unique_id": new_procure["detached_award_proc_unique"].upper(),
             }
         )
@@ -1327,8 +1301,7 @@ class TestAwardIdLookup:
         expected_award_id_lookup.append(
             {
                 "award_id": 7,
-                "detached_award_procurement_id": None,
-                "published_fabs_id": new_assist["published_fabs_id"],
+                "is_fpds": False,
                 "transaction_unique_id": new_assist["afa_generated_unique"].upper(),
                 "generated_unique_award_id": new_assist["unique_award_key"].upper(),
             }
@@ -1382,8 +1355,7 @@ class TestAwardIdLookup:
         expected_award_id_lookup.append(
             {
                 "award_id": 8,
-                "detached_award_procurement_id": new_procure["detached_award_procurement_id"],
-                "published_fabs_id": None,
+                "is_fpds": True,
                 "transaction_unique_id": new_procure["detached_award_proc_unique"].upper(),
                 "generated_unique_award_id": new_procure["unique_award_key"].upper(),
             }
@@ -1813,8 +1785,7 @@ class TestTransactionFabs:
         "unique_award_key": new_unique_award_key,
     }
     expected_transaction_id_lookup_append = {
-        "detached_award_procurement_id": None,
-        "published_fabs_id": TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
+        "is_fpds": False,
         "transaction_unique_id": new_afa_generated_unique.upper(),
     }
     expected_transaction_fabs_fpds_append = {
@@ -1889,8 +1860,7 @@ class TestTransactionFpds:
         "unique_award_key": new_unique_award_key,
     }
     expected_transaction_id_lookup_append = {
-        "detached_award_procurement_id": TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
-        "published_fabs_id": None,
+        "is_fpds": True,
         "transaction_unique_id": new_detached_award_proc_unique.upper(),
     }
     expected_transaction_fabs_fpds_append = {
