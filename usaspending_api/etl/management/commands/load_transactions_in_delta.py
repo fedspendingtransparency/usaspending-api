@@ -66,7 +66,7 @@ class Command(BaseCommand):
     # query below.
     award_id_lookup_delete_subquery: str = """
         -- Adding CTEs to pre-filter award_id_lookup table for significant speedups when joining
-        WITH 
+        WITH
         aidlu_fpds AS (
             SELECT * FROM int.award_id_lookup
             WHERE is_fpds = TRUE
@@ -227,7 +227,7 @@ class Command(BaseCommand):
             id_col = "transaction_id"
             subquery = """
                 -- Adding CTEs to pre-filter transaction_id_lookup table for significant speedups when joining
-                WITH 
+                WITH
                 tidlu_fpds AS (
                     SELECT * FROM int.transaction_id_lookup
                     WHERE is_fpds = TRUE
@@ -827,7 +827,7 @@ class Command(BaseCommand):
         self.logger.info("Creating new 'transaction_id_lookup' records for new transactions")
         self.spark.sql(
             f"""
-            WITH 
+            WITH
             dap_filtered AS (
                 SELECT detached_award_proc_unique
                 FROM raw.detached_award_procurement
@@ -913,7 +913,7 @@ class Command(BaseCommand):
         self.logger.info("Creating new 'award_id_lookup' records for new awards")
         self.spark.sql(
             f"""
-            WITH 
+            WITH
             dap_filtered AS (
                 SELECT detached_award_proc_unique, unique_award_key
                 FROM raw.detached_award_procurement
