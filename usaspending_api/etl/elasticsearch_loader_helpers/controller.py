@@ -271,8 +271,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["award_search"] = "rpt.award_search"
         elif self.config["load_type"] == "covid19-faba":
             identifier_replacements["financial_accounts_by_awards"] = "raw.financial_accounts_by_awards"
-            # TODO: This needs to be replaced with int.awards once that delta table becomes active
-            identifier_replacements["vw_awards"] = "raw.awards"
+            identifier_replacements["vw_awards"] = "int.awards"
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
