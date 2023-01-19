@@ -834,8 +834,7 @@ def test_load_table_to_from_delta_for_subawards(
 
     # Let's also check if update_delta_award_with_subaward_counts is working as expected
 
-    # TODO: Update award_table to "rpt.award_search" when it includes those columns
-    award_table = "raw.awards"
+    award_table = "int.awards"
 
     # set the update_date for these awards to be something old so that when the script runs we can confirm it updated
     old_date = "1970-01-01"
