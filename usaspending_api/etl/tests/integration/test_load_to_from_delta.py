@@ -354,6 +354,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
+        award_update_date="2020-01-01",
     )
     baker.make(
         "search.TransactionSearch",
@@ -403,6 +404,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
+        award_update_date="2020-01-01",
     )
     baker.make(
         "search.TransactionSearch",
@@ -445,6 +447,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_name="Virginia",
+        award_update_date="2020-01-01",
     )
     baker.make(
         "search.TransactionSearch",
@@ -487,6 +490,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_name="Virginia",
+        award_update_date="2020-01-01",
     )
     baker.make(
         "search.TransactionSearch",
@@ -508,6 +512,7 @@ def populate_usas_data(populate_broker_data):
         awarding_agency_id=32,
         funding_agency_id=32,
         last_modified_date="2020-01-01",
+        award_update_date="2020-01-01",
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
