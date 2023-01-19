@@ -129,8 +129,8 @@ def populate_usas_data(populate_broker_data):
     )
 
     # Create agency data
-    funding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
-    funding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
+    funding_toptier_agency = baker.make("references.ToptierAgency", name="TEST AGENCY 1", _fill_optional=True)
+    funding_subtier_agency = baker.make("references.SubtierAgency", name="TEST AGENCY 1", _fill_optional=True)
     funding_agency = baker.make(
         "references.Agency",
         toptier_agency=funding_toptier_agency,
@@ -143,8 +143,8 @@ def populate_usas_data(populate_broker_data):
     subtier = baker.make("references.SubtierAgency", name="subtier", abbreviation="st", _fill_optional=True)
     baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, toptier_flag=True, id=32)
 
-    awarding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
-    awarding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
+    awarding_toptier_agency = baker.make("references.ToptierAgency", name="TEST AGENCY 2", _fill_optional=True)
+    awarding_subtier_agency = baker.make("references.SubtierAgency", name="TEST SUBTIER 2", _fill_optional=True)
     awarding_agency = baker.make(
         "references.Agency",
         toptier_agency=awarding_toptier_agency,
@@ -166,7 +166,7 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
     baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
-    baker.make("references.PopCounty", state_code="51", county_number="000", _fill_optional=True)
+    baker.make("references.PopCounty", state_code="51", county_number="000", latest_population=1, _fill_optional=True)
     baker.make("references.PopCounty", state_code="51", county_number="001", _fill_optional=True)
     baker.make("references.PopCongressionalDistrict", state_code="51", congressional_district="01")
     defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", _fill_optional=True)
@@ -196,9 +196,12 @@ def populate_usas_data(populate_broker_data):
         date_signed="2020-01-01",
         certified_date="2020-04-01",
         update_date="2020-01-01",
+        action_date="2020-04-01",
+        fiscal_year=2020,
         award_amount=0.00,
         total_obligation=100.00,
-        total_subsidy_cost=100.00,
+        total_subsidy_cost=None,
+        total_obl_bin="<1M",
         type_description="Direct Loan",
         display_award_id="FAIN",
         fain="FAIN",
@@ -206,11 +209,24 @@ def populate_usas_data(populate_broker_data):
         piid=None,
         subaward_count=0,
         transaction_unique_id=1,
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_code=awarding_toptier_agency.toptier_code,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        funding_toptier_agency_code=funding_toptier_agency.toptier_code,
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        awarding_subtier_agency_code=awarding_subtier_agency.subtier_code,
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        funding_subtier_agency_code=funding_subtier_agency.subtier_code,
+        funding_subtier_agency_name=funding_subtier_agency.name,
         treasury_account_identifiers=[tas.treasury_account_identifier],
         cfda_number="12.456",
+        cfdas=['{"cfda_number": "12.456", "cfda_program_title": None}'],
         recipient_uei="FABSUEI12345",
         recipient_unique_id="FABSDUNS12345",
         recipient_name="FABS RECIPIENT 12345",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        recipient_levels=["C"],
         parent_uei="PARENTUEI12345",
         parent_recipient_unique_id="PARENTDUNS12345",
         total_funding_amount="2.23",
@@ -228,6 +244,13 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
+        tas_paths=[
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        tas_components=[
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa{tas.ending_period_of_availability or ''}=a={tas.availability_type_code}"
+        ],
+        recipient_location_state_fips=51,
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -242,7 +265,7 @@ def populate_usas_data(populate_broker_data):
         update_date="2020-01-01",
         award_amount=100.00,
         total_obligation=100.00,
-        total_subsidy_cost=0.00,
+        total_subsidy_cost=None,
         display_award_id="PIID",
         piid="PIID",
         fain=None,
@@ -284,7 +307,7 @@ def populate_usas_data(populate_broker_data):
         certified_date="2020-04-01",
         award_amount=100.00,
         total_obligation=100.00,
-        total_subsidy_cost=0.00,
+        total_subsidy_cost=None,
         last_modified_date="2020-01-01",
         update_date="2020-01-01",
         awarding_agency_id=32,
@@ -1236,7 +1259,11 @@ def test_load_table_to_from_delta_for_transaction_search(
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
-        spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark,
+        "transaction_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=["award_update_date", "etl_update_date"],
     )
     # TODO: Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC
     #       as by design the data in delta will be different from the data in postgres
