@@ -12,7 +12,6 @@ from django.conf import settings
 from django.db import connection
 from fiscalyear import datetime
 from usaspending_api.common.matview_manager import (
-    OVERLAY_VIEWS,
     DEPENDENCY_FILEPATH,
     MATERIALIZED_VIEWS,
     CHUNKED_MATERIALIZED_VIEWS,
@@ -130,8 +129,6 @@ def generate_matviews(materialized_views_as_traditional_views=False):
                     f" CREATE RULE {name}_delete_rule AS ON DELETE TO {name} DO INSTEAD NOTHING;"
                 )
             cursor.execute(sql)
-        for view_sql_file in OVERLAY_VIEWS:
-            cursor.execute(view_sql_file.read_text())
 
     shutil.rmtree(DEFAULT_MATIVEW_DIR)
 

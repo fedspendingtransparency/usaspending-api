@@ -1,7 +1,9 @@
 import logging
 import re
 
-from django.conf import settings
+from typing import Dict, List
+from pathlib import Path
+
 from django.core.management import BaseCommand
 from django.db import connection, ProgrammingError, transaction
 
@@ -9,12 +11,8 @@ from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetche
 
 logger = logging.getLogger("script")
 
-
-VIEWS_TO_UPDATE = {
-    "award_search": [
-        settings.APP_DIR / "database_scripts" / "matviews" / "vw_es_award_search.sql",
-    ]
-}
+# Dict of table name str mapped to a List of Path refs pointing to .sql files to read and execute
+VIEWS_TO_UPDATE = {}  # type: Dict[str, List[Path]]
 
 
 class Command(BaseCommand):
