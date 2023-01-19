@@ -865,11 +865,11 @@ transaction_search_load_sql_string = fr"""
         transaction_fpds.women_owned_small_business
 
     FROM
-        raw.transaction_normalized
+        int.transaction_normalized
     LEFT OUTER JOIN
-        raw.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id AND transaction_normalized.is_fpds = false)
+        int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id AND transaction_normalized.is_fpds = false)
     LEFT OUTER JOIN
-        raw.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id AND transaction_normalized.is_fpds = true)
+        int.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id AND transaction_normalized.is_fpds = true)
     LEFT OUTER JOIN
         global_temp.references_cfda ON (transaction_fabs.cfda_number = references_cfda.program_number)
     LEFT OUTER JOIN
@@ -885,7 +885,7 @@ transaction_search_load_sql_string = fr"""
             )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
         )
     LEFT OUTER JOIN
-        raw.awards ON (transaction_normalized.award_id = awards.id)
+        int.awards ON (transaction_normalized.award_id = awards.id)
     LEFT OUTER JOIN
         global_temp.agency AS AA ON (transaction_normalized.awarding_agency_id = AA.id)
     LEFT OUTER JOIN
