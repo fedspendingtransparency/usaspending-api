@@ -130,7 +130,7 @@ def populate_usas_data(populate_broker_data):
 
     # Create agency data
     funding_toptier_agency = baker.make("references.ToptierAgency", name="TEST AGENCY 1", _fill_optional=True)
-    funding_subtier_agency = baker.make("references.SubtierAgency", name="TEST AGENCY 1", _fill_optional=True)
+    funding_subtier_agency = baker.make("references.SubtierAgency", name="TEST SUBTIER 1", _fill_optional=True)
     funding_agency = baker.make(
         "references.Agency",
         toptier_agency=funding_toptier_agency,
@@ -209,6 +209,49 @@ def populate_usas_data(populate_broker_data):
         piid=None,
         subaward_count=0,
         transaction_unique_id=1,
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_code=awarding_toptier_agency.toptier_code,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        funding_toptier_agency_code=funding_toptier_agency.toptier_code,
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        awarding_subtier_agency_code=awarding_subtier_agency.subtier_code,
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        funding_subtier_agency_code=funding_subtier_agency.subtier_code,
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        cfda_number="12.456",
+        cfdas=['{"cfda_number": "12.456", "cfda_program_title": None}'],
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="FABS RECIPIENT 12345",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        recipient_levels=["C"],
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        total_funding_amount="2.23",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_county_code="001",
+        recipient_location_county_name="COUNTY NAME",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_county_code="001",
+        pop_county_name="COUNTY NAME",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
+        tas_paths=[
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        tas_components=[
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa{tas.ending_period_of_availability or ''}=a={tas.availability_type_code}"
+        ],
+        recipient_location_state_fips=51,
+        _fill_optional=True,
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -252,6 +295,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
+        _fill_optional=True,
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -294,6 +338,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_name="Virginia",
+        _fill_optional=True,
     )
 
     baker.make(
@@ -317,6 +362,16 @@ def populate_usas_data(populate_broker_data):
         type="07",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        awarding_toptier_agency_id=awarding_agency.id,
+        funding_toptier_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
         federal_action_obligation=0,
         cfda_number="12.456",
@@ -344,6 +399,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
         award_update_date=asst_award.update_date,
+        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
@@ -366,6 +422,16 @@ def populate_usas_data(populate_broker_data):
         type="07",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        awarding_toptier_agency_id=awarding_agency.id,
+        funding_toptier_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
         federal_action_obligation=0,
         published_fabs_id=2,
@@ -394,6 +460,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
         award_update_date=asst_award.update_date,
+        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
@@ -416,6 +483,16 @@ def populate_usas_data(populate_broker_data):
         type="A",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        awarding_toptier_agency_id=awarding_agency.id,
+        funding_toptier_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
         federal_action_obligation=0,
         naics_code="123456",
@@ -437,6 +514,7 @@ def populate_usas_data(populate_broker_data):
         pop_state_code="VA",
         pop_state_name="Virginia",
         award_update_date=cont_award.update_date,
+        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
@@ -459,6 +537,16 @@ def populate_usas_data(populate_broker_data):
         type="A",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        awarding_toptier_agency_id=awarding_agency.id,
+        funding_toptier_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
         federal_action_obligation=0,
         naics_code="123456",
@@ -480,6 +568,7 @@ def populate_usas_data(populate_broker_data):
         pop_state_code="VA",
         pop_state_name="Virginia",
         award_update_date=cont_award.update_date,
+        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
