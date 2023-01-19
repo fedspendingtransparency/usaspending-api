@@ -1069,7 +1069,7 @@ class Command(BaseCommand):
                 """
                     INSERT OVERWRITE temp.orphaned_transaction_info
                         SELECT tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
-                        FROM raw.transaction_normalized AS tn 
+                        FROM raw.transaction_normalized AS tn
                         LEFT JOIN raw.detached_award_procurement AS dap ON (
                             tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
                         )
@@ -1232,7 +1232,7 @@ class Command(BaseCommand):
                                     raw.awards AS aw INNER JOIN raw.detached_award_procurement AS dap ON (
                                         aw.generated_unique_award_id = ucase(dap.unique_award_key)
                                     )
-                                -- Again, want to exclude orphaned transactions, as they will not be copied into the 
+                                -- Again, want to exclude orphaned transactions, as they will not be copied into the
                                 -- int schema.
                                 WHERE ucase(dap.detached_award_proc_unique) NOT IN (
                                     SELECT transaction_unique_id FROM temp.orphaned_transaction_info WHERE is_fpds
@@ -1251,7 +1251,7 @@ class Command(BaseCommand):
                                     raw.awards AS aw INNER JOIN raw.published_fabs AS pfabs ON (
                                         aw.generated_unique_award_id = ucase(pfabs.unique_award_key)
                                     )
-                                -- Again, want to exclude orphaned transactions, as they will not be copied into the 
+                                -- Again, want to exclude orphaned transactions, as they will not be copied into the
                                 -- int schema.
                                 WHERE ucase(pfabs.afa_generated_unique) NOT IN (
                                     SELECT transaction_unique_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds
@@ -1318,9 +1318,9 @@ class Command(BaseCommand):
                 TRANSACTION_FABS_COLUMNS,
                 TRANSACTION_FPDS_COLUMNS,
                 list(TRANSACTION_NORMALIZED_COLUMNS),
-                list(AWARDS_COLUMNS)
+                list(AWARDS_COLUMNS),
             ),
-            ("transaction_id", "transaction_id", "id", "id")
+            ("transaction_id", "transaction_id", "id", "id"),
         ):
             call_command(
                 "create_delta_table",
