@@ -166,43 +166,22 @@ class AwardSearch(models.Model):
     class Meta:
         db_table = "award_search"
         indexes = [
-            models.Index(
-                fields=["recipient_hash"], name="as_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")
-            ),
+            models.Index(fields=["generated_unique_award_id"], name="as_idx_award_key"),
+            # Ideal indexes for data analysis commented out
+            # models.Index(fields=["is_fpds"], name="as_idx_is_fpds"),
+            # models.Index(fields=["piid"], name="as_idx_piid"),
+            # models.Index(fields=["fain"], name="as_idx_fain"),
+            # models.Index(fields=["uri"], name="as_idx_uri"),
+            models.Index(fields=["awarding_agency_id"], name="as_idx_awarding_agency_id"),
+            models.Index(fields=["funding_agency_id"], name="as_idx_funding_agency_id"),
+            models.Index(fields=["recipient_hash"], name="as_idx_recipient_hash"),
             models.Index(
                 fields=["recipient_unique_id"],
                 name="as_idx_recipient_unique_id",
-                condition=Q(recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
+                condition=Q(recipient_unique_id__isnull=False),
             ),
-            models.Index(
-                F("action_date").desc(nulls_last=True),
-                name="as_idx_action_date",
-                condition=Q(action_date__gte="2007-10-01"),
-            ),
-            models.Index(
-                fields=["funding_agency_id"],
-                name="as_idx_funding_agency_id",
-                condition=Q(action_date__gte="2007-10-01"),
-            ),
-            models.Index(
-                fields=["recipient_location_congressional_code"],
-                name="as_idx_recipient_cong_code",
-                condition=Q(action_date__gte="2007-10-01"),
-            ),
-            models.Index(
-                fields=["recipient_location_county_code"],
-                name="as_idx_recipient_county_code",
-                condition=Q(action_date__gte="2007-10-01"),
-            ),
-            models.Index(
-                fields=["recipient_location_state_code"],
-                name="as_idx_recipient_state_code",
-                condition=Q(action_date__gte="2007-10-01"),
-            ),
-            # mimicking transaction_search's indexes, this additional index accounts for pre-2008 data
-            models.Index(
-                F("action_date").desc(nulls_last=True),
-                name="as_idx_action_date_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
+            models.Index(F("action_date").desc(nulls_last=True), name="as_idx_action_date"),
+            models.Index(fields=["recipient_location_congressional_code"], name="as_idx_recipient_cong_code"),
+            models.Index(fields=["recipient_location_county_code"], name="as_idx_recipient_county_code"),
+            models.Index(fields=["recipient_location_state_code"], name="as_idx_recipient_state_code"),
         ]

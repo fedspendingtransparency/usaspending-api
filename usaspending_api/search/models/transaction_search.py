@@ -408,88 +408,40 @@ class TransactionSearch(models.Model):
         db_table = "transaction_search"
         indexes = [
             models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
-            models.Index(
-                fields=["generated_unique_award_id"],
-                name="ts_idx_award_key_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
-            models.Index(
-                fields=["afa_generated_unique"],
-                name="ts_idx_fabs_key_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
-            models.Index(
-                fields=["detached_award_proc_unique"],
-                name="ts_idx_fpds_key_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
-            models.Index(fields=["piid"], name="ts_idx_piid_pre2008", condition=Q(action_date__lt="2007-10-01")),
-            models.Index(
-                fields=["parent_award_id"],
-                name="ts_idx_parent_award_id_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
-            models.Index(fields=["fain"], name="ts_idx_fain_pre2008", condition=Q(action_date__lt="2007-10-01")),
-            models.Index(fields=["uri"], name="ts_idx_uri_pre2008", condition=Q(action_date__lt="2007-10-01")),
-            models.Index(fields=["is_fpds"], name="ts_idx_is_fpds_pre2008", condition=Q(action_date__lt="2007-10-01")),
-            models.Index(
-                fields=["-action_date"], name="ts_idx_action_date", condition=Q(action_date__gte="2007-10-01")
-            ),
+            models.Index(fields=["afa_generated_unique"], name="ts_idx_fabs_key"),
+            models.Index(fields=["detached_award_proc_unique"], name="ts_idx_fpds_key"),
+            models.Index(fields=["award"], name="ts_idx_award_id"),
+            models.Index(fields=["generated_unique_award_id"], name="ts_idx_award_key"),
+            models.Index(fields=["is_fpds"], name="ts_idx_is_fpds"),
+            models.Index(fields=["piid"], name="ts_idx_piid"),
+            models.Index(fields=["parent_award_id"], name="ts_idx_parent_award_id"),
+            models.Index(fields=["fain"], name="ts_idx_fain"),
+            models.Index(fields=["uri"], name="ts_idx_uri"),
+            models.Index(fields=["type"], name="ts_idx_type", condition=Q(type__isnull=False)),
+            models.Index(fields=["-action_date"], name="ts_idx_action_date"),
             models.Index(fields=["-last_modified_date"], name="ts_idx_last_modified_date"),
-            models.Index(
-                fields=["-fiscal_year"], name="ts_idx_fiscal_year", condition=Q(action_date__gte="2007-10-01")
-            ),
-            models.Index(
-                fields=["type"], name="ts_idx_type", condition=Q(type__isnull=False) & Q(action_date__gte="2007-10-01")
-            ),
-            models.Index(fields=["award"], name="ts_idx_award_id", condition=Q(action_date__gte="2007-10-01")),
-            models.Index(
-                fields=["pop_zip5"],
-                name="ts_idx_pop_zip5",
-                condition=Q(pop_zip5__isnull=False) & Q(action_date__gte="2007-10-01"),
-            ),
+            models.Index(fields=["-fiscal_year"], name="ts_idx_fiscal_year"),
+            models.Index(fields=["etl_update_date"], name="ts_idx_etl_update_date"),
             models.Index(
                 fields=["recipient_unique_id"],
                 name="ts_idx_recipient_unique_id",
-                condition=Q(recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
-            ),
+                condition=Q(recipient_unique_id__isnull=False)),
             models.Index(
                 fields=["parent_recipient_unique_id"],
                 name="ts_idx_parent_recipient_unique",
-                condition=Q(parent_recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
+                condition=Q(parent_recipient_unique_id__isnull=False),
             ),
+            models.Index(fields=["recipient_hash"], name="ts_idx_recipient_hash",),
+            models.Index(fields=["pop_zip5"], name="ts_idx_pop_zip5", condition=Q(pop_zip5__isnull=False)),
             models.Index(
-                fields=["pop_state_code", "action_date"],
+                fields=["pop_state_code"],
                 name="ts_idx_simple_pop_geolocation",
-                condition=Q(pop_country_code="USA")
-                & Q(pop_state_code__isnull=False)
-                & Q(action_date__gte="2007-10-01"),
+                condition=Q(pop_country_code="USA") & Q(pop_state_code__isnull=False),
             ),
-            models.Index(
-                fields=["recipient_hash"], name="ts_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")
-            ),
-            models.Index(
-                fields=["action_date"], name="ts_idx_action_date_pre2008", condition=Q(action_date__lt="2007-10-01")
-            ),
-            models.Index(fields=["etl_update_date"], name="ts_idx_etl_update_date"),
-            models.Index(
-                fields=["type_of_contract_pricing"],
-                name="ts_idx_tocp_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
-            models.Index(fields=["naics_code"], name="ts_idx_naics_pre2008", condition=Q(action_date__lt="2007-10-01")),
-            models.Index(
-                fields=["extent_competed"], name="ts_idx_ext_com_pre2008", condition=Q(action_date__lt="2007-10-01")
-            ),
-            models.Index(
-                fields=["product_or_service_code"], name="ts_idx_psc_pre2008", condition=Q(action_date__lt="2007-10-01")
-            ),
-            models.Index(
-                fields=["type_set_aside"],
-                name="ts_idx_type_set_aside_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
-            models.Index(
-                fields=["cfda_number"], name="ts_idx_cfda_aside_pre2008", condition=Q(action_date__lt="2007-10-01")
-            ),
+            models.Index(fields=["type_of_contract_pricing"], name="ts_idx_tocp"),
+            models.Index(fields=["naics_code"], name="ts_idx_naics"),
+            models.Index(fields=["extent_competed"], name="ts_idx_ext_com"),
+            models.Index(fields=["product_or_service_code"], name="ts_idx_psc"),
+            models.Index(fields=["type_set_aside"], name="ts_idx_type_set_aside"),
+            models.Index(fields=["cfda_number"], name="ts_idx_cfda_aside"),
         ]
