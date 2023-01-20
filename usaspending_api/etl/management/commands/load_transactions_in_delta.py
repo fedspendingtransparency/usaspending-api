@@ -356,7 +356,7 @@ class Command(BaseCommand):
                 )
                 WHERE rank = 1
             ),
-            transaction_latest as (
+            transaction_latest AS (
                 SELECT * FROM (
                     SELECT
                         -- General update columns (id at top, rest alphabetically by alias/name)
@@ -464,8 +464,9 @@ class Command(BaseCommand):
                                           if col_name not in set_subquery_ignored_columns])}
             FROM transaction_latest AS latest
             INNER JOIN transaction_earliest AS earliest ON latest.id = earliest.id
-            INNER JOIN transaction_ec AS ec ON latest.id = ec.id
             INNER JOIN transaction_totals AS totals on latest.id = totals.id
+            -- Not every award will have a record in transaction_ec, so need to do a LEFT JOIN on it.
+            LEFT JOIN transaction_ec AS ec ON latest.id = ec.id
         """
 
         # On set, create_date will not be changed and update_date will be set below.  The subaward columns will not
