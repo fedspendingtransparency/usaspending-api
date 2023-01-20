@@ -251,7 +251,6 @@ def populate_usas_data(populate_broker_data):
             f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa{tas.ending_period_of_availability or ''}=a={tas.availability_type_code}"
         ],
         recipient_location_state_fips=51,
-        _fill_optional=True,
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -295,7 +294,6 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        _fill_optional=True,
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -338,7 +336,6 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_name="Virginia",
-        _fill_optional=True,
     )
 
     baker.make(
@@ -399,7 +396,6 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
         award_update_date=asst_award.update_date,
-        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
@@ -460,7 +456,6 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
         award_update_date=asst_award.update_date,
-        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
@@ -514,7 +509,6 @@ def populate_usas_data(populate_broker_data):
         pop_state_code="VA",
         pop_state_name="Virginia",
         award_update_date=cont_award.update_date,
-        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
@@ -568,7 +562,6 @@ def populate_usas_data(populate_broker_data):
         pop_state_code="VA",
         pop_state_name="Virginia",
         award_update_date=cont_award.update_date,
-        _fill_optional=True,
     )
     baker.make(
         "search.TransactionSearch",
