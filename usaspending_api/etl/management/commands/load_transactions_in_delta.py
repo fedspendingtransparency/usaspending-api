@@ -459,8 +459,8 @@ class Command(BaseCommand):
                 WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
                 GROUP BY tn.award_id
             )
-            SELECT 
-                latest.id, 
+            SELECT
+                latest.id,
                 0 AS subaward_count,  -- for consistency with Postgres table
                 {", ".join([col_name for col_name in AWARDS_COLUMNS if col_name not in subquery_ignored_columns])}
             FROM transaction_latest AS latest
