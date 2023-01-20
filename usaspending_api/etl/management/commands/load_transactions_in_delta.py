@@ -995,6 +995,7 @@ class Command(BaseCommand):
         Procedure to create & set up transaction_id_lookup and award_id_lookup tables and create other tables in
         int database that will be populated by subsequent calls.
         """
+
         @contextmanager
         def prepare_temp_tables():
             # Since the table to track the orphaned transactions is only needed for this function, just using a
@@ -1155,7 +1156,7 @@ class Command(BaseCommand):
                         award_id LONG NOT NULL
                     )
                     USING DELTA
-                    LOCATION 
+                    LOCATION
                         's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
                 """
             )
@@ -1202,7 +1203,7 @@ class Command(BaseCommand):
                         generated_unique_award_id STRING NOT NULL
                     )
                     USING DELTA
-                    LOCATION 
+                    LOCATION
                         's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
                 """
             )
@@ -1269,7 +1270,7 @@ class Command(BaseCommand):
                                     -- Again, want to exclude orphaned transactions, as they will not be copied into the
                                     -- int schema.
                                     WHERE ucase(pfabs.afa_generated_unique) NOT IN (
-                                        SELECT 
+                                        SELECT
                                             transaction_unique_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds
                                     )
                                 )
