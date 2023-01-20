@@ -205,9 +205,10 @@ def populate_usas_data(populate_broker_data):
         update_date="2020-01-01",
         action_date="2020-04-01",
         fiscal_year=2020,
-        award_amount=100.00,
+        award_amount=0.00,
         total_obligation=0.00,
-        total_subsidy_cost=100.00,
+        total_subsidy_cost=0.00,
+        total_loan_value=0.00,
         total_obl_bin="<1M",
         type_description="Direct Loan",
         display_award_id="FAIN",
@@ -215,7 +216,7 @@ def populate_usas_data(populate_broker_data):
         uri="URI",
         piid=None,
         subaward_count=0,
-        transaction_unique_id=1,
+        transaction_unique_id=2,
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
         awarding_toptier_agency_code=awarding_toptier_agency.toptier_code,
@@ -408,7 +409,9 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
         award_update_date=asst_award.update_date,
-        _fill_optional=True,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
     )
     baker.make(
         "search.TransactionSearch",
@@ -474,7 +477,9 @@ def populate_usas_data(populate_broker_data):
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
         award_update_date=asst_award.update_date,
-        _fill_optional=True,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
     )
     baker.make(
         "search.TransactionSearch",
@@ -533,7 +538,9 @@ def populate_usas_data(populate_broker_data):
         pop_state_code="VA",
         pop_state_name="Virginia",
         award_update_date=cont_award.update_date,
-        _fill_optional=True,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
     )
     baker.make(
         "search.TransactionSearch",
@@ -592,7 +599,9 @@ def populate_usas_data(populate_broker_data):
         pop_state_code="VA",
         pop_state_name="Virginia",
         award_update_date=cont_award.update_date,
-        _fill_optional=True,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
     )
     baker.make(
         "search.TransactionSearch",
@@ -616,7 +625,9 @@ def populate_usas_data(populate_broker_data):
         funding_agency_id=32,
         last_modified_date="2020-01-01",
         award_update_date=cont_award2.update_date,
-        _fill_optional=True,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
