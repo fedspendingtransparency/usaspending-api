@@ -1,5 +1,3 @@
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
-
 AWARD_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
@@ -340,15 +338,15 @@ award_search_load_sql_string = fr"""
   awards.officer_5_amount,
   awards.officer_5_name
 FROM
-  raw.awards
+  int.awards
 INNER JOIN
-  raw.transaction_normalized AS latest_transaction
+  int.transaction_normalized AS latest_transaction
     ON (awards.latest_transaction_id = latest_transaction.id)
 LEFT OUTER JOIN
-  raw.transaction_fpds
+  int.transaction_fpds
     ON (awards.latest_transaction_id = transaction_fpds.transaction_id AND latest_transaction.is_fpds = true)
 LEFT OUTER JOIN
-  raw.transaction_fabs
+  int.transaction_fabs
     ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)
 LEFT OUTER JOIN
   rpt.recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
@@ -363,8 +361,8 @@ LEFT OUTER JOIN
     (SELECT
       award_id, COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title))) as cfdas
       FROM
-         raw.transaction_fabs tf
-       INNER JOIN raw.transaction_normalized tn ON
+         int.transaction_fabs tf
+       INNER JOIN int.transaction_normalized tn ON
          tf.transaction_id = tn.id
        GROUP BY
          award_id
@@ -522,15 +520,4 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
-WHERE
-    -- Make sure that the data matches the different Award Type matviews' current state
-    (
-        latest_transaction.action_date >= '2007-10-01'
-        AND (
-            awards.type IN ({str(list(all_awards_types_to_category)).replace("[", "").replace("]", "")})
-            OR awards.type LIKE 'IDV%'
-        )
-    )
-    -- Make sure that we also pick up the current state of Pre2008 matview
-    OR latest_transaction.action_date < '2007-10-01'
 """

@@ -481,16 +481,16 @@ subaward_search_load_sql_string = fr"""
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
-        raw.awards AS a
+        int.awards AS a
             ON a.generated_unique_award_id = bs.unique_award_key
     LEFT OUTER JOIN
-        raw.transaction_normalized AS tn
+        int.transaction_normalized AS tn
             ON tn.id = a.latest_transaction_id
     LEFT OUTER JOIN
-        raw.transaction_fpds AS fpds
+        int.transaction_fpds AS fpds
             ON fpds.transaction_id = a.latest_transaction_id
     LEFT OUTER JOIN
-        raw.transaction_fabs AS fabs
+        int.transaction_fabs AS fabs
             ON fabs.transaction_id = a.latest_transaction_id
     LEFT OUTER JOIN
         global_temp.agency AS aa
