@@ -313,7 +313,7 @@ class DefaultConfig(BaseSettings):
     # number of partitions to split/group batches of CSV files into, which need to be written via COPY to PG
     # This multiplier will be multiplied against the max_parallel_workers value of the target database. It can be a
     # fraction less than 1.0. The final value will be the greater of that or ``SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS``
-    SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER: float = 0.5
+    SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER: float = 1.0
 
     # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
