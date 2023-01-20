@@ -151,7 +151,7 @@ c_to_d_linkage_view_sql_strings = [
         SELECT
             financial_accounts_by_awards_id,
             aw.id AS award_id,
-            2 AS priority 
+            2 AS priority
         FROM
             faba_upper AS faba
         INNER JOIN
@@ -179,7 +179,7 @@ c_to_d_linkage_view_sql_strings = [
         SELECT
             financial_accounts_by_awards_id,
             aw.id AS award_id,
-            3 AS priority 
+            3 AS priority
         FROM
             faba_upper AS faba
         INNER JOIN
@@ -206,7 +206,7 @@ c_to_d_linkage_view_sql_strings = [
         SELECT
             financial_accounts_by_awards_id,
             aw.id AS award_id,
-            4 AS priority 
+            4 AS priority
         FROM
             faba_upper AS faba
         INNER JOIN
@@ -261,7 +261,7 @@ c_to_d_linkage_view_sql_strings = [
         SELECT
             financial_accounts_by_awards_id,
             aw.id AS award_id,
-            6 AS priority 
+            6 AS priority
         FROM
             faba_upper AS faba
         INNER JOIN
@@ -332,7 +332,7 @@ c_to_d_linkage_view_sql_strings = [
     # -----
     """
     CREATE OR REPLACE TEMPORARY VIEW union_all_priority AS (
-        SELECT 
+        SELECT
         financial_accounts_by_awards_id,
         award_id
         FROM (
