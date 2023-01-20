@@ -89,11 +89,11 @@ summary_state_view_load_sql_string = fr"""
         ) AS face_value_loan_guarantee,
         COUNT(*) AS counts
     FROM
-        raw.transaction_normalized
+        int.transaction_normalized
     LEFT OUTER JOIN
-        raw.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)
+        int.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)
     LEFT OUTER JOIN
-        raw.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
+        int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
     WHERE
         transaction_normalized.action_date >= '2007-10-01'
         AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
