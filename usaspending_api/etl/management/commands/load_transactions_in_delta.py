@@ -995,6 +995,38 @@ class Command(BaseCommand):
         Procedure to create & set up transaction_id_lookup and award_id_lookup tables and create other tables in
         int database that will be populated by subsequent calls.
         """
+        @contextmanager
+        def prepare_temp_tables():
+            # Since the table to track the orphaned transactions is only needed for this function, just using a
+            # managed table in the temp database.
+            self.spark.sql(f"CREATE DATABASE IF NOT EXISTS temp")
+            self.spark.sql(
+                """
+                    CREATE OR REPLACE TABLE temp.orphaned_transaction_info (
+                        transaction_id        LONG NOT NULL,
+                        transaction_unique_id STRING NOT NULL,
+                        is_fpds               BOOLEAN NOT NULL,
+                        unique_award_key      STRING NOT NULL
+                    )
+                    USING DELTA
+                """
+            )
+
+            # We actually need another temporary table to handle orphaned awards
+            self.spark.sql(
+                """
+                    CREATE OR REPLACE TABLE temp.orphaned_award_info (
+                        award_id LONG NOT NULL
+                    )
+                    USING DELTA
+                """
+            )
+
+            yield
+
+            self.spark.sql("DROP TABLE temp.orphaned_transaction_info")
+            self.spark.sql("DROP TABLE temp.orphaned_award_info")
+
         delta_lake_s3_path = CONFIG.DELTA_LAKE_S3_PATH
         destination_database = "int"
 
@@ -1025,358 +1057,340 @@ class Command(BaseCommand):
         #   code to avoid copying orphaned transactions to the int tables, just in case.
         # Due to the size of the dataset, need to keep information about the orphaned transactions in a table.
         #   If we tried to insert the data directly into a SQL statement, it can break the Spark driver.
-        #   However, since the table is only needed for this function, just using a managed table in the temp schema.
-        self.spark.sql(f"CREATE DATABASE IF NOT EXISTS temp")
-        self.spark.sql(
-            """
-                CREATE OR REPLACE TABLE temp.orphaned_transaction_info (
-                    transaction_id        LONG NOT NULL,
-                    transaction_unique_id STRING NOT NULL,
-                    is_fpds               BOOLEAN NOT NULL,
-                    unique_award_key      STRING NOT NULL
-                )
-                USING DELTA
-            """
-        )
-
-        # We actually need another temporary table to handle orphaned awards
-        self.spark.sql(
-            """
-                CREATE OR REPLACE TABLE temp.orphaned_award_info (
-                    award_id LONG NOT NULL
-                )
-                USING DELTA
-            """
-        )
-
-        # Test to see if raw.transaction_normalized exists
-        try:
-            self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
-        except AnalysisException as e:
-            if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
-                # In this case, we just don't populate transaction_id_lookup
-                self.logger.warn(
-                    "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
-                )
-
-                # Without a raw.transaction_normalized table, can't get a maximum id from it, either.
-                max_id = None
-            else:
-                # Don't try to handle anything else
-                raise e
-        else:
-            # First, find orphaned transactions
-            self.spark.sql(
-                """
-                    INSERT OVERWRITE temp.orphaned_transaction_info
-                        SELECT tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
-                        FROM raw.transaction_normalized AS tn
-                        LEFT JOIN raw.detached_award_procurement AS dap ON (
-                            tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
-                        )
-                        LEFT JOIN raw.published_fabs AS pfabs ON (
-                            tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
-                        )
-                        WHERE dap.detached_award_proc_unique IS NULL AND pfabs.afa_generated_unique IS NULL
-                """
-            )
-
-            # Insert existing non-orphaned transactions into the lookup table
-            self.logger.info("Populating transaction_id_lookup table from raw.transaction_normalized")
-
-            # Note that the transaction loader code will convert string fields to upper case, so we have to match
-            # on the upper-cased versions of the strings.
-            self.spark.sql(
-                f"""
-                INSERT OVERWRITE {destination_database}.{destination_table}
-                    SELECT
-                        tn.id AS transaction_id,
-                        TRUE AS is_fpds,
-                        tn.transaction_unique_id
-                    FROM raw.transaction_normalized AS tn INNER JOIN raw.detached_award_procurement AS dap ON (
-                        tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+        with prepare_temp_tables():
+            # Test to see if raw.transaction_normalized exists
+            try:
+                self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
+            except AnalysisException as e:
+                if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
+                    # In this case, we just don't populate transaction_id_lookup
+                    self.logger.warn(
+                        "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
                     )
-                    -- Want to exclude orphaned transactions, as they will not be copied into the int schema.
-                    WHERE tn.id NOT IN (SELECT transaction_id FROM temp.orphaned_transaction_info WHERE is_fpds)
-                    UNION ALL
-                    SELECT
-                        tn.id AS transaction_id,
-                        FALSE AS is_fpds,
-                        tn.transaction_unique_id
-                    FROM raw.transaction_normalized AS tn INNER JOIN raw.published_fabs AS pfabs ON (
-                        tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
-                    )
-                    -- Want to exclude orphaned transactions, as they will not be copied into the int schema.
-                    WHERE tn.id NOT IN (SELECT transaction_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds)
-                """
-            )
 
-            self.logger.info("Updating transaction_id_seq to the max transaction_id value")
-            # Make sure to get the maximum transaction id from the raw table in case there are records in
-            # raw.transaction_normalized that don't correspond to a record in either of the source tables.
-            # This way, new transaction_ids won't repeat the ids of any of those "orphaned" transaction records.
-            max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.transaction_normalized").collect()[0]["max_id"]
-
-        if max_id is None:
-            # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the transaction IDs
-            # will start at 2.
-            max_id = 1
-            # Also, don't set the last load date in this case
-            set_last_load_date = False
-        with connection.cursor() as cursor:
-            # Set is_called flag to false so that the next call to nextval() will return the specified value
-            # https://www.postgresql.org/docs/13/functions-sequence.html
-            cursor.execute(f"SELECT setval('transaction_id_seq', {max_id}, false)")
-
-        if set_last_load_date:
-            update_last_load_date(destination_table, next_last_load)
-            # es_deletes should remain in lockstep with transaction load dates, so if they are reset, it should be reset
-            update_last_load_date("es_deletes", next_last_load)
-
-        # Need a table to keep track of awards in which some, but not all, transactions are deleted.
-        destination_table = "award_ids_delete_modified"
-
-        self.logger.info(f"Creating {destination_table} table")
-        self.spark.sql(
-            f"""
-                CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
-                    award_id LONG NOT NULL
-                )
-                USING DELTA
-                LOCATION 's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
-            """
-        )
-        # Nothing to add to this table yet.
-
-        # award_id_lookup
-        destination_table = "award_id_lookup"
-        set_last_load_date = True
-
-        # Test to see if raw.transaction_normalized exists
-        try:
-            self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
-        except AnalysisException as e:
-            if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
-                # In this case, we just don't check for NULLs in unique_award_key.
-                pass
+                    # Without a raw.transaction_normalized table, can't get a maximum id from it, either.
+                    max_id = None
+                else:
+                    # Don't try to handle anything else
+                    raise e
             else:
-                # Don't try to handle anything else
-                raise e
-        else:
-            # Before creating table or running INSERT, make sure unique_award_key has no NULLs
-            # (nothing needed to check before transaction_id_lookup table creation)
-            self.logger.info("Checking for NULLs in unique_award_key")
-            num_nulls = self.spark.sql(
-                "SELECT COUNT(*) AS count FROM raw.transaction_normalized WHERE unique_award_key IS NULL"
-            ).collect()[0]["count"]
-
-            if num_nulls > 0:
-                raise ValueError(
-                    f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in 'unique_award_key' in table "
-                    "raw.transaction_normalized!"
+                # First, find orphaned transactions
+                self.spark.sql(
+                    """
+                        INSERT OVERWRITE temp.orphaned_transaction_info
+                            SELECT tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
+                            FROM raw.transaction_normalized AS tn
+                            LEFT JOIN raw.detached_award_procurement AS dap ON (
+                                tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+                            )
+                            LEFT JOIN raw.published_fabs AS pfabs ON (
+                                tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+                            )
+                            WHERE dap.detached_award_proc_unique IS NULL AND pfabs.afa_generated_unique IS NULL
+                    """
                 )
 
-        self.logger.info(f"Creating {destination_table} table")
-        self.spark.sql(
-            f"""
-                CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
-                    award_id LONG NOT NULL,
-                    -- The is_fpds flag is needed in this table to allow the award_id_lookup ETL level to choose
-                    -- the correct rows for deleting so that it can be run in parallel with the transaction_id_lookup
-                    -- ETL level
-                    is_fpds BOOLEAN NOT NULL,
-                    transaction_unique_id STRING NOT NULL,
-                    generated_unique_award_id STRING NOT NULL
-                )
-                USING DELTA
-                LOCATION 's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
-            """
-        )
+                # Insert existing non-orphaned transactions into the lookup table
+                self.logger.info("Populating transaction_id_lookup table from raw.transaction_normalized")
 
-        # Test to see if raw.awards exists
-        try:
-            self.spark.sql("SELECT 1 FROM raw.awards")
-        except AnalysisException as e:
-            if re.match(r"Table or view not found: raw\.awards", e.desc):
-                # In this case, we just don't populate award_id_lookup
-                self.logger.warn("Skipping population of award_id_lookup table; no raw.awards table.")
-
-                # Without a raw.awards table, can't get a maximum id from it, either.
-                max_id = None
-            else:
-                # Don't try to handle anything else
-                raise e
-        else:
-            # Insert existing non-orphaned transactions and their corresponding award_ids into the lookup table
-            self.logger.info("Populating award_id_lookup table from raw.awards")
-
-            # Once again we have to match on the upper-cased versions of the strings from published_fabs
-            # and detached_award_procurement.
-            self.spark.sql(
-                f"""
+                # Note that the transaction loader code will convert string fields to upper case, so we have to match
+                # on the upper-cased versions of the strings.
+                self.spark.sql(
+                    f"""
                     INSERT OVERWRITE {destination_database}.{destination_table}
                         SELECT
-                            existing_awards.id AS award_id,
-                            existing_awards.is_fpds,
-                            existing_awards.transaction_unique_id,
-                            existing_awards.generated_unique_award_id
-                        FROM (
-                            (
-                                SELECT
-                                    aw.id,
-                                    TRUE AS is_fpds,
-                                    -- The transaction loader code will convert this to upper case, so use that
-                                    -- version here.
-                                    ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
-                                    aw.generated_unique_award_id
-                                FROM
-                                    raw.awards AS aw INNER JOIN raw.detached_award_procurement AS dap ON (
-                                        aw.generated_unique_award_id = ucase(dap.unique_award_key)
-                                    )
-                                -- Again, want to exclude orphaned transactions, as they will not be copied into the
-                                -- int schema.
-                                WHERE ucase(dap.detached_award_proc_unique) NOT IN (
-                                    SELECT transaction_unique_id FROM temp.orphaned_transaction_info WHERE is_fpds
-                                )
-                            )
-                            UNION ALL
-                            (
-                                SELECT
-                                    aw.id,
-                                    FALSE AS is_fpds,
-                                    -- The transaction loader code will convert this to upper case, so use that
-                                    -- version here.
-                                    ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
-                                    aw.generated_unique_award_id
-                                FROM
-                                    raw.awards AS aw INNER JOIN raw.published_fabs AS pfabs ON (
-                                        aw.generated_unique_award_id = ucase(pfabs.unique_award_key)
-                                    )
-                                -- Again, want to exclude orphaned transactions, as they will not be copied into the
-                                -- int schema.
-                                WHERE ucase(pfabs.afa_generated_unique) NOT IN (
-                                    SELECT transaction_unique_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds
-                                )
-                            )
-                        ) AS existing_awards
-                """
-            )
+                            tn.id AS transaction_id,
+                            TRUE AS is_fpds,
+                            tn.transaction_unique_id
+                        FROM raw.transaction_normalized AS tn INNER JOIN raw.detached_award_procurement AS dap ON (
+                            tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+                        )
+                        -- Want to exclude orphaned transactions, as they will not be copied into the int schema.
+                        WHERE tn.id NOT IN (SELECT transaction_id FROM temp.orphaned_transaction_info WHERE is_fpds)
+                        UNION ALL
+                        SELECT
+                            tn.id AS transaction_id,
+                            FALSE AS is_fpds,
+                            tn.transaction_unique_id
+                        FROM raw.transaction_normalized AS tn INNER JOIN raw.published_fabs AS pfabs ON (
+                            tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+                        )
+                        -- Want to exclude orphaned transactions, as they will not be copied into the int schema.
+                        WHERE tn.id NOT IN (SELECT transaction_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds)
+                    """
+                )
 
-            # Any award that has a transaction inserted into award_id_lookup table that also has an orphaned
-            # transaction is an award that will have to be updated the first time this command is called with the
-            # awards ETL level, so add those awards to the award_ids_delete_modified table.
-            self.logger.info("Updating award_ids_delete_modified table")
+                self.logger.info("Updating transaction_id_seq to the max transaction_id value")
+                # Make sure to get the maximum transaction id from the raw table in case there are records in
+                # raw.transaction_normalized that don't correspond to a record in either of the source tables.
+                # This way, new transaction_ids won't repeat the ids of any of those "orphaned" transaction records.
+                max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.transaction_normalized").collect()[0][
+                    "max_id"
+                ]
+
+            if max_id is None:
+                # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the transaction IDs
+                # will start at 2.
+                max_id = 1
+                # Also, don't set the last load date in this case
+                set_last_load_date = False
+            with connection.cursor() as cursor:
+                # Set is_called flag to false so that the next call to nextval() will return the specified value
+                # https://www.postgresql.org/docs/13/functions-sequence.html
+                cursor.execute(f"SELECT setval('transaction_id_seq', {max_id}, false)")
+
+            if set_last_load_date:
+                update_last_load_date(destination_table, next_last_load)
+                # es_deletes should remain in lockstep with transaction load dates, so if they are reset,
+                # it should be reset
+                update_last_load_date("es_deletes", next_last_load)
+
+            # Need a table to keep track of awards in which some, but not all, transactions are deleted.
+            destination_table = "award_ids_delete_modified"
+
+            self.logger.info(f"Creating {destination_table} table")
             self.spark.sql(
-                """
-                    INSERT INTO int.award_ids_delete_modified
-                        SELECT DISTINCT(award_id)
-                        FROM int.award_id_lookup
-                        WHERE transaction_unique_id IN (
-                            SELECT transaction_unique_id FROM temp.orphaned_transaction_info
-                        )
-                """
-            )
-
-            # Awards that have orphaned transactions, but that *aren't* in the award_ids_delete_modified table are
-            # orphaned awards (those with no remaining transactions), so put those into the orphaned_award_info table.
-            self.spark.sql(
-                """
-                    INSERT INTO temp.orphaned_award_info
-                        SELECT DISTINCT(aidlu.award_id)
-                        FROM temp.orphaned_transaction_info AS oti INNER JOIN int.award_id_lookup AS aidlu ON (
-                            oti.transaction_unique_id = aidlu.transaction_unique_id
-                        )
-                        WHERE aidlu.award_id NOT IN (SELECT * FROM int.award_ids_delete_modified)
+                f"""
+                    CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
+                        award_id LONG NOT NULL
+                    )
+                    USING DELTA
+                    LOCATION 
+                        's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
                 """
             )
+            # Nothing to add to this table yet.
 
-            self.logger.info("Updating award_id_seq to the max award_id value")
-            # As for transaction_id_seq, make sure to get the maximum award id from the raw table in case there are
-            # records in raw.awards that don't correspond to any records in either of the source tables.
-            # This way, new award_ids won't repeat the ids of any of those "orphaned" award records.
-            max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.awards").collect()[0]["max_id"]
+            # award_id_lookup
+            destination_table = "award_id_lookup"
+            set_last_load_date = True
 
-        if max_id is None:
-            # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs
-            # will start at 2.
-            max_id = 1
-            # Also, don't set the last load date in this case
-            set_last_load_date = False
-        with connection.cursor() as cursor:
-            # Set is_called flag to false so that the next call to nextval() will return the specified value
-            # https://www.postgresql.org/docs/13/functions-sequence.html
-            cursor.execute(f"SELECT setval('award_id_seq', {max_id}, false)")
-
-        if set_last_load_date:
-            update_last_load_date(destination_table, next_last_load)
-            # es_deletes should remain in lockstep with transaction load dates, so if they are reset, it should be reset
-            update_last_load_date("es_deletes", next_last_load)
-
-        # Create other tables in 'int' database
-        for destination_table, col_names, orphaned_record_key in zip(
-            ("transaction_fabs", "transaction_fpds", "transaction_normalized", "awards"),
-            (
-                TRANSACTION_FABS_COLUMNS,
-                TRANSACTION_FPDS_COLUMNS,
-                list(TRANSACTION_NORMALIZED_COLUMNS),
-                list(AWARDS_COLUMNS),
-            ),
-            ("transaction_id", "transaction_id", "id", "id"),
-        ):
-            call_command(
-                "create_delta_table",
-                "--destination-table",
-                destination_table,
-                "--spark-s3-bucket",
-                self.spark_s3_bucket,
-                "--alt-db",
-                destination_database,
-            )
-
-            if not self.no_initial_copy:
-                # Test to see if the raw table exists
-                try:
-                    self.spark.sql(f"SELECT 1 FROM raw.{destination_table}")
-                except AnalysisException as e:
-                    if re.match(rf"Table or view not found: raw\.{destination_table}", e.desc):
-                        # In this case, we just don't copy anything over
-                        self.logger.warn(
-                            f"Skipping copy of {destination_table} table from 'raw' to 'int' database; "
-                            f"no raw.{destination_table} table."
-                        )
-                    else:
-                        # Don't try to handle anything else
-                        raise e
+            # Test to see if raw.transaction_normalized exists
+            try:
+                self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
+            except AnalysisException as e:
+                if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
+                    # In this case, we just don't check for NULLs in unique_award_key.
+                    pass
                 else:
-                    # Handle exclusion of orphaned records
-                    if destination_table != "awards":
-                        orphan_str = f"""
-                            WHERE {orphaned_record_key} NOT IN (
-                                SELECT transaction_id FROM temp.orphaned_transaction_info
-                            )
-                        """
-                    else:
-                        orphan_str = (
-                            f"WHERE {orphaned_record_key} NOT IN (SELECT award_id FROM temp.orphaned_award_info)"
-                        )
+                    # Don't try to handle anything else
+                    raise e
+            else:
+                # Before creating table or running INSERT, make sure unique_award_key has no NULLs
+                # (nothing needed to check before transaction_id_lookup table creation)
+                self.logger.info("Checking for NULLs in unique_award_key")
+                num_nulls = self.spark.sql(
+                    "SELECT COUNT(*) AS count FROM raw.transaction_normalized WHERE unique_award_key IS NULL"
+                ).collect()[0]["count"]
 
-                    # Handle the possibility that the order of columns is different between the raw and int tables.
-                    self.spark.sql(
-                        f"""
-                        INSERT OVERWRITE {destination_database}.{destination_table} ({", ".join(col_names)})
-                            SELECT {", ".join(col_names)} FROM raw.{destination_table}
-                            {orphan_str}
-                        """
+                if num_nulls > 0:
+                    raise ValueError(
+                        f"Found {num_nulls} NULL{'s' if num_nulls > 1 else ''} in 'unique_award_key' in table "
+                        "raw.transaction_normalized!"
                     )
 
-                    count = self.spark.sql(
-                        f"SELECT COUNT(*) AS count FROM {destination_database}.{destination_table}"
-                    ).collect()[0]["count"]
-                    if count > 0:
-                        update_last_load_date(destination_table, next_last_load)
-                        # es_deletes should remain in lockstep with transaction load dates, so if they are reset,
-                        # it should be reset
-                        update_last_load_date("es_deletes", next_last_load)
+            self.logger.info(f"Creating {destination_table} table")
+            self.spark.sql(
+                f"""
+                    CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
+                        award_id LONG NOT NULL,
+                        -- The is_fpds flag is needed in this table to allow the award_id_lookup ETL level to choose
+                        -- the correct rows for deleting so that it can be run in parallel with the
+                        -- transaction_id_lookup ETL level
+                        is_fpds BOOLEAN NOT NULL,
+                        transaction_unique_id STRING NOT NULL,
+                        generated_unique_award_id STRING NOT NULL
+                    )
+                    USING DELTA
+                    LOCATION 
+                        's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
+                """
+            )
 
-        self.spark.sql("DROP TABLE temp.orphaned_transaction_info")
-        self.spark.sql("DROP TABLE temp.orphaned_award_info")
+            # Test to see if raw.awards exists
+            try:
+                self.spark.sql("SELECT 1 FROM raw.awards")
+            except AnalysisException as e:
+                if re.match(r"Table or view not found: raw\.awards", e.desc):
+                    # In this case, we just don't populate award_id_lookup
+                    self.logger.warn("Skipping population of award_id_lookup table; no raw.awards table.")
+
+                    # Without a raw.awards table, can't get a maximum id from it, either.
+                    max_id = None
+                else:
+                    # Don't try to handle anything else
+                    raise e
+            else:
+                # Insert existing non-orphaned transactions and their corresponding award_ids into the lookup table
+                self.logger.info("Populating award_id_lookup table from raw.awards")
+
+                # Once again we have to match on the upper-cased versions of the strings from published_fabs
+                # and detached_award_procurement.
+                self.spark.sql(
+                    f"""
+                        INSERT OVERWRITE {destination_database}.{destination_table}
+                            SELECT
+                                existing_awards.id AS award_id,
+                                existing_awards.is_fpds,
+                                existing_awards.transaction_unique_id,
+                                existing_awards.generated_unique_award_id
+                            FROM (
+                                (
+                                    SELECT
+                                        aw.id,
+                                        TRUE AS is_fpds,
+                                        -- The transaction loader code will convert this to upper case, so use that
+                                        -- version here.
+                                        ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
+                                        aw.generated_unique_award_id
+                                    FROM
+                                        raw.awards AS aw INNER JOIN raw.detached_award_procurement AS dap ON (
+                                            aw.generated_unique_award_id = ucase(dap.unique_award_key)
+                                        )
+                                    -- Again, want to exclude orphaned transactions, as they will not be copied into the
+                                    -- int schema.
+                                    WHERE ucase(dap.detached_award_proc_unique) NOT IN (
+                                        SELECT transaction_unique_id FROM temp.orphaned_transaction_info WHERE is_fpds
+                                    )
+                                )
+                                UNION ALL
+                                (
+                                    SELECT
+                                        aw.id,
+                                        FALSE AS is_fpds,
+                                        -- The transaction loader code will convert this to upper case, so use that
+                                        -- version here.
+                                        ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
+                                        aw.generated_unique_award_id
+                                    FROM
+                                        raw.awards AS aw INNER JOIN raw.published_fabs AS pfabs ON (
+                                            aw.generated_unique_award_id = ucase(pfabs.unique_award_key)
+                                        )
+                                    -- Again, want to exclude orphaned transactions, as they will not be copied into the
+                                    -- int schema.
+                                    WHERE ucase(pfabs.afa_generated_unique) NOT IN (
+                                        SELECT 
+                                            transaction_unique_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds
+                                    )
+                                )
+                            ) AS existing_awards
+                    """
+                )
+
+                # Any award that has a transaction inserted into award_id_lookup table that also has an orphaned
+                # transaction is an award that will have to be updated the first time this command is called with the
+                # awards ETL level, so add those awards to the award_ids_delete_modified table.
+                self.logger.info("Updating award_ids_delete_modified table")
+                self.spark.sql(
+                    """
+                        INSERT INTO int.award_ids_delete_modified
+                            SELECT DISTINCT(award_id)
+                            FROM int.award_id_lookup
+                            WHERE transaction_unique_id IN (
+                                SELECT transaction_unique_id FROM temp.orphaned_transaction_info
+                            )
+                    """
+                )
+
+                # Awards that have orphaned transactions, but that *aren't* in the award_ids_delete_modified table are
+                # orphaned awards (those with no remaining transactions), so put those into the orphaned_award_info
+                # table.
+                self.spark.sql(
+                    """
+                        INSERT INTO temp.orphaned_award_info
+                            SELECT DISTINCT(aidlu.award_id)
+                            FROM temp.orphaned_transaction_info AS oti INNER JOIN int.award_id_lookup AS aidlu ON (
+                                oti.transaction_unique_id = aidlu.transaction_unique_id
+                            )
+                            WHERE aidlu.award_id NOT IN (SELECT * FROM int.award_ids_delete_modified)
+                    """
+                )
+
+                self.logger.info("Updating award_id_seq to the max award_id value")
+                # As for transaction_id_seq, make sure to get the maximum award id from the raw table in case there are
+                # records in raw.awards that don't correspond to any records in either of the source tables.
+                # This way, new award_ids won't repeat the ids of any of those "orphaned" award records.
+                max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.awards").collect()[0]["max_id"]
+
+            if max_id is None:
+                # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs
+                # will start at 2.
+                max_id = 1
+                # Also, don't set the last load date in this case
+                set_last_load_date = False
+            with connection.cursor() as cursor:
+                # Set is_called flag to false so that the next call to nextval() will return the specified value
+                # https://www.postgresql.org/docs/13/functions-sequence.html
+                cursor.execute(f"SELECT setval('award_id_seq', {max_id}, false)")
+
+            if set_last_load_date:
+                update_last_load_date(destination_table, next_last_load)
+                # es_deletes should remain in lockstep with transaction load dates, so if they are reset,
+                # it should be reset
+                update_last_load_date("es_deletes", next_last_load)
+
+            # Create other tables in 'int' database
+            for destination_table, col_names, orphaned_record_key in zip(
+                ("transaction_fabs", "transaction_fpds", "transaction_normalized", "awards"),
+                (
+                    TRANSACTION_FABS_COLUMNS,
+                    TRANSACTION_FPDS_COLUMNS,
+                    list(TRANSACTION_NORMALIZED_COLUMNS),
+                    list(AWARDS_COLUMNS),
+                ),
+                ("transaction_id", "transaction_id", "id", "id"),
+            ):
+                call_command(
+                    "create_delta_table",
+                    "--destination-table",
+                    destination_table,
+                    "--spark-s3-bucket",
+                    self.spark_s3_bucket,
+                    "--alt-db",
+                    destination_database,
+                )
+
+                if not self.no_initial_copy:
+                    # Test to see if the raw table exists
+                    try:
+                        self.spark.sql(f"SELECT 1 FROM raw.{destination_table}")
+                    except AnalysisException as e:
+                        if re.match(rf"Table or view not found: raw\.{destination_table}", e.desc):
+                            # In this case, we just don't copy anything over
+                            self.logger.warn(
+                                f"Skipping copy of {destination_table} table from 'raw' to 'int' database; "
+                                f"no raw.{destination_table} table."
+                            )
+                        else:
+                            # Don't try to handle anything else
+                            raise e
+                    else:
+                        # Handle exclusion of orphaned records
+                        if destination_table != "awards":
+                            orphan_str = f"""
+                                WHERE {orphaned_record_key} NOT IN (
+                                    SELECT transaction_id FROM temp.orphaned_transaction_info
+                                )
+                            """
+                        else:
+                            orphan_str = (
+                                f"WHERE {orphaned_record_key} NOT IN (SELECT award_id FROM temp.orphaned_award_info)"
+                            )
+
+                        # Handle the possibility that the order of columns is different between the raw and int tables.
+                        self.spark.sql(
+                            f"""
+                            INSERT OVERWRITE {destination_database}.{destination_table} ({", ".join(col_names)})
+                                SELECT {", ".join(col_names)} FROM raw.{destination_table}
+                                {orphan_str}
+                            """
+                        )
+
+                        count = self.spark.sql(
+                            f"SELECT COUNT(*) AS count FROM {destination_database}.{destination_table}"
+                        ).collect()[0]["count"]
+                        if count > 0:
+                            update_last_load_date(destination_table, next_last_load)
+                            # es_deletes should remain in lockstep with transaction load dates, so if they are reset,
+                            # it should be reset
+                            update_last_load_date("es_deletes", next_last_load)
