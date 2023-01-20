@@ -427,6 +427,33 @@ class Command(BaseCommand):
             )
         s3_bucket_with_csv_path = f"s3a://{spark_s3_bucket_name}/{csv_path}"
 
+        # Get boto3 s3 resource to interact with bucket where CSV data will land
+        if not CONFIG.USE_AWS:
+            boto3_session = boto3.session.Session(
+                region_name=CONFIG.AWS_REGION,
+                aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+                aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+            )
+            s3_resource = boto3_session.resource(
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
+            )
+        else:
+            s3_resource = boto3.resource(
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
+            )
+        s3_bucket_name = spark_s3_bucket_name
+        s3_bucket = s3_resource.Bucket(s3_bucket_name)
+        objs_collection = s3_bucket.objects.filter(Prefix=csv_path)
+        initial_size = sum(1 for _ in objs_collection)
+
+        if initial_size > 0:
+            self.logger.info(f"LOAD: Starting to delete {initial_size} previous objects in {s3_bucket_with_csv_path}")
+            objs_collection.delete()
+            post_delete_size = sum(1 for _ in objs_collection)
+            self.logger.info(f"LOAD: Finished deleting. {post_delete_size} objects remain in {s3_bucket_with_csv_path}")
+        else:
+            self.logger.info(f"LOAD: Target S3 path {s3_bucket_with_csv_path} is empty or yet to be created")
+
         self.logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
@@ -444,21 +471,6 @@ class Command(BaseCommand):
             f"get listing of contents of Bucket={spark_s3_bucket_name} with Prefix={csv_path}"
         )
 
-        if not CONFIG.USE_AWS:
-            boto3_session = boto3.session.Session(
-                region_name=CONFIG.AWS_REGION,
-                aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
-                aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
-            )
-            s3_resource = boto3_session.resource(
-                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
-            )
-        else:
-            s3_resource = boto3.resource(
-                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
-            )
-        s3_bucket_name = spark_s3_bucket_name
-        s3_bucket = s3_resource.Bucket(s3_bucket_name)
         gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
         file_count = len(gzipped_csv_files)
         self.logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
