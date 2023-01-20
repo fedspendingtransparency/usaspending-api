@@ -996,8 +996,9 @@ class Command(BaseCommand):
         int database that will be populated by subsequent calls.
         """
 
+        # Creating 2 context managers to be able to handle error if either temp table is not created correctly.
         @contextmanager
-        def prepare_temp_tables():
+        def prepare_orphaned_transaction_temp_table():
             # Since the table to track the orphaned transactions is only needed for this function, just using a
             # managed table in the temp database.
             self.spark.sql(f"CREATE DATABASE IF NOT EXISTS temp")
@@ -1013,6 +1014,15 @@ class Command(BaseCommand):
                 """
             )
 
+            # Need a try...finally here to properly handle the case where an inner context manager raises an error
+            # during its __enter__ phase.
+            try:
+                yield
+            finally:
+                self.spark.sql("DROP TABLE IF EXISTS temp.orphaned_transaction_info")
+
+        @contextmanager
+        def prepare_orphaned_award_temp_table():
             # We actually need another temporary table to handle orphaned awards
             self.spark.sql(
                 """
@@ -1023,10 +1033,11 @@ class Command(BaseCommand):
                 """
             )
 
-            yield
-
-            self.spark.sql("DROP TABLE temp.orphaned_transaction_info")
-            self.spark.sql("DROP TABLE temp.orphaned_award_info")
+            # Using another try...finally here just in case another context manager is used.
+            try:
+                yield
+            finally:
+                self.spark.sql("DROP TABLE IF EXISTS temp.orphaned_award_info")
 
         delta_lake_s3_path = CONFIG.DELTA_LAKE_S3_PATH
         destination_database = "int"
@@ -1057,8 +1068,8 @@ class Command(BaseCommand):
         #   in one of the source tables) by the time this code is ultimately run in production, putting in
         #   code to avoid copying orphaned transactions to the int tables, just in case.
         # Due to the size of the dataset, need to keep information about the orphaned transactions in a table.
-        #   If we tried to insert the data directly into a SQL statement, it can break the Spark driver.
-        with prepare_temp_tables():
+        #   If we tried to insert the data directly into a SQL statement, it could break the Spark driver.
+        with prepare_orphaned_transaction_temp_table(), prepare_orphaned_award_temp_table():
             # Test to see if raw.transaction_normalized exists
             try:
                 self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
