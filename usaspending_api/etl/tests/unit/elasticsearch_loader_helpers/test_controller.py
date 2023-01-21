@@ -1,4 +1,4 @@
-from usaspending_api.etl.elasticsearch_loader_helpers import Controller
+from usaspending_api.etl.elasticsearch_loader_helpers import PostgresElasticsearchIndexerController
 from math import ceil
 
 
@@ -7,7 +7,7 @@ def test_get_id_range_for_partition_one_records():
     max_id = 1
     id_range_item_count = max_id - min_id + 1  # this many individual IDs should be processed for continuous ID range
     etl_config = {"partition_size": 10000}
-    ctrl = Controller(etl_config)
+    ctrl = PostgresElasticsearchIndexerController(etl_config)
     ctrl.min_id = min_id
     ctrl.max_id = max_id
     ctrl.record_count = id_range_item_count  # assume records exist for each ID in range
@@ -28,7 +28,7 @@ def test_get_id_range_for_partition_two_records():
     max_id = 2
     id_range_item_count = max_id - min_id + 1  # this many individual IDs should be processed for continuous ID range
     etl_config = {"partition_size": 10000}
-    ctrl = Controller(etl_config)
+    ctrl = PostgresElasticsearchIndexerController(etl_config)
     ctrl.min_id = min_id
     ctrl.max_id = max_id
     ctrl.record_count = id_range_item_count  # assume records exist for each ID in range
@@ -52,7 +52,7 @@ def test_get_id_range_for_partition_with_evenly_divisible():
     id_range_item_count = max_id - min_id + 1  # this many individual IDs should be processed for continuous ID range
     assert id_range_item_count % partition_size == 0  # evenly divisible
     etl_config = {"partition_size": partition_size}
-    ctrl = Controller(etl_config)
+    ctrl = PostgresElasticsearchIndexerController(etl_config)
     ctrl.min_id = min_id
     ctrl.max_id = max_id
     ctrl.record_count = id_range_item_count  # assume records exist for each ID in range
@@ -84,7 +84,7 @@ def test_get_id_range_for_partition_with_one_over():
     id_range_item_count = max_id - min_id + 1  # this many individual IDs should be processed for continuous ID range
     assert id_range_item_count % partition_size == 1  # one over the partition size
     etl_config = {"partition_size": partition_size}
-    ctrl = Controller(etl_config)
+    ctrl = PostgresElasticsearchIndexerController(etl_config)
     ctrl.min_id = min_id
     ctrl.max_id = max_id
     ctrl.record_count = id_range_item_count  # assume records exist for each ID in range
@@ -115,7 +115,7 @@ def test_get_id_range_for_partition_with_evenly_divisible_partition_size_offset(
     partition_size = 2000
     id_range_item_count = max_id - min_id + 1  # this many individual IDs should be processed for continuous ID range
     etl_config = {"partition_size": partition_size}
-    ctrl = Controller(etl_config)
+    ctrl = PostgresElasticsearchIndexerController(etl_config)
     ctrl.min_id = min_id
     ctrl.max_id = max_id
     ctrl.record_count = id_range_item_count  # assume records exist for each ID in range
@@ -147,7 +147,7 @@ def test_get_id_range_for_partition_with_sparse_range():
     id_range_item_count = max_id - min_id + 1  # this many individual IDs should be processed for continuous ID range
     record_ids = {4, 5, 7, 99, 101, 120, 1998, 1999, 2000, 2001, 2002, 4444, 5999}
     etl_config = {"partition_size": partition_size}
-    ctrl = Controller(etl_config)
+    ctrl = PostgresElasticsearchIndexerController(etl_config)
     ctrl.min_id = min_id
     ctrl.max_id = max_id
     ctrl.record_count = len(record_ids)
@@ -178,7 +178,7 @@ def test_get_id_range_for_partition_with_empty_partitions():
     id_range_item_count = max_id - min_id + 1  # this many individual IDs should be processed for continuous ID range
     record_ids = {1, 5, 7, 15, 19, 20, 41, 100}
     etl_config = {"partition_size": partition_size}
-    ctrl = Controller(etl_config)
+    ctrl = PostgresElasticsearchIndexerController(etl_config)
     ctrl.min_id = min_id
     ctrl.max_id = max_id
     ctrl.record_count = len(record_ids)

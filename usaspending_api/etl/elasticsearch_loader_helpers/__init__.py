@@ -1,3 +1,16 @@
+from django.apps import apps
+from django import setup as django_setup
+
+# Ensure Django is setup before importing/using ths module. Why? -->
+# This module is used by other application functions, which are pickled and transported to worker machines
+# in a distributed/cluster computing configuration (Spark workers). As the code lands there, no prior setup or
+# dependencies are established, so setup of things like Django needs to be re-initialized before the code is run.
+# Due to the way the function requires classes and functions under this module, this __init__ module is always run
+# before any other entrypoint code can be invoked.
+if not apps.ready:  # an indicator of whether Django has already been setup in this running process
+    # NOTE: ENV VAR NAMED DJANGO_SETTINGS_MODULE must be set for setup to work (e.g. to usaspending_api.settings)
+    django_setup()
+
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     delete_docs_by_unique_key,
     delete_awards,
@@ -5,8 +18,10 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
     count_of_records_to_process,
+    count_of_records_to_process_in_delta,
     extract_records,
-    obtain_extract_sql,
+    obtain_extract_partition_sql,
+    obtain_extract_all_partitions_sql,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     create_award_type_aliases,
@@ -30,12 +45,19 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     gen_random_name,
     TaskSpec,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.controller import Controller
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
+    AbstractElasticsearchIndexerController,
+    PostgresElasticsearchIndexerController,
+    DeltaLakeElasticsearchIndexerController,
+)
 
 __all__ = [
     "chunks",
-    "Controller",
+    "AbstractElasticsearchIndexerController",
+    "PostgresElasticsearchIndexerController",
+    "DeltaLakeElasticsearchIndexerController",
     "count_of_records_to_process",
+    "count_of_records_to_process_in_delta",
     "create_award_type_aliases",
     "create_index",
     "delete_docs_by_unique_key",
@@ -46,7 +68,8 @@ __all__ = [
     "format_log",
     "gen_random_name",
     "load_data",
-    "obtain_extract_sql",
+    "obtain_extract_partition_sql",
+    "obtain_extract_all_partitions_sql",
     "set_final_index_config",
     "swap_aliases",
     "take_snapshot",
