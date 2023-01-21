@@ -315,4 +315,4 @@ INNER JOIN (
             0
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = awards.id)
+) DEFC ON (DEFC.award_id = awards.award_id)
