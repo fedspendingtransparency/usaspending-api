@@ -33,7 +33,7 @@ WITH update_cte AS (
     RETURNING award_id
 )
 UPDATE
-    award_search a
+    temp.award_search_temp a
 SET
     update_date = NOW()
 FROM
@@ -52,7 +52,7 @@ WITH update_cte AS (
             SELECT
                 award_id
             FROM
-                award_search AS aw
+                temp.award_search_temp AS aw
             WHERE
                 UPPER(aw.uri) = UPPER(faba.uri)
         )
@@ -68,7 +68,7 @@ WITH update_cte AS (
                 AND faba_sub.award_id IS NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM award_search AS aw_sub
+                    FROM temp.award_search_temp AS aw_sub
                     WHERE
                         UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
                 ) = 1
@@ -77,7 +77,7 @@ WITH update_cte AS (
         RETURNING award_id
     )
 UPDATE
-    award_search a
+    temp.award_search_temp a
 SET
     update_date = NOW()
 FROM
