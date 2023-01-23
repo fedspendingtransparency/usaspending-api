@@ -21,13 +21,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            self.faba_award_id_check()
             if options.get("submission_ids"):
                 for sub in options["submission_ids"]:
                     self.run_sql(sub)
             else:
                 self.run_sql()
-            # self.faba_award_id_check()
+            self.faba_award_id_check()
 
     def run_sql(self, submission=None):
         for link_type in self.LINKAGE_TYPES:
@@ -62,11 +61,10 @@ class Command(BaseCommand):
             before_change_count = cursor.fetchall()[0][0]
         self.logger.info(f"Count of FABA rows that need their award_id values updated: {before_change_count}")
 
-        # Replace award_id values with NULL if the award doesn't exist
-        self.logger.info(f"Running {update_filename}")
-        with connection.cursor() as cursor:
-            cursor.execute(update_sql_command[0])
-            changed_count = cursor.fetchall()[0][0]
-        self.logger.info(f"Count of FABA rows updated: {changed_count}")
+        if before_change_count > 0:
+            # Replace award_id values with NULL if the award doesn't exist
+            self.logger.info(f"Running {update_filename}")
+            with connection.cursor() as cursor:
+                cursor.execute(update_sql_command[0])
 
         self.logger.info(f"Finished FABA award_id queries in {datetime.now() - sql_execution_start_time} seconds")
