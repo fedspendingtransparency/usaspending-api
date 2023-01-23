@@ -8,7 +8,7 @@ SET
 WHERE
     faba.award_id NOT IN (
         SELECT
-            DISTICT(award_id)
+            DISTINCT(award_id)
         FROM
             temp.award_search_temp
     );
