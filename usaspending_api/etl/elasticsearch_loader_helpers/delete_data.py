@@ -9,6 +9,7 @@ from typing import Optional, Dict, Union, Any
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
+from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, get_latest_load_date
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
@@ -235,7 +236,14 @@ def _lookup_deleted_award_keys(
     return award_key_list
 
 
-def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB Deletes") -> int:
+def delete_awards(
+    client: Elasticsearch,
+    config: dict,
+    task_id: str = "Sync DB Deletes",
+    fabs_external_data_load_date_key: str = "fabs",
+    fpds_external_data_load_date_key: str = "fpds",
+    spark: SparkSession = None,
+) -> int:
     """Delete all awards in the Elasticsearch awards index that were deleted in the source database.
 
     This performs the deletes of award documents in ES in a series of batches, as there could be many. Millions of
@@ -253,10 +261,18 @@ def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB D
         client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
         config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
         task_id (str): label for this sub-step of the ETL
+        fabs_external_data_load_date_key (str): the key used to lookup the ``ExternalDataLoadDate`` model entry for fabs
+        fpds_external_data_load_date_key: str = the key used to lookup the ``ExternalDataLoadDate`` model entry for fpds
+        spark (SparkSession): provided SparkSession to be used in a Spark Cluster runtime to interact with Delta Lake
+            tables as the basis of discovering award records that are no longer in the table and should be deleted.
+            Presence of this variable is a marker for whether the Postgres awards table or Delta awards table should
+            be interrogated.
 
     Returns: Number of ES docs deleted in the index
     """
-    deleted_tx_keys = _gather_deleted_transaction_keys(config)
+    deleted_tx_keys = _gather_deleted_transaction_keys(
+        config, fabs_external_data_load_date_key, fpds_external_data_load_date_key
+    )
     # While extracting unique award keys, the lookup is on transactions and must match against the unique transaction id
     award_keys = _lookup_deleted_award_keys(
         client,
@@ -280,7 +296,7 @@ def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB D
         format_log(f"Derived {award_keys_len} award keys from transactions in ES", action="Delete", name=task_id)
     )
 
-    deleted_award_kvs = _check_awards_for_deletes(award_keys)
+    deleted_award_kvs = _check_awards_for_deletes(award_keys, spark)
     deleted_award_kvs_len = len(deleted_award_kvs)
     if deleted_award_kvs_len == 0:
         # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
@@ -310,7 +326,13 @@ def delete_awards(client: Elasticsearch, config: dict, task_id: str = "Sync DB D
     )
 
 
-def delete_transactions(client: Elasticsearch, config: dict, task_id: str = "Sync DB Deletes") -> int:
+def delete_transactions(
+    client: Elasticsearch,
+    config: dict,
+    task_id: str = "Sync DB Deletes",
+    fabs_external_data_load_date_key: str = "fabs",
+    fpds_external_data_load_date_key: str = "fpds",
+) -> int:
     """Delete all transactions in the Elasticsearch transactions index that were deleted in the source database.
 
     This performs the deletes of transaction documents in ES in a series of batches, as there could be many. Millions of
@@ -325,11 +347,15 @@ def delete_transactions(client: Elasticsearch, config: dict, task_id: str = "Syn
         client (Elasticsearch): elasticsearch-dsl client for making calls to an ES cluster
         config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
         task_id (str): label for this sub-step of the ETL
+        fabs_external_data_load_date_key (str): the key used to lookup the ``ExternalDataLoadDate`` model entry for fabs
+        fpds_external_data_load_date_key: str = the key used to lookup the ``ExternalDataLoadDate`` model entry for fpds
 
 
     Returns: Number of ES docs deleted in the index
     """
-    deleted_tx_keys = _gather_deleted_transaction_keys(config)
+    deleted_tx_keys = _gather_deleted_transaction_keys(
+        config, fabs_external_data_load_date_key, fpds_external_data_load_date_key
+    )
     return delete_docs_by_unique_key(
         client,
         key=config["unique_key_field"],
@@ -340,10 +366,19 @@ def delete_transactions(client: Elasticsearch, config: dict, task_id: str = "Syn
     )
 
 
-def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, Any], Dict[str, Any]]]:
+def _gather_deleted_transaction_keys(
+    config: dict,
+    fabs_external_data_load_date_key: str = "fabs",
+    fpds_external_data_load_date_key: str = "fpds",
+) -> Optional[Dict[Union[str, Any], Dict[str, Any]]]:
     """
     Connect to S3 and gather all of the transaction ids stored in CSV files
     generated by the broker when transactions are removed from the DB.
+
+    Args:
+        config (dict): collection of key-value pairs that encapsulates runtime arguments for this ES management task
+        fabs_external_data_load_date_key (str): the key used to lookup the ``ExternalDataLoadDate`` model entry for fabs
+        fpds_external_data_load_date_key: str = the key used to lookup the ``ExternalDataLoadDate`` model entry for fpds
     """
 
     if not config["process_deletes"]:
@@ -359,7 +394,7 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
     start_date = get_last_load_date("es_deletes")
     # An `end_date` is used, so we don't try to delete records from ES that have not yet
     # been deleted in postgres by the fabs/fpds loader
-    end_date = get_latest_load_date(["fabs", "fpds"])
+    end_date = get_latest_load_date([fabs_external_data_load_date_key, fpds_external_data_load_date_key])
 
     logger.info(format_log(f"CSV data from {start_date} to {end_date}", action="Delete"))
 
@@ -415,7 +450,7 @@ def _gather_deleted_transaction_keys(config: dict) -> Optional[Dict[Union[str, A
     return deleted_keys
 
 
-def _check_awards_for_deletes(id_list: list) -> list:
+def _check_awards_for_deletes(id_list: list, spark: SparkSession = None, awards_table: str = "vw_awards") -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
     formatted_value_ids = ""
     for x in id_list:
@@ -424,7 +459,18 @@ def _check_awards_for_deletes(id_list: list) -> list:
     sql = """
         SELECT x.generated_unique_award_id
         FROM (values {ids}) AS x(generated_unique_award_id)
-        LEFT JOIN vw_awards a ON a.generated_unique_award_id = x.generated_unique_award_id
+        LEFT JOIN {awards_table} a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id IS NULL"""
 
-    return execute_sql_statement(sql.format(ids=formatted_value_ids[:-1]), results=True)
+    if spark:  # then use spark against a Delta Table
+        awards_table = "int.awards"
+        results = [
+            row.asDict()
+            for row in spark.sql(sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table)).collect()
+        ]
+    else:
+        results = execute_sql_statement(
+            sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table), results=True
+        )
+
+    return results
