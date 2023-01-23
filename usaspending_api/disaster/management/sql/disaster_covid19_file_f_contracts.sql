@@ -106,7 +106,7 @@ SELECT
     "subaward_search"."date_submitted" AS "subaward_fsrs_report_last_modified_date"
 FROM "subaward_search"
 INNER JOIN "award_search" AS "awards" ON ("subaward_search"."award_id" = "awards"."award_id")
-INNER JOIN "transaction_fpds" ON ("awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")
+INNER JOIN "transaction_search" AS "transaction_fpds" ON ("transaction_fpds"."is_fpds" = TRUE AND "awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")
 INNER JOIN (
     SELECT
         faba.award_id,
