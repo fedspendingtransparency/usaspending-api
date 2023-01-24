@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
@@ -112,6 +114,15 @@ class RecipientProfile(models.Model):
     last_12_loans = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
     last_12_other = models.DecimalField(max_digits=23, decimal_places=2, default=0.00)
     last_12_months_count = models.IntegerField(null=False, default=0)
+
+    @staticmethod
+    def return_one_level(levels: List[str]) -> Optional[str]:
+        """Return the most-desirable recipient level"""
+        for level in ("C", "R", "P"):  # Child, "Recipient," or Parent
+            if level in levels:
+                return level
+        else:
+            return None
 
     class Meta:
         managed = True

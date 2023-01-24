@@ -14,21 +14,19 @@ from typing import ClassVar
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
-    eval_default_factory,
     eval_default_factory_from_root_validator,
-    CONFIG_VAR_PLACEHOLDERS,
-    parse_pg_uri,
-    unveil,
+    check_for_full_url_config,
+    validate_url_and_parts,
+    check_required_url_parts,
+    backfill_url_parts_config,
 )
 from pydantic import (
     AnyHttpUrl,
     BaseSettings,
     PostgresDsn,
     SecretStr,
-    validator,
     root_validator,
 )
-from pydantic.fields import ModelField
 
 _PROJECT_NAME = "usaspending-api"
 # WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
@@ -53,11 +51,15 @@ class DefaultConfig(BaseSettings):
         BROKER_DB_PASSWORD: Password for the user used to connect to the Broker DB
         BROKER_DB_HOST: Host on which to to connect to the Broker DB
         BROKER_DB_PORT: Port on which to connect to the Broker DB
-        ES_URL: (optional) Full URL to Elasticsearch cluster that can be used to override the URL-by-parts
+        ES_HOSTNAME: (optional, but preferred) Full URL to Elasticsearch cluster that can be used to override the
+                URL-by-parts
         ES_SCHEME: "http" or "https". Defaults to "https:
         ES_HOST: Host on which to connect to the USAspending Elasticsearch cluster
         ES_PORT: Port on which to connect to the USAspending Elasticsearch cluster, if different than 80 or 443
-                 Defaults to empty string ("")
+                 Defaults to None
+        ES_NAME: Defaults to None and not intended to be set. Here for compatibility with URL-based configs
+        ES_USER: Username to be used if basic auth is required for ES connections
+        ES_PASSWORD: Password to be used if basic auth is required for ES connections
     """
 
     def __new__(cls, *args, **kwargs):
@@ -75,6 +77,7 @@ class DefaultConfig(BaseSettings):
 
     # ==== [Postgres] ====
     DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
+    USASPENDING_DB_SCHEME: str = "postgres"
     USASPENDING_DB_NAME: str = "data_store_api"
     USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
@@ -82,6 +85,7 @@ class DefaultConfig(BaseSettings):
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
     DATA_BROKER_DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
+    BROKER_DB_SCHEME: str = "postgres"
     BROKER_DB_NAME: str = "data_broker"
     BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
@@ -90,129 +94,46 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    def _validate_database_url(cls, values, db_url_conf_name, db_conf_prefix, required=True):
+    def _validate_database_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
         """ Helper function to validate both DATABASE_URLs and their parts """
 
-        # First determine if DB URL config was provided.
-        is_database_url_provided = values[db_url_conf_name] and values[db_url_conf_name] not in CONFIG_VAR_PLACEHOLDERS
+        # First determine if full URL config was provided.
+        is_full_url_provided = check_for_full_url_config(url_conf_name, values)
 
-        # If the DB URL config was was provided
+        # If the full URL config was provided
         # - it should take precedence
-        # - its values will be used to backfill any missing POSTGRES DSN parts stored as separate config vars
-        if is_database_url_provided:
-            url_parts, username, password = parse_pg_uri(values[db_url_conf_name])
-            backfill_configs = {
-                f"{db_conf_prefix}_HOST": lambda: url_parts.hostname,
-                f"{db_conf_prefix}_PORT": lambda: str(url_parts.port),
-                f"{db_conf_prefix}_NAME": lambda: url_parts.path.lstrip("/"),
-                f"{db_conf_prefix}_USER": lambda: username,
-                f"{db_conf_prefix}_PASSWORD": lambda: SecretStr(password),
-            }
-            # Backfill only POSTGRES DSN CONFIG vars that are missing their value
-            for config_name, transformation in backfill_configs.items():
-                value = values.get(config_name, None)
-                if config_name == f"{db_conf_prefix}_PASSWORD":
-                    value = unveil(value)
-                if value in [None] + CONFIG_VAR_PLACEHOLDERS:
-                    values = eval_default_factory_from_root_validator(cls, values, config_name, transformation)
+        # - its values will be used to backfill any missing URL parts stored as separate config vars
+        if is_full_url_provided:
+            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
 
-        # If the DB URL config is not provided, try to build-it-up from provided parts, then backfill it
-        if not is_database_url_provided:
+        # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
+        if not is_full_url_provided:
             # First validate that we have enough parts to provide it
-            required_pg_dsn_parts = [
-                f"{db_conf_prefix}_HOST",
-                f"{db_conf_prefix}_PORT",
-                f"{db_conf_prefix}_NAME",
-                f"{db_conf_prefix}_USER",
-                f"{db_conf_prefix}_PASSWORD",
-            ]
-            if not (
-                all(pg_dsn_part in values for pg_dsn_part in required_pg_dsn_parts)
-                and all(values[pg_dsn_part] is not None for pg_dsn_part in required_pg_dsn_parts)
-            ):
-                if required:
-                    raise ValueError(
-                        f"PostgreSQL {db_url_conf_name} was not provided and could not be built because one or more of"
-                        " these required parts were missing. Please check that the parts are completely configured, or"
-                        f" provide a {db_url_conf_name} instead: {required_pg_dsn_parts}"
-                    )
-                else:
-                    print(
-                        f"PostgreSQL {db_url_conf_name} was not provided and could not be built because one or more of"
-                        " these required parts were missing. Leaving blank for now. Please check that the parts are"
-                        f" completely configured, or provide a {db_url_conf_name} to use it:"
-                        f" {required_pg_dsn_parts}"
-                    )
-            else:
+            enough_parts = check_required_url_parts(
+                error_if_missing=required,
+                url_conf_name=url_conf_name,
+                resource_conf_prefix=resource_conf_prefix,
+                values=values,
+                required_parts=["USER", "PASSWORD", "HOST", "PORT", "NAME"],
+            )
+
+            if enough_parts:
                 pg_dsn = PostgresDsn(
                     url=None,
-                    scheme="postgres",
-                    user=values[f"{db_conf_prefix}_USER"],
-                    password=values[f"{db_conf_prefix}_PASSWORD"].get_secret_value(),
-                    host=values[f"{db_conf_prefix}_HOST"],
-                    port=values[f"{db_conf_prefix}_PORT"],
-                    path="/" + values[f"{db_conf_prefix}_NAME"] if values[f"{db_conf_prefix}_NAME"] else None,
-                )
-                values = eval_default_factory_from_root_validator(cls, values, db_url_conf_name, lambda: str(pg_dsn))
-
-        # if the DB URL is now available, check for consistency with the db config values
-        if values.get(db_url_conf_name, None):
-            # Now validate the provided and/or built values are consistent between DB URL and db config parts
-            pg_url_config_errors = {}
-            pg_url_parts, pg_username, pg_password = parse_pg_uri(values[db_url_conf_name])
-
-            # Validate host
-            if pg_url_parts.hostname != values[f"{db_conf_prefix}_HOST"]:
-                pg_url_config_errors[f"{db_conf_prefix}_HOST"] = (
-                    values[f"{db_conf_prefix}_HOST"],
-                    pg_url_parts.hostname,
-                )
-
-            # Validate port
-            if (
-                (pg_url_parts.port is not None and str(pg_url_parts.port) != values[f"{db_conf_prefix}_PORT"])
-                or pg_url_parts.port is None
-                and values[f"{db_conf_prefix}_PORT"] is not None
-            ):
-                pg_url_config_errors[f"{db_conf_prefix}_PORT"] = (values[f"{db_conf_prefix}_PORT"], pg_url_parts.port)
-
-            # Validate DB name (path)
-            if (
-                (pg_url_parts.path is not None and pg_url_parts.path.lstrip("/") != values[f"{db_conf_prefix}_NAME"])
-                or pg_url_parts.path is None
-                and values[f"{db_conf_prefix}_NAME"] is not None
-            ):
-                pg_url_config_errors[f"{db_conf_prefix}_NAME"] = (
-                    values[f"{db_conf_prefix}_NAME"],
-                    pg_url_parts.path.lstrip("/")
-                    if pg_url_parts.path is not None and pg_url_parts.path != "/"
+                    scheme=values[f"{resource_conf_prefix}_SCHEME"],
+                    user=values[f"{resource_conf_prefix}_USER"],
+                    password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value(),
+                    host=values[f"{resource_conf_prefix}_HOST"],
+                    port=values[f"{resource_conf_prefix}_PORT"],
+                    path="/" + values[f"{resource_conf_prefix}_NAME"]
+                    if values[f"{resource_conf_prefix}_NAME"]
                     else None,
                 )
+                values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(pg_dsn))
 
-            # Validate username
-            if pg_username != values[f"{db_conf_prefix}_USER"]:
-                pg_url_config_errors[f"{db_conf_prefix}_USER"] = (values[f"{db_conf_prefix}_USER"], pg_username)
-
-            # Validate password
-            if pg_password != unveil(values[f"{db_conf_prefix}_PASSWORD"]):
-                # NOTE: Keeping password text obfuscated in the error output
-                pg_url_config_errors[f"{db_conf_prefix}_PASSWORD"] = (
-                    values[f"{db_conf_prefix}_PASSWORD"],
-                    "*" * len(pg_password) if pg_password is not None else None,
-                )
-
-            if len(pg_url_config_errors) > 0:
-                err_msg = (
-                    f"The {db_url_conf_name} config var value was provided along with one or more {db_conf_prefix}_*"
-                    "config var values, however they were not consistent. Differing configuration sources that should "
-                    "match will cause confusion. Either provide all values consistently, or only provide a complete "
-                    f"{db_url_conf_name} and leave the others as None or unset, or leave "
-                    f"the {db_url_conf_name} None or unset and provide only the required POSTGRES DSN parts. "
-                    "Parts not matching:\n"
-                )
-                for k, v in pg_url_config_errors.items():
-                    err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {db_url_conf_name}: {v[1]}\n"
-                raise ValueError(err_msg)
+        # if the fully configured URL is now available, check for consistency with the URL-part config values
+        if values.get(url_conf_name, None):
+            validate_url_and_parts(url_conf_name, resource_conf_prefix, values)
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
@@ -228,7 +149,7 @@ class DefaultConfig(BaseSettings):
         """
         # noinspection PyArgumentList
         cls._validate_database_url(
-            cls=cls, values=values, db_url_conf_name="DATABASE_URL", db_conf_prefix="USASPENDING_DB", required=True
+            cls=cls, values=values, url_conf_name="DATABASE_URL", resource_conf_prefix="USASPENDING_DB", required=True
         )
         return values
 
@@ -248,40 +169,84 @@ class DefaultConfig(BaseSettings):
         cls._validate_database_url(
             cls=cls,
             values=values,
-            db_url_conf_name="DATA_BROKER_DATABASE_URL",
-            db_conf_prefix="BROKER_DB",
+            url_conf_name="DATA_BROKER_DATABASE_URL",
+            resource_conf_prefix="BROKER_DB",
             required=False,
         )
         return values
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
-    ES_URL: str = None
+    ES_HOSTNAME: str = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
     ES_SCHEME: str = "https"
     ES_HOST: str = ENV_SPECIFIC_OVERRIDE
-    ES_PORT: str = ""
-
-    ELASTICSEARCH_HOST: AnyHttpUrl = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
+    ES_PORT: str = None
+    ES_USER: str = None
+    ES_PASSWORD: SecretStr = None
+    ES_NAME: str = None
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @validator("ELASTICSEARCH_HOST")
-    def _ELASTICSEARCH_HOST_factory(cls, v, values, field: ModelField):
-        def factory_func() -> AnyHttpUrl:
-            """A factory that assembles the full URL to a single Elasticsearch host, to which ES cluster
-            connections are made.
+    @root_validator
+    def _ES_HOSTNAME_and_parts_factory(cls, values):
+        """A root validator to backfill ES_HOSTNAME and ES_* part config vars and validate that they are
+        all consistent.
 
-                If ``ES_URL`` is provided as e.g. an env var, it will be used. Otherwise this URL is assembled from the
-                other ``ES_*`` config vars
-            """
-            return AnyHttpUrl(
-                url=values["ES_URL"],
-                scheme=values["ES_SCHEME"],
-                host=values["ES_HOST"],
-                port=values["ES_PORT"],
+        - Serves as a factory function to fill out all places where we track the ES URL as both one
+        complete connection string and as individual parts.
+        - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
+        be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
+        """
+        # noinspection PyArgumentList
+        cls._validate_http_url(
+            cls=cls, values=values, url_conf_name="ES_HOSTNAME", resource_conf_prefix="ES", required=False
+        )
+        return values
+
+    # noinspection PyMethodParameters
+    # Pydantic returns a classmethod for its validators, so the cls param is correct
+    def _validate_http_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
+        """ Helper function to validate complete URLs and their individual parts when either/both are provided """
+
+        # First determine if full URL config was provided.
+        is_full_url_provided = check_for_full_url_config(url_conf_name, values)
+
+        # If the full URL config was provided
+        # - it should take precedence
+        # - its values will be used to backfill any missing URL parts stored as separate config vars
+        if is_full_url_provided:
+            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
+
+        # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
+        if not is_full_url_provided:
+            # First validate that we have enough parts to provide it
+            enough_parts = check_required_url_parts(
+                error_if_missing=required,
+                url_conf_name=url_conf_name,
+                resource_conf_prefix=resource_conf_prefix,
+                values=values,
+                required_parts=["SCHEME", "HOST", "PORT"],
             )
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+            if enough_parts:
+                http_url = AnyHttpUrl(
+                    url=None,
+                    scheme=values[f"{resource_conf_prefix}_SCHEME"],
+                    user=values[f"{resource_conf_prefix}_USER"],
+                    password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
+                    if values[f"{resource_conf_prefix}_PASSWORD"]
+                    else None,
+                    host=values[f"{resource_conf_prefix}_HOST"],
+                    port=values[f"{resource_conf_prefix}_PORT"],
+                    path="/" + values[f"{resource_conf_prefix}_NAME"]
+                    if values[f"{resource_conf_prefix}_NAME"]
+                    else None,
+                )
+                values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(http_url))
+
+        # if the fully configured URL is now available, check for consistency with the URL-part config values
+        if values.get(url_conf_name, None):
+            validate_url_and_parts(url_conf_name, resource_conf_prefix, values)
 
     # ==== [Spark] ====
     # SPARK_SCHEDULER_MODE = "FAIR"  # if used with weighted pools, could allow round-robin tasking of simultaneous jobs
@@ -299,7 +264,7 @@ class DefaultConfig(BaseSettings):
 
     # Ideal partition size based on a single Executor's task execution, and what it can handle in memory: ~128MB
     # Given the density of this data, 128 MB bulk-index request to Elasticsearch is about 75,000 docs
-    # However ES does not appear to be able too handle that when several Executors make that request in parallel
+    # However ES does not appear to be able to handle that when several Executors make that request in parallel
     # Good tips from ES: https:#www.elastic.co/guide/en/elasticsearch/reference/6.2/tune-for-indexing-speed.html
     # Reducing to 10,000 DB rows per bulk indexing operation
     SPARK_PARTITION_ROWS: int = 10000
