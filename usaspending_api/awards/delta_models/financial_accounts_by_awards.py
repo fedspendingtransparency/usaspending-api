@@ -293,7 +293,7 @@ c_to_d_linkage_view_sql_strings = [
     CREATE OR REPLACE TEMPORARY VIEW c_to_d_deletes AS (
         SELECT
             faba.financial_accounts_by_awards_id,
-            aw.award_id,
+            aw.id,
             7 AS priority
         FROM
             faba_upper AS faba
