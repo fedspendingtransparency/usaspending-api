@@ -1,12 +1,14 @@
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
-from usaspending_api.awards.delta_models import c_to_d_linkage_view_sql_strings
+from usaspending_api.awards.delta_models import c_to_d_linkage_view_sql_strings, c_to_d_linkage_drop_view_sql_strings
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jvm_logger,
 )
+from usaspending_api.config import CONFIG
 
 
 class Command(BaseCommand):
@@ -19,6 +21,22 @@ class Command(BaseCommand):
     )
 
     spark: SparkSession
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--no-clone",
+            action="store_true",
+            required=False,
+            help="Whether to create a full new `int` table instead of a clone.",
+        )
+
+        parser.add_argument(
+            "--spark-s3-bucket",
+            type=str,
+            required=False,
+            default=CONFIG.SPARK_S3_BUCKET,
+            help="The destination bucket in S3 to write the data",
+        )
 
     def get_unlinked_count(self, schema):
         unlinked_sql = f"""
@@ -45,6 +63,9 @@ class Command(BaseCommand):
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
+        no_clone = options["no_clone"]
+        spark_s3_bucket = options["spark_s3_bucket"]
+
         self.spark = get_active_spark_session()
         spark_created_by_command = False
         if not self.spark:
@@ -53,6 +74,30 @@ class Command(BaseCommand):
 
         # Setup Logger
         logger = get_jvm_logger(self.spark, __name__)
+
+        # Setup int table. Creates a shallow clone of the `raw` FABA table in the `int` schema.
+        # If the --no-clone option is provided a full table is created instead.
+        if no_clone:
+            self.spark.sql("DROP TABLE IF EXISTS int.financial_accounts_by_awards")
+            call_command(
+                "create_delta_table",
+                "--destination-table",
+                "financial_accounts_by_awards",
+                "--spark-s3-bucket",
+                spark_s3_bucket,
+                "--alt-db",
+                "int",
+            )
+            self.spark.sql(
+                "INSERT INTO int.financial_accounts_by_awards SELECT * FROM raw.financial_accounts_by_awards;"
+            )
+        else:
+            self.spark.sql(
+                """
+            CREATE OR REPLACE TABLE int.financial_accounts_by_awards
+            SHALLOW CLONE raw.financial_accounts_by_awards;
+            """
+            )
 
         # Log initial linkage count
         unlinked_count = self.get_unlinked_count("raw")
@@ -77,11 +122,17 @@ class Command(BaseCommand):
 
         # Log the number of FABA records updated in the merge and final linkage count
         results = self.spark.sql(merge_sql)
-        update_count = results.collect()[0][0]
-        logger.info(f"{update_count:,} int.financial_accounts_by_awards records were unlinked or linked to int.awards")
-
+        update_count = results.collect()
+        logger.info(update_count)
+        # logger.info(f"{update_count:,} int.financial_accounts_by_awards records were unlinked or linked to int.awards")
         unlinked_count = self.get_unlinked_count("int")
         logger.info(f"Count of unlinked records after updates: {unlinked_count:,}")
+
+        # Run Linkage Queries
+        drop_view_queries = c_to_d_linkage_drop_view_sql_strings
+        for index, query in enumerate(drop_view_queries):
+            logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
+            self.spark.sql(query)
 
         if spark_created_by_command:
             self.spark.stop()

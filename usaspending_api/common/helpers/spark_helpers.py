@@ -567,7 +567,7 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
     call_command("create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_data_bucket)
 
     if data:
-        insert_sql = f"INSERT {'OVERWRITE' if overwrite else 'INTO'} raw.{table_name} VALUES\n"
+        insert_sql = f"INSERT {'OVERWRITE' if overwrite else 'INTO'} {table_schema}.{table_name} VALUES\n"
         row_strs = []
         for row in data:
             value_strs = []

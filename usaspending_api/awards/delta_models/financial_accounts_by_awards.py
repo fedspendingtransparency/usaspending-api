@@ -65,14 +65,6 @@ financial_accounts_by_awards_sql_string = rf"""
 
 c_to_d_linkage_view_sql_strings = [
     # -----
-    # Recreate a shallow copy of the FABA table in the `int` schema;
-    # Replaces the previous version of the unmanaged clone, so old S3 files are also deleted.
-    # -----
-    """
-    CREATE OR REPLACE TABLE int.financial_accounts_by_awards
-    SHALLOW CLONE raw.financial_accounts_by_awards;
-    """,
-    # -----
     # Before starting to link records, we should first unlink FABA records from Awards that no longer
     # exist. This creates a view on FABA with a subset of fields needed for the linkage process;
     # Also upper cases some fields because the UPPER() operation can't be used in some predicates
@@ -90,7 +82,7 @@ c_to_d_linkage_view_sql_strings = [
         FROM
             int.financial_accounts_by_awards AS faba
         LEFT JOIN
-            raw.awards AS aw
+            int.awards AS aw
         ON
             faba.award_id = aw.id
     );
@@ -108,7 +100,7 @@ c_to_d_linkage_view_sql_strings = [
             UPPER(fain) AS fain,
             UPPER(uri) AS uri
         FROM
-            raw.awards
+            int.awards
     );
     """,
     # -----
@@ -349,4 +341,19 @@ c_to_d_linkage_view_sql_strings = [
         WHERE row_num = 1
     );
     """,
+]
+
+# List of SQL strings used to drop the views created for File C to D Linkage
+c_to_d_linkage_drop_view_sql_strings = [
+    "DROP VIEW faba_upper;",
+    "DROP VIEW awards_upper;",
+    "DROP VIEW c_to_d_piid_and_parent_piid;",
+    "DROP VIEW c_to_d_piid;",
+    "DROP VIEW c_to_d_fain;",
+    "DROP VIEW c_to_d_uri;",
+    "DROP VIEW c_to_d_fain_and_uri_fain;",
+    "DROP VIEW c_to_d_fain_and_uri_uri;",
+    "DROP VIEW c_to_d_deletes;",
+    "DROP VIEW union_all;",
+    "DROP VIEW union_all_priority;",
 ]
