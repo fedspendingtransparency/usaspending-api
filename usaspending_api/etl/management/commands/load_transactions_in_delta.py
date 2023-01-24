@@ -317,8 +317,8 @@ class Command(BaseCommand):
     def update_awards(self):
         load_datetime = datetime.now(timezone.utc)
 
-        insert_special_columns = ["subaward_count", "total_subaward_amount", "create_date", "update_date"]
-        set_subquery_ignored_columns = insert_special_columns + ["id"]
+        set_insert_special_columns = ["total_subaward_amount", "create_date", "update_date"]
+        subquery_ignored_columns = set_insert_special_columns + ["id", "subaward_count"]
 
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
         # between the query parts or in int.award_ids_delete_modified.
@@ -459,9 +459,10 @@ class Command(BaseCommand):
                 WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
                 GROUP BY tn.award_id
             )
-            SELECT latest.id, {", ".join([col_name
-                                          for col_name in AWARDS_COLUMNS
-                                          if col_name not in set_subquery_ignored_columns])}
+            SELECT
+                latest.id,
+                0 AS subaward_count,  -- for consistency with Postgres table
+                {", ".join([col_name for col_name in AWARDS_COLUMNS if col_name not in subquery_ignored_columns])}
             FROM transaction_latest AS latest
             INNER JOIN transaction_earliest AS earliest ON latest.id = earliest.id
             INNER JOIN transaction_totals AS totals on latest.id = totals.id
@@ -474,19 +475,19 @@ class Command(BaseCommand):
         set_cols = [
             f"int.awards.{col_name} = source_subquery.{col_name}"
             for col_name in AWARDS_COLUMNS
-            if col_name not in set_subquery_ignored_columns
+            if col_name not in set_insert_special_columns
         ]
         set_cols.append(f"""int.awards.update_date = '{load_datetime.isoformat(" ")}'""")
 
         # Move insert_special_columns to the end of the list of column names for ease of handling
         # during record insert
-        insert_col_name_list = [col_name for col_name in AWARDS_COLUMNS if col_name not in insert_special_columns]
-        insert_col_name_list.extend(insert_special_columns)
+        insert_col_name_list = [col_name for col_name in AWARDS_COLUMNS if col_name not in set_insert_special_columns]
+        insert_col_name_list.extend(set_insert_special_columns)
         insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
 
         # On insert, all values except for those in insert_special_columns will come from the subquery
-        insert_value_list = insert_col_name_list[:-4]
-        insert_value_list.extend(["NULL"] * 2)
+        insert_value_list = insert_col_name_list[:-3]
+        insert_value_list.extend(["NULL"])
         insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
         insert_values = ", ".join([value for value in insert_value_list])
 

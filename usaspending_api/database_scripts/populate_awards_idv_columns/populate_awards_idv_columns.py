@@ -45,7 +45,7 @@ POPULATE_TABLE = (
         sum(cast(f.base_exercised_options_val as numeric))
             base_exercised_options_val
     from
-        awards a
+        vw_awards a
         inner join vw_transaction_normalized as tx on tx.award_id = a.id
         inner join vw_transaction_fpds as f on f.transaction_id = tx.id
     group by
