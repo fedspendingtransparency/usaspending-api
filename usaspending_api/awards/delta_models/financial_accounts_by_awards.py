@@ -70,7 +70,7 @@ c_to_d_linkage_view_sql_strings = [
     # -----
     """
     CREATE OR REPLACE TABLE int.financial_accounts_by_awards
-    SHALLOW CLONE raw.financial_accounts_by_awards
+    SHALLOW CLONE raw.financial_accounts_by_awards;
     """,
     # -----
     # Before starting to link records, we should first unlink FABA records from Awards that no longer
@@ -93,7 +93,7 @@ c_to_d_linkage_view_sql_strings = [
             raw.awards AS aw
         ON
             faba.award_id = aw.id
-        )
+    );
     """,
     # -----
     # Selects a subset of fields from the Awards table and uppercases them because the UPPER() operation
@@ -293,7 +293,7 @@ c_to_d_linkage_view_sql_strings = [
     CREATE OR REPLACE TEMPORARY VIEW c_to_d_deletes AS (
         SELECT
             faba.financial_accounts_by_awards_id,
-            faba.award_id,
+            aw.award_id,
             7 AS priority
         FROM
             faba_upper AS faba

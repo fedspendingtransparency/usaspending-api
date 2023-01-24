@@ -10,6 +10,8 @@ import os
 import sys
 from typing import Optional, Union
 
+from datetime import date, datetime
+from django.core.management import call_command
 from py4j.java_gateway import (
     JavaGateway,
 )
@@ -22,10 +24,22 @@ from pyspark.java_gateway import launch_gateway
 from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
 from pyspark.sql.conf import RuntimeConfig
+from typing import Sequence, Set
+
+from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
+from usaspending_api.awards.delta_models.financial_accounts_by_awards import FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
-
 from usaspending_api.config.utils import parse_pg_uri
+from usaspending_api.transactions.delta_models.transaction_fabs import (
+    TRANSACTION_FABS_COLUMN_INFO,
+    TRANSACTION_FABS_COLUMNS,
+)
+from usaspending_api.transactions.delta_models.transaction_fpds import (
+    TRANSACTION_FPDS_COLUMN_INFO,
+    TRANSACTION_FPDS_COLUMNS,
+)
+from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 
 
 def get_active_spark_context() -> Optional[SparkContext]:
@@ -531,3 +545,61 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
         for (k, v) in {str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()}.items()
         if config_key_contains in k
     ]
+
+
+def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, data, overwrite=False):
+    table_to_col_names_dict = {}
+    table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
+    table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS
+    table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
+    table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
+    table_to_col_names_dict["financial_accounts_by_awards"] = list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS)
+
+    table_to_col_info_dict = {}
+    for tbl_name, col_info in zip(
+        ("transaction_fabs", "transaction_fpds"), (TRANSACTION_FABS_COLUMN_INFO, TRANSACTION_FPDS_COLUMN_INFO)
+    ):
+        table_to_col_info_dict[tbl_name] = {}
+        for col in col_info:
+            table_to_col_info_dict[tbl_name][col.dest_name] = col
+
+    # Make sure the table has been created first
+    call_command("create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_data_bucket)
+
+    if data:
+        insert_sql = f"INSERT {'OVERWRITE' if overwrite else 'INTO'} raw.{table_name} VALUES\n"
+        row_strs = []
+        for row in data:
+            value_strs = []
+            for col_name in table_to_col_names_dict[table_name]:
+                value = row.get(col_name)
+                if isinstance(value, (str, bytes)):
+                    # Quote strings for insertion into DB
+                    value_strs.append(f"'{value}'")
+                elif isinstance(value, (date, datetime)):
+                    # Convert to string and quote
+                    value_strs.append(f"""'{value.isoformat()}'""")
+                elif isinstance(value, bool):
+                    value_strs.append(str(value).upper())
+                elif isinstance(value, (Sequence, Set)):
+                    # Assume "sequences" must be "sequences" of strings, so quote each item in the "sequence"
+                    value = [f"'{item}'" for item in value]
+                    value_strs.append(f"ARRAY({', '.join(value)})")
+                elif value is None:
+                    col_info = table_to_col_info_dict.get(table_name)
+                    if (
+                        col_info
+                        and col_info[col_name].delta_type.upper() == "BOOLEAN"
+                        and not col_info[col_name].handling == "leave_null"
+                    ):
+                        # Convert None/NULL to false for boolean columns unless specified to leave the null
+                        value_strs.append("FALSE")
+                    else:
+                        value_strs.append("NULL")
+                else:
+                    value_strs.append(str(value))
+
+            row_strs.append(f"    ({', '.join(value_strs)})")
+
+        sql = "".join([insert_sql, ",\n".join(row_strs), ";"])
+        spark.sql(sql)
