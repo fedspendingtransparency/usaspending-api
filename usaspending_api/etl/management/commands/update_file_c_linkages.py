@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            self.faba_award_id_check()
+            self.unlink_from_removed_awards()
             if options.get("submission_ids"):
                 for sub in options["submission_ids"]:
                     self.run_sql(sub)
@@ -32,9 +32,8 @@ class Command(BaseCommand):
         for link_type in self.LINKAGE_TYPES:
             update_c_to_d_linkages(type=link_type, submission_id=submission)
 
-    def faba_award_id_check(self):
-        """Update any FABA records with an award_id associated with an award
-        that no longer exists."""
+    def unlink_from_removed_awards(self):
+        """Unlinks FABA records from Awards that no longer exist"""
         self.logger.info("Updating any FABA records that have an award ID of an award that no longer exists.")
 
         update_filename = "update_faba_award_ids.sql"
