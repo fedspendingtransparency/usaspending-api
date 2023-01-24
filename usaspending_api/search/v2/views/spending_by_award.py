@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 import logging
 from usaspending_api.awards.models import Award
-from usaspending_api.etl.elasticsearch_loader_helpers.aggregate_key_functions import return_one_level
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -452,6 +452,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if recipient_hash is None or len(recipient_levels) == 0:
             return None
 
-        recipient_level = return_one_level(recipient_levels)
+        recipient_level = RecipientProfile.return_one_level(recipient_levels)
 
         return f"{recipient_hash}-{recipient_level}"
