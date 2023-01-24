@@ -55,13 +55,13 @@ def read_output_faba_to_award_id(spark):
 @mark.django_db(transaction=True)
 def test_update_file_c_linkages_in_delta(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
 
-    # Add common (required) fields to dictionaries before loading them to delta
+    # Add common (required) fields to Awards before loading them to delta
     full_award_records = [dict(item, **common_award_info) for item in award_records]
 
+    # Build expected FABA to Award ID mapping and add common fields to FABA
     expected_faba_to_award_id = {}
     for item in faba_records:
         expected_faba_to_award_id[item["financial_accounts_by_awards_id"]] = item.pop("expected_award_id")
-
     full_faba_records = [dict(item, **common_faba_info) for item in faba_records]
 
     # Make sure the table has been created first
