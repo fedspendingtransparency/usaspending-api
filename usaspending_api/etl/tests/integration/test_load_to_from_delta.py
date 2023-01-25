@@ -1202,13 +1202,13 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
     for dest_table in load_table_tables + load_query_tables:
         if dest_table in ["awards", "transaction_fabs", "transaction_normalized", "transaction_fpds"]:
             call_command(
-            "create_delta_table", f"--destination-table={dest_table}", "--alt-db=int", f"--spark-s3-bucket={s3_bucket}"
-        )
-        else:
-            call_command(
-                "create_delta_table", f"--destination-table={dest_table}",
-                f"--spark-s3-bucket={s3_bucket}"
+                "create_delta_table",
+                f"--destination-table={dest_table}",
+                "--alt-db=int",
+                f"--spark-s3-bucket={s3_bucket}",
             )
+        else:
+            call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
 
     for dest_table in load_table_tables:
         if dest_table in ["awards", "transaction_fabs", "transaction_normalized", "transaction_fpds"]:
@@ -1222,7 +1222,6 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
                 "load_table_to_delta",
                 f"--destination-table={dest_table}",
             )
-
 
     for dest_table in load_query_tables:
         call_command("load_query_to_delta", f"--destination-table={dest_table}")
