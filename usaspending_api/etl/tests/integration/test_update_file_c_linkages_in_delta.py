@@ -138,49 +138,17 @@ faba_records = [
         "expected_award_id": None,
     },
     # Links to an Award based on FAIN when both FAIN/URI are populated
-    {
-        "financial_accounts_by_awards_id": 18,
-        "fain": "fain_1",
-        "uri": "uri_200",
-        "expected_award_id": 9
-    },
+    {"financial_accounts_by_awards_id": 18, "fain": "fain_1", "uri": "uri_200", "expected_award_id": 9},
     # Matches an Award based on FAIN when both FAIN/URI are populated, but already linked
-    {
-        "financial_accounts_by_awards_id": 19,
-        "fain": "fain_1",
-        "uri": "uri_200",
-        "award_id": 1,
-        "expected_award_id": 1
-    },
-    # Matches two Awards based on FAIN when both FAIN/URI are populated - No Update 
-    {
-        "financial_accounts_by_awards_id": 20,
-        "fain": "fain_2",
-        "uri": "uri_200",
-        "expected_award_id": None
-    },
+    {"financial_accounts_by_awards_id": 19, "fain": "fain_1", "uri": "uri_200", "award_id": 1, "expected_award_id": 1},
+    # Matches two Awards based on FAIN when both FAIN/URI are populated - No Update
+    {"financial_accounts_by_awards_id": 20, "fain": "fain_2", "uri": "uri_200", "expected_award_id": None},
     # Links to an Award based on URI when both FAIN/URI are populated
-    {
-        "financial_accounts_by_awards_id": 21,
-        "fain": "fain_200",
-        "uri": "uri_1",
-        "expected_award_id": 9
-    },
+    {"financial_accounts_by_awards_id": 21, "fain": "fain_200", "uri": "uri_1", "expected_award_id": 9},
     # Matches an Award based on URI when both FAIN/URI are populated, but already linked
-    {
-        "financial_accounts_by_awards_id": 22,
-        "fain": "fain_200",
-        "uri": "uri_1",
-        "award_id": 1,
-        "expected_award_id": 1
-    },
+    {"financial_accounts_by_awards_id": 22, "fain": "fain_200", "uri": "uri_1", "award_id": 1, "expected_award_id": 1},
     # Matches two Awards based on URI when both FAIN/URI are populated - No Update
-    {
-        "financial_accounts_by_awards_id": 23,
-        "fain": "fain_200",
-        "uri": "uri_2",
-        "expected_award_id": None
-    },
+    {"financial_accounts_by_awards_id": 23, "fain": "fain_200", "uri": "uri_2", "expected_award_id": None},
 ]
 
 
