@@ -56,7 +56,8 @@ def populate_broker_data(broker_server_dblink_setup):
 
 
 @fixture
-def populate_usas_data(populate_broker_data):
+# def populate_usas_data(populate_broker_data):
+def populate_usas_data():
     # Create recipient data for two transactions; the other two will generate ad hoc
     baker.make(
         "recipient.RecipientLookup",
@@ -947,7 +948,7 @@ def populate_usas_data(populate_broker_data):
     # Run current Postgres ETLs to make sure data is populated_correctly
     update_awards()
     restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
-    execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
+    # execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
     call_command("update_recipient_lookup")
     execute_sql_simple(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
 
@@ -1199,17 +1200,30 @@ def verify_delta_table_loaded_from_delta(
 def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
     load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
     load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
-    for dest_table in load_query_tables + load_table_tables:
-        call_command(
+    for dest_table in load_table_tables + load_query_tables:
+        if dest_table in ["awards", "transaction_fabs", "transaction_normalized", "transaction_fpds"]:
+            call_command(
             "create_delta_table", f"--destination-table={dest_table}", "--alt-db=int", f"--spark-s3-bucket={s3_bucket}"
         )
+        else:
+            call_command(
+                "create_delta_table", f"--destination-table={dest_table}",
+                f"--spark-s3-bucket={s3_bucket}"
+            )
 
     for dest_table in load_table_tables:
-        call_command(
-            "load_table_to_delta",
-            f"--destination-table={dest_table}",
-            "--alt-db=int",
-        )
+        if dest_table in ["awards", "transaction_fabs", "transaction_normalized", "transaction_fpds"]:
+            call_command(
+                "load_table_to_delta",
+                f"--destination-table={dest_table}",
+                "--alt-db=int",
+            )
+        else:
+            call_command(
+                "load_table_to_delta",
+                f"--destination-table={dest_table}",
+            )
+
 
     for dest_table in load_query_tables:
         call_command("load_query_to_delta", f"--destination-table={dest_table}")
