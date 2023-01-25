@@ -96,7 +96,7 @@ class Command(BaseCommand):
                 f"""
                 CREATE OR REPLACE TABLE int.financial_accounts_by_awards
                 SHALLOW CLONE raw.financial_accounts_by_awards
-                LOCATION s3a://{spark_s3_bucket}/{CONFIG.SPARK_CSV_S3_PATH}/int/financial_accounts_by_awards;
+                LOCATION s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/int/financial_accounts_by_awards;
             """
             )
 
