@@ -85,7 +85,9 @@ def count_of_records_to_process(config: dict) -> Tuple[int, int, int]:
     return count, min_id, max_id
 
 
-def count_of_records_to_process_in_delta(config: dict, spark: "pyspark.sql.SparkSession") -> Tuple[int, int, int]:
+def count_of_records_to_process_in_delta(
+    config: dict, spark: "pyspark.sql.SparkSession"  # noqa
+) -> Tuple[int, int, int]:
     start = perf_counter()
     # Spark SQL does not like double quotes around identifiers
     min_max_count_sql = obtain_min_max_count_sql(config).replace('"', "")

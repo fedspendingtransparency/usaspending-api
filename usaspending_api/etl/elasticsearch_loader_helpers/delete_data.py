@@ -241,7 +241,7 @@ def delete_awards(
     task_id: str = "Sync DB Deletes",
     fabs_external_data_load_date_key: str = "fabs",
     fpds_external_data_load_date_key: str = "fpds",
-    spark: "pyspark.sql.SparkSession" = None,
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
 ) -> int:
     """Delete all awards in the Elasticsearch awards index that were deleted in the source database.
 
@@ -449,7 +449,9 @@ def _gather_deleted_transaction_keys(
     return deleted_keys
 
 
-def _check_awards_for_deletes(id_list: list, spark: "pyspark.sql.SparkSession" = None, awards_table: str = "vw_awards") -> list:
+def _check_awards_for_deletes(
+    id_list: list, spark: "pyspark.sql.SparkSession" = None, awards_table: str = "vw_awards"  # noqa
+) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
     formatted_value_ids = ""
     for x in id_list:
