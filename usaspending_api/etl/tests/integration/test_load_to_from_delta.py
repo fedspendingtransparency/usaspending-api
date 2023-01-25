@@ -56,8 +56,7 @@ def populate_broker_data(broker_server_dblink_setup):
 
 
 @fixture
-# def populate_usas_data(populate_broker_data):
-def populate_usas_data():
+def populate_usas_data(populate_broker_data):
     # Create recipient data for two transactions; the other two will generate ad hoc
     baker.make(
         "recipient.RecipientLookup",
@@ -948,7 +947,7 @@ def populate_usas_data():
     # Run current Postgres ETLs to make sure data is populated_correctly
     update_awards()
     restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
-    # execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
+    execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
     call_command("update_recipient_lookup")
     execute_sql_simple(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
 
