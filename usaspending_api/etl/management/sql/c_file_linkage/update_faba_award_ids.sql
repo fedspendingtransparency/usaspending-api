@@ -7,11 +7,11 @@ WITH award_id_cte AS (
 	FROM
  		financial_accounts_by_awards faba
 	LEFT JOIN
-		temp.award_search_temp ast
+		{file_d_tablename} a
 	ON
-		faba.award_id = ast.award_id
+		faba.award_id = a.award_id
 	WHERE
-		ast.award_id IS NULL
+		a.award_id IS NULL
   		AND
   		faba.award_id IS NOT NULL
 )

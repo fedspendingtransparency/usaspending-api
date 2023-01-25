@@ -8,7 +8,7 @@ WITH update_cte AS (
             SELECT
                 award_id
             FROM
-                temp.award_search_temp AS aw
+                {file_d_tablename} AS aw
             WHERE
                 UPPER(aw.piid) = UPPER(faba.piid)
                 AND UPPER(aw.parent_award_piid) = UPPER(faba.parent_award_id)
@@ -25,7 +25,7 @@ WITH update_cte AS (
                 AND faba_sub.parent_award_id IS NOT NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM temp.award_search_temp AS aw_sub
+                    FROM {file_d_tablename} AS aw_sub
                     WHERE
                         UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
                         AND UPPER(aw_sub.parent_award_piid) = UPPER(faba_sub.parent_award_id)
@@ -35,7 +35,7 @@ WITH update_cte AS (
     RETURNING award_id
 )
 UPDATE
-    temp.award_search_temp a
+    {file_d_tablename} a
 SET
     update_date = NOW()
 FROM
@@ -54,7 +54,7 @@ WITH update_cte AS (
             SELECT
                 award_id
             FROM
-                temp.award_search_temp AS aw
+                {file_d_tablename} AS aw
             WHERE
                 UPPER(aw.piid) = UPPER(faba.piid)
         )
@@ -70,7 +70,7 @@ WITH update_cte AS (
                 AND faba_sub.parent_award_id IS NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM temp.award_search_temp AS aw_sub
+                    FROM {file_d_tablename} AS aw_sub
                     WHERE
                         UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
                 ) = 1
@@ -79,7 +79,7 @@ WITH update_cte AS (
     RETURNING award_id
 )
 UPDATE
-    temp.award_search_temp a
+    {file_d_tablename} a
 SET
     update_date = NOW()
 FROM
