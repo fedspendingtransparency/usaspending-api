@@ -3,7 +3,6 @@
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
 import json
-from collections import OrderedDict
 
 import psycopg2
 import pytz
@@ -164,7 +163,7 @@ def populate_usas_data(populate_broker_data):
     )
 
     # Create reference data
-    naics = baker.make("references.NAICS", code="123456", _fill_optional=True)
+    baker.make("references.NAICS", code="123456", _fill_optional=True)
     psc = baker.make("references.PSC", code="12", _fill_optional=True)
     cfda = baker.make("references.Cfda", program_number="12.456", _fill_optional=True)
     baker.make(
