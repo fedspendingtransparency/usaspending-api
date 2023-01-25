@@ -7,7 +7,6 @@ from math import ceil
 from multiprocessing import Pool, Event, Value
 from time import perf_counter
 from typing import List, Tuple, Dict
-from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -243,7 +242,7 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
 class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerController):
     """Controller for Spark-based Elasticsearch ETL that extracts data from Delta Lake"""
 
-    def __init__(self, config: dict, spark: SparkSession, spark_created_by_command: bool = False):
+    def __init__(self, config: dict, spark: "pyspark.sql.SparkSession", spark_created_by_command: bool = False):
         super(DeltaLakeElasticsearchIndexerController, self).__init__(config)
         self.spark = spark
         self.spark_created_by_command = spark_created_by_command

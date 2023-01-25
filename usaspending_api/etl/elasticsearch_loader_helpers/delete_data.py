@@ -9,7 +9,6 @@ from typing import Optional, Dict, Union, Any
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
-from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, get_latest_load_date
 from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
@@ -242,7 +241,7 @@ def delete_awards(
     task_id: str = "Sync DB Deletes",
     fabs_external_data_load_date_key: str = "fabs",
     fpds_external_data_load_date_key: str = "fpds",
-    spark: SparkSession = None,
+    spark: "pyspark.sql.SparkSession" = None,
 ) -> int:
     """Delete all awards in the Elasticsearch awards index that were deleted in the source database.
 
@@ -263,7 +262,7 @@ def delete_awards(
         task_id (str): label for this sub-step of the ETL
         fabs_external_data_load_date_key (str): the key used to lookup the ``ExternalDataLoadDate`` model entry for fabs
         fpds_external_data_load_date_key: str = the key used to lookup the ``ExternalDataLoadDate`` model entry for fpds
-        spark (SparkSession): provided SparkSession to be used in a Spark Cluster runtime to interact with Delta Lake
+        spark (pyspark.sql.SparkSession): provided SparkSession to be used in a Spark Cluster runtime to interact with Delta Lake
             tables as the basis of discovering award records that are no longer in the table and should be deleted.
             Presence of this variable is a marker for whether the Postgres awards table or Delta awards table should
             be interrogated.
@@ -450,7 +449,7 @@ def _gather_deleted_transaction_keys(
     return deleted_keys
 
 
-def _check_awards_for_deletes(id_list: list, spark: SparkSession = None, awards_table: str = "vw_awards") -> list:
+def _check_awards_for_deletes(id_list: list, spark: "pyspark.sql.SparkSession" = None, awards_table: str = "vw_awards") -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
     formatted_value_ids = ""
     for x in id_list:
