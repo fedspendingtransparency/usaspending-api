@@ -141,7 +141,7 @@ INNER JOIN (
             0
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = awards.id)
+) DEFC ON (DEFC.award_id = awards.award_id)
 WHERE (
     "subaward_search"."prime_award_group" IN ('grant')
     AND "subaward_search"."sub_action_date" >= '2020-04-01'
