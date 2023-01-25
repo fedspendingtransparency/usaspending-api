@@ -14,10 +14,10 @@ class Command(BaseCommand):
     logger = logging.getLogger("script")
 
     def add_arguments(self, parser):
+        parser.add_argument("--file_d_tablename", help=("Name of the File D table to use."), type=str, required=True)
         parser.add_argument(
             "--submission-ids", help=("One or more Broker submission_ids to be updated."), nargs="+", type=int
         )
-        parser.add_argument("--file_d_tablename", help=("Name of the File D table to use."), type=str)
 
     def handle(self, *args, **options):
         with transaction.atomic():
