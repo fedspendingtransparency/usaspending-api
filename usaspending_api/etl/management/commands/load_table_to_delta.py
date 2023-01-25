@@ -62,7 +62,7 @@ TABLE_SPEC = {
         "is_from_broker": False,
         "source_table": "vw_awards",
         "source_database": "rpt",
-        "destination_database": "int",
+        "destination_database": "raw",
         "swap_table": None,
         "swap_schema": None,
         "partition_column": "id",
