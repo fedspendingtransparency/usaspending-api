@@ -350,7 +350,8 @@ class Command(BaseCommand):
             logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}_temp")
             dep_view_sql = dep_view["dep_view_sql"].replace(self.curr_table_name, self.temp_table_name)
             mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
-            cursor.execute(f"CREATE OR REPLACE {mv_s}VIEW temp.{dep_view['dep_view_name']}_temp AS ({dep_view_sql});")
+            cursor.execute(f"DROP {mv_s}VIEW IF EXISTS temp.{dep_view['dep_view_name']}_temp;")
+            cursor.execute(f"CREATE {mv_s}VIEW temp.{dep_view['dep_view_name']}_temp AS ({dep_view_sql});")
 
     def validate_foreign_keys(self, cursor):
         logger.info("Verifying that Foreign Key constraints are not found")
