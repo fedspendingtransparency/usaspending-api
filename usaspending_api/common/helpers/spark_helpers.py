@@ -565,7 +565,15 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
             table_to_col_info_dict[tbl_name][col.dest_name] = col
 
     # Make sure the table has been created first
-    call_command("create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_data_bucket)
+    call_command(
+        "create_delta_table",
+        "--destination-table",
+        table_name,
+        "--alt-db",
+        table_schema,
+        "--spark-s3-bucket",
+        s3_data_bucket,
+    )
 
     if data:
         insert_sql = f"INSERT {'OVERWRITE' if overwrite else 'INTO'} {table_schema}.{table_name} VALUES\n"

@@ -89,7 +89,7 @@ class Command(BaseCommand):
                 "int",
             )
             self.spark.sql(
-                "INSERT INTO int.financial_accounts_by_awards SELECT * FROM raw.financial_accounts_by_awards;"
+                "INSERT OVERWRITE int.financial_accounts_by_awards SELECT * FROM raw.financial_accounts_by_awards;"
             )
         else:
             self.spark.sql(
@@ -109,6 +109,22 @@ class Command(BaseCommand):
             logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
             self.spark.sql(query)
 
+        # Update to be linked to Award record's `update_date`
+        update_sql = """
+            MERGE INTO int.awards AS aw
+            USING updated_awards AS updates
+            ON aw.id = updates.award_id
+            WHEN MATCHED
+                THEN UPDATE SET aw.update_date = NOW();
+        """
+
+        # Log the number of Awards linked to and updated
+        results = self.spark.sql(update_sql).collect()
+        # Merge results do not contain counts outside of Databricks, so check the contents of results before logging
+        if len(results) > 0:
+            update_count = results[0][0]
+            logger.info(f"{update_count:,} int.awards records were linked to and updated.")
+
         # Final MERGE of `union_all_priority` into `int.financial_accounts_by_awards`;
         # This merge will set the `award_id` field to the `id` of the linked `int.awards` record;
         # If any previously linked Awards have been deleted, the `award_id` will be set to NULL
@@ -121,10 +137,15 @@ class Command(BaseCommand):
         """
 
         # Log the number of FABA records updated in the merge and final linkage count
-        results = self.spark.sql(merge_sql)
-        update_count = results.collect()
-        logger.info(update_count)
-        # logger.info(f"{update_count:,} int.financial_accounts_by_awards records were unlinked or linked to int.awards")
+        results = self.spark.sql(merge_sql).collect()
+        # Merge results do not contain counts outside of Databricks, so check the contents of results before logging
+        if len(results) > 0:
+            update_count = results[0][0]
+            logger.info(
+                f"{update_count:,} int.financial_accounts_by_awards records were unlinked or linked to int.awards"
+            )
+
+        # Log the number of FABA records still unlinked
         unlinked_count = self.get_unlinked_count("int")
         logger.info(f"Count of unlinked records after updates: {unlinked_count:,}")
 

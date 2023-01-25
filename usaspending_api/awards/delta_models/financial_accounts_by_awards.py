@@ -238,7 +238,7 @@ c_to_d_linkage_view_sql_strings = [
             AND faba.award_id IS NULL
             AND (
                 SELECT COUNT(*)
-                FROM int.awards AS aw_sub
+                FROM awards_upper AS aw_sub
                 WHERE
                     aw_sub.fain = faba.fain
             ) = 1
@@ -266,7 +266,7 @@ c_to_d_linkage_view_sql_strings = [
             AND faba.award_id IS NULL
             AND (
                 SELECT COUNT(*)
-                FROM int.awards AS aw_sub
+                FROM awards_upper AS aw_sub
                 WHERE
                     aw_sub.uri = faba.uri
             ) = 1
@@ -288,13 +288,14 @@ c_to_d_linkage_view_sql_strings = [
             aw.id,
             7 AS priority
         FROM
-            faba_upper AS faba
+            int.financial_accounts_by_awards AS faba
         LEFT JOIN
             awards_upper AS aw
         ON
             faba.award_id = aw.id
         WHERE
-            aw.id is NULL
+            aw.id IS NULL
+            AND faba.award_id IS NOT NULL
     );
     """,
     # -----
@@ -341,6 +342,14 @@ c_to_d_linkage_view_sql_strings = [
         WHERE row_num = 1
     );
     """,
+    # -----
+    # Create view of distinct awards that are being linked to
+    # -----
+    """
+    CREATE OR REPLACE TEMPORARY VIEW updated_awards AS (
+        SELECT DISTINCT award_id FROM union_all_priority
+    );
+    """,
 ]
 
 # List of SQL strings used to drop the views created for File C to D Linkage
@@ -356,4 +365,5 @@ c_to_d_linkage_drop_view_sql_strings = [
     "DROP VIEW c_to_d_deletes;",
     "DROP VIEW union_all;",
     "DROP VIEW union_all_priority;",
+    "DROP VIEW updated_awards;",
 ]
