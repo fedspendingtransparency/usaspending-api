@@ -283,10 +283,10 @@ class Command(BaseCommand):
 
     def validate_indexes(self, cursor):
         logger.info("Verifying that the same number of indexes exist for the old and new table")
-        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_table_name}'")
+        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_table_name}' ORDER BY indexname")
         temp_indexes = ordered_dictionary_fetcher(cursor)
         self.query_result_lookup["temp_table_indexes"] = temp_indexes
-        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.curr_table_name}'")
+        cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.curr_table_name}' ORDER BY indexname")
         curr_indexes = ordered_dictionary_fetcher(cursor)
         self.query_result_lookup["curr_table_indexes"] = curr_indexes
         if len(temp_indexes) != len(curr_indexes):
