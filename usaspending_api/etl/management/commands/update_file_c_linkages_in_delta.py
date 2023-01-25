@@ -93,14 +93,15 @@ class Command(BaseCommand):
             )
         else:
             self.spark.sql(
-                """
-            CREATE OR REPLACE TABLE int.financial_accounts_by_awards
-            SHALLOW CLONE raw.financial_accounts_by_awards;
+                f"""
+                CREATE OR REPLACE TABLE int.financial_accounts_by_awards
+                SHALLOW CLONE raw.financial_accounts_by_awards
+                LOCATION s3a://{spark_s3_bucket}/{CONFIG.SPARK_CSV_S3_PATH}/int/financial_accounts_by_awards;
             """
             )
 
         # Log initial linkage count
-        unlinked_count = self.get_unlinked_count("raw")
+        unlinked_count = self.get_unlinked_count("int")
         logger.info(f"Count of unlinked records before updates: {unlinked_count:,}")
 
         # Run Linkage Queries

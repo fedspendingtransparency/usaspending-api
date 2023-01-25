@@ -549,6 +549,19 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
 
 
 def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, data, overwrite=False):
+    """Create a table in Delta and populate it with the contents of a provided dicationary (data). This should
+    primarily be used for unit testing.
+
+    Args:
+        spark - SparkSession used to run Spark commands
+        s3_data_bucket - Bucket where Delta table will be created
+        table_schema - Override the default schema from the TABLE_SPEC for the Delta table being created
+        table_name - Name of table to create in Delta. This parameter will also be used to lookup a TABLE_SPEC
+        data - List of dictionaries containing data to load into the table. Should at least contain the table's
+            required fields. Other fields are optional
+        overwrite - If this parameter is set to true, the table will be overwritten with each call. When set
+            to False, the table will be inserted into instead.
+    """
     table_to_col_names_dict = {}
     table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
     table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS

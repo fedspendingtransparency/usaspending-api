@@ -304,17 +304,17 @@ c_to_d_linkage_view_sql_strings = [
     """
     CREATE OR REPLACE TEMPORARY VIEW union_all AS (
         SELECT * FROM c_to_d_piid_and_parent_piid
-        UNION
+        UNION ALL
         SELECT * FROM c_to_d_piid
-        UNION
+        UNION ALL
         SELECT * FROM c_to_d_fain
-        UNION
+        UNION ALL
         SELECT * FROM c_to_d_uri
-        UNION
+        UNION ALL
         SELECT * FROM c_to_d_fain_and_uri_fain
-        UNION
+        UNION ALL
         SELECT * FROM c_to_d_fain_and_uri_uri
-        UNION
+        UNION ALL
         SELECT * FROM c_to_d_deletes
     );
     """,
