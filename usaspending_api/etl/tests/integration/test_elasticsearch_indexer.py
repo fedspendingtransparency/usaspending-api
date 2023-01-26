@@ -17,10 +17,10 @@ from usaspending_api.etl.management.commands.elasticsearch_indexer import (
     parse_cli_args,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    PostgresElasticsearchIndexerController,
     delete_awards,
     delete_transactions,
 )
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import PostgresElasticsearchIndexerController
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     _check_awards_for_deletes,
     _lookup_deleted_award_keys,
