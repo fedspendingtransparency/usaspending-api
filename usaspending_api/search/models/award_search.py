@@ -165,16 +165,32 @@ class AwardSearch(models.Model):
 
     class Meta:
         db_table = "award_search"
+        constraints = [models.UniqueConstraint(fields=["award"], name="as_idx_award_id_unique")]
         indexes = [
+            models.Index(fields=["award"], name="as_idx_award_id"),
             models.Index(fields=["generated_unique_award_id"], name="as_idx_award_key"),
+            models.Index(fields=["category"], name="as_idx_category"),
+            models.Index(fields=["category"], name="as_idx_category_like"),
+            models.Index(fields=["type"], name="as_idx_type"),
+            models.Index(fields=["type"], name="as_idx_type_like"),
             # Ideal indexes for data analysis commented out
             # models.Index(fields=["is_fpds"], name="as_idx_is_fpds"),
-            # models.Index(fields=["piid"], name="as_idx_piid"),
-            # models.Index(fields=["fain"], name="as_idx_fain"),
-            # models.Index(fields=["uri"], name="as_idx_uri"),
+            models.Index(fields=["piid"], name="as_idx_piid"),
+            models.Index(fields=["piid"], name="as_idx_piid_like"),
+            models.Index(fields=["parent_award_piid"], name="as_idx_parent_piid"),
+            models.Index(fields=["parent_award_piid"], name="as_idx_parent_piid_like"),
+            models.Index(fields=["fain"], name="as_idx_fain"),
+            models.Index(fields=["fain"], name="as_idx_fain_like"),
+            models.Index(fields=["uri"], name="as_idx_uri"),
+            models.Index(fields=["uri"], name="as_idx_uri_like"),
             models.Index(fields=["awarding_agency_id"], name="as_idx_awarding_agency_id"),
             models.Index(fields=["funding_agency_id"], name="as_idx_funding_agency_id"),
+            models.Index(fields=["total_obligation"], name="as_idx_total_obligation"),
             models.Index(fields=["recipient_hash"], name="as_idx_recipient_hash"),
+            models.Index(fields=["earliest_transaction"], name="as_idx_earliest"),
+            models.Index(fields=["latest_transaction"], name="as_idx_latest"),
+            models.Index(fields=["period_of_performance_start_date"], name="as_idx_ppop_start"),
+            models.Index(fields=["period_of_performance_current_end_date"], name="as_idx_ppop_current_end"),
             models.Index(
                 fields=["recipient_unique_id"],
                 name="as_idx_recipient_unique_id",

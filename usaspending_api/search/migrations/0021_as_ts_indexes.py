@@ -11,6 +11,211 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Django processed these as both removing and re-adding them in the same migration
+        migrations.RunSQL(
+            sql='',
+            state_operations=[
+                migrations.RemoveIndex(
+                    model_name='awardsearch',
+                    name='as_idx_funding_agency_id',
+                ),
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['funding_agency_id'], name='as_idx_funding_agency_id'),
+                ),
+            ]
+        ),
+        migrations.RunSQL(
+            sql='',
+            state_operations=[
+                migrations.RemoveIndex(
+                    model_name='transactionsearch',
+                    name='ts_idx_type',
+                ),
+                migrations.AddIndex(
+                    model_name='transactionsearch',
+                    index=models.Index(condition=models.Q(('type__isnull', False)), fields=['type'],
+                                       name='ts_idx_type'),
+                ),
+            ]
+        ),
+        migrations.RunSQL(
+            sql='',
+            state_operations=[
+                migrations.RemoveIndex(
+                    model_name='transactionsearch',
+                    name='ts_idx_award_id',
+                ),
+                migrations.AddIndex(
+                    model_name='transactionsearch',
+                    index=models.Index(fields=['award'], name='ts_idx_award_id'),
+                ),
+            ]
+        ),
+        # Rename secret indexes and add them to the model
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_category_93aecaef RENAME TO as_idx_category',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['category'], name='as_idx_category'),
+                ),
+            ]
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_category_93aecaef_like RENAME TO as_idx_category_like',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['category'], name='as_idx_category_like'),
+                ),
+            ]
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_type_73bb5bc8 RENAME TO as_idx_type',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['type'], name='as_idx_type'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_type_73bb5bc8_like RENAME TO as_idx_type_like',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['type'], name='as_idx_type_like'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_total_obligation_9b14cadd RENAME TO as_idx_total_obligation',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['total_obligation'], name='as_idx_total_obligation'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_piid_3549d1f1 RENAME TO as_idx_piid',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['piid'], name='as_idx_piid'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_piid_3549d1f1_like RENAME TO as_idx_piid_like',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['piid'], name='as_idx_piid_like'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_parent_award_piid_652c7e7a RENAME TO as_idx_parent_piid',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['parent_award_piid'], name='as_idx_parent_piid'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_parent_award_piid_652c7e7a_like RENAME TO as_idx_parent_piid_like',
+            state_operations=[
+
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['parent_award_piid'], name='as_idx_parent_piid_like'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_fain_ae4c2f05 RENAME TO as_idx_fain',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['fain'], name='as_idx_fain'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_fain_ae4c2f05_like RENAME TO as_idx_fain_like',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['fain'], name='as_idx_fain_like'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_uri_71372082 RENAME TO as_idx_uri',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['uri'], name='as_idx_uri'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_uri_71372082_like RENAME TO as_idx_uri_like',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['uri'], name='as_idx_uri_like'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_earliest_transaction_id_e067cf6a RENAME TO as_idx_earliest',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['earliest_transaction'], name='as_idx_earliest'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_latest_transaction_id_f224bce6 RENAME TO as_idx_latest',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['latest_transaction'], name='as_idx_latest'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS award_search_period_of_performance_start_date_ec22ae77 RENAME TO as_idx_ppop_start',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['period_of_performance_start_date'], name='as_idx_ppop_start'),
+                ),
+            ],
+        ),
+        migrations.RunSQL(
+            sql='ALTER INDEX IF EXISTS as_pop_current_end_date_64876276 RENAME TO as_idx_ppop_current_end',
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='awardsearch',
+                    index=models.Index(fields=['period_of_performance_current_end_date'],
+                                       name='as_idx_ppop_current_end'),
+                ),
+            ],
+        ),
+        # Drop duplicate secret indexes
+        migrations.RunSQL(
+            sql='DROP INDEX IF EXISTS award_search_awarding_agency_id_ae68ab38',
+        ),
+        migrations.RunSQL(
+            sql='DROP INDEX IF EXISTS award_search_funding_agency_id_2eba675b',
+        ),
+        #
         migrations.RemoveIndex(
             model_name='awardsearch',
             name='as_idx_recipient_hash',
@@ -22,10 +227,6 @@ class Migration(migrations.Migration):
         migrations.RemoveIndex(
             model_name='awardsearch',
             name='as_idx_action_date',
-        ),
-        migrations.RemoveIndex(
-            model_name='awardsearch',
-            name='as_idx_funding_agency_id',
         ),
         migrations.RemoveIndex(
             model_name='awardsearch',
@@ -43,6 +244,9 @@ class Migration(migrations.Migration):
             model_name='awardsearch',
             name='as_idx_action_date_pre2008',
         ),
+        migrations.RunSQL(
+            sql='DROP INDEX IF EXISTS transaction_search_award_id_7042e1c1',
+        ),
         migrations.RemoveIndex(
             model_name='transactionsearch',
             name='ts_idx_action_date',
@@ -50,14 +254,6 @@ class Migration(migrations.Migration):
         migrations.RemoveIndex(
             model_name='transactionsearch',
             name='ts_idx_fiscal_year',
-        ),
-        migrations.RemoveIndex(
-            model_name='transactionsearch',
-            name='ts_idx_type',
-        ),
-        migrations.RemoveIndex(
-            model_name='transactionsearch',
-            name='ts_idx_award_id',
         ),
         migrations.RemoveIndex(
             model_name='transactionsearch',
@@ -139,6 +335,25 @@ class Migration(migrations.Migration):
             model_name='transactionsearch',
             name='ts_idx_cfda_aside_pre2008',
         ),
+        # Dropping the singular unique indexes and replacing it with a unique constraint + index
+        migrations.RunSQL(
+            sql='DROP INDEX IF EXISTS as_idx_award_id',
+        ),
+        migrations.AddConstraint(
+            model_name='awardsearch',
+            constraint=models.UniqueConstraint(fields=('award',), name='as_idx_award_id_unique'),
+        ),
+        migrations.RunSQL(
+            sql='DROP INDEX IF EXISTS transaction_search_pkey',
+        ),
+        migrations.AddConstraint(
+            model_name='transactionsearch',
+            constraint=models.UniqueConstraint(fields=('transaction',), name='ts_idx_transaction_id_unique'),
+        ),
+        migrations.AddIndex(
+            model_name='awardsearch',
+            index=models.Index(fields=['award'], name='as_idx_award_id'),
+        ),
         migrations.AddIndex(
             model_name='awardsearch',
             index=models.Index(fields=['generated_unique_award_id'], name='as_idx_award_key'),
@@ -146,10 +361,6 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='awardsearch',
             index=models.Index(fields=['awarding_agency_id'], name='as_idx_awarding_agency_id'),
-        ),
-        migrations.AddIndex(
-            model_name='awardsearch',
-            index=models.Index(fields=['funding_agency_id'], name='as_idx_funding_agency_id'),
         ),
         migrations.AddIndex(
             model_name='awardsearch',
@@ -185,10 +396,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='transactionsearch',
-            index=models.Index(fields=['award'], name='ts_idx_award_id'),
-        ),
-        migrations.AddIndex(
-            model_name='transactionsearch',
             index=models.Index(fields=['generated_unique_award_id'], name='ts_idx_award_key'),
         ),
         migrations.AddIndex(
@@ -210,10 +417,6 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='transactionsearch',
             index=models.Index(fields=['uri'], name='ts_idx_uri'),
-        ),
-        migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(('type__isnull', False)), fields=['type'], name='ts_idx_type'),
         ),
         migrations.AddIndex(
             model_name='transactionsearch',

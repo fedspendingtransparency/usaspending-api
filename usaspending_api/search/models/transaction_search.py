@@ -406,6 +406,7 @@ class TransactionSearch(models.Model):
 
     class Meta:
         db_table = "transaction_search"
+        constraints = [models.UniqueConstraint(fields=["transaction"], name="ts_idx_transaction_id_unique")]
         indexes = [
             models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
             models.Index(fields=["afa_generated_unique"], name="ts_idx_fabs_key"),
@@ -425,13 +426,14 @@ class TransactionSearch(models.Model):
             models.Index(
                 fields=["recipient_unique_id"],
                 name="ts_idx_recipient_unique_id",
-                condition=Q(recipient_unique_id__isnull=False)),
+                condition=Q(recipient_unique_id__isnull=False),
+            ),
             models.Index(
                 fields=["parent_recipient_unique_id"],
                 name="ts_idx_parent_recipient_unique",
                 condition=Q(parent_recipient_unique_id__isnull=False),
             ),
-            models.Index(fields=["recipient_hash"], name="ts_idx_recipient_hash",),
+            models.Index(fields=["recipient_hash"], name="ts_idx_recipient_hash"),
             models.Index(fields=["pop_zip5"], name="ts_idx_pop_zip5", condition=Q(pop_zip5__isnull=False)),
             models.Index(
                 fields=["pop_state_code"],
