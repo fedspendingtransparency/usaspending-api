@@ -1360,28 +1360,6 @@ def test_load_table_to_from_delta_for_recipient_profile(
 
 
 @mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=1,
-        award_id=1,
-        is_fpds=False,
-        indirect_federal_sharing=1.0,
-        _fill_optional=True,
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=2,
-        award_id=1,
-        is_fpds=False,
-        indirect_federal_sharing=1.0,
-        _fill_optional=True,
-    )
-    verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-
-
-@mark.django_db(transaction=True)
 def test_load_table_to_delta_timezone_aware(spark, monkeypatch, s3_unittest_data_bucket, hive_unittest_metastore_db):
     """Test that timestamps are not inadvertently shifted due to loss of timezone during reads and writes.
 
@@ -1540,22 +1518,6 @@ def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_d
     )
 
     verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("search.TransactionSearch", transaction_id="1", award_id=1, is_fpds=True, _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", award_id=2, is_fpds=True, _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
-
-
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_normalized(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
-    baker.make("search.TransactionSearch", transaction_id="1", award_id=1, _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", award_id=2, _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
 
 
 @mark.django_db(transaction=True)
