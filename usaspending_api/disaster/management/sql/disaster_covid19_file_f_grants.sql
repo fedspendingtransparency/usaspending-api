@@ -23,10 +23,10 @@ SELECT
     "subaward_search"."funding_sub_tier_agency_na" AS "prime_award_funding_sub_agency_name",
     "subaward_search"."funding_office_code" AS "prime_award_funding_office_code",
     "subaward_search"."funding_office_name" AS "prime_award_funding_office_name",
-    (SELECT STRING_AGG (DISTINCT U2."tas_rendering_label", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."award_id" = U1."award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1."treasury_account_id" = U2."treasury_account_identifier") WHERE U0."award_id" = ("subaward_search"."award_id") GROUP BY U0."award_id") AS "prime_award_treasury_accounts_funding_this_award",
-    (SELECT STRING_AGG (DISTINCT U3."federal_account_code", ';') AS "value" FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."award_id" = U1."award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1."treasury_account_id" = U2."treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2."federal_account_id" = U3."award_id") WHERE U0."award_id" = ("subaward_search"."award_id") GROUP BY U0."award_id") AS "prime_award_federal_accounts_funding_this_award",
-    (SELECT STRING_AGG(DISTINCT CONCAT(U2."object_class", ':', U2.object_class_name), ';') FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "award_id" = U1. "award_id") INNER JOIN "object_class" U2 ON (U1. "object_class_id" = U2. "award_id") WHERE U0. "award_id" = ("subaward_search"."award_id") and U1.object_class_id is not null GROUP BY U0. "award_id") AS "prime_award_object_classes_funding_this_award",
-    (SELECT STRING_AGG(DISTINCT CONCAT(U2."program_activity_code", ':', U2.program_activity_name), ';') FROM "awards" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "award_id" = U1. "award_id") INNER JOIN "ref_program_activity" U2 ON (U1. "program_activity_id" = U2. "award_id") WHERE U0. "award_id" = ("subaward_search"."award_id") and U1.program_activity_id is not null GROUP BY U0. "award_id") AS "prime_award_program_activities_funding_this_award",
+    (SELECT STRING_AGG (DISTINCT U2."tas_rendering_label", ';') AS "value" FROM "award_search" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."award_id" = U1."award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1."treasury_account_id" = U2."treasury_account_identifier") WHERE U0."award_id" = ("subaward_search"."award_id") GROUP BY U0."award_id") AS "prime_award_treasury_accounts_funding_this_award",
+    (SELECT STRING_AGG (DISTINCT U3."federal_account_code", ';') AS "value" FROM "award_search" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0."award_id" = U1."award_id") LEFT OUTER JOIN "treasury_appropriation_account" U2 ON (U1."treasury_account_id" = U2."treasury_account_identifier") LEFT OUTER JOIN "federal_account" U3 ON (U2."federal_account_id" = U3."id") WHERE U0."award_id" = ("subaward_search"."award_id") GROUP BY U0."award_id") AS "prime_award_federal_accounts_funding_this_award",
+    (SELECT STRING_AGG(DISTINCT CONCAT(U2."object_class", ':', U2.object_class_name), ';') FROM "award_search" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "award_id" = U1. "award_id") INNER JOIN "object_class" U2 ON (U1. "object_class_id" = U2. "id") WHERE U0. "award_id" = ("subaward_search"."award_id") and U1.object_class_id is not null GROUP BY U0. "award_id") AS "prime_award_object_classes_funding_this_award",
+    (SELECT STRING_AGG(DISTINCT CONCAT(U2."program_activity_code", ':', U2.program_activity_name), ';') FROM "award_search" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "award_id" = U1. "award_id") INNER JOIN "ref_program_activity" U2 ON (U1. "program_activity_id" = U2. "id") WHERE U0. "award_id" = ("subaward_search"."award_id") and U1.program_activity_id is not null GROUP BY U0. "award_id") AS "prime_award_program_activities_funding_this_award",
     "subaward_search"."awardee_or_recipient_uniqu" AS "prime_awardee_duns",
     "transaction_fabs"."uei" AS "prime_awardee_uei",
     "subaward_search"."awardee_or_recipient_legal" AS "prime_awardee_name",
@@ -101,7 +101,7 @@ SELECT
     "subaward_search"."date_submitted" AS "subaward_fsrs_report_last_modified_date"
 FROM "subaward_search"
 INNER JOIN "award_search" AS "awards" ON ("subaward_search"."award_id" = "awards"."award_id")
-INNER JOIN "transaction_fabs" ON ("awards"."latest_transaction_id" = "transaction_fabs"."transaction_id")
+INNER JOIN "transaction_search" AS "transaction_fabs" ON ("transaction_fabs"."is_fpds" = FALSE AND "awards"."latest_transaction_id" = "transaction_fabs"."transaction_id")
 INNER JOIN (
     SELECT
         faba.award_id,
@@ -141,7 +141,7 @@ INNER JOIN (
             0
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = awards.id)
+) DEFC ON (DEFC.award_id = awards.award_id)
 WHERE (
     "subaward_search"."prime_award_group" IN ('grant')
     AND "subaward_search"."sub_action_date" >= '2020-04-01'
