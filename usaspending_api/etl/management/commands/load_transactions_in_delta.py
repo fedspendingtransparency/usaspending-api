@@ -1088,6 +1088,10 @@ class Command(BaseCommand):
                     raise e
             else:
                 # First, find orphaned transactions
+                self.logger.info(
+                    "Finding orphaned transactions in raw.transaction_normalized (those with missing records in "
+                    "the source tables)"
+                )
                 self.spark.sql(
                     """
                         INSERT OVERWRITE temp.orphaned_transaction_info
@@ -1171,6 +1175,10 @@ class Command(BaseCommand):
                         # raw.transaction_fpds exists, but not raw.transaction_fabs
                         where_str = "".join(("WHERE ", fpds_transaction_id_where, " AND ", fpds_is_fpds_where))
 
+                    self.logger.info(
+                        "Finding additional orphaned transactions in raw.transaction_normalized (those with missing "
+                        "records in raw.transaction_fabs or raw.transaction_fpds)"
+                    )
                     self.spark.sql(
                         f"""
                             INSERT INTO temp.orphaned_transaction_info
@@ -1181,6 +1189,11 @@ class Command(BaseCommand):
                                 {fpds_join}
                                 {where_str}
                         """
+                    )
+                else:
+                    self.logger.warn(
+                        "No raw.transaction_fabs or raw.transaction_fpds tables, so not finding additional orphaned "
+                        "transactions in raw.transaction_normalized"
                     )
 
                 # Insert existing non-orphaned transactions into the lookup table
@@ -1388,6 +1401,7 @@ class Command(BaseCommand):
                 # Awards that have orphaned transactions, but that *aren't* in the award_ids_delete_modified table are
                 # orphaned awards (those with no remaining transactions), so put those into the orphaned_award_info
                 # table.
+                self.logger.info("Populating orphaned_award_info table")
                 self.spark.sql(
                     """
                         INSERT INTO temp.orphaned_award_info
