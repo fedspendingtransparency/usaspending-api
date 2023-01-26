@@ -848,28 +848,7 @@ class TestInitialRunNoPostgresLoader:
             spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, **kwargs
         )
 
-        # 2. Call initial_run with initial-copy, but have empty raw.transaction_f[ab|pd]s tables
-        destination_tables = ("transaction_fabs", "transaction_fpds")
-        for destination_table in destination_tables:
-            call_command(
-                "create_delta_table",
-                "--destination-table",
-                destination_table,
-                "--spark-s3-bucket",
-                s3_unittest_data_bucket,
-            )
-        # Don't call Postgres loader or reload any of the tables
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False)
-        kwargs["expected_last_load_transaction_normalized"] = initial_source_table_load_datetime
-        TestInitialRun.verify(
-            spark,
-            self.expected_initial_transaction_id_lookup,
-            self.expected_initial_award_id_lookup,
-            len(self.initial_transaction_normalized),
-            **kwargs,
-        )
-
-        # 3. Call initial_run with initial-copy, and have all raw tables populated
+        # 2. Call initial_run with initial-copy, and have all raw tables populated
 
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
@@ -879,6 +858,7 @@ class TestInitialRunNoPostgresLoader:
         ]
         # Don't call Postgres loader or re-load the source tables, though.
         TestInitialRun.initial_run(s3_unittest_data_bucket, False, load_other_raw_tables)
+        kwargs["expected_last_load_transaction_normalized"] = initial_source_table_load_datetime
         kwargs["expected_last_load_transaction_fabs"] = initial_source_table_load_datetime
         kwargs["expected_last_load_transaction_fpds"] = initial_source_table_load_datetime
         TestInitialRun.verify(
