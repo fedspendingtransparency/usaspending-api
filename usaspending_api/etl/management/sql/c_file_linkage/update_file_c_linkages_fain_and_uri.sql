@@ -33,7 +33,7 @@ WITH update_cte AS (
     RETURNING award_id
 )
 UPDATE
-    {file_d_tablename} a
+    {file_d_table} a
 SET
     update_date = NOW()
 FROM
@@ -52,7 +52,7 @@ WITH update_cte AS (
             SELECT
                 award_id
             FROM
-                {file_d_tablename} AS aw
+                {file_d_table} AS aw
             WHERE
                 UPPER(aw.uri) = UPPER(faba.uri)
         )
@@ -68,7 +68,7 @@ WITH update_cte AS (
                 AND faba_sub.award_id IS NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM {file_d_tablename} AS aw_sub
+                    FROM {file_d_table} AS aw_sub
                     WHERE
                         UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
                 ) = 1
@@ -77,7 +77,7 @@ WITH update_cte AS (
         RETURNING award_id
     )
 UPDATE
-    {file_d_tablename} a
+    {file_d_table} a
 SET
     update_date = NOW()
 FROM
