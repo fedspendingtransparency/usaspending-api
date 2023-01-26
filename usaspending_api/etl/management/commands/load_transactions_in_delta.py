@@ -1171,14 +1171,16 @@ class Command(BaseCommand):
                         # raw.transaction_fpds exists, but not raw.transaction_fabs
                         where_str = "".join(("WHERE ", fpds_transaction_id_where, " AND ", fpds_is_fpds_where))
 
-                    self.spark.sql(f"""
-                        INSERT INTO temp.orphaned_transaction_info
-                            SELECT tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
-                            FROM raw.transaction_normalized AS tn
-                            {fabs_join}
-                            {fpds_join}
-                            {where_str}
-                    """
+                    self.spark.sql(
+                        f"""
+                            INSERT INTO temp.orphaned_transaction_info
+                                SELECT
+                                    tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
+                                FROM raw.transaction_normalized AS tn
+                                {fabs_join}
+                                {fpds_join}
+                                {where_str}
+                        """
                     )
 
                 # Insert existing non-orphaned transactions into the lookup table
