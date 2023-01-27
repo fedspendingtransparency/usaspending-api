@@ -452,8 +452,8 @@ class Command(BaseCommand):
                     SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount,
                     SUM(tn.indirect_federal_sharing)    AS total_indirect_federal_sharing,
                     -- Transaction FPDS Fields
-                    SUM(CAST(fpds.base_and_all_options_value AS NUMERIC)) AS base_and_all_options_value,
-                    SUM(CAST(fpds.base_exercised_options_val AS NUMERIC)) AS base_exercised_options_val
+                    SUM(CAST(fpds.base_and_all_options_value AS NUMERIC(23, 2))) AS base_and_all_options_value,
+                    SUM(CAST(fpds.base_exercised_options_val AS NUMERIC(23, 2))) AS base_exercised_options_val
                 FROM int.transaction_normalized AS tn
                 LEFT JOIN int.transaction_fpds AS fpds ON tn.id = fpds.transaction_id
                 WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
