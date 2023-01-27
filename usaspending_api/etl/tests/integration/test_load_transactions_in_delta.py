@@ -2,33 +2,26 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+import dateutil
+import re
+import pyspark
+
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
-import re
-from typing import Any, Dict, Optional, Sequence, Set
-
-import dateutil
-import pyspark
-from pyspark.sql import SparkSession
-from model_bakery import baker
-from pytest import fixture, mark, raises
 from django.db import connection
 from django.core.management import call_command
+from model_bakery import baker
+from pyspark.sql import SparkSession
+from pytest import fixture, mark, raises
+from typing import Any, Dict, Optional, Sequence
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.common.helpers.spark_helpers import load_dict_to_delta_table
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres, equal_datasets
-
-from usaspending_api.transactions.delta_models.transaction_fabs import (
-    TRANSACTION_FABS_COLUMN_INFO,
-    TRANSACTION_FABS_COLUMNS,
-)
-from usaspending_api.transactions.delta_models.transaction_fpds import (
-    TRANSACTION_FPDS_COLUMN_INFO,
-    TRANSACTION_FPDS_COLUMNS,
-)
+from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTION_FABS_COLUMNS
+from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
-from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
 
 BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
 initial_datetime = datetime(2022, 10, 31, tzinfo=timezone.utc)
@@ -200,63 +193,6 @@ class TableLoadInfo:
     overwrite: Optional[bool] = False
 
 
-def load_to_raw_delta_table(spark, s3_data_bucket, table_name, data, overwrite=False):
-    table_to_col_names_dict = {}
-    table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
-    table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS
-    table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
-    table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
-
-    table_to_col_info_dict = {}
-    for tbl_name, col_info in zip(
-        ("transaction_fabs", "transaction_fpds"), (TRANSACTION_FABS_COLUMN_INFO, TRANSACTION_FPDS_COLUMN_INFO)
-    ):
-        table_to_col_info_dict[tbl_name] = {}
-        for col in col_info:
-            table_to_col_info_dict[tbl_name][col.dest_name] = col
-
-    # Make sure the table has been created first
-    call_command("create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_data_bucket)
-
-    if data:
-        insert_sql = f"INSERT {'OVERWRITE' if overwrite else 'INTO'} raw.{table_name} VALUES\n"
-        row_strs = []
-        for row in data:
-            value_strs = []
-            for col_name in table_to_col_names_dict[table_name]:
-                value = row.get(col_name)
-                if isinstance(value, (str, bytes)):
-                    # Quote strings for insertion into DB
-                    value_strs.append(f"'{value}'")
-                elif isinstance(value, (date, datetime)):
-                    # Convert to string and quote
-                    value_strs.append(f"""'{value.isoformat()}'""")
-                elif isinstance(value, bool):
-                    value_strs.append(str(value).upper())
-                elif isinstance(value, (Sequence, Set)):
-                    # Assume "sequences" must be "sequences" of strings, so quote each item in the "sequence"
-                    value = [f"'{item}'" for item in value]
-                    value_strs.append(f"ARRAY({', '.join(value)})")
-                elif value is None:
-                    col_info = table_to_col_info_dict.get(table_name)
-                    if (
-                        col_info
-                        and col_info[col_name].delta_type.upper() == "BOOLEAN"
-                        and not col_info[col_name].handling == "leave_null"
-                    ):
-                        # Convert None/NULL to false for boolean columns unless specified to leave the null
-                        value_strs.append("FALSE")
-                    else:
-                        value_strs.append("NULL")
-                else:
-                    value_strs.append(str(value))
-
-            row_strs.append(f"    ({', '.join(value_strs)})")
-
-        sql = "".join([insert_sql, ",\n".join(row_strs), ";"])
-        spark.sql(sql)
-
-
 def load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_raw_tables=None):
     if load_source_tables:
         load_delta_table_from_postgres("published_fabs", s3_data_bucket)
@@ -265,7 +201,7 @@ def load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_raw
     if load_other_raw_tables:
         for item in load_other_raw_tables:
             if isinstance(item, TableLoadInfo):
-                load_to_raw_delta_table(item.spark, s3_data_bucket, item.table_name, item.data, item.overwrite)
+                load_dict_to_delta_table(item.spark, s3_data_bucket, "raw", item.table_name, item.data, item.overwrite)
             else:
                 load_delta_table_from_postgres(item, s3_data_bucket)
 
@@ -392,7 +328,7 @@ class TestInitialRun:
         )
 
         # int.award_ids_delete_modified should exist, but be empty
-        actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.award_ids_delete_modified").collect()[0]["count"]
+        actual_count = spark.sql("SELECT COUNT(*) AS count from int.award_ids_delete_modified").collect()[0]["count"]
         assert actual_count == 0
 
         # Make sure int.transaction_[normalized,fabs,fpds] tables have been created and have the expected sizes.
@@ -855,8 +791,8 @@ class TestInitialRunNoPostgresLoader:
         load_tables_to_delta(s3_unittest_data_bucket)
 
         # Directly load the contents of raw.transaction_normalized to Delta
-        load_to_raw_delta_table(
-            spark, s3_unittest_data_bucket, "transaction_normalized", self.initial_transaction_normalized
+        load_dict_to_delta_table(
+            spark, s3_unittest_data_bucket, "raw", "transaction_normalized", self.initial_transaction_normalized
         )
 
         spark.sql(
@@ -912,28 +848,7 @@ class TestInitialRunNoPostgresLoader:
             spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, **kwargs
         )
 
-        # 2. Call initial_run with initial-copy, but have empty raw.transaction_f[ab|pd]s tables
-        destination_tables = ("transaction_fabs", "transaction_fpds")
-        for destination_table in destination_tables:
-            call_command(
-                "create_delta_table",
-                "--destination-table",
-                destination_table,
-                "--spark-s3-bucket",
-                s3_unittest_data_bucket,
-            )
-        # Don't call Postgres loader or reload any of the tables
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False)
-        kwargs["expected_last_load_transaction_normalized"] = initial_source_table_load_datetime
-        TestInitialRun.verify(
-            spark,
-            self.expected_initial_transaction_id_lookup,
-            self.expected_initial_award_id_lookup,
-            len(self.initial_transaction_normalized),
-            **kwargs,
-        )
-
-        # 3. Call initial_run with initial-copy, and have all raw tables populated
+        # 2. Call initial_run with initial-copy, and have all raw tables populated
 
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
@@ -943,6 +858,7 @@ class TestInitialRunNoPostgresLoader:
         ]
         # Don't call Postgres loader or re-load the source tables, though.
         TestInitialRun.initial_run(s3_unittest_data_bucket, False, load_other_raw_tables)
+        kwargs["expected_last_load_transaction_normalized"] = initial_source_table_load_datetime
         kwargs["expected_last_load_transaction_fabs"] = initial_source_table_load_datetime
         kwargs["expected_last_load_transaction_fpds"] = initial_source_table_load_datetime
         TestInitialRun.verify(
@@ -1315,7 +1231,7 @@ class TestAwardIdLookup:
 
         # Also, test that int.award_ids_delete_modified is still empty, since no transactions were deleted since
         # the last check.
-        actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.award_ids_delete_modified").collect()[0]["count"]
+        actual_count = spark.sql("SELECT COUNT(*) AS count from int.award_ids_delete_modified").collect()[0]["count"]
         assert actual_count == 0
 
         # 4. Make inserts to and deletes from the raw tables, call load_transaction_in_delta with etl-level of
