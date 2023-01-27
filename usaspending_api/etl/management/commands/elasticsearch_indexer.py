@@ -11,8 +11,6 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import drop_etl_view
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
-    AbstractElasticsearchIndexerController,
-    PostgresElasticsearchIndexerController,
     execute_sql_statement,
     format_log,
     toggle_refresh_off,
@@ -20,6 +18,10 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_covid19_faba_data,
     transform_transaction_data,
     check_new_index_name_is_ok,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
+    AbstractElasticsearchIndexerController,
+    PostgresElasticsearchIndexerController,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_AWARDS_UNIQUE_KEY_FIELD,

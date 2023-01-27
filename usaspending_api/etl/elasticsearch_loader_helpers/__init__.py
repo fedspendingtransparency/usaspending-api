@@ -45,17 +45,9 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     gen_random_name,
     TaskSpec,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
-    AbstractElasticsearchIndexerController,
-    PostgresElasticsearchIndexerController,
-    DeltaLakeElasticsearchIndexerController,
-)
 
 __all__ = [
     "chunks",
-    "AbstractElasticsearchIndexerController",
-    "PostgresElasticsearchIndexerController",
-    "DeltaLakeElasticsearchIndexerController",
     "count_of_records_to_process",
     "count_of_records_to_process_in_delta",
     "create_award_type_aliases",
@@ -72,7 +64,6 @@ __all__ = [
     "obtain_extract_all_partitions_sql",
     "set_final_index_config",
     "swap_aliases",
-    "take_snapshot",
     "TaskSpec",
     "toggle_refresh_off",
     "toggle_refresh_on",
