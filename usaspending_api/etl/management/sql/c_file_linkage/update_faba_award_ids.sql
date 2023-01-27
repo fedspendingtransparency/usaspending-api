@@ -7,7 +7,7 @@ WITH award_id_cte AS (
 	FROM
  		financial_accounts_by_awards faba
 	LEFT JOIN
-		{file_d_tablename} a
+		{file_d_table} a
 	ON
 		faba.award_id = a.award_id
 	WHERE
