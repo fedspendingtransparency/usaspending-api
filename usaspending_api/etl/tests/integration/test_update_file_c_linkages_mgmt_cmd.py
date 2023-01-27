@@ -31,7 +31,8 @@ def test_update_contract_linkages_piid_with_no_parent_piid():
     for entry in models_to_mock:
         baker.make(entry.pop("model"), **entry)
 
-    call_command("update_file_c_linkages")
+    # use the award_search table because the award_search_temp table is not present in testing
+    call_command("update_file_c_linkages", "--file-d-table=award_search")
 
     expected_results = 999
 
@@ -67,7 +68,8 @@ def test_update_contract_linkages_piid_with_parent_piid():
     for entry in models_to_mock:
         baker.make(entry.pop("model"), **entry)
 
-    call_command("update_file_c_linkages")
+    # use the award_search table because the award_search_temp table is not present in testing
+    call_command("update_file_c_linkages", "--file-d-table=award_search")
 
     expected_results = {
         "award_ids": [999, 1999],
@@ -101,7 +103,8 @@ def test_update_assistance_linkages_fain():
     for entry in models_to_mock:
         baker.make(entry.pop("model"), **entry)
 
-    call_command("update_file_c_linkages")
+    # use the award_search table because the award_search_temp table is not present in testing
+    call_command("update_file_c_linkages", "--file-d-table=award_search")
 
     expected_results = 999
 
@@ -125,7 +128,8 @@ def test_update_assistance_linkages_uri():
     for entry in models_to_mock:
         baker.make(entry.pop("model"), **entry)
 
-    call_command("update_file_c_linkages")
+    # use the award_search table because the award_search_temp table is not present in testing
+    call_command("update_file_c_linkages", "--file-d-table=award_search")
 
     expected_results = 999
 
@@ -161,7 +165,8 @@ def test_update_assistance_linkages_fain_and_uri():
     for entry in models_to_mock:
         baker.make(entry.pop("model"), **entry)
 
-    call_command("update_file_c_linkages")
+    # use the award_search table because the award_search_temp table is not present in testing
+    call_command("update_file_c_linkages", "--file-d-table=award_search")
 
     expected_results = 999
 

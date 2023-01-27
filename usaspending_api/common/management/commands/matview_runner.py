@@ -18,7 +18,6 @@ from usaspending_api.common.matview_manager import (
     MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
     CHUNKED_MATVIEW_GENERATOR_FILE,
-    OVERLAY_VIEWS,
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -165,9 +164,6 @@ class Command(BaseCommand):
                 index_concurrency=self.index_concurrency,
                 matview_dir=self.matview_chunked_dir,
             )
-
-        for view in OVERLAY_VIEWS:
-            run_sql(view.read_text(), "Creating Views")
 
         if self.remove_matviews:
             run_sql(DROP_OLD_MATVIEWS.read_text(), "Drop Old Materialized Views")

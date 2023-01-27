@@ -317,8 +317,8 @@ class Command(BaseCommand):
     def update_awards(self):
         load_datetime = datetime.now(timezone.utc)
 
-        insert_special_columns = ["subaward_count", "total_subaward_amount", "create_date", "update_date"]
-        set_subquery_ignored_columns = insert_special_columns + ["id"]
+        set_insert_special_columns = ["total_subaward_amount", "create_date", "update_date"]
+        subquery_ignored_columns = set_insert_special_columns + ["id", "subaward_count"]
 
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
         # between the query parts or in int.award_ids_delete_modified.
@@ -459,9 +459,10 @@ class Command(BaseCommand):
                 WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
                 GROUP BY tn.award_id
             )
-            SELECT latest.id, {", ".join([col_name
-                                          for col_name in AWARDS_COLUMNS
-                                          if col_name not in set_subquery_ignored_columns])}
+            SELECT
+                latest.id,
+                0 AS subaward_count,  -- for consistency with Postgres table
+                {", ".join([col_name for col_name in AWARDS_COLUMNS if col_name not in subquery_ignored_columns])}
             FROM transaction_latest AS latest
             INNER JOIN transaction_earliest AS earliest ON latest.id = earliest.id
             INNER JOIN transaction_totals AS totals on latest.id = totals.id
@@ -474,19 +475,19 @@ class Command(BaseCommand):
         set_cols = [
             f"int.awards.{col_name} = source_subquery.{col_name}"
             for col_name in AWARDS_COLUMNS
-            if col_name not in set_subquery_ignored_columns
+            if col_name not in set_insert_special_columns
         ]
         set_cols.append(f"""int.awards.update_date = '{load_datetime.isoformat(" ")}'""")
 
         # Move insert_special_columns to the end of the list of column names for ease of handling
         # during record insert
-        insert_col_name_list = [col_name for col_name in AWARDS_COLUMNS if col_name not in insert_special_columns]
-        insert_col_name_list.extend(insert_special_columns)
+        insert_col_name_list = [col_name for col_name in AWARDS_COLUMNS if col_name not in set_insert_special_columns]
+        insert_col_name_list.extend(set_insert_special_columns)
         insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
 
         # On insert, all values except for those in insert_special_columns will come from the subquery
-        insert_value_list = insert_col_name_list[:-4]
-        insert_value_list.extend(["NULL"] * 2)
+        insert_value_list = insert_col_name_list[:-3]
+        insert_value_list.extend(["NULL"])
         insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
         insert_values = ", ".join([value for value in insert_value_list])
 
@@ -1087,6 +1088,10 @@ class Command(BaseCommand):
                     raise e
             else:
                 # First, find orphaned transactions
+                self.logger.info(
+                    "Finding orphaned transactions in raw.transaction_normalized (those with missing records in "
+                    "the source tables)"
+                )
                 self.spark.sql(
                     """
                         INSERT OVERWRITE temp.orphaned_transaction_info
@@ -1101,6 +1106,95 @@ class Command(BaseCommand):
                             WHERE dap.detached_award_proc_unique IS NULL AND pfabs.afa_generated_unique IS NULL
                     """
                 )
+
+                # Extend the orphaned transactions to any transactions found in raw.transaction_normalized that
+                # don't have a corresponding entry in raw.transaction_fabs|fpds.  Beyond the records found above,
+                # this will find problematic records that are duplicated (have the same transaction_unique_id) in
+                # raw.transaction_normalized, but only have single records with that transaction_unique_id in
+                # raw.transaction_fabs|fpds.
+
+                # First, check that raw.transaction_fabs|fpds exist
+                try:
+                    self.spark.sql("SELECT 1 FROM raw.transaction_fabs")
+                except AnalysisException as e:
+                    if re.match(r"Table or view not found: raw\.transaction_fabs", e.desc):
+                        # In this case, we just skip extending the orphaned transactions with this table
+                        self.logger.warn(
+                            "Skipping extension of orphaned_transaction_info table using raw.transaction_fabs table."
+                        )
+
+                        fabs_join = ""
+                        fabs_transaction_id_where = ""
+                        fabs_is_fpds_where = ""
+                    else:
+                        # Don't try to handle anything else
+                        raise e
+                else:
+                    fabs_join = """
+                        LEFT JOIN raw.transaction_fabs AS fabs ON (
+                            tn.id = fabs.transaction_id
+                        )
+                    """
+                    fabs_transaction_id_where = "fabs.transaction_id IS NULL"
+                    fabs_is_fpds_where = "is_fpds = FALSE"
+
+                try:
+                    self.spark.sql("SELECT 1 FROM raw.transaction_fpds")
+                except AnalysisException as e:
+                    if re.match(r"Table or view not found: raw\.transaction_fpds", e.desc):
+                        # In this case, we just skip extending the orphaned transactions with this table
+                        self.logger.warn(
+                            "Skipping extension of orphaned_transaction_info table using raw.transaction_fpds table."
+                        )
+
+                        fpds_join = ""
+                        fpds_transaction_id_where = ""
+                        fpds_is_fpds_where = ""
+                    else:
+                        # Don't try to handle anything else
+                        raise e
+                else:
+                    fpds_join = """
+                        LEFT JOIN raw.transaction_fpds AS fpds ON (
+                            tn.id = fpds.transaction_id
+                        )
+                    """
+                    fpds_transaction_id_where = "fpds.transaction_id IS NULL"
+                    fpds_is_fpds_where = "is_fpds = TRUE"
+
+                # As long as one of raw.transaction_fabs|fpds exists, extend temp.orphaned_transaction_info table
+                if fabs_join or fpds_join:
+                    if fabs_join and fpds_join:
+                        # If both raw.transaction_fabs and raw.transaction_fpds exist, don't need *_is_fpds_where
+                        # in WHERE clause
+                        where_str = "".join(("WHERE ", fabs_transaction_id_where, " AND ", fpds_transaction_id_where))
+                    elif fabs_join:
+                        # raw.transaction_fabs exists, but not raw.transaction_fpds
+                        where_str = "".join(("WHERE ", fabs_transaction_id_where, " AND ", fabs_is_fpds_where))
+                    else:
+                        # raw.transaction_fpds exists, but not raw.transaction_fabs
+                        where_str = "".join(("WHERE ", fpds_transaction_id_where, " AND ", fpds_is_fpds_where))
+
+                    self.logger.info(
+                        "Finding additional orphaned transactions in raw.transaction_normalized (those with missing "
+                        "records in raw.transaction_fabs or raw.transaction_fpds)"
+                    )
+                    self.spark.sql(
+                        f"""
+                            INSERT INTO temp.orphaned_transaction_info
+                                SELECT
+                                    tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
+                                FROM raw.transaction_normalized AS tn
+                                {fabs_join}
+                                {fpds_join}
+                                {where_str}
+                        """
+                    )
+                else:
+                    self.logger.warn(
+                        "No raw.transaction_fabs or raw.transaction_fpds tables, so not finding additional orphaned "
+                        "transactions in raw.transaction_normalized"
+                    )
 
                 # Insert existing non-orphaned transactions into the lookup table
                 self.logger.info("Populating transaction_id_lookup table from raw.transaction_normalized")
@@ -1307,6 +1401,7 @@ class Command(BaseCommand):
                 # Awards that have orphaned transactions, but that *aren't* in the award_ids_delete_modified table are
                 # orphaned awards (those with no remaining transactions), so put those into the orphaned_award_info
                 # table.
+                self.logger.info("Populating orphaned_award_info table")
                 self.spark.sql(
                     """
                         INSERT INTO temp.orphaned_award_info

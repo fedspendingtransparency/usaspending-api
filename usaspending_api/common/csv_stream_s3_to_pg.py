@@ -8,7 +8,7 @@ are used in distributed/parallel/multiprocess execution (by Spark) and is
 pickled via cloudpickle. As such it must not have any presumed setup code that would have run (like Django setup,
 logging configuration, etc.) and must encapsulate all of those dependencies (like logging config) on its own.
 
-Adding new imports to this module may inadvertenly introduce a dependency that can't be pickled.
+Adding new imports to this module may inadvertently introduce a dependency that can't be pickled.
 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
