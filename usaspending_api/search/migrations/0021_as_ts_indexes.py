@@ -344,6 +344,9 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(fields=('award',), name='as_idx_award_id_unique'),
         ),
         migrations.RunSQL(
+            sql='ALTER TABLE rpt.transaction_search DROP CONSTRAINT IF EXISTS transaction_search_pkey',
+        ),
+        migrations.RunSQL(
             sql='DROP INDEX IF EXISTS transaction_search_pkey',
         ),
         migrations.AddConstraint(
