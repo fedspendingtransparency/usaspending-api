@@ -14,7 +14,7 @@ UPDATE_AWARDS_SQL = """
     SELECT
         DISTINCT award_id
     FROM
-        raw.financial_accounts_by_awards faba
+        int.financial_accounts_by_awards faba
     INNER JOIN global_temp.submission_attributes sa ON
         faba.submission_id = sa.submission_id
     INNER JOIN global_temp.dabs_submission_window_schedule dabs ON
