@@ -1026,7 +1026,7 @@ transaction_search_load_sql_string = fr"""
                 ),
                 TRUE
             ) AS tas_components
-        FROM raw.financial_accounts_by_awards AS faba
+        FROM int.financial_accounts_by_awards AS faba
         INNER JOIN global_temp.treasury_appropriation_account AS taa ON taa.treasury_account_identifier = faba.treasury_account_id
         INNER JOIN global_temp.federal_account AS fa ON fa.id = taa.federal_account_id
         INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
