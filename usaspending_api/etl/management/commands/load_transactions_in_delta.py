@@ -549,8 +549,12 @@ class Command(BaseCommand):
                 regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
             """
             if is_casted_to_date:
-                mmddYYYY_fmt = f"CAST({mmddYYYY_fmt}" f"AS DATE)"
-                YYYYmmdd_fmt = f"CAST({YYYYmmdd_fmt}" f"AS DATE)"
+                mmddYYYY_fmt = f"""CAST({mmddYYYY_fmt}
+                            AS DATE)
+                """
+                YYYYmmdd_fmt = f"""CAST({YYYYmmdd_fmt}
+                            AS DATE)
+                """
             sql_snippet = f"""
                 CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
                           THEN {mmddYYYY_fmt}
