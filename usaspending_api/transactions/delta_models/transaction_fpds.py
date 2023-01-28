@@ -363,6 +363,7 @@ DAP_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("modification_number", "award_modification_amendme", "STRING"),
     TransactionColumn("non_federal_funding_amount", "NULL", "NUMERIC(23, 2)", "literal"),
     TransactionColumn("original_loan_subsidy_cost", "NULL", "NUMERIC(23, 2)", "literal"),
+    # All period_of_performance_* fields seen as: YYYY-MM-DD 00:00:00, so cast works
     TransactionColumn("period_of_performance_current_end_date", "period_of_performance_curr", "DATE", "cast"),
     TransactionColumn("period_of_performance_start_date", "period_of_performance_star", "DATE", "cast"),
     TransactionColumn("transaction_unique_id", "detached_award_proc_unique", "STRING"),
