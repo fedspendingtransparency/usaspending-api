@@ -139,8 +139,9 @@ class Command(BaseCommand):
             )
         )
 
+        count = results.collect()[0][0]
+
         if dry_run:
-            count = results.collect()[0]
             logger.info(
                 f"There are {count:,} award records which should be reloaded into Elasticsearch for data consistency."
             )
