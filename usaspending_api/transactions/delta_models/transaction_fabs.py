@@ -1,7 +1,7 @@
 from usaspending_api.common.data_classes import TransactionColumn
 
 TRANSACTION_FABS_COLUMN_INFO = [
-    TransactionColumn("action_date", "action_date", "STRING", "string_datetime_remove_timestamp"),
+    TransactionColumn("action_date", "action_date", "STRING"),
     TransactionColumn("action_type", "action_type", "STRING"),
     TransactionColumn("action_type_description", "action_type_description", "STRING"),
     TransactionColumn("afa_generated_unique", "afa_generated_unique", "STRING"),
