@@ -22,6 +22,7 @@ from usaspending_api.broker.helpers.last_load_date import (
     get_last_load_date,
     update_last_load_date,
 )
+from usaspending_api.common.data_classes import TransactionColumn
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
@@ -513,67 +514,77 @@ class Command(BaseCommand):
         self.spark.sql("DELETE FROM int.award_ids_delete_modified")
 
     def source_subquery_sql(self, transaction_type=None):
-        def handle_column(col, bronze_table_name):
-            # Require a separator for mmddYYYY, but not for YYYYmmdd, or there is no way to tell them apart
-            #   from just regexp, and only YYYYmmdd has been seen without a separator.
-            # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
-            #   and the timestamp allows for an optional UTC offset.  In any case, the timestamp is ignored, though.
-            regexp_mmddYYYY = (
-                r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
-            )
-            regexp_YYYYmmdd = (
-                r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
-            )
 
+        # When handling date-parsing, require a separator for mmddYYYY, but not for YYYYmmdd, or there is no way to
+        # tell them apart from just regexp, and only YYYYmmdd has been seen without a separator.
+        # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
+        #   and the timestamp allows for an optional UTC offset.  In any case, the timestamp is ignored, though.
+        regexp_mmddYYYY = r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+        regexp_YYYYmmdd = r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+
+        def build_date_format_sql(
+            col: TransactionColumn, is_casted_to_date: bool = True, is_result_aliased: bool = True
+        ) -> str:
+            """Builder function to wrap a column in date-parsing logic.
+
+            It will either parse it in mmddYYYY format with - or / as a required separated, or in YYYYmmdd format
+            with or without either of - or / as a separtor.
+            Args:
+                is_casted_to_date (bool): if true, the parsed result will be cast to DATE to provide a DATE datatype,
+                    otherwise it remains a STRING in YYYY-mm-dd format
+                is_result_aliased (bool) if true, aliases the parsing result with the given ``col``'s ``dest_name``
+            """
+            mmddYYYY_fmt = f"""
+                (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
+                || '-' ||
+                regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
+                || '-' ||
+                regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
+            """
+            YYYYmmdd_fmt = f"""
+                (regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
+                || '-' ||
+                regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
+                || '-' ||
+                regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
+            """
+            if is_casted_to_date:
+                mmddYYYY_fmt = f"""CAST({mmddYYYY_fmt}
+                            AS DATE)
+                """
+                YYYYmmdd_fmt = f"""CAST({YYYYmmdd_fmt}
+                            AS DATE)
+                """
+            sql_snippet = f"""
+                CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
+                          THEN {mmddYYYY_fmt}
+                     ELSE {YYYYmmdd_fmt}
+                END{' AS ' + col.dest_name if is_result_aliased else ''}
+            """
+            return sql_snippet
+
+        def handle_column(col, bronze_table_name, is_result_aliased=True):
             if col.handling == "cast":
-                retval = f"CAST({bronze_table_name}.{col.source} AS {col.delta_type}) AS {col.dest_name}"
+                retval = f"CAST({bronze_table_name}.{col.source} AS {col.delta_type}){' AS ' + col.dest_name if is_result_aliased else ''}"
             elif col.handling == "literal":
                 # Use col.source directly as the value
-                retval = f"{col.source} AS {col.dest_name}"
+                retval = f"{col.source}{' AS ' + col.dest_name if is_result_aliased else ''}"
             elif col.handling == "parse_string_datetime_to_date":
                 # These are string fields that actually hold DATES/TIMESTAMPS and need to be cast as dates.
                 # However, they may not be properly parsed when calling CAST(... AS DATE).
-                retval = f"""
-                    CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
-                              THEN CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
-                                         || '-' ||
-                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
-                                         || '-' ||
-                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
-                                        AS DATE)
-                         ELSE CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
-                                   AS DATE)
-                    END AS {col.dest_name}
-                """
+                retval = build_date_format_sql(col, is_casted_to_date=True, is_result_aliased=is_result_aliased)
             elif col.handling == "string_datetime_remove_timestamp":
                 # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
                 # even though they remain as strings
-                retval = f"""
-                    CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
-                              THEN (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
-                         ELSE (regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
-                               || '-' ||
-                               regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
-                               || '-' ||
-                               regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
-                    END AS {col.dest_name}
-                """
+                retval = build_date_format_sql(col, is_casted_to_date=False, is_result_aliased=is_result_aliased)
             elif col.delta_type.upper() == "STRING":
                 # Capitalize all string values
-                retval = f"ucase({bronze_table_name}.{col.source}) AS {col.dest_name}"
+                retval = f"ucase({bronze_table_name}.{col.source}){' AS ' + col.dest_name if is_result_aliased else ''}"
             elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
                 # Unless specified, convert any nulls to false for boolean columns
-                retval = f"COALESCE({bronze_table_name}.{col.source}, FALSE) AS {col.dest_name}"
+                retval = f"COALESCE({bronze_table_name}.{col.source}, FALSE){' AS ' + col.dest_name if is_result_aliased else ''}"
             else:
-                retval = f"{bronze_table_name}.{col.source} AS {col.dest_name}"
+                retval = f"{bronze_table_name}.{col.source}{' AS ' + col.dest_name if is_result_aliased else ''}"
 
             return retval
 
@@ -595,12 +606,19 @@ class Command(BaseCommand):
             return select_cols
 
         def select_columns_transaction_normalized(bronze_table_name):
+            action_date_col = next(
+                filter(
+                    lambda c: c.dest_name == "action_date" and c.source == "action_date",
+                    FABS_TO_NORMALIZED_COLUMN_INFO if transaction_type == "fabs" else DAP_TO_NORMALIZED_COLUMN_INFO,
+                )
+            )
+            parse_action_date_sql_snippet = handle_column(action_date_col, bronze_table_name, is_result_aliased=False)
             select_cols = [
                 "award_id_lookup.award_id",
                 "awarding_agency.id AS awarding_agency_id",
-                f"""CASE WHEN month(to_date({bronze_table_name}.action_date)) > 9
-                             THEN year(to_date({bronze_table_name}.action_date)) + 1
-                         ELSE year(to_date({bronze_table_name}.action_date))
+                f"""CASE WHEN month({parse_action_date_sql_snippet}) > 9
+                             THEN year({parse_action_date_sql_snippet}) + 1
+                         ELSE year({parse_action_date_sql_snippet})
                     END AS fiscal_year""",
                 "funding_agency.id AS funding_agency_id",
             ]
