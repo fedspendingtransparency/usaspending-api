@@ -514,7 +514,6 @@ class Command(BaseCommand):
         self.spark.sql("DELETE FROM int.award_ids_delete_modified")
 
     def source_subquery_sql(self, transaction_type=None):
-
         def build_date_format_sql(
             col: TransactionColumn, is_casted_to_date: bool = True, is_result_aliased: bool = True
         ) -> str:
