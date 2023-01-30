@@ -460,7 +460,7 @@ LEFT OUTER JOIN (
                 END), 0) AS outlay,
             COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
         FROM
-            raw.financial_accounts_by_awards AS faba
+            int.financial_accounts_by_awards AS faba
         INNER JOIN
             global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
         INNER JOIN
@@ -512,7 +512,7 @@ LEFT OUTER JOIN (
     COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers
   FROM
     global_temp.treasury_appropriation_account taa
-  INNER JOIN raw.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+  INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
   INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
   INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
   WHERE
