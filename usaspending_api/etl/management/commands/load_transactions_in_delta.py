@@ -515,25 +515,27 @@ class Command(BaseCommand):
 
     def source_subquery_sql(self, transaction_type=None):
 
-        # When handling date-parsing, require a separator for mmddYYYY, but not for YYYYmmdd, or there is no way to
-        # tell them apart from just regexp, and only YYYYmmdd has been seen without a separator.
-        # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
-        #   and the timestamp allows for an optional UTC offset.  In any case, the timestamp is ignored, though.
-        regexp_mmddYYYY = r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
-        regexp_YYYYmmdd = r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
-
         def build_date_format_sql(
             col: TransactionColumn, is_casted_to_date: bool = True, is_result_aliased: bool = True
         ) -> str:
             """Builder function to wrap a column in date-parsing logic.
 
-            It will either parse it in mmddYYYY format with - or / as a required separated, or in YYYYmmdd format
-            with or without either of - or / as a separtor.
+            It will either parse it in mmddYYYY format with - or / as a required separator, or in YYYYmmdd format
+            with or without either of - or / as a separator.
             Args:
                 is_casted_to_date (bool): if true, the parsed result will be cast to DATE to provide a DATE datatype,
                     otherwise it remains a STRING in YYYY-mm-dd format
                 is_result_aliased (bool) if true, aliases the parsing result with the given ``col``'s ``dest_name``
             """
+            # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
+            #   and the timestamp allows for an optional UTC offset.  In any case, the timestamp is ignored, though.
+            regexp_mmddYYYY = (
+                r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+            )
+            regexp_YYYYmmdd = (
+                r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
+            )
+
             mmddYYYY_fmt = f"""
                 (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
                 || '-' ||
@@ -548,6 +550,7 @@ class Command(BaseCommand):
                 || '-' ||
                 regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
             """
+
             if is_casted_to_date:
                 mmddYYYY_fmt = f"""CAST({mmddYYYY_fmt}
                             AS DATE)
@@ -555,12 +558,14 @@ class Command(BaseCommand):
                 YYYYmmdd_fmt = f"""CAST({YYYYmmdd_fmt}
                             AS DATE)
                 """
+
             sql_snippet = f"""
                 CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
                           THEN {mmddYYYY_fmt}
                      ELSE {YYYYmmdd_fmt}
                 END{' AS ' + col.dest_name if is_result_aliased else ''}
             """
+
             return sql_snippet
 
         def handle_column(col, bronze_table_name, is_result_aliased=True):
@@ -629,10 +634,13 @@ class Command(BaseCommand):
                         # business_categories
                         f"get_business_categories_fabs({bronze_table_name}.business_types) AS business_categories",
                         # funding_amount
+                        # In theory, this should be equal to
+                        #   CAST(COALESCE({bronze_table_name}.federal_action_obligation, 0)
+                        #        + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
+                        #        AS NUMERIC(23, 2))
+                        #   However, for some historical records, this isn't true.
                         f"""
-                        CAST(COALESCE({bronze_table_name}.federal_action_obligation, 0)
-                                + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
-                             AS NUMERIC(23, 2)) AS funding_amount
+                        CAST({bronze_table_name}.total_funding_amount AS NUMERIC(23, 2)) AS funding_amount
                         """,
                     ]
                 )
