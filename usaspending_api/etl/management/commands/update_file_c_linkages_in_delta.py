@@ -6,7 +6,9 @@ from usaspending_api.awards.delta_models import c_to_d_linkage_view_sql_strings,
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
+    get_jdbc_connection_properties,
     get_jvm_logger,
+    get_usas_jdbc_url,
 )
 from usaspending_api.config import CONFIG
 
@@ -149,6 +151,15 @@ class Command(BaseCommand):
         # Log the number of FABA records still unlinked
         unlinked_count = self.get_unlinked_count("int")
         logger.info(f"Count of unlinked records after updates: {unlinked_count:,}")
+
+        # Write view back to Postgres for linkages
+        c_to_d_linkage_updates_df = self.spark.sql("SELECT * FROM union_all_priority")
+        c_to_d_linkage_updates_df.write.jdbc(
+            url=get_usas_jdbc_url(),
+            table="c_to_d_linkage_updates",
+            mode="overwrite",
+            properties=get_jdbc_connection_properties(),
+        )
 
         # Run Linkage Queries
         drop_view_queries = c_to_d_linkage_drop_view_sql_strings
