@@ -1,3 +1,4 @@
+/* NOTE: Comments must be in this form. This SQL gets flattened to 1-line for psql \copy */
 SELECT
     award_search.generated_unique_award_id AS assistance_award_unique_key,
     award_search.fain AS award_id_fain,
@@ -92,7 +93,7 @@ SELECT
     award_search.officer_5_amount AS highly_compensated_officer_5_amount,
     CONCAT('https://www.usaspending.gov/award/', urlencode(award_search.generated_unique_award_id), '/') AS usaspending_permalink,
     latest_transaction.last_modified_date::TIMESTAMP WITH TIME ZONE AS last_modified_date
-FROM rpt.award_search -- constrained with is_fpds = FALSE in the covid_faba_assistance_awards_agg subquery that it's INNER JOINed to
+FROM rpt.award_search /* constrained with is_fpds = FALSE in the covid_faba_assistance_awards_agg subquery that it's INNER JOINed to */
 INNER JOIN rpt.transaction_search AS latest_transaction ON (award_search.latest_transaction_id = latest_transaction.transaction_id)
 INNER JOIN (
     SELECT
@@ -149,8 +150,8 @@ LATERAL (
         ON faba.object_class_id = oc.id
     LEFT JOIN ref_program_activity pa
         ON faba.program_activity_id = pa.id
-    -- JOIN back to the filtered down award_search (filtered by its INNER JOIN to the covid_faba_assistance_awards_agg subquery)
-    -- to narrow the scope of how many award-groups this subquery has to make the aggs do less work
+    /* JOIN back to the filtered down award_search (filtered by its INNER JOIN to the covid_faba_assistance_awards_agg subquery)
+       to narrow the scope of how many award-groups this subquery has to make the aggs do less work */
     WHERE
         awd.award_id = award_search.award_id
     GROUP BY
@@ -163,8 +164,8 @@ LATERAL (
     FROM rpt.award_search awd
     INNER JOIN rpt.transaction_search ts
         ON awd.award_id = ts.award_id
-    -- JOIN back to the filtered down award_search (filtered by its INNER JOIN to the covid_faba_assistance_awards_agg subquery)
-    -- to narrow the scope of how many award-groups this subquery has to make the aggs do less work
+    /* JOIN back to the filtered down award_search (filtered by its INNER JOIN to the covid_faba_assistance_awards_agg subquery)
+       to narrow the scope of how many award-groups this subquery has to make the aggs do less work */
     WHERE
         awd.award_id = award_search.award_id
     GROUP BY
