@@ -153,10 +153,10 @@ class Command(BaseCommand):
         logger.info(f"Count of unlinked records after updates: {unlinked_count:,}")
 
         # Write view back to Postgres for linkages
-        c_to_d_linkage_updates_df = self.spark.sql("SELECT * FROM union_all_priority")
+        c_to_d_linkage_updates_df = self.spark.sql("SELECT * FROM union_all_priority;")
         c_to_d_linkage_updates_df.write.jdbc(
             url=get_usas_jdbc_url(),
-            table="c_to_d_linkage_updates",
+            table="temp.c_to_d_linkage_updates",
             mode="overwrite",
             properties=get_jdbc_connection_properties(),
         )
