@@ -18,14 +18,14 @@ class Command(BaseCommand):
     )
 
     UPDATE_LINKAGES_SQL = """
-    MERGE INTO public.financial_accounts_by_awards AS faba
-    USING
-        TEMP.c_to_d_linkages_updates AS updates
-    ON
-        faba.financial_accounts_by_awards_id = updates.financial_accounts_by_awards_id
-    WHEN MATCHED THEN UPDATE
+    UPDATE
+        public.financial_accounts_by_awards AS faba
     SET
-        faba.award_id = updates.award_id;
+        award_id = updates.award_id
+    FROM
+        TEMP.c_to_d_linkage_updates AS updates
+    WHERE
+        faba.financial_accounts_by_awards_id = updates.financial_accounts_by_awards_id;
     """
 
     LINKAGE_TYPES = ["contract", "assistance"]
