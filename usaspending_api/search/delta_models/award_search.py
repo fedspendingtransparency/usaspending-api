@@ -115,6 +115,9 @@ AWARD_SEARCH_COLUMNS = {
     "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
+    "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
+    "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
+    "iija_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": True},
     "officer_1_amount": {
         "delta": "NUMERIC(23, 2)",
         "postgres": "NUMERIC(23, 2)",
@@ -134,7 +137,7 @@ AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.ite
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
 AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["gold"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 
-award_search_create_sql_string = fr"""
+award_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
     )
@@ -142,7 +145,7 @@ award_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-award_search_load_sql_string = fr"""
+award_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
             {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
