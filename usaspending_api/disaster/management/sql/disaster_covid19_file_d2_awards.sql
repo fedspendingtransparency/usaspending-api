@@ -1,4 +1,4 @@
-/* NOTE: Comments must be in this form. This SQL gets flattened to 1-line for psql \copy */
+/* NOTE: Comments must be in this form and may not include single quotes/apostrophes. This SQL gets flattened to 1-line for psql \copy */
 SELECT
     award_search.generated_unique_award_id AS assistance_award_unique_key,
     award_search.fain AS award_id_fain,
@@ -93,7 +93,7 @@ SELECT
     award_search.officer_5_amount AS highly_compensated_officer_5_amount,
     CONCAT('https://www.usaspending.gov/award/', urlencode(award_search.generated_unique_award_id), '/') AS usaspending_permalink,
     latest_transaction.last_modified_date::TIMESTAMP WITH TIME ZONE AS last_modified_date
-FROM rpt.award_search /* constrained with is_fpds = FALSE in the covid_faba_assistance_awards_agg subquery that it's INNER JOINed to */
+FROM rpt.award_search /* constrained with is_fpds = FALSE in the covid_faba_assistance_awards_agg subquery that it is INNER JOINed to */
 INNER JOIN rpt.transaction_search AS latest_transaction ON (award_search.latest_transaction_id = latest_transaction.transaction_id)
 INNER JOIN (
     SELECT
