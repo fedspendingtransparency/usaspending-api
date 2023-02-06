@@ -17,6 +17,17 @@ class Command(BaseCommand):
         "necessary updates will be reculated using a series of SQL files",
     )
 
+    UPDATE_LINKAGES_SQL = """
+    MERGE INTO public.financial_accounts_by_awards AS faba
+    USING
+        TEMP.c_to_d_linkages_updates AS updates
+    ON
+        faba.financial_accounts_by_awards_id = updates.financial_accounts_by_awards_id
+    WHEN MATCHED THEN UPDATE
+    SET
+        faba.award_id = updates.award_id;
+    """
+
     LINKAGE_TYPES = ["contract", "assistance"]
     ETL_SQL_FILE_PATH = "usaspending_api/etl/management/sql/"
     logger = logging.getLogger("script")
@@ -44,17 +55,29 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        with transaction.atomic():
-            self.unlink_from_removed_awards(options.get("file_d_table"))
-            if options.get("submission_ids"):
-                for sub in options["submission_ids"]:
-                    self.run_sql(sub)
-            else:
-                self.run_sql()
 
-    def run_sql(self, submission=None):
+        recalculate_linkages = options["recalculate_linkages"]
+        file_d_table = options["file_d_table"]
+        submission_ids = options["submission_ids"]
+
+        if recalculate_linkages:
+            # If recalculate linkages argument is used, run through SQL files to link File C to provided File D table
+            with transaction.atomic():
+                self.unlink_from_removed_awards(file_d_table)
+                if submission_ids:
+                    for sub in submission_ids:
+                        self.run_linkage_sql(file_d_table, sub)
+                else:
+                    self.run_linkage_sql(file_d_table)
+        else:
+            # Otherwise use the `c_to_d_linkage_updates` table to update the FABA table
+            with connection.cursor() as cursor:
+                self.logger.info("Updating FABA records using `c_to_d_linkage_updates` table.")
+                cursor.execute(self.UPDATE_LINKAGES_SQL)
+
+    def run_linkage_sql(self, file_d_table, submission=None):
         for link_type in self.LINKAGE_TYPES:
-            update_c_to_d_linkages(type=link_type, submission_id=submission)
+            update_c_to_d_linkages(type=link_type, file_d_table=file_d_table, submission_id=submission)
 
     def unlink_from_removed_awards(self, file_d_table):
         """Unlinks FABA records from Awards that no longer exist"""
