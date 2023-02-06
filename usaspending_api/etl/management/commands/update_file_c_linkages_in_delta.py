@@ -17,14 +17,22 @@ class Command(BaseCommand):
 
     help = (
         "This command links File C (financial_accounts_by_awards) records to File D (awards) records.",
-        "It creates a new copy of the `financial_accounts_by_awards` table in the `int` schema based",
-        "on the copy in the `raw` schema and applies the updates there. These records are linked to",
-        "the `awards` table in the `int` schema",
+        "It creates a new copy of the `financial_accounts_by_awards` Delta table in the `int` schema",
+        "based on the copy in the `raw` schema and applies the updates there. These records are linked to",
+        "the `awards` table in the `int` schema. By default, this copy is peformed as a SHALLOW CLONE,",
+        "but if the `--no-clone` command is used, a full copy of the table will be made instead. In either",
+        "case, the int table is replaced during each run.",
+        "",
+        "Before updating the int table, it builds a temporary view containing all necessary updates to",
+        "linkages. At the end of the command, this view is written to Postgres replacing the contents of the",
+        "contents of the `c_to_d_linkages` table, which is later used to perform the same updates on the",
+        "Postgres version of the FABA table.",
     )
 
     spark: SparkSession
 
     def add_arguments(self, parser):
+
         parser.add_argument(
             "--no-clone",
             action="store_true",
@@ -37,7 +45,7 @@ class Command(BaseCommand):
             type=str,
             required=False,
             default=CONFIG.SPARK_S3_BUCKET,
-            help="The destination bucket in S3 to write the data",
+            help="The destination bucket in S3 to rewrite the FABA table when the --no-clone option is used.",
         )
 
     def get_unlinked_count(self, schema):

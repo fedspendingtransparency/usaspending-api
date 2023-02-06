@@ -9,14 +9,38 @@ from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages, r
 
 class Command(BaseCommand):
 
+    help = (
+        "By default, this command will use the `c_to_d_linkage_updates` table to determine which FABA",
+        "records need to be updated. This table is populated by the `update_file_c_linkages_in_delta`",
+        "command which should be run before this command during the nightly pipeline. It contains a",
+        "mapping from FABA records to Awards. However, if the --recalculate-linkages flag is used, the",
+        "necessary updates will be reculated using a series of SQL files",
+    )
+
     LINKAGE_TYPES = ["contract", "assistance"]
     ETL_SQL_FILE_PATH = "usaspending_api/etl/management/sql/"
     logger = logging.getLogger("script")
 
     def add_arguments(self, parser):
-        parser.add_argument("--file-d-table", help=("Name of the File D table to use."), type=str, required=True)
         parser.add_argument(
-            "--submission-ids", help=("One or more Broker submission_ids to be updated."), nargs="+", type=int
+            "--recalculate-linkages",
+            action="store_true",
+            required=False,
+            help="Recalculate the necesarry linkages using a series of SQL files instead of using a precalculated list",
+        )
+
+        parser.add_argument(
+            "--file-d-table",
+            help="Name of File D table used to calculate linkages. Only applicable with `--recalculate-linkages` flag",
+            type=str,
+            required=True,
+        )
+
+        parser.add_argument(
+            "--submission-ids",
+            help="One or more submission_ids to be updated. Only applicable with the `--recalculate-linkages` flag",
+            nargs="+",
+            type=int,
         )
 
     def handle(self, *args, **options):
