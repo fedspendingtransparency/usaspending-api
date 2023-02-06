@@ -1,13 +1,16 @@
+/* NOTE: Comments must be in this form and may not include single quotes/apostrophes. This SQL gets flattened to 1-line for psql \copy */
 SELECT
     award_search.generated_unique_award_id AS assistance_award_unique_key,
     award_search.fain AS award_id_fain,
     award_search.uri AS award_id_uri,
     latest_transaction.sai_number AS sai_number,
-    0 AS disaster_emergency_fund_codes,
+    covid_faba_assistance_awards_agg.disaster_emergency_fund_codes AS disaster_emergency_fund_codes,
     (
-       0
+        covid_faba_assistance_awards_agg.gross_outlay_amount_by_award_cpe
+        + covid_faba_assistance_awards_agg.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
+        + covid_faba_assistance_awards_agg.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
     ) AS "outlayed_amount_funded_by_COVID-19_supplementals",
-    0 AS "obligated_amount_funded_by_COVID-19_supplementals",
+    covid_faba_assistance_awards_agg.transaction_obligated_amount AS "obligated_amount_funded_by_COVID-19_supplementals",
     award_search.total_obligation AS total_obligated_amount,
     award_search.non_federal_funding_amount AS total_non_federal_funding_amount,
     award_search.total_funding_amount AS total_funding_amount,
@@ -31,10 +34,10 @@ SELECT
     latest_transaction.funding_subtier_agency_name AS funding_sub_agency_name,
     latest_transaction.funding_office_code AS funding_office_code,
     latest_transaction.funding_office_name AS funding_office_name,
-    array[]::text[] AS treasury_accounts_funding_this_award,
-    array[]::text[] AS federal_accounts_funding_this_award,
-    array[]::text[] AS object_classes_funding_this_award,
-    array[]::text[] AS program_activities_funding_this_award,
+    faba_assistance_awards_agg.treasury_accounts_funding_this_award AS treasury_accounts_funding_this_award,
+    faba_assistance_awards_agg.federal_accounts_funding_this_award AS federal_accounts_funding_this_award,
+    faba_assistance_awards_agg.object_classes_funding_this_award AS object_classes_funding_this_award,
+    faba_assistance_awards_agg.program_activities_funding_this_award AS program_activities_funding_this_award,
     latest_transaction.recipient_unique_id AS recipient_duns,
     latest_transaction.recipient_uei AS recipient_uei,
     latest_transaction.recipient_name_raw AS recipient_name,
@@ -68,7 +71,7 @@ SELECT
     latest_transaction.place_of_performance_zip4a AS primary_place_of_performance_zip_4,
     latest_transaction.pop_congressional_code AS primary_place_of_performance_congressional_district,
     latest_transaction.place_of_performance_forei AS primary_place_of_performance_foreign_location,
-    array[]::text[] AS cfda_numbers_and_titles,
+    cfda_numbers_and_titles_agg.cfda_numbers_and_titles AS cfda_numbers_and_titles,
     latest_transaction.type AS assistance_type_code,
     latest_transaction.type_description AS assistance_type_description,
     award_search.description AS prime_award_base_transaction_description,
@@ -90,7 +93,81 @@ SELECT
     award_search.officer_5_amount AS highly_compensated_officer_5_amount,
     CONCAT('https://www.usaspending.gov/award/', urlencode(award_search.generated_unique_award_id), '/') AS usaspending_permalink,
     latest_transaction.last_modified_date::TIMESTAMP WITH TIME ZONE AS last_modified_date
-FROM rpt.award_search
-INNER JOIN rpt.transaction_search AS latest_transaction
-    ON (latest_transaction.is_fpds = FALSE AND award_search.latest_transaction_id = latest_transaction.transaction_id)
-limit 21804792
+FROM rpt.award_search /* constrained with is_fpds = FALSE in the covid_faba_assistance_awards_agg subquery that it is INNER JOINed to */
+INNER JOIN rpt.transaction_search AS latest_transaction ON (award_search.latest_transaction_id = latest_transaction.transaction_id)
+INNER JOIN (
+    SELECT
+        awd.award_id,
+        STRING_AGG(DISTINCT CONCAT(defc.code, ': ', defc.public_law), '; ' ORDER BY CONCAT(defc.code, ': ', defc.public_law)) AS disaster_emergency_fund_codes,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe END), 0) AS ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END), 0) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
+        COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
+    FROM financial_accounts_by_awards faba
+    INNER JOIN disaster_emergency_fund_code defc
+        ON defc.group_name = 'covid_19'
+        AND defc.code = faba.disaster_emergency_fund_code
+    INNER JOIN submission_attributes sa
+        ON sa.reporting_period_start >= '2020-04-01'
+        AND faba.submission_id = sa.submission_id
+    INNER JOIN dabs_submission_window_schedule
+        ON dabs_submission_window_schedule.submission_reveal_date <= now()
+        AND sa.submission_window_id = dabs_submission_window_schedule.id
+    INNER JOIN rpt.award_search awd
+        ON awd.is_fpds = FALSE
+        AND faba.award_id = awd.award_id
+    GROUP BY
+        awd.award_id
+    HAVING
+        SUM(
+            CASE
+                WHEN sa.is_final_balances_for_fy = TRUE
+                THEN
+                    COALESCE(faba.gross_outlay_amount_by_award_cpe, 0)
+                    + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                    + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                ELSE 0
+            END
+        ) != 0
+        OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
+) AS covid_faba_assistance_awards_agg
+    ON award_search.award_id = covid_faba_assistance_awards_agg.award_id,
+LATERAL (
+    SELECT
+        awd.award_id,
+        STRING_AGG (DISTINCT tas.tas_rendering_label, ';') AS treasury_accounts_funding_this_award,
+        STRING_AGG (DISTINCT fa.federal_account_code, ';') AS federal_accounts_funding_this_award,
+        STRING_AGG(DISTINCT CONCAT(oc.object_class, ':', oc.object_class_name), ';') FILTER (WHERE oc.id IS NOT NULL) AS object_classes_funding_this_award,
+        STRING_AGG(DISTINCT CONCAT(pa.program_activity_code, ':', pa.program_activity_name), ';') FILTER (WHERE pa.id IS NOT NULL) AS program_activities_funding_this_award
+    FROM rpt.award_search awd
+    INNER JOIN financial_accounts_by_awards faba
+        ON awd.award_id = faba.award_id
+    LEFT JOIN treasury_appropriation_account tas
+        ON faba.treasury_account_id = tas.treasury_account_identifier
+    LEFT JOIN federal_account fa
+        ON tas.federal_account_id = fa.id
+    LEFT JOIN object_class oc
+        ON faba.object_class_id = oc.id
+    LEFT JOIN ref_program_activity pa
+        ON faba.program_activity_id = pa.id
+    /* JOIN back to the filtered down award_search (filtered by its INNER JOIN to the covid_faba_assistance_awards_agg subquery)
+       to narrow the scope of how many award-groups this subquery has to make the aggs do less work */
+    WHERE
+        awd.award_id = award_search.award_id
+    GROUP BY
+        awd.award_id
+) AS faba_assistance_awards_agg,
+LATERAL (
+    SELECT
+        awd.award_id,
+        STRING_AGG(DISTINCT CONCAT(ts.cfda_number, ': ', ts.cfda_title), '; ' ORDER BY CONCAT(ts.cfda_number, ': ', ts.cfda_title)) AS cfda_numbers_and_titles
+    FROM rpt.award_search awd
+    INNER JOIN rpt.transaction_search ts
+        ON awd.award_id = ts.award_id
+    /* JOIN back to the filtered down award_search (filtered by its INNER JOIN to the covid_faba_assistance_awards_agg subquery)
+       to narrow the scope of how many award-groups this subquery has to make the aggs do less work */
+    WHERE
+        awd.award_id = award_search.award_id
+    GROUP BY
+        awd.award_id
+) AS cfda_numbers_and_titles_agg
