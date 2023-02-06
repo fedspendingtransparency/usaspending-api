@@ -164,7 +164,7 @@ class Command(BaseCommand):
         c_to_d_linkage_updates_df = self.spark.sql("SELECT * FROM union_all_priority;")
         c_to_d_linkage_updates_df.write.jdbc(
             url=get_usas_jdbc_url(),
-            table="temp.c_to_d_linkage_updates",
+            table="public.c_to_d_linkage_updates",
             mode="overwrite",
             properties=get_jdbc_connection_properties(),
         )

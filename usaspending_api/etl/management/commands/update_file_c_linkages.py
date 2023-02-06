@@ -23,7 +23,7 @@ class Command(BaseCommand):
     SET
         award_id = updates.award_id
     FROM
-        TEMP.c_to_d_linkage_updates AS updates
+        public.c_to_d_linkage_updates AS updates
     WHERE
         faba.financial_accounts_by_awards_id = updates.financial_accounts_by_awards_id;
     """
