@@ -15,7 +15,6 @@ WITH award_id_cte AS (
   		AND
   		faba.award_id IS NOT NULL
 )
-
 UPDATE
 	financial_accounts_by_awards
 SET
