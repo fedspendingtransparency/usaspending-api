@@ -519,15 +519,15 @@ FROM
             COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
         FROM
             int.financial_accounts_by_awards AS faba
-            INNER JOIN disaster_emergency_fund_code AS defc ON (
+            INNER JOIN global_temp.disaster_emergency_fund_code AS defc ON (
                 faba.disaster_emergency_fund_code = defc.code
                 AND defc.code IN ('Z', '1')
             )
-            INNER JOIN submission_attributes AS sa ON (
+            INNER JOIN global_temp.submission_attributes AS sa ON (
                 faba.submission_id = sa.submission_id
                 AND sa.reporting_period_start >= '2020-04-01'
             )
-            INNER JOIN dabs_submission_window_schedule AS dsws ON (
+            INNER JOIN global_temp.dabs_submission_window_schedule AS dsws ON (
                 sa.submission_window_id = dsws.id
                 AND dsws.submission_reveal_date <= now()
             )
