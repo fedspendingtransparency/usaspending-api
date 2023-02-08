@@ -327,9 +327,9 @@ award_search_load_sql_string = rf"""
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   TREASURY_ACCT.disaster_emergency_fund_codes,
-  DEFC.covid_spending_by_defc,
-  DEFC.total_covid_outlay,
-  DEFC.total_covid_obligation,
+  COVID_DEFC.covid_spending_by_defc,
+  COVID_DEFC.total_covid_outlay,
+  COVID_DEFC.total_covid_obligation,
   awards.officer_1_amount,
   awards.officer_1_name,
   awards.officer_2_amount,
@@ -341,9 +341,9 @@ award_search_load_sql_string = rf"""
   awards.officer_5_amount,
   awards.officer_5_name,
 
-  DEFC.iija_spending_by_defc,
-  DEFC.total_iija_outlay,
-  DEFC.total_iija_obligation
+  IIJA_DEFC.iija_spending_by_defc,
+  IIJA_DEFC.total_iija_outlay,
+  IIJA_DEFC.total_iija_obligation
 FROM
   int.awards
 INNER JOIN
@@ -444,6 +444,7 @@ LEFT OUTER JOIN (
         )
         AND recipient_lookup.legal_business_name IS NOT NULL
     )
+-- COVID spending
 LEFT OUTER JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
@@ -481,7 +482,8 @@ LEFT OUTER JOIN (
         GROUPED_BY_DEFC.award_id IS NOT NULL
     GROUP BY
         GROUPED_BY_DEFC.award_id
-) DEFC on DEFC.award_id = awards.id
+) COVID_DEFC on COVID_DEFC.award_id = awards.id
+-- Infrastructure Investment and Jobs Act (IIJA) spending
 LEFT OUTER JOIN (
     SELECT
     GROUPED_BY_DEFC.award_id,
@@ -537,7 +539,7 @@ WHERE
     GROUPED_BY_DEFC.award_id IS NOT NULL
 GROUP BY
     GROUPED_BY_DEFC.award_id
-) DEFC on DEFC.award_id = awards.id
+) IIJA_DEFC on IIJA_DEFC.award_id = awards.id
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,
