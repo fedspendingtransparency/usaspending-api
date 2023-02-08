@@ -444,7 +444,7 @@ class InitialRunWithPostgresLoader:
     expected_initial_transaction_fpds = [
         {
             **procure,
-            "action_date": dateutil.parser.parse(procure["action_date"]).date().isoformat(),
+            "action_date": procure["action_date"],
             "detached_award_proc_unique": procure["detached_award_proc_unique"].upper(),
             "transaction_id": procure["detached_award_procurement_id"] + len(initial_assists),
             "unique_award_key": procure["unique_award_key"].upper(),
@@ -758,7 +758,7 @@ class TestInitialRunNoPostgresLoader:
     initial_transaction_fpds = [
         {
             **procure,
-            "action_date": dateutil.parser.parse(procure["action_date"]).date().isoformat(),
+            "action_date": procure["action_date"],
             "detached_award_proc_unique": procure["detached_award_proc_unique"].upper(),
             "transaction_id": procure["detached_award_procurement_id"] * 2,
             "unique_award_key": procure["unique_award_key"].upper(),
@@ -767,14 +767,14 @@ class TestInitialRunNoPostgresLoader:
     ] + [
         {
             **initial_procures[3],
-            "action_date": dateutil.parser.parse(initial_procures[3]["action_date"]).date().isoformat(),
+            "action_date": initial_procures[3]["action_date"],
             "detached_award_proc_unique": initial_procures[3]["detached_award_proc_unique"].upper(),
             "transaction_id": 9,
             "unique_award_key": initial_procures[3]["unique_award_key"].upper(),
         },
         {
             **initial_procures[4],
-            "action_date": dateutil.parser.parse(initial_procures[4]["action_date"]).date().isoformat(),
+            "action_date": initial_procures[4]["action_date"],
             "detached_award_proc_unique": initial_procures[4]["detached_award_proc_unique"].upper(),
             "transaction_id": 10,
             "unique_award_key": initial_procures[4]["unique_award_key"].upper(),
@@ -1639,7 +1639,9 @@ class TransactionFabsFpdsCore:
         expected_transaction_fabs_fpds_append.update(
             {
                 "transaction_id": self.new_transaction_id,
-                "action_date": insert_update_datetime.date().isoformat(),
+                "action_date":
+                    insert_update_datetime.date().isoformat() if self.etl_level == "transaction_fabs"
+                                                                else insert_update_datetime.isoformat(),
                 "created_at": insert_update_datetime,
                 "updated_at": insert_update_datetime,
             }

@@ -569,7 +569,10 @@ class Command(BaseCommand):
 
         def handle_column(col, bronze_table_name, is_result_aliased=True):
             if col.handling == "cast":
-                retval = f"CAST({bronze_table_name}.{col.source} AS {col.delta_type}){' AS ' + col.dest_name if is_result_aliased else ''}"
+                retval = (
+                    f"CAST({bronze_table_name}.{col.source} AS {col.delta_type})"
+                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
+                )
             elif col.handling == "literal":
                 # Use col.source directly as the value
                 retval = f"{col.source}{' AS ' + col.dest_name if is_result_aliased else ''}"
@@ -582,11 +585,17 @@ class Command(BaseCommand):
                 # even though they remain as strings
                 retval = build_date_format_sql(col, is_casted_to_date=False, is_result_aliased=is_result_aliased)
             elif col.delta_type.upper() == "STRING":
-                # Capitalize all string values
-                retval = f"ucase({bronze_table_name}.{col.source}){' AS ' + col.dest_name if is_result_aliased else ''}"
+                # Capitalize and remove leading & trailing whitespace from all string values
+                retval = (
+                    f"ucase(trim({bronze_table_name}.{col.source}))"
+                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
+                )
             elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
                 # Unless specified, convert any nulls to false for boolean columns
-                retval = f"COALESCE({bronze_table_name}.{col.source}, FALSE){' AS ' + col.dest_name if is_result_aliased else ''}"
+                retval = (
+                    f"COALESCE({bronze_table_name}.{col.source}, FALSE)"
+                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
+                )
             else:
                 retval = f"{bronze_table_name}.{col.source}{' AS ' + col.dest_name if is_result_aliased else ''}"
 
