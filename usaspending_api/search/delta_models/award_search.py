@@ -339,7 +339,11 @@ award_search_load_sql_string = rf"""
   awards.officer_4_amount,
   awards.officer_4_name,
   awards.officer_5_amount,
-  awards.officer_5_name
+  awards.officer_5_name,
+
+  DEFC.iija_spending_by_defc,
+  DEFC.total_iija_outlay,
+  DEFC.total_iija_obligation
 FROM
   int.awards
 INNER JOIN
@@ -477,6 +481,62 @@ LEFT OUTER JOIN (
         GROUPED_BY_DEFC.award_id IS NOT NULL
     GROUP BY
         GROUPED_BY_DEFC.award_id
+) DEFC on DEFC.award_id = awards.id
+LEFT OUTER JOIN (
+    SELECT
+    GROUPED_BY_DEFC.award_id,
+    COLLECT_SET(
+      TO_JSON(
+        NAMED_STRUCT(
+          'defc',
+          GROUPED_BY_DEFC.def_code,
+          'outlay',
+          GROUPED_BY_DEFC.outlay,
+          'obligation',
+          GROUPED_BY_DEFC.obligation
+        )
+      )
+    ) AS iija_spending_by_defc,
+    sum(GROUPED_BY_DEFC.outlay) AS total_iija_outlay,
+    sum(GROUPED_BY_DEFC.obligation) AS total_iija_obligation
+FROM
+    (
+        SELECT
+            faba.award_id,
+            faba.disaster_emergency_fund_code AS def_code,
+            COALESCE(
+                sum(
+                    CASE
+                        WHEN sa.is_final_balances_for_fy = true THEN COALESCE(faba.gross_outlay_amount_by_award_cpe, 0) + COALESCE(
+                            faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+                            0
+                            ) + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                        ELSE NULL
+                    END
+                ), 0) AS outlay,
+            COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
+        FROM
+            public.financial_accounts_by_awards AS faba
+            INNER JOIN disaster_emergency_fund_code AS defc ON (
+                faba.disaster_emergency_fund_code = defc.code
+                AND defc.code IN ('Z', '1')
+            )
+            INNER JOIN submission_attributes AS sa ON (
+                faba.submission_id = sa.submission_id
+                AND sa.reporting_period_start >= '2020-04-01'
+            )
+            INNER JOIN dabs_submission_window_schedule AS dsws ON (
+                sa.submission_window_id = dsws.id
+                AND dsws.submission_reveal_date <= now()
+            )
+        GROUP BY
+            faba.award_id,
+            faba.disaster_emergency_fund_code
+    ) AS GROUPED_BY_DEFC
+WHERE
+    GROUPED_BY_DEFC.award_id IS NOT NULL
+GROUP BY
+    GROUPED_BY_DEFC.award_id
 ) DEFC on DEFC.award_id = awards.id
 LEFT OUTER JOIN (
   SELECT
