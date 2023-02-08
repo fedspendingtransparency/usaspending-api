@@ -518,7 +518,7 @@ FROM
                 ), 0) AS outlay,
             COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
         FROM
-            public.financial_accounts_by_awards AS faba
+            int.financial_accounts_by_awards AS faba
             INNER JOIN disaster_emergency_fund_code AS defc ON (
                 faba.disaster_emergency_fund_code = defc.code
                 AND defc.code IN ('Z', '1')
