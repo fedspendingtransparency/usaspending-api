@@ -1639,9 +1639,9 @@ class TransactionFabsFpdsCore:
         expected_transaction_fabs_fpds_append.update(
             {
                 "transaction_id": self.new_transaction_id,
-                "action_date":
-                    insert_update_datetime.date().isoformat() if self.etl_level == "transaction_fabs"
-                                                                else insert_update_datetime.isoformat(),
+                "action_date": insert_update_datetime.date().isoformat()
+                if self.etl_level == "transaction_fabs"
+                else insert_update_datetime.isoformat(),
                 "created_at": insert_update_datetime,
                 "updated_at": insert_update_datetime,
             }
