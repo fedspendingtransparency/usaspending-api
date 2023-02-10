@@ -80,7 +80,7 @@ c_to_d_linkage_view_sql_strings = [
             UPPER(faba.fain) AS fain,
             UPPER(faba.uri) AS uri
         FROM
-            int.financial_accounts_by_awards AS faba
+            raw.financial_accounts_by_awards AS faba
         LEFT JOIN
             int.awards AS aw
         ON
@@ -288,7 +288,7 @@ c_to_d_linkage_view_sql_strings = [
             aw.id,
             7 AS priority
         FROM
-            int.financial_accounts_by_awards AS faba
+            raw.financial_accounts_by_awards AS faba
         LEFT JOIN
             awards_upper AS aw
         ON
