@@ -115,9 +115,6 @@ AWARD_SEARCH_COLUMNS = {
     "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
-    "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
-    "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
-    "iija_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": True},
     "officer_1_amount": {
         "delta": "NUMERIC(23, 2)",
         "postgres": "NUMERIC(23, 2)",
@@ -132,6 +129,9 @@ AWARD_SEARCH_COLUMNS = {
     "officer_4_name": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "officer_5_amount": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "officer_5_name": {"delta": "STRING", "postgres": "TEXT", "gold": True},
+    "iija_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": True},
+    "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
+    "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
