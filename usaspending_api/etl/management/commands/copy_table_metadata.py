@@ -55,25 +55,29 @@ async def index_with_concurrency(index_definitions, index_concurrency):
     return await asyncio.gather(*tasks)
 
 
-def make_copy_constraints(cursor, source_table, dest_table, drop_foreign_keys=False):
+def make_copy_constraints(
+    cursor, source_table, dest_table, drop_foreign_keys=False, source_suffix="", dest_suffix="temp"
+):
     # read the existing indexes
     cursor.execute(make_read_constraints(source_table)[0])
     src_constrs = dictfetchall(cursor)
 
     # build the destination index sql
     dest_constr_sql = []
-    for constr_dict in src_constrs:
-        create_constr_name = constr_dict["conname"]
-        create_constr_content = constr_dict["pg_get_constraintdef"]
+    for src_constr_dict in src_constrs:
+        src_constr_name = src_constr_dict["conname"]
+        root_constr_name = src_constr_name.rsplit(f"_{source_suffix}", 1)[0] if source_suffix else src_constr_name
+        dest_constr_name = f"{root_constr_name}_{dest_suffix}" if dest_suffix else root_constr_name
+        create_constr_content = src_constr_dict["pg_get_constraintdef"]
         if "FOREIGN KEY" in create_constr_content and drop_foreign_keys:
             continue
         dest_constr_sql.append(
-            f"ALTER TABLE {dest_table} ADD CONSTRAINT {create_constr_name}_temp" f" {create_constr_content}"
+            f"ALTER TABLE {dest_table} ADD CONSTRAINT {dest_constr_name}" f" {create_constr_content}"
         )
     return dest_constr_sql
 
 
-def make_copy_indexes(cursor, source_table, dest_table):
+def make_copy_indexes(cursor, source_table, dest_table, source_suffix="", dest_suffix="temp"):
     # read the existing indexes of source table
     cursor.execute(make_read_indexes(source_table)[0])
     src_indexes = dictfetchall(cursor)
@@ -84,19 +88,20 @@ def make_copy_indexes(cursor, source_table, dest_table):
 
     # build the destination index sql
     dest_ix_sql = []
-    for ix_dict in src_indexes:
-        ix_name = ix_dict["indexname"]
-        dest_ix_name = f"{ix_name}_temp"
+    for src_ix_dict in src_indexes:
+        src_ix_name = src_ix_dict["indexname"]
+        root_ix_name = src_ix_name.rsplit(f"_{source_suffix}", 1)[0] if source_suffix else src_ix_name
+        dest_ix_name = f"{root_ix_name}_{dest_suffix}" if dest_suffix else root_ix_name
         if dest_ix_name in dest_indexes:
             logger.info(f"Index {dest_ix_name} already in {dest_table}. Skipping.")
             continue
 
-        create_ix_sql = ix_dict["indexdef"]
+        create_ix_sql = src_ix_dict["indexdef"]
         ix_regex = r"CREATE\s.*INDEX\s\S+\sON\s(\S+)\s.*"
         # this *should* match source_table, but can get funky with/without the schema included and regex
         # for example, a table 'x' in the public schema could be provided and the string will include `public.x'
         src_table = re.findall(ix_regex, create_ix_sql)[0]
-        create_ix_sql = create_ix_sql.replace(ix_name, dest_ix_name)
+        create_ix_sql = create_ix_sql.replace(src_ix_name, dest_ix_name)
         create_ix_sql = create_ix_sql.replace(src_table, dest_table)
         dest_ix_sql.append(create_ix_sql)
     return dest_ix_sql
@@ -116,10 +121,25 @@ class Command(BaseCommand):
             help="The source postgres table to read the metadata",
         )
         parser.add_argument(
+            "--source-suffix",
+            type=str,
+            required=True,
+            default="",
+            help="The assumed suffix on the source table name and all objects (like index names) of the source table",
+        )
+        parser.add_argument(
             "--dest-table",
             type=str,
             required=True,
-            help="The source postgres table to copy the metadata to",
+            help="The destination postgres table to copy the metadata to",
+        )
+        parser.add_argument(
+            "--dest-suffix",
+            type=str,
+            required=True,
+            default="temp",
+            help="The assumed suffix on the destination table name and all objects (like index names) of the "
+            "destination table",
         )
         parser.add_argument(
             "--keep-foreign-constraints",
@@ -158,7 +178,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Resolve Parameters
         source_table = options["source_table"]
+        source_suffix = options["source_suffix"]
         dest_table = options["dest_table"]
+        dest_suffix = options["dest_suffix"]
         keep_foreign_constraints = options["keep_foreign_constraints"]
         skip_constraints = options["skip_constraints"]
         skip_indexes = options["skip_indexes"]
@@ -173,7 +195,11 @@ class Command(BaseCommand):
             if not skip_constraints:
                 logger.info(f"Copying constraints over from {source_table}")
                 copy_constraint_sql = make_copy_constraints(
-                    cursor, source_table, dest_table, drop_foreign_keys=not keep_foreign_constraints
+                    cursor,
+                    source_table,
+                    dest_table,
+                    drop_foreign_keys=not keep_foreign_constraints,
+                    dest_suffix=dest_suffix,
                 )
                 if copy_constraint_sql:
                     cursor.execute("; ".join(copy_constraint_sql))
@@ -187,7 +213,9 @@ class Command(BaseCommand):
                 if maintenance_work_mem:
                     logger.info(f"Setting maintenance_work_mem to '{maintenance_work_mem}GB'")
                     cursor.execute(f"SET maintenance_work_mem = '{maintenance_work_mem}GB'")
-                copy_index_sql = make_copy_indexes(cursor, source_table, dest_table)
+                copy_index_sql = make_copy_indexes(
+                    cursor, source_table, dest_table, source_suffix=source_suffix, dest_suffix=dest_suffix
+                )
         if copy_index_sql:
             logger.info(f"Copying indexes over from {source_table}.")
             create_indexes(copy_index_sql, index_concurrency)
