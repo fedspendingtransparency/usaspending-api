@@ -232,6 +232,7 @@ class Command(BaseCommand):
             cursor.execute(f"DROP {mv_s}VIEW {dep_view['dep_view_fullname']}_old;")
 
     def extra_sql(self, cursor):
+        logger.info(f"Running ANALYZE VERBOSE {self.curr_table_name} and GRANTing SELECT to readonly")
         cursor.execute(f"ANALYZE VERBOSE {self.curr_table_name}")
         cursor.execute(f"GRANT SELECT ON {self.curr_table_name} TO readonly")
 
