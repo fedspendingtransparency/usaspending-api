@@ -34,6 +34,7 @@ class Command(BaseCommand):
     curr_table_name: str
     temp_schema_name: str
     temp_table_name: str
+    is_table_partitioned: bool
 
     # Query values are populated as they are run during validation and saved for re-use
     query_result_lookup = {
@@ -85,6 +86,15 @@ class Command(BaseCommand):
             self.curr_schema_name = schemas_lookup.get(self.curr_table_name)
             self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
             self.dep_views = self.dependent_views(cursor)
+
+            cursor.execute(
+                f"""
+                SELECT DISTINCT pg_partition_root(partrelid) AS partitioned_table 
+                FROM pg_partitioned_table 
+                WHERE pg_partition_root(partrelid) = '{self.temp_schema_name + '.' + self.temp_table_name}'::regclass;
+                """
+            )
+            self.is_table_partitioned = cursor.fetchone()
 
             self.validate_state_of_tables(cursor, options)
             self.cleanup_old_data(cursor)
@@ -286,10 +296,20 @@ class Command(BaseCommand):
         logger.info("Verifying that the same number of indexes exist for the old and new table")
         cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_table_name}' ORDER BY indexname")
         temp_indexes = ordered_dictionary_fetcher(cursor)
-        self.query_result_lookup["temp_table_indexes"] = temp_indexes
         cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.curr_table_name}' ORDER BY indexname")
         curr_indexes = ordered_dictionary_fetcher(cursor)
+
+        if self.is_table_partitioned and len(temp_indexes) == 0:
+            # Assuming the parent partitioned table is just a shell and indexes are handled on child partitions
+            logger.info(
+                "Source temp table is a partitioned table with no indexes. Assuming that all/any "
+                "indexes are managed on the child partitions and skipping validation."
+            )
+            return
+
+        self.query_result_lookup["temp_table_indexes"] = temp_indexes
         self.query_result_lookup["curr_table_indexes"] = curr_indexes
+
         if len(temp_indexes) != len(curr_indexes):
             logger.error(
                 f"The number of indexes are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
@@ -413,6 +433,14 @@ class Command(BaseCommand):
             f" WHERE table_constraints.table_name = '{self.curr_table_name}'"
         )
         curr_constraints = ordered_dictionary_fetcher(cursor)
+
+        if self.is_table_partitioned and len(temp_constraints) == 0:
+            # Assuming the parent partitioned table is just a shell and constraints are handled on child partitions
+            logger.info(
+                "Source temp table is a partitioned table with no constraints. Assuming that all/any "
+                "constraints are managed on the child partitions and skipping validation."
+            )
+            return
 
         if len(temp_constraints) != len(curr_constraints):
             logger.error(
