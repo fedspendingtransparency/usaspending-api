@@ -124,6 +124,8 @@ class Command(BaseCommand):
             "--source-suffix",
             type=str,
             required=False,
+            nargs="?",
+            const="",  # value if flag provided but no arg values given
             default="",
             help="The assumed suffix on the source table name and all objects (like index names) of the source table",
         )
@@ -137,6 +139,8 @@ class Command(BaseCommand):
             "--dest-suffix",
             type=str,
             required=False,
+            nargs="?",
+            const="",  # value if flag provided but no arg values given
             default="temp",
             help="The assumed suffix on the destination table name and all objects (like index names) of the "
             "destination table",
