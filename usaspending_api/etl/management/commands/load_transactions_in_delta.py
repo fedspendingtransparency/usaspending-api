@@ -1384,16 +1384,16 @@ class Command(BaseCommand):
                                         -- versions here.
                                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
                                         ucase(dap.unique_award_key) AS generated_unique_award_id
-                                    FROM raw.transaction_normalized AS tn 
+                                    FROM raw.transaction_normalized AS tn
                                     INNER JOIN raw.detached_award_procurement AS dap ON (
                                         tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
                                     )
                                     /* Again, want to exclude orphaned transactions, as they will not be copied into the
                                        int schema.  We have to be careful and only exclude transactions based on their
-                                       transaction_id, though!  There shouldn't be, but there can be multiple 
+                                       transaction_id, though!  There shouldn't be, but there can be multiple
                                        transactions with the same transaction_unique_id in raw.transaction_normalized!
-                                       We only want to exclude those that don't have matching records in 
-                                       raw.transaction_fabs|fpds.                                                  */ 
+                                       We only want to exclude those that don't have matching records in
+                                       raw.transaction_fabs|fpds.                                                  */
                                     WHERE tn.id NOT IN (
                                         SELECT transaction_id FROM temp.orphaned_transaction_info WHERE is_fpds
                                     )
@@ -1407,7 +1407,7 @@ class Command(BaseCommand):
                                         -- versions here.
                                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
                                         ucase(pfabs.unique_award_key) AS generated_unique_award_id
-                                    FROM raw.transaction_normalized AS tn 
+                                    FROM raw.transaction_normalized AS tn
                                     INNER JOIN raw.published_fabs AS pfabs ON (
                                         tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
                                     )
