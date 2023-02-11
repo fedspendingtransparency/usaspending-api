@@ -123,7 +123,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--source-suffix",
             type=str,
-            required=True,
+            required=False,
             default="",
             help="The assumed suffix on the source table name and all objects (like index names) of the source table",
         )
@@ -136,7 +136,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--dest-suffix",
             type=str,
-            required=True,
+            required=False,
             default="temp",
             help="The assumed suffix on the destination table name and all objects (like index names) of the "
             "destination table",
