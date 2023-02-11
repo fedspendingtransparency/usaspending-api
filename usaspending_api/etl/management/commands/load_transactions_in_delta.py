@@ -1105,6 +1105,10 @@ class Command(BaseCommand):
         # Due to the size of the dataset, need to keep information about the orphaned transactions in a table.
         #   If we tried to insert the data directly into a SQL statement, it could break the Spark driver.
         with prepare_orphaned_transaction_temp_table(), prepare_orphaned_award_temp_table():
+            # To avoid re-testing for raw.transaction_normalized, use a variable to keep track.  Initially
+            # assume that the table does exist.
+            raw_transaction_normalized_exists = True
+
             # Test to see if raw.transaction_normalized exists
             try:
                 self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
@@ -1114,7 +1118,7 @@ class Command(BaseCommand):
                     self.logger.warn(
                         "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
                     )
-
+                    raw_transaction_normalized_exists = False
                     # Without a raw.transaction_normalized table, can't get a maximum id from it, either.
                     max_id = None
                 else:
@@ -1231,7 +1235,7 @@ class Command(BaseCommand):
                     )
 
                 # Insert existing non-orphaned transactions into the lookup table
-                self.logger.info("Populating transaction_id_lookup table from raw.transaction_normalized")
+                self.logger.info("Populating transaction_id_lookup table")
 
                 # Note that the transaction loader code will convert string fields to upper case, so we have to match
                 # on the upper-cased versions of the strings.
@@ -1305,17 +1309,7 @@ class Command(BaseCommand):
             destination_table = "award_id_lookup"
             set_last_load_date = True
 
-            # Test to see if raw.transaction_normalized exists
-            try:
-                self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
-            except AnalysisException as e:
-                if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
-                    # In this case, we just don't check for NULLs in unique_award_key.
-                    pass
-                else:
-                    # Don't try to handle anything else
-                    raise e
-            else:
+            if raw_transaction_normalized_exists:
                 # Before creating table or running INSERT, make sure unique_award_key has no NULLs
                 # (nothing needed to check before transaction_id_lookup table creation)
                 self.logger.info("Checking for NULLs in unique_award_key")
@@ -1361,8 +1355,15 @@ class Command(BaseCommand):
                     # Don't try to handle anything else
                     raise e
             else:
+                # We also need to make sure that raw.transaction_normalized exists, or the award_id_lookup table
+                # population query won't work.
+                if not raw_transaction_normalized_exists:
+                    raise RuntimeError(
+                        "In initial_run, if raw.awards table exists, raw.transaction_normalized must also exist!"
+                    )
+
                 # Insert existing non-orphaned transactions and their corresponding award_ids into the lookup table
-                self.logger.info("Populating award_id_lookup table from raw.awards")
+                self.logger.info("Populating award_id_lookup table")
 
                 # Once again we have to match on the upper-cased versions of the strings from published_fabs
                 # and detached_award_procurement.
@@ -1370,47 +1371,49 @@ class Command(BaseCommand):
                     f"""
                         INSERT OVERWRITE {destination_database}.{destination_table}
                             SELECT
-                                existing_awards.id AS award_id,
+                                existing_awards.award_id,
                                 existing_awards.is_fpds,
                                 existing_awards.transaction_unique_id,
                                 existing_awards.generated_unique_award_id
                             FROM (
                                 (
                                     SELECT
-                                        aw.id,
+                                        tn.award_id,
                                         TRUE AS is_fpds,
-                                        -- The transaction loader code will convert this to upper case, so use that
-                                        -- version here.
+                                        -- The transaction loader code will convert these to upper case, so use those
+                                        -- versions here.
                                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
-                                        aw.generated_unique_award_id
-                                    FROM
-                                        raw.awards AS aw INNER JOIN raw.detached_award_procurement AS dap ON (
-                                            aw.generated_unique_award_id = ucase(dap.unique_award_key)
-                                        )
-                                    -- Again, want to exclude orphaned transactions, as they will not be copied into the
-                                    -- int schema.
-                                    WHERE ucase(dap.detached_award_proc_unique) NOT IN (
-                                        SELECT transaction_unique_id FROM temp.orphaned_transaction_info WHERE is_fpds
+                                        ucase(dap.unique_award_key) AS generated_unique_award_id
+                                    FROM raw.transaction_normalized AS tn 
+                                    INNER JOIN raw.detached_award_procurement AS dap ON (
+                                        tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+                                    )
+                                    /* Again, want to exclude orphaned transactions, as they will not be copied into the
+                                       int schema.  We have to be careful and only exclude transactions based on their
+                                       transaction_id, though!  There shouldn't be, but there can be multiple 
+                                       transactions with the same transaction_unique_id in raw.transaction_normalized!
+                                       We only want to exclude those that don't have matching records in 
+                                       raw.transaction_fabs|fpds.                                                  */ 
+                                    WHERE tn.id NOT IN (
+                                        SELECT transaction_id FROM temp.orphaned_transaction_info WHERE is_fpds
                                     )
                                 )
                                 UNION ALL
                                 (
                                     SELECT
-                                        aw.id,
+                                        tn.award_id,
                                         FALSE AS is_fpds,
-                                        -- The transaction loader code will convert this to upper case, so use that
-                                        -- version here.
+                                        -- The transaction loader code will convert these to upper case, so use those
+                                        -- versions here.
                                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
-                                        aw.generated_unique_award_id
-                                    FROM
-                                        raw.awards AS aw INNER JOIN raw.published_fabs AS pfabs ON (
-                                            aw.generated_unique_award_id = ucase(pfabs.unique_award_key)
-                                        )
-                                    -- Again, want to exclude orphaned transactions, as they will not be copied into the
-                                    -- int schema.
-                                    WHERE ucase(pfabs.afa_generated_unique) NOT IN (
-                                        SELECT
-                                            transaction_unique_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds
+                                        ucase(pfabs.unique_award_key) AS generated_unique_award_id
+                                    FROM raw.transaction_normalized AS tn 
+                                    INNER JOIN raw.published_fabs AS pfabs ON (
+                                        tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+                                    )
+                                    -- See note above about excluding orphaned transactions.
+                                    WHERE tn.id NOT IN (
+                                        SELECT transaction_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds
                                     )
                                 )
                             ) AS existing_awards
