@@ -1414,6 +1414,7 @@ class TransactionFabsFpdsCore:
         self,
         load_other_raw_tables,
         expected_initial_transaction_id_lookup,
+        expected_initial_award_id_lookup
     ):
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, making sure to load
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
@@ -1427,7 +1428,7 @@ class TransactionFabsFpdsCore:
         # the initial data.
         kwargs = {
             "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
             "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
             "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
@@ -1436,7 +1437,7 @@ class TransactionFabsFpdsCore:
         TestInitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
-            [],
+            expected_initial_award_id_lookup,
             0,
             len(self.expected_initial_transaction_fabs),
             len(self.expected_initial_transaction_fpds),
@@ -1491,7 +1492,7 @@ class TransactionFabsFpdsCore:
         TestInitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
-            [],
+            expected_initial_award_id_lookup,
             0,
             len(self.expected_initial_transaction_fabs),
             len(self.expected_initial_transaction_fpds),
@@ -1526,6 +1527,7 @@ class TransactionFabsFpdsCore:
                 )
             ],
             TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
+            TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup
         )
 
     def happy_paths_test_core(
