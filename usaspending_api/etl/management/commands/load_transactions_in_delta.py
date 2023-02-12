@@ -1440,9 +1440,9 @@ class Command(BaseCommand):
                 # As for transaction_id_seq, make sure to get the maximum award id from the raw table in case there are
                 # records in raw.awards that don't correspond to any records in either of the source tables.
                 # This way, new award_ids won't repeat the ids of any of those "orphaned" award records.
-                max_id = self.spark.sql(
-                    f"SELECT MAX(award_id) AS max_id FROM raw.transaction_normalized"
-                ).collect()[0]["max_id"]
+                max_id = self.spark.sql(f"SELECT MAX(award_id) AS max_id FROM raw.transaction_normalized").collect()[0][
+                    "max_id"
+                ]
 
             if max_id is None:
                 # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs

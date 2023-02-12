@@ -1411,10 +1411,7 @@ class TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
     def unexpected_paths_test_core(
-        self,
-        load_other_raw_tables,
-        expected_initial_transaction_id_lookup,
-        expected_initial_award_id_lookup
+        self, load_other_raw_tables, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup
     ):
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, making sure to load
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
@@ -1527,7 +1524,7 @@ class TransactionFabsFpdsCore:
                 )
             ],
             TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
-            TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup
+            TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup,
         )
 
     def happy_paths_test_core(
