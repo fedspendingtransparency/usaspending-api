@@ -19,6 +19,7 @@ logger = logging.getLogger("script")
 def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {
         "covid_spending_by_defc": convert_json_data_to_dict,
+        "iija_spending_by_defc": convert_json_data_to_dict,
     }
     agg_key_creations = {
         "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
