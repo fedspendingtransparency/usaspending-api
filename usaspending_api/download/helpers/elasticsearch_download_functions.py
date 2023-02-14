@@ -161,7 +161,9 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
         cls._populate_download_lookups(filters, download_job)
         queryset = base_queryset.filter(
             Exists(
-                DownloadJobLookup.objects.filter(lookup_id=OuterRef("id"), download_job_id=download_job.download_job_id)
+                DownloadJobLookup.objects.filter(
+                    lookup_id=OuterRef("transaction_id"), download_job_id=download_job.download_job_id
+                )
             )
         )
 
