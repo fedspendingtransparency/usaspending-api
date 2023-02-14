@@ -14,6 +14,8 @@ d2_columns.csv
 """
 import copy
 from collections import OrderedDict
+
+from usaspending_api.awards.models.transaction_fpds import FPDS_TO_TRANSACTION_SEARCH_COL_MAP
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
 
@@ -755,8 +757,13 @@ query_paths = {
     "transaction_search": {
         "d1": OrderedDict(
             [
+                # TODO: Start either replacing FPDS and FABS cols with transaction_search cols
+                #  or using the models.transaction_fpds.FPDS_TO_TRANSACTION_SEARCH_COL_MAP to look-it-up
+                # TODO: Also create a models.transaction_fabs.FABS_TO_TRANSACTION_SEARCH_COL_MAP
+                # TODO: Make sure queries that are projecting transaction_search cols directly are ALSO adding
+                #  a is_fpds = TRUE|FALSE to their query
                 ("contract_transaction_unique_key", "transaction__contract_data__detached_award_proc_unique"),
-                ("contract_award_unique_key", "transaction__award__generated_unique_award_id"),
+                ("contract_award_unique_key", "generated_unique_award_id"),
                 ("award_id_piid", "transaction__contract_data__piid"),
                 ("modification_number", "transaction__contract_data__award_modification_amendme"),
                 ("transaction_number", "transaction__contract_data__transaction_number"),
@@ -806,9 +813,9 @@ query_paths = {
                 ("foreign_funding_description", "transaction__contract_data__foreign_funding_desc"),
                 ("sam_exception", "transaction__contract_data__sam_exception"),
                 ("sam_exception_description", "transaction__contract_data__sam_exception_description"),
-                ("recipient_uei", "transaction__contract_data__awardee_or_recipient_uei"),
-                ("recipient_duns", "transaction__contract_data__awardee_or_recipient_uniqu"),
-                ("recipient_name", "transaction__contract_data__awardee_or_recipient_legal"),
+                ("recipient_uei", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["awardee_or_recipient_uei"]),
+                ("recipient_duns", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["awardee_or_recipient_uniqu"]),
+                ("recipient_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["awardee_or_recipient_legal"]),
                 ("recipient_doing_business_as_name", "transaction__contract_data__vendor_doing_as_business_n"),
                 ("cage_code", "transaction__contract_data__cage_code"),
                 ("recipient_parent_uei", "transaction__contract_data__ultimate_parent_uei"),
