@@ -521,7 +521,7 @@ FROM
             int.financial_accounts_by_awards AS faba
             INNER JOIN global_temp.disaster_emergency_fund_code AS defc ON (
                 faba.disaster_emergency_fund_code = defc.code
-                AND defc.code IN ('Z', '1')
+                AND defc.group_name = 'infrastructure'
             )
             INNER JOIN global_temp.submission_attributes AS sa ON (
                 faba.submission_id = sa.submission_id
