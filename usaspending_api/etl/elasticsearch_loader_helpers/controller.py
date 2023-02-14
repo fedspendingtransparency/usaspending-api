@@ -57,7 +57,7 @@ class AbstractElasticsearchIndexerController(ABC):
         self.record_count, self.min_id, self.max_id = self._count_of_records_to_process(self.config)
 
         if self.record_count == 0:
-            self.config["partitions"] = 0
+            self.config["partitions"] = 1
             self.config["processes"] = 0
             return
 
