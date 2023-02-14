@@ -89,8 +89,8 @@ class Command(BaseCommand):
 
             cursor.execute(
                 f"""
-                SELECT DISTINCT pg_partition_root(partrelid) AS partitioned_table 
-                FROM pg_partitioned_table 
+                SELECT DISTINCT pg_partition_root(partrelid) AS partitioned_table
+                FROM pg_partitioned_table
                 WHERE pg_partition_root(partrelid) = '{self.temp_schema_name + '.' + self.temp_table_name}'::regclass;
                 """
             )
