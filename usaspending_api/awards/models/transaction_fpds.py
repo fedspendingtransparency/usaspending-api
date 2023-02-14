@@ -341,15 +341,24 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "product_or_service_co_desc": "product_or_service_description",
 }
 
+FPDS_CASTED_COL_MAP = {
+    # transaction_fpds col name : type casting search -> fpds
+    "action_date": "TEXT",
+    "last_modified": "TEXT",
+    "period_of_performance_star": "TEXT",
+    "period_of_performance_curr": "TEXT",
+}
+
 FPDS_TO_TRANSACTION_SEARCH_COL_MAP = {
     f.name: FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.name, f.name) for f in TransactionFPDS._meta.fields
 }
 
-# TODO: Still not happy with the layout of this SQL when printing. Adjust ljust or padding
 vw_transaction_fpds_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_fpds AS
         SELECT
-        {(','+os.linesep).join([v.ljust(12)+' AS '.ljust(48)+k for k, v in FPDS_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
+            {(','+os.linesep+' '*12).join([
+                (v+(f'::{FPDS_CASTED_COL_MAP[k]}' if k in FPDS_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
+                for k, v in FPDS_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
         FROM
             rpt.transaction_search
         WHERE

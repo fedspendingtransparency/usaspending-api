@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 
 from usaspending_api.common.custom_django_fields import NumericField
@@ -115,114 +117,65 @@ class TransactionFABS(models.Model):
         unique_together = (("awarding_sub_tier_agency_c", "award_modification_amendme", "fain", "uri", "cfda_number"),)
 
 
-vw_transaction_fabs_sql = """
+FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
+    # transaction_fabs col name : transaction_search col name
+    "award_modification_amendme": "modification_number",
+    "unique_award_key": "generated_unique_award_id",
+    "modified_at": "last_modified_date",
+    "period_of_performance_star": "period_of_performance_start_date",
+    "period_of_performance_curr": "period_of_performance_current_end_date",
+    "awarding_agency_name": "awarding_toptier_agency_name",
+    "funding_agency_name": "funding_toptier_agency_name",
+    "awarding_sub_tier_agency_n": "awarding_subtier_agency_name",
+    "funding_sub_tier_agency_na": "funding_subtier_agency_name",
+    "assistance_type": "type",
+    "assistance_type_desc": "type_description",
+    "award_description": "transaction_description",
+    "uei": "recipient_uei",
+    "awardee_or_recipient_legal": "recipient_name_raw",
+    "awardee_or_recipient_uniqu": "recipient_unique_id",
+    "ultimate_parent_uei": "parent_uei",
+    "ultimate_parent_legal_enti": "parent_recipient_name",
+    "ultimate_parent_unique_ide": "parent_recipient_unique_id",
+    "legal_entity_country_code": "recipient_location_country_code",
+    "legal_entity_country_name": "recipient_location_country_name",
+    "legal_entity_state_code": "recipient_location_state_code",
+    "legal_entity_state_name": "recipient_location_state_name",
+    "legal_entity_county_code": "recipient_location_county_code",
+    "legal_entity_county_name": "recipient_location_county_name",
+    "legal_entity_congressional": "recipient_location_congressional_code",
+    "legal_entity_zip5": "recipient_location_zip5",
+    "legal_entity_city_name": "recipient_location_city_name",
+    "place_of_perform_country_c": "pop_country_code",
+    "place_of_perform_country_n": "pop_country_name",
+    "place_of_perfor_state_code": "pop_state_code",
+    "place_of_perform_state_nam": "pop_state_name",
+    "place_of_perform_county_co": "pop_county_code",
+    "place_of_perform_county_na": "pop_county_name",
+    "place_of_performance_congr": "pop_congressional_code",
+    "place_of_performance_zip5": "pop_zip5",
+    "place_of_performance_city": "pop_city_name",
+}
+
+FABS_CASTED_COL_MAP = {
+    # transaction_fabs col name : type casting search -> fabs
+    "action_date": "TEXT",
+    "modified_at": "TIMESTAMP WITH TIME ZONE",
+    "period_of_performance_star": "TEXT",
+    "period_of_performance_curr": "TEXT",
+    "total_funding_amount": "TEXT",
+}
+
+FABS_TO_TRANSACTION_SEARCH_COL_MAP = {
+    f.name: FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.name, f.name) for f in TransactionFABS._meta.fields
+}
+
+vw_transaction_fabs_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_fabs AS
         SELECT
-            -- Keys
-            transaction_id,
-            published_fabs_id,
-            modification_number                             AS "award_modification_amendme",
-            generated_unique_award_id                       AS "unique_award_key",
-            -- Dates
-            action_date::TEXT,
-            last_modified_date::TIMESTAMP WITH TIME ZONE    AS "modified_at",
-            period_of_performance_start_date::TEXT          AS "period_of_performance_star",
-            period_of_performance_current_end_date::TEXT    AS "period_of_performance_curr",
-            -- Agencies
-            awarding_agency_code,
-            awarding_toptier_agency_name                    AS "awarding_agency_name",
-            funding_agency_code,
-            funding_toptier_agency_name                     AS "funding_agency_name",
-            awarding_sub_tier_agency_c,
-            awarding_subtier_agency_name                    AS "awarding_sub_tier_agency_n",
-            funding_sub_tier_agency_co,
-            funding_subtier_agency_name                     AS "funding_sub_tier_agency_na",
-            awarding_office_code,
-            awarding_office_name,
-            funding_office_code,
-            funding_office_name,
-            -- Typing
-            type                                            AS "assistance_type",
-            type_description                                AS "assistance_type_desc",
-            action_type,
-            action_type_description,
-            transaction_description                         AS "award_description",
-            -- Amounts
-            federal_action_obligation,
-            original_loan_subsidy_cost,
-            face_value_loan_guarantee,
-            indirect_federal_sharing,
-            total_funding_amount::TEXT,
-            non_federal_funding_amount,
-            -- Recipient
-            recipient_uei                                   AS "uei",
-            recipient_name_raw                              AS "awardee_or_recipient_legal",
-            recipient_unique_id                             AS "awardee_or_recipient_uniqu",
-            parent_uei                                      AS "ultimate_parent_uei",
-            parent_recipient_name                           AS "ultimate_parent_legal_enti",
-            parent_recipient_unique_id                      AS "ultimate_parent_unique_ide",
-            -- Recipient Location
-            recipient_location_country_code                 AS "legal_entity_country_code",
-            recipient_location_country_name                 AS "legal_entity_country_name",
-            recipient_location_state_code                   AS "legal_entity_state_code",
-            recipient_location_state_name                   AS "legal_entity_state_name",
-            recipient_location_county_code                  AS "legal_entity_county_code",
-            recipient_location_county_name                  AS "legal_entity_county_name",
-            recipient_location_congressional_code           AS "legal_entity_congressional",
-            recipient_location_zip5                         AS "legal_entity_zip5",
-            legal_entity_zip_last4,
-            legal_entity_city_code,
-            recipient_location_city_name                    AS "legal_entity_city_name",
-            legal_entity_address_line1,
-            legal_entity_address_line2,
-            legal_entity_address_line3,
-            legal_entity_foreign_city,
-            legal_entity_foreign_descr,
-            legal_entity_foreign_posta,
-            legal_entity_foreign_provi,
-            -- Place of Performance
-            place_of_performance_code,
-            place_of_performance_scope,
-            pop_country_code                                AS "place_of_perform_country_c",
-            pop_country_name                                AS "place_of_perform_country_n",
-            pop_state_code                                  AS "place_of_perfor_state_code",
-            pop_state_name                                  AS "place_of_perform_state_nam",
-            pop_county_code                                 AS "place_of_perform_county_co",
-            pop_county_name                                 AS "place_of_perform_county_na",
-            pop_congressional_code                          AS "place_of_performance_congr",
-            pop_zip5                                        AS "place_of_performance_zip5",
-            place_of_performance_zip4a,
-            place_of_perform_zip_last4,
-            pop_city_name                                   AS "place_of_performance_city",
-            place_of_performance_forei,
-            -- Officer Amounts
-            officer_1_name,
-            officer_1_amount,
-            officer_2_name,
-            officer_2_amount,
-            officer_3_name,
-            officer_3_amount,
-            officer_4_name,
-            officer_4_amount,
-            officer_5_name,
-            officer_5_amount,
-            -- Exclusively FABS
-            afa_generated_unique,
-            business_funds_ind_desc,
-            business_funds_indicator,
-            business_types,
-            business_types_desc,
-            cfda_number,
-            cfda_title,
-            correction_delete_indicatr,
-            correction_delete_ind_desc,
-            fain,
-            funding_opportunity_goals,
-            funding_opportunity_number,
-            record_type,
-            record_type_description,
-            sai_number,
-            uri
+            {(','+os.linesep+' '*12).join([
+                (v+(f'::{FABS_CASTED_COL_MAP[k]}' if k in FABS_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
+                for k, v in FABS_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
         FROM
             rpt.transaction_search
         WHERE

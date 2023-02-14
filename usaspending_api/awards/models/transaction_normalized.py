@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 
 from django.contrib.postgres.fields import ArrayField
@@ -126,43 +128,29 @@ class TransactionNormalized(models.Model):
         index_together = ["award", "action_date"]
 
 
-vw_transaction_normalized_sql = """
+NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
+    # transaction_normalized col name : transaction_search col name
+    "id": "transaction_id",
+    "unique_award_key": "generated_unique_award_id",
+    "certified_date": "award_certified_date",
+    "description": "transaction_description",
+}
+
+NORM_CASTED_COL_MAP = {
+    # transaction_normalized col name : type casting search -> normalized
+    "indirect_federal_sharing": "NUMERIC(23,2)"
+}
+
+NORM_TO_TRANSACTION_SEARCH_COL_MAP = {
+    f.name: NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.name, f.name) for f in TransactionNormalized._meta.fields
+}
+
+vw_transaction_normalized_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_normalized AS
         SELECT
-            -- Keys
-            transaction_id                          AS "id",
-            award_id,
-            transaction_unique_id,
-            usaspending_unique_transaction_id,
-            modification_number,
-            generated_unique_award_id               AS "unique_award_key",
-            -- Dates
-            action_date,
-            last_modified_date,
-            fiscal_year,
-            award_certified_date                    AS "certified_date",
-            create_date,
-            update_date,
-            period_of_performance_start_date,
-            period_of_performance_current_end_date,
-            -- Agencies
-            awarding_agency_id,
-            funding_agency_id,
-            -- Typing
-            is_fpds,
-            type,
-            type_description,
-            action_type,
-            action_type_description,
-            transaction_description                 AS "description",
-            business_categories,
-            -- Amounts
-            federal_action_obligation,
-            original_loan_subsidy_cost,
-            face_value_loan_guarantee,
-            indirect_federal_sharing::NUMERIC(23,2),
-            funding_amount,
-            non_federal_funding_amount
+            {(','+os.linesep+' '*12).join([
+                (v+(f'::{NORM_CASTED_COL_MAP[k]}' if k in NORM_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
+                for k, v in NORM_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
         FROM
             rpt.transaction_search;
 """
