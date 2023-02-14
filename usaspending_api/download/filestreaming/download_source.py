@@ -25,8 +25,6 @@ class DownloadSource:
         self.is_for_contract = VALUE_MAPPINGS[source_type].get("is_for_contract", False)
         self.is_for_assistance = VALUE_MAPPINGS[source_type].get("is_for_assistance", False)
         self.award_category = None
-        # TODO: This would be a place (or in one of the functions below that renders a queryset) that we could use
-        #  self.is_for_contract or self.is_for_assistance to add a global queryset.filter(is_fpds=True|False)
         self.filters = filters or {}
 
     def __repr__(self):
