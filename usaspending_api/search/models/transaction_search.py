@@ -2,8 +2,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 
-from usaspending_api.common.custom_django_fields import NumericField
-
 
 class TransactionSearch(models.Model):
     """
