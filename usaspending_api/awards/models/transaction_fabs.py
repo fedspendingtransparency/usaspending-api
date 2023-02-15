@@ -157,24 +157,14 @@ FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "place_of_performance_city": "pop_city_name",
 }
 
-FABS_CASTED_COL_MAP = {
-    # transaction_fabs col name : type casting search -> fabs
-    "action_date": "TEXT",
-    "modified_at": "TIMESTAMP WITH TIME ZONE",
-    "period_of_performance_star": "TEXT",
-    "period_of_performance_curr": "TEXT",
-    "total_funding_amount": "TEXT",
-}
-
 FABS_TO_TRANSACTION_SEARCH_COL_MAP = {
-    f.name: FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.name, f.name) for f in TransactionFABS._meta.fields
+    f.column: FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.column, f.column) for f in TransactionFABS._meta.fields
 }
 
 vw_transaction_fabs_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_fabs AS
         SELECT
-            {(','+os.linesep+' '*12).join([
-                (v+(f'::{FABS_CASTED_COL_MAP[k]}' if k in FABS_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
+            {(','+os.linesep+' '*12).join([v.ljust(62)+' AS '+k.ljust(48)
                 for k, v in FABS_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
         FROM
             rpt.transaction_search
