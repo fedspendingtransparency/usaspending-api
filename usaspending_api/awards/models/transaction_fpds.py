@@ -342,7 +342,7 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
 }
 
 FPDS_TO_TRANSACTION_SEARCH_COL_MAP = {
-    f.name: FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.name, f.name) for f in TransactionFPDS._meta.fields
+    f.column: FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.column, f.column) for f in TransactionFPDS._meta.fields
 }
 
 vw_transaction_fpds_sql = f"""

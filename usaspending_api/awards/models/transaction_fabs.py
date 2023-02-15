@@ -158,7 +158,7 @@ FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
 }
 
 FABS_TO_TRANSACTION_SEARCH_COL_MAP = {
-    f.name: FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.name, f.name) for f in TransactionFABS._meta.fields
+    f.column: FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.column, f.column) for f in TransactionFABS._meta.fields
 }
 
 vw_transaction_fabs_sql = f"""
