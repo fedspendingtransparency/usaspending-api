@@ -205,6 +205,14 @@ TABLE_SPEC = {
         "column_names": list(TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
+        "postgres_partitions": {
+            "partition_keys": ["is_fpds"],
+            "partitioning_form": "LIST",
+            "partitions": [
+                {"table_suffix": "_fpds", "partitioning_clause": "FOR VALUES IN (TRUE)"},
+                {"table_suffix": "_fabs", "partitioning_clause": "FOR VALUES IN (FALSE)"},
+            ],
+        },
     },
     "subaward_search": {
         "model": SubawardSearch,

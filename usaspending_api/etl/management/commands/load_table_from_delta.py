@@ -224,22 +224,41 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
+        is_postgres_table_partitioned = "postgres_partition_spec" in table_spec
+
         if postgres_table or postgres_cols:
             # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
             # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
             # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
             if make_new_table:
+                partition_clause = ""
+                storage_parameters = "WITH (autovacuum_enabled=FALSE)"
+                partitions_sql = []
+                if is_postgres_table_partitioned:
+                    partition_clause = (
+                        f"PARTITION BY {table_spec['postgres_partition_spec']['partitioning_form']}"
+                        f"({table_spec['postgres_partition_spec']['partition_keys']})"
+                    )
+                    storage_parameters = ""
+                    partitions_sql = [
+                        (
+                            f"CREATE TABLE {temp_table}{pt['table_suffix']} "
+                            f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
+                            f"{storage_parameters}"
+                        )
+                        for pt in {table_spec["postgres_partition_spec"]["partitions"]}
+                    ]
                 if postgres_table:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
-                        ) WITH (autovacuum_enabled=FALSE)
+                        ) {partition_clause} {storage_parameters}
                     """
                 elif postgres_cols:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
-                        ) WITH (autovacuum_enabled=FALSE)
+                        ) {partition_clause} {storage_parameters}
                     """
                 else:
                     raise RuntimeError(
@@ -251,7 +270,15 @@ class Command(BaseCommand):
                     cursor.execute(create_temp_sql)
                     self.logger.info(f"{temp_table} created.")
 
+                    if is_postgres_table_partitioned and partitions_sql:
+                        for create_partition in partitions_sql:
+                            self.logger.info(f"Creating partition of {temp_table} named {create_partition.split()[1]}")
+                            cursor.execute(create_temp_sql)
+                            self.logger.info(f"{create_partition.split()[1]} partition created.")
+
                     # If there are vectors, add the triggers that will populate them based on other calls
+                    # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
+                    #       at the top-level virtual/partitioned table (versus having to apply on each partition)
                     for tsvector_name, derived_from_cols in tsvectors.items():
                         self.logger.info(
                             f"To prevent any confusion or duplicates, dropping the trigger"
