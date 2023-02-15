@@ -138,7 +138,6 @@ NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
 
 NORM_CASTED_COL_MAP = {
     # transaction_normalized col name : type casting search -> normalized
-    "indirect_federal_sharing": "NUMERIC(23,2)"
 }
 
 NORM_TO_TRANSACTION_SEARCH_COL_MAP = {

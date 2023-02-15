@@ -79,7 +79,7 @@ class TransactionSearch(models.Model):
     federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    indirect_federal_sharing = NumericField(blank=True, null=True)
+    indirect_federal_sharing = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
