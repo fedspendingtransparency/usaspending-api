@@ -157,7 +157,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
-        base_queryset = TransactionNormalized.objects.all()
+        base_queryset = TransactionSearch.objects.all()
         cls._populate_download_lookups(filters, download_job)
         queryset = base_queryset.filter(
             Exists(
