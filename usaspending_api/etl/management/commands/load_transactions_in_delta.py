@@ -220,6 +220,11 @@ class Command(BaseCommand):
             )
         """
 
+        # TODO: The values returned here are put into a list in an 'IN' clause in award_id_lookup_post_delete.
+        #       However, there is a limit on the number of values one can manually put into an 'IN' cluase (i.e., not
+        #       returned by a SELECT subquery inside the 'IN').  Thus, this code should return a dataframe directly,
+        #       create a temporary view from the dataframe in award_id_lookup_post_delete, and use that temporary
+        #       view to either do a subquery in the 'IN' clause or to JOIN against.
         possibly_modified_award_ids = [str(row["award_id"]) for row in self.spark.sql(sql).collect()]
         return possibly_modified_award_ids
 
@@ -306,6 +311,7 @@ class Command(BaseCommand):
         #   level could be run more than once before awards ETL level is run.
         # Avoid SQL error if possibly_modified_award_ids is empty
         if possibly_modified_award_ids:
+            # TODO: see award_id_lookup_pre_delete
             self.spark.sql(
                 f"""
                     INSERT INTO int.award_ids_delete_modified
