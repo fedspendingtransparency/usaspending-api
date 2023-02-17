@@ -137,7 +137,8 @@ NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
 }
 
 NORM_TO_TRANSACTION_SEARCH_COL_MAP = {
-    f.column: NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.column, f.column) for f in TransactionNormalized._meta.fields
+    f.column: NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.column, f.column)
+    for f in TransactionNormalized._meta.fields
 }
 
 vw_transaction_normalized_sql = f"""
