@@ -72,7 +72,7 @@ def make_copy_constraints(
     dest_constr_sql = []
     for src_constr_dict in src_constrs:
         src_constr_name = src_constr_dict["conname"]
-        root_constr_name = src_constr_name[:-len(f"_{source_suffix}")] if source_suffix else src_constr_name
+        root_constr_name = src_constr_name[: -len(f"_{source_suffix}")] if source_suffix else src_constr_name
         dest_constr_name = f"{root_constr_name}_{dest_suffix}" if dest_suffix else root_constr_name
         create_constr_content = src_constr_dict["pg_get_constraintdef"]
         if "FOREIGN KEY" in create_constr_content and drop_foreign_keys:
@@ -101,7 +101,7 @@ def make_copy_indexes(
     dest_ix_sql = []
     for src_ix_dict in src_indexes:
         src_ix_name = src_ix_dict["indexname"]
-        root_ix_name = src_ix_name[:-len(f"_{source_suffix}")] if source_suffix else src_ix_name
+        root_ix_name = src_ix_name[: -len(f"_{source_suffix}")] if source_suffix else src_ix_name
         dest_ix_name = f"{root_ix_name}_{dest_suffix}" if dest_suffix else root_ix_name
         if dest_ix_name in dest_indexes:
             logger.info(f"Index {dest_ix_name} already in {dest_table}. Skipping.")

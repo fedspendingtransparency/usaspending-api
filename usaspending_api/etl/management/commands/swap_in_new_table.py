@@ -18,7 +18,7 @@ logger = logging.getLogger("script")
 
 class Command(BaseCommand):
     help = """
-    This command is used to swap two tables. It uses a base table name and then discriminating suffixes (possibly 
+    This command is used to swap two tables. It uses a base table name and then discriminating suffixes (possibly
     empty string) for the tables to be swapped (defaults to swapping <table>_temp in for <table>).
     Validation is run against the new table to ensure that after the swap is complete all of the indexes, constraints,
     columns, and table name will be the same.
@@ -380,7 +380,6 @@ class Command(BaseCommand):
                 raise SystemExit(1)
 
     def validate_indexes(self, cursor):
-        # logger.info("Verifying that the same number of indexes exist for the old and new table")
         cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.temp_table_name}' ORDER BY indexname")
         temp_indexes = ordered_dictionary_fetcher(cursor)
         cursor.execute(f"SELECT * FROM pg_indexes WHERE tablename = '{self.curr_table_name}' ORDER BY indexname")
@@ -397,22 +396,11 @@ class Command(BaseCommand):
         self.query_result_lookup["temp_table_indexes"] = temp_indexes
         self.query_result_lookup["curr_table_indexes"] = curr_indexes
 
-        # if len(temp_indexes) != len(curr_indexes):
-        #     logger.error(
-        #         f"The number of indexes are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
-        #     )
-        #     raise SystemExit(1)
-
         logger.info(
             f"Verifying that the indexes are the same except for suffixes in their name "
             f"(source_suffix='{self.source_suffix}', dest_suffix='{self.dest_suffix}')"
-        )  # temp_indexes = [
-        #     {
-        #         "indexname": re.sub(rf"_temp$", "", val["indexname"], count=1),
-        #         "indexdef": re.sub(rf"_temp\s+", "", val["indexdef"].replace("_temp", "")),
-        #     }
-        #     for val in temp_indexes
-        # ]
+        )
+
         temp_index_specs = {}
         for val in temp_indexes:
             tindexname = re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["indexname"], count=1)
@@ -422,11 +410,7 @@ class Command(BaseCommand):
             if self.is_temp_table_partitioned:
                 tindexdef = re.sub("ON ONLY", "ON", tindexdef, flags=re.I)
             temp_index_specs[tindexname] = tindexdef
-        # curr_index_names = [val["indexname"] for val in curr_indexes]
-        # # Index Definition include the <schema_name>.<table_table> to compare these the schema names are normalized
-        # curr_index_defs = [
-        #     val["indexdef"].replace(f"{self.curr_schema_name}.", f"{self.temp_schema_name}.") for val in curr_indexes
-        # ]
+
         curr_index_specs = {}
         for val in curr_indexes:
             cindexname = val["indexname"]
@@ -468,12 +452,6 @@ class Command(BaseCommand):
                 if diff not in differences:
                     differences.append(diff)
 
-                # if index["indexname"] not in curr_index_names or index["indexdef"] not in curr_index_defs:
-                #     differences.append(
-                #         {"temp_index_name": index["indexname"], "cur_index_name": index["indexname"] if index[
-                #             "indexname"] in curr_index_names else None, "temp_index_def": index["indexdef"],
-                #          "cur_index_def": )
-                #     )
         if differences:
             logger.error(
                 f"Indexes missing or differences found among the {len(curr_indexes)} current indexes "
@@ -545,11 +523,6 @@ class Command(BaseCommand):
             raise SystemExit(1)
 
     def validate_constraints(self, cursor):
-        # Used to sort constraints for comparison since sorting in the original SQL query that retrieves them
-        # would not be taking into account that some would have "_temp" appended
-        # def _sort_key(val):
-        #     return val["constraint_name"]
-
         logger.info("Verifying that the same number of constraints exist for the old and new table")
         cursor.execute(
             f"SELECT "
@@ -595,14 +568,6 @@ class Command(BaseCommand):
                 "constraints are managed on the child partitions and skipping validation."
             )
             return
-
-        # if len(temp_constraints) != len(curr_constraints):
-        #     logger.error(
-        #         f"The number of constraints are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
-        #     )
-        #     raise SystemExit(1)
-        temp_constraints_count = len(temp_constraints)
-        curr_constraints_count = len(curr_constraints)
 
         # NOT NULL constraints are created on a COLUMN not the TABLE, this means we do not control their name.
         # As a result, we verify that the same NOT NULL constraints exist on the tables but do not handle the swap.
@@ -681,12 +646,6 @@ class Command(BaseCommand):
                 if diff not in differences:
                     differences.append(diff)
 
-                # if index["indexname"] not in curr_index_names or index["indexdef"] not in curr_index_defs:
-                #     differences.append(
-                #         {"temp_index_name": index["indexname"], "cur_index_name": index["indexname"] if index[
-                #             "indexname"] in curr_index_names else None, "temp_index_def": index["indexdef"],
-                #          "cur_index_def": )
-                #     )
         if differences:
             logger.error(
                 f"Constraints missing or differences found among the {len(curr_constraints)} current constraints "
@@ -694,12 +653,6 @@ class Command(BaseCommand):
                 f"table to be swapped in:\n{json.dumps(differences, indent=4)}"
             )
             raise SystemExit(1)
-
-        # if sorted(temp_constraints, key=_sort_key) != sorted(curr_constraints, key=_sort_key):
-        #     logger.error(
-        #         f"The constraint definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
-        #     )
-        #     raise SystemExit(1)
 
     def validate_columns(self, cursor):
         logger.info("Verifying that the same number of columns exist for the old and new table")
@@ -760,9 +713,9 @@ class Command(BaseCommand):
         with connection.cursor() as cursor:
             cursor.execute(
                 f"""
-                    SELECT t.tablename 
-                    FROM pg_tables t 
-                    WHERE t.tablename ~ '{table_match}' 
+                    SELECT t.tablename
+                    FROM pg_tables t
+                    WHERE t.tablename ~ '{table_match}'
                     ORDER BY t.tablename DESC LIMIT 1;
                 """
             )

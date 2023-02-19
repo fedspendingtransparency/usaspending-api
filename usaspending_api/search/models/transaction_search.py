@@ -409,9 +409,7 @@ class TransactionSearch(models.Model):
 
     class Meta:
         db_table = "transaction_search"
-        constraints = [
-            models.UniqueConstraint(fields=["is_fpds", "transaction"], name="ts_idx_is_fpds_transaction_id")
-        ]
+        constraints = [models.UniqueConstraint(fields=["is_fpds", "transaction"], name="ts_idx_is_fpds_transaction_id")]
         indexes = [
             models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
             models.Index(

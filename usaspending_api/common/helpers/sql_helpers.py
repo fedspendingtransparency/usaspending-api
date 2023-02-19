@@ -345,7 +345,7 @@ def get_parent_partitioned_table(table, cursor):
         schema = "public"
     cursor.execute(
         f"""
-            SELECT pg_partition_root(inhrelid) FROM pg_inherits 
+            SELECT pg_partition_root(inhrelid) FROM pg_inherits
             WHERE inhrelid = '{schema}.{table}'::regclass;
         """
     )
