@@ -112,10 +112,13 @@ def make_copy_indexes(
             only_clause = "ONLY "
 
         create_ix_sql = src_ix_dict["indexdef"]
-        ix_regex = rf"CREATE\s.*INDEX\s\S+\sON\s(\S+)\s.*"
-        # this *should* match source_table, but can get funky with/without the schema included and regex
+
+        # (?:ONLY\s+)? is an optional word (ONLY) in a non-capturing group
+        # this regex *should* match source_table, but can get funky with/without the schema included and regex
         # for example, a table 'x' in the public schema could be provided and the string will include `public.x'
+        ix_regex = rf"CREATE\s+.*INDEX\s+\S+\s+ON\s+(?:ONLY\s+)?(\S+)\s+.*"
         src_table = re.findall(ix_regex, create_ix_sql)[0]
+
         create_ix_sql = create_ix_sql.replace(src_ix_name, dest_ix_name)
         create_ix_sql = create_ix_sql.replace(src_table, f"{only_clause}{dest_table}")
         dest_ix_sql.append(create_ix_sql)

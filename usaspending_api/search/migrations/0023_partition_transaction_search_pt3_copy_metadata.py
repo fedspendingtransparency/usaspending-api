@@ -114,8 +114,9 @@ def attach_child_partition_metadata(parent_partition_table, child_partition_suff
 
 
 class Migration(migrations.Migration):
-    # Subsequent steps use a different connection than the one running migrations, so in order to see tables or DB
-    # objects being created or dropped by prior steps, the migration steps need to be made non-atomic
+    # call_command(...) issued from RunPython operations does not seem to have insight into the transaction state from
+    # prior RunSQL operations. So in order to see tables or DB objects being created or dropped by prior RunSQL steps,
+    # the migration steps need to be made non-atomic
     atomic = False
 
     dependencies = [
