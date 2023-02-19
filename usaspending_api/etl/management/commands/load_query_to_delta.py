@@ -71,6 +71,7 @@ TABLE_SPEC = {
         "column_names": list(AWARD_SEARCH_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
+        "postgres_partitions": None,
     },
     "award_search_gold": {
         "model": AwardSearch,
@@ -91,6 +92,7 @@ TABLE_SPEC = {
         "column_names": list(AWARD_SEARCH_POSTGRES_GOLD_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
+        "postgres_partitions": None,
     },
     "recipient_lookup": {
         "model": RecipientLookup,
@@ -110,6 +112,7 @@ TABLE_SPEC = {
         "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
         "postgres_seq_name": "recipient_lookup_id_seq",
         "tsvectors": None,
+        "postgres_partitions": None,
     },
     "recipient_profile": {
         "model": RecipientProfile,
@@ -129,6 +132,7 @@ TABLE_SPEC = {
         "column_names": list(RPT_RECIPIENT_PROFILE_DELTA_COLUMNS),
         "postgres_seq_name": "recipient_profile_id_seq",
         "tsvectors": None,
+        "postgres_partitions": None,
     },
     "summary_state_view": {
         "model": SummaryStateView,
@@ -148,6 +152,7 @@ TABLE_SPEC = {
         "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
+        "postgres_partitions": None,
     },
     "sam_recipient": {
         "model": None,
@@ -167,6 +172,7 @@ TABLE_SPEC = {
         "column_names": list(SAM_RECIPIENT_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
+        "postgres_partitions": None,
     },
     "transaction_search": {
         "model": TransactionSearch,
@@ -186,6 +192,7 @@ TABLE_SPEC = {
         "column_names": list(TRANSACTION_SEARCH_POSTGRES_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
+        "postgres_partitions": None,
     },
     "transaction_search_gold": {
         "model": TransactionSearch,
@@ -232,6 +239,7 @@ TABLE_SPEC = {
         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
+        "postgres_partitions": None,
     },
 }
 
