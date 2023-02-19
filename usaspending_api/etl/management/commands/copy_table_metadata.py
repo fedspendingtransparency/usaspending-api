@@ -56,7 +56,13 @@ async def index_with_concurrency(index_definitions, index_concurrency):
 
 
 def make_copy_constraints(
-    cursor, source_table, dest_table, drop_foreign_keys=False, source_suffix="", dest_suffix="temp"
+    cursor,
+    source_table,
+    dest_table,
+    drop_foreign_keys=False,
+    source_suffix="",
+    dest_suffix="temp",
+    only_parent_partitioned_table=False,
 ):
     # read the existing indexes
     cursor.execute(make_read_constraints(source_table)[0])
@@ -66,18 +72,23 @@ def make_copy_constraints(
     dest_constr_sql = []
     for src_constr_dict in src_constrs:
         src_constr_name = src_constr_dict["conname"]
-        root_constr_name = src_constr_name.rsplit(f"_{source_suffix}", 1)[0] if source_suffix else src_constr_name
+        root_constr_name = src_constr_name[:-len(f"_{source_suffix}")] if source_suffix else src_constr_name
         dest_constr_name = f"{root_constr_name}_{dest_suffix}" if dest_suffix else root_constr_name
         create_constr_content = src_constr_dict["pg_get_constraintdef"]
         if "FOREIGN KEY" in create_constr_content and drop_foreign_keys:
             continue
+        only_clause = ""
+        if only_parent_partitioned_table:
+            only_clause = "ONLY "
         dest_constr_sql.append(
-            f"ALTER TABLE {dest_table} ADD CONSTRAINT {dest_constr_name}" f" {create_constr_content}"
+            f"ALTER TABLE {only_clause}{dest_table} ADD CONSTRAINT {dest_constr_name} {create_constr_content}"
         )
     return dest_constr_sql
 
 
-def make_copy_indexes(cursor, source_table, dest_table, source_suffix="", dest_suffix="temp"):
+def make_copy_indexes(
+    cursor, source_table, dest_table, source_suffix="", dest_suffix="temp", only_parent_partitioned_table=False
+):
     # read the existing indexes of source table
     cursor.execute(make_read_indexes(source_table)[0])
     src_indexes = dictfetchall(cursor)
@@ -90,19 +101,23 @@ def make_copy_indexes(cursor, source_table, dest_table, source_suffix="", dest_s
     dest_ix_sql = []
     for src_ix_dict in src_indexes:
         src_ix_name = src_ix_dict["indexname"]
-        root_ix_name = src_ix_name.rsplit(f"_{source_suffix}", 1)[0] if source_suffix else src_ix_name
+        root_ix_name = src_ix_name[:-len(f"_{source_suffix}")] if source_suffix else src_ix_name
         dest_ix_name = f"{root_ix_name}_{dest_suffix}" if dest_suffix else root_ix_name
         if dest_ix_name in dest_indexes:
             logger.info(f"Index {dest_ix_name} already in {dest_table}. Skipping.")
             continue
 
+        only_clause = ""
+        if only_parent_partitioned_table:
+            only_clause = "ONLY "
+
         create_ix_sql = src_ix_dict["indexdef"]
-        ix_regex = r"CREATE\s.*INDEX\s\S+\sON\s(\S+)\s.*"
+        ix_regex = rf"CREATE\s.*INDEX\s\S+\sON\s(\S+)\s.*"
         # this *should* match source_table, but can get funky with/without the schema included and regex
         # for example, a table 'x' in the public schema could be provided and the string will include `public.x'
         src_table = re.findall(ix_regex, create_ix_sql)[0]
         create_ix_sql = create_ix_sql.replace(src_ix_name, dest_ix_name)
-        create_ix_sql = create_ix_sql.replace(src_table, dest_table)
+        create_ix_sql = create_ix_sql.replace(src_table, f"{only_clause}{dest_table}")
         dest_ix_sql.append(create_ix_sql)
     return dest_ix_sql
 
@@ -178,6 +193,12 @@ class Command(BaseCommand):
             default=5,
             help="Concurrency limit for index creation.",
         )
+        parser.add_argument(
+            "--only-parent-partitioned-table",
+            action="store_true",
+            help="If this flag is provided, it is instructing the use of the 'ONLY' keyword when applying INDEXes or "
+            "CONSTRAINTs to a parent partitioned table (only).",
+        )
 
     def handle(self, *args, **options):
         # Resolve Parameters
@@ -191,6 +212,7 @@ class Command(BaseCommand):
         max_parallel_maintenance_workers = options["max_parallel_maintenance_workers"]
         maintenance_work_mem = options["maintenance_work_mem"]
         index_concurrency = options["index_concurrency"]
+        only_parent_partitioned_table = options["only_parent_partitioned_table"]
 
         logger.info(f"Copying metadata from table {source_table} to table {dest_table}.")
 
@@ -203,7 +225,9 @@ class Command(BaseCommand):
                     source_table,
                     dest_table,
                     drop_foreign_keys=not keep_foreign_constraints,
+                    source_suffix=source_suffix,
                     dest_suffix=dest_suffix,
+                    only_parent_partitioned_table=only_parent_partitioned_table,
                 )
                 if copy_constraint_sql:
                     cursor.execute("; ".join(copy_constraint_sql))
@@ -218,7 +242,12 @@ class Command(BaseCommand):
                     logger.info(f"Setting maintenance_work_mem to '{maintenance_work_mem}GB'")
                     cursor.execute(f"SET maintenance_work_mem = '{maintenance_work_mem}GB'")
                 copy_index_sql = make_copy_indexes(
-                    cursor, source_table, dest_table, source_suffix=source_suffix, dest_suffix=dest_suffix
+                    cursor,
+                    source_table,
+                    dest_table,
+                    source_suffix=source_suffix,
+                    dest_suffix=dest_suffix,
+                    only_parent_partitioned_table=only_parent_partitioned_table,
                 )
         if copy_index_sql:
             logger.info(f"Copying indexes over from {source_table}.")
