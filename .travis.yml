@@ -91,6 +91,16 @@ before_script:
   - sudo psql --cluster 13/main -U postgres -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - sudo psql --cluster 13/main -U postgres -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
   - sudo psql --cluster 13/main -U postgres -c "CREATE USER ${BROKER_DB_USER} PASSWORD '${BROKER_DB_PASSWORD}' SUPERUSER"
+  # Postgres DB also needs a readonly user, that is referenced in some code
+  - sudo psql --cluster 13/main -U postgres -c "CREATE ROLE readonly;"
+  - >
+    sudo psql --cluster 13/main -U postgres -c "\copy (
+        SELECT
+          'GRANT USAGE ON SCHEMA ' || nspname || ' TO readonly; '
+        || 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly; '
+        || 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly; '
+        FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')
+      ) TO grant_to_readonly.sql;"
   # Ensure MinIO can run as our s3 substitute
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
