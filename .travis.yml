@@ -101,6 +101,7 @@ before_script:
         || 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly; '
         FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')
       ) TO grant_to_readonly.sql;"
+  - sudo psql --cluster 13/main -U postgres -c "\i grant_to_readonly.sql"
   # Ensure MinIO can run as our s3 substitute
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
