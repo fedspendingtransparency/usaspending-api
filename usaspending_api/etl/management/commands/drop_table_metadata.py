@@ -51,11 +51,15 @@ def drop_table_metadata(target_table, is_potential_partition=False, keep_constra
             if drop_constr_sql:
                 logger.info(f"About to run drop constraints SQL:\n{pformat(drop_constr_sql)}")
                 cursor.execute("; ".join(drop_constr_sql))
+            else:
+                logger.info(f"No constraints discovered to be dropped on '{target_table}'")
         if not keep_indexes:
             drop_idx_sql = make_drop_indexes(cursor, target_table)
             if drop_idx_sql:
                 logger.info(f"About to run drop indexes SQL:\n{pformat(drop_idx_sql)}")
                 cursor.execute("; ".join(drop_idx_sql))
+            else:
+                logger.info(f"No indexes discovered to be dropped on '{target_table}'")
 
 
 def make_drop_constraints(cursor, target_table, drop_foreign_keys=False):
