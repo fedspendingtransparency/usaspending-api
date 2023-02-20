@@ -11,7 +11,7 @@ def check_data_load_limit(apps, _):
             "Manually load data into the partitions "
             "(temp.transaction_search_fpds and temp.transaction_search_fabs) external to this "
             "migation using a streamlined/bulk-load approach, then when successful, mark this migration "
-            "as applied with: python3 manage.py migration --fake search 0022"
+            "as applied with: python3 manage.py migrate --fake search 0022"
         )
 
 

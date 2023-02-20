@@ -237,7 +237,7 @@ class Command(BaseCommand):
                 if is_postgres_table_partitioned:
                     partition_clause = (
                         f"PARTITION BY {table_spec['postgres_partition_spec']['partitioning_form']}"
-                        f"({table_spec['postgres_partition_spec']['partition_keys']})"
+                        f"({', '.join(table_spec['postgres_partition_spec']['partition_keys'])})"
                     )
                     storage_parameters = ""
                     partitions_sql = [

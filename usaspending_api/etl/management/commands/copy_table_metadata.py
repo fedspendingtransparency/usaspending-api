@@ -108,17 +108,20 @@ def make_copy_indexes(
             logger.info(f"Index {dest_ix_name} already in {dest_table}. Skipping.")
             continue
 
-        only_clause = ""
-        if only_parent_partitioned_table:
-            only_clause = "ONLY "
-
         create_ix_sql = src_ix_dict["indexdef"]
 
-        # (?:ONLY\s+)? is an optional word (ONLY) in a non-capturing group
         # this regex *should* match source_table, but can get funky with/without the schema included and regex
         # for example, a table 'x' in the public schema could be provided and the string will include `public.x'
-        ix_regex = rf"CREATE\s+.*INDEX\s+\S+\s+ON\s+(?:ONLY\s+)?(\S+)\s+.*"
-        src_table = re.findall(ix_regex, create_ix_sql)[0]
+        # Depending on whether the source table is a paritioned table or not, it may or may not already have the ONLY
+        # clause in its index definition(s)
+        ix_regex = rf"CREATE\s+.*INDEX\s+\S+\s+ON\s+(ONLY\s+)?(\S+)\s+.*"
+        regex_groups = re.findall(ix_regex, create_ix_sql)[0]
+        contains_only = regex_groups[0]
+        src_table = regex_groups[1]
+
+        only_clause = ""
+        if only_parent_partitioned_table and not contains_only:
+            only_clause = "ONLY "
 
         create_ix_sql = create_ix_sql.replace(src_ix_name, dest_ix_name)
         create_ix_sql = create_ix_sql.replace(src_table, f"{only_clause}{dest_table}")
