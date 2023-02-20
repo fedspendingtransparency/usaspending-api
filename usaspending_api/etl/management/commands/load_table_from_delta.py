@@ -246,7 +246,7 @@ class Command(BaseCommand):
                             f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
                             f"{storage_parameters}"
                         )
-                        for pt in {table_spec["postgres_partition_spec"]["partitions"]}
+                        for pt in table_spec["postgres_partition_spec"]["partitions"]
                     ]
                 if postgres_table:
                     create_temp_sql = f"""

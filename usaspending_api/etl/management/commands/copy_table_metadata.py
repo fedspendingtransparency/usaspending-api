@@ -1,7 +1,8 @@
 import logging
 import re
 import asyncio
-from django import db
+from pprint import pformat
+from django.db import connection
 from django.core.management.base import BaseCommand
 
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
@@ -125,6 +126,55 @@ def make_copy_indexes(
     return dest_ix_sql
 
 
+def attach_child_partition_metadata(parent_partitioned_table, child_partition_name, dest_suffix="temp"):
+    # e.g. parent_parititioned_table=temp.transaction_search_temp
+    # child_partition_name=temp.transaction_search_fabs_temp
+
+    # The parent-child partitions must follow the convention of partition names just adding a suffix to parent tables
+    # And if a --dest-suffix was provided to this command, it needs to be stripped off first before deriving the
+    # child partition name suffix
+    dest_suffix_appendage = "" if not dest_suffix else f"_{dest_suffix}"
+    dest_suffix_chop_len = len(dest_suffix_appendage)
+    parent_table_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", parent_partitioned_table)
+    child_partition_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", child_partition_name)
+    child_partition_suffix = re.sub(
+        rf"^.*?{parent_table_without_schema[:-dest_suffix_chop_len]}(.*?)$",
+        rf"\g<1>",
+        child_partition_without_schema[:-dest_suffix_chop_len],
+    )
+
+    if not child_partition_suffix:
+        raise RuntimeError(
+            f"Could not derive a child partition suffix from parent_partitioned_table='{parent_partitioned_table}' "
+            f"and child_partiton_name='{child_partition_name}'"
+        )
+    # read the existing indexes
+    with connection.cursor() as cursor:
+        if "." in parent_partitioned_table:
+            schema_name, _ = (
+                parent_partitioned_table[: parent_partitioned_table.index(".")],
+                parent_partitioned_table[parent_partitioned_table.index(".") + 1 :],
+            )
+        else:
+            schema_name = "public"
+
+        # read the existing indexes of parent partition table
+        cursor.execute(make_read_indexes(parent_partitioned_table)[0])
+        src_indexes = dictfetchall(cursor)
+
+        # build the attach partition index sql
+        attach_ix_sql = []
+        for src_ix_dict in src_indexes:
+            src_ix_name = src_ix_dict["indexname"]
+            attach_ix_sql.append(
+                f"ALTER INDEX {schema_name}.{src_ix_name} "
+                f"ATTACH PARTITION "
+                f"{schema_name}.{src_ix_name[:-dest_suffix_chop_len]}{child_partition_suffix}{dest_suffix_appendage}"
+            )
+        logger.info(f"Running SQL to ATTACH child partition indexes to parent:\n{pformat(attach_ix_sql)}")
+        cursor.execute("; ".join(attach_ix_sql))
+
+
 class Command(BaseCommand):
 
     help = """
@@ -202,6 +252,19 @@ class Command(BaseCommand):
             help="If this flag is provided, it is instructing the use of the 'ONLY' keyword when applying INDEXes or "
             "CONSTRAINTs to a parent partitioned table (only).",
         )
+        parser.add_argument(
+            "--partition-of",
+            type=str,
+            required=False,
+            help="Name of the parent partitioned table to the --dest-table. If this flag is provided, assume the "
+            "--dest-table is a child partition to a parent partitioned table, and any indexes added to it will "
+            "need to be 'made valid' by attaching it to indexes on the parent table. See postgres docs on "
+            "partitioned tables. Pre-conditions: 1) parent partitioned table must exist; 2) parent and child "
+            "tables must share the same root name except for child suffix and then optional --dest-suffix; 3) parent "
+            "partitioned table must already have the same indexes defined using ONLY (e.g. by copying metadata to "
+            "parent using this command with --only-parent-partitioned-table) that have the same root name except for "
+            "child suffix and then optional --dest-suffix",
+        )
 
     def handle(self, *args, **options):
         # Resolve Parameters
@@ -216,11 +279,12 @@ class Command(BaseCommand):
         maintenance_work_mem = options["maintenance_work_mem"]
         index_concurrency = options["index_concurrency"]
         only_parent_partitioned_table = options["only_parent_partitioned_table"]
+        partition_of = options["partition_of"]
 
         logger.info(f"Copying metadata from table {source_table} to table {dest_table}.")
 
         copy_index_sql = None
-        with db.connection.cursor() as cursor:
+        with connection.cursor() as cursor:
             if not skip_constraints:
                 logger.info(f"Copying constraints over from {source_table}")
                 copy_constraint_sql = make_copy_constraints(
@@ -256,3 +320,6 @@ class Command(BaseCommand):
             logger.info(f"Copying indexes over from {source_table}.")
             create_indexes(copy_index_sql, index_concurrency)
             logger.info(f"Indexes from {source_table} copied over.")
+
+        if partition_of:
+            attach_child_partition_metadata(parent_partitioned_table=partition_of, child_partition_name=dest_table)
