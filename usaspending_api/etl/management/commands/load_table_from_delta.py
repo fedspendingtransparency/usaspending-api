@@ -311,8 +311,10 @@ class Command(BaseCommand):
 
         # If we're working off an existing table, truncate before loading in all the data
         if not make_new_table:
+            self.logger.info(f"Truncating existing table {temp_table}")
             with db.connection.cursor() as cursor:
                 cursor.execute(f"TRUNCATE {temp_table}")
+                self.logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
         if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
