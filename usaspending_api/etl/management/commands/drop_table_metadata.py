@@ -4,6 +4,7 @@ table metadata (constraints and indexes so far) for the specified table. Also su
 """
 
 import logging
+from pprint import pformat
 from django.db import connection
 from django.core.management.base import BaseCommand
 
@@ -48,10 +49,12 @@ def drop_table_metadata(target_table, is_potential_partition=False, keep_constra
         if not keep_constraints:
             drop_constr_sql = make_drop_constraints(cursor, target_table)
             if drop_constr_sql:
+                logger.info(f"About to run drop constraints SQL:\n{pformat(drop_constr_sql)}")
                 cursor.execute("; ".join(drop_constr_sql))
         if not keep_indexes:
             drop_idx_sql = make_drop_indexes(cursor, target_table)
             if drop_idx_sql:
+                logger.info(f"About to run drop indexes SQL:\n{pformat(drop_idx_sql)}")
                 cursor.execute("; ".join(drop_idx_sql))
 
 
