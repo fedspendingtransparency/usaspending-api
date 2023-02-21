@@ -224,7 +224,7 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
-        is_postgres_table_partitioned = "postgres_partition_spec" in table_spec
+        is_postgres_table_partitioned = table_spec.get("postgres_partition_spec") is not None
 
         if postgres_table or postgres_cols:
             # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
