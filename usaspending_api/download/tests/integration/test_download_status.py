@@ -319,7 +319,7 @@ def test_download_transactions_status(client, download_test_data, monkeypatch, e
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("transaction", "d1"), ("transaction", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
+        ("transaction_search", "d1"), ("transaction_search", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -361,7 +361,7 @@ def test_download_transactions_limit(client, download_test_data, monkeypatch, el
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("transaction", "d1"), ("transaction", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
+        ("transaction_search", "d1"), ("transaction_search", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
