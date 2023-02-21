@@ -213,6 +213,11 @@ class Command(BaseCommand):
             cursor.execute(temp_dest_table_exists_sql)
             temp_dest_table_exists = cursor.fetchone()[0]
 
+        self.logger.warning(f"!!!!!!!!\n!!!!!!!!\n\ttemp_dest_table_exists = {temp_dest_table_exists}\n!!!!!!!!\n!!!!!!!!\n")
+        self.logger.warning(f"!!!!!!!!\n!!!!!!!!\n\trecreate = {recreate}\n!!!!!!!!\n!!!!!!!!\n")
+        if temp_dest_table_exists:
+            self.logger.warning(f"----ENTERED HERE BECAUSE temp_dest_table_exists EVALUATED TO TRUTHY----")
+
         # If it does, and we're recreating it, drop it first
         if temp_dest_table_exists and recreate:
             self.logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
