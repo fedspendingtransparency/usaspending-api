@@ -237,7 +237,7 @@ class Command(BaseCommand):
                 if is_postgres_table_partitioned:
                     partition_clause = (
                         f"PARTITION BY {table_spec['postgres_partition_spec']['partitioning_form']}"
-                        f"({table_spec['postgres_partition_spec']['partition_keys']})"
+                        f"({', '.join(table_spec['postgres_partition_spec']['partition_keys'])})"
                     )
                     storage_parameters = ""
                     partitions_sql = [
@@ -246,7 +246,7 @@ class Command(BaseCommand):
                             f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
                             f"{storage_parameters}"
                         )
-                        for pt in {table_spec["postgres_partition_spec"]["partitions"]}
+                        for pt in table_spec["postgres_partition_spec"]["partitions"]
                     ]
                 if postgres_table:
                     create_temp_sql = f"""
@@ -311,8 +311,10 @@ class Command(BaseCommand):
 
         # If we're working off an existing table, truncate before loading in all the data
         if not make_new_table:
+            self.logger.info(f"Truncating existing table {temp_table}")
             with db.connection.cursor() as cursor:
                 cursor.execute(f"TRUNCATE {temp_table}")
+                self.logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
         if options["reset_sequence"] and table_spec.get("postgres_seq_name"):

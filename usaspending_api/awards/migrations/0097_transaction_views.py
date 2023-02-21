@@ -110,7 +110,7 @@ class Migration(migrations.Migration):
             reverse_sql="",
         ),
         migrations.RunSQL(
-            sql="DROP TABLE IF EXISTS transaction_normalized",
+            sql="DROP TABLE IF EXISTS transaction_normalized CASCADE",
             reverse_sql="",
         ),
     ]

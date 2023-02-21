@@ -320,3 +320,34 @@ def close_all_django_db_conns() -> None:
     """
 
     connections.close_all()
+
+
+def is_table_partitioned(table, cursor):
+    if "." in table:
+        schema, table = table.split(".")[0], table.split(".")[1]
+    else:
+        schema = "public"
+    cursor.execute(
+        f"""
+            SELECT DISTINCT pg_partition_root(partrelid) AS partitioned_table
+            FROM pg_partitioned_table
+            WHERE pg_partition_root(partrelid) = '{schema}.{table}'::regclass;
+            """
+    )
+    return cursor.fetchone() is not None
+
+
+def get_parent_partitioned_table(table, cursor):
+    """Return the parent partitioned table if the provided table is a partition, otherwise None"""
+    if "." in table:
+        schema, table = table.split(".")[0], table.split(".")[1]
+    else:
+        schema = "public"
+    cursor.execute(
+        f"""
+            SELECT pg_partition_root(inhrelid) FROM pg_inherits
+            WHERE inhrelid = '{schema}.{table}'::regclass;
+        """
+    )
+    parent_partition_results = cursor.fetchone()
+    return parent_partition_results[0] if parent_partition_results else None
