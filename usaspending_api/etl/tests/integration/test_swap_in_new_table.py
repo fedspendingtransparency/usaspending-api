@@ -157,8 +157,9 @@ def test_constraint_validation(caplog, monkeypatch):
         try:
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key")
         except SystemExit:
-            assert caplog.records[-1].message == (
-                "The number of constraints are different for the tables: test_table_temp and test_table"
+            assert caplog.records[-1].message.startswith(
+                "Constraints missing or differences found among the 0 current constraints in test_table and the"
+                " 1 constraints of test_table_temp table to be swapped in:"
             )
         else:
             assert False, "No exception was raised"
@@ -171,8 +172,9 @@ def test_constraint_validation(caplog, monkeypatch):
         try:
             call_command("swap_in_new_table", "--table=test_table")
         except SystemExit:
-            assert caplog.records[-1].message == (
-                "The number of constraints are different for the tables: test_table_temp and test_table"
+            assert caplog.records[-1].message.startswith(
+                "Constraints missing or differences found among the 1 current constraints in test_table and the"
+                " 0 constraints of test_table_temp table to be swapped in:"
             )
         else:
             assert False, "No exception was raised"
@@ -184,8 +186,9 @@ def test_constraint_validation(caplog, monkeypatch):
         try:
             call_command("swap_in_new_table", "--table=test_table")
         except SystemExit:
-            assert caplog.records[-1].message == (
-                "The constraint definitions are different for the tables: test_table_temp and test_table"
+            assert caplog.records[-1].message.startswith(
+                "Constraints missing or differences found among the 1 current constraints in test_table and the"
+                " 1 constraints of test_table_temp table to be swapped in:"
             )
         else:
             assert False, "No exception was raised"
@@ -198,8 +201,9 @@ def test_constraint_validation(caplog, monkeypatch):
         try:
             call_command("swap_in_new_table", "--table=test_table")
         except SystemExit:
-            assert caplog.records[-1].message == (
-                "The constraint definitions are different for the tables: test_table_temp and test_table"
+            assert caplog.records[-1].message.startswith(
+                "Constraints missing or differences found among the 1 current constraints in test_table and the"
+                " 1 constraints of test_table_temp table to be swapped in:"
             )
         else:
             assert False, "No exception was raised"
@@ -212,9 +216,9 @@ def test_constraint_validation(caplog, monkeypatch):
         try:
             call_command("swap_in_new_table", "--table=test_table_not_null")
         except SystemExit:
-            assert caplog.records[-1].message == (
-                "The number of constraints are different for the tables:"
-                " test_table_not_null_temp and test_table_not_null"
+            assert caplog.records[-1].message.startswith(
+                "Constraints missing or differences found among the 1 current constraints in test_table_not_null and"
+                " the 0 constraints of test_table_not_null_temp table to be swapped in:"
             )
         else:
             assert False, "No exception was raised"
@@ -224,9 +228,9 @@ def test_constraint_validation(caplog, monkeypatch):
         try:
             call_command("swap_in_new_table", "--table=test_table_not_null")
         except SystemExit:
-            assert caplog.records[-1].message == (
-                "The constraint definitions are different for the tables:"
-                " test_table_not_null_temp and test_table_not_null"
+            assert caplog.records[-1].message.startswith(
+                "Constraints missing or differences found among the 1 current constraints in test_table_not_null and"
+                " the 1 constraints of test_table_not_null_temp table to be swapped in:"
             )
         else:
             assert False, "No exception was raised"
