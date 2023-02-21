@@ -5,13 +5,12 @@ other types of filters so they get their own file.
 import logging
 
 from usaspending_api.accounts.v2.filters.account_download import generate_treasury_account_query
-from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.filters.filter_helpers import (
     get_all_award_ids_in_idv_hierarchy,
     get_descendant_award_ids,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.search.models import AwardSearch
+from usaspending_api.search.models import AwardSearch, TransactionSearch
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ def idv_order_filter(filters):
 
 def idv_transaction_filter(filters):
     idv_award_id = _get_idv_award_id(filters)
-    return TransactionNormalized.objects.filter(award_id=idv_award_id)
+    return TransactionSearch.objects.filter(award_id=idv_award_id)
 
 
 def idv_treasury_account_funding_filter(account_type, download_table, filters, account_level):
