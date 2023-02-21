@@ -312,7 +312,8 @@ class Command(BaseCommand):
             name = f"{val['indexname']}{self.old_suffix}"
             drop_sql.append(f"DROP INDEX {name};")
 
-        cursor.execute("\n".join(drop_sql))
+        if drop_sql:
+            cursor.execute("\n".join(drop_sql))
         self.cleanup_old_data(cursor)
 
     def drop_old_views(self, cursor):
@@ -364,9 +365,9 @@ class Command(BaseCommand):
         cursor.execute(
             f"""
             WITH matched_tables AS (
-                SELECT schemaname, tablename FROM pg_tables WHERE tablename IN ('{self.curr_table_name}', '{self.temp_table_name}', '{self.curr_table_name}{self.old_suffix}')
+                SELECT schemaname, tablename FROM pg_tables WHERE tablename IN ('{self.curr_table_name}', '{self.temp_table_name}', '{self.curr_table_name}_old', '{self.curr_table_name}{self.old_suffix}')
                 UNION
-                SELECT schemaname, matviewname AS tablename FROM pg_matviews WHERE matviewname IN ('{self.curr_table_name}', '{self.temp_table_name}', '{self.curr_table_name}{self.old_suffix}')
+                SELECT schemaname, matviewname AS tablename FROM pg_matviews WHERE matviewname IN ('{self.curr_table_name}', '{self.temp_table_name}', '{self.curr_table_name}_old', '{self.curr_table_name}{self.old_suffix}')
             )
             SELECT tablename, COUNT(*) AS schema_count
             FROM matched_tables
