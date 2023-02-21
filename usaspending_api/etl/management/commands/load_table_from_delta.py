@@ -278,7 +278,7 @@ class Command(BaseCommand):
                     if is_postgres_table_partitioned and partitions_sql:
                         for create_partition in partitions_sql:
                             self.logger.info(f"Creating partition of {temp_table} named {create_partition.split()[1]}")
-                            cursor.execute(create_temp_sql)
+                            cursor.execute(create_partition)
                             self.logger.info(f"{create_partition.split()[1]} partition created.")
 
                     # If there are vectors, add the triggers that will populate them based on other calls
