@@ -190,10 +190,12 @@ class Command(BaseCommand):
 
         # Postgres side - temp
         temp_schema = "temp"
+        temp_table_suffix = "temp"
+        temp_table_suffix_appendage = f"_{temp_table_suffix}" if {temp_table_suffix} else ""
         if postgres_table:
-            temp_table_name = f"{postgres_table_name}_temp"
+            temp_table_name = f"{postgres_table_name}{temp_table_suffix_appendage}"
         else:
-            temp_table_name = f"{delta_table_name}_temp"
+            temp_table_name = f"{delta_table_name}{temp_table_suffix_appendage}"
         temp_table = f"{temp_schema}.{temp_table_name}"
 
         summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
@@ -213,7 +215,9 @@ class Command(BaseCommand):
             cursor.execute(temp_dest_table_exists_sql)
             temp_dest_table_exists = cursor.fetchone()[0]
 
-        self.logger.warn(f"!!!!!!!!\n!!!!!!!!\n\ttemp_dest_table_exists = {temp_dest_table_exists}\n!!!!!!!!\n!!!!!!!!\n")
+        self.logger.warn(
+            f"!!!!!!!!\n!!!!!!!!\n\ttemp_dest_table_exists = {temp_dest_table_exists}\n!!!!!!!!\n!!!!!!!!\n"
+        )
         self.logger.warn(f"!!!!!!!!\n!!!!!!!!\n\trecreate = {recreate}\n!!!!!!!!\n!!!!!!!!\n")
         if temp_dest_table_exists:
             self.logger.warn(f"----ENTERED HERE BECAUSE temp_dest_table_exists EVALUATED TO TRUTHY----")
@@ -247,7 +251,9 @@ class Command(BaseCommand):
                     storage_parameters = ""
                     partitions_sql = [
                         (
-                            f"CREATE TABLE {temp_table}{pt['table_suffix']} "
+                            f"CREATE TABLE "
+                            # Below: e.g. my_tbl_temp -> my_tbl_part_temp
+                            f"{temp_table[:-len(temp_table_suffix_appendage)]}{pt['table_suffix']}{temp_table_suffix_appendage}"
                             f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
                             f"{storage_parameters}"
                         )
@@ -277,9 +283,9 @@ class Command(BaseCommand):
 
                     if is_postgres_table_partitioned and partitions_sql:
                         for create_partition in partitions_sql:
-                            self.logger.info(f"Creating partition of {temp_table} named {create_partition.split()[1]}")
+                            self.logger.info(f"Creating partition of {temp_table} with SQL:\n{create_partition}")
                             cursor.execute(create_partition)
-                            self.logger.info(f"{create_partition.split()[1]} partition created.")
+                            self.logger.info("Partition created.")
 
                     # If there are vectors, add the triggers that will populate them based on other calls
                     # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
