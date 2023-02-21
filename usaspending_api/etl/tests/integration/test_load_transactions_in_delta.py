@@ -444,7 +444,7 @@ class InitialRunWithPostgresLoader:
     expected_initial_transaction_fpds = [
         {
             **procure,
-            "action_date": procure["action_date"],
+            "action_date": dateutil.parser.parse(procure["action_date"]).date().isoformat(),
             "detached_award_proc_unique": procure["detached_award_proc_unique"].upper(),
             "transaction_id": procure["detached_award_procurement_id"] + len(initial_assists),
             "unique_award_key": procure["unique_award_key"].upper(),
@@ -758,7 +758,7 @@ class TestInitialRunNoPostgresLoader:
     initial_transaction_fpds = [
         {
             **procure,
-            "action_date": procure["action_date"],
+            "action_date": dateutil.parser.parse(procure["action_date"]).date().isoformat(),
             "detached_award_proc_unique": procure["detached_award_proc_unique"].upper(),
             "transaction_id": procure["detached_award_procurement_id"] * 2,
             "unique_award_key": procure["unique_award_key"].upper(),
@@ -767,14 +767,14 @@ class TestInitialRunNoPostgresLoader:
     ] + [
         {
             **initial_procures[3],
-            "action_date": initial_procures[3]["action_date"],
+            "action_date": dateutil.parser.parse(initial_procures[3]["action_date"]).date().isoformat(),
             "detached_award_proc_unique": initial_procures[3]["detached_award_proc_unique"].upper(),
             "transaction_id": 9,
             "unique_award_key": initial_procures[3]["unique_award_key"].upper(),
         },
         {
             **initial_procures[4],
-            "action_date": initial_procures[4]["action_date"],
+            "action_date": dateutil.parser.parse(initial_procures[4]["action_date"]).date().isoformat(),
             "detached_award_proc_unique": initial_procures[4]["detached_award_proc_unique"].upper(),
             "transaction_id": 10,
             "unique_award_key": initial_procures[4]["unique_award_key"].upper(),
@@ -1411,9 +1411,7 @@ class TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
     def unexpected_paths_test_core(
-        self,
-        load_other_raw_tables,
-        expected_initial_transaction_id_lookup,
+        self, load_other_raw_tables, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup
     ):
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, making sure to load
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
@@ -1427,7 +1425,7 @@ class TransactionFabsFpdsCore:
         # the initial data.
         kwargs = {
             "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
             "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
             "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
@@ -1436,7 +1434,7 @@ class TransactionFabsFpdsCore:
         TestInitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
-            [],
+            expected_initial_award_id_lookup,
             0,
             len(self.expected_initial_transaction_fabs),
             len(self.expected_initial_transaction_fpds),
@@ -1491,7 +1489,7 @@ class TransactionFabsFpdsCore:
         TestInitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
-            [],
+            expected_initial_award_id_lookup,
             0,
             len(self.expected_initial_transaction_fabs),
             len(self.expected_initial_transaction_fpds),
@@ -1526,6 +1524,7 @@ class TransactionFabsFpdsCore:
                 )
             ],
             TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
+            TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup,
         )
 
     def happy_paths_test_core(
@@ -1639,9 +1638,7 @@ class TransactionFabsFpdsCore:
         expected_transaction_fabs_fpds_append.update(
             {
                 "transaction_id": self.new_transaction_id,
-                "action_date": insert_update_datetime.date().isoformat()
-                if self.etl_level == "transaction_fabs"
-                else insert_update_datetime.isoformat(),
+                "action_date": insert_update_datetime.date().isoformat(),
                 "created_at": insert_update_datetime,
                 "updated_at": insert_update_datetime,
             }

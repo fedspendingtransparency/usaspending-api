@@ -57,7 +57,9 @@ class AbstractElasticsearchIndexerController(ABC):
         self.record_count, self.min_id, self.max_id = self._count_of_records_to_process(self.config)
 
         if self.record_count == 0:
-            self.processes = []
+            # We should always have at least one partition
+            self.config["partitions"] = 1
+            self.config["processes"] = 0
             return
 
         self.config["partitions"] = self.determine_partitions()
@@ -91,7 +93,7 @@ class AbstractElasticsearchIndexerController(ABC):
             for j in range(self.config["partitions"])
         }
         if self.config["extra_null_partition"]:
-            task_dict[0] = self.configure_task(self.config["partitions"], next(name_gen), True)
+            task_dict[0] = self.configure_task(0, next(name_gen), True)
 
         return task_dict
 
