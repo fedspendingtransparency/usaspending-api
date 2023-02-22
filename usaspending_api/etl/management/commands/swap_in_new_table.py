@@ -165,15 +165,36 @@ class Command(BaseCommand):
                 table=f"{self.curr_schema_name}.{self.curr_table_name}", cursor=cursor
             )
 
+            # Make sure old and new are like-like in all ways
             self.validate_state_of_tables(cursor, options)
+
+            # Get constraints and indexes named correctly before the table is renamed
             self.swap_constraints_sql(cursor)
             self.swap_index_sql(cursor)
+
+            # New temp views are setup to point to the temp table, and will swap-in with the table
             self.create_new_views(cursor)
+
+            # Prep stats and privs on the staged temp table before swapping (renaming)
+            self.analyze_temp_table(cursor)
+            self.grant_privs_on_temp_table(cursor)
+
+            # Do the swap via renames
             self.swap_table_view_sql(cursor)
+
             if not options["keep_old_data"]:
                 self.drop_old_views(cursor)
-                self.drop_old_table_sql(cursor)
-            self.extra_sql(cursor)
+                if self.curr_table_parent_partitioned_table:
+                    logger.info(
+                        f"'{self.curr_table_name}' is a partition of '{self.curr_table_parent_partitioned_table}' and "
+                        f"will not be dropped. Swapped-out partitions are not deleted after the swap due to the risk "
+                        f"of their live parent partitioned table still receiving traffic while having one of its "
+                        f"partitions deleted. If '{self.curr_table_parent_partitioned_table}' is also being swapped, "
+                        f"then this partition will be deleted when it is deleted. Otherwise delete "
+                        f"'{self.curr_table_name}{self.old_suffix}' manually."
+                    )
+                else:
+                    self.drop_old_table_sql(cursor)
 
     def cleanup_old_data(self, cursor, old_suffix=None):
         """
@@ -181,11 +202,11 @@ class Command(BaseCommand):
         We first try to delete the "table" as though it is a table. In the event
         that this fails we ignore the error and attempt to then drop the "table"
         as though it is a Materialized View, displaying both the current and
-        previous errors if this should fail agin..
+        previous errors if this should fail again.
         """
         if not old_suffix:
             old_suffix = self.old_suffix
-        logger.info(f"Dropping {self.curr_table_name}{old_suffix} if it exists")
+        logger.info(f"Dropping table {self.curr_table_name}{old_suffix} if it exists")
         try:
             cursor.execute(f"DROP TABLE IF EXISTS {self.curr_table_name}{old_suffix} CASCADE;")
             return
@@ -295,13 +316,12 @@ class Command(BaseCommand):
         cursor.execute("\n".join(rename_sql))
 
     def drop_old_table_sql(self, cursor):
+        self.drop_old_table_metadata(cursor)
+        self.cleanup_old_data(cursor)
+
+    def drop_old_table_metadata(self, cursor):
         # Instead of using CASCADE, all old constraints and indexes are dropped manually
-        logger.info("Dropping the old table")
-        if self.temp_table_parent_partitioned_table:
-            logger.info("First detaching this table (a partition) from parent table before dropping")
-            cursor.execute(
-                f"ALTER TABLE {self.temp_table_parent_partitioned_table} DETACH PARTITION {self.curr_table_name}{self.old_suffix}"
-            )
+        logger.info("Manually dropping the old table metadata (constraints and indexes")
         drop_sql = []
         indexes = self.query_result_lookup["curr_table_indexes"]
         constraints = self.query_result_lookup["curr_table_constraints"]
@@ -311,10 +331,8 @@ class Command(BaseCommand):
         for val in indexes:
             name = f"{val['indexname']}{self.old_suffix}"
             drop_sql.append(f"DROP INDEX {name};")
-
         if drop_sql:
             cursor.execute("\n".join(drop_sql))
-        self.cleanup_old_data(cursor)
 
     def drop_old_views(self, cursor):
         for dep_view in self.dep_views:
@@ -322,17 +340,19 @@ class Command(BaseCommand):
             logger.info(f"Dropping old dependent view: {dep_view['dep_view_fullname']}{self.old_suffix}")
             cursor.execute(f"DROP {mv_s}VIEW {dep_view['dep_view_fullname']}{self.old_suffix};")
 
-    def extra_sql(self, cursor):
+    def analyze_temp_table(self, cursor):
         if not self.is_temp_table_partitioned:
-            logger.info(f"Running ANALYZE VERBOSE {self.curr_table_name}")
-            cursor.execute(f"ANALYZE VERBOSE {self.curr_table_name}")
+            logger.info(f"Running ANALYZE VERBOSE {self.temp_table_name}")
+            cursor.execute(f"ANALYZE VERBOSE {self.temp_table_name}")
         else:
             logger.info(
-                f"Skipping ANALYZE VERBOSE {self.curr_table_name} because table is partitioned and ANALYZE "
-                f"should already be run against each partition"
+                f"Skipping ANALYZE VERBOSE {self.temp_table_name} because table is partitioned and ANALYZE "
+                f"should already be run against each partition, which should be swapped before it."
             )
-        logger.info(f"GRANT SELECT ON {self.curr_table_name} TO readonly")
-        cursor.execute(f"GRANT SELECT ON {self.curr_table_name} TO readonly")
+
+    def grant_privs_on_temp_table(self, cursor):
+        logger.info(f"GRANT SELECT ON {self.temp_table_name} TO readonly")
+        cursor.execute(f"GRANT SELECT ON {self.temp_table_name} TO readonly")
 
     def validate_tables(self, cursor):
         logger.info("Verifying that the current table exists")
