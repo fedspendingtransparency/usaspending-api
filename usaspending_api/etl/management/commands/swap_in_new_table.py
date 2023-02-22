@@ -426,7 +426,12 @@ class Command(BaseCommand):
         for val in temp_indexes:
             tindexname = re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["indexname"], count=1)
             tindexdef = re.sub(
-                rf"(.*?){self.source_suffix}(\s+|$)", rf"\g<1>{self.dest_suffix}\g<2>", val["indexdef"], flags=re.I
+                # Name ending in source suffix, that may be quoted (due to special chars like $), that are followed
+                # by whitespace or the end of the line
+                rf"(.*?){self.source_suffix}(\"?\s+|\"?$)",
+                rf"\g<1>{self.dest_suffix}\g<2>",
+                val["indexdef"],
+                flags=re.I,
             )
             if self.is_temp_table_partitioned:
                 tindexdef = re.sub("ON ONLY", "ON", tindexdef, flags=re.I)
