@@ -243,7 +243,9 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("referenced_idv_type_desc", "referenced_idv_type_desc", "STRING"),
     TransactionColumn("referenced_mult_or_si_desc", "referenced_mult_or_si_desc", "STRING"),
     TransactionColumn("referenced_mult_or_single", "referenced_mult_or_single", "STRING"),
-    TransactionColumn("referenced_multi_or_single", "referenced_mult_or_single", "STRING"),
+    # The referenced_multi_or_single field does not appear in the django model and may have been created inadvertently
+    # in the Delta model previously.  Since it is always NULL, it is a candidate for elimination.
+    TransactionColumn("referenced_multi_or_single", "NULL", "STRING", "literal"),
     TransactionColumn("research", "research", "STRING"),
     TransactionColumn("research_description", "research_description", "STRING"),
     TransactionColumn("sam_exception", "sam_exception", "STRING"),
