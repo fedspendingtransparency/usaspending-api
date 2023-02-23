@@ -106,7 +106,11 @@ def matview_search_filter(filters, model, for_downloads=False):
             logger.info("Found {} transactions based on keyword: {}".format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
             queryset = queryset.extra(
-                where=['"vw_transaction_normalized"."id" = ANY(\'{{{}}}\'::int[])'.format(",".join(transaction_ids))]
+                where=[
+                    '"transaction_search"."transaction_id" = ANY(\'{{{}}}\'::int[])'.format(
+                        "," "".join(transaction_ids)
+                    )
+                ]
             )
 
         elif key == "time_period":

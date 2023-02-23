@@ -5,8 +5,7 @@ other types of filters so they get their own file.
 import logging
 
 from usaspending_api.accounts.v2.filters.account_download import generate_treasury_account_query
-from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.search.models import SubawardSearch
+from usaspending_api.search.models import TransactionSearch, SubawardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
@@ -24,7 +23,7 @@ def _get_award_id(filters):
 
 def awards_transaction_filter(filters):
     award_id = _get_award_id(filters)
-    queryset = TransactionNormalized.objects.filter(award_id=award_id)
+    queryset = TransactionSearch.objects.filter(award_id=award_id)
     return queryset
 
 
