@@ -1,9 +1,11 @@
 import json
 import pytest
+import datetime
 
 from rest_framework import status
 from model_bakery import baker
 
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_month, generate_fiscal_year
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.views.spending_over_time import GROUPING_LOOKUP
@@ -31,29 +33,18 @@ def spending_over_time_test_data():
         treasury_account_id = i + 11000
 
         action_date = f"20{i % 10 + 10}-{i % 9 + 1}-{i % 28 + 1}"
+        action_date_obj = datetime.datetime.strptime(action_date, "%Y-%m-%d")
+        fiscal_month = generate_fiscal_month(action_date_obj)
+        fiscal_year = generate_fiscal_year(action_date_obj)
+        fiscal_action_date = f"{fiscal_year}-{fiscal_month}-{i % 28 + 1}"
         contract_award_type = ["A", "B", "C", "D"][i % 4]
         grant_award_type = ["02", "03", "04", "05"][i % 4]
         is_fpds = i % 2 == 0
 
-        # Transaction Normalized
-        baker.make(
-            "awards.TransactionNormalized",
-            id=transaction_id,
-            action_date=action_date,
-            award_id=award_id,
-            awarding_agency_id=awarding_agency_id,
-            business_categories=[f"business_category_1_{transaction_id}", f"business_category_2_{transaction_id}"],
-            description=f"This is a test description {transaction_id}" if transaction_id % 2 == 0 else None,
-            federal_action_obligation=federal_action_obligation,
-            funding_agency_id=funding_agency_id,
-            is_fpds=is_fpds,
-            type=contract_award_type if is_fpds else grant_award_type,
-        )
-
         # Award
         baker.make(
-            "awards.Award",
-            id=award_id,
+            "search.AwardSearch",
+            award_id=award_id,
             fain=f"fain_{transaction_id}" if not is_fpds else None,
             is_fpds=is_fpds,
             latest_transaction_id=transaction_id,
@@ -82,6 +73,15 @@ def spending_over_time_test_data():
             sub_account_code=f"taa_sub_{transaction_id}",
             treasury_account_identifier=treasury_account_id,
         )
+        tas_components = [
+            f"aid=taa_aid_{transaction_id}"
+            f"main=taa_main_{transaction_id}"
+            f"ata=taa_ata_{transaction_id}"
+            f"sub=taa_sub_{transaction_id}"
+            f"bpoa=taa_bpoa_{transaction_id}"
+            f"epoa=taa_epoa_{transaction_id}"
+            f"a=taa_a_{transaction_id}"
+        ]
         baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=treasury_account_id)
 
         # Awarding Agency
@@ -134,38 +134,63 @@ def spending_over_time_test_data():
         # FPDS / FABS
         if is_fpds:
             baker.make(
-                "awards.TransactionFPDS",
-                awarding_agency_name=f"toptier_awarding_agency_agency_name_{transaction_id}",
-                funding_agency_name=f"toptier_funding_agency_agency_name_{transaction_id}",
-                awarding_sub_tier_agency_c=f"subtier_awarding_agency_agency_name_{transaction_id}",
-                funding_sub_tier_agency_na=f"subtier_funding_agency_agency_name_{transaction_id}",
-                awardee_or_recipient_legal=f"recipient_name_{transaction_id}",
-                awardee_or_recipient_uniqu=f"{transaction_id:09d}",
+                "search.TransactionSearch",
+                transaction_id=transaction_id,
+                is_fpds=is_fpds,
+                action_date=action_date,
+                fiscal_year=fiscal_year,
+                fiscal_action_date=fiscal_action_date,
+                award_id=award_id,
+                awarding_agency_id=awarding_agency_id,
+                business_categories=[f"business_category_1_{transaction_id}", f"business_category_2_{transaction_id}"],
+                transaction_description=f"This is a test description {transaction_id}"
+                if transaction_id % 2 == 0
+                else None,
+                federal_action_obligation=federal_action_obligation,
+                generated_pragmatic_obligation=federal_action_obligation,
+                award_amount=total_obligation,
+                funding_agency_id=funding_agency_id,
+                type=contract_award_type if is_fpds else grant_award_type,
+                awarding_agency_code=f"toptier_awarding_agency_code_{transaction_id}",
+                awarding_toptier_agency_name=f"toptier_awarding_agency_agency_name_{transaction_id}",
+                awarding_toptier_agency_abbreviation=f"toptier_awarding_agency_agency_name_{transaction_id}",
+                funding_agency_code=f"toptier_funding_agency_code_{transaction_id}",
+                funding_toptier_agency_name=f"toptier_funding_agency_agency_name_{transaction_id}",
+                funding_toptier_agency_abbreviation=f"toptier_funding_agency_agency_name_{transaction_id}",
+                awarding_sub_tier_agency_c=f"subtier_awarding_agency_code_{transaction_id}",
+                awarding_subtier_agency_name=f"subtier_awarding_agency_agency_name_{transaction_id}",
+                funding_sub_tier_agency_co=f"subtier_funding_agency_code_{transaction_id}",
+                funding_subtier_agency_name=f"subtier_funding_agency_agency_name_{transaction_id}",
+                funding_subtier_agency_abbreviation=f"subtier_funding_agency_agency_name_{transaction_id}",
+                recipient_name=f"recipient_name_{transaction_id}",
+                recipient_unique_id=f"{transaction_id:09d}",
+                recipient_hash="c687823d-10af-701b-1bad-650c6e680190" if transaction_id == 21 else None,
+                recipient_levels=["R"] if i == 21 else [],
                 extent_competed=f"extent_competed_{transaction_id}",
-                legal_entity_country_code="USA",
-                legal_entity_country_name="USA",
-                legal_entity_state_code=f"LE_STATE_CODE_{transaction_id}",
-                legal_entity_county_code=f"{transaction_id:03d}",
-                legal_entity_county_name=f"LE_COUNTY_NAME_{transaction_id}",
-                legal_entity_congressional=f"{transaction_id:02d}",
-                legal_entity_zip5=f"LE_ZIP5_{transaction_id}",
-                legal_entity_city_name=f"LE_CITY_NAME_{transaction_id}",
-                naics=f"{transaction_id}{transaction_id}",
+                recipient_location_country_code="USA",
+                recipient_location_country_name="USA",
+                recipient_location_state_code=f"LE_STATE_CODE_{transaction_id}",
+                recipient_location_county_code=f"{transaction_id:03d}",
+                recipient_location_county_name=f"LE_COUNTY_NAME_{transaction_id}",
+                recipient_location_congressional_code=f"{transaction_id:02d}",
+                recipient_location_zip5=f"LE_ZIP5_{transaction_id}",
+                recipient_location_city_name=f"LE_CITY_NAME_{transaction_id}",
+                naics_code=f"{transaction_id}{transaction_id}",
                 naics_description=f"naics_description_{transaction_id}",
                 piid=f"piid_{transaction_id}",
-                place_of_perform_country_c="USA",
-                place_of_perf_country_desc="UNITED STATES",
-                place_of_performance_state=f"POP_STATE_CODE_{transaction_id}",
-                place_of_perform_county_co=f"{transaction_id:03d}",
-                place_of_perform_county_na=f"POP_COUNTY_NAME_{transaction_id}",
-                place_of_performance_zip5=f"POP_ZIP5_{transaction_id}",
-                place_of_performance_congr=f"{transaction_id:02d}",
-                place_of_perform_city_name=f"POP_CITY_NAME_{transaction_id}",
+                pop_country_code="USA",
+                pop_country_name="UNITED STATES",
+                pop_state_code=f"POP_STATE_CODE_{transaction_id}",
+                pop_county_code=f"{transaction_id:03d}",
+                pop_county_name=f"POP_COUNTY_NAME_{transaction_id}",
+                pop_zip5=f"POP_ZIP5_{transaction_id}",
+                pop_congressional_code=f"{transaction_id:02d}",
+                pop_city_name=f"POP_CITY_NAME_{transaction_id}",
                 product_or_service_code=str(transaction_id).zfill(4),
-                product_or_service_co_desc=f"psc_description_{transaction_id}",
-                transaction_id=transaction_id,
+                product_or_service_description=f"psc_description_{transaction_id}",
                 type_of_contract_pricing=f"type_of_contract_pricing_{transaction_id}",
                 type_set_aside=f"type_set_aside_{transaction_id}",
+                tas_components=tas_components,
             )
             baker.make(
                 "references.NAICS",
@@ -177,32 +202,57 @@ def spending_over_time_test_data():
             )
         else:
             baker.make(
-                "awards.TransactionFABS",
-                awarding_agency_name=f"toptier_awarding_agency_agency_name_{transaction_id}",
-                funding_agency_name=f"toptier_funding_agency_agency_name_{transaction_id}",
-                awarding_sub_tier_agency_c=f"subtier_awarding_agency_agency_name_{transaction_id}",
-                funding_sub_tier_agency_na=f"subtier_funding_agency_agency_name_{transaction_id}",
-                awardee_or_recipient_legal=f"recipient_name_{transaction_id}",
-                awardee_or_recipient_uniqu=f"{transaction_id:09d}",
+                "search.TransactionSearch",
+                transaction_id=transaction_id,
+                is_fpds=is_fpds,
+                action_date=action_date,
+                fiscal_year=fiscal_year,
+                fiscal_action_date=fiscal_action_date,
+                award_id=award_id,
+                awarding_agency_id=awarding_agency_id,
+                business_categories=[f"business_category_1_{transaction_id}", f"business_category_2_{transaction_id}"],
+                transaction_description=f"This is a test description {transaction_id}"
+                if transaction_id % 2 == 0
+                else None,
+                federal_action_obligation=federal_action_obligation,
+                generated_pragmatic_obligation=federal_action_obligation,
+                award_amount=total_obligation,
+                funding_agency_id=funding_agency_id,
+                type=contract_award_type if is_fpds else grant_award_type,
+                awarding_agency_code=f"toptier_awarding_agency_code_{transaction_id}",
+                awarding_toptier_agency_name=f"toptier_awarding_agency_agency_name_{transaction_id}",
+                awarding_toptier_agency_abbreviation=f"toptier_awarding_agency_agency_name_{transaction_id}",
+                funding_agency_code=f"toptier_funding_agency_code_{transaction_id}",
+                funding_toptier_agency_name=f"toptier_funding_agency_agency_name_{transaction_id}",
+                funding_toptier_agency_abbreviation=f"toptier_funding_agency_agency_name_{transaction_id}",
+                awarding_sub_tier_agency_c=f"subtier_awarding_agency_code_{transaction_id}",
+                awarding_subtier_agency_name=f"subtier_awarding_agency_agency_name_{transaction_id}",
+                funding_sub_tier_agency_co=f"subtier_funding_agency_code_{transaction_id}",
+                funding_subtier_agency_name=f"subtier_funding_agency_agency_name_{transaction_id}",
+                funding_subtier_agency_abbreviation=f"subtier_funding_agency_agency_name_{transaction_id}",
+                recipient_name=f"recipient_name_{transaction_id}",
+                recipient_unique_id=f"{transaction_id:09d}",
+                recipient_hash="c687823d-10af-701b-1bad-650c6e680190" if transaction_id == 21 else None,
+                recipient_levels=["R"] if i == 21 else [],
                 cfda_number=f"cfda_number_{transaction_id}",
                 fain=f"fain_{transaction_id}",
-                legal_entity_country_code="USA",
-                legal_entity_country_name="USA",
-                legal_entity_state_code=f"LE_STATE_CODE_{transaction_id}",
-                legal_entity_county_code=f"{transaction_id:03d}",
-                legal_entity_county_name=f"LE_COUNTY_NAME_{transaction_id}",
-                legal_entity_congressional=f"{transaction_id:02d}",
-                legal_entity_zip5=f"LE_ZIP5_{transaction_id}",
-                legal_entity_city_name=f"LE_CITY_NAME_{transaction_id}",
-                place_of_perform_country_c="USA",
-                place_of_perform_country_n="UNITED STATES",
-                place_of_perfor_state_code=f"POP_STATE_CODE_{transaction_id}",
-                place_of_perform_county_co=f"{transaction_id:03d}",
-                place_of_perform_county_na=f"POP_COUNTY_NAME_{transaction_id}",
-                place_of_performance_zip5=f"POP_ZIP5_{transaction_id}",
-                place_of_performance_congr=f"{transaction_id:02d}",
-                place_of_performance_city=f"POP_CITY_NAME{transaction_id}",
-                transaction_id=transaction_id,
+                recipient_location_country_code="USA",
+                recipient_location_country_name="USA",
+                recipient_location_state_code=f"LE_STATE_CODE_{transaction_id}",
+                recipient_location_county_code=f"{transaction_id:03d}",
+                recipient_location_county_name=f"LE_COUNTY_NAME_{transaction_id}",
+                recipient_location_congressional_code=f"{transaction_id:02d}",
+                recipient_location_zip5=f"LE_ZIP5_{transaction_id}",
+                recipient_location_city_name=f"LE_CITY_NAME_{transaction_id}",
+                pop_country_code="USA",
+                pop_country_name="UNITED STATES",
+                pop_state_code=f"POP_STATE_CODE_{transaction_id}",
+                pop_county_code=f"{transaction_id:03d}",
+                pop_county_name=f"POP_COUNTY_NAME_{transaction_id}",
+                pop_zip5=f"POP_ZIP5_{transaction_id}",
+                pop_congressional_code=f"{transaction_id:02d}",
+                pop_city_name=f"POP_CITY_NAME{transaction_id}",
+                tas_components=tas_components,
             )
 
 
@@ -985,27 +1035,35 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
     baker.make(
         "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
     )
-    baker.make("awards.Award", id=99, total_obligation=20, piid="0001")
+    baker.make("search.AwardSearch", award_id=99, total_obligation=20, piid="0001")
     baker.make(
-        "awards.TransactionNormalized",
-        id=99,
+        "search.TransactionSearch",
+        transaction_id=99,
         action_date="2020-04-02",
+        fiscal_action_date="2020-04-02",
+        fiscal_year=2020,
         federal_action_obligation=10,
+        generated_pragmatic_obligation=10,
+        award_amount=20,
         award_id=99,
         is_fpds=True,
         type="A",
+        piid="0001",
+        disaster_emergency_fund_codes=["L"],
     )
-    baker.make("awards.TransactionFPDS", transaction_id=99, piid="0001")
     baker.make(
-        "awards.TransactionNormalized",
-        id=100,
+        "search.TransactionSearch",
+        transaction_id=100,
         action_date="2020-01-01",
+        fiscal_action_date="2020-01-01",
         federal_action_obligation=22,
+        generated_pragmatic_obligation=22,
+        award_amount=20,
         award_id=99,
         is_fpds=True,
         type="A",
+        disaster_emergency_fund_codes=["L"],
     )
-    baker.make("awards.TransactionFPDS", transaction_id=100)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     resp = client.post(
         "/api/v2/search/spending_over_time",

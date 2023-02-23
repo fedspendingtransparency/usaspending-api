@@ -130,7 +130,7 @@ SELECT
             "financial_accounts_by_awards"."award_id" = "awards"."id"
        )
     INNER JOIN
-    "transaction_fabs"
+    "vw_transaction_fabs" AS "transaction_fabs"
         ON (
             "awards"."latest_transaction_id" = "transaction_fabs"."transaction_id"
        )

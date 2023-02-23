@@ -1,13 +1,15 @@
 import logging
 
+from abc import ABC, abstractmethod
 from django.core.management import call_command
 from math import ceil
 from multiprocessing import Pool, Event, Value
 from time import perf_counter
-from typing import Generator, List, Tuple
+from typing import Tuple, Dict
 
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process,
     create_index,
@@ -17,7 +19,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     format_log,
     gen_random_name,
     load_data,
-    obtain_extract_sql,
+    obtain_extract_partition_sql,
     set_final_index_config,
     swap_aliases,
     TaskSpec,
@@ -40,19 +42,24 @@ def init_shared_abort(a: Event) -> None:
     abort = a
 
 
-class Controller:
-    """Controller for multiprocess Elasticsearch ETL"""
-
+class AbstractElasticsearchIndexerController(ABC):
     def __init__(self, config):
         self.config = config
-        self.tasks = []
+        self.tasks = {}
 
+    @abstractmethod
+    def ensure_view_exists(self, sql_view_name: str, force_recreate=True) -> None:
+        pass
+
+    @abstractmethod
     def prepare_for_etl(self) -> None:
         logger.info(format_log("Assessing data to process"))
-        self.record_count, self.min_id, self.max_id = count_of_records_to_process(self.config)
+        self.record_count, self.min_id, self.max_id = self._count_of_records_to_process(self.config)
 
         if self.record_count == 0:
-            self.processes = []
+            # We should always have at least one partition
+            self.config["partitions"] = 1
+            self.config["processes"] = 0
             return
 
         self.config["partitions"] = self.determine_partitions()
@@ -73,17 +80,72 @@ class Controller:
             call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}")
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
+    @abstractmethod
+    def determine_partitions(self) -> int:
+        pass
+
+    def construct_tasks(self) -> Dict[int, TaskSpec]:
+        """Create the Task objects w/ the appropriate configuration"""
+        name_gen = gen_random_name()
+        task_offset = 1 if self.config["extra_null_partition"] else 0
+        task_dict = {
+            j + task_offset: self.configure_task(j + task_offset, next(name_gen))
+            for j in range(self.config["partitions"])
+        }
+        if self.config["extra_null_partition"]:
+            task_dict[0] = self.configure_task(0, next(name_gen), True)
+
+        return task_dict
+
+    @abstractmethod
+    def configure_task(self, partition_number: int, task_name: str, is_null_partition: bool = False) -> TaskSpec:
+        pass
+
+    def _construct_task_spec(
+        self,
+        partition_number,
+        task_name,
+        extract_sql_str,
+    ):
+        return TaskSpec(
+            base_table=self.config["base_table"],
+            base_table_id=self.config["base_table_id"],
+            execute_sql_func=self.config["execute_sql_func"],
+            index=self.config["index_name"],
+            is_incremental=self.config["is_incremental_load"],
+            name=task_name,
+            partition_number=partition_number,
+            primary_key=self.config["primary_key"],
+            field_for_es_id=self.config["field_for_es_id"],
+            sql=extract_sql_str,
+            transform_func=self.config["data_transform_func"],
+            view=self.config["sql_view"],
+        )
+
+    @abstractmethod
+    def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
+        pass
+
+    @abstractmethod
     def dispatch_tasks(self) -> None:
-        _abort = Event()  # Event which when set signals an error occurred in a subprocess
-        parallel_procs = self.config["processes"]
-        with Pool(parallel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
-            pool.map(extract_transform_load, self.tasks)
+        pass
 
-        msg = f"Total documents indexed: {total_doc_success.value}, total document fails: {total_doc_fail.value}"
-        logger.info(format_log(msg))
+    def run_deletes(self) -> None:
+        logger.info(format_log("Processing deletions"))
+        if self.config["data_type"] == "award":
+            self._run_award_deletes()
+        elif self.config["data_type"] == "transaction":
+            self._run_transaction_deletes()
+        else:
+            raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
 
-        if _abort.is_set():
-            raise RuntimeError("One or more partitions failed!")
+    @abstractmethod
+    def _run_award_deletes(self):
+        pass
+
+    @abstractmethod
+    def _run_transaction_deletes(self):
+        pass
 
     def complete_process(self) -> None:
         client = instantiate_elasticsearch_client()
@@ -104,6 +166,25 @@ class Controller:
             )
             update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
+    @abstractmethod
+    def cleanup(self) -> None:
+        """Method that can be overridden for any final cleanup. If nothing to cleanup, implement with ``pass``"""
+        pass
+
+    @abstractmethod
+    def _count_of_records_to_process(self, config) -> Tuple[int, int, int]:
+        pass
+
+
+class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerController):
+    """Controller for multiprocess Elasticsearch ETL that extracts data from a Postgres database"""
+
+    def ensure_view_exists(self, sql_view_name: str, force_recreate=True) -> None:
+        ensure_view_exists(view_name=sql_view_name, force=force_recreate)
+
+    def _count_of_records_to_process(self, config) -> Tuple[int, int, int]:
+        return count_of_records_to_process(self.config)
+
     def determine_partitions(self) -> int:
         """Simple strategy of partitions that cover the id-range in an even distribution"""
         id_range_item_count = self.max_id - self.min_id + 1  # total number or records if all IDs exist in DB
@@ -111,55 +192,48 @@ class Controller:
             return 1
         return ceil(id_range_item_count / self.config["partition_size"])
 
-    def construct_tasks(self) -> List[TaskSpec]:
-        """Create the Task objects w/ the appropriate configuration"""
-        name_gen = gen_random_name()
-        task_list = [self.configure_task(j, name_gen) for j in range(self.config["partitions"])]
-
-        if self.config["extra_null_partition"]:
-            task_list.insert(0, self.configure_task(self.config["partitions"], name_gen, True))
-
-        return task_list
-
-    def configure_task(self, partition_number: int, name_gen: Generator, is_null_partition: bool = False) -> TaskSpec:
-        lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
-        sql_config = {**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}}
-        sql_str = obtain_extract_sql(sql_config, is_null_partition)
-
-        return TaskSpec(
-            base_table=self.config["base_table"],
-            base_table_id=self.config["base_table_id"],
-            execute_sql_func=self.config["execute_sql_func"],
-            index=self.config["index_name"],
-            is_incremental=self.config["is_incremental_load"],
-            name=next(name_gen),
-            partition_number=partition_number,
-            primary_key=self.config["primary_key"],
-            field_for_es_id=self.config["field_for_es_id"],
-            sql=sql_str,
-            transform_func=self.config["data_transform_func"],
-            view=self.config["sql_view"],
-        )
-
     def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
         partition_size = self.config["partition_size"]
         lower_bound = self.min_id + (partition_number * partition_size)
         upper_bound = min(lower_bound + partition_size - 1, self.max_id)
         return lower_bound, upper_bound
 
-    def run_deletes(self) -> None:
-        logger.info(format_log("Processing deletions"))
+    def prepare_for_etl(self) -> None:
+        super().prepare_for_etl()
+
+    def configure_task(self, partition_number: int, task_name: str, is_null_partition: bool = False) -> TaskSpec:
+        lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
+        sql_config = {**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}}
+        sql_str = obtain_extract_partition_sql(sql_config, is_null_partition)
+
+        return self._construct_task_spec(partition_number, task_name, sql_str)
+
+    def dispatch_tasks(self) -> None:
+        _abort = Event()  # Event which when set signals an error occurred in a subprocess
+        parallel_procs = self.config["processes"]
+        with Pool(parallel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
+            pool.map(extract_transform_load, self.tasks.values())
+
+        msg = f"Total documents indexed: {total_doc_success.value}, total document fails: {total_doc_fail.value}"
+        logger.info(format_log(msg))
+
+        if _abort.is_set():
+            raise RuntimeError("One or more partitions failed!")
+
+    def _run_award_deletes(self):
         client = instantiate_elasticsearch_client()
-        if self.config["data_type"] == "award":
-            delete_awards(client, self.config)
-        elif self.config["data_type"] == "transaction":
-            delete_transactions(client, self.config)
-            # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
-            # ensures all records deleted since either job was run are taken into account
-            last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
-            update_last_load_date("es_deletes", last_db_delete_time)
-        else:
-            raise RuntimeError(f"No delete function implemented for type {self.config['data_type']}")
+        delete_awards(client=client, config=self.config)
+
+    def _run_transaction_deletes(self):
+        client = instantiate_elasticsearch_client()
+        delete_transactions(client=client, config=self.config)
+        # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
+        # ensures all records deleted since either job was run are taken into account
+        last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
+        update_last_load_date("es_deletes", last_db_delete_time)
+
+    def cleanup(self) -> None:
+        pass
 
 
 def extract_transform_load(task: TaskSpec) -> None:

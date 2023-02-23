@@ -5,11 +5,7 @@ from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
 
-from usaspending_api.awards.models import (
-    TransactionNormalized,
-    TransactionFABS,
-    TransactionFPDS,
-)
+from usaspending_api.search.models import TransactionSearch
 from usaspending_api.awards.v2.lookups.lookups import all_subaward_types, award_type_mapping
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
@@ -77,207 +73,158 @@ def award_data(transactional_db):
     baker.make("accounts.FederalAccount", account_title="Compensation to Accounts", agency_identifier="102", id=1)
 
     # Create Awards
-    baker.make("awards.Award", id=1, category="contracts", generated_unique_award_id="TEST_AWARD_1")
-    baker.make("awards.Award", id=2, category="contracts", generated_unique_award_id="TEST_AWARD_2")
-    baker.make("awards.Award", id=3, category="assistance", generated_unique_award_id="TEST_AWARD_3")
-    baker.make("awards.Award", id=4, category="contracts", generated_unique_award_id="TEST_AWARD_4")
-    baker.make("awards.Award", id=5, category="assistance", generated_unique_award_id="TEST_AWARD_5")
-    baker.make("awards.Award", id=6, category="assistance", generated_unique_award_id="TEST_AWARD_6")
-    baker.make("awards.Award", id=7, category="contracts", generated_unique_award_id="TEST_AWARD_7")
-    baker.make("awards.Award", id=8, category="assistance", generated_unique_award_id="TEST_AWARD_8")
-    baker.make("awards.Award", id=9, category="assistance", generated_unique_award_id="TEST_AWARD_9")
+    baker.make("search.AwardSearch", award_id=1, category="contracts", generated_unique_award_id="TEST_AWARD_1")
+    baker.make("search.AwardSearch", award_id=2, category="contracts", generated_unique_award_id="TEST_AWARD_2")
+    baker.make("search.AwardSearch", award_id=3, category="assistance", generated_unique_award_id="TEST_AWARD_3")
+    baker.make("search.AwardSearch", award_id=4, category="contracts", generated_unique_award_id="TEST_AWARD_4")
+    baker.make("search.AwardSearch", award_id=5, category="assistance", generated_unique_award_id="TEST_AWARD_5")
+    baker.make("search.AwardSearch", award_id=6, category="assistance", generated_unique_award_id="TEST_AWARD_6")
+    baker.make("search.AwardSearch", award_id=7, category="contracts", generated_unique_award_id="TEST_AWARD_7")
+    baker.make("search.AwardSearch", award_id=8, category="assistance", generated_unique_award_id="TEST_AWARD_8")
+    baker.make("search.AwardSearch", award_id=9, category="assistance", generated_unique_award_id="TEST_AWARD_9")
 
     # Create Transactions
     baker.make(
-        TransactionNormalized,
-        id=1,
+        TransactionSearch,
+        transaction_id=1,
         award_id=1,
         modification_number=1,
-        awarding_agency=aa1,
-        unique_award_key="TEST_AWARD_1",
+        awarding_agency_id=aa1.id,
+        generated_unique_award_id="TEST_AWARD_1",
         action_date="2017-01-01",
         type="A",
         is_fpds=True,
+        piid="tc1piid",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
     )
     baker.make(
-        TransactionNormalized,
-        id=2,
+        TransactionSearch,
+        transaction_id=2,
         award_id=2,
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_2",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="TEST_AWARD_2",
         action_date="2017-04-01",
         type="IDV_B",
         is_fpds=True,
+        piid="tc2piid",
+        recipient_location_country_code="CAN",
+        recipient_location_country_name="CANADA",
+        pop_country_code="CAN",
+        pop_country_name="CANADA",
     )
     baker.make(
-        TransactionNormalized,
-        id=3,
+        TransactionSearch,
+        transaction_id=3,
         award_id=3,
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_3",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="TEST_AWARD_3",
         action_date="2017-06-01",
         type="02",
         is_fpds=False,
+        fain="ta1fain",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
     )
     baker.make(
-        TransactionNormalized,
-        id=4,
+        TransactionSearch,
+        transaction_id=4,
         award_id=4,
         modification_number=1,
-        awarding_agency=aa1,
-        unique_award_key="TEST_AWARD_4",
+        awarding_agency_id=aa1.id,
+        generated_unique_award_id="TEST_AWARD_4",
         action_date="2018-01-15",
         type="A",
         is_fpds=True,
+        piid="tc4piid",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
     )
     baker.make(
-        TransactionNormalized,
-        id=5,
+        TransactionSearch,
+        transaction_id=5,
         award_id=5,
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_5",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="TEST_AWARD_5",
         action_date="2018-03-15",
         type="07",
         is_fpds=False,
+        fain="ta5fain",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
     )
     baker.make(
-        TransactionNormalized,
-        id=6,
+        TransactionSearch,
+        transaction_id=6,
         award_id=6,
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_6",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="TEST_AWARD_6",
         action_date="2018-06-15",
         type="02",
         is_fpds=False,
+        fain="ta6fain",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
     )
     baker.make(
-        TransactionNormalized,
-        id=7,
+        TransactionSearch,
+        transaction_id=7,
         award_id=7,
         modification_number=1,
-        awarding_agency=aa1,
-        unique_award_key="TEST_AWARD_7",
+        awarding_agency_id=aa1.id,
+        generated_unique_award_id="TEST_AWARD_7",
         action_date="2017-01-15",
         type="A",
         is_fpds=True,
+        piid="tc7piid",
+        recipient_location_country_code="CAN",
+        recipient_location_country_name="CANADA",
+        pop_country_code="CAN",
+        pop_country_name="CANADA",
     )
     baker.make(
-        TransactionNormalized,
-        id=8,
+        TransactionSearch,
+        transaction_id=8,
         award_id=8,
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_8",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="TEST_AWARD_8",
         action_date="2017-03-15",
         type="07",
         is_fpds=False,
+        fain="ta8fain",
+        recipient_location_country_code="USA",
+        pop_country_code="USA",
     )
     baker.make(
-        TransactionNormalized,
-        id=9,
+        TransactionSearch,
+        transaction_id=9,
         award_id=9,
         modification_number=1,
-        awarding_agency=aa2,
-        unique_award_key="TEST_AWARD_9",
+        awarding_agency_id=aa2.id,
+        generated_unique_award_id="TEST_AWARD_9",
         action_date="2017-06-15",
         type="02",
         is_fpds=False,
-    )
-
-    # Create TransactionContract
-    baker.make(
-        TransactionFPDS,
-        transaction_id=1,
-        piid="tc1piid",
-        unique_award_key="TEST_AWARD_1",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_c="USA",
-        place_of_perf_country_desc="UNITED STATES",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction_id=2,
-        piid="tc2piid",
-        unique_award_key="TEST_AWARD_2",
-        legal_entity_country_code="CAN",
-        legal_entity_country_name="CANADA",
-        place_of_perform_country_c="CAN",
-        place_of_perf_country_desc="CANADA",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction_id=4,
-        piid="tc4piid",
-        unique_award_key="TEST_AWARD_4",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_c="USA",
-        place_of_perf_country_desc="UNITED STATES",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction_id=7,
-        piid="tc7piid",
-        unique_award_key="TEST_AWARD_7",
-        legal_entity_country_code="CAN",
-        legal_entity_country_name="CANADA",
-        place_of_perform_country_c="CAN",
-        place_of_perf_country_desc="CANADA",
-    )
-
-    # Create TransactionAssistance
-    baker.make(
-        TransactionFABS,
-        transaction_id=3,
-        fain="ta1fain",
-        unique_award_key="TEST_AWARD_3",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
-    )
-    baker.make(
-        TransactionFABS,
-        transaction_id=5,
-        fain="ta5fain",
-        unique_award_key="TEST_AWARD_5",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
-    )
-    baker.make(
-        TransactionFABS,
-        transaction_id=6,
-        fain="ta6fain",
-        unique_award_key="TEST_AWARD_6",
-        legal_entity_country_code="USA",
-        legal_entity_country_name="UNITED STATES",
-        place_of_perform_country_c="USA",
-        place_of_perform_country_n="UNITED STATES",
-    )
-    baker.make(
-        TransactionFABS,
-        transaction_id=8,
-        fain="ta8fain",
-        unique_award_key="TEST_AWARD_8",
-        legal_entity_country_code="USA",
-        place_of_perform_country_c="USA",
-    )
-    baker.make(
-        TransactionFABS,
-        transaction_id=9,
         fain="ta9fain",
-        unique_award_key="TEST_AWARD_9",
-        legal_entity_country_code="CAN",
-        legal_entity_country_name="CANADA",
-        place_of_perform_country_c="CAN",
-        place_of_perform_country_n="CANADA",
+        recipient_location_country_code="CAN",
+        recipient_location_country_name="CANADA",
+        pop_country_code="CAN",
+        pop_country_name="CANADA",
     )
 
     # Create SubawardSearch

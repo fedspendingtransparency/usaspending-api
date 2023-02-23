@@ -3,10 +3,9 @@ import logging
 from django.core.management.base import BaseCommand
 from datetime import datetime
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
-from usaspending_api.awards.models import Award
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency
-
+from usaspending_api.search.models import AwardSearch
 
 logger = logging.getLogger("script")
 
@@ -141,15 +140,15 @@ class Command(BaseCommand):
             transaction.awarding_agency = awarding_agency
             transaction.funding_agency = funding_agency
 
-            award = Award.objects.filter(id=transaction.award.id).first()
+            award = AwardSearch.objects.filter(award_id=transaction.award.id).first()
 
             if award is None:
                 logger.error("Unable to find Award {}".format(str(transaction.award.id)))
                 continue
 
-            award.awarding_agency = awarding_agency
+            award.awarding_agency_id = awarding_agency.id
 
-            award.funding_agency = funding_agency
+            award.funding_agency_id = funding_agency.id
 
             try:
                 transaction.save()

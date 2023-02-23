@@ -22,14 +22,14 @@ GET_COUNT_SQL = SQL(
         where   ppa.{award_id_column} = {award_id}
     ), gather_awards as (
         select  id award_id
-        from    awards
+        from    vw_awards
         where   {awards_table_id_column} = {award_id} and
                 (piid = {piid} or {piid} is null)
         union   all
         select  ca.id award_id
         from    gather_award_ids gaids
-                inner join awards pa on pa.id = gaids.award_id
-                inner join awards ca on
+                inner join vw_awards pa on pa.id = gaids.award_id
+                inner join vw_awards ca on
                     ca.parent_award_piid = pa.piid and
                     ca.fpds_parent_agency_id = pa.fpds_agency_id and
                     (ca.piid = {piid} or {piid} is null)

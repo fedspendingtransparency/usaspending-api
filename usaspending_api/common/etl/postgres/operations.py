@@ -166,7 +166,11 @@ def update_changed_rows(source: ETLObjectBase, destination: ETLWritableObjectBas
 
 
 def upsert_records_with_predicate(
-    source: ETLObjectBase, destination: ETLWritableObjectBase, predicate: list, primary_key: str
+    source: ETLObjectBase,
+    destination: ETLWritableObjectBase,
+    predicate: list,
+    primary_key: str,
+    is_case_insensitive_pk_match: bool = False,
 ) -> int:
     # Destination columns that are in source or are overridden.
     insertable_columns = _get_shared_columns(source.columns + list(destination.insert_overrides), destination.columns)
@@ -178,11 +182,15 @@ def upsert_records_with_predicate(
         ]
     )
 
+    match_expression = Identifier(primary_key)
+    if is_case_insensitive_pk_match:
+        match_expression = SQL("upper({primary_key})").format(primary_key=Identifier(primary_key))
+
     upsert_sql_template = """
         INSERT INTO {destination_object_representation} ({insert_columns})
         SELECT      {select_columns}
         FROM        {source_object} AS {alias}
-        ON CONFLICT ({primary_key}) DO UPDATE SET
+        ON CONFLICT ({match_expression}) DO UPDATE SET
         {excluded}
         RETURNING {primary_key}
     """
@@ -190,6 +198,7 @@ def upsert_records_with_predicate(
 
     sql = SQL(upsert_sql_template).format(
         primary_key=Identifier(primary_key),
+        match_expression=match_expression,
         alias=Identifier(alias),
         destination_object_representation=destination.object_representation,
         insert_columns=primatives.make_column_list(insertable_columns),

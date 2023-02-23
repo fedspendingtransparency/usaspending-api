@@ -54,10 +54,10 @@ def generic_account_data():
     defc_n = baker.make("references.DisasterEmergencyFundCode", code="N", group_name="covid_19")
     defc_o = baker.make("references.DisasterEmergencyFundCode", code="O", group_name="covid_19")
     defc_9 = baker.make("references.DisasterEmergencyFundCode", code="9")
-    award1 = baker.make("awards.Award", id=111, total_loan_value=1111, type="A")
-    award2 = baker.make("awards.Award", id=222, total_loan_value=2222, type="A")
-    award3 = baker.make("awards.Award", id=333, total_loan_value=3333, type="07")
-    award4 = baker.make("awards.Award", id=444, total_loan_value=4444, type="08")
+    award1 = baker.make("search.AwardSearch", award_id=111, total_loan_value=1111, type="A")
+    award2 = baker.make("search.AwardSearch", award_id=222, total_loan_value=2222, type="A")
+    award3 = baker.make("search.AwardSearch", award_id=333, total_loan_value=3333, type="07")
+    award4 = baker.make("search.AwardSearch", award_id=444, total_loan_value=4444, type="08")
     fed_acct1 = baker.make("accounts.FederalAccount", account_title="gifts", federal_account_code="000-0000", id=21)
     tre_acct1 = baker.make(
         "accounts.TreasuryAppropriationAccount",

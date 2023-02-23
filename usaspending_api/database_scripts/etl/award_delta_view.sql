@@ -102,4 +102,5 @@ SELECT
   "total_covid_outlay",
   "total_covid_obligation"
 
-FROM "vw_es_award_search";
+FROM "award_search"
+WHERE "action_date" >= '2007-10-01';

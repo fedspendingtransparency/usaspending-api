@@ -45,7 +45,7 @@ FUNDING_SQL = SQL(
                 faba.treasury_account_id,
                 faba.object_class_id,
                 faba.program_activity_id
-        from    awards as a
+        from    vw_awards as a
                 inner join financial_accounts_by_awards as faba on faba.award_id = a.id
         where   a.{award_id_column} = {award_id}
     )

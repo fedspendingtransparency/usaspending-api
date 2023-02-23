@@ -8,7 +8,7 @@ from usaspending_api.search.models import AgencyAutocompleteMatview
 
 @pytest.fixture
 def agency_data(db):
-    tn = baker.make("awards.TransactionNormalized", action_date="1900-01-01")
+    tn = baker.make("search.TransactionSearch", transaction_id=1, action_date="1900-01-01")
 
     a = baker.make(
         "references.Agency",
@@ -19,10 +19,15 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+        "search.AwardSearch",
+        award_id=1,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
+        latest_transaction_id=tn.transaction_id,
+        certified_date=tn.action_date,
     )
 
-    tn = baker.make("awards.TransactionNormalized", action_date="2020-01-01")
+    tn = baker.make("search.TransactionSearch", transaction_id=2, action_date="2020-01-01")
 
     a = baker.make(
         "references.Agency",
@@ -33,7 +38,12 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+        "search.AwardSearch",
+        award_id=2,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
+        latest_transaction_id=tn.transaction_id,
+        certified_date=tn.action_date,
     )
 
     a = baker.make(
@@ -45,7 +55,12 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+        "search.AwardSearch",
+        award_id=3,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
+        latest_transaction_id=tn.transaction_id,
+        certified_date=tn.action_date,
     )
 
     a = baker.make(
@@ -57,7 +72,12 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+        "search.AwardSearch",
+        award_id=4,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
+        latest_transaction_id=tn.transaction_id,
+        certified_date=tn.action_date,
     )
 
     a = baker.make(
@@ -69,7 +89,12 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+        "search.AwardSearch",
+        award_id=5,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
+        latest_transaction_id=tn.transaction_id,
+        certified_date=tn.action_date,
     )
 
     a = baker.make(
@@ -82,7 +107,12 @@ def agency_data(db):
         _fill_optional=True,
     )
     baker.make(
-        "awards.Award", awarding_agency=a, funding_agency=a, latest_transaction=tn, certified_date=tn.action_date
+        "search.AwardSearch",
+        award_id=6,
+        awarding_agency_id=a.id,
+        funding_agency_id=a.id,
+        latest_transaction_id=tn.transaction_id,
+        certified_date=tn.action_date,
     )
 
 

@@ -10,7 +10,6 @@ used by the db setup scripts *and* the application code.
 from collections import namedtuple, OrderedDict
 
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
-from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.download.helpers.elasticsearch_download_functions import (
     AwardsElasticsearchDownload,
     TransactionsElasticsearchDownload,
@@ -38,7 +37,6 @@ from usaspending_api.awards.v2.filters.search import (
 )
 from usaspending_api.awards.v2.filters.sub_award import subaward_download
 from usaspending_api.download.helpers.download_annotation_functions import (
-    transaction_annotations,
     award_annotations,
     subaward_annotations,
     idv_order_annotations,
@@ -67,12 +65,11 @@ VALUE_MAPPINGS = {
     # Elasticsearch Award Level
     "elasticsearch_awards": {
         "source_type": "award",
-        "table": Award,
+        "table": AwardSearch,
         "table_name": "award",
         "type_name": "PrimeAwardSummaries",
         "download_name": "{agency}{type}_PrimeAwardSummaries_{timestamp}",
-        "contract_data": "latest_transaction__contract_data",
-        "assistance_data": "latest_transaction__assistance_data",
+        "is_fpds_join": "",
         "filter_function": AwardsElasticsearchDownload.query,
         "annotations_function": award_annotations,
     },
@@ -83,22 +80,20 @@ VALUE_MAPPINGS = {
         "table_name": "transaction_search",
         "type_name": "PrimeTransactions",
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
-        "contract_data": "transaction__contract_data",
-        "assistance_data": "transaction__assistance_data",
+        "is_fpds_join": "",
         "filter_function": transaction_search_filter,
         "annotations_function": transaction_search_annotations,
     },
     # Elasticsearch Transaction Level
     "elasticsearch_transactions": {
         "source_type": "award",
-        "table": TransactionNormalized,
-        "table_name": "transaction",
+        "table": TransactionSearch,
+        "table_name": "transaction_search",
         "type_name": "PrimeTransactions",
         "download_name": "{agency}{type}_PrimeTransactions_{timestamp}",
-        "contract_data": "contract_data",
-        "assistance_data": "assistance_data",
+        "is_fpds_join": "",
         "filter_function": TransactionsElasticsearchDownload.query,
-        "annotations_function": transaction_annotations,
+        "annotations_function": transaction_search_annotations,
     },
     # SubAward Level
     "sub_awards": {
@@ -107,8 +102,7 @@ VALUE_MAPPINGS = {
         "table_name": "subaward_search",
         "type_name": "Subawards",
         "download_name": "{agency}{type}_Subawards_{timestamp}",
-        "contract_data": "award__latest_transaction__contract_data",
-        "assistance_data": "award__latest_transaction__assistance_data",
+        "is_fpds_join": "award__latest_transaction__",
         "filter_function": subaward_download,
         "annotations_function": subaward_annotations,
     },
@@ -149,10 +143,10 @@ VALUE_MAPPINGS = {
     },
     "idv_orders": {
         "source_type": "award",
-        "table": Award,
+        "table": AwardSearch,
         "table_name": "idv_orders",
         "download_name": "IDV_{piid}_Orders",
-        "contract_data": "latest_transaction__contract_data",
+        "is_fpds_join": "",
         "filter_function": idv_order_filter,
         "is_for_idv": True,
         "annotations_function": idv_order_annotations,
@@ -167,10 +161,10 @@ VALUE_MAPPINGS = {
     },
     "idv_transaction_history": {
         "source_type": "award",
-        "table": TransactionNormalized,
+        "table": TransactionSearch,
         "table_name": "idv_transaction_history",
         "download_name": "IDV_{piid}_TransactionHistory",
-        "contract_data": "contract_data",
+        "is_fpds_join": "",
         "filter_function": idv_transaction_filter,
         "is_for_idv": True,
         "annotations_function": idv_transaction_annotations,
@@ -196,7 +190,7 @@ VALUE_MAPPINGS = {
         "table": SubawardSearch,
         "table_name": "subaward_search",
         "download_name": "Contract_{piid}_Sub-Awards",
-        "contract_data": "award__latest_transaction__contract_data",
+        "is_fpds_join": "award__",
         "filter_function": awards_subaward_filter,
         "is_for_contract": True,
         "annotations_function": subaward_annotations,
@@ -206,27 +200,27 @@ VALUE_MAPPINGS = {
         "table": SubawardSearch,
         "table_name": "subaward_search",
         "download_name": "Assistance_{assistance_id}_Sub-Awards",
-        "assistance_data": "award__latest_transaction__assistance_data",
+        "is_fpds_join": "award__",
         "filter_function": awards_subaward_filter,
         "is_for_assistance": True,
         "annotations_function": subaward_annotations,
     },
     "contract_transactions": {
         "source_type": "award",
-        "table": TransactionNormalized,
+        "table": TransactionSearch,
         "table_name": "idv_transaction_history",
         "download_name": "Contract_{piid}_TransactionHistory",
-        "contract_data": "contract_data",
+        "is_fpds_join": "",
         "filter_function": awards_transaction_filter,
         "is_for_contract": True,
         "annotations_function": idv_transaction_annotations,
     },
     "assistance_transactions": {
         "source_type": "award",
-        "table": TransactionNormalized,
+        "table": TransactionSearch,
         "table_name": "assistance_transaction_history",
         "download_name": "Assistance_{assistance_id}_TransactionHistory",
-        "assistance_data": "assistance_data",
+        "is_fpds_join": "",
         "filter_function": awards_transaction_filter,
         "is_for_assistance": True,
         "annotations_function": idv_transaction_annotations,

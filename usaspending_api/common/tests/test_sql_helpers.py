@@ -24,9 +24,9 @@ RAW_SQL = """
         tn.id              transaction_normalized_id,
         tf.transaction_id  transaction_fpds_id
     from
-        awards a
-        inner join transaction_normalized tn on tn.award_id = a.id
-        inner join transaction_fpds tf on tf.transaction_id = tn.id
+        vw_awards a
+        inner join vw_transaction_normalized tn on tn.award_id = a.id
+        inner join vw_transaction_fpds tf on tf.transaction_id = tn.id
     order by
         a.id
 """
@@ -56,9 +56,8 @@ class CursorExecuteTestCase(TestCase):
         Set up some awards and transactions that we can query.
         """
         for _id in range(1, AWARD_COUNT + 1):
-            baker.make("awards.TransactionNormalized", id=_id, award_id=_id)
-            baker.make("awards.TransactionFPDS", transaction_id=_id)
-            baker.make("awards.Award", id=_id, latest_transaction_id=_id)
+            baker.make("search.TransactionSearch", is_fpds=True, transaction_id=_id, award_id=_id)
+            baker.make("search.AwardSearch", award_id=_id, latest_transaction_id=_id)
 
     @staticmethod
     def test_build_composable_order_by():
@@ -125,7 +124,7 @@ class CursorExecuteTestCase(TestCase):
             with pytest.raises(ValueError):
                 _build_composable_order_by(["column1", "column2"], sort_nulls=["first", "first", "first"])
 
-        _sql = SQL("select id, latest_transaction_id from awards a ") + SQL(
+        _sql = SQL("select id, latest_transaction_id from vw_awards a ") + SQL(
             _build_composable_order_by(["a.id", "a.latest_transaction_id"], ["desc", "asc"], ["first", "last"])
         )
         assert execute_sql_to_ordered_dictionary(_sql) == [

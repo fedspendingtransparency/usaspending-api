@@ -1,6 +1,7 @@
 from usaspending_api.config.envs.local import LocalConfig
 from usaspending_api.config.envs.production import ProductionConfig
 from usaspending_api.config.envs.qat import QATConfig
+from usaspending_api.config.envs.sandbox import SandboxConfig
 from usaspending_api.config.envs.staging import StagingConfig
 
 __all__ = [
@@ -21,6 +22,13 @@ ENVS = [
         "long_name": "local",
         "description": "Local Development Environment",
         "constructor": LocalConfig,
+    },
+    {
+        "env_type": "development",
+        "code": SandboxConfig.ENV_CODE,
+        "long_name": "sandbox",
+        "description": "Sandbox Development Environment",
+        "constructor": SandboxConfig,
     },
     {
         "env_type": "testing",

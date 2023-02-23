@@ -115,9 +115,9 @@ recipient_lookup_load_sql_string_list = [
                 WHEN tn.is_fpds = TRUE THEN CAST('fpds' AS STRING)
                 ELSE CAST('fabs' AS STRING)
             END AS source
-        FROM raw.transaction_normalized AS tn
-        LEFT OUTER JOIN raw.transaction_fpds AS fpds ON (tn.id = fpds.transaction_id)
-        LEFT OUTER JOIN raw.transaction_fabs AS fabs ON (tn.id = fabs.transaction_id)
+        FROM int.transaction_normalized AS tn
+        LEFT OUTER JOIN int.transaction_fpds AS fpds ON (tn.id = fpds.transaction_id)
+        LEFT OUTER JOIN int.transaction_fabs AS fabs ON (tn.id = fabs.transaction_id)
         WHERE tn.action_date >= '2007-10-01'
     )
     """,

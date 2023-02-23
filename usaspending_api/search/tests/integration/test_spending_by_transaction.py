@@ -13,23 +13,19 @@ ENDPOINT = "/api/v2/search/spending_by_transaction/"
 @pytest.fixture
 def transaction_data():
     baker.make(
-        "awards.TransactionNormalized",
-        id=1,
+        "search.TransactionSearch",
+        transaction_id=1,
         award_id=1,
         action_date="2010-10-01",
         is_fpds=True,
         type="A",
-        description="test",
-    )
-    baker.make(
-        "awards.TransactionFPDS",
-        transaction_id=1,
-        legal_entity_zip5="abcde",
+        transaction_description="test",
+        recipient_location_zip5="abcde",
         piid="IND12PB00323",
-        awardee_or_recipient_uei="testuei",
-        ultimate_parent_uei="test_parent_uei",
+        recipient_uei="testuei",
+        parent_uei="test_parent_uei",
     )
-    baker.make("awards.Award", id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
 
 
 @pytest.mark.django_db

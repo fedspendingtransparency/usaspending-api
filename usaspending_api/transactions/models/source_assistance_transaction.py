@@ -124,6 +124,7 @@ class SourceAssistanceTransaction(models.Model):
 
     class Meta:
         db_table = "source_assistance_transaction"
+        # UNIQUE index also created on UPPER(afa_generated_unique)
 
     @property
     def table_name(self):
