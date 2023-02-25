@@ -1,4 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
+from django.db.models.functions import Upper
 from django_cte import CTEManager
 from django.db import models
 from django.db.models import Q, F
@@ -205,4 +206,8 @@ class AwardSearch(models.Model):
                 name="as_idx_action_date_pre2008",
                 condition=Q(action_date__lt="2007-10-01"),
             ),
+            models.Index(Upper("piid"), name="as_idx_piid_upper"),
+            models.Index(Upper("parent_award_piid"), name="as_idx_parent_award_piid_upper"),
+            models.Index(Upper("fain"), name="as_idx_fain_upper"),
+            models.Index(Upper("uri"), name="as_idx_uri_upper"),
         ]
