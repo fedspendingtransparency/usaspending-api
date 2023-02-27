@@ -298,7 +298,7 @@ def generate_contract_data(fiscal_year, i):
         "",
         "",  # "highly_compensated_officer_4_name", "highly_compensated_officer_4_amount", "highly_compensated_officer_5_name",
         "",
-        "www.usaspending.gov/award/CONT_AWD_1_0_0",
+        f"www.usaspending.gov/award/CONT_AWD_{i}_0_0",
         f"05/07/{fiscal_year}",  # "highly_compensated_officer_5_amount", "usaspending_permalink", "last_modified_date"
     ]
 
@@ -397,7 +397,7 @@ def generate_assistance_data(fiscal_year, i):
         "",
         "",  # "highly_compensated_officer_4_name", "highly_compensated_officer_4_amount", "highly_compensated_officer_5_name",
         "",
-        "http://www.usaspending.gov/award/ASST_NON_2_0_0",
+        f"http://www.usaspending.gov/award/ASST_NON_{i}_0_0",
         f"05/07/{fiscal_year}",  # "highly_compensated_officer_5_amount", "usaspending_permalink", "last_modified_date"
     ]
 
@@ -416,7 +416,7 @@ def monthly_download_data(db, monkeypatch):
         baker.make(
             "search.AwardSearch",
             award_id=i,
-            generated_unique_award_id="CONT_AWD_1_0_0",
+            generated_unique_award_id=f"CONT_AWD_{i}_0_0",
             is_fpds=True,
             type="B",
             type_description="Purchase Order",
@@ -452,7 +452,7 @@ def monthly_download_data(db, monkeypatch):
             face_value_loan_guarantee=100.0,
             funding_amount=100.0,
             non_federal_funding_amount=100.0,
-            generated_unique_award_id=1,
+            generated_unique_award_id=f"CONT_AWD_{i}_0_0",
             business_categories=[],
             detached_award_proc_unique=f"test{i}",
             piid=f"piid{i}",
@@ -466,7 +466,7 @@ def monthly_download_data(db, monkeypatch):
         baker.make(
             "search.AwardSearch",
             award_id=i + 100,
-            generated_unique_award_id="ASST_NON_2_0_0",
+            generated_unique_award_id=f"ASST_NON_{i}_0_0",
             is_fpds=False,
             type="02",
             type_description="Block Grant",
@@ -479,6 +479,7 @@ def monthly_download_data(db, monkeypatch):
         baker.make(
             "search.TransactionSearch",
             award_id=i + 100,
+            generated_unique_award_id=f"ASST_NON_{i}_0_0",
             transaction_id=i + 100,
             is_fpds=False,
             transaction_unique_id=i + 100,
@@ -502,7 +503,6 @@ def monthly_download_data(db, monkeypatch):
             face_value_loan_guarantee=100.0,
             funding_amount=100.0,
             non_federal_funding_amount=100.0,
-            generated_unique_award_id=i + 100,
             fain=f"fain{i}",
             awarding_agency_code="001",
             awarding_sub_tier_agency_c=1,
