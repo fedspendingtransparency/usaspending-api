@@ -412,11 +412,7 @@ class TransactionSearch(models.Model):
         constraints = [models.UniqueConstraint(fields=["is_fpds", "transaction"], name="ts_idx_is_fpds_transaction_id")]
         indexes = [
             models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
-            models.Index(
-                fields=["generated_unique_award_id"],
-                name="ts_idx_award_key_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
+            models.Index(fields=["generated_unique_award_id"], name="ts_idx_award_key"),
             models.Index(
                 fields=["afa_generated_unique"],
                 name="ts_idx_fabs_key_pre2008",
