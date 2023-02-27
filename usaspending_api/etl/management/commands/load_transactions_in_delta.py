@@ -986,7 +986,7 @@ class Command(BaseCommand):
             INSERT INTO int.award_id_lookup
             SELECT
                 COALESCE(
-                    all_new_awards.existing_award_id, 
+                    all_new_awards.existing_award_id,
                     {previous_max_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
                         ORDER BY all_new_awards.unique_award_key
                     )
@@ -1003,7 +1003,7 @@ class Command(BaseCommand):
                         ucase(dap.unique_award_key) AS unique_award_key,
                         award_aidlu.award_id AS existing_award_id
                     FROM
-                         dap_filtered AS dap 
+                         dap_filtered AS dap
                     LEFT JOIN aidlu_fpds AS trans_aidlu ON (
                             ucase(dap.detached_award_proc_unique) = trans_aidlu.transaction_unique_id
                          )
