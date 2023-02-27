@@ -126,6 +126,8 @@ List of table columns
 + `Place of Performance Zip5` (optional, number)
 + `COVID-19 Outlays` (optional, number)
 + `COVID-19 Obligations` (optional, number)
++ `Infrastructure Outlays` (optional, number)
++ `Infrastructure Obligations` (optional, number)
 + `def_codes` (optional, array[string], fixed-type)
 + `Prime Award ID` (optional, string, nullable)
     Sub-Awards only, returns the ID (piid/fain/uri) of the prime award.
