@@ -167,6 +167,7 @@ class AwardSearch(models.Model):
     class Meta:
         db_table = "award_search"
         indexes = [
+            models.Index(fields=["generated_unique_award_id"], name="as_idx_award_key"),
             models.Index(
                 fields=["recipient_hash"], name="as_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")
             ),
