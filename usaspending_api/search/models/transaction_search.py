@@ -492,4 +492,6 @@ class TransactionSearch(models.Model):
             models.Index(
                 fields=["cfda_number"], name="ts_idx_cfda_aside_pre2008", condition=Q(action_date__lt="2007-10-01")
             ),
+            models.Index(fields=["awarding_agency_id"], name="ts_idx_awarding_agency_id"),
+            models.Index(fields=["funding_agency_id"], name="ts_idx_funding_agency_id"),
         ]
