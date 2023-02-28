@@ -13,7 +13,7 @@ class AwardSearch(models.Model):
     category = models.TextField(null=True, db_index=True)
     type = models.TextField(null=True, db_index=True)
     type_description = models.TextField(null=True)
-    generated_unique_award_id = models.TextField(null=True)
+    generated_unique_award_id = models.TextField(null=False, unique=True)
     display_award_id = models.TextField(null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     piid = models.TextField(null=True, db_index=True)
