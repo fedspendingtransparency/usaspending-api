@@ -298,14 +298,14 @@ class Command(BaseCommand):
                     # 2. rename active view in target schema to have old suffix
                     sql_view_template.format(
                         mv_s=mv_s,
-                        old_view_schema=dep_view['dep_view_schema'],
-                        old_view_name=dep_view['dep_view_name'],
+                        old_view_schema=dep_view["dep_view_schema"],
+                        old_view_name=dep_view["dep_view_name"],
                         new_view_name=f"{dep_view['dep_view_name']}{self.old_suffix}",
                     ),
                     # 3. rename temp view (now moved into target schema) to active name
                     sql_view_template.format(
                         mv_s=mv_s,
-                        old_view_schema=dep_view['dep_view_schema'],
+                        old_view_schema=dep_view["dep_view_schema"],
                         old_view_name=f"{dep_view['dep_view_name']}{self.source_suffix}",
                         new_view_name=dep_view["dep_view_name"],
                     ),
