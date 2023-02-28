@@ -3,6 +3,7 @@ import logging
 import re
 
 from datetime import datetime
+from pprint import pformat
 from typing import List, OrderedDict, Optional
 from django.core.management import BaseCommand
 from django.db import connection, ProgrammingError, transaction
@@ -179,8 +180,9 @@ class Command(BaseCommand):
             self.analyze_temp_table(cursor)
             self.grant_privs_on_temp_table(cursor)
 
-            # Do the swap via renames
-            self.swap_table_view_sql(cursor)
+            # Do the swaps via renames
+            self.swap_dependent_views(cursor)
+            self.swap_table(cursor)
 
             if not options["keep_old_data"]:
                 self.drop_old_views(cursor)
@@ -281,39 +283,50 @@ class Command(BaseCommand):
         if rename_sql:
             cursor.execute("\n".join(rename_sql))
 
+    def swap_dependent_views(self, cursor):
+        sql_view_template = "ALTER {mv_s}VIEW {old_view_schema}.{old_view_name} RENAME TO {new_view_name};"
+        for dep_view in self.dep_views:
+            # Coordinate the schema move and view renames in 1 atomic operation
+            # But don't have the transaction span more than 1 view at a time to avoid any potential deadlocks with
+            # ongoing queries
+            with transaction.atomic():
+                mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
+                view_rename_sql = [
+                    # 1. move temp suffixed view to the target schema
+                    f"ALTER {mv_s}VIEW {self.temp_schema_name}.{dep_view['dep_view_name']}{self.source_suffix} "
+                    f"SET SCHEMA {dep_view['dep_view_schema']};",
+                    # 2. rename active view in target schema to have old suffix
+                    sql_view_template.format(
+                        mv_s=mv_s,
+                        old_view_schema=dep_view["dep_view_schema"],
+                        old_view_name=dep_view["dep_view_name"],
+                        new_view_name=f"{dep_view['dep_view_name']}{self.old_suffix}",
+                    ),
+                    # 3. rename temp view (now moved into target schema) to active name
+                    sql_view_template.format(
+                        mv_s=mv_s,
+                        old_view_schema=dep_view["dep_view_schema"],
+                        old_view_name=f"{dep_view['dep_view_name']}{self.source_suffix}",
+                        new_view_name=dep_view["dep_view_name"],
+                    ),
+                ]
+                logger.info(f"Running view swap SQL in an atomic transaction:\n{pformat(view_rename_sql)}")
+                cursor.execute("\n".join(view_rename_sql))
+
     @transaction.atomic
-    def swap_table_view_sql(self, cursor):
-        logger.info("Renaming the new and old tables and views")
+    def swap_table(self, cursor):
+        logger.info("Renaming the new and old table")
         sql_table_template = "ALTER TABLE {old_table_name} RENAME TO {new_table_name};"
 
-        rename_sql = [
+        table_rename_sql = [
             f"ALTER TABLE {self.temp_table_name} SET SCHEMA {self.curr_schema_name};",
             sql_table_template.format(
                 old_table_name=self.curr_table_name, new_table_name=f"{self.curr_table_name}{self.old_suffix}"
             ),
             sql_table_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
         ]
-
-        sql_view_template = "ALTER {mv_s}VIEW {old_view_name} RENAME TO {new_view_name};"
-        for dep_view in self.dep_views:
-            mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
-            rename_sql.extend(
-                [
-                    sql_view_template.format(
-                        mv_s=mv_s,
-                        old_view_name=dep_view["dep_view_fullname"],
-                        new_view_name=f"{dep_view['dep_view_name']}{self.old_suffix}",
-                    ),
-                    f"ALTER {mv_s}VIEW {self.temp_schema_name}.{dep_view['dep_view_name']}{self.source_suffix} "
-                    f"SET SCHEMA {dep_view['dep_view_schema']};",
-                    sql_view_template.format(
-                        mv_s=mv_s,
-                        old_view_name=f"{dep_view['dep_view_fullname']}{self.source_suffix}",
-                        new_view_name=dep_view["dep_view_name"],
-                    ),
-                ]
-            )
-        cursor.execute("\n".join(rename_sql))
+        logger.info(f"Running table swap SQL in an atomic transaction:\n{pformat(table_rename_sql)}")
+        cursor.execute("\n".join(table_rename_sql))
 
     def drop_old_table_sql(self, cursor):
         self.drop_old_table_metadata(cursor)
