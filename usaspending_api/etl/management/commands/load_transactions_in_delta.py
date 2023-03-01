@@ -1025,7 +1025,7 @@ class Command(BaseCommand):
                     LEFT JOIN aidlu_fabs AS trans_aidlu ON (
                             ucase(pfabs.afa_generated_unique) = trans_aidlu.transaction_unique_id
                          )
-                    LEFT JOIN aidlu_fpds_map AS award_aidlu ON (
+                    LEFT JOIN aidlu_fabs_map AS award_aidlu ON (
                             ucase(pfabs.unique_award_key) = award_aidlu.generated_unique_award_id
                          )
                     WHERE trans_aidlu.transaction_unique_id IS NULL
