@@ -22,6 +22,7 @@ from usaspending_api.broker.helpers.last_load_date import (
     get_last_load_date,
     update_last_load_date,
 )
+from usaspending_api.common.data_classes import TransactionColumn
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
@@ -219,6 +220,11 @@ class Command(BaseCommand):
             )
         """
 
+        # TODO: The values returned here are put into a list in an 'IN' clause in award_id_lookup_post_delete.
+        #       However, there is a limit on the number of values one can manually put into an 'IN' cluase (i.e., not
+        #       returned by a SELECT subquery inside the 'IN').  Thus, this code should return a dataframe directly,
+        #       create a temporary view from the dataframe in award_id_lookup_post_delete, and use that temporary
+        #       view to either do a subquery in the 'IN' clause or to JOIN against.
         possibly_modified_award_ids = [str(row["award_id"]) for row in self.spark.sql(sql).collect()]
         return possibly_modified_award_ids
 
@@ -305,6 +311,7 @@ class Command(BaseCommand):
         #   level could be run more than once before awards ETL level is run.
         # Avoid SQL error if possibly_modified_award_ids is empty
         if possibly_modified_award_ids:
+            # TODO: see award_id_lookup_pre_delete
             self.spark.sql(
                 f"""
                     INSERT INTO int.award_ids_delete_modified
@@ -452,8 +459,8 @@ class Command(BaseCommand):
                     SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount,
                     SUM(tn.indirect_federal_sharing)    AS total_indirect_federal_sharing,
                     -- Transaction FPDS Fields
-                    SUM(CAST(fpds.base_and_all_options_value AS NUMERIC)) AS base_and_all_options_value,
-                    SUM(CAST(fpds.base_exercised_options_val AS NUMERIC)) AS base_exercised_options_val
+                    SUM(CAST(fpds.base_and_all_options_value AS NUMERIC(23, 2))) AS base_and_all_options_value,
+                    SUM(CAST(fpds.base_exercised_options_val AS NUMERIC(23, 2))) AS base_exercised_options_val
                 FROM int.transaction_normalized AS tn
                 LEFT JOIN int.transaction_fpds AS fpds ON tn.id = fpds.transaction_id
                 WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
@@ -513,9 +520,18 @@ class Command(BaseCommand):
         self.spark.sql("DELETE FROM int.award_ids_delete_modified")
 
     def source_subquery_sql(self, transaction_type=None):
-        def handle_column(col, bronze_table_name):
-            # Require a separator for mmddYYYY, but not for YYYYmmdd, or there is no way to tell them apart
-            #   from just regexp, and only YYYYmmdd has been seen without a separator.
+        def build_date_format_sql(
+            col: TransactionColumn, is_casted_to_date: bool = True, is_result_aliased: bool = True
+        ) -> str:
+            """Builder function to wrap a column in date-parsing logic.
+
+            It will either parse it in mmddYYYY format with - or / as a required separator, or in YYYYmmdd format
+            with or without either of - or / as a separator.
+            Args:
+                is_casted_to_date (bool): if true, the parsed result will be cast to DATE to provide a DATE datatype,
+                    otherwise it remains a STRING in YYYY-mm-dd format
+                is_result_aliased (bool) if true, aliases the parsing result with the given ``col``'s ``dest_name``
+            """
             # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
             #   and the timestamp allows for an optional UTC offset.  In any case, the timestamp is ignored, though.
             regexp_mmddYYYY = (
@@ -525,55 +541,69 @@ class Command(BaseCommand):
                 r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
             )
 
+            mmddYYYY_fmt = f"""
+                (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
+                || '-' ||
+                regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
+                || '-' ||
+                regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
+            """
+            YYYYmmdd_fmt = f"""
+                (regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
+                || '-' ||
+                regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
+                || '-' ||
+                regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
+            """
+
+            if is_casted_to_date:
+                mmddYYYY_fmt = f"""CAST({mmddYYYY_fmt}
+                            AS DATE)
+                """
+                YYYYmmdd_fmt = f"""CAST({YYYYmmdd_fmt}
+                            AS DATE)
+                """
+
+            sql_snippet = f"""
+                CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
+                          THEN {mmddYYYY_fmt}
+                     ELSE {YYYYmmdd_fmt}
+                END{' AS ' + col.dest_name if is_result_aliased else ''}
+            """
+
+            return sql_snippet
+
+        def handle_column(col, bronze_table_name, is_result_aliased=True):
             if col.handling == "cast":
-                retval = f"CAST({bronze_table_name}.{col.source} AS {col.delta_type}) AS {col.dest_name}"
+                retval = (
+                    f"CAST({bronze_table_name}.{col.source} AS {col.delta_type})"
+                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
+                )
             elif col.handling == "literal":
                 # Use col.source directly as the value
-                retval = f"{col.source} AS {col.dest_name}"
+                retval = f"{col.source}{' AS ' + col.dest_name if is_result_aliased else ''}"
             elif col.handling == "parse_string_datetime_to_date":
                 # These are string fields that actually hold DATES/TIMESTAMPS and need to be cast as dates.
                 # However, they may not be properly parsed when calling CAST(... AS DATE).
-                retval = f"""
-                    CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
-                              THEN CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
-                                         || '-' ||
-                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
-                                         || '-' ||
-                                         regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
-                                        AS DATE)
-                         ELSE CAST((regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
-                                   AS DATE)
-                    END AS {col.dest_name}
-                """
+                retval = build_date_format_sql(col, is_casted_to_date=True, is_result_aliased=is_result_aliased)
             elif col.handling == "string_datetime_remove_timestamp":
                 # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
                 # even though they remain as strings
-                retval = f"""
-                    CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
-                              THEN (regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 5)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 1)
-                                    || '-' ||
-                                    regexp_extract({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}', 3))
-                         ELSE (regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 1)
-                               || '-' ||
-                               regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 3)
-                               || '-' ||
-                               regexp_extract({bronze_table_name}.{col.source}, '{regexp_YYYYmmdd}', 5))
-                    END AS {col.dest_name}
-                """
+                retval = build_date_format_sql(col, is_casted_to_date=False, is_result_aliased=is_result_aliased)
             elif col.delta_type.upper() == "STRING":
-                # Capitalize all string values
-                retval = f"ucase({bronze_table_name}.{col.source}) AS {col.dest_name}"
+                # Capitalize and remove leading & trailing whitespace from all string values
+                retval = (
+                    f"ucase(trim({bronze_table_name}.{col.source}))"
+                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
+                )
             elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
                 # Unless specified, convert any nulls to false for boolean columns
-                retval = f"COALESCE({bronze_table_name}.{col.source}, FALSE) AS {col.dest_name}"
+                retval = (
+                    f"COALESCE({bronze_table_name}.{col.source}, FALSE)"
+                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
+                )
             else:
-                retval = f"{bronze_table_name}.{col.source} AS {col.dest_name}"
+                retval = f"{bronze_table_name}.{col.source}{' AS ' + col.dest_name if is_result_aliased else ''}"
 
             return retval
 
@@ -595,12 +625,19 @@ class Command(BaseCommand):
             return select_cols
 
         def select_columns_transaction_normalized(bronze_table_name):
+            action_date_col = next(
+                filter(
+                    lambda c: c.dest_name == "action_date" and c.source == "action_date",
+                    FABS_TO_NORMALIZED_COLUMN_INFO if transaction_type == "fabs" else DAP_TO_NORMALIZED_COLUMN_INFO,
+                )
+            )
+            parse_action_date_sql_snippet = handle_column(action_date_col, bronze_table_name, is_result_aliased=False)
             select_cols = [
                 "award_id_lookup.award_id",
                 "awarding_agency.id AS awarding_agency_id",
-                f"""CASE WHEN month(to_date({bronze_table_name}.action_date)) > 9
-                             THEN year(to_date({bronze_table_name}.action_date)) + 1
-                         ELSE year(to_date({bronze_table_name}.action_date))
+                f"""CASE WHEN month({parse_action_date_sql_snippet}) > 9
+                             THEN year({parse_action_date_sql_snippet}) + 1
+                         ELSE year({parse_action_date_sql_snippet})
                     END AS fiscal_year""",
                 "funding_agency.id AS funding_agency_id",
             ]
@@ -611,10 +648,13 @@ class Command(BaseCommand):
                         # business_categories
                         f"get_business_categories_fabs({bronze_table_name}.business_types) AS business_categories",
                         # funding_amount
+                        # In theory, this should be equal to
+                        #   CAST(COALESCE({bronze_table_name}.federal_action_obligation, 0)
+                        #        + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
+                        #        AS NUMERIC(23, 2))
+                        #   However, for some historical records, this isn't true.
                         f"""
-                        CAST(COALESCE({bronze_table_name}.federal_action_obligation, 0)
-                                + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
-                             AS NUMERIC(23, 2)) AS funding_amount
+                        CAST({bronze_table_name}.total_funding_amount AS NUMERIC(23, 2)) AS funding_amount
                         """,
                     ]
                 )
@@ -931,14 +971,25 @@ class Command(BaseCommand):
                 SELECT * FROM int.award_id_lookup
                 WHERE is_fpds = TRUE
             ),
+            aidlu_fpds_map AS (
+                SELECT award_id, generated_unique_award_id FROM aidlu_fpds
+                GROUP BY award_id, generated_unique_award_id
+            ),
             aidlu_fabs AS (
                 SELECT * FROM int.award_id_lookup
                 WHERE is_fpds = FALSE
+            ),
+            aidlu_fabs_map AS (
+                SELECT award_id, generated_unique_award_id FROM aidlu_fabs
+                GROUP BY award_id, generated_unique_award_id
             )
             INSERT INTO int.award_id_lookup
             SELECT
-                {previous_max_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
-                    ORDER BY all_new_awards.unique_award_key
+                COALESCE(
+                    all_new_awards.existing_award_id,
+                    {previous_max_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
+                        ORDER BY all_new_awards.unique_award_key
+                    )
                 ) AS award_id,
                 all_new_awards.is_fpds,
                 all_new_awards.transaction_unique_id,
@@ -949,12 +1000,17 @@ class Command(BaseCommand):
                         TRUE AS is_fpds,
                         -- The transaction loader code will convert these to upper case, so use those versions here.
                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
-                        ucase(dap.unique_award_key) AS unique_award_key
+                        ucase(dap.unique_award_key) AS unique_award_key,
+                        award_aidlu.award_id AS existing_award_id
                     FROM
-                         dap_filtered AS dap LEFT JOIN aidlu_fpds AS aidlu ON (
-                            ucase(dap.detached_award_proc_unique) = aidlu.transaction_unique_id
+                         dap_filtered AS dap
+                    LEFT JOIN aidlu_fpds AS trans_aidlu ON (
+                            ucase(dap.detached_award_proc_unique) = trans_aidlu.transaction_unique_id
                          )
-                    WHERE aidlu.transaction_unique_id IS NULL
+                    LEFT JOIN aidlu_fpds_map AS award_aidlu ON (
+                            ucase(dap.unique_award_key) = award_aidlu.generated_unique_award_id
+                         )
+                    WHERE trans_aidlu.transaction_unique_id IS NULL
                 )
                 UNION ALL
                 (
@@ -962,12 +1018,17 @@ class Command(BaseCommand):
                         FALSE AS is_fpds,
                         -- The transaction loader code will convert these to upper case, so use those versions here.
                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
-                        ucase(pfabs.unique_award_key) AS unique_award_key
+                        ucase(pfabs.unique_award_key) AS unique_award_key,
+                        award_aidlu.award_id AS existing_award_id
                     FROM
-                        pfabs_filtered AS pfabs LEFT JOIN aidlu_fabs AS aidlu ON (
-                            ucase(pfabs.afa_generated_unique) = aidlu.transaction_unique_id
+                        pfabs_filtered AS pfabs
+                    LEFT JOIN aidlu_fabs AS trans_aidlu ON (
+                            ucase(pfabs.afa_generated_unique) = trans_aidlu.transaction_unique_id
                          )
-                    WHERE aidlu.transaction_unique_id IS NULL
+                    LEFT JOIN aidlu_fabs_map AS award_aidlu ON (
+                            ucase(pfabs.unique_award_key) = award_aidlu.generated_unique_award_id
+                         )
+                    WHERE trans_aidlu.transaction_unique_id IS NULL
                 )
             ) AS all_new_awards
         """
@@ -1071,6 +1132,10 @@ class Command(BaseCommand):
         # Due to the size of the dataset, need to keep information about the orphaned transactions in a table.
         #   If we tried to insert the data directly into a SQL statement, it could break the Spark driver.
         with prepare_orphaned_transaction_temp_table(), prepare_orphaned_award_temp_table():
+            # To avoid re-testing for raw.transaction_normalized, use a variable to keep track.  Initially
+            # assume that the table does exist.
+            raw_transaction_normalized_exists = True
+
             # Test to see if raw.transaction_normalized exists
             try:
                 self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
@@ -1080,7 +1145,7 @@ class Command(BaseCommand):
                     self.logger.warn(
                         "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
                     )
-
+                    raw_transaction_normalized_exists = False
                     # Without a raw.transaction_normalized table, can't get a maximum id from it, either.
                     max_id = None
                 else:
@@ -1197,7 +1262,7 @@ class Command(BaseCommand):
                     )
 
                 # Insert existing non-orphaned transactions into the lookup table
-                self.logger.info("Populating transaction_id_lookup table from raw.transaction_normalized")
+                self.logger.info("Populating transaction_id_lookup table")
 
                 # Note that the transaction loader code will convert string fields to upper case, so we have to match
                 # on the upper-cased versions of the strings.
@@ -1271,17 +1336,7 @@ class Command(BaseCommand):
             destination_table = "award_id_lookup"
             set_last_load_date = True
 
-            # Test to see if raw.transaction_normalized exists
-            try:
-                self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
-            except AnalysisException as e:
-                if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
-                    # In this case, we just don't check for NULLs in unique_award_key.
-                    pass
-                else:
-                    # Don't try to handle anything else
-                    raise e
-            else:
+            if raw_transaction_normalized_exists:
                 # Before creating table or running INSERT, make sure unique_award_key has no NULLs
                 # (nothing needed to check before transaction_id_lookup table creation)
                 self.logger.info("Checking for NULLs in unique_award_key")
@@ -1313,22 +1368,15 @@ class Command(BaseCommand):
                 """
             )
 
-            # Test to see if raw.awards exists
-            try:
-                self.spark.sql("SELECT 1 FROM raw.awards")
-            except AnalysisException as e:
-                if re.match(r"Table or view not found: raw\.awards", e.desc):
-                    # In this case, we just don't populate award_id_lookup
-                    self.logger.warn("Skipping population of award_id_lookup table; no raw.awards table.")
+            if not raw_transaction_normalized_exists:
+                # In this case, we just don't populate award_id_lookup
+                self.logger.warn("Skipping population of award_id_lookup table; no raw.transaction_normalized table.")
 
-                    # Without a raw.awards table, can't get a maximum id from it, either.
-                    max_id = None
-                else:
-                    # Don't try to handle anything else
-                    raise e
+                # Without a raw.transaction_normalized table, can't get a maximum award_id from it, either.
+                max_id = None
             else:
                 # Insert existing non-orphaned transactions and their corresponding award_ids into the lookup table
-                self.logger.info("Populating award_id_lookup table from raw.awards")
+                self.logger.info("Populating award_id_lookup table")
 
                 # Once again we have to match on the upper-cased versions of the strings from published_fabs
                 # and detached_award_procurement.
@@ -1336,47 +1384,49 @@ class Command(BaseCommand):
                     f"""
                         INSERT OVERWRITE {destination_database}.{destination_table}
                             SELECT
-                                existing_awards.id AS award_id,
+                                existing_awards.award_id,
                                 existing_awards.is_fpds,
                                 existing_awards.transaction_unique_id,
                                 existing_awards.generated_unique_award_id
                             FROM (
                                 (
                                     SELECT
-                                        aw.id,
+                                        tn.award_id,
                                         TRUE AS is_fpds,
-                                        -- The transaction loader code will convert this to upper case, so use that
-                                        -- version here.
+                                        -- The transaction loader code will convert these to upper case, so use those
+                                        -- versions here.
                                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
-                                        aw.generated_unique_award_id
-                                    FROM
-                                        raw.awards AS aw INNER JOIN raw.detached_award_procurement AS dap ON (
-                                            aw.generated_unique_award_id = ucase(dap.unique_award_key)
-                                        )
-                                    -- Again, want to exclude orphaned transactions, as they will not be copied into the
-                                    -- int schema.
-                                    WHERE ucase(dap.detached_award_proc_unique) NOT IN (
-                                        SELECT transaction_unique_id FROM temp.orphaned_transaction_info WHERE is_fpds
+                                        ucase(dap.unique_award_key) AS generated_unique_award_id
+                                    FROM raw.transaction_normalized AS tn
+                                    INNER JOIN raw.detached_award_procurement AS dap ON (
+                                        tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+                                    )
+                                    /* Again, want to exclude orphaned transactions, as they will not be copied into the
+                                       int schema.  We have to be careful and only exclude transactions based on their
+                                       transaction_id, though!  There shouldn't be, but there can be multiple
+                                       transactions with the same transaction_unique_id in raw.transaction_normalized!
+                                       We only want to exclude those records in transaction_normalized that don't have
+                                       matching records in raw.transaction_fabs|fpds.                                */
+                                    WHERE tn.id NOT IN (
+                                        SELECT transaction_id FROM temp.orphaned_transaction_info WHERE is_fpds
                                     )
                                 )
                                 UNION ALL
                                 (
                                     SELECT
-                                        aw.id,
+                                        tn.award_id,
                                         FALSE AS is_fpds,
-                                        -- The transaction loader code will convert this to upper case, so use that
-                                        -- version here.
+                                        -- The transaction loader code will convert these to upper case, so use those
+                                        -- versions here.
                                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
-                                        aw.generated_unique_award_id
-                                    FROM
-                                        raw.awards AS aw INNER JOIN raw.published_fabs AS pfabs ON (
-                                            aw.generated_unique_award_id = ucase(pfabs.unique_award_key)
-                                        )
-                                    -- Again, want to exclude orphaned transactions, as they will not be copied into the
-                                    -- int schema.
-                                    WHERE ucase(pfabs.afa_generated_unique) NOT IN (
-                                        SELECT
-                                            transaction_unique_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds
+                                        ucase(pfabs.unique_award_key) AS generated_unique_award_id
+                                    FROM raw.transaction_normalized AS tn
+                                    INNER JOIN raw.published_fabs AS pfabs ON (
+                                        tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+                                    )
+                                    -- See note above about excluding orphaned transactions.
+                                    WHERE tn.id NOT IN (
+                                        SELECT transaction_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds
                                     )
                                 )
                             ) AS existing_awards
@@ -1417,7 +1467,9 @@ class Command(BaseCommand):
                 # As for transaction_id_seq, make sure to get the maximum award id from the raw table in case there are
                 # records in raw.awards that don't correspond to any records in either of the source tables.
                 # This way, new award_ids won't repeat the ids of any of those "orphaned" award records.
-                max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.awards").collect()[0]["max_id"]
+                max_id = self.spark.sql(f"SELECT MAX(award_id) AS max_id FROM raw.transaction_normalized").collect()[0][
+                    "max_id"
+                ]
 
             if max_id is None:
                 # Can't set a Postgres sequence to 0, so set to 1 in this case.  If this happens, the award IDs

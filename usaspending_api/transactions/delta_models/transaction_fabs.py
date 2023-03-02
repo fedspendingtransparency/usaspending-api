@@ -129,6 +129,7 @@ transaction_fabs_sql_string = rf"""
 
 # Mapping from raw.published_fabs to int.transaction_normalized columns, where a simple mapping exists
 FABS_TO_NORMALIZED_COLUMN_INFO = [
+    # action_date seen as: mm/dd/YYYY, YYYYmmdd, YYYY-mm-dd, so need special parsing
     TransactionColumn("action_date", "action_date", "DATE", "parse_string_datetime_to_date"),
     TransactionColumn("action_type", "action_type", "STRING"),
     TransactionColumn("action_type_description", "action_type_description", "STRING"),
@@ -142,8 +143,13 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("modification_number", "award_modification_amendme", "STRING"),
     TransactionColumn("non_federal_funding_amount", "non_federal_funding_amount", "NUMERIC(23,2)"),
     TransactionColumn("original_loan_subsidy_cost", "original_loan_subsidy_cost", "NUMERIC(23,2)"),
-    TransactionColumn("period_of_performance_current_end_date", "period_of_performance_curr", "DATE", "cast"),
-    TransactionColumn("period_of_performance_start_date", "period_of_performance_star", "DATE", "cast"),
+    # period_of_performance_* fields seen as: mm/dd/YYYY as well as YYYYmmdd, so need special parsing
+    TransactionColumn(
+        "period_of_performance_current_end_date", "period_of_performance_curr", "DATE", "parse_string_datetime_to_date"
+    ),
+    TransactionColumn(
+        "period_of_performance_start_date", "period_of_performance_star", "DATE", "parse_string_datetime_to_date"
+    ),
     TransactionColumn("transaction_unique_id", "afa_generated_unique", "STRING"),
     TransactionColumn("type", "assistance_type", "STRING"),
     TransactionColumn("type_description", "assistance_type_desc", "STRING"),

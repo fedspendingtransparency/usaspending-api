@@ -15,6 +15,9 @@ class TransactionSearch(models.Model):
     # Keys
     # "transaction" and "award" are actually models.BigIntegerField(), but left as OneToOneField and ForeignKey
     # to allow for querying in the Django ORM
+    # Also, this table has been physically partitioned by partition key: is_fpds. We can no longer have a UNIQUE key
+    # or UNIQUE INDEX on transaction_id (the primary_key) anymore, it must include the partition key. So setting
+    # primary_key=False and adding a UniqueConstraint (is_fpds, transaction)
     transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
     award = models.ForeignKey("search.AwardSearch", on_delete=models.DO_NOTHING, null=True)
     transaction_unique_id = models.TextField(blank=False, null=False, default="NONE")
@@ -406,13 +409,10 @@ class TransactionSearch(models.Model):
 
     class Meta:
         db_table = "transaction_search"
+        constraints = [models.UniqueConstraint(fields=["is_fpds", "transaction"], name="ts_idx_is_fpds_transaction_id")]
         indexes = [
             models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
-            models.Index(
-                fields=["generated_unique_award_id"],
-                name="ts_idx_award_key_pre2008",
-                condition=Q(action_date__lt="2007-10-01"),
-            ),
+            models.Index(fields=["generated_unique_award_id"], name="ts_idx_award_key"),
             models.Index(
                 fields=["afa_generated_unique"],
                 name="ts_idx_fabs_key_pre2008",
@@ -431,7 +431,7 @@ class TransactionSearch(models.Model):
             ),
             models.Index(fields=["fain"], name="ts_idx_fain_pre2008", condition=Q(action_date__lt="2007-10-01")),
             models.Index(fields=["uri"], name="ts_idx_uri_pre2008", condition=Q(action_date__lt="2007-10-01")),
-            models.Index(fields=["is_fpds"], name="ts_idx_is_fpds_pre2008", condition=Q(action_date__lt="2007-10-01")),
+            models.Index(fields=["is_fpds"], name="ts_idx_is_fpds"),
             models.Index(
                 fields=["-action_date"], name="ts_idx_action_date", condition=Q(action_date__gte="2007-10-01")
             ),
@@ -492,4 +492,6 @@ class TransactionSearch(models.Model):
             models.Index(
                 fields=["cfda_number"], name="ts_idx_cfda_aside_pre2008", condition=Q(action_date__lt="2007-10-01")
             ),
+            models.Index(fields=["awarding_agency_id"], name="ts_idx_awarding_agency_id"),
+            models.Index(fields=["funding_agency_id"], name="ts_idx_funding_agency_id"),
         ]
