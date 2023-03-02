@@ -20,8 +20,8 @@ class Migration(migrations.Migration):
                 ALTER INDEX rpt.transaction_search_fpds_awarding_agency_id_idx RENAME TO ts_idx_awarding_agency_id_fpds;
                 CREATE INDEX ts_idx_funding_agency_id ON rpt.transaction_search(funding_agency_id int4_ops);
                 -- (Same comment as above)
-                ALTER INDEX rpt.transaction_search_fabs_funding_agency_id_idx RENAME TO ts_idx_awarding_funding_id_fabs;
-                ALTER INDEX rpt.transaction_search_fpds_funding_agency_id_idx RENAME TO ts_idx_awarding_funding_id_fpds;
+                ALTER INDEX rpt.transaction_search_fabs_funding_agency_id_idx RENAME TO ts_idx_funding_agency_id_fabs;
+                ALTER INDEX rpt.transaction_search_fpds_funding_agency_id_idx RENAME TO ts_idx_funding_agency_id_fpds;
             """,
             reverse_sql="""
                 DROP INDEX ts_idx_funding_agency_id;
