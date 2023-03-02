@@ -580,10 +580,10 @@ def object_class_program_activity_annotations(filters: dict):
             "ussgl480100_undelivered_orders_obligations_unpaid_fyb"
         ),
         "USSGL480200_undelivered_orders_obligations_prepaid_advanced": Sum(
-            "gross_outlays_delivered_orders_paid_total_cpe"
+            "ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe"
         ),
         "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB": Sum(
-            "gross_outlays_delivered_orders_paid_total_fyb"
+            "ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb"
         ),
         "USSGL483100_undelivered_orders_obligations_transferred_unpaid": Sum(
             "ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe"
