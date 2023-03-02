@@ -272,6 +272,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         sort_field = self.get_elastic_sort_by_fields()
 
         iija_sort_fields = {"Infrastructure Obligations": "obligation", "Infrastructure Outlays": "outlay"}
+        covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
         if "iija_spending_by_defc" in sort_field:
             sort_field.remove("iija_spending_by_defc")
             sorts = [
@@ -290,11 +291,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     {"filter": {"terms": {"iija_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
-        else:
-            sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
-
-        covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
-        if "covid_spending_by_defc" in sort_field:
+        elif "covid_spending_by_defc" in sort_field:
             sort_field.remove("covid_spending_by_defc")
             sorts = [
                 {
