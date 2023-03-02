@@ -1932,11 +1932,11 @@ query_paths = {
                 ),
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
-                    "gross_outlays_delivered_orders_paid_total_cpe",
+                    "ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe",
                 ),
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
-                    "gross_outlays_delivered_orders_paid_total_fyb",
+                    "ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb",
                 ),
                 (
                     "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
