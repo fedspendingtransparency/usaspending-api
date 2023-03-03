@@ -58,8 +58,4 @@ class Migration(migrations.Migration):
             name='award',
             options={'managed': False},
         ),
-        migrations.RunSQL(
-            sql="DROP TABLE IF EXISTS awards",
-            reverse_sql="",
-        ),
     ]
