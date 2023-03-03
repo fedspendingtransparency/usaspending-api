@@ -8,13 +8,15 @@ import inspect
 import logging
 import os
 import sys
-from typing import Optional, Union
+import re
+from typing import Optional, Union, List, Dict
 
+from datetime import date, datetime
+from django.core.management import call_command
 from py4j.java_gateway import (
     JavaGateway,
 )
 from py4j.protocol import Py4JJavaError
-from pydantic import AnyHttpUrl
 from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
 from pyspark.find_spark_home import _find_spark_home
@@ -22,10 +24,22 @@ from pyspark.java_gateway import launch_gateway
 from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
 from pyspark.sql.conf import RuntimeConfig
+from typing import Sequence, Set
+
+from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
+from usaspending_api.awards.delta_models.financial_accounts_by_awards import FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
-
-from usaspending_api.config.utils import parse_pg_uri
+from usaspending_api.config.utils import parse_pg_uri, parse_http_url
+from usaspending_api.transactions.delta_models.transaction_fabs import (
+    TRANSACTION_FABS_COLUMN_INFO,
+    TRANSACTION_FABS_COLUMNS,
+)
+from usaspending_api.transactions.delta_models.transaction_fpds import (
+    TRANSACTION_FPDS_COLUMN_INFO,
+    TRANSACTION_FPDS_COLUMNS,
+)
+from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 
 
 def get_active_spark_context() -> Optional[SparkContext]:
@@ -396,12 +410,13 @@ def get_es_config():  # pragma: no cover -- will be used eventually
         index_config["es.mapping.routing"] = routing  # for index routing key
         index_config["es.mapping.id"] = doc_id        # for _id field of indexed documents
     """
-    es_host = CONFIG.ELASTICSEARCH_HOST  # type: AnyHttpUrl
-    ssl = es_host.scheme == "https"
-    host = es_host.host
-    port = es_host.port if es_host.port else "443" if ssl else "80"
-    user = es_host.user if es_host.user else ""
-    password = es_host.password if es_host.password else ""
+    es_url = CONFIG.ES_HOSTNAME
+    url_parts, url_username, url_password = parse_http_url(es_url)
+    ssl = url_parts.scheme == "https"
+    host = url_parts.hostname
+    port = url_parts.port if url_parts.port else "443" if ssl else "80"
+    user = url_username or ""
+    password = url_password or ""
 
     # More values at:
     # - https://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html
@@ -531,3 +546,125 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
         for (k, v) in {str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()}.items()
         if config_key_contains in k
     ]
+
+
+def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, data, overwrite=False):
+    """Create a table in Delta and populate it with the contents of a provided dicationary (data). This should
+    primarily be used for unit testing.
+
+    Args:
+        spark - SparkSession used to run Spark commands
+        s3_data_bucket - Bucket where Delta table will be created
+        table_schema - Override the default schema from the TABLE_SPEC for the Delta table being created
+        table_name - Name of table to create in Delta. This parameter will also be used to lookup a TABLE_SPEC
+        data - List of dictionaries containing data to load into the table. Should at least contain the table's
+            required fields. Other fields are optional
+        overwrite - If this parameter is set to true, the table will be overwritten with each call. When set
+            to False, the table will be inserted into instead.
+    """
+    table_to_col_names_dict = {}
+    table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
+    table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS
+    table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
+    table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
+    table_to_col_names_dict["financial_accounts_by_awards"] = list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS)
+
+    table_to_col_info_dict = {}
+    for tbl_name, col_info in zip(
+        ("transaction_fabs", "transaction_fpds"), (TRANSACTION_FABS_COLUMN_INFO, TRANSACTION_FPDS_COLUMN_INFO)
+    ):
+        table_to_col_info_dict[tbl_name] = {}
+        for col in col_info:
+            table_to_col_info_dict[tbl_name][col.dest_name] = col
+
+    # Make sure the table has been created first
+    call_command(
+        "create_delta_table",
+        "--destination-table",
+        table_name,
+        "--alt-db",
+        table_schema,
+        "--spark-s3-bucket",
+        s3_data_bucket,
+    )
+
+    if data:
+        insert_sql = f"INSERT {'OVERWRITE' if overwrite else 'INTO'} {table_schema}.{table_name} VALUES\n"
+        row_strs = []
+        for row in data:
+            value_strs = []
+            for col_name in table_to_col_names_dict[table_name]:
+                value = row.get(col_name)
+                if isinstance(value, (str, bytes)):
+                    # Quote strings for insertion into DB
+                    value_strs.append(f"'{value}'")
+                elif isinstance(value, (date, datetime)):
+                    # Convert to string and quote
+                    value_strs.append(f"""'{value.isoformat()}'""")
+                elif isinstance(value, bool):
+                    value_strs.append(str(value).upper())
+                elif isinstance(value, (Sequence, Set)):
+                    # Assume "sequences" must be "sequences" of strings, so quote each item in the "sequence"
+                    value = [f"'{item}'" for item in value]
+                    value_strs.append(f"ARRAY({', '.join(value)})")
+                elif value is None:
+                    col_info = table_to_col_info_dict.get(table_name)
+                    if (
+                        col_info
+                        and col_info[col_name].delta_type.upper() == "BOOLEAN"
+                        and not col_info[col_name].handling == "leave_null"
+                    ):
+                        # Convert None/NULL to false for boolean columns unless specified to leave the null
+                        value_strs.append("FALSE")
+                    else:
+                        value_strs.append("NULL")
+                else:
+                    value_strs.append(str(value))
+
+            row_strs.append(f"    ({', '.join(value_strs)})")
+
+        sql = "".join([insert_sql, ",\n".join(row_strs), ";"])
+        spark.sql(sql)
+
+
+def clean_postgres_sql_for_spark_sql(
+    postgres_sql_str: str, global_temp_view_proxies: List[str] = None, identifier_replacements: Dict[str, str] = None
+):
+    """Convert some of the known-to-be-problematic PostgreSQL syntax, which is not compliant with Spark SQL,
+    to an acceptable and compliant Spark SQL alternative.
+
+    CAUTION: There is no guarantee that this will convert everything, AND some liberties are taken here to convert
+    incompatible data types like JSON to string. USE AT YOUR OWN RISK and make sure its transformations fit your use
+    case!
+
+    Arguments:
+        postgres_sql_str (str): the SQL string to clean
+        global_temp_view_proxies (List[str]): list of table names that should be prepended with the global_temp
+            schema if they exist in the hive metastore as a GLOBAL TEMPORARY VIEW
+        identifier_replacements (Dict[str, str]): given names (dict keys), that if found (preceded by whitespace)
+            will be replaced with the provided alternate name (dict value)
+
+    """
+    # Spark SQL does not like double-quoted identifiers
+    spark_sql = postgres_sql_str.replace('"', "")
+    spark_sql = re.sub(fr"CREATE VIEW", fr"CREATE OR REPLACE TEMP VIEW", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+
+    # Treat these type casts as string in Spark SQL
+    # NOTE: If replacing a ::JSON cast, be sure that the string data coming from delta is treated as needed (e.g. as
+    # JSON or converted to JSON or a dict) on the receiving side, and not just left as a string
+    spark_sql = re.sub(fr"::text|::json", fr"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+
+    if global_temp_view_proxies:
+        for vw in global_temp_view_proxies:
+            spark_sql = re.sub(
+                fr"FROM\s+{vw}", fr"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+            )
+            spark_sql = re.sub(
+                fr"JOIN\s+{vw}", fr"JOIN global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+            )
+
+    if identifier_replacements:
+        for old, new in identifier_replacements.items():
+            spark_sql = re.sub(fr"(\s+|^){old}(\s+|$)", fr" {new} ", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+
+    return spark_sql

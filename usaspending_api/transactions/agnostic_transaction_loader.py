@@ -191,7 +191,9 @@ class AgnosticTransactionLoader:
             with Timer(message=f"Upsert {len(id_list):,} records"):
                 if len(id_list) != 0:
                     predicate = self.extra_predicate + [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
-                    record_count = operations.upsert_records_with_predicate(source, destination, predicate, primary_key)
+                    record_count = operations.upsert_records_with_predicate(
+                        source, destination, predicate, primary_key, self.is_case_insensitive_pk_match
+                    )
                 else:
                     logger.warning("No records to load. Please check parameters and settings to confirm accuracy")
                     record_count = 0

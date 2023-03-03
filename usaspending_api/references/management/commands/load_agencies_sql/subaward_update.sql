@@ -18,7 +18,7 @@ set
 
 from
     subaward_search as s
-    left outer join awards as a on a.id = s.award_id
+    left outer join vw_awards as a on a.id = s.award_id
 
     left outer join agency as aa on aa.id = a.awarding_agency_id
     left outer join subtier_agency as asa on asa.subtier_agency_id = aa.subtier_agency_id

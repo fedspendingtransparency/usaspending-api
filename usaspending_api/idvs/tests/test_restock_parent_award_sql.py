@@ -85,8 +85,10 @@ tp1 = {
 def set_up_db(*awards):
     set_up_related_award_objects()
     award_dict = create_tree(awards)
+    i = 1
     for award in award_dict:
-        baker.make("awards.Award", **award)
+        baker.make("search.AwardSearch", award_id=i, **award)
+        i = i + 1
     call_command("restock_parent_award")
 
 

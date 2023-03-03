@@ -31,9 +31,9 @@ from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.delta_models import (
     DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS,
     detached_award_procurement_create_sql_string,
-    TRANSACTION_FABS_COLUMNS,
+    TRANSACTION_FABS_VIEW_COLUMNS,
     transaction_fabs_sql_string,
-    TRANSACTION_FPDS_COLUMNS,
+    TRANSACTION_FPDS_VIEW_COLUMNS,
     transaction_fpds_sql_string,
     TRANSACTION_NORMALIZED_COLUMNS,
     transaction_normalized_sql_string,
@@ -60,7 +60,7 @@ TABLE_SPEC = {
     "awards": {
         "model": Award,
         "is_from_broker": False,
-        "source_table": "awards",
+        "source_table": "vw_awards",
         "source_database": "rpt",
         "destination_database": "raw",
         "swap_table": None,
@@ -111,7 +111,7 @@ TABLE_SPEC = {
     "transaction_fabs": {
         "model": TransactionFABS,
         "is_from_broker": False,
-        "source_table": "transaction_fabs",
+        "source_table": "vw_transaction_fabs",
         "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,
@@ -122,7 +122,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_fabs_sql_string,
         "source_schema": None,
         "custom_schema": "",
-        "column_names": TRANSACTION_FABS_COLUMNS,
+        "column_names": TRANSACTION_FABS_VIEW_COLUMNS,
         "tsvectors": None,
     },
     "published_fabs": {
@@ -145,7 +145,7 @@ TABLE_SPEC = {
     "transaction_fpds": {
         "model": TransactionFPDS,
         "is_from_broker": False,
-        "source_table": "transaction_fpds",
+        "source_table": "vw_transaction_fpds",
         "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,
@@ -156,13 +156,13 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_fpds_sql_string,
         "source_schema": None,
         "custom_schema": "",
-        "column_names": TRANSACTION_FPDS_COLUMNS,
+        "column_names": TRANSACTION_FPDS_VIEW_COLUMNS,
         "tsvectors": None,
     },
     "transaction_normalized": {
         "model": TransactionNormalized,
         "is_from_broker": False,
-        "source_table": "transaction_normalized",
+        "source_table": "vw_transaction_normalized",
         "source_database": "int",
         "destination_database": "raw",
         "swap_table": None,

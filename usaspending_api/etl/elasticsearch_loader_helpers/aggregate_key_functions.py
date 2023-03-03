@@ -1,8 +1,9 @@
 import json
 import logging
 
-from typing import Optional, List
+from typing import Optional
 
+from usaspending_api.recipient.models import RecipientProfile
 
 logger = logging.getLogger("script")
 
@@ -16,16 +17,13 @@ def award_recipient_agg_key(record: dict) -> str:
 
 def transaction_recipient_agg_key(record: dict) -> str:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
-    return str(record["recipient_hash"]) + "/" + (return_one_level(record["recipient_levels"] or []) or "")
-
-
-def return_one_level(levels: List[str]) -> Optional[str]:
-    """Return the most-desirable recipient level"""
-    for level in ("C", "R", "P"):  # Child, "Recipient," or Parent
-        if level in levels:
-            return level
-    else:
-        return None
+    if record["recipient_hash"] is None:
+        return ""
+    return (
+        str(record["recipient_hash"])
+        + "/"
+        + (RecipientProfile.return_one_level(record["recipient_levels"] or []) or "")
+    )
 
 
 def awarding_subtier_agency_agg_key(record: dict) -> Optional[str]:

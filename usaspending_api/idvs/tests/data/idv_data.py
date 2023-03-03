@@ -1,13 +1,12 @@
 from model_bakery import baker
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.references.models import Agency, ToptierAgency, SubtierAgency
+from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 
 def set_up_related_award_objects():
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
 
-    trans_cont = {"pk": 1, "business_categories": ["small_business"]}
     duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
     baker.make("recipient.DUNS", **duns)
     baker.make("references.SubtierAgency", **subag)
@@ -15,13 +14,13 @@ def set_up_related_award_objects():
 
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
-    baker.make("awards.TransactionNormalized", **trans_cont)
     baker.make("references.Agency", **ag)
     cont_data = {
         "pk": 1,
-        "transaction": TransactionNormalized.objects.get(pk=1),
+        "transaction_id": 1,
+        "is_fpds": True,
         "type_of_contract_pric_desc": "FIRM FIXED PRICE",
-        "naics": "333911",
+        "naics_code": "333911",
         "naics_description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
         "referenced_idv_agency_iden": "9700",
         "idv_type_description": None,
@@ -59,8 +58,9 @@ def set_up_related_award_objects():
         "type_set_aside_description": None,
         "materials_supplies_descrip": "NO",
         "domestic_or_foreign_e_desc": "U.S. OWNED BUSINESS",
+        "business_categories": ["small_business"],
     }
-    baker.make("awards.TransactionFPDS", **cont_data)
+    baker.make("search.TransactionSearch", **cont_data)
 
 
 def create_tree(awards):
@@ -68,8 +68,8 @@ def create_tree(awards):
         "type_description": "FAKE",
         "category": "contract",
         "description": "lorem ipsum",
-        "awarding_agency": Agency.objects.get(pk=1),
-        "funding_agency": Agency.objects.get(pk=1),
+        "awarding_agency_id": 1,
+        "funding_agency_id": 1,
         "period_of_performance_start_date": "2004-02-04",
         "period_of_performance_current_end_date": "2005-02-04",
         "latest_transaction": TransactionNormalized.objects.get(pk=1),

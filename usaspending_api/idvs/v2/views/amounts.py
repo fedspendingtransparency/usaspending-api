@@ -23,8 +23,8 @@ child_award_sql = """
         ac.id as award_id
     from
         parent_award pap
-        inner join awards ap on ap.id = pap.award_id
-        inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
+        inner join vw_awards ap on ap.id = pap.award_id
+        inner join vw_awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
             ac.type not like 'IDV%'
     where
         pap.{award_id_column} = '{award_id}'
@@ -35,8 +35,8 @@ grandchild_award_sql = """
     from
         parent_award pap
         inner join parent_award pac on pac.parent_award_id = pap.award_id
-        inner join awards ap on ap.id = pac.award_id
-        inner join awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
+        inner join vw_awards ap on ap.id = pac.award_id
+        inner join vw_awards ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and ac.parent_award_piid = ap.piid and
             ac.type not like 'IDV%'
 
     where
@@ -120,11 +120,11 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
                 financial_accounts_by_awards faba
             INNER JOIN submission_attributes sa
                 ON faba.submission_id = sa.submission_id
-            INNER JOIN awards a
+            INNER JOIN vw_awards a
                 ON faba.award_id = a.id
                 AND a.date_signed >= '2019-10-01'
             INNER JOIN child_cte a2 ON faba.award_id = a2.award_id
-            INNER JOIN transaction_normalized tn ON tn.id = a.earliest_transaction_id
+            INNER JOIN vw_transaction_normalized tn ON tn.id = a.earliest_transaction_id
             WHERE sa.is_final_balances_for_fy AND sa.reporting_fiscal_year = tn.fiscal_year
             GROUP BY faba.award_id
         )

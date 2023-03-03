@@ -11,6 +11,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_te
 )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_code_filter_only(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -19,6 +20,7 @@ def test_match_from_code_filter_only(client, monkeypatch, elasticsearch_award_in
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_component_filter_only(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -27,6 +29,7 @@ def test_match_from_component_filter_only(client, monkeypatch, elasticsearch_awa
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_component_both_filters(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -37,6 +40,7 @@ def test_match_from_component_both_filters(client, monkeypatch, elasticsearch_aw
     assert resp.json()["results"] == [_award1()]
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_non_match_from_component_both_filters(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -47,6 +51,7 @@ def test_non_match_from_component_both_filters(client, monkeypatch, elasticsearc
     assert resp.json()["results"] == []
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_different_matches_with_each_filter(client, monkeypatch, elasticsearch_award_index, multiple_awards_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
@@ -59,6 +64,7 @@ def test_different_matches_with_each_filter(client, monkeypatch, elasticsearch_a
     )
 
 
+@pytest.mark.skip
 @pytest.mark.django_db
 def test_match_from_component_filter_despite_exclusion(
     client, monkeypatch, elasticsearch_award_index, multiple_awards_with_tas

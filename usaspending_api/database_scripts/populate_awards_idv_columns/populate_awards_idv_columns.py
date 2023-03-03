@@ -45,9 +45,9 @@ POPULATE_TABLE = (
         sum(cast(f.base_exercised_options_val as numeric))
             base_exercised_options_val
     from
-        awards a
-        inner join transaction_normalized as tx on tx.award_id = a.id
-        inner join transaction_fpds as f on f.transaction_id = tx.id
+        vw_awards a
+        inner join vw_transaction_normalized as tx on tx.award_id = a.id
+        inner join vw_transaction_fpds as f on f.transaction_id = tx.id
     group by
         tx.award_id
 """
@@ -56,12 +56,12 @@ POPULATE_TABLE = (
 
 ADD_PRIMARY_KEY = 'alter table "%s" add primary key (id)' % TEMPORARY_TABLE_NAME
 
-GET_MIN_MAX_SQL = "select min(id), max(id) from awards"
+GET_MIN_MAX_SQL = "select min(id), max(id) from vw_awards"
 
 UPDATE_SQL = (
     """
     update
-        awards
+        award_search
     set
         fpds_agency_id = t.fpds_agency_id,
         fpds_parent_agency_id = t.fpds_parent_agency_id,

@@ -14,7 +14,9 @@ def faba_with_toptier_agencies(award_count_sub_schedule, award_count_submission,
 
     toptier_agency(2)
     award2 = award_with_toptier_agency(2)
-    award3 = baker.make("awards.Award", type="A", funding_agency=Agency.objects.first(), total_loan_value=0)
+    award3 = baker.make(
+        "search.AwardSearch", award_id=1, type="A", funding_agency_id=Agency.objects.first().id, total_loan_value=0
+    )
 
     faba_for_award(award1, 8, 0)
     faba_for_award(award2, 0, 7)
@@ -53,11 +55,15 @@ def faba_for_award(award, toa, outlay):
         "accounts.FederalAccount",
         federal_account_code="001-0000",
         account_title="FA 1",
-        parent_toptier_agency=ToptierAgency.objects.get(pk=award.funding_agency.toptier_agency_id),
+        parent_toptier_agency=ToptierAgency.objects.get(
+            pk=Agency.objects.get(id=award.funding_agency_id).toptier_agency_id
+        ),
     )
     tas1 = baker.make(
         "accounts.TreasuryAppropriationAccount",
-        funding_toptier_agency=ToptierAgency.objects.get(pk=award.funding_agency.toptier_agency_id),
+        funding_toptier_agency=ToptierAgency.objects.get(
+            pk=Agency.objects.get(id=award.funding_agency_id).toptier_agency_id
+        ),
         budget_function_code=100,
         budget_function_title="NAME 1",
         budget_subfunction_code=1100,
@@ -91,10 +97,21 @@ def toptier_agency(id):
 
 def award_with_toptier_agency(id):
     agency = baker.make("references.Agency", toptier_agency_id=id, toptier_flag=True)
-    a1 = baker.make("awards.Award", type="A", funding_agency=agency, total_loan_value=0, latest_transaction_id=id)
-    baker.make(
-        "awards.TransactionNormalized", id=id, award=a1, action_date="2020-04-01", is_fpds=True, funding_agency=agency
+    a1 = baker.make(
+        "search.AwardSearch",
+        award_id=id,
+        type="A",
+        funding_agency_id=agency.id,
+        total_loan_value=0,
+        latest_transaction_id=id,
     )
-    baker.make("awards.TransactionFPDS", transaction_id=id)
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=id,
+        award=a1,
+        action_date="2020-04-01",
+        is_fpds=True,
+        funding_agency_id=agency.id,
+    )
 
     return a1

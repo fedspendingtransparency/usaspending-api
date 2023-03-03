@@ -91,7 +91,9 @@ class IDVFundingTestCase(TestCase):
         assert len(response2.data["results"]) == response.data["count"]
 
     def test_special_characters(self):
-        baker.make("awards.Award", id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
+        baker.make(
+            "search.AwardSearch", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700"
+        )
         response = self.client.get("/api/v2/idvs/count/federal_account/CONT_IDV_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
         assert response.status_code == status.HTTP_200_OK
 

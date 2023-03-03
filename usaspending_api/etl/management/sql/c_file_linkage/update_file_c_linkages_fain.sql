@@ -5,9 +5,9 @@ WITH update_cte AS (
     SET
         award_id = (
             SELECT
-                id
+                award_id
             FROM
-                awards AS aw
+                {file_d_table} AS aw
             WHERE
                 UPPER(aw.fain) = UPPER(faba.fain)
         )
@@ -23,7 +23,7 @@ WITH update_cte AS (
                 AND faba_sub.award_id IS NULL
                 AND (
                     SELECT COUNT(*)
-                    FROM awards AS aw_sub
+                    FROM {file_d_table} AS aw_sub
                     WHERE UPPER(aw_sub.fain) = UPPER(faba_sub.fain)
                 ) = 1
                 {submission_id_clause}
@@ -31,11 +31,11 @@ WITH update_cte AS (
     RETURNING award_id
 )
 UPDATE
-    awards
+    {file_d_table} a
 SET
     update_date = NOW()
 FROM
     update_cte
 WHERE
-    id = update_cte.award_id
+    a.award_id = update_cte.award_id
 ;

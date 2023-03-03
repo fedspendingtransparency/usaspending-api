@@ -435,40 +435,91 @@ def disaster_account_data():
     )
 
     a1 = baker.make(
-        "awards.Award", id=1, total_loan_value=333, type="07", funding_agency=ag1, latest_transaction_id=10
+        "search.AwardSearch",
+        award_id=1,
+        total_loan_value=333,
+        type="07",
+        funding_agency_id=ag1.id,
+        latest_transaction_id=10,
+        action_date="2020-01-01",
     )  # Loan
     a2 = baker.make(
-        "awards.Award", id=2, total_loan_value=444, type="02", funding_agency=ag2, latest_transaction_id=20
+        "search.AwardSearch",
+        award_id=2,
+        total_loan_value=444,
+        type="02",
+        funding_agency_id=ag2.id,
+        latest_transaction_id=20,
+        action_date="2020-01-01",
     )  # Block Grant - subtier sister to a4
     a3 = baker.make(
-        "awards.Award", id=3, total_loan_value=444, type="A", funding_agency=ag3, latest_transaction_id=30
+        "search.AwardSearch",
+        award_id=3,
+        total_loan_value=444,
+        type="A",
+        funding_agency_id=ag3.id,
+        latest_transaction_id=30,
+        action_date="2020-01-01",
     )  # BPA Call
     a4 = baker.make(
-        "awards.Award", id=4, total_loan_value=555, type="02", funding_agency=ag3, latest_transaction_id=40
+        "search.AwardSearch",
+        award_id=4,
+        total_loan_value=555,
+        type="02",
+        funding_agency_id=ag3.id,
+        latest_transaction_id=40,
+        action_date="2020-01-01",
     )  # Block Grant - subtier sister to a2
-    a5 = baker.make("awards.Award", id=5, total_loan_value=666, type="02", funding_agency=ag4, latest_transaction_id=50)
-
-    baker.make(
-        "awards.TransactionNormalized", id=10, award=a1, action_date="2020-04-01", is_fpds=False, funding_agency=ag1
-    )
-    baker.make(
-        "awards.TransactionNormalized", id=20, award=a2, action_date="2020-04-02", is_fpds=False, funding_agency=ag2
-    )
-    baker.make(
-        "awards.TransactionNormalized", id=30, award=a3, action_date="2020-04-03", is_fpds=True, funding_agency=ag3
-    )
-    baker.make(
-        "awards.TransactionNormalized", id=40, award=a4, action_date="2020-04-04", is_fpds=False, funding_agency=ag3
-    )
-    baker.make(
-        "awards.TransactionNormalized", id=50, award=a5, action_date="2020-04-04", is_fpds=False, funding_agency=ag4
+    a5 = baker.make(
+        "search.AwardSearch",
+        award_id=5,
+        total_loan_value=666,
+        type="02",
+        funding_agency_id=ag4.id,
+        latest_transaction_id=50,
+        action_date="2020-01-01",
     )
 
-    baker.make("awards.TransactionFABS", transaction_id=10)
-    baker.make("awards.TransactionFABS", transaction_id=20)
-    baker.make("awards.TransactionFPDS", transaction_id=30)
-    baker.make("awards.TransactionFABS", transaction_id=40)
-    baker.make("awards.TransactionFABS", transaction_id=50)
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=10,
+        award=a1,
+        action_date="2020-04-01",
+        is_fpds=False,
+        funding_agency_id=ag1.id,
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=20,
+        award=a2,
+        action_date="2020-04-02",
+        is_fpds=False,
+        funding_agency_id=ag2.id,
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=30,
+        award=a3,
+        action_date="2020-04-03",
+        is_fpds=True,
+        funding_agency_id=ag3.id,
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=40,
+        award=a4,
+        action_date="2020-04-04",
+        is_fpds=False,
+        funding_agency_id=ag3.id,
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=50,
+        award=a5,
+        action_date="2020-04-04",
+        is_fpds=False,
+        funding_agency_id=ag4.id,
+    )
 
     faba = "awards.FinancialAccountsByAwards"
     baker.make(

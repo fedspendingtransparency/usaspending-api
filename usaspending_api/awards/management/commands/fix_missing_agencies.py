@@ -94,20 +94,20 @@ class Command(BaseCommand):
     WITH    match_by_subtier AS (
         SELECT  aw.id AS award_id,
                 MAX(a.id) AS agency_id
-        FROM    transaction_fpds t
-        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
-        JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
+        FROM    vw_transaction_fpds t
+        JOIN    vw_transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    vw_awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
         JOIN    full_agency_data a ON (a.subtier_code = t.awarding_sub_tier_agency_c)
         WHERE   aw.awarding_agency_id IS NULL
-        AND     aw.id >= {floor}
-        AND     aw.id < {ceiling}
-        GROUP BY aw.id
+        AND     aw.award_id >= {floor}
+        AND     aw.award_id < {ceiling}
+        GROUP BY aw.award_id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
-    UPDATE awards
+    UPDATE award_search
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
-    WHERE  match_by_subtier.award_id = awards.id
+    WHERE  match_by_subtier.award_id = award_search.award_id
     """,
         ),
         (
@@ -116,9 +116,9 @@ class Command(BaseCommand):
     WITH    match_by_subtier AS (
         SELECT  aw.id AS award_id,
                 MAX(a.id) AS agency_id
-        FROM    transaction_fpds t
-        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
-        JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
+        FROM    vw_transaction_fpds t
+        JOIN    vw_transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    VW_awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
         JOIN    full_agency_data a ON (a.subtier_code = t.funding_sub_tier_agency_co)
         WHERE   aw.funding_agency_id IS NULL
         AND     aw.id >= {floor}
@@ -126,10 +126,10 @@ class Command(BaseCommand):
         GROUP BY aw.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
-    UPDATE awards
+    UPDATE award_search
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
-    WHERE  match_by_subtier.award_id = awards.id
+    WHERE  match_by_subtier.award_id = award_search.award_id
     """,
         ),
         (
@@ -139,8 +139,8 @@ class Command(BaseCommand):
         SELECT  aw.id AS award_id,
                 MAX(a.id) AS agency_id
         FROM    transaction_fabs t
-        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
-        JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
+        JOIN    vw_transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    award_search aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
         JOIN    full_agency_data a ON (a.subtier_code = t.awarding_sub_tier_agency_c)
         WHERE   aw.awarding_agency_id IS NULL
         AND     aw.id >= {floor}
@@ -148,10 +148,10 @@ class Command(BaseCommand):
         GROUP BY aw.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
-    UPDATE awards
+    UPDATE award_search
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
-    WHERE  match_by_subtier.award_id = awards.id
+    WHERE  match_by_subtier.award_id = award_search.award_id
     """,
         ),
         (
@@ -161,32 +161,32 @@ class Command(BaseCommand):
         SELECT  aw.id AS award_id,
                 MAX(a.id) AS agency_id
         FROM    transaction_fabs t
-        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
-        JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
+        JOIN    vw_transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    award_search aw ON (tn.award_id = aw.award_id AND aw.latest_transaction_id = tn.id)
         JOIN    full_agency_data a ON (a.subtier_code = t.funding_sub_tier_agency_co)
         WHERE   aw.funding_agency_id IS NULL
-        AND     aw.id >= {floor}
-        AND     aw.id < {ceiling}
-        GROUP BY aw.id
+        AND     aw.award_id >= {floor}
+        AND     aw.award_id < {ceiling}
+        GROUP BY aw.award_id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
-    UPDATE awards
+    UPDATE award_search
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
-    WHERE  match_by_subtier.award_id = awards.id
+    WHERE  match_by_subtier.award_id = award_search.award_id
     """,
         ),
     )
 
-    TRANSACTION_NORMALIZED_UPDATERS = (
+    TRANSACTION_SEARCH_UPDATERS = (
         (
             "Awarding agency in transaction_normalized for FPDS",
             """
     WITH    match_by_subtier AS (
         SELECT  tn.id AS transaction_id,
                 MAX(a.id) AS agency_id
-        FROM    transaction_fpds t
-        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
+        FROM    vw_transaction_fpds t
+        JOIN    vw_transaction_normalized tn ON (t.transaction_id = tn.id)
         JOIN    full_agency_data a ON (a.subtier_code = t.awarding_sub_tier_agency_c)
         WHERE   tn.awarding_agency_id IS NULL
         AND     tn.id >= {floor}
@@ -194,10 +194,10 @@ class Command(BaseCommand):
         GROUP BY tn.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
-    UPDATE transaction_normalized
+    UPDATE transaction_search
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
-    WHERE  match_by_subtier.transaction_id = transaction_normalized.id
+    WHERE  match_by_subtier.transaction_id = transaction_search.transaction_id
     """,
         ),
         (
@@ -206,9 +206,9 @@ class Command(BaseCommand):
     WITH    match_by_subtier AS (
         SELECT  tn.id AS transaction_id,
                 MAX(a.id) AS agency_id
-        FROM    transaction_fpds t
-        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
-        JOIN    awards aw ON (tn.award_id = aw.id AND aw.latest_transaction_id = tn.id)
+        FROM    vw_transaction_fpds t
+        JOIN    vw_transaction_normalized tn ON (t.transaction_id = tn.id)
+        JOIN    award_search aw ON (tn.award_id = aw.award_id AND aw.latest_transaction_id = tn.id)
         JOIN    full_agency_data a ON (a.subtier_code = t.funding_sub_tier_agency_co)
         WHERE   tn.funding_agency_id IS NULL
         AND     tn.id >= {floor}
@@ -216,10 +216,10 @@ class Command(BaseCommand):
         GROUP BY tn.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
-    UPDATE transaction_normalized
+    UPDATE transaction_search
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
-    WHERE  match_by_subtier.transaction_id = transaction_normalized.id
+    WHERE  match_by_subtier.transaction_id = transaction_search.transaction_id
     """,
         ),
         (
@@ -228,8 +228,8 @@ class Command(BaseCommand):
     WITH    match_by_subtier AS (
         SELECT  tn.id AS transaction_id,
                 MAX(a.id) AS agency_id
-        FROM    transaction_fabs t
-        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
+        FROM    vw_transaction_fabs t
+        JOIN    vw_transaction_normalized tn ON (t.transaction_id = tn.id)
         JOIN    full_agency_data a ON (a.subtier_code = t.awarding_sub_tier_agency_c)
         WHERE   tn.awarding_agency_id IS NULL
         AND     tn.id >= {floor}
@@ -237,10 +237,10 @@ class Command(BaseCommand):
         GROUP BY tn.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
-    UPDATE transaction_normalized
+    UPDATE transaction_search
     SET    awarding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
-    WHERE  match_by_subtier.transaction_id = transaction_normalized.id
+    WHERE  match_by_subtier.transaction_id = transaction_search.transaction_id
     """,
         ),
         (
@@ -249,8 +249,8 @@ class Command(BaseCommand):
     WITH    match_by_subtier AS (
         SELECT  tn.id AS transaction_id,
                 MAX(a.id) AS agency_id
-        FROM    transaction_fabs t
-        JOIN    transaction_normalized tn ON (t.transaction_id = tn.id)
+        FROM    vw_transaction_fabs t
+        JOIN    vw_transaction_normalized tn ON (t.transaction_id = tn.id)
         JOIN    full_agency_data a ON (a.subtier_code = t.funding_sub_tier_agency_co)
         WHERE   tn.funding_agency_id IS NULL
         AND     tn.id >= {floor}
@@ -258,10 +258,10 @@ class Command(BaseCommand):
         GROUP BY tn.id
         HAVING  COUNT(DISTINCT a.id) = 1
     )
-    UPDATE transaction_normalized
+    UPDATE transaction_search
     SET    funding_agency_id = match_by_subtier.agency_id
     FROM   match_by_subtier
-    WHERE  match_by_subtier.transaction_id = transaction_normalized.id
+    WHERE  match_by_subtier.transaction_id = transaction_search.transaction_id
     """,
         ),
     )

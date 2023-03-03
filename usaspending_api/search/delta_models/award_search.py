@@ -1,8 +1,7 @@
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
-
 AWARD_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
+    "data_source": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "transaction_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "latest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "earliest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
@@ -151,6 +150,7 @@ award_search_load_sql_string = fr"""
     SELECT
   TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
+  awards.data_source AS data_source,
   awards.transaction_unique_id,
   awards.latest_transaction_id,
   awards.earliest_transaction_id,
@@ -289,7 +289,7 @@ award_search_load_sql_string = fr"""
   RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
 
-  COALESCE(transaction_fpds.place_of_perform_country_n, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
+  COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
   COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) AS pop_state_code,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
@@ -300,7 +300,7 @@ award_search_load_sql_string = fr"""
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)) AS pop_city_name,
-  COALESCE(transaction_fpds.place_of_perform_state_nam, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
+  COALESCE(transaction_fpds.place_of_perfor_state_desc, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
   POP_STATE_LOOKUP.fips AS pop_state_fips,
   POP_STATE_POPULATION.latest_population AS pop_state_population,
   POP_COUNTY_POPULATION.latest_population AS pop_county_population,
@@ -338,15 +338,15 @@ award_search_load_sql_string = fr"""
   awards.officer_5_amount,
   awards.officer_5_name
 FROM
-  raw.awards
+  int.awards
 INNER JOIN
-  raw.transaction_normalized AS latest_transaction
+  int.transaction_normalized AS latest_transaction
     ON (awards.latest_transaction_id = latest_transaction.id)
 LEFT OUTER JOIN
-  raw.transaction_fpds
+  int.transaction_fpds
     ON (awards.latest_transaction_id = transaction_fpds.transaction_id AND latest_transaction.is_fpds = true)
 LEFT OUTER JOIN
-  raw.transaction_fabs
+  int.transaction_fabs
     ON (awards.latest_transaction_id = transaction_fabs.transaction_id AND latest_transaction.is_fpds = false)
 LEFT OUTER JOIN
   rpt.recipient_lookup ON recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
@@ -361,8 +361,8 @@ LEFT OUTER JOIN
     (SELECT
       award_id, COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title))) as cfdas
       FROM
-         raw.transaction_fabs tf
-       INNER JOIN raw.transaction_normalized tn ON
+         int.transaction_fabs tf
+       INNER JOIN int.transaction_normalized tn ON
          tf.transaction_id = tn.id
        GROUP BY
          award_id
@@ -460,7 +460,7 @@ LEFT OUTER JOIN (
                 END), 0) AS outlay,
             COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
         FROM
-            raw.financial_accounts_by_awards AS faba
+            int.financial_accounts_by_awards AS faba
         INNER JOIN
             global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
         INNER JOIN
@@ -512,7 +512,7 @@ LEFT OUTER JOIN (
     COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers
   FROM
     global_temp.treasury_appropriation_account taa
-  INNER JOIN raw.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
+  INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
   INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
   INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
   WHERE
@@ -520,18 +520,4 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
-WHERE
-    -- Make sure that the data matches the different Award Type matviews' current state
-    (
-        latest_transaction.action_date >= '2007-10-01'
-        AND (
-            awards.type IN ({str(list(all_awards_types_to_category)).replace("[", "").replace("]", "")})
-            OR awards.type LIKE 'IDV%'
-        )
-    )
-    -- Make sure that we also pick up the current state of Pre2008 matview
-    OR (
-        latest_transaction.action_date >= '2000-10-01'
-        AND latest_transaction.action_date < '2007-10-01'
-    )
 """

@@ -2,7 +2,7 @@ import pytest
 
 from model_bakery import baker
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFPDS, TransactionFABS
+from usaspending_api.search.models import TransactionSearch
 
 
 @pytest.fixture
@@ -53,172 +53,228 @@ def sub_agency_data_1():
 
     # Awards
     award_contract = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=1,
         category="contract",
         date_signed="2021-04-01",
     )
     award_idv = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=2,
         category="idv",
         date_signed="2020-04-01",
     )
     award_grant = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=3,
         category="grant",
         date_signed="2021-04-01",
     )
     award_loan = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=5,
         category="loans",
         date_signed="2021-04-01",
     )
     award_dp = baker.make(
-        "awards.Award",
+        "search.AwardSearch",
+        award_id=6,
         category="direct payment",
         date_signed="2021-04-01",
     )
 
-    contract_transaction = baker.make(
-        TransactionNormalized,
-        award=award_contract,
+    baker.make(
+        TransactionSearch,
+        transaction_id=1,
+        award_id=award_contract.award_id,
+        award_category="contract",
         federal_action_obligation=101,
+        generated_pragmatic_obligation=101,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
-        funding_agency=awarding_agency_1,
+        fiscal_action_date="2021-07-01",
+        award_date_signed="2021-04-01",
+        awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        funding_agency_id=awarding_agency_1.id,
+        funding_toptier_agency_id=awarding_agency_1.id,
         is_fpds=True,
         type="A",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction=contract_transaction,
         awarding_agency_code="001",
+        awarding_toptier_agency_name="Agency 1",
         funding_agency_code="001",
+        funding_toptier_agency_name="Agency 1",
         awarding_sub_tier_agency_c="0001",
+        awarding_subtier_agency_name="Sub-Agency 1",
+        awarding_subtier_agency_abbreviation="A1",
         funding_sub_tier_agency_co="0001",
+        funding_subtier_agency_name="Sub-Agency 1",
+        funding_subtier_agency_abbreviation="A1",
+        awarding_office_name="Office 1",
         awarding_office_code="0001",
+        funding_office_name="Office 2",
         funding_office_code="0002",
     )
 
-    no_office_transaction = baker.make(
-        TransactionNormalized,
-        award=award_contract,
+    baker.make(
+        TransactionSearch,
+        transaction_id=2,
+        award_id=award_contract.award_id,
+        award_category="contract",
         federal_action_obligation=110,
+        generated_pragmatic_obligation=110,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_3,
-        funding_agency=awarding_agency_3,
+        fiscal_action_date="2021-07-01",
+        award_date_signed="2021-04-01",
+        awarding_agency_id=awarding_agency_3.id,
+        awarding_toptier_agency_id=awarding_agency_3.id,
+        funding_agency_id=awarding_agency_3.id,
+        funding_toptier_agency_id=awarding_agency_3.id,
         is_fpds=True,
         type="B",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction=no_office_transaction,
         awarding_agency_code="003",
+        awarding_toptier_agency_name="Agency 3",
         funding_agency_code="003",
+        funding_toptier_agency_name="Agency 3",
         awarding_sub_tier_agency_c="0003",
+        awarding_subtier_agency_name="Sub-Agency 3",
+        awarding_subtier_agency_abbreviation="A3",
         funding_sub_tier_agency_co="0003",
+        funding_subtier_agency_name="Sub-Agency 3",
+        funding_subtier_agency_abbreviation="A3",
         awarding_office_name=None,
         awarding_office_code=None,
         funding_office_name=None,
         funding_office_code=None,
     )
-
-    idv_transaction = baker.make(
-        TransactionNormalized,
-        award=award_idv,
+    baker.make(
+        TransactionSearch,
+        transaction_id=3,
+        award_id=award_idv.award_id,
+        award_category="idv",
         federal_action_obligation=102,
+        generated_pragmatic_obligation=102,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        fiscal_action_date="2021-07-01",
+        award_date_signed="2020-04-01",
+        awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
         is_fpds=True,
         type="IDV_A",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction=idv_transaction,
         awarding_agency_code="001",
+        awarding_toptier_agency_name="Agency 1",
         awarding_sub_tier_agency_c="0001",
+        awarding_subtier_agency_name="Sub-Agency 1",
+        awarding_subtier_agency_abbreviation="A1",
+        awarding_office_name="Office 1",
         awarding_office_code="0001",
     )
-
-    grant_transaction = baker.make(
-        TransactionNormalized,
-        award=award_grant,
+    baker.make(
+        TransactionSearch,
+        transaction_id=4,
+        award_id=award_grant.award_id,
+        award_category="grant",
         federal_action_obligation=103,
+        generated_pragmatic_obligation=103,
         action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
+        fiscal_action_date="2021-07-01",
+        award_date_signed="2021-04-01",
+        awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
         is_fpds=False,
         type="04",
-    )
-    baker.make(
-        TransactionFABS,
-        transaction=grant_transaction,
         awarding_agency_code="001",
+        awarding_toptier_agency_name="Agency 1",
         awarding_sub_tier_agency_c="0001",
-        awarding_office_code="0002",
-    )
-    loan_transaction = baker.make(
-        TransactionNormalized,
-        award=award_loan,
-        federal_action_obligation=104,
-        action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
-        is_fpds=False,
-        type="09",
-    )
-    baker.make(
-        TransactionFABS,
-        transaction=loan_transaction,
-        awarding_agency_code="001",
-        awarding_sub_tier_agency_c="0001",
+        awarding_subtier_agency_name="Sub-Agency 1",
+        awarding_subtier_agency_abbreviation="A1",
         awarding_office_name="Office 2",
         awarding_office_code="0002",
     )
-    directpayment_transaction = baker.make(
-        TransactionNormalized,
-        award=award_dp,
-        federal_action_obligation=105,
-        action_date="2021-04-01",
-        awarding_agency=awarding_agency_1,
-        is_fpds=False,
-        type="10",
-    )
     baker.make(
-        TransactionFABS,
-        transaction=directpayment_transaction,
+        TransactionSearch,
+        transaction_id=5,
+        award_id=award_loan.award_id,
+        award_category="loans",
+        federal_action_obligation=104,
+        generated_pragmatic_obligation=104,
+        action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
+        award_date_signed="2021-04-01",
+        awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        is_fpds=False,
+        type="09",
         awarding_agency_code="001",
+        awarding_toptier_agency_name="Agency 1",
         awarding_sub_tier_agency_c="0001",
+        awarding_subtier_agency_name="Sub-Agency 1",
+        awarding_subtier_agency_abbreviation="A1",
+        awarding_office_name="Office 2",
         awarding_office_code="0002",
     )
-
-    # Alternate Year
-    idv_2 = baker.make(
-        TransactionNormalized,
-        award=award_idv,
-        federal_action_obligation=300,
-        action_date="2020-04-01",
-        awarding_agency=awarding_agency_1,
-        is_fpds=True,
-    )
     baker.make(
-        TransactionFPDS,
-        transaction=idv_2,
+        TransactionSearch,
+        transaction_id=6,
+        award_id=award_dp.award_id,
+        award_category="direct payment",
+        federal_action_obligation=105,
+        generated_pragmatic_obligation=105,
+        action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
+        award_date_signed="2021-04-01",
+        awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        is_fpds=False,
+        type="10",
         awarding_agency_code="001",
+        awarding_toptier_agency_name="Agency 1",
         awarding_sub_tier_agency_c="0001",
+        awarding_subtier_agency_name="Sub-Agency 1",
+        awarding_subtier_agency_abbreviation="A1",
+        awarding_office_name="Office 2",
+        awarding_office_code="0002",
+    )
+    # Alternate Year
+    baker.make(
+        TransactionSearch,
+        transaction_id=7,
+        award_id=award_idv.award_id,
+        award_category="direct payment",
+        federal_action_obligation=300,
+        generated_pragmatic_obligation=300,
+        action_date="2020-04-01",
+        fiscal_action_date="2020-07-01",
+        award_date_signed="2020-04-01",
+        awarding_agency_id=awarding_agency_1.id,
+        awarding_toptier_agency_id=awarding_agency_1.id,
+        is_fpds=True,
+        awarding_agency_code="001",
+        awarding_toptier_agency_name="Agency 1",
+        awarding_sub_tier_agency_c="0001",
+        awarding_subtier_agency_name="Sub-Agency 1",
+        awarding_subtier_agency_abbreviation="A1",
+        awarding_office_name="Office 1",
         awarding_office_code="0001",
     )
-
     # Alternate Agency
-    idv_3 = baker.make(
-        TransactionNormalized,
-        award=award_idv,
-        federal_action_obligation=400,
-        action_date="2021-04-01",
-        awarding_agency=awarding_agency_2,
-        is_fpds=True,
-    )
     baker.make(
-        TransactionFPDS,
-        transaction=idv_3,
+        TransactionSearch,
+        transaction_id=8,
+        award_id=award_idv.award_id,
+        award_category="idv",
+        federal_action_obligation=400,
+        generated_pragmatic_obligation=400,
+        action_date="2021-04-01",
+        fiscal_action_date="2021-07-01",
+        award_date_signed="2020-04-01",
+        awarding_agency_id=awarding_agency_2.id,
+        awarding_toptier_agency_id=awarding_agency_2.id,
+        is_fpds=True,
         awarding_agency_code="002",
+        awarding_toptier_agency_name="Agency 2",
         awarding_sub_tier_agency_c="0002",
+        awarding_subtier_agency_name="Sub-Agency 2",
+        awarding_subtier_agency_abbreviation="A2",
+        awarding_office_name="Office 2",
         awarding_office_code="0002",
     )

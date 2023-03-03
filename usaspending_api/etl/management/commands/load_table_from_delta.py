@@ -190,10 +190,12 @@ class Command(BaseCommand):
 
         # Postgres side - temp
         temp_schema = "temp"
+        temp_table_suffix = "temp"
+        temp_table_suffix_appendage = f"_{temp_table_suffix}" if {temp_table_suffix} else ""
         if postgres_table:
-            temp_table_name = f"{postgres_table_name}_temp"
+            temp_table_name = f"{postgres_table_name}{temp_table_suffix_appendage}"
         else:
-            temp_table_name = f"{delta_table_name}_temp"
+            temp_table_name = f"{delta_table_name}{temp_table_suffix_appendage}"
         temp_table = f"{temp_schema}.{temp_table_name}"
 
         summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
@@ -224,22 +226,43 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
+        is_postgres_table_partitioned = table_spec.get("postgres_partition_spec") is not None
+
         if postgres_table or postgres_cols:
             # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
             # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
             # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
             if make_new_table:
+                partition_clause = ""
+                storage_parameters = "WITH (autovacuum_enabled=FALSE)"
+                partitions_sql = []
+                if is_postgres_table_partitioned:
+                    partition_clause = (
+                        f"PARTITION BY {table_spec['postgres_partition_spec']['partitioning_form']}"
+                        f"({', '.join(table_spec['postgres_partition_spec']['partition_keys'])})"
+                    )
+                    storage_parameters = ""
+                    partitions_sql = [
+                        (
+                            f"CREATE TABLE "
+                            # Below: e.g. my_tbl_temp -> my_tbl_part_temp
+                            f"{temp_table[:-len(temp_table_suffix_appendage)]}{pt['table_suffix']}{temp_table_suffix_appendage} "
+                            f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
+                            f"{storage_parameters}"
+                        )
+                        for pt in table_spec["postgres_partition_spec"]["partitions"]
+                    ]
                 if postgres_table:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
-                        ) WITH (autovacuum_enabled=FALSE)
+                        ) {partition_clause} {storage_parameters}
                     """
                 elif postgres_cols:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
-                        ) WITH (autovacuum_enabled=FALSE)
+                        ) {partition_clause} {storage_parameters}
                     """
                 else:
                     raise RuntimeError(
@@ -251,7 +274,15 @@ class Command(BaseCommand):
                     cursor.execute(create_temp_sql)
                     self.logger.info(f"{temp_table} created.")
 
+                    if is_postgres_table_partitioned and partitions_sql:
+                        for create_partition in partitions_sql:
+                            self.logger.info(f"Creating partition of {temp_table} with SQL:\n{create_partition}")
+                            cursor.execute(create_partition)
+                            self.logger.info("Partition created.")
+
                     # If there are vectors, add the triggers that will populate them based on other calls
+                    # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
+                    #       at the top-level virtual/partitioned table (versus having to apply on each partition)
                     for tsvector_name, derived_from_cols in tsvectors.items():
                         self.logger.info(
                             f"To prevent any confusion or duplicates, dropping the trigger"
@@ -284,8 +315,10 @@ class Command(BaseCommand):
 
         # If we're working off an existing table, truncate before loading in all the data
         if not make_new_table:
+            self.logger.info(f"Truncating existing table {temp_table}")
             with db.connection.cursor() as cursor:
                 cursor.execute(f"TRUNCATE {temp_table}")
+                self.logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
         if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
@@ -427,6 +460,33 @@ class Command(BaseCommand):
             )
         s3_bucket_with_csv_path = f"s3a://{spark_s3_bucket_name}/{csv_path}"
 
+        # Get boto3 s3 resource to interact with bucket where CSV data will land
+        if not CONFIG.USE_AWS:
+            boto3_session = boto3.session.Session(
+                region_name=CONFIG.AWS_REGION,
+                aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+                aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+            )
+            s3_resource = boto3_session.resource(
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
+            )
+        else:
+            s3_resource = boto3.resource(
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
+            )
+        s3_bucket_name = spark_s3_bucket_name
+        s3_bucket = s3_resource.Bucket(s3_bucket_name)
+        objs_collection = s3_bucket.objects.filter(Prefix=csv_path)
+        initial_size = sum(1 for _ in objs_collection)
+
+        if initial_size > 0:
+            self.logger.info(f"LOAD: Starting to delete {initial_size} previous objects in {s3_bucket_with_csv_path}")
+            objs_collection.delete()
+            post_delete_size = sum(1 for _ in objs_collection)
+            self.logger.info(f"LOAD: Finished deleting. {post_delete_size} objects remain in {s3_bucket_with_csv_path}")
+        else:
+            self.logger.info(f"LOAD: Target S3 path {s3_bucket_with_csv_path} is empty or yet to be created")
+
         self.logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
@@ -444,21 +504,6 @@ class Command(BaseCommand):
             f"get listing of contents of Bucket={spark_s3_bucket_name} with Prefix={csv_path}"
         )
 
-        if not CONFIG.USE_AWS:
-            boto3_session = boto3.session.Session(
-                region_name=CONFIG.AWS_REGION,
-                aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
-                aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
-            )
-            s3_resource = boto3_session.resource(
-                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
-            )
-        else:
-            s3_resource = boto3.resource(
-                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
-            )
-        s3_bucket_name = spark_s3_bucket_name
-        s3_bucket = s3_resource.Bucket(s3_bucket_name)
         gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
         file_count = len(gzipped_csv_files)
         self.logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")

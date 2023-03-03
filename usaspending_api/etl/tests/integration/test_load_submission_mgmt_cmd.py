@@ -93,21 +93,21 @@ class TestWithMultipleDatabases(TestCase):
         Test load submission management command for File C records with FAIN and URI
         """
         baker.make(
-            "awards.Award",
-            id=-999,
+            "search.AwardSearch",
+            award_id=-999,
             uri="RANDOM_LOAD_SUB_URI_999",
             fain="RANDOM_LOAD_SUB_FAIN_999",
             latest_transaction_id=-999,
         )
         baker.make(
-            "awards.Award",
-            id=-1999,
+            "search.AwardSearch",
+            award_id=-1999,
             uri="RANDOM_LOAD_SUB_URI_1999",
             fain="RANDOM_LOAD_SUB_FAIN_1999",
             latest_transaction_id=-1999,
         )
-        baker.make("awards.TransactionNormalized", id=-999)
-        baker.make("awards.TransactionNormalized", id=-1999)
+        baker.make("search.TransactionSearch", transaction_id=-999)
+        baker.make("search.TransactionSearch", transaction_id=-1999)
 
         call_command("load_submission", "-9999")
 
@@ -126,8 +126,8 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a URI
         """
-        baker.make("awards.Award", id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
-        baker.make("awards.TransactionNormalized", id=-997)
+        baker.make("search.AwardSearch", award_id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
+        baker.make("search.TransactionSearch", transaction_id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -144,8 +144,8 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a FAIN
         """
-        baker.make("awards.Award", id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
-        baker.make("awards.TransactionNormalized", id=-997)
+        baker.make("search.AwardSearch", award_id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
+        baker.make("search.TransactionSearch", transaction_id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -163,13 +163,13 @@ class TestWithMultipleDatabases(TestCase):
         Test load submission management command for File C records with only a piid and parent piid
         """
         baker.make(
-            "awards.Award",
-            id=-997,
+            "search.AwardSearch",
+            award_id=-997,
             piid="RANDOM_LOAD_SUB_PIID",
             parent_award_piid="RANDOM_LOAD_SUB_PARENT_PIID",
             latest_transaction_id=-997,
         )
-        baker.make("awards.TransactionNormalized", id=-997)
+        baker.make("search.TransactionSearch", transaction_id=-997)
 
         call_command("load_submission", "-9999")
 
@@ -187,9 +187,13 @@ class TestWithMultipleDatabases(TestCase):
         Test load submission management command for File C records with only a piid and no parent piid
         """
         baker.make(
-            "awards.Award", id=-998, piid="RANDOM_LOAD_SUB_PIID", parent_award_piid=None, latest_transaction_id=-998
+            "search.AwardSearch",
+            award_id=-998,
+            piid="RANDOM_LOAD_SUB_PIID",
+            parent_award_piid=None,
+            latest_transaction_id=-998,
         )
-        baker.make("awards.TransactionNormalized", id=-998)
+        baker.make("search.TransactionSearch", transaction_id=-998)
 
         call_command("load_submission", "-9999")
 
@@ -207,13 +211,13 @@ class TestWithMultipleDatabases(TestCase):
         Test load submission management command for File C records that are not expected to be linked to Award data
         """
         baker.make(
-            "awards.Award",
-            id=-1001,
+            "search.AwardSearch",
+            award_id=-1001,
             piid="RANDOM_LOAD_SUB_PIID",
             parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
             latest_transaction_id=-1234,
         )
-        baker.make("awards.TransactionNormalized", id=-1234)
+        baker.make("search.TransactionSearch", transaction_id=-1234)
 
         call_command("load_submission", "-9999")
 
@@ -231,13 +235,13 @@ class TestWithMultipleDatabases(TestCase):
         Test load submission management command for File C records that are not expected to be linked to Award data
         """
         baker.make(
-            "awards.Award",
-            id=-999,
+            "search.AwardSearch",
+            award_id=-999,
             piid="RANDOM_LOAD_SUB_PIID_DNE",
             parent_award_piid="PARENT_LOAD_SUB_PIID_DNE",
             latest_transaction_id=-999,
         )
-        baker.make("awards.TransactionNormalized", id=-999, award_id=-999)
+        baker.make("search.TransactionSearch", transaction_id=-999, award_id=-999)
 
         call_command("load_submission", "-9999")
 
