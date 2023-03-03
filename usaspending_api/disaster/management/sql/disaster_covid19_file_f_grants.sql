@@ -28,17 +28,17 @@ SELECT
     (SELECT STRING_AGG(DISTINCT CONCAT(U2."object_class", ':', U2.object_class_name), ';') FROM "award_search" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "award_id" = U1. "award_id") INNER JOIN "object_class" U2 ON (U1. "object_class_id" = U2. "id") WHERE U0. "award_id" = ("subaward_search"."award_id") and U1.object_class_id is not null GROUP BY U0. "award_id") AS "prime_award_object_classes_funding_this_award",
     (SELECT STRING_AGG(DISTINCT CONCAT(U2."program_activity_code", ':', U2.program_activity_name), ';') FROM "award_search" U0 LEFT OUTER JOIN "financial_accounts_by_awards" U1 ON (U0. "award_id" = U1. "award_id") INNER JOIN "ref_program_activity" U2 ON (U1. "program_activity_id" = U2. "id") WHERE U0. "award_id" = ("subaward_search"."award_id") and U1.program_activity_id is not null GROUP BY U0. "award_id") AS "prime_award_program_activities_funding_this_award",
     "subaward_search"."awardee_or_recipient_uniqu" AS "prime_awardee_duns",
-    "transaction_fabs"."uei" AS "prime_awardee_uei",
+    "transaction_fabs"."recipient_uei" AS "prime_awardee_uei",
     "subaward_search"."awardee_or_recipient_legal" AS "prime_awardee_name",
     "subaward_search"."dba_name" AS "prime_awardee_dba_name",
     "subaward_search"."ultimate_parent_unique_ide" AS "prime_awardee_parent_duns",
-    "transaction_fabs"."ultimate_parent_uei" AS "prime_awardee_parent_uei",
+    "transaction_fabs"."parent_uei" AS "prime_awardee_parent_uei",
     "subaward_search"."ultimate_parent_legal_enti" AS "prime_awardee_parent_name",
     "subaward_search"."legal_entity_country_code" AS "prime_awardee_country_code",
     "subaward_search"."legal_entity_country_name" AS "prime_awardee_country_name",
     "subaward_search"."legal_entity_address_line1" AS "prime_awardee_address_line_1",
     "subaward_search"."legal_entity_city_name" AS "prime_awardee_city_name",
-    "transaction_fabs"."legal_entity_county_name" AS "prime_awardee_county_name",
+    "transaction_fabs"."recipient_location_county_name" AS "prime_awardee_county_name",
     "subaward_search"."legal_entity_state_code" AS "prime_awardee_state_code",
     "subaward_search"."legal_entity_state_name" AS "prime_awardee_state_name",
     "subaward_search"."legal_entity_zip" AS "prime_awardee_zip_code",
@@ -141,7 +141,7 @@ INNER JOIN (
             0
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = awards.id)
+) DEFC ON (DEFC.award_id = awards.award_id)
 WHERE (
     "subaward_search"."prime_award_group" IN ('grant')
     AND "subaward_search"."sub_action_date" >= '2020-04-01'

@@ -190,10 +190,12 @@ class Command(BaseCommand):
 
         # Postgres side - temp
         temp_schema = "temp"
+        temp_table_suffix = "temp"
+        temp_table_suffix_appendage = f"_{temp_table_suffix}" if {temp_table_suffix} else ""
         if postgres_table:
-            temp_table_name = f"{postgres_table_name}_temp"
+            temp_table_name = f"{postgres_table_name}{temp_table_suffix_appendage}"
         else:
-            temp_table_name = f"{delta_table_name}_temp"
+            temp_table_name = f"{delta_table_name}{temp_table_suffix_appendage}"
         temp_table = f"{temp_schema}.{temp_table_name}"
 
         summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
@@ -224,22 +226,43 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
+        is_postgres_table_partitioned = table_spec.get("postgres_partition_spec") is not None
+
         if postgres_table or postgres_cols:
             # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
             # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
             # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
             if make_new_table:
+                partition_clause = ""
+                storage_parameters = "WITH (autovacuum_enabled=FALSE)"
+                partitions_sql = []
+                if is_postgres_table_partitioned:
+                    partition_clause = (
+                        f"PARTITION BY {table_spec['postgres_partition_spec']['partitioning_form']}"
+                        f"({', '.join(table_spec['postgres_partition_spec']['partition_keys'])})"
+                    )
+                    storage_parameters = ""
+                    partitions_sql = [
+                        (
+                            f"CREATE TABLE "
+                            # Below: e.g. my_tbl_temp -> my_tbl_part_temp
+                            f"{temp_table[:-len(temp_table_suffix_appendage)]}{pt['table_suffix']}{temp_table_suffix_appendage} "
+                            f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
+                            f"{storage_parameters}"
+                        )
+                        for pt in table_spec["postgres_partition_spec"]["partitions"]
+                    ]
                 if postgres_table:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
-                        ) WITH (autovacuum_enabled=FALSE)
+                        ) {partition_clause} {storage_parameters}
                     """
                 elif postgres_cols:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
                             {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
-                        ) WITH (autovacuum_enabled=FALSE)
+                        ) {partition_clause} {storage_parameters}
                     """
                 else:
                     raise RuntimeError(
@@ -251,7 +274,15 @@ class Command(BaseCommand):
                     cursor.execute(create_temp_sql)
                     self.logger.info(f"{temp_table} created.")
 
+                    if is_postgres_table_partitioned and partitions_sql:
+                        for create_partition in partitions_sql:
+                            self.logger.info(f"Creating partition of {temp_table} with SQL:\n{create_partition}")
+                            cursor.execute(create_partition)
+                            self.logger.info("Partition created.")
+
                     # If there are vectors, add the triggers that will populate them based on other calls
+                    # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
+                    #       at the top-level virtual/partitioned table (versus having to apply on each partition)
                     for tsvector_name, derived_from_cols in tsvectors.items():
                         self.logger.info(
                             f"To prevent any confusion or duplicates, dropping the trigger"
@@ -284,8 +315,10 @@ class Command(BaseCommand):
 
         # If we're working off an existing table, truncate before loading in all the data
         if not make_new_table:
+            self.logger.info(f"Truncating existing table {temp_table}")
             with db.connection.cursor() as cursor:
                 cursor.execute(f"TRUNCATE {temp_table}")
+                self.logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
         if options["reset_sequence"] and table_spec.get("postgres_seq_name"):

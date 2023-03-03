@@ -243,7 +243,7 @@ subaward_search_load_sql_string = fr"""
         FROM
             global_temp.treasury_appropriation_account AS taa
         INNER JOIN
-            raw.financial_accounts_by_awards AS faba
+            int.financial_accounts_by_awards AS faba
                 ON taa.treasury_account_identifier = faba.treasury_account_id
         WHERE
             faba.award_id IS NOT NULL

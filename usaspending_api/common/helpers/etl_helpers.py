@@ -31,7 +31,7 @@ def get_unlinked_count(file_name):
     return int(result)
 
 
-def update_c_to_d_linkages(type, count=True, submission_id=None):
+def update_c_to_d_linkages(type, count=True, submission_id=None, file_d_table="award_search"):
     logger.info("Starting File C to D linkage updates for %s records" % type)
 
     if type.lower() == "contract":
@@ -58,7 +58,7 @@ def update_c_to_d_linkages(type, count=True, submission_id=None):
         sql_commands = read_sql_file(file_path=str(_ETL_SQL_FILE_PATH / file_name))
         for command in sql_commands:
             submission_id_clause = f"and faba_sub.submission_id = {submission_id}" if submission_id else ""
-            command = command.format(submission_id_clause=submission_id_clause)
+            command = command.format(submission_id_clause=submission_id_clause, file_d_table=file_d_table)
             with connection.cursor() as cursor:
                 cursor.execute(command)
         logger.info(f"Finished {file_name} in {str(datetime.now() - start)} seconds")

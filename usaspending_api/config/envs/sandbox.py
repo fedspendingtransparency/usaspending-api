@@ -12,8 +12,8 @@ from typing import ClassVar
 from usaspending_api.config.envs.default import DefaultConfig
 
 
-class QATConfig(DefaultConfig):
-    """Config for a qat runtime environment, which inherits and overrides from DefaultConfig
+class SandboxConfig(DefaultConfig):
+    """Config for a sandbox runtime environment, which inherits and overrides from DefaultConfig
 
     See Also:
         Attributes inherited from or overridden from ``DefaultConfig``
@@ -21,8 +21,11 @@ class QATConfig(DefaultConfig):
     """
 
     # ==== [Global] ====
-    ENV_CODE: ClassVar[str] = "qat"
+    ENV_CODE: ClassVar[str] = "sbx"
 
     # ==== [AWS] ====
     AWS_PROFILE: str = None
     SPARK_S3_BUCKET = "dti-da-usaspending-spark-qat"
+    # Prefix data paths with data/sandbox to not interfere with qat data in the same shared bucket
+    DELTA_LAKE_S3_PATH: str = "data/sandbox/delta"
+    SPARK_CSV_S3_PATH: str = "data/sandbox/csv"

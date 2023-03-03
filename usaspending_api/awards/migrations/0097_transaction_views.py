@@ -100,17 +100,4 @@ class Migration(migrations.Migration):
             name='transactionnormalized',
             options={'managed': False},
         ),
-
-        migrations.RunSQL(
-            sql="DROP TABLE IF EXISTS transaction_fabs",
-            reverse_sql="",
-        ),
-        migrations.RunSQL(
-            sql="DROP TABLE IF EXISTS transaction_fpds",
-            reverse_sql="",
-        ),
-        migrations.RunSQL(
-            sql="DROP TABLE IF EXISTS transaction_normalized",
-            reverse_sql="",
-        ),
     ]

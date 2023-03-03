@@ -14,7 +14,7 @@ UPDATE_AWARDS_SQL = """
     SELECT
         DISTINCT award_id
     FROM
-        raw.financial_accounts_by_awards faba
+        int.financial_accounts_by_awards faba
     INNER JOIN global_temp.submission_attributes sa ON
         faba.submission_id = sa.submission_id
     INNER JOIN global_temp.dabs_submission_window_schedule dabs ON
@@ -139,8 +139,9 @@ class Command(BaseCommand):
             )
         )
 
+        count = results.collect()[0][0]
+
         if dry_run:
-            count = results.collect()[0]
             logger.info(
                 f"There are {count:,} award records which should be reloaded into Elasticsearch for data consistency."
             )
