@@ -17,7 +17,7 @@ from django.db.models import (
     Value,
     When,
 )
-from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault
+from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault, CFDAs
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, TransactionFABS
 from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_latest_closed_periods,
@@ -283,19 +283,7 @@ def award_annotations(filters: dict):
             output_field=TextField(),
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
-        "cfda_numbers_and_titles": Subquery(
-            TransactionFABS.objects.filter(transaction__award_id=OuterRef("award_id"))
-            .annotate(
-                value=ExpressionWrapper(
-                    ConcatAll(F("cfda_number"), Value(": "), F("cfda_title")),
-                    output_field=TextField(),
-                ),
-            )
-            .values("transaction__award_id")
-            .annotate(total=StringAggWithDefault("value", "; ", distinct=True, ordering="value"))
-            .values("total"),
-            output_field=TextField(),
-        ),
+        "cfda_numbers_and_titles": CFDAs("cfdas"),
     }
     return annotation_fields
 
