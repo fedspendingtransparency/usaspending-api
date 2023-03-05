@@ -48,7 +48,7 @@ class FiscalYearAndQuarter(Func):
     output_field = CharField()
 
 
-class CFDAS(Func):
+class CFDAs(Func):
     """ Generates the CFDAs string from the text array of JSON strings of cfdas. """
 
     function = "array_to_string"
