@@ -48,6 +48,18 @@ class FiscalYearAndQuarter(Func):
     output_field = CharField()
 
 
+class CFDAS(Func):
+    """ Generates the CFDAs string from the text array of JSON strings of cfdas. """
+
+    function = "array_to_string"
+    template = (
+        "%(function)s(ARRAY("
+        "SELECT CONCAT(unnest_cfdas::JSON->>'cfda_number', ': ', unnest_cfdas::JSON->>'cfda_program_title')"
+        " FROM unnest(%(expressions)s) AS unnest_cfdas), '; ')"
+    )
+    output_field = TextField()
+
+
 class BoolOr(Aggregate):
     """true if at least one input value is true, otherwise false"""
 
