@@ -138,12 +138,13 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         base_queryset = DBAwardSearch.objects.all()
         cls._populate_download_lookups(filters, download_job)
-        queryset = base_queryset.filter(
-            Exists(
-                DownloadJobLookup.objects.filter(
-                    lookup_id=OuterRef("award_id"), download_job_id=download_job.download_job_id
-                )
-            )
+        queryset = base_queryset.extra(
+            tables=["download_job_lookup"],
+            where=[
+                '"download_job_lookup"."download_job_id" = %s '
+                'AND "download_job_lookup"."lookup_id" = "award_search"."award_id"'
+            ],
+            params=[download_job.download_job_id],
         )
 
         return queryset
@@ -158,12 +159,13 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         base_queryset = DBTransactionSearch.objects.all()
         cls._populate_download_lookups(filters, download_job)
-        queryset = base_queryset.filter(
-            Exists(
-                DownloadJobLookup.objects.filter(
-                    lookup_id=OuterRef("transaction_id"), download_job_id=download_job.download_job_id
-                )
-            )
+        queryset = base_queryset.extra(
+            tables=["download_job_lookup"],
+            where=[
+                '"download_job_lookup"."download_job_id" = %s '
+                'AND "download_job_lookup"."lookup_id" = "transaction_search"."transaction_id"'
+            ],
+            params=[download_job.download_job_id],
         )
 
         return queryset
