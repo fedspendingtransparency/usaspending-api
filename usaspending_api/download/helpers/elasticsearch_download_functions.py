@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Union
 
 from django.conf import settings
-from django.db.models import QuerySet, Exists, OuterRef
+from django.db.models import QuerySet
 from elasticsearch_dsl import A
 
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
