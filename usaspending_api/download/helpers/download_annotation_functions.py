@@ -525,19 +525,7 @@ def subaward_annotations(filters: dict):
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("latest_transaction__action_date"),
-        "prime_award_cfda_numbers_and_titles": Subquery(
-            TransactionFABS.objects.filter(transaction__award_id=OuterRef("award_id"))
-            .annotate(
-                value=ExpressionWrapper(
-                    ConcatAll(F("cfda_number"), Value(": "), F("cfda_title")),
-                    output_field=TextField(),
-                )
-            )
-            .values("transaction__award_id")
-            .annotate(total=StringAggWithDefault("value", "; ", distinct=True, ordering="value"))
-            .values("total"),
-            output_field=TextField(),
-        ),
+        "prime_award_cfda_numbers_and_titles": CFDAs("award__cfdas"),
     }
     return annotation_fields
 
