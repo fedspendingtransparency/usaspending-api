@@ -172,9 +172,11 @@ def subaward_filter(filters, for_downloads=False):
             transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
             logger.info("Found {} transactions based on keyword: {}".format(len(transaction_ids), keyword))
             transaction_ids = [str(transaction_id) for transaction_id in transaction_ids]
-            queryset = queryset.filter(latest_transaction_id__isnull=False)
+            queryset = queryset.filter(latest_transaction__isnull=False)
 
             # Prepare a SQL snippet to include in the predicate for searching an array of transaction IDs
+            # TODO: Now that SubawardSearch has an FK field to TransactionSearch, we don't need the extra (raw SQL)
+            #  Look to add a Django filter that does the same as below
             sql_fragment = (
                 '"subaward_search"."latest_transaction_id" = ANY(\'{{{}}}\'::int[])'  # int[] -> int array type
             )

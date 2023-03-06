@@ -17,7 +17,7 @@ from django.db.models import (
     Value,
     When,
 )
-from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault
+from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault, CFDAs
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards, TransactionFABS
 from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_latest_closed_periods,
@@ -283,19 +283,7 @@ def award_annotations(filters: dict):
             output_field=TextField(),
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
-        "cfda_numbers_and_titles": Subquery(
-            TransactionFABS.objects.filter(transaction__award_id=OuterRef("award_id"))
-            .annotate(
-                value=ExpressionWrapper(
-                    ConcatAll(F("cfda_number"), Value(": "), F("cfda_title")),
-                    output_field=TextField(),
-                ),
-            )
-            .values("transaction__award_id")
-            .annotate(total=StringAggWithDefault("value", "; ", distinct=True, ordering="value"))
-            .values("total"),
-            output_field=TextField(),
-        ),
+        "cfda_numbers_and_titles": CFDAs("cfdas"),
     }
     return annotation_fields
 
@@ -454,7 +442,7 @@ def subaward_annotations(filters: dict):
         "subaward_action_date_fiscal_year": FiscalYear("sub_action_date"),
         "prime_award_base_action_date_fiscal_year": FiscalYear("award__date_signed"),
         "prime_award_period_of_performance_potential_end_date": Cast(
-            F("award__latest_transaction__contract_data__period_of_perf_potential_e"), DateField()
+            F("latest_transaction__period_of_perf_potential_e"), DateField()
         ),
         "prime_award_treasury_accounts_funding_this_award": Subquery(
             Award.objects.filter(id=OuterRef("award_id"))
@@ -536,20 +524,8 @@ def subaward_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "prime_award_latest_action_date_fiscal_year": FiscalYear("award__latest_transaction__action_date"),
-        "prime_award_cfda_numbers_and_titles": Subquery(
-            TransactionFABS.objects.filter(transaction__award_id=OuterRef("award_id"))
-            .annotate(
-                value=ExpressionWrapper(
-                    ConcatAll(F("cfda_number"), Value(": "), F("cfda_title")),
-                    output_field=TextField(),
-                )
-            )
-            .values("transaction__award_id")
-            .annotate(total=StringAggWithDefault("value", "; ", distinct=True, ordering="value"))
-            .values("total"),
-            output_field=TextField(),
-        ),
+        "prime_award_latest_action_date_fiscal_year": FiscalYear("latest_transaction__action_date"),
+        "prime_award_cfda_numbers_and_titles": CFDAs("award__cfdas"),
     }
     return annotation_fields
 

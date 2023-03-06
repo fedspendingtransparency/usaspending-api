@@ -159,7 +159,14 @@ class SubawardSearch(models.Model):
     prime_award_type = models.TextField(null=True, blank=True)
     piid = models.TextField(null=True, blank=True)
     fain = models.TextField(null=True, blank=True)
-    latest_transaction_id = models.BigIntegerField(null=True, blank=True)
+    latest_transaction = models.ForeignKey(
+        "search.TransactionSearch",
+        on_delete=models.DO_NOTHING,
+        related_name="subawardsearch",
+        null=True,
+        help_text="The latest transaction for the prime award by action_date and mod",
+        db_constraint=False,
+    )
     last_modified_date = models.DateField(null=True, blank=True)
 
     awarding_agency = models.ForeignKey(
