@@ -66,12 +66,11 @@ SELECT
     "transaction_fabs"."place_of_performance_zip4a" AS "primary_place_of_performance_zip_4",
     "transaction_fabs"."place_of_performance_congr" AS "primary_place_of_performance_congressional_district",
     "transaction_fabs"."place_of_performance_forei" AS "primary_place_of_performance_foreign_location",
-        array_to_string(ARRAY(
+    array_to_string(ARRAY(
         SELECT CONCAT(unnest_cfdas::json ->> 'cfda_number', ': ', unnest_cfdas::json ->> 'cfda_program_title')
         FROM unnest("awards"."cfdas") AS unnest_cfdas
         ), '; '
     ) AS "cfda_numbers_and_titles",
-    (SELECT STRING_AGG(DISTINCT CONCAT(U0."cfda_number", ': ', U0."cfda_title"), '; '  ORDER BY  CONCAT(U0."cfda_number", ': ', U0."cfda_title")) AS "total" FROM "vw_transaction_fabs" U0 INNER JOIN "vw_transaction_normalized" U1 ON (U0."transaction_id" = U1."id") WHERE U1."award_id" = ("awards"."award_id") GROUP BY U1."award_id") AS "cfda_numbers_and_titles",
     "transaction_fabs"."assistance_type" AS "assistance_type_code",
     "transaction_fabs"."assistance_type_desc" AS "assistance_type_description",
     "awards"."description" AS "prime_award_base_transaction_description",
