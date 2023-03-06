@@ -158,6 +158,25 @@ class AwardSearch(models.Model):
         help_text="The earliest transaction by action_date and mod associated with this award",
         db_constraint=False,
     )
+    # TODO: Maybe for later, as a way to join award_search directly to transaction_search
+    # latest_transaction_search = models.ForeignKey(
+    #     "search.TransactionSearch",
+    #     on_delete=models.DO_NOTHING,
+    #     related_name="latest_for_award",
+    #     null=True,
+    #     help_text="The latest transaction in transaction_search table by action_date and mod associated with this "
+    #     "award",
+    #     db_constraint=False,
+    # )
+    # earliest_transaction_search = models.ForeignKey(
+    #     "search.TransactionSearch",
+    #     on_delete=models.DO_NOTHING,
+    #     related_name="earliest_for_award",
+    #     null=True,
+    #     help_text="The earliest transaction in transaction_search table by action_date and mod associated with this "
+    #     "award",
+    #     db_constraint=False,
+    # )
     total_indirect_federal_sharing = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     transaction_unique_id = models.TextField(null=True)
     raw_recipient_name = models.TextField(null=True)
