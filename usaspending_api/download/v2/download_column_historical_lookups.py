@@ -1413,7 +1413,7 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("prime_award_latest_action_date", "award__latest_transaction__action_date"),
+                ("prime_award_latest_action_date", "latest_transaction__action_date"),
                 ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
@@ -1448,7 +1448,7 @@ query_paths = {
                 ("prime_awardee_country_name", "legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "legal_entity_address_line1"),
                 ("prime_awardee_city_name", "legal_entity_city_name"),
-                ("prime_awardee_county_name", "award__latest_transaction__contract_data__legal_entity_county_name"),
+                ("prime_awardee_county_name", "latest_transaction__recipient_location_county_name"),
                 ("prime_awardee_state_code", "legal_entity_state_code"),
                 ("prime_awardee_state_name", "legal_entity_state_name"),
                 ("prime_awardee_zip_code", "legal_entity_zip"),
@@ -1480,11 +1480,11 @@ query_paths = {
                 ("prime_award_naics_description", "naics_description"),
                 (
                     "prime_award_national_interest_action_code",
-                    "award__latest_transaction__contract_data__national_interest_action",
+                    "latest_transaction__national_interest_action",
                 ),
                 (
                     "prime_award_national_interest_action",
-                    "award__latest_transaction__contract_data__national_interest_desc",
+                    "latest_transaction__national_interest_desc",
                 ),
                 ("subaward_type", "subaward_type"),
                 ("subaward_fsrs_report_id", "internal_id"),
@@ -1568,7 +1568,7 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("prime_award_latest_action_date", "award__latest_transaction__action_date"),
+                ("prime_award_latest_action_date", "latest_transaction__action_date"),
                 ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
@@ -1599,7 +1599,7 @@ query_paths = {
                 ("prime_awardee_country_name", "legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "legal_entity_address_line1"),
                 ("prime_awardee_city_name", "legal_entity_city_name"),
-                ("prime_awardee_county_name", "award__latest_transaction__assistance_data__legal_entity_county_name"),
+                ("prime_awardee_county_name", "latest_transaction__recipient_location_county_name"),
                 ("prime_awardee_state_code", "legal_entity_state_code"),
                 ("prime_awardee_state_name", "legal_entity_state_name"),
                 ("prime_awardee_zip_code", "legal_entity_zip"),
