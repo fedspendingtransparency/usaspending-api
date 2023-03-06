@@ -11,26 +11,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql="""
-                alter table rpt.award_search add column latest_transaction_search_id bigint generated always as (latest_transaction_id) stored;
-                alter table rpt.award_search add column earliest_transaction_search_id bigint generated always as (earliest_transaction_id) stored;
-            """,
-            reverse_sql="""
-                alter table rpt.award_search drop column earliest_transaction_search_id;
-                alter table rpt.award_search drop column latest_transaction_search_id;
-            """,
-            state_operations=[
-                migrations.AddField(
-                    model_name='awardsearch',
-                    name='earliest_transaction_search',
-                    field=models.ForeignKey(db_constraint=False, help_text='The earliest transaction in transaction_search table by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='earliest_for_award', to='search.transactionsearch'),
-                ),
-                migrations.AddField(
-                    model_name='awardsearch',
-                    name='latest_transaction_search',
-                    field=models.ForeignKey(db_constraint=False, help_text='The latest transaction in transaction_search table by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='latest_for_award', to='search.transactionsearch'),
-                ),
-            ],
-        )
+        migrations.AddField(
+            model_name='awardsearch',
+            name='earliest_transaction_search',
+            field=models.ForeignKey(db_constraint=False, help_text='The earliest transaction in transaction_search table by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='earliest_for_award', to='search.transactionsearch'),
+        ),
+        migrations.AddField(
+            model_name='awardsearch',
+            name='latest_transaction_search',
+            field=models.ForeignKey(db_constraint=False, help_text='The latest transaction in transaction_search table by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='latest_for_award', to='search.transactionsearch'),
+        ),
     ]
