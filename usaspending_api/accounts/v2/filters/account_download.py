@@ -263,7 +263,7 @@ def generate_gross_outlay_amount_derived_field(account_type, submission_queryset
 
 
 def generate_treasury_account_query(queryset, account_type):
-    """ Derive necessary fields for a treasury account-grouped query """
+    """Derive necessary fields for a treasury account-grouped query"""
     derived_fields = {
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(account_type),
@@ -300,7 +300,7 @@ def generate_treasury_account_query(queryset, account_type):
 
 
 def generate_federal_account_query(queryset, account_type, tas_id, filters):
-    """ Group by federal account (and budget function/subfunction) and SUM all other fields """
+    """Group by federal account (and budget function/subfunction) and SUM all other fields"""
     # Submission Queryset is only built for Federal Account downloads since the TAS are rolled up into
     # the Federal Account. For cases such as Treasury Account download where there is no GROUP BY in
     # the resulting SQL query this is not needed.
@@ -351,6 +351,33 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "unobligated_balance",
         "status_of_budgetary_resources_total",
         "transaction_obligated_amount",
+        "obligations_undelivered_orders_unpaid_total",
+        "obligations_undelivered_orders_unpaid_total_FYB",
+        "USSGL480100_undelivered_orders_obligations_unpaid",
+        "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
+        "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
+        "obligations_delivered_orders_unpaid_total",
+        "obligations_delivered_orders_unpaid_total_FYB",
+        "USSGL490100_delivered_orders_obligations_unpaid",
+        "USSGL490100_delivered_orders_obligations_unpaid_FYB",
+        "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
+        "gross_outlay_amount_FYB",
+        "gross_outlays_undelivered_orders_prepaid_total",
+        "gross_outlays_undelivered_orders_prepaid_total_FYB",
+        "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
+        "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
+        "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
+        "gross_outlays_delivered_orders_paid_total",
+        "gross_outlays_delivered_orders_paid_total_FYB",
+        "USSGL490200_delivered_orders_obligations_paid",
+        "USSGL490800_authority_outlayed_not_yet_disbursed",
+        "USSGL490800_authority_outlayed_not_yet_disbursed_FYB",
+        "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
+        "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig",
+        "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig",
+        "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
+        "USSGL493100_delivered_orders_obligations_transferred_unpaid",
+        "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
     ]
 
     # Group by all columns within the file that can't be summed
