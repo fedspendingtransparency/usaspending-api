@@ -249,7 +249,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return queryset
 
     def custom_queryset_order_by(self, queryset, sort_field_names, order):
-        """ Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
+        """Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
         if order == "desc":
             order_by_list = [F(field).desc(nulls_last=True) for field in sort_field_names]
         else:
@@ -271,7 +271,27 @@ class SpendingByAwardVisualizationViewSet(APIView):
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         sort_field = self.get_elastic_sort_by_fields()
         covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
-        if "covid_spending_by_defc" in sort_field:
+        iija_sort_fields = {"Infrastructure Obligations": "obligation", "Infrastructure Outlays": "outlay"}
+
+        if "iija_spending_by_defc" in sort_field:
+            sort_field.remove("iija_spending_by_defc")
+            sorts = [
+                {
+                    f"iija_spending_by_defc.{iija_sort_fields[self.pagination['sort_key']]}": {
+                        "mode": "sum",
+                        "order": self.pagination["sort_order"],
+                        "nested": {
+                            "path": "iija_spending_by_defc",
+                        },
+                    }
+                }
+            ]
+            if self.filters.get("def_codes") is not None:
+                sorts[0][f"iija_spending_by_defc.{iija_sort_fields[self.pagination['sort_key']]}"]["nested"].update(
+                    {"filter": {"terms": {"iija_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
+                )
+            sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
+        elif "covid_spending_by_defc" in sort_field:
             sort_field.remove("covid_spending_by_defc")
             sorts = [
                 {
