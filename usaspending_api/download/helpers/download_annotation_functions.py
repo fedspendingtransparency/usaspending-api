@@ -18,7 +18,7 @@ from django.db.models import (
     When,
 )
 from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault, CFDAs
-from usaspending_api.awards.models import Award, FinancialAccountsByAwards, TransactionFABS
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_latest_closed_periods,
     final_submissions_for_all_fy,
