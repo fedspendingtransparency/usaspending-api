@@ -27,8 +27,14 @@ query_paths = {
             [
                 ("contract_award_unique_key", "generated_unique_award_id"),
                 ("award_id_piid", "piid"),
-                ("parent_award_agency_id", "latest_transaction__contract_data__referenced_idv_agency_iden"),
-                ("parent_award_agency_name", "latest_transaction__contract_data__referenced_idv_agency_desc"),
+                (
+                    "parent_award_agency_id",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['referenced_idv_agency_iden']}",
+                ),
+                (
+                    "parent_award_agency_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['referenced_idv_agency_desc']}",
+                ),
                 ("parent_award_id_piid", "parent_award_piid"),
                 (
                     "disaster_emergency_fund_codes" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -37,556 +43,964 @@ query_paths = {
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "total_obligation"),
-                ("current_total_value_of_award", "latest_transaction__contract_data__current_total_value_award"),
+                (
+                    "current_total_value_of_award",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['current_total_value_award']}",
+                ),
                 (
                     "potential_total_value_of_award",
-                    "latest_transaction__contract_data__potential_total_value_awar",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['potential_total_value_awar']}",
                 ),
                 ("award_base_action_date", "date_signed"),
                 ("award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("award_latest_action_date", "latest_transaction__action_date"),
+                (
+                    "award_latest_action_date",
+                    f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}",
+                ),
                 ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "period_of_performance_start_date"),
                 (
                     "period_of_performance_current_end_date",
-                    "latest_transaction__contract_data__period_of_performance_curr",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['period_of_performance_curr']}",
                 ),
                 (
                     "period_of_performance_potential_end_date",
-                    "latest_transaction__contract_data__period_of_perf_potential_e",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['period_of_perf_potential_e']}",
                 ),
-                ("ordering_period_end_date", "latest_transaction__contract_data__ordering_period_end_date"),
-                ("solicitation_date", "earliest_transaction__contract_data__solicitation_date"),
-                ("awarding_agency_code", "latest_transaction__contract_data__awarding_agency_code"),
-                ("awarding_agency_name", "latest_transaction__contract_data__awarding_agency_name"),
-                ("awarding_sub_agency_code", "latest_transaction__contract_data__awarding_sub_tier_agency_c"),
-                ("awarding_sub_agency_name", "latest_transaction__contract_data__awarding_sub_tier_agency_n"),
-                ("awarding_office_code", "latest_transaction__contract_data__awarding_office_code"),
-                ("awarding_office_name", "latest_transaction__contract_data__awarding_office_name"),
-                ("funding_agency_code", "latest_transaction__contract_data__funding_agency_code"),
-                ("funding_agency_name", "latest_transaction__contract_data__funding_agency_name"),
-                ("funding_sub_agency_code", "latest_transaction__contract_data__funding_sub_tier_agency_co"),
-                ("funding_sub_agency_name", "latest_transaction__contract_data__funding_sub_tier_agency_na"),
-                ("funding_office_code", "latest_transaction__contract_data__funding_office_code"),
-                ("funding_office_name", "latest_transaction__contract_data__funding_office_name"),
+                (
+                    "ordering_period_end_date",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['ordering_period_end_date']}",
+                ),
+                (
+                    "solicitation_date",
+                    f"earliest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['solicitation_date']}",
+                ),
+                (
+                    "awarding_agency_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_agency_code']}",
+                ),
+                (
+                    "awarding_agency_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_agency_name']}",
+                ),
+                (
+                    "awarding_sub_agency_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_sub_tier_agency_c']}",
+                ),
+                (
+                    "awarding_sub_agency_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_sub_tier_agency_n']}",
+                ),
+                (
+                    "awarding_office_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_office_code']}",
+                ),
+                (
+                    "awarding_office_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_office_name']}",
+                ),
+                (
+                    "funding_agency_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['funding_agency_code']}",
+                ),
+                (
+                    "funding_agency_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['funding_agency_name']}",
+                ),
+                (
+                    "funding_sub_agency_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['funding_sub_tier_agency_co']}",
+                ),
+                (
+                    "funding_sub_agency_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['funding_sub_tier_agency_na']}",
+                ),
+                (
+                    "funding_office_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['funding_office_code']}",
+                ),
+                (
+                    "funding_office_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['funding_office_name']}",
+                ),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("object_classes_funding_this_award", None),  # Annotation is used to create this column
                 ("program_activities_funding_this_award", None),  # Annotation is used to create this column
-                ("foreign_funding", "latest_transaction__contract_data__foreign_funding"),
-                ("foreign_funding_description", "latest_transaction__contract_data__foreign_funding_desc"),
-                ("sam_exception", "latest_transaction__contract_data__sam_exception"),
-                ("sam_exception_description", "latest_transaction__contract_data__sam_exception_description"),
-                ("recipient_uei", "latest_transaction__contract_data__awardee_or_recipient_uei"),
-                ("recipient_duns", "latest_transaction__contract_data__awardee_or_recipient_uniqu"),
-                ("recipient_name", "latest_transaction__contract_data__awardee_or_recipient_legal"),
+                (
+                    "foreign_funding",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['foreign_funding']}",
+                ),
+                (
+                    "foreign_funding_description",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['foreign_funding_desc']}",
+                ),
+                ("sam_exception", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['sam_exception']}"),
+                (
+                    "sam_exception_description",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['sam_exception_description']}",
+                ),
+                (
+                    "recipient_uei",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awardee_or_recipient_uei']}",
+                ),
+                (
+                    "recipient_duns",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awardee_or_recipient_uniqu']}",
+                ),
+                (
+                    "recipient_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awardee_or_recipient_legal']}",
+                ),
                 (
                     "recipient_doing_business_as_name",
-                    "latest_transaction__contract_data__vendor_doing_as_business_n",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['vendor_doing_as_business_n']}",
                 ),
-                ("cage_code", "latest_transaction__contract_data__cage_code"),
-                ("recipient_parent_uei", "latest_transaction__contract_data__ultimate_parent_uei"),
-                ("recipient_parent_duns", "latest_transaction__contract_data__ultimate_parent_unique_ide"),
-                ("recipient_parent_name", "latest_transaction__contract_data__ultimate_parent_legal_enti"),
-                ("recipient_country_code", "latest_transaction__contract_data__legal_entity_country_code"),
-                ("recipient_country_name", "latest_transaction__contract_data__legal_entity_country_name"),
-                ("recipient_address_line_1", "latest_transaction__contract_data__legal_entity_address_line1"),
-                ("recipient_address_line_2", "latest_transaction__contract_data__legal_entity_address_line2"),
-                ("recipient_city_name", "latest_transaction__contract_data__legal_entity_city_name"),
-                ("recipient_county_name", "latest_transaction__contract_data__legal_entity_county_name"),
-                ("recipient_state_code", "latest_transaction__contract_data__legal_entity_state_code"),
-                ("recipient_state_name", "latest_transaction__contract_data__legal_entity_state_descrip"),
-                ("recipient_zip_4_code", "latest_transaction__contract_data__legal_entity_zip4"),
+                ("cage_code", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['cage_code']}"),
+                (
+                    "recipient_parent_uei",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['ultimate_parent_uei']}",
+                ),
+                (
+                    "recipient_parent_duns",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['ultimate_parent_unique_ide']}",
+                ),
+                (
+                    "recipient_parent_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['ultimate_parent_legal_enti']}",
+                ),
+                (
+                    "recipient_country_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_country_code']}",
+                ),
+                (
+                    "recipient_country_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_country_name']}",
+                ),
+                (
+                    "recipient_address_line_1",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_address_line1']}",
+                ),
+                (
+                    "recipient_address_line_2",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_address_line2']}",
+                ),
+                (
+                    "recipient_city_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_city_name']}",
+                ),
+                (
+                    "recipient_county_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_county_name']}",
+                ),
+                (
+                    "recipient_state_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_state_code']}",
+                ),
+                (
+                    "recipient_state_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_state_descrip']}",
+                ),
+                (
+                    "recipient_zip_4_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_zip4']}",
+                ),
                 (
                     "recipient_congressional_district",
-                    "latest_transaction__contract_data__legal_entity_congressional",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_congressional']}",
                 ),
-                ("recipient_phone_number", "latest_transaction__contract_data__vendor_phone_number"),
-                ("recipient_fax_number", "latest_transaction__contract_data__vendor_fax_number"),
+                (
+                    "recipient_phone_number",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['vendor_phone_number']}",
+                ),
+                (
+                    "recipient_fax_number",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['vendor_fax_number']}",
+                ),
                 (
                     "primary_place_of_performance_country_code",
-                    "latest_transaction__contract_data__place_of_perform_country_c",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_country_c']}",
                 ),
                 (
                     "primary_place_of_performance_country_name",
-                    "latest_transaction__contract_data__place_of_perf_country_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perf_country_desc']}",
                 ),
                 (
                     "primary_place_of_performance_city_name",
-                    "latest_transaction__contract_data__place_of_perform_city_name",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_city_name']}",
                 ),
                 (
                     "primary_place_of_performance_county_name",
-                    "latest_transaction__contract_data__place_of_perform_county_na",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_county_na']}",
                 ),
                 (
                     "primary_place_of_performance_state_code",
-                    "latest_transaction__contract_data__place_of_performance_state",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_state']}",
                 ),
                 (
                     "primary_place_of_performance_state_name",
-                    "latest_transaction__contract_data__place_of_perfor_state_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perfor_state_desc']}",
                 ),
                 (
                     "primary_place_of_performance_zip_4",
-                    "latest_transaction__contract_data__place_of_performance_zip4a",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_zip4a']}",
                 ),
                 (
                     "primary_place_of_performance_congressional_district",
-                    "latest_transaction__contract_data__place_of_performance_congr",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_congr']}",
                 ),
-                ("award_or_idv_flag", "latest_transaction__contract_data__pulled_from"),
+                (
+                    "award_or_idv_flag",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['pulled_from']}",
+                ),
                 (
                     "award_type_code",
-                    "latest_transaction__contract_data__contract_award_type",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contract_award_type']}",
                 ),  # Column is appended to in account_download.py
                 (
                     "award_type",
-                    "latest_transaction__contract_data__contract_award_type_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contract_award_type_desc']}",
                 ),  # Column is appended to in account_download.py
-                ("idv_type_code", "latest_transaction__contract_data__idv_type"),
-                ("idv_type", "latest_transaction__contract_data__idv_type_description"),
+                ("idv_type_code", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['idv_type']}"),
+                (
+                    "idv_type",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['idv_type_description']}",
+                ),
                 (
                     "multiple_or_single_award_idv_code",
-                    "latest_transaction__contract_data__multiple_or_single_award_i",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['multiple_or_single_award_i']}",
                 ),
                 (
                     "multiple_or_single_award_idv",
-                    "latest_transaction__contract_data__multiple_or_single_aw_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['multiple_or_single_aw_desc']}",
                 ),
-                ("type_of_idc_code", "latest_transaction__contract_data__type_of_idc"),
-                ("type_of_idc", "latest_transaction__contract_data__type_of_idc_description"),
-                ("type_of_contract_pricing_code", "latest_transaction__contract_data__type_of_contract_pricing"),
-                ("type_of_contract_pricing", "latest_transaction__contract_data__type_of_contract_pric_desc"),
+                ("type_of_idc_code", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['type_of_idc']}"),
+                (
+                    "type_of_idc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['type_of_idc_description']}",
+                ),
+                (
+                    "type_of_contract_pricing_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['type_of_contract_pricing']}",
+                ),
+                (
+                    "type_of_contract_pricing",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['type_of_contract_pric_desc']}",
+                ),
                 ("prime_award_base_transaction_description", "description"),
-                ("solicitation_identifier", "latest_transaction__contract_data__solicitation_identifier"),
-                ("number_of_actions", "latest_transaction__contract_data__number_of_actions"),
+                (
+                    "solicitation_identifier",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['solicitation_identifier']}",
+                ),
+                (
+                    "number_of_actions",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['number_of_actions']}",
+                ),
                 (
                     "inherently_governmental_functions",
-                    "latest_transaction__contract_data__inherently_government_func",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['inherently_government_func']}",
                 ),
                 (
                     "inherently_governmental_functions_description",
-                    "latest_transaction__contract_data__inherently_government_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['inherently_government_desc']}",
                 ),
-                ("product_or_service_code", "latest_transaction__contract_data__product_or_service_code"),
+                (
+                    "product_or_service_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['product_or_service_code']}",
+                ),
                 (
                     "product_or_service_code_description",
-                    "latest_transaction__contract_data__product_or_service_co_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['product_or_service_co_desc']}",
                 ),
-                ("contract_bundling_code", "latest_transaction__contract_data__contract_bundling"),
-                ("contract_bundling", "latest_transaction__contract_data__contract_bundling_descrip"),
-                ("dod_claimant_program_code", "latest_transaction__contract_data__dod_claimant_program_code"),
+                (
+                    "contract_bundling_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contract_bundling']}",
+                ),
+                (
+                    "contract_bundling",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contract_bundling_descrip']}",
+                ),
+                (
+                    "dod_claimant_program_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['dod_claimant_program_code']}",
+                ),
                 (
                     "dod_claimant_program_description",
-                    "latest_transaction__contract_data__dod_claimant_prog_cod_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['dod_claimant_prog_cod_desc']}",
                 ),
-                ("naics_code", "latest_transaction__contract_data__naics"),
-                ("naics_description", "latest_transaction__contract_data__naics_description"),
+                ("naics_code", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['naics']}"),
+                (
+                    "naics_description",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['naics_description']}",
+                ),
                 (
                     "recovered_materials_sustainability_code",
-                    "latest_transaction__contract_data__recovered_materials_sustai",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['recovered_materials_sustai']}",
                 ),
                 (
                     "recovered_materials_sustainability",
-                    "latest_transaction__contract_data__recovered_materials_s_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['recovered_materials_s_desc']}",
                 ),
                 (
                     "domestic_or_foreign_entity_code",
-                    "latest_transaction__contract_data__domestic_or_foreign_entity",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['domestic_or_foreign_entity']}",
                 ),
-                ("domestic_or_foreign_entity", "latest_transaction__contract_data__domestic_or_foreign_e_desc"),
+                (
+                    "domestic_or_foreign_entity",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['domestic_or_foreign_e_desc']}",
+                ),
                 (
                     "dod_acquisition_program_code",
-                    "latest_transaction__contract_data__program_system_or_equipmen",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['program_system_or_equipmen']}",
                 ),
                 (
                     "dod_acquisition_program_description",
-                    "latest_transaction__contract_data__program_system_or_equ_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['program_system_or_equ_desc']}",
                 ),
                 (
                     "information_technology_commercial_item_category_code",
-                    "latest_transaction__contract_data__information_technology_com",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['information_technology_com']}",
                 ),
                 (
                     "information_technology_commercial_item_category",
-                    "latest_transaction__contract_data__information_technolog_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['information_technolog_desc']}",
                 ),
-                ("epa_designated_product_code", "latest_transaction__contract_data__epa_designated_product"),
-                ("epa_designated_product", "latest_transaction__contract_data__epa_designated_produc_desc"),
+                (
+                    "epa_designated_product_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['epa_designated_product']}",
+                ),
+                (
+                    "epa_designated_product",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['epa_designated_produc_desc']}",
+                ),
                 (
                     "country_of_product_or_service_origin_code",
-                    "latest_transaction__contract_data__country_of_product_or_serv",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['country_of_product_or_serv']}",
                 ),
                 (
                     "country_of_product_or_service_origin",
-                    "latest_transaction__contract_data__country_of_product_or_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['country_of_product_or_desc']}",
                 ),
-                ("place_of_manufacture_code", "latest_transaction__contract_data__place_of_manufacture"),
-                ("place_of_manufacture", "latest_transaction__contract_data__place_of_manufacture_desc"),
-                ("subcontracting_plan_code", "latest_transaction__contract_data__subcontracting_plan"),
-                ("subcontracting_plan", "latest_transaction__contract_data__subcontracting_plan_desc"),
-                ("extent_competed_code", "latest_transaction__contract_data__extent_competed"),
-                ("extent_competed", "latest_transaction__contract_data__extent_compete_description"),
-                ("solicitation_procedures_code", "latest_transaction__contract_data__solicitation_procedures"),
-                ("solicitation_procedures", "latest_transaction__contract_data__solicitation_procedur_desc"),
-                ("type_of_set_aside_code", "latest_transaction__contract_data__type_set_aside"),
-                ("type_of_set_aside", "latest_transaction__contract_data__type_set_aside_description"),
-                ("evaluated_preference_code", "latest_transaction__contract_data__evaluated_preference"),
-                ("evaluated_preference", "latest_transaction__contract_data__evaluated_preference_desc"),
-                ("research_code", "latest_transaction__contract_data__research"),
-                ("research", "latest_transaction__contract_data__research_description"),
+                (
+                    "place_of_manufacture_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_manufacture']}",
+                ),
+                (
+                    "place_of_manufacture",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_manufacture_desc']}",
+                ),
+                (
+                    "subcontracting_plan_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['subcontracting_plan']}",
+                ),
+                (
+                    "subcontracting_plan",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['subcontracting_plan_desc']}",
+                ),
+                (
+                    "extent_competed_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['extent_competed']}",
+                ),
+                (
+                    "extent_competed",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['extent_compete_description']}",
+                ),
+                (
+                    "solicitation_procedures_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['solicitation_procedures']}",
+                ),
+                (
+                    "solicitation_procedures",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['solicitation_procedur_desc']}",
+                ),
+                (
+                    "type_of_set_aside_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['type_set_aside']}",
+                ),
+                (
+                    "type_of_set_aside",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['type_set_aside_description']}",
+                ),
+                (
+                    "evaluated_preference_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['evaluated_preference']}",
+                ),
+                (
+                    "evaluated_preference",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['evaluated_preference_desc']}",
+                ),
+                ("research_code", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['research']}"),
+                (
+                    "research",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['research_description']}",
+                ),
                 (
                     "fair_opportunity_limited_sources_code",
-                    "latest_transaction__contract_data__fair_opportunity_limited_s",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['fair_opportunity_limited_s']}",
                 ),
                 (
                     "fair_opportunity_limited_sources",
-                    "latest_transaction__contract_data__fair_opportunity_limi_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['fair_opportunity_limi_desc']}",
                 ),
                 (
                     "other_than_full_and_open_competition_code",
-                    "latest_transaction__contract_data__other_than_full_and_open_c",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['other_than_full_and_open_c']}",
                 ),
                 (
                     "other_than_full_and_open_competition",
-                    "latest_transaction__contract_data__other_than_full_and_o_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['other_than_full_and_o_desc']}",
                 ),
-                ("number_of_offers_received", "latest_transaction__contract_data__number_of_offers_received"),
+                (
+                    "number_of_offers_received",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['number_of_offers_received']}",
+                ),
                 (
                     "commercial_item_acquisition_procedures_code",
-                    "latest_transaction__contract_data__commercial_item_acquisitio",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['commercial_item_acquisitio']}",
                 ),
                 (
                     "commercial_item_acquisition_procedures",
-                    "latest_transaction__contract_data__commercial_item_acqui_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['commercial_item_acqui_desc']}",
                 ),
                 (
                     "small_business_competitiveness_demonstration_program",
-                    "latest_transaction__contract_data__small_business_competitive",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['small_business_competitive']}",
                 ),
                 (
                     "simplified_procedures_for_certain_commercial_items_code",
-                    "latest_transaction__contract_data__commercial_item_test_progr",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['commercial_item_test_progr']}",
                 ),
                 (
                     "simplified_procedures_for_certain_commercial_items",
-                    "latest_transaction__contract_data__commercial_item_test_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['commercial_item_test_desc']}",
                 ),
-                ("a76_fair_act_action_code", "latest_transaction__contract_data__a_76_fair_act_action"),
-                ("a76_fair_act_action", "latest_transaction__contract_data__a_76_fair_act_action_desc"),
-                ("fed_biz_opps_code", "latest_transaction__contract_data__fed_biz_opps"),
-                ("fed_biz_opps", "latest_transaction__contract_data__fed_biz_opps_description"),
-                ("local_area_set_aside_code", "latest_transaction__contract_data__local_area_set_aside"),
-                ("local_area_set_aside", "latest_transaction__contract_data__local_area_set_aside_desc"),
+                (
+                    "a76_fair_act_action_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['a_76_fair_act_action']}",
+                ),
+                (
+                    "a76_fair_act_action",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['a_76_fair_act_action_desc']}",
+                ),
+                (
+                    "fed_biz_opps_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['fed_biz_opps']}",
+                ),
+                (
+                    "fed_biz_opps",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['fed_biz_opps_description']}",
+                ),
+                (
+                    "local_area_set_aside_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['local_area_set_aside']}",
+                ),
+                (
+                    "local_area_set_aside",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['local_area_set_aside_desc']}",
+                ),
                 (
                     "price_evaluation_adjustment_preference_percent_difference",
-                    "latest_transaction__contract_data__price_evaluation_adjustmen",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['price_evaluation_adjustmen']}",
                 ),
                 (
                     "clinger_cohen_act_planning_code",
-                    "latest_transaction__contract_data__clinger_cohen_act_planning",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['clinger_cohen_act_planning']}",
                 ),
-                ("clinger_cohen_act_planning", "latest_transaction__contract_data__clinger_cohen_act_pla_desc"),
+                (
+                    "clinger_cohen_act_planning",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['clinger_cohen_act_pla_desc']}",
+                ),
                 (
                     "materials_supplies_articles_equipment_code",
-                    "latest_transaction__contract_data__materials_supplies_article",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['materials_supplies_article']}",
                 ),
                 (
                     "materials_supplies_articles_equipment",
-                    "latest_transaction__contract_data__materials_supplies_descrip",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['materials_supplies_descrip']}",
                 ),
-                ("labor_standards_code", "latest_transaction__contract_data__labor_standards"),
-                ("labor_standards", "latest_transaction__contract_data__labor_standards_descrip"),
+                (
+                    "labor_standards_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['labor_standards']}",
+                ),
+                (
+                    "labor_standards",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['labor_standards_descrip']}",
+                ),
                 (
                     "construction_wage_rate_requirements_code",
-                    "latest_transaction__contract_data__construction_wage_rate_req",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['construction_wage_rate_req']}",
                 ),
                 (
                     "construction_wage_rate_requirements",
-                    "latest_transaction__contract_data__construction_wage_rat_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['construction_wage_rat_desc']}",
                 ),
                 (
                     "interagency_contracting_authority_code",
-                    "latest_transaction__contract_data__interagency_contracting_au",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['interagency_contracting_au']}",
                 ),
                 (
                     "interagency_contracting_authority",
-                    "latest_transaction__contract_data__interagency_contract_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['interagency_contract_desc']}",
                 ),
-                ("other_statutory_authority", "latest_transaction__contract_data__other_statutory_authority"),
-                ("program_acronym", "latest_transaction__contract_data__program_acronym"),
+                (
+                    "other_statutory_authority",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['other_statutory_authority']}",
+                ),
+                (
+                    "program_acronym",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['program_acronym']}",
+                ),
                 (
                     "parent_award_type_code",
-                    "latest_transaction__contract_data__referenced_idv_type",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['referenced_idv_type']}",
                 ),
                 (
                     "parent_award_type",
-                    "latest_transaction__contract_data__referenced_idv_type_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['referenced_idv_type_desc']}",
                 ),
                 (
                     "parent_award_single_or_multiple_code",
-                    "latest_transaction__contract_data__referenced_mult_or_single",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['referenced_mult_or_single']}",
                 ),
                 (
                     "parent_award_single_or_multiple",
-                    "latest_transaction__contract_data__referenced_mult_or_si_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['referenced_mult_or_si_desc']}",
                 ),
-                ("major_program", "latest_transaction__contract_data__major_program"),
-                ("national_interest_action_code", "latest_transaction__contract_data__national_interest_action"),
-                ("national_interest_action", "latest_transaction__contract_data__national_interest_desc"),
-                ("cost_or_pricing_data_code", "latest_transaction__contract_data__cost_or_pricing_data"),
-                ("cost_or_pricing_data", "latest_transaction__contract_data__cost_or_pricing_data_desc"),
+                ("major_program", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['major_program']}"),
+                (
+                    "national_interest_action_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['national_interest_action']}",
+                ),
+                (
+                    "national_interest_action",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['national_interest_desc']}",
+                ),
+                (
+                    "cost_or_pricing_data_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['cost_or_pricing_data']}",
+                ),
+                (
+                    "cost_or_pricing_data",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['cost_or_pricing_data_desc']}",
+                ),
                 (
                     "cost_accounting_standards_clause_code",
-                    "latest_transaction__contract_data__cost_accounting_standards",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['cost_accounting_standards']}",
                 ),
                 (
                     "cost_accounting_standards_clause",
-                    "latest_transaction__contract_data__cost_accounting_stand_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['cost_accounting_stand_desc']}",
                 ),
                 (
                     "government_furnished_property_code",
-                    "latest_transaction__contract_data__government_furnished_prope",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['government_furnished_prope']}",
                 ),
                 (
                     "government_furnished_property",
-                    "latest_transaction__contract_data__government_furnished_prope",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['government_furnished_prope']}",
                 ),
-                ("sea_transportation_code", "latest_transaction__contract_data__sea_transportation"),
-                ("sea_transportation", "latest_transaction__contract_data__sea_transportation_desc"),
-                ("consolidated_contract_code", "latest_transaction__contract_data__consolidated_contract"),
-                ("consolidated_contract", "latest_transaction__contract_data__consolidated_contract_desc"),
+                (
+                    "sea_transportation_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['sea_transportation']}",
+                ),
+                (
+                    "sea_transportation",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['sea_transportation_desc']}",
+                ),
+                (
+                    "consolidated_contract_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['consolidated_contract']}",
+                ),
+                (
+                    "consolidated_contract",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['consolidated_contract_desc']}",
+                ),
                 (
                     "performance_based_service_acquisition_code",
-                    "latest_transaction__contract_data__performance_based_service",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['performance_based_service']}",
                 ),
                 (
                     "performance_based_service_acquisition",
-                    "latest_transaction__contract_data__performance_based_se_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['performance_based_se_desc']}",
                 ),
-                ("multi_year_contract_code", "latest_transaction__contract_data__multi_year_contract"),
-                ("multi_year_contract", "latest_transaction__contract_data__multi_year_contract_desc"),
-                ("contract_financing_code", "latest_transaction__contract_data__contract_financing"),
-                ("contract_financing", "latest_transaction__contract_data__contract_financing_descrip"),
+                (
+                    "multi_year_contract_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['multi_year_contract']}",
+                ),
+                (
+                    "multi_year_contract",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['multi_year_contract_desc']}",
+                ),
+                (
+                    "contract_financing_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contract_financing']}",
+                ),
+                (
+                    "contract_financing",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contract_financing_descrip']}",
+                ),
                 (
                     "purchase_card_as_payment_method_code",
-                    "latest_transaction__contract_data__purchase_card_as_payment_m",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['purchase_card_as_payment_m']}",
                 ),
                 (
                     "purchase_card_as_payment_method",
-                    "latest_transaction__contract_data__purchase_card_as_paym_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['purchase_card_as_paym_desc']}",
                 ),
                 (
                     "contingency_humanitarian_or_peacekeeping_operation_code",
-                    "latest_transaction__contract_data__contingency_humanitarian_o",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contingency_humanitarian_o']}",
                 ),
                 (
                     "contingency_humanitarian_or_peacekeeping_operation",
-                    "latest_transaction__contract_data__contingency_humanitar_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contingency_humanitar_desc']}",
                 ),
                 (
                     "alaskan_native_corporation_owned_firm",
-                    "latest_transaction__contract_data__alaskan_native_owned_corpo",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['alaskan_native_owned_corpo']}",
                 ),
                 (
                     "american_indian_owned_business",
-                    "latest_transaction__contract_data__american_indian_owned_busi",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['american_indian_owned_busi']}",
                 ),
                 (
                     "indian_tribe_federally_recognized",
-                    "latest_transaction__contract_data__indian_tribe_federally_rec",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['indian_tribe_federally_rec']}",
                 ),
                 (
                     "native_hawaiian_organization_owned_firm",
-                    "latest_transaction__contract_data__native_hawaiian_owned_busi",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['native_hawaiian_owned_busi']}",
                 ),
-                ("tribally_owned_firm", "latest_transaction__contract_data__tribally_owned_business"),
-                ("veteran_owned_business", "latest_transaction__contract_data__veteran_owned_business"),
+                (
+                    "tribally_owned_firm",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['tribally_owned_business']}",
+                ),
+                (
+                    "veteran_owned_business",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['veteran_owned_business']}",
+                ),
                 (
                     "service_disabled_veteran_owned_business",
-                    "latest_transaction__contract_data__service_disabled_veteran_o",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['service_disabled_veteran_o']}",
                 ),
-                ("woman_owned_business", "latest_transaction__contract_data__woman_owned_business"),
-                ("women_owned_small_business", "latest_transaction__contract_data__women_owned_small_business"),
+                (
+                    "woman_owned_business",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['woman_owned_business']}",
+                ),
+                (
+                    "women_owned_small_business",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['women_owned_small_business']}",
+                ),
                 (
                     "economically_disadvantaged_women_owned_small_business",
-                    "latest_transaction__contract_data__economically_disadvantaged",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['economically_disadvantaged']}",
                 ),
                 (
                     "joint_venture_women_owned_small_business",
-                    "latest_transaction__contract_data__joint_venture_women_owned",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['joint_venture_women_owned']}",
                 ),
                 (
                     "joint_venture_economic_disadvantaged_women_owned_small_bus",
-                    "latest_transaction__contract_data__joint_venture_economically",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['joint_venture_economically']}",
                 ),
-                ("minority_owned_business", "latest_transaction__contract_data__minority_owned_business"),
+                (
+                    "minority_owned_business",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['minority_owned_business']}",
+                ),
                 (
                     "subcontinent_asian_asian_indian_american_owned_business",
-                    "latest_transaction__contract_data__subcontinent_asian_asian_i",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['subcontinent_asian_asian_i']}",
                 ),
                 (
                     "asian_pacific_american_owned_business",
-                    "latest_transaction__contract_data__asian_pacific_american_own",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['asian_pacific_american_own']}",
                 ),
                 (
                     "black_american_owned_business",
-                    "latest_transaction__contract_data__black_american_owned_busin",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['black_american_owned_busin']}",
                 ),
                 (
                     "hispanic_american_owned_business",
-                    "latest_transaction__contract_data__hispanic_american_owned_bu",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['hispanic_american_owned_bu']}",
                 ),
                 (
                     "native_american_owned_business",
-                    "latest_transaction__contract_data__native_american_owned_busi",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['native_american_owned_busi']}",
                 ),
                 (
                     "other_minority_owned_business",
-                    "latest_transaction__contract_data__other_minority_owned_busin",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['other_minority_owned_busin']}",
                 ),
                 (
                     "contracting_officers_determination_of_business_size",
-                    "latest_transaction__contract_data__contracting_officers_desc",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contracting_officers_desc']}",
                 ),
                 (
                     "contracting_officers_determination_of_business_size_code",
-                    "latest_transaction__contract_data__contracting_officers_deter",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contracting_officers_deter']}",
                 ),
-                ("emerging_small_business", "latest_transaction__contract_data__emerging_small_business"),
+                (
+                    "emerging_small_business",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['emerging_small_business']}",
+                ),
                 (
                     "community_developed_corporation_owned_firm",
-                    "latest_transaction__contract_data__community_developed_corpor",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['community_developed_corpor']}",
                 ),
-                ("labor_surplus_area_firm", "latest_transaction__contract_data__labor_surplus_area_firm"),
-                ("us_federal_government", "latest_transaction__contract_data__us_federal_government"),
+                (
+                    "labor_surplus_area_firm",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['labor_surplus_area_firm']}",
+                ),
+                (
+                    "us_federal_government",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['us_federal_government']}",
+                ),
                 (
                     "federally_funded_research_and_development_corp",
-                    "latest_transaction__contract_data__federally_funded_research",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['federally_funded_research']}",
                 ),
-                ("federal_agency", "latest_transaction__contract_data__federal_agency"),
-                ("us_state_government", "latest_transaction__contract_data__us_state_government"),
-                ("us_local_government", "latest_transaction__contract_data__us_local_government"),
-                ("city_local_government", "latest_transaction__contract_data__city_local_government"),
-                ("county_local_government", "latest_transaction__contract_data__county_local_government"),
+                (
+                    "federal_agency",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['federal_agency']}",
+                ),
+                (
+                    "us_state_government",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['us_state_government']}",
+                ),
+                (
+                    "us_local_government",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['us_local_government']}",
+                ),
+                (
+                    "city_local_government",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['city_local_government']}",
+                ),
+                (
+                    "county_local_government",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['county_local_government']}",
+                ),
                 (
                     "inter_municipal_local_government",
-                    "latest_transaction__contract_data__inter_municipal_local_gove",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['inter_municipal_local_gove']}",
                 ),
-                ("local_government_owned", "latest_transaction__contract_data__local_government_owned"),
+                (
+                    "local_government_owned",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['local_government_owned']}",
+                ),
                 (
                     "municipality_local_government",
-                    "latest_transaction__contract_data__municipality_local_governm",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['municipality_local_governm']}",
                 ),
                 (
                     "school_district_local_government",
-                    "latest_transaction__contract_data__school_district_local_gove",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['school_district_local_gove']}",
                 ),
-                ("township_local_government", "latest_transaction__contract_data__township_local_government"),
-                ("us_tribal_government", "latest_transaction__contract_data__us_tribal_government"),
-                ("foreign_government", "latest_transaction__contract_data__foreign_government"),
-                ("organizational_type", "latest_transaction__contract_data__organizational_type"),
+                (
+                    "township_local_government",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['township_local_government']}",
+                ),
+                (
+                    "us_tribal_government",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['us_tribal_government']}",
+                ),
+                (
+                    "foreign_government",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['foreign_government']}",
+                ),
+                (
+                    "organizational_type",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['organizational_type']}",
+                ),
                 (
                     "corporate_entity_not_tax_exempt",
-                    "latest_transaction__contract_data__corporate_entity_not_tax_e",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['corporate_entity_not_tax_e']}",
                 ),
-                ("corporate_entity_tax_exempt", "latest_transaction__contract_data__corporate_entity_tax_exemp"),
+                (
+                    "corporate_entity_tax_exempt",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['corporate_entity_tax_exemp']}",
+                ),
                 (
                     "partnership_or_limited_liability_partnership",
-                    "latest_transaction__contract_data__partnership_or_limited_lia",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['partnership_or_limited_lia']}",
                 ),
-                ("sole_proprietorship", "latest_transaction__contract_data__sole_proprietorship"),
+                (
+                    "sole_proprietorship",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['sole_proprietorship']}",
+                ),
                 (
                     "small_agricultural_cooperative",
-                    "latest_transaction__contract_data__small_agricultural_coopera",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['small_agricultural_coopera']}",
                 ),
-                ("international_organization", "latest_transaction__contract_data__international_organization"),
-                ("us_government_entity", "latest_transaction__contract_data__us_government_entity"),
+                (
+                    "international_organization",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['international_organization']}",
+                ),
+                (
+                    "us_government_entity",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['us_government_entity']}",
+                ),
                 (
                     "community_development_corporation",
-                    "latest_transaction__contract_data__community_development_corp",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['community_development_corp']}",
                 ),
-                ("domestic_shelter", "latest_transaction__contract_data__domestic_shelter"),
-                ("educational_institution", "latest_transaction__contract_data__educational_institution"),
-                ("foundation", "latest_transaction__contract_data__foundation"),
-                ("hospital_flag", "latest_transaction__contract_data__hospital_flag"),
-                ("manufacturer_of_goods", "latest_transaction__contract_data__manufacturer_of_goods"),
-                ("veterinary_hospital", "latest_transaction__contract_data__veterinary_hospital"),
+                (
+                    "domestic_shelter",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['domestic_shelter']}",
+                ),
+                (
+                    "educational_institution",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['educational_institution']}",
+                ),
+                ("foundation", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['foundation']}"),
+                ("hospital_flag", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['hospital_flag']}"),
+                (
+                    "manufacturer_of_goods",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['manufacturer_of_goods']}",
+                ),
+                (
+                    "veterinary_hospital",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['veterinary_hospital']}",
+                ),
                 (
                     "hispanic_servicing_institution",
-                    "latest_transaction__contract_data__hispanic_servicing_institu",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['hispanic_servicing_institu']}",
                 ),
-                ("receives_contracts", "latest_transaction__contract_data__contracts"),
-                ("receives_financial_assistance", "latest_transaction__contract_data__grants"),
+                ("receives_contracts", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contracts']}"),
+                (
+                    "receives_financial_assistance",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['grants']}",
+                ),
                 (
                     "receives_contracts_and_financial_assistance",
-                    "latest_transaction__contract_data__receives_contracts_and_gra",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['receives_contracts_and_gra']}",
                 ),
-                ("airport_authority", "latest_transaction__contract_data__airport_authority"),
-                ("council_of_governments", "latest_transaction__contract_data__council_of_governments"),
+                (
+                    "airport_authority",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['airport_authority']}",
+                ),
+                (
+                    "council_of_governments",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['council_of_governments']}",
+                ),
                 (
                     "housing_authorities_public_tribal",
-                    "latest_transaction__contract_data__housing_authorities_public",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['housing_authorities_public']}",
                 ),
-                ("interstate_entity", "latest_transaction__contract_data__interstate_entity"),
-                ("planning_commission", "latest_transaction__contract_data__planning_commission"),
-                ("port_authority", "latest_transaction__contract_data__port_authority"),
-                ("transit_authority", "latest_transaction__contract_data__transit_authority"),
-                ("subchapter_scorporation", "latest_transaction__contract_data__subchapter_s_corporation"),
+                (
+                    "interstate_entity",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['interstate_entity']}",
+                ),
+                (
+                    "planning_commission",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['planning_commission']}",
+                ),
+                (
+                    "port_authority",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['port_authority']}",
+                ),
+                (
+                    "transit_authority",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['transit_authority']}",
+                ),
+                (
+                    "subchapter_scorporation",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['subchapter_s_corporation']}",
+                ),
                 (
                     "limited_liability_corporation",
-                    "latest_transaction__contract_data__limited_liability_corporat",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['limited_liability_corporat']}",
                 ),
-                ("foreign_owned", "latest_transaction__contract_data__foreign_owned_and_located"),
-                ("for_profit_organization", "latest_transaction__contract_data__for_profit_organization"),
-                ("nonprofit_organization", "latest_transaction__contract_data__nonprofit_organization"),
+                (
+                    "foreign_owned",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['foreign_owned_and_located']}",
+                ),
+                (
+                    "for_profit_organization",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['for_profit_organization']}",
+                ),
+                (
+                    "nonprofit_organization",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['nonprofit_organization']}",
+                ),
                 (
                     "other_not_for_profit_organization",
-                    "latest_transaction__contract_data__other_not_for_profit_organ",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['other_not_for_profit_organ']}",
                 ),
-                ("the_ability_one_program", "latest_transaction__contract_data__the_ability_one_program"),
+                (
+                    "the_ability_one_program",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['the_ability_one_program']}",
+                ),
                 (
                     "private_university_or_college",
-                    "latest_transaction__contract_data__private_university_or_coll",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['private_university_or_coll']}",
                 ),
                 (
                     "state_controlled_institution_of_higher_learning",
-                    "latest_transaction__contract_data__state_controlled_instituti",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['state_controlled_instituti']}",
                 ),
-                ("1862_land_grant_college", "latest_transaction__contract_data__c1862_land_grant_college"),
-                ("1890_land_grant_college", "latest_transaction__contract_data__c1890_land_grant_college"),
-                ("1994_land_grant_college", "latest_transaction__contract_data__c1994_land_grant_college"),
-                ("minority_institution", "latest_transaction__contract_data__minority_institution"),
-                ("historically_black_college", "latest_transaction__contract_data__historically_black_college"),
-                ("tribal_college", "latest_transaction__contract_data__tribal_college"),
+                (
+                    "1862_land_grant_college",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['c1862_land_grant_college']}",
+                ),
+                (
+                    "1890_land_grant_college",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['c1890_land_grant_college']}",
+                ),
+                (
+                    "1994_land_grant_college",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['c1994_land_grant_college']}",
+                ),
+                (
+                    "minority_institution",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['minority_institution']}",
+                ),
+                (
+                    "historically_black_college",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['historically_black_college']}",
+                ),
+                (
+                    "tribal_college",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['tribal_college']}",
+                ),
                 (
                     "alaskan_native_servicing_institution",
-                    "latest_transaction__contract_data__alaskan_native_servicing_i",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['alaskan_native_servicing_i']}",
                 ),
                 (
                     "native_hawaiian_servicing_institution",
-                    "latest_transaction__contract_data__native_hawaiian_servicing",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['native_hawaiian_servicing']}",
                 ),
-                ("school_of_forestry", "latest_transaction__contract_data__school_of_forestry"),
-                ("veterinary_college", "latest_transaction__contract_data__veterinary_college"),
-                ("dot_certified_disadvantage", "latest_transaction__contract_data__dot_certified_disadvantage"),
+                (
+                    "school_of_forestry",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['school_of_forestry']}",
+                ),
+                (
+                    "veterinary_college",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['veterinary_college']}",
+                ),
+                (
+                    "dot_certified_disadvantage",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['dot_certified_disadvantage']}",
+                ),
                 (
                     "self_certified_small_disadvantaged_business",
-                    "latest_transaction__contract_data__self_certified_small_disad",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['self_certified_small_disad']}",
                 ),
                 (
                     "small_disadvantaged_business",
-                    "latest_transaction__contract_data__small_disadvantaged_busine",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['small_disadvantaged_busine']}",
                 ),
-                ("c8a_program_participant", "latest_transaction__contract_data__c8a_program_participant"),
+                (
+                    "c8a_program_participant",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['c8a_program_participant']}",
+                ),
                 (
                     "historically_underutilized_business_zone_hubzone_firm",
-                    "latest_transaction__contract_data__historically_underutilized",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['historically_underutilized']}",
                 ),
                 (
                     "sba_certified_8a_joint_venture",
-                    "latest_transaction__contract_data__sba_certified_8_a_joint_ve",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['sba_certified_8_a_joint_ve']}",
                 ),
                 ("highly_compensated_officer_1_name", "officer_1_name"),
                 ("highly_compensated_officer_1_amount", "officer_1_amount"),
@@ -599,7 +1013,10 @@ query_paths = {
                 ("highly_compensated_officer_5_name", "officer_5_name"),
                 ("highly_compensated_officer_5_amount", "officer_5_amount"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
-                ("last_modified_date", "latest_transaction__contract_data__last_modified"),
+                (
+                    "last_modified_date",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['last_modified']}",
+                ),
             ]
         ),
         "d2": OrderedDict(
@@ -607,7 +1024,7 @@ query_paths = {
                 ("assistance_award_unique_key", "generated_unique_award_id"),
                 ("award_id_fain", "fain"),
                 ("award_id_uri", "uri"),
-                ("sai_number", "latest_transaction__assistance_data__sai_number"),
+                ("sai_number", f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['sai_number']}"),
                 (
                     "disaster_emergency_fund_codes" + NAMING_CONFLICT_DISCRIMINATOR,
                     None,
@@ -616,7 +1033,7 @@ query_paths = {
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 (
                     "award_latest_action_date",
-                    "latest_transaction__action_date",
+                    f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}",
                 ),  # Annotation is used to create this column
                 ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "total_obligation"),
@@ -629,118 +1046,226 @@ query_paths = {
                 ("award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", "period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "period_of_performance_current_end_date"),
-                ("awarding_agency_code", "latest_transaction__assistance_data__awarding_agency_code"),
-                ("awarding_agency_name", "latest_transaction__assistance_data__awarding_agency_name"),
-                ("awarding_sub_agency_code", "latest_transaction__assistance_data__awarding_sub_tier_agency_c"),
-                ("awarding_sub_agency_name", "latest_transaction__assistance_data__awarding_sub_tier_agency_n"),
-                ("awarding_office_code", "latest_transaction__assistance_data__awarding_office_code"),
-                ("awarding_office_name", "latest_transaction__assistance_data__awarding_office_name"),
-                ("funding_agency_code", "latest_transaction__assistance_data__funding_agency_code"),
-                ("funding_agency_name", "latest_transaction__assistance_data__funding_agency_name"),
-                ("funding_sub_agency_code", "latest_transaction__assistance_data__funding_sub_tier_agency_co"),
-                ("funding_sub_agency_name", "latest_transaction__assistance_data__funding_sub_tier_agency_na"),
-                ("funding_office_code", "latest_transaction__assistance_data__funding_office_code"),
-                ("funding_office_name", "latest_transaction__assistance_data__funding_office_name"),
+                (
+                    "awarding_agency_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_agency_code']}",
+                ),
+                (
+                    "awarding_agency_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_agency_name']}",
+                ),
+                (
+                    "awarding_sub_agency_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_sub_tier_agency_c']}",
+                ),
+                (
+                    "awarding_sub_agency_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_sub_tier_agency_n']}",
+                ),
+                (
+                    "awarding_office_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_office_code']}",
+                ),
+                (
+                    "awarding_office_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awarding_office_name']}",
+                ),
+                (
+                    "funding_agency_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['funding_agency_code']}",
+                ),
+                (
+                    "funding_agency_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['funding_agency_name']}",
+                ),
+                (
+                    "funding_sub_agency_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['funding_sub_tier_agency_co']}",
+                ),
+                (
+                    "funding_sub_agency_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['funding_sub_tier_agency_na']}",
+                ),
+                (
+                    "funding_office_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['funding_office_code']}",
+                ),
+                (
+                    "funding_office_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['funding_office_name']}",
+                ),
                 ("treasury_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("federal_accounts_funding_this_award", None),  # Annotation is used to create this column
                 ("object_classes_funding_this_award", None),  # Annotation is used to create this column
                 ("program_activities_funding_this_award", None),  # Annotation is used to create this column
-                ("recipient_uei", "latest_transaction__assistance_data__uei"),
-                ("recipient_duns", "latest_transaction__assistance_data__awardee_or_recipient_uniqu"),
-                ("recipient_name", "latest_transaction__assistance_data__awardee_or_recipient_legal"),
-                ("recipient_parent_uei", "latest_transaction__assistance_data__ultimate_parent_uei"),
-                ("recipient_parent_duns", "latest_transaction__assistance_data__ultimate_parent_unique_ide"),
-                ("recipient_parent_name", "latest_transaction__assistance_data__ultimate_parent_legal_enti"),
-                ("recipient_country_code", "latest_transaction__assistance_data__legal_entity_country_code"),
-                ("recipient_country_name", "latest_transaction__assistance_data__legal_entity_country_name"),
-                ("recipient_address_line_1", "latest_transaction__assistance_data__legal_entity_address_line1"),
-                ("recipient_address_line_2", "latest_transaction__assistance_data__legal_entity_address_line2"),
-                ("recipient_city_code", "latest_transaction__assistance_data__legal_entity_city_code"),
-                ("recipient_city_name", "latest_transaction__assistance_data__legal_entity_city_name"),
-                ("recipient_county_code", "latest_transaction__assistance_data__legal_entity_county_code"),
-                ("recipient_county_name", "latest_transaction__assistance_data__legal_entity_county_name"),
-                ("recipient_state_code", "latest_transaction__assistance_data__legal_entity_state_code"),
-                ("recipient_state_name", "latest_transaction__assistance_data__legal_entity_state_name"),
-                ("recipient_zip_code", "latest_transaction__assistance_data__legal_entity_zip5"),
-                ("recipient_zip_last_4_code", "latest_transaction__assistance_data__legal_entity_zip_last4"),
+                ("recipient_uei", f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['uei']}"),
+                (
+                    "recipient_duns",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awardee_or_recipient_uniqu']}",
+                ),
+                (
+                    "recipient_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awardee_or_recipient_legal']}",
+                ),
+                (
+                    "recipient_parent_uei",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['ultimate_parent_uei']}",
+                ),
+                (
+                    "recipient_parent_duns",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['ultimate_parent_unique_ide']}",
+                ),
+                (
+                    "recipient_parent_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['ultimate_parent_legal_enti']}",
+                ),
+                (
+                    "recipient_country_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_country_code']}",
+                ),
+                (
+                    "recipient_country_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_country_name']}",
+                ),
+                (
+                    "recipient_address_line_1",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_address_line1']}",
+                ),
+                (
+                    "recipient_address_line_2",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_address_line2']}",
+                ),
+                (
+                    "recipient_city_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_city_code']}",
+                ),
+                (
+                    "recipient_city_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_city_name']}",
+                ),
+                (
+                    "recipient_county_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_county_code']}",
+                ),
+                (
+                    "recipient_county_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_county_name']}",
+                ),
+                (
+                    "recipient_state_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_state_code']}",
+                ),
+                (
+                    "recipient_state_name",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_state_name']}",
+                ),
+                (
+                    "recipient_zip_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_zip5']}",
+                ),
+                (
+                    "recipient_zip_last_4_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_zip_last4']}",
+                ),
                 (
                     "recipient_congressional_district",
-                    "latest_transaction__assistance_data__legal_entity_congressional",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_congressional']}",
                 ),
                 (
                     "recipient_foreign_city_name",
-                    "latest_transaction__assistance_data__legal_entity_foreign_city",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_foreign_city']}",
                 ),
                 (
                     "recipient_foreign_province_name",
-                    "latest_transaction__assistance_data__legal_entity_foreign_provi",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_foreign_provi']}",
                 ),
                 (
                     "recipient_foreign_postal_code",
-                    "latest_transaction__assistance_data__legal_entity_foreign_posta",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_foreign_posta']}",
                 ),
                 (
                     "primary_place_of_performance_scope",
-                    "latest_transaction__assistance_data__place_of_performance_scope",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_scope']}",
                 ),
                 (
                     "primary_place_of_performance_country_code",
-                    "latest_transaction__assistance_data__place_of_perform_country_c",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_country_c']}",
                 ),
                 (
                     "primary_place_of_performance_country_name",
-                    "latest_transaction__assistance_data__place_of_perform_country_n",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_country_n']}",
                 ),
                 (
                     "primary_place_of_performance_code",
-                    "latest_transaction__assistance_data__place_of_performance_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_code']}",
                 ),
                 (
                     "primary_place_of_performance_city_name",
-                    "latest_transaction__assistance_data__place_of_performance_city",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_city']}",
                 ),
                 (
                     "primary_place_of_performance_county_code",
-                    "latest_transaction__assistance_data__place_of_perform_county_co",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_county_co']}",
                 ),
                 (
                     "primary_place_of_performance_county_name",
-                    "latest_transaction__assistance_data__place_of_perform_county_na",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_county_na']}",
                 ),
                 (
                     "primary_place_of_performance_state_name",
-                    "latest_transaction__assistance_data__place_of_perform_state_nam",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_state_nam']}",
                 ),
                 (
                     "primary_place_of_performance_zip_4",
-                    "latest_transaction__assistance_data__place_of_performance_zip4a",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_zip4a']}",
                 ),
                 (
                     "primary_place_of_performance_congressional_district",
-                    "latest_transaction__assistance_data__place_of_performance_congr",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_congr']}",
                 ),
                 (
                     "primary_place_of_performance_foreign_location",
-                    "latest_transaction__assistance_data__place_of_performance_forei",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_forei']}",
                 ),
                 ("cfda_numbers_and_titles", None),  # Annotation is used to create this column
-                ("funding_opportunity_number", "latest_transaction__assistance_data__funding_opportunity_number"),
-                ("funding_opportunity_goals_text", "latest_transaction__assistance_data__funding_opportunity_goals"),
-                ("assistance_type_code", "latest_transaction__assistance_data__assistance_type"),
-                ("assistance_type_description", "latest_transaction__assistance_data__assistance_type_desc"),
+                (
+                    "funding_opportunity_number",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['funding_opportunity_number']}",
+                ),
+                (
+                    "funding_opportunity_goals_text",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['funding_opportunity_goals']}",
+                ),
+                (
+                    "assistance_type_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['assistance_type']}",
+                ),
+                (
+                    "assistance_type_description",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['assistance_type_desc']}",
+                ),
                 ("prime_award_base_transaction_description", "description"),
                 (
                     "business_funds_indicator_code",
-                    "latest_transaction__assistance_data__business_funds_indicator",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['business_funds_indicator']}",
                 ),
                 (
                     "business_funds_indicator_description",
-                    "latest_transaction__assistance_data__business_funds_ind_desc",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['business_funds_ind_desc']}",
                 ),
-                ("business_types_code", "latest_transaction__assistance_data__business_types"),
-                ("business_types_description", "latest_transaction__assistance_data__business_types_desc"),
-                ("record_type_code", "latest_transaction__assistance_data__record_type"),
-                ("record_type_description", "latest_transaction__assistance_data__record_type_description"),
+                (
+                    "business_types_code",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['business_types']}",
+                ),
+                (
+                    "business_types_description",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['business_types_desc']}",
+                ),
+                ("record_type_code", f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['record_type']}"),
+                (
+                    "record_type_description",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['record_type_description']}",
+                ),
                 ("highly_compensated_officer_1_name", "officer_1_name"),
                 ("highly_compensated_officer_1_amount", "officer_1_amount"),
                 ("highly_compensated_officer_2_name", "officer_2_name"),
@@ -752,7 +1277,10 @@ query_paths = {
                 ("highly_compensated_officer_5_name", "officer_5_name"),
                 ("highly_compensated_officer_5_amount", "officer_5_amount"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
-                ("last_modified_date", "latest_transaction__assistance_data__modified_at"),
+                (
+                    "last_modified_date",
+                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['modified_at']}",
+                ),
             ]
         ),
     },
@@ -1413,7 +1941,7 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("prime_award_latest_action_date", "award__latest_transaction__action_date"),
+                ("prime_award_latest_action_date", "latest_transaction__action_date"),
                 ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
@@ -1448,7 +1976,7 @@ query_paths = {
                 ("prime_awardee_country_name", "legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "legal_entity_address_line1"),
                 ("prime_awardee_city_name", "legal_entity_city_name"),
-                ("prime_awardee_county_name", "award__latest_transaction__contract_data__legal_entity_county_name"),
+                ("prime_awardee_county_name", "latest_transaction__recipient_location_county_name"),
                 ("prime_awardee_state_code", "legal_entity_state_code"),
                 ("prime_awardee_state_name", "legal_entity_state_name"),
                 ("prime_awardee_zip_code", "legal_entity_zip"),
@@ -1480,11 +2008,11 @@ query_paths = {
                 ("prime_award_naics_description", "naics_description"),
                 (
                     "prime_award_national_interest_action_code",
-                    "award__latest_transaction__contract_data__national_interest_action",
+                    "latest_transaction__national_interest_action",
                 ),
                 (
                     "prime_award_national_interest_action",
-                    "award__latest_transaction__contract_data__national_interest_desc",
+                    "latest_transaction__national_interest_desc",
                 ),
                 ("subaward_type", "subaward_type"),
                 ("subaward_fsrs_report_id", "internal_id"),
@@ -1568,7 +2096,7 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
-                ("prime_award_latest_action_date", "award__latest_transaction__action_date"),
+                ("prime_award_latest_action_date", "latest_transaction__action_date"),
                 ("prime_award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("prime_award_period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
@@ -1599,7 +2127,7 @@ query_paths = {
                 ("prime_awardee_country_name", "legal_entity_country_name"),
                 ("prime_awardee_address_line_1", "legal_entity_address_line1"),
                 ("prime_awardee_city_name", "legal_entity_city_name"),
-                ("prime_awardee_county_name", "award__latest_transaction__assistance_data__legal_entity_county_name"),
+                ("prime_awardee_county_name", "latest_transaction__recipient_location_county_name"),
                 ("prime_awardee_state_code", "legal_entity_state_code"),
                 ("prime_awardee_state_name", "legal_entity_state_name"),
                 ("prime_awardee_zip_code", "legal_entity_zip"),
@@ -1932,11 +2460,11 @@ query_paths = {
                 ),
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
-                    "gross_outlays_delivered_orders_paid_total_cpe",
+                    "ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe",
                 ),
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
-                    "gross_outlays_delivered_orders_paid_total_fyb",
+                    "ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb",
                 ),
                 (
                     "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
@@ -2013,86 +2541,98 @@ query_paths = {
                 ("disaster_emergency_fund_code", "disaster_emergency_fund__code"),
                 ("disaster_emergency_fund_name", "disaster_emergency_fund__title"),
                 ("obligations_incurred", "obligations_incurred"),
-                ("obligations_undelivered_orders_unpaid_total", "obligations_undelivered_orders_unpaid_total_cpe"),
-                ("obligations_undelivered_orders_unpaid_total_FYB", "obligations_undelivered_orders_unpaid_total_fyb"),
+                ("obligations_undelivered_orders_unpaid_total", None),  # annotated in download_annotation_functions.py
+                (
+                    "obligations_undelivered_orders_unpaid_total_FYB",
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL480100_undelivered_orders_obligations_unpaid",
-                    "ussgl480100_undelivered_orders_obligations_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
-                    "ussgl480100_undelivered_orders_obligations_unpaid_fyb",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
-                    "ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe",
-                ),
-                ("obligations_delivered_orders_unpaid_total", "obligations_delivered_orders_unpaid_total_cpe"),
-                ("obligations_delivered_orders_unpaid_total_FYB", "obligations_delivered_orders_unpaid_total_cpe"),
+                    None,
+                ),  # annotated in download_annotation_functions.py
+                ("obligations_delivered_orders_unpaid_total", None),  # annotated in download_annotation_functions.py
+                (
+                    "obligations_delivered_orders_unpaid_total_FYB",
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL490100_delivered_orders_obligations_unpaid",
-                    "ussgl490100_delivered_orders_obligations_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL490100_delivered_orders_obligations_unpaid_FYB",
-                    "ussgl490100_delivered_orders_obligations_unpaid_fyb",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
-                    "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_FYB_to_period_end",
                 ),  # Column is annotated in account_download.py
-                ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
+                ("gross_outlay_amount_FYB", None),  # annotated in download_annotation_functions.py
                 (
                     "gross_outlays_undelivered_orders_prepaid_total",
-                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "gross_outlays_undelivered_orders_prepaid_total_FYB",
-                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
-                    "gross_outlays_delivered_orders_paid_total_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
-                    "gross_outlays_delivered_orders_paid_total_fyb",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
-                    "ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe",
-                ),
-                ("gross_outlays_delivered_orders_paid_total", "gross_outlays_delivered_orders_paid_total_cpe"),
-                ("gross_outlays_delivered_orders_paid_total_FYB", "gross_outlays_delivered_orders_paid_total_fyb"),
-                ("USSGL490200_delivered_orders_obligations_paid", "ussgl490200_delivered_orders_obligations_paid_cpe"),
+                    None,
+                ),  # annotated in download_annotation_functions.py
+                ("gross_outlays_delivered_orders_paid_total", None),  # annotated in download_annotation_functions.py
+                (
+                    "gross_outlays_delivered_orders_paid_total_FYB",
+                    None,
+                ),  # annotated in download_annotation_functions.py
+                (
+                    "USSGL490200_delivered_orders_obligations_paid",
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL490800_authority_outlayed_not_yet_disbursed",
-                    "ussgl490800_authority_outlayed_not_yet_disbursed_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL490800_authority_outlayed_not_yet_disbursed_FYB",
-                    "ussgl490800_authority_outlayed_not_yet_disbursed_fyb",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
-                    "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
-                    "deobligations_recoveries_refund_pri_program_object_class_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig",
-                    "ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig",
-                    "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
@@ -2103,16 +2643,16 @@ query_paths = {
                 ),  # Column is annotated in account_download.py
                 (
                     "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
-                    "ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL493100_delivered_orders_obligations_transferred_unpaid",
-                    "ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
-                    "ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe",
-                ),
+                    None,
+                ),  # annotated in download_annotation_functions.py
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,

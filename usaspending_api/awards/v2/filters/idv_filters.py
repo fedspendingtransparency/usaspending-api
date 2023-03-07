@@ -32,7 +32,7 @@ def idv_order_filter(filters):
         # possibly be true since we cannot pass an empty list into an __in
         # statement (well, we can but it'll throw an exception later).
         return AwardSearch.objects.filter(award_id__isnull=True)
-    return AwardSearch.objects.filter(id__in=descendant_award_ids)
+    return AwardSearch.objects.filter(award_id__in=descendant_award_ids)
 
 
 def idv_transaction_filter(filters):

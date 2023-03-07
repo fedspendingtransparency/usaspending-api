@@ -42,6 +42,7 @@ from usaspending_api.download.helpers.download_annotation_functions import (
     idv_order_annotations,
     idv_transaction_annotations,
     transaction_search_annotations,
+    object_class_program_activity_annotations,
 )
 
 
@@ -101,7 +102,7 @@ VALUE_MAPPINGS = {
         "table_name": "subaward_search",
         "type_name": "Subawards",
         "download_name": "{agency}{type}_Subawards_{timestamp}",
-        "is_fpds_join": "award__latest_transaction__",
+        "is_fpds_join": "latest_transaction__",
         "filter_function": subaward_download,
         "annotations_function": subaward_annotations,
     },
@@ -130,6 +131,7 @@ VALUE_MAPPINGS = {
         "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByPA-OC_{timestamp}",
         "filter_function": account_download_filter,
+        "annotations_function": object_class_program_activity_annotations,
     },
     "award_financial": {
         "source_type": "account",
@@ -188,7 +190,7 @@ VALUE_MAPPINGS = {
         "table": SubawardSearch,
         "table_name": "subaward_search",
         "download_name": "Contract_{piid}_Sub-Awards",
-        "is_fpds_join": "award__",
+        "is_fpds_join": "latest_transaction__",
         "filter_function": awards_subaward_filter,
         "is_for_contract": True,
         "annotations_function": subaward_annotations,
@@ -198,7 +200,7 @@ VALUE_MAPPINGS = {
         "table": SubawardSearch,
         "table_name": "subaward_search",
         "download_name": "Assistance_{assistance_id}_Sub-Awards",
-        "is_fpds_join": "award__",
+        "is_fpds_join": "latest_transaction__",
         "filter_function": awards_subaward_filter,
         "is_for_assistance": True,
         "annotations_function": subaward_annotations,
