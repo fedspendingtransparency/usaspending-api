@@ -17,6 +17,8 @@ from django.db.models import (
     Value,
     When,
 )
+
+from usaspending_api.awards.models.transaction_normalized import NORM_TO_TRANSACTION_SEARCH_COL_MAP
 from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault, CFDAs
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -282,7 +284,9 @@ def award_annotations(filters: dict):
             .values("total"),
             output_field=TextField(),
         ),
-        "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
+        "award_latest_action_date_fiscal_year": FiscalYear(
+            F(f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}")
+        ),
         "cfda_numbers_and_titles": CFDAs("cfdas"),
     }
     return annotation_fields
@@ -316,7 +320,9 @@ def idv_order_annotations(filters: dict):
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(award_id_col="award_id"),
         "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(award_id_col="award_id"),
         "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(award_id_col="award_id"),
-        "award_latest_action_date_fiscal_year": FiscalYear(F("latest_transaction__action_date")),
+        "award_latest_action_date_fiscal_year": FiscalYear(
+            F(f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}")
+        ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
