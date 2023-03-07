@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0030_force_as_linkage_to_ts.py"),
+        ("search", "0030_force_as_linkage_to_ts"),
     ]
 
     operations = [
