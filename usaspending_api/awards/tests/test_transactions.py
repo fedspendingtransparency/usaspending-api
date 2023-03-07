@@ -24,6 +24,8 @@ def test_transaction_endpoint_v2_award_fk(client):
         total_obligation="2000",
         latest_transaction_id=1,
         earliest_transaction_id=1,
+        latest_transaction_search_id=1,
+        earliest_transaction_search_id=1,
         _fill_optional=True,
         generated_unique_award_id="-TEST-",
     )
