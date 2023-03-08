@@ -24,10 +24,12 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
         "funding_toptier_agency_agg_key": lambda x: x["funding_toptier_agency_code"],
         "pop_congressional_agg_key": lambda x: x["pop_congressional_code"],
+        "pop_congressional_cur_agg_key": funcs.pop_congressional_cur_agg_key,
         "pop_county_agg_key": lambda x: x["pop_county_code"],
         "pop_state_agg_key": lambda x: x["pop_state_code"],
         "recipient_agg_key": funcs.award_recipient_agg_key,
         "recipient_location_congressional_agg_key": lambda x: x["recipient_location_congressional_code"],
+        "recipient_location_congressional_cur_agg_key": funcs.recipient_location_congressional_cur_agg_key,
         "recipient_location_county_agg_key": lambda x: x["recipient_location_county_code"],
         "recipient_location_state_agg_key": lambda x: x["recipient_location_state_code"],
     }
@@ -65,8 +67,10 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "pop_state_agg_key": lambda x: x["pop_state_code"],
         "pop_county_agg_key": funcs.pop_county_agg_key,
         "pop_congressional_agg_key": funcs.pop_congressional_agg_key,
+        "pop_congressional_cur_agg_key": funcs.pop_congressional_cur_agg_key,
         "recipient_location_state_agg_key": lambda x: x["recipient_location_state_code"],
         "recipient_location_congressional_agg_key": funcs.recipient_location_congressional_agg_key,
+        "recipient_location_congressional_cur_agg_key": funcs.recipient_location_congressional_cur_agg_key,
         "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
     }
     drop_fields = [
