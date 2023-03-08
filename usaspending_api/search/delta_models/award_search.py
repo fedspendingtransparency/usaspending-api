@@ -79,6 +79,7 @@ AWARD_SEARCH_COLUMNS = {
     "recipient_location_county_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_county_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "recipient_location_congressional_code_current": {"delta": "INTEGER", "postgres": "INTEGER", "gold": True},
     "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_city_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_state_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -94,6 +95,7 @@ AWARD_SEARCH_COLUMNS = {
     "pop_city_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "pop_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "pop_city_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_state_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_state_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -144,6 +146,7 @@ award_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
+# TODO: include derivations for recipient_location_congressional_code_current and pop_congressional_code_current
 award_search_load_sql_string = fr"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
@@ -285,6 +288,8 @@ award_search_load_sql_string = fr"""
   COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
+  -- TODO: include recipient_location_congressional_code_current derivation
+  NULL AS recipient_location_congressional_code_current,
   COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)) AS recipient_location_city_name,
   COALESCE(transaction_fpds.legal_entity_state_descrip, transaction_fabs.legal_entity_state_name) AS recipient_location_state_name,
@@ -303,6 +308,8 @@ award_search_load_sql_string = fr"""
   COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5) AS pop_zip5,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
+  -- TODO: include pop_congressional_code_current derivation
+  NULL AS pop_congressional_code_current,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)) AS pop_city_name,
   COALESCE(transaction_fpds.place_of_perfor_state_desc, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
   POP_STATE_LOOKUP.fips AS pop_state_fips,
