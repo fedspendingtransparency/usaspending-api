@@ -104,7 +104,7 @@ def recipient_location_congressional_cur_agg_key(record: dict) -> Optional[str]:
 
 def _congressional_agg_key(location_type, current, record: dict) -> Optional[str]:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
-    cur_str = "current" if current else ""
+    cur_str = "_current" if current else ""
     if record[f"{location_type}_state_code"] is None or record[f"{location_type}_congressional_code{cur_str}"] is None:
         return None
     return f"{record[f'{location_type}_state_code']}{record[f'{location_type}_congressional_code{cur_str}']}"
