@@ -2719,11 +2719,11 @@ query_paths = {
                 ),  # Column is annotated in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
-                ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
+                ("ordering_period_end_date", "award__latest_transaction_search__ordering_period_end_date"),
                 ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
-                ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
-                ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
+                ("idv_type_code", "award__latest_transaction_search__idv_type"),
+                ("idv_type", "award__latest_transaction_search__idv_type_description"),
                 ("prime_award_base_transaction_description", "award__description"),
                 ("awarding_agency_code", "awarding_agency_code"),  # Column is annotated in account_download.py
                 ("awarding_agency_name", "awarding_agency_name"),  # Column is annotated in account_download.py
@@ -2770,17 +2770,17 @@ query_paths = {
                     "primary_place_of_performance_zip_code",
                     "primary_place_of_performance_zip_code",
                 ),  # Column is annotated in account_download.py
-                ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
-                ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
-                ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
+                ("cfda_number", "award__latest_transaction_search__cfda_number"),
+                ("cfda_title", "award__latest_transaction_search__cfda_title"),
+                ("product_or_service_code", "award__latest_transaction_search__product_or_service_code"),
                 (
                     "product_or_service_code_description",
-                    "award__latest_transaction__contract_data__product_or_service_co_desc",
+                    "award__latest_transaction_search__product_or_service_description",
                 ),
-                ("naics_code", "award__latest_transaction__contract_data__naics"),
-                ("naics_description", "award__latest_transaction__contract_data__naics_description"),
-                ("national_interest_action_code", "award__latest_transaction__contract_data__national_interest_action"),
-                ("national_interest_action", "award__latest_transaction__contract_data__national_interest_desc"),
+                ("naics_code", "award__latest_transaction_search__naics_code"),
+                ("naics_description", "award__latest_transaction_search__naics_description"),
+                ("national_interest_action_code", "award__latest_transaction_search__national_interest_action"),
+                ("national_interest_action", "award__latest_transaction_search__national_interest_desc"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
@@ -2835,11 +2835,11 @@ query_paths = {
                 ),  # Column is annotated in account_download.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
-                ("ordering_period_end_date", "award__latest_transaction__contract_data__ordering_period_end_date"),
+                ("ordering_period_end_date", "award__latest_transaction_search__ordering_period_end_date"),
                 ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
                 ("award_type", "award_type"),  # Column is annotated in account_download.py
-                ("idv_type_code", "award__latest_transaction__contract_data__idv_type"),
-                ("idv_type", "award__latest_transaction__contract_data__idv_type_description"),
+                ("idv_type_code", "award__latest_transaction_search__idv_type"),
+                ("idv_type", "award__latest_transaction_search__idv_type_description"),
                 ("prime_award_base_transaction_description", "award__description"),
                 ("awarding_agency_code", "awarding_agency_code"),  # Column is annotated in account_download.py
                 ("awarding_agency_name", "awarding_agency_name"),  # Column is annotated in account_download.py
@@ -2886,17 +2886,17 @@ query_paths = {
                     "primary_place_of_performance_zip_code",
                     "primary_place_of_performance_zip_code",
                 ),  # Column is annotated in account_download.py
-                ("cfda_number", "award__latest_transaction__assistance_data__cfda_number"),
-                ("cfda_title", "award__latest_transaction__assistance_data__cfda_title"),
-                ("product_or_service_code", "award__latest_transaction__contract_data__product_or_service_code"),
+                ("cfda_number", "award__latest_transaction_search__cfda_number"),
+                ("cfda_title", "award__latest_transaction_search__cfda_title"),
+                ("product_or_service_code", "award__latest_transaction_search__product_or_service_code"),
                 (
                     "product_or_service_code_description",
-                    "award__latest_transaction__contract_data__product_or_service_co_desc",
+                    "award__latest_transaction_search__product_or_service_description",
                 ),
-                ("naics_code", "award__latest_transaction__contract_data__naics"),
-                ("naics_description", "award__latest_transaction__contract_data__naics_description"),
-                ("national_interest_action_code", "award__latest_transaction__contract_data__national_interest_action"),
-                ("national_interest_action", "award__latest_transaction__contract_data__national_interest_desc"),
+                ("naics_code", "award__latest_transaction_search__naics_code"),
+                ("naics_description", "award__latest_transaction_search__naics_description"),
+                ("national_interest_action_code", "award__latest_transaction_search__national_interest_action"),
+                ("national_interest_action", "award__latest_transaction_search__national_interest_desc"),
                 ("usaspending_permalink", "usaspending_permalink"),  # to be filled in by annotation
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
