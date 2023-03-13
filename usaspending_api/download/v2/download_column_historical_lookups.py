@@ -2725,51 +2725,44 @@ query_paths = {
                 ("idv_type_code", "award__latest_transaction_search__idv_type"),
                 ("idv_type", "award__latest_transaction_search__idv_type_description"),
                 ("prime_award_base_transaction_description", "award__description"),
-                ("awarding_agency_code", "awarding_agency_code"),  # Column is annotated in account_download.py
-                ("awarding_agency_name", "awarding_agency_name"),  # Column is annotated in account_download.py
-                ("awarding_subagency_code", "awarding_subagency_code"),  # Column is annotated in account_download.py
-                ("awarding_subagency_name", "awarding_subagency_name"),  # Column is annotated in account_download.py
-                ("awarding_office_code", "awarding_office_code"),  # Column is annotated in account_download.py
-                ("awarding_office_name", "awarding_office_name"),  # Column is annotated in account_download.py
-                ("funding_agency_code", "funding_agency_code"),  # Column is annotated in account_download.py
-                ("funding_agency_name", "funding_agency_name"),  # Column is annotated in account_download.py
-                ("funding_sub_agency_code", "funding_sub_agency_code"),  # Column is annotated in account_download.py
-                ("funding_sub_agency_name", "funding_sub_agency_name"),  # Column is annotated in account_download.py
-                ("funding_office_code", "funding_office_code"),  # Column is annotated in account_download.py
-                ("funding_office_name", "funding_office_name"),  # Column is annotated in account_download.py
-                ("recipient_uei", "recipient_uei"),  # Column is annotated in account_download.py
-                ("recipient_duns", "recipient_duns"),  # Column is annotated in account_download.py
-                ("recipient_name", "recipient_name"),  # Column is annotated in account_download.py
-                ("recipient_parent_uei", "recipient_parent_uei"),  # Column is annotated in account_download.py
-                ("recipient_parent_duns", "recipient_parent_duns"),  # Column is annotated in account_download.py
-                ("recipient_parent_name", "recipient_parent_name"),  # Column is annotated in account_download.py
-                ("recipient_country", "recipient_country"),  # Column is annotated in account_download.py
-                ("recipient_state", "recipient_state"),  # Column is annotated in account_download.py
-                ("recipient_county", "recipient_county"),  # Column is annotated in account_download.py
-                ("recipient_city", "recipient_city"),  # Column is annotated in account_download.py
-                ("recipient_congressional_district", "recipient_congressional_district"),
-                # Column is annotated in account_download.py
+                ("awarding_agency_code", "award__latest_transaction_search__awarding_agency_code"),
+                ("awarding_agency_name", "award__latest_transaction_search__awarding_toptier_agency_name_raw"),
+                ("awarding_subagency_code", "award__latest_transaction_search__awarding_sub_tier_agency_c"),
+                ("awarding_subagency_name", "award__latest_transaction_search__awarding_subtier_agency_name_raw"),
+                ("awarding_office_code", "award__latest_transaction_search__awarding_office_code"),
+                ("awarding_office_name", "award__latest_transaction_search__awarding_office_name"),
+                ("funding_agency_code", "award__latest_transaction_search__funding_agency_code"),
+                ("funding_agency_name", "award__latest_transaction_search__funding_toptier_agency_name_raw"),
+                ("funding_sub_agency_code", "award__latest_transaction_search__funding_sub_tier_agency_co"),
+                ("funding_sub_agency_name", "award__latest_transaction_search__funding_subtier_agency_name_raw"),
+                ("funding_office_code", "award__latest_transaction_search__funding_office_code"),
+                ("funding_office_name", "award__latest_transaction_search__funding_office_name"),
+                ("recipient_uei", "award__latest_transaction_search__recipient_uei"),
+                ("recipient_duns", "award__latest_transaction_search__recipient_unique_id"),
+                ("recipient_name", "award__latest_transaction_search__recipient_name_raw"),
+                ("recipient_parent_uei", "award__latest_transaction_search__parent_uei"),
+                ("recipient_parent_duns", "award__latest_transaction_search__parent_uei"),
+                ("recipient_parent_name", "award__latest_transaction_search__parent_recipient_name_raw"),
+                ("recipient_country", "award__latest_transaction_search__recipient_location_country_code"),
+                ("recipient_state", "award__latest_transaction_search__recipient_location_state_code"),
+                ("recipient_county", "award__latest_transaction_search__recipient_location_county_name"),
+                ("recipient_city", "award__latest_transaction_search__recipient_location_city_name"),
+                (
+                    "recipient_congressional_district",
+                    "award__latest_transaction_search__recipient_location_congressional_code",
+                ),
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
-                (
-                    "primary_place_of_performance_country",
-                    "primary_place_of_performance_country",
-                ),  # Column is annotated in account_download.py
-                (
-                    "primary_place_of_performance_state",
-                    "primary_place_of_performance_state",
-                ),  # Column is annotated in account_download.py
-                (
-                    "primary_place_of_performance_county",
-                    "primary_place_of_performance_county",
-                ),  # Column is annotated in account_download.py
+                ("primary_place_of_performance_country", "award__latest_transaction_search__pop_country_name"),
+                ("primary_place_of_performance_state", "award__latest_transaction_search__pop_state_name"),
+                ("primary_place_of_performance_county", "award__latest_transaction_search__pop_county_name"),
                 (
                     "primary_place_of_performance_congressional_district",
-                    "primary_place_of_performance_congressional_district",
-                ),  # Column is annotated in account_download.py
+                    "award__latest_transaction_search__pop_congressional_code",
+                ),
                 (
                     "primary_place_of_performance_zip_code",
-                    "primary_place_of_performance_zip_code",
-                ),  # Column is annotated in account_download.py
+                    "award__latest_transaction_search__place_of_performance_zip4a",
+                ),
                 ("cfda_number", "award__latest_transaction_search__cfda_number"),
                 ("cfda_title", "award__latest_transaction_search__cfda_title"),
                 ("product_or_service_code", "award__latest_transaction_search__product_or_service_code"),
