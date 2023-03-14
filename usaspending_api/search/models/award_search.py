@@ -1,4 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
+from django.db.models.functions import Upper
 from django_cte import CTEManager
 from django.db import models
 from django.db.models import Q, F
@@ -12,7 +13,7 @@ class AwardSearch(models.Model):
     category = models.TextField(null=True, db_index=True)
     type = models.TextField(null=True, db_index=True)
     type_description = models.TextField(null=True)
-    generated_unique_award_id = models.TextField(null=True)
+    generated_unique_award_id = models.TextField(null=False, unique=True)
     display_award_id = models.TextField(null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     piid = models.TextField(null=True, db_index=True)
@@ -119,6 +120,9 @@ class AwardSearch(models.Model):
     covid_spending_by_defc = models.JSONField(null=True)
     total_covid_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_covid_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    iija_spending_by_defc = models.JSONField(null=True)
+    total_iija_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_iija_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_1_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_1_name = models.TextField(null=True)
     officer_2_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
@@ -155,6 +159,24 @@ class AwardSearch(models.Model):
         related_name="earliest_for_award",
         null=True,
         help_text="The earliest transaction by action_date and mod associated with this award",
+        db_constraint=False,
+    )
+    latest_transaction_search = models.ForeignKey(
+        "search.TransactionSearch",
+        on_delete=models.DO_NOTHING,
+        related_name="latest_for_award",
+        null=True,
+        help_text="The latest transaction in transaction_search table by action_date and mod associated with this "
+        "award",
+        db_constraint=False,
+    )
+    earliest_transaction_search = models.ForeignKey(
+        "search.TransactionSearch",
+        on_delete=models.DO_NOTHING,
+        related_name="earliest_for_award",
+        null=True,
+        help_text="The earliest transaction in transaction_search table by action_date and mod associated with this "
+        "award",
         db_constraint=False,
     )
     total_indirect_federal_sharing = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
@@ -205,4 +227,8 @@ class AwardSearch(models.Model):
                 name="as_idx_action_date_pre2008",
                 condition=Q(action_date__lt="2007-10-01"),
             ),
+            models.Index(Upper("piid"), name="as_idx_piid_upper"),
+            models.Index(Upper("parent_award_piid"), name="as_idx_parent_award_piid_upper"),
+            models.Index(Upper("fain"), name="as_idx_fain_upper"),
+            models.Index(Upper("uri"), name="as_idx_uri_upper"),
         ]

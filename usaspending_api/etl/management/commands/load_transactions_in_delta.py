@@ -220,6 +220,11 @@ class Command(BaseCommand):
             )
         """
 
+        # TODO: The values returned here are put into a list in an 'IN' clause in award_id_lookup_post_delete.
+        #       However, there is a limit on the number of values one can manually put into an 'IN' cluase (i.e., not
+        #       returned by a SELECT subquery inside the 'IN').  Thus, this code should return a dataframe directly,
+        #       create a temporary view from the dataframe in award_id_lookup_post_delete, and use that temporary
+        #       view to either do a subquery in the 'IN' clause or to JOIN against.
         possibly_modified_award_ids = [str(row["award_id"]) for row in self.spark.sql(sql).collect()]
         return possibly_modified_award_ids
 
@@ -306,6 +311,7 @@ class Command(BaseCommand):
         #   level could be run more than once before awards ETL level is run.
         # Avoid SQL error if possibly_modified_award_ids is empty
         if possibly_modified_award_ids:
+            # TODO: see award_id_lookup_pre_delete
             self.spark.sql(
                 f"""
                     INSERT INTO int.award_ids_delete_modified
@@ -965,14 +971,25 @@ class Command(BaseCommand):
                 SELECT * FROM int.award_id_lookup
                 WHERE is_fpds = TRUE
             ),
+            aidlu_fpds_map AS (
+                SELECT award_id, generated_unique_award_id FROM aidlu_fpds
+                GROUP BY award_id, generated_unique_award_id
+            ),
             aidlu_fabs AS (
                 SELECT * FROM int.award_id_lookup
                 WHERE is_fpds = FALSE
+            ),
+            aidlu_fabs_map AS (
+                SELECT award_id, generated_unique_award_id FROM aidlu_fabs
+                GROUP BY award_id, generated_unique_award_id
             )
             INSERT INTO int.award_id_lookup
             SELECT
-                {previous_max_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
-                    ORDER BY all_new_awards.unique_award_key
+                COALESCE(
+                    all_new_awards.existing_award_id,
+                    {previous_max_id} + DENSE_RANK(all_new_awards.unique_award_key) OVER (
+                        ORDER BY all_new_awards.unique_award_key
+                    )
                 ) AS award_id,
                 all_new_awards.is_fpds,
                 all_new_awards.transaction_unique_id,
@@ -983,12 +1000,17 @@ class Command(BaseCommand):
                         TRUE AS is_fpds,
                         -- The transaction loader code will convert these to upper case, so use those versions here.
                         ucase(dap.detached_award_proc_unique) AS transaction_unique_id,
-                        ucase(dap.unique_award_key) AS unique_award_key
+                        ucase(dap.unique_award_key) AS unique_award_key,
+                        award_aidlu.award_id AS existing_award_id
                     FROM
-                         dap_filtered AS dap LEFT JOIN aidlu_fpds AS aidlu ON (
-                            ucase(dap.detached_award_proc_unique) = aidlu.transaction_unique_id
+                         dap_filtered AS dap
+                    LEFT JOIN aidlu_fpds AS trans_aidlu ON (
+                            ucase(dap.detached_award_proc_unique) = trans_aidlu.transaction_unique_id
                          )
-                    WHERE aidlu.transaction_unique_id IS NULL
+                    LEFT JOIN aidlu_fpds_map AS award_aidlu ON (
+                            ucase(dap.unique_award_key) = award_aidlu.generated_unique_award_id
+                         )
+                    WHERE trans_aidlu.transaction_unique_id IS NULL
                 )
                 UNION ALL
                 (
@@ -996,12 +1018,17 @@ class Command(BaseCommand):
                         FALSE AS is_fpds,
                         -- The transaction loader code will convert these to upper case, so use those versions here.
                         ucase(pfabs.afa_generated_unique) AS transaction_unique_id,
-                        ucase(pfabs.unique_award_key) AS unique_award_key
+                        ucase(pfabs.unique_award_key) AS unique_award_key,
+                        award_aidlu.award_id AS existing_award_id
                     FROM
-                        pfabs_filtered AS pfabs LEFT JOIN aidlu_fabs AS aidlu ON (
-                            ucase(pfabs.afa_generated_unique) = aidlu.transaction_unique_id
+                        pfabs_filtered AS pfabs
+                    LEFT JOIN aidlu_fabs AS trans_aidlu ON (
+                            ucase(pfabs.afa_generated_unique) = trans_aidlu.transaction_unique_id
                          )
-                    WHERE aidlu.transaction_unique_id IS NULL
+                    LEFT JOIN aidlu_fabs_map AS award_aidlu ON (
+                            ucase(pfabs.unique_award_key) = award_aidlu.generated_unique_award_id
+                         )
+                    WHERE trans_aidlu.transaction_unique_id IS NULL
                 )
             ) AS all_new_awards
         """

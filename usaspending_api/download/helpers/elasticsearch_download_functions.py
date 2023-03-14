@@ -7,16 +7,15 @@ from datetime import datetime, timezone
 from typing import Union
 
 from django.conf import settings
-from django.db.models import QuerySet, Exists, OuterRef
+from django.db.models import QuerySet
 from elasticsearch_dsl import A
 
-from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
-from usaspending_api.search.models import AwardSearch as DBAwardSearch
+from usaspending_api.search.models import AwardSearch as DBAwardSearch, TransactionSearch as DBTransactionSearch
 
 logger = logging.getLogger(__name__)
 
@@ -139,12 +138,13 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         base_queryset = DBAwardSearch.objects.all()
         cls._populate_download_lookups(filters, download_job)
-        queryset = base_queryset.filter(
-            Exists(
-                DownloadJobLookup.objects.filter(
-                    lookup_id=OuterRef("award_id"), download_job_id=download_job.download_job_id
-                )
-            )
+        queryset = base_queryset.extra(
+            tables=["download_job_lookup"],
+            where=[
+                '"download_job_lookup"."download_job_id" = %s '
+                'AND "download_job_lookup"."lookup_id" = "award_search"."award_id"'
+            ],
+            params=[download_job.download_job_id],
         )
 
         return queryset
@@ -157,12 +157,15 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
-        base_queryset = TransactionNormalized.objects.all()
+        base_queryset = DBTransactionSearch.objects.all()
         cls._populate_download_lookups(filters, download_job)
-        queryset = base_queryset.filter(
-            Exists(
-                DownloadJobLookup.objects.filter(lookup_id=OuterRef("id"), download_job_id=download_job.download_job_id)
-            )
+        queryset = base_queryset.extra(
+            tables=["download_job_lookup"],
+            where=[
+                '"download_job_lookup"."download_job_id" = %s '
+                'AND "download_job_lookup"."lookup_id" = "transaction_search"."transaction_id"'
+            ],
+            params=[download_job.download_job_id],
         )
 
         return queryset

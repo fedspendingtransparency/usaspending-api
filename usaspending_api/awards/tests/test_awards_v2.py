@@ -107,6 +107,7 @@ def awards_and_transactions(db):
     asst_trans_1 = {
         "is_fpds": False,
         "award_id": 1,
+        "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
         "record_type": 111,
         "transaction_id": 1,
         "recipient_name": "LEGAL ENTITY",
@@ -154,6 +155,7 @@ def awards_and_transactions(db):
     asst_trans_2 = {
         "is_fpds": False,
         "award_id": 3,
+        "generated_unique_award_id": "ASST_NON_0001_0",
         "record_type": 333,
         "transaction_id": 3,
         "recipient_name": "LEGAL ENTITY",
@@ -204,6 +206,7 @@ def awards_and_transactions(db):
     asst_trans_3 = {
         "is_fpds": False,
         "award_id": 3,
+        "generated_unique_award_id": "ASST_NON_0001_0",
         "record_type": 444,
         "transaction_id": 4,
         "recipient_name": "LEGAL ENTITY",
@@ -254,6 +257,7 @@ def awards_and_transactions(db):
     asst_trans_4 = {
         "is_fpds": False,
         "award_id": 13,
+        "generated_unique_award_id": "ASST_AGG_whatever_3620",
         "record_type": 555,
         "transaction_id": 5,
         "recipient_name": "LEGAL ENTITY",
@@ -305,6 +309,7 @@ def awards_and_transactions(db):
     asst_trans_5 = {
         "is_fpds": False,
         "award_id": 3,
+        "generated_unique_award_id": "ASST_NON_0001_0",
         "record_type": 666,
         "transaction_id": 13,
         "recipient_name": "LEGAL ENTITY",
@@ -364,6 +369,7 @@ def awards_and_transactions(db):
     cont_trans_1 = {
         "is_fpds": True,
         "award_id": 2,
+        "generated_unique_award_id": "CONT_AWD_03VD_9700_SPM30012D3486_9700",
         "transaction_id": 2,
         "recipient_name": "LEGAL ENTITY",
         "recipient_name_raw": "LEGAL ENTITY",
@@ -451,6 +457,7 @@ def awards_and_transactions(db):
     cont_trans_2 = {
         "is_fpds": True,
         "award_id": 5,
+        "generated_unique_award_id": "CONT_AWD_WHATEVER",
         "transaction_id": 6,
         "recipient_name": "LEGAL ENTITY",
         "recipient_name_raw": "LEGAL ENTITY",
@@ -538,6 +545,7 @@ def awards_and_transactions(db):
     cont_trans_3 = {
         "is_fpds": True,
         "award_id": 6,
+        "generated_unique_award_id": "CONT_AWD_WHATEVER2",
         "transaction_id": 7,
         "recipient_name": "LEGAL ENTITY",
         "recipient_name_raw": "LEGAL ENTITY",
@@ -625,6 +633,7 @@ def awards_and_transactions(db):
     cont_trans_4 = {
         "is_fpds": True,
         "award_id": 7,
+        "generated_unique_award_id": "CONT_AWD_AWARD7_1000_AWARD8_1000",
         "transaction_id": 8,
         "agency_id": "1000",
         "idv_type_description": None,
@@ -638,6 +647,7 @@ def awards_and_transactions(db):
     cont_trans_5 = {
         "is_fpds": True,
         "award_id": 8,
+        "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
         "transaction_id": 9,
         "agency_id": "1000",
         "idv_type_description": "TYPE DESCRIPTION TRANS 9",
@@ -651,6 +661,7 @@ def awards_and_transactions(db):
     cont_trans_6 = {
         "is_fpds": True,
         "award_id": 9,
+        "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
         "transaction_id": 10,
         "agency_id": "1000",
         "idv_type_description": "TYPE DESCRIPTION TRANS 10",
@@ -664,6 +675,7 @@ def awards_and_transactions(db):
     cont_trans_7 = {
         "is_fpds": True,
         "award_id": 10,
+        "generated_unique_award_id": "CONT_AWD_AWARD10_2000",
         "transaction_id": 11,
         "agency_id": "2000",
         "piid": "AWARD10",
@@ -739,11 +751,11 @@ def awards_and_transactions(db):
         "category": "grant",
         "date_signed": "2004-03-02",
         "description": "lorem ipsum",
-        "generated_unique_award_id": "",
+        "generated_unique_award_id": "ASST_NON_0001_0",
         "parent_award_piid": "0001",
         "period_of_performance_current_end_date": "2005-02-04",
         "period_of_performance_start_date": "2004-02-04",
-        "piid": "0001",
+        "fain": "0001",
         "subaward_count": 0,
         "total_obligation": 600,
         "total_subaward_amount": 0,

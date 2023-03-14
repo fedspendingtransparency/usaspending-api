@@ -392,31 +392,31 @@ LOGGING = {
     },
     "handlers": {
         "server": {
-            "level": "INFO",
+            "level": "DEBUG",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "server.log"),
             "formatter": "user_readable",
         },
         "console_file": {
-            "level": "INFO",
+            "level": "DEBUG",
             "class": "logging.handlers.WatchedFileHandler",
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simpletime"},
-        "script": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "detailed"},
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
+        "script": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "detailed"},
     },
     "loggers": {
         # The root logger; i.e. "all modules"
         "": {"handlers": ["console", "console_file"], "level": "WARNING", "propagate": False},
         # The "root" logger for all usaspending_api modules
-        "usaspending_api": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "usaspending_api": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
         # Logger for Django API requests via middleware. See logging.py
-        "server": {"handlers": ["server"], "level": "INFO", "propagate": False},
+        "server": {"handlers": ["server"], "level": "DEBUG", "propagate": False},
         # Catch-all logger (over)used for non-Django-API commands that output to the console
-        "console": {"handlers": ["console", "console_file"], "level": "INFO", "propagate": False},
+        "console": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
         # More-verbose logger for ETL scripts
-        "script": {"handlers": ["script"], "level": "INFO", "propagate": False},
+        "script": {"handlers": ["script"], "level": "DEBUG", "propagate": False},
         # Logger used to specifically record exceptions
         "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
     },
