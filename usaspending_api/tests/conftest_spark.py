@@ -1,16 +1,30 @@
+import json
 import logging
 import uuid
+from datetime import datetime
+from pathlib import Path
 
 import boto3
+from django.core.management import call_command
+from django.db import connections
+from model_bakery import baker
+from psycopg2.extensions import AsIs
 from pyspark.sql import SparkSession
 from pytest import fixture
+
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from usaspending_api.common.helpers.spark_helpers import (
     is_spark_context_stopped,
     stop_spark_context,
 )
+from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.config import CONFIG
-
+from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.etl.management.commands.create_delta_table import (
+    LOAD_QUERY_TABLE_SPEC,
+    LOAD_TABLE_TABLE_SPEC,
+)
 
 # ==== Spark Automated Integration Test Fixtures ==== #
 
@@ -220,3 +234,515 @@ def delta_lake_unittest_schema(spark: SparkSession, hive_unittest_metastore_db):
     yield DELTA_LAKE_UNITTEST_SCHEMA_NAME
 
     # The dependent hive_unittest_metastore_db fixture will take care of cleaning up this schema post-test
+
+
+
+@fixture
+def populate_broker_data(broker_server_dblink_setup):
+    broker_data = {
+        "sam_recipient": json.loads(Path("usaspending_api/recipient/tests/data/broker_sam_recipient.json").read_text()),
+        "subaward": json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text()),
+    }
+    insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
+    with connections["data_broker"].cursor() as cursor:
+        for table_name, rows in broker_data.items():
+            # An assumption is made that each set of rows have the same columns in the same order
+            columns = list(rows[0])
+            values = [str(tuple(r.values())).replace("None", "null") for r in rows]
+            sql_string = cursor.mogrify(
+                insert_statement,
+                {"table_name": AsIs(table_name), "columns": AsIs(",".join(columns)), "values": AsIs(",".join(values))},
+            )
+            cursor.execute(sql_string)
+    yield
+    # Cleanup test data for each Broker test table
+    with connections["data_broker"].cursor() as cursor:
+        for table in broker_data:
+            cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE")
+
+
+@fixture
+def populate_usas_data(db, populate_broker_data):
+    # Create recipient data for two transactions; the other two will generate ad hoc
+    baker.make(
+        "recipient.RecipientLookup",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        uei="FABSUEI12345",
+        duns="FABSDUNS12345",
+        legal_business_name="FABS TEST RECIPIENT",
+        parent_uei="PARENTUEI12345",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        uei="PARENTUEI12345",
+        duns="PARENTDUNS12345",
+        legal_business_name="PARENT RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        uei="FPDSUEI12345",
+        duns="FPDSDUNS12345",
+        legal_business_name="FPDS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        uei="FABSUEI12345",
+        recipient_level="C",
+        recipient_name="FABS TEST RECIPIENT",
+        recipient_unique_id="FABSDUNS12345",
+        parent_uei="PARENTUEI12345",
+        recipient_affiliations=["PARENTUEI12345"],
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
+        uei="PARENTUEI12345",
+        recipient_level="P",
+        recipient_name="PARENT RECIPIENT 12345",
+        recipient_unique_id="PARENTDUNS12345",
+        parent_uei="PARENTUEI12345",
+        recipient_affiliations=["FABSUEI12345", "FPDSUEI12345"],
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        uei="FPDSUEI12345",
+        recipient_level="C",
+        recipient_name="FPDS RECIPIENT 12345",
+        recipient_unique_id="FPDSDUNS12345",
+        parent_uei="PARENTUEI12345",
+        recipient_affiliations=["PARENTUEI12345"],
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.DUNS",
+        broker_duns_id="1",
+        uei="FABSUEI12345",
+        ultimate_parent_uei="PARENTUEI12345",
+        ultimate_parent_unique_ide="PARENTDUNS12345",
+        awardee_or_recipient_uniqu="FABSDUNS12345",
+        ultimate_parent_legal_enti="PARENT RECIPIENT 12345",
+        legal_business_name="FABS TEST RECIPIENT",
+        _fill_optional=True,
+    )
+
+    # Create agency data
+    funding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
+    funding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
+    funding_agency = baker.make(
+        "references.Agency",
+        toptier_agency=funding_toptier_agency,
+        subtier_agency=funding_subtier_agency,
+        toptier_flag=True,
+        _fill_optional=True,
+    )
+
+    toptier = baker.make("references.ToptierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
+    subtier = baker.make("references.SubtierAgency", name="subtier", abbreviation="st", _fill_optional=True)
+    baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, toptier_flag=True, id=32)
+
+    awarding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
+    awarding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
+    awarding_agency = baker.make(
+        "references.Agency",
+        toptier_agency=awarding_toptier_agency,
+        subtier_agency=awarding_subtier_agency,
+        toptier_flag=True,
+        _fill_optional=True,
+    )
+
+    # Create reference data
+    baker.make("references.NAICS", code="123456", _fill_optional=True)
+    baker.make("references.PSC", code="12", _fill_optional=True)
+    baker.make("references.Cfda", program_number="12.456", _fill_optional=True)
+    baker.make(
+        "references.CityCountyStateCode",
+        state_alpha="VA",
+        county_numeric="001",
+        county_name="County Name",
+        _fill_optional=True,
+    )
+    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
+    baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
+    baker.make("references.PopCounty", state_code="51", county_number="000", _fill_optional=True)
+    baker.make("references.PopCounty", state_code="51", county_number="001", _fill_optional=True)
+    baker.make("references.PopCongressionalDistrict", state_code="51", congressional_district="01")
+    defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", _fill_optional=True)
+    defc_m = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19", _fill_optional=True)
+    defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
+
+    # Create awards and transactions
+    asst_award = baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        type="07",
+        category="loans",
+        generated_unique_award_id="UNIQUE AWARD KEY B",
+        period_of_performance_start_date="2020-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2020-01-01",
+        certified_date="2020-01-01",
+        update_date="2020-01-01",
+        total_obligation=100.00,
+        total_subsidy_cost=100.00,
+        type_description="Direct Loan",
+        fain="FAIN",
+        uri="URI",
+        piid=None,
+    )
+    cont_award = baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        type="A",
+        category="contracts",
+        generated_unique_award_id="UNIQUE AWARD KEY C",
+        period_of_performance_start_date="2020-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2020-01-01",
+        certified_date="2020-01-01",
+        update_date="2020-01-01",
+        total_obligation=100.00,
+        piid="PIID",
+        fain=None,
+        uri=None,
+    )
+    cont_award2 = baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        generated_unique_award_id="UNIQUE AWARD KEY A",
+        type="A",
+        category="contracts",
+        period_of_performance_start_date="2020-01-01",
+        period_of_performance_current_end_date="2022-01-01",
+        date_signed="2020-01-01",
+        certified_date="2020-01-01",
+        total_obligation=100.00,
+        last_modified_date="2020-01-01",
+        update_date="2020-01-01",
+        awarding_agency_id=32,
+        funding_agency_id=32,
+        piid="PIID",
+        fain=None,
+        uri=None,
+    )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
+        afa_generated_unique=1,
+        action_date="2020-01-01",
+        fiscal_action_date="2020-04-01",
+        award_id=asst_award.award_id,
+        generated_unique_award_id=asst_award.generated_unique_award_id,
+        award_certified_date=asst_award.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=asst_award.date_signed,
+        etl_update_date=asst_award.update_date,
+        award_category=asst_award.category,
+        piid=asst_award.piid,
+        fain=asst_award.fain,
+        uri=asst_award.uri,
+        is_fpds=False,
+        type="07",
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
+        last_modified_date="2020-01-01",
+        federal_action_obligation=0,
+        cfda_number="12.456",
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="FABS RECIPIENT 12345",
+        recipient_name_raw="FABS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=1.0,
+        total_funding_amount="2.23",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_county_code="001",
+        recipient_location_county_name="COUNTY NAME",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_county_code="001",
+        pop_county_name="COUNTY NAME",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
+        afa_generated_unique=2,
+        action_date="2020-04-01",
+        fiscal_action_date="2020-07-01",
+        award_id=asst_award.award_id,
+        generated_unique_award_id=asst_award.generated_unique_award_id,
+        award_certified_date=asst_award.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=asst_award.date_signed,
+        etl_update_date=asst_award.update_date,
+        award_category=asst_award.category,
+        piid=asst_award.piid,
+        fain=asst_award.fain,
+        uri=asst_award.uri,
+        is_fpds=False,
+        type="07",
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
+        last_modified_date="2020-01-01",
+        federal_action_obligation=0,
+        published_fabs_id=2,
+        cfda_number="12.456",
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="FABS RECIPIENT 12345",
+        recipient_name_raw="FABS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=1.0,
+        total_funding_amount="2.23",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_county_code="001",
+        recipient_location_county_name="COUNTY NAME",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_county_code="001",
+        pop_county_name="COUNTY NAME",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=3,
+        detached_award_procurement_id=3,
+        action_date="2020-07-01",
+        fiscal_action_date="2020-10-01",
+        award_id=cont_award.award_id,
+        generated_unique_award_id=cont_award.generated_unique_award_id,
+        award_certified_date=cont_award.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=cont_award.date_signed,
+        etl_update_date=cont_award.update_date,
+        award_category=cont_award.category,
+        piid=cont_award.piid,
+        fain=cont_award.fain,
+        uri=cont_award.uri,
+        is_fpds=True,
+        type="A",
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
+        last_modified_date="2020-01-01",
+        federal_action_obligation=0,
+        naics_code="123456",
+        product_or_service_code="12",
+        recipient_uei="FPDSUEI12345",
+        recipient_unique_id="FPDSDUNS12345",
+        recipient_name="FPDS RECIPIENT 12345",
+        recipient_name_raw="FPDS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        ordering_period_end_date="2020-07-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=4,
+        detached_award_procurement_id=4,
+        action_date="2020-10-01",
+        fiscal_action_date="2021-01-01",
+        award_id=cont_award.award_id,
+        generated_unique_award_id=cont_award.generated_unique_award_id,
+        award_certified_date=cont_award.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=cont_award.date_signed,
+        etl_update_date=cont_award.update_date,
+        award_category=cont_award.category,
+        piid=cont_award.piid,
+        fain=cont_award.fain,
+        uri=cont_award.uri,
+        is_fpds=True,
+        type="A",
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
+        last_modified_date="2020-01-01",
+        federal_action_obligation=0,
+        naics_code="123456",
+        product_or_service_code="12",
+        recipient_uei="FPDSUEI12345",
+        recipient_unique_id="FPDSDUNS12345",
+        recipient_name="FPDS RECIPIENT 12345",
+        recipient_name_raw="FPDS RECIPIENT 12345",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        ordering_period_end_date="2020-07-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=434,
+        detached_award_procurement_id=434,
+        is_fpds=True,
+        award_id=cont_award2.award_id,
+        generated_unique_award_id=cont_award2.generated_unique_award_id,
+        award_certified_date=cont_award2.certified_date,
+        award_fiscal_year=2020,
+        award_date_signed=cont_award2.date_signed,
+        etl_update_date=cont_award2.update_date,
+        award_category=cont_award2.category,
+        piid=cont_award2.piid,
+        fain=cont_award2.fain,
+        uri=cont_award2.uri,
+        type="A",
+        awarding_agency_id=32,
+        funding_agency_id=32,
+        last_modified_date="2020-01-01",
+    )
+    baker.make(
+        "transactions.SourceProcurementTransaction",
+        detached_award_procurement_id=4,
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+    baker.make(
+        "transactions.SourceProcurementTransaction",
+        detached_award_procurement_id=5,
+        created_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        federal_action_obligation=1000001,
+        _fill_optional=True,
+    )
+
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        published_fabs_id=6,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        indirect_federal_sharing=22.00,
+        is_active=True,
+        federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
+        submission_id=33.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
+        _fill_optional=True,
+    )
+    baker.make(
+        "transactions.SourceAssistanceTransaction",
+        published_fabs_id=7,
+        created_at=datetime.fromtimestamp(0),
+        modified_at=datetime.fromtimestamp(0),
+        updated_at=datetime.fromtimestamp(0),
+        indirect_federal_sharing=22.00,
+        is_active=True,
+        federal_action_obligation=1000001,
+        face_value_loan_guarantee=22.00,
+        non_federal_funding_amount=44.00,
+        original_loan_subsidy_cost=55.00,
+        submission_id=33.00,
+        _fill_optional=True,
+    )
+    # Create account data
+    federal_account = baker.make(
+        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
+    )
+    tas = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        federal_account=federal_account,
+        allocation_transfer_agency_id=None,
+        _fill_optional=True,
+    )
+    dabs = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01")
+    sa = baker.make("submissions.SubmissionAttributes", reporting_period_start="2020-04-02", submission_window=dabs)
+
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=asst_award.award_id,
+        treasury_account=tas,
+        disaster_emergency_fund=defc_l,
+        submission=sa,
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=asst_award.award_id,
+        treasury_account=tas,
+        disaster_emergency_fund=defc_m,
+        submission=sa,
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=cont_award.award_id,
+        treasury_account=tas,
+        disaster_emergency_fund=defc_q,
+        submission=sa,
+        _fill_optional=True,
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=cont_award.award_id,
+        treasury_account=tas,
+        disaster_emergency_fund=None,
+        submission=sa,
+        _fill_optional=True,
+    )
+
+    # Run current Postgres ETLs to make sure data is populated_correctly
+    update_awards()
+    restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
+    execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
+    call_command("update_recipient_lookup")
+    execute_sql_simple(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
+
+
+def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
+    load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
+    load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
+    for dest_table in load_query_tables + load_table_tables:
+        call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
+
+    for dest_table in load_table_tables:
+        call_command("load_table_to_delta", f"--destination-table={dest_table}")
+
+    for dest_table in load_query_tables:
+        call_command("load_query_to_delta", f"--destination-table={dest_table}")
+
+    create_ref_temp_views(spark)

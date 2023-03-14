@@ -1,29 +1,22 @@
-import docker
-import logging
 import os
-import pytest
 import tempfile
 
+import docker
+import pytest
 from django.conf import settings
-from django.core.management import call_command
-from django.db import connections
 from django.test import override_settings
-from model_bakery import baker
-from pathlib import Path
 
-from usaspending_api.config import CONFIG
-from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
     ensure_business_categories_functions_exist,
 )
+from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 from usaspending_api.common.sqs.sqs_handler import (
     FAKE_QUEUE_DATA_PATH,
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
-from usaspending_api.common.helpers.generic_helper import generate_matviews
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, get_broker_dsn_string
 
 # Compose other supporting conftest_*.py files
 from usaspending_api.conftest_helpers import (
@@ -32,7 +25,6 @@ from usaspending_api.conftest_helpers import (
     remove_unittest_queue_data_files,
 )
 from usaspending_api.tests.conftest_spark import *  # noqa
-
 
 logger = logging.getLogger("console")
 
@@ -382,7 +374,9 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
 
 @pytest.fixture(scope="session")
 def broker_server_dblink_setup(django_db_blocker, broker_db_setup):
-    """Fixture to use during a pytest session if you will run integration tests connecting to the broker DB via dblink."""
+    """Fixture to use during a pytest session if you will run integration
+    tests connecting to the broker DB via dblink.
+    """
     with django_db_blocker.unblock():
         ensure_broker_server_dblink_exists()
 
