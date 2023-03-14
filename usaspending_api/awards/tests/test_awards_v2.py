@@ -714,6 +714,7 @@ def awards_and_transactions(db):
         "type": "11",
         "type_description": "OTHER FINANCIAL ASSISTA1NCE",
         "uri": 1234,
+        "action_date": "2020-01-01",
     }
     award_2 = {
         "award_id": 2,
@@ -739,6 +740,7 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "type": "A",
         "type_description": "DEFINITIVE CONTRACT",
+        "action_date": "2020-01-01",
     }
     award_3 = {
         "award_id": 3,
@@ -759,6 +761,7 @@ def awards_and_transactions(db):
         "total_subaward_amount": 0,
         "type": "03",
         "type_description": "FORMULA GRANT (A)",
+        "action_date": "2020-01-01",
     }
     award_4 = {
         "award_id": 4,
@@ -779,6 +782,7 @@ def awards_and_transactions(db):
         "total_subaward_amount": 0,
         "type": "IDV_B",
         "type_description": "INDEFINITE DELIVERY CONTRACT",
+        "action_date": "2020-01-01",
     }
     award_5 = {
         "award_id": 5,
@@ -804,6 +808,7 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "type": "A",
         "type_description": "DEFINITIVE CONTRACT",
+        "action_date": "2020-01-01",
     }
     award_6 = {
         "award_id": 6,
@@ -829,6 +834,7 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "type": "A",
         "type_description": "DEFINITIVE CONTRACT",
+        "action_date": "2020-01-01",
     }
     award_7 = {
         "award_id": 7,
@@ -839,6 +845,7 @@ def awards_and_transactions(db):
         "parent_award_piid": "AWARD8",
         "piid": "AWARD7",
         "type": "A",
+        "action_date": "2020-01-01",
     }
     award_8 = {
         "award_id": 8,
@@ -849,6 +856,7 @@ def awards_and_transactions(db):
         "parent_award_piid": "AWARD9",
         "piid": "AWARD8",
         "type": "IDV_A",
+        "action_date": "2020-01-01",
     }
     award_9 = {
         "award_id": 9,
@@ -859,6 +867,7 @@ def awards_and_transactions(db):
         "parent_award_piid": None,
         "piid": "AWARD9",
         "type": "IDV_A",
+        "action_date": "2020-01-01",
     }
     award_10 = {
         "award_id": 10,
@@ -869,6 +878,7 @@ def awards_and_transactions(db):
         "parent_award_piid": None,
         "piid": "AWARD10",
         "type": "A",
+        "action_date": "2020-01-01",
     }
     award_11 = {
         "award_id": 11,
@@ -889,6 +899,7 @@ def awards_and_transactions(db):
         "total_subaward_amount": 0,
         "subaward_count": 0,
         "date_signed": "2004-03-02",
+        "action_date": "2020-01-01",
     }
     award_13 = {
         "award_id": 13,
@@ -910,6 +921,7 @@ def awards_and_transactions(db):
         "type": "11",
         "type_description": "OTHER FINANCIAL ASSISTA1NCE",
         "uri": 1234,
+        "action_date": "2020-01-01",
     }
 
     baker.make("search.AwardSearch", **award_1)

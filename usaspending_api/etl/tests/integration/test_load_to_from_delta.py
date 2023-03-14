@@ -3,6 +3,7 @@
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
 import json
+
 import psycopg2
 import pytz
 from datetime import date, datetime
@@ -300,6 +301,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         total_obligation=100.00,
         total_subsidy_cost=100.00,
         type_description="Direct Loan",
+        subaward_count=0,
     )
     baker.make(
         "search.TransactionSearch",
@@ -307,7 +309,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         afa_generated_unique=1001,
         action_date="2021-01-01",
         fiscal_action_date="2021-04-01",
-        award_id=new_award.id,
+        award_id=new_award.award_id,
         is_fpds=False,
         type="07",
         last_modified_date="2021-01-01",
@@ -359,7 +361,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     )  # test alt write strategy
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
 
@@ -381,7 +382,6 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -402,30 +402,6 @@ def test_load_table_to_from_delta_for_recipient_profile(
     verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True, ignore_fields=["id"])
 
 
-@mark.skip
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=1,
-        award_id=1,
-        is_fpds=False,
-        indirect_federal_sharing=1.0,
-        _fill_optional=True,
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=2,
-        award_id=1,
-        is_fpds=False,
-        indirect_federal_sharing=1.0,
-        _fill_optional=True,
-    )
-    verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-
-
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_timezone_aware(spark, monkeypatch, s3_unittest_data_bucket, hive_unittest_metastore_db):
     """Test that timestamps are not inadvertently shifted due to loss of timezone during reads and writes.
@@ -565,7 +541,6 @@ def test_load_table_to_delta_timezone_aware(spark, monkeypatch, s3_unittest_data
                 cursor.execute("DROP TABLE test_table")
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make(
@@ -588,24 +563,6 @@ def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_d
     verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
 
 
-@mark.skip
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("search.TransactionSearch", transaction_id="1", is_fpds=True, _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", is_fpds=True, _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
-
-
-@mark.skip
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_normalized(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
-    baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
-
-
 @mark.django_db(transaction=True)
 @mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
 def test_load_table_to_from_delta_for_recipient_profile_testing(
@@ -624,7 +581,6 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
     )
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -641,7 +597,11 @@ def test_load_table_to_from_delta_for_transaction_search(
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
-        spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark,
+        "transaction_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=["award_update_date", "etl_update_date"],
     )
     # TODO: Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC
     #       as by design the data in delta will be different from the data in postgres
@@ -649,7 +609,6 @@ def test_load_table_to_from_delta_for_transaction_search(
     # verify_delta_table_loaded_from_delta(spark, "transaction_search", jdbc_inserts=True)  # test alt write strategy
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search_testing(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -664,13 +623,12 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
     pass
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", award_id=1, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", award_id=2, _fill_optional=True)
     verify_delta_table_loaded_to_delta(
         spark,
         "transaction_normalized",
@@ -715,7 +673,6 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     # )
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -738,7 +695,6 @@ def test_load_table_to_from_delta_for_award_search(
     verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
     expected_data = [
@@ -769,7 +725,6 @@ def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, p
     )
 
 
-#@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_summary_state_view(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db

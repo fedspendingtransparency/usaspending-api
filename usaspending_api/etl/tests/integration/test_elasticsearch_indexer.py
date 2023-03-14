@@ -130,7 +130,6 @@ def mock_execute_sql(sql, results, verbosity=None):
     return execute_sql_to_ordered_dictionary(sql)
 
 
-@pytest.mark.skip
 def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to create a new awards index and load it
     with data from the DB
@@ -164,7 +163,6 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
     assert es_award_docs == original_db_awards_count
 
 
-@pytest.mark.skip
 def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to create a new transactions index and load it
     with data from the DB
@@ -182,7 +180,6 @@ def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch
     assert es_award_docs == original_db_tx_count
 
 
-@pytest.mark.skip
 def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to incrementally load updated data into the awards ES
     index from the DB, overwriting the doc that was already there
@@ -212,7 +209,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     # Also override SQL function listed in config object with the mock one
     es_etl_config["execute_sql_func"] = mock_execute_sql
     ensure_view_exists(es_etl_config["sql_view"], force=True)
-    loader = (PostgresElasticsearchIndexerController(es_etl_config),)
+    loader = PostgresElasticsearchIndexerController(es_etl_config)
     assert loader.__class__.__name__ == "PostgresElasticsearchIndexerController"
     loader.prepare_for_etl()
     loader.dispatch_tasks()
@@ -222,11 +219,10 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     es_awards = client.search(index=elasticsearch_award_index.index_name)
-    updated_award = [a for a in es_awards["hits"]["hits"] if a["_source"]["award_id"] == awd.id][0]
+    updated_award = [a for a in es_awards["hits"]["hits"] if a["_source"]["award_id"] == awd.award_id][0]
     assert int(updated_award["_source"]["total_obligation"]) == 9999
 
 
-@pytest.mark.skip
 def test_incremental_load_into_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to incrementally load updated data into
     the transactions ES index from the DB, overwriting the doc that was already there
@@ -406,7 +402,6 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     assert es_award_docs == 0
 
 
-@pytest.mark.skip
 def test_delete_awards_zero_for_unmatched_transactions(
     award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db
 ):
@@ -442,7 +437,6 @@ def test_delete_awards_zero_for_unmatched_transactions(
     assert es_award_docs == Award.objects.count()
 
 
-@pytest.mark.skip
 def test_delete_one_assistance_award(
     award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db
 ):
@@ -487,7 +481,6 @@ def test_delete_one_assistance_award(
     assert es_award_docs == original_db_awards_count - 1
 
 
-@pytest.mark.skip
 def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_transaction_index, monkeypatch, db):
     """Ensure that transactions not logged for delete don't get deleted but those logged for delete do"""
     elasticsearch_transaction_index.update_index()

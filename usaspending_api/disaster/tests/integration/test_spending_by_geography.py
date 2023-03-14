@@ -99,7 +99,6 @@ def test_spending_by_geography_failure_with_invalid_fields(
     assert resp.data["detail"] == "Field 'scope' is outside valid values ['place_of_performance', 'recipient_location']"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_with_different_geo_filters(
     client, monkeypatch, elasticsearch_award_index, awards_and_transactions
@@ -134,10 +133,10 @@ def _test_correct_response_for_pop_county(client):
         "spending_type": "obligation",
         "results": [
             {
-                "amount": 2202000.0,
+                "amount": 2220000.0,
                 "award_count": 3,
                 "display_name": "Charleston",
-                "per_capita": 2202000.0,
+                "per_capita": 2220000.0,
                 "population": 1,
                 "shape_code": "45001",
             },
@@ -173,7 +172,7 @@ def _test_correct_response_for_pop_district(client):
         "spending_type": "obligation",
         "results": [
             {
-                "amount": 2000.0,
+                "amount": 20000.0,
                 "award_count": 1,
                 "display_name": "SC-10",
                 "per_capita": None,
@@ -189,10 +188,10 @@ def _test_correct_response_for_pop_district(client):
                 "shape_code": "4550",
             },
             {
-                "amount": 20200.0,
+                "amount": 2200.0,
                 "award_count": 2,
                 "display_name": "WA-50",
-                "per_capita": 20.2,
+                "per_capita": 2.2,
                 "population": 1000,
                 "shape_code": "5350",
             },
@@ -220,9 +219,9 @@ def _test_correct_response_for_pop_state(client):
         "spending_type": "obligation",
         "results": [
             {
-                "amount": 20200.0,
+                "amount": 2200.0,
                 "display_name": "Washington",
-                "per_capita": 2.02,
+                "per_capita": 0.22,
                 "population": 10000,
                 "shape_code": "WA",
                 "award_count": 2,
@@ -353,7 +352,6 @@ def _test_correct_response_for_recipient_location_state(client):
     assert resp_json == expected_response
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_with_different_spending_types(
     client, monkeypatch, elasticsearch_award_index, awards_and_transactions
@@ -474,7 +472,6 @@ def _test_correct_response_for_face_value_of_loan(client):
     assert resp_json == expected_response
 
 
-@pytest.mark.skip
 def test_correct_response_for_award_type_codes(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -645,7 +642,6 @@ def _test_correct_response_of_empty_list_for_state(client):
     assert resp.json() == expected_response
 
 
-@pytest.mark.skip
 def test_correct_response_without_geo_filters(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -689,18 +685,18 @@ def _test_correct_response_for_pop_county_without_geo_filters(client):
                 "shape_code": "45005",
             },
             {
-                "amount": 20200.0,
+                "amount": 2200.0,
                 "award_count": 2,
                 "display_name": "Test Name",
-                "per_capita": 202.0,
+                "per_capita": 22.0,
                 "population": 100,
                 "shape_code": "53005",
             },
             {
-                "amount": 2202000.0,
+                "amount": 2220000.0,
                 "award_count": 3,
                 "display_name": "Charleston",
-                "per_capita": 2202000.0,
+                "per_capita": 2220000.0,
                 "population": 1,
                 "shape_code": "45001",
             },
@@ -739,20 +735,20 @@ def _test_correct_response_for_pop_district_without_geo_filters(client):
                 "shape_code": "4550",
             },
             {
-                "amount": 2000.0,
+                "amount": 2200.0,
+                "award_count": 2,
+                "display_name": "WA-50",
+                "per_capita": 2.2,
+                "population": 1000,
+                "shape_code": "5350",
+            },
+            {
+                "amount": 20000.0,
                 "award_count": 1,
                 "display_name": "SC-10",
                 "per_capita": None,
                 "population": None,
                 "shape_code": "4510",
-            },
-            {
-                "amount": 20200.0,
-                "award_count": 2,
-                "display_name": "WA-50",
-                "per_capita": 20.2,
-                "population": 1000,
-                "shape_code": "5350",
             },
             {
                 "amount": 2200000.0,
@@ -789,18 +785,18 @@ def _test_correct_response_for_pop_state_without_geo_filters(client):
                 "shape_code": None,
             },
             {
-                "amount": 20200.0,
+                "amount": 2200.0,
                 "award_count": 2,
                 "display_name": "Washington",
-                "per_capita": 2.02,
+                "per_capita": 0.22,
                 "population": 10000,
                 "shape_code": "WA",
             },
             {
-                "amount": 2202020.0,
+                "amount": 2220020.0,
                 "award_count": 4,
                 "display_name": "South Carolina",
-                "per_capita": 2202.02,
+                "per_capita": 2220.02,
                 "population": 1000,
                 "shape_code": "SC",
             },

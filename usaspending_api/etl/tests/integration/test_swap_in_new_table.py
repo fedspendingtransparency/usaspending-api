@@ -236,7 +236,6 @@ def test_constraint_validation(caplog, monkeypatch):
             assert False, "No exception was raised"
 
 
-@mark.skip
 @mark.django_db()
 def test_column_validation(caplog, monkeypatch):
     monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
@@ -272,7 +271,6 @@ def test_column_validation(caplog, monkeypatch):
             assert False, "No exception was raised"
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_happy_path():
     # Create the Award records for testing with Foreign Keys
@@ -322,8 +320,8 @@ def test_happy_path():
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
-                "ALTER TABLE test_table ADD CONSTRAINT test_table_award_fk FOREIGN KEY (col2) REFERENCES awards (id);"
-                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
+                "ALTER TABLE test_table ADD CONSTRAINT test_table_award_fk FOREIGN KEY (col2) REFERENCES award_search (award_id);"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES award_search (award_id);"
                 "CREATE OR REPLACE VIEW vw_test_table AS SELECT * FROM test_table;"
             )
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key")
@@ -344,7 +342,7 @@ def test_happy_path():
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
-                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES award_search (award_id);"
                 "CREATE OR REPLACE VIEW vw_test_table AS SELECT * FROM test_table;"
             )
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key", "--keep-old-data")

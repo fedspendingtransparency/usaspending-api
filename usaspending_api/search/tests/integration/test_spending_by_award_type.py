@@ -12,7 +12,18 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 def test_data():
 
     baker.make(
-        "search.AwardSearch", award_id=1, type="A", latest_transaction_id=1, generated_unique_award_id="CONT_AWD_1"
+        "search.AwardSearch",
+        award_id=1,
+        type="A",
+        latest_transaction_id=1,
+        generated_unique_award_id="CONT_AWD_1",
+        action_date="2010-10-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_zip5="00501",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_zip5="00001",
     )
     baker.make(
         "search.TransactionSearch",
@@ -29,7 +40,18 @@ def test_data():
     )
 
     baker.make(
-        "search.AwardSearch", award_id=2, type="A", latest_transaction_id=2, generated_unique_award_id="CONT_AWD_2"
+        "search.AwardSearch",
+        award_id=2,
+        type="A",
+        latest_transaction_id=2,
+        generated_unique_award_id="CONT_AWD_2",
+        action_date="2010-10-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_zip5="00502",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_zip5="00002",
     )
     baker.make(
         "search.TransactionSearch",
@@ -46,7 +68,18 @@ def test_data():
     )
 
     baker.make(
-        "search.AwardSearch", award_id=3, type="A", latest_transaction_id=3, generated_unique_award_id="CONT_AWD_3"
+        "search.AwardSearch",
+        award_id=3,
+        type="A",
+        latest_transaction_id=3,
+        generated_unique_award_id="CONT_AWD_3",
+        action_date="2010-10-01",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_zip5="00503",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_zip5="00003",
     )
     baker.make(
         "search.TransactionSearch",
@@ -63,7 +96,18 @@ def test_data():
     )
 
     baker.make(
-        "search.AwardSearch", award_id=4, type="A", latest_transaction_id=4, generated_unique_award_id="CONT_AWD_4"
+        "search.AwardSearch",
+        award_id=4,
+        type="A",
+        latest_transaction_id=4,
+        generated_unique_award_id="CONT_AWD_4",
+        action_date="2010-10-01",
+        recipient_location_country_code="GIB",
+        recipient_location_country_name="GIBRALTAR",
+        recipient_location_zip5="00504",
+        pop_country_code="GIB",
+        pop_country_name="GIBRALTAR",
+        pop_zip5="00004",
     )
     baker.make(
         "search.TransactionSearch",
@@ -151,7 +195,6 @@ def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_pop_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by pop zips works"""
@@ -230,7 +273,6 @@ def test_spending_by_award_pop_zip_filter(client, monkeypatch, elasticsearch_awa
     assert resp.data["results"][0] != resp.data["results"][1]
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_recipient_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by recipient zips works"""
@@ -303,7 +345,6 @@ def test_spending_by_award_recipient_zip_filter(client, monkeypatch, elasticsear
     assert resp.data["results"][0] != resp.data["results"][1]
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_both_zip_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Test that filtering by both kinds of zips works"""
@@ -374,7 +415,6 @@ def test_spending_by_award_both_zip_filter(client, monkeypatch, elasticsearch_aw
     }
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_foreign_filter(client, monkeypatch, elasticsearch_award_index, test_data):
     """ Verify that foreign country filter is returning the correct results """

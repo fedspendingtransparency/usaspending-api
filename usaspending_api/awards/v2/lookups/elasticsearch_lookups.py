@@ -51,6 +51,8 @@ base_mapping = {
     "def_codes": "disaster_emergency_fund_codes",
     "COVID-19 Obligations": "covid_spending_by_defc",
     "COVID-19 Outlays": "covid_spending_by_defc",
+    "Infrastructure Obligations": "iija_spending_by_defc",
+    "Infrastructure Outlays": "iija_spending_by_defc",
 }
 contracts_mapping = {
     **base_mapping,
