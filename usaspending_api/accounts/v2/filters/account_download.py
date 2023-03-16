@@ -263,7 +263,7 @@ def generate_gross_outlay_amount_derived_field(account_type, submission_queryset
 
 
 def generate_treasury_account_query(queryset, account_type):
-    """ Derive necessary fields for a treasury account-grouped query """
+    """Derive necessary fields for a treasury account-grouped query"""
     derived_fields = {
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(account_type),
@@ -300,7 +300,7 @@ def generate_treasury_account_query(queryset, account_type):
 
 
 def generate_federal_account_query(queryset, account_type, tas_id, filters):
-    """ Group by federal account (and budget function/subfunction) and SUM all other fields """
+    """Group by federal account (and budget function/subfunction) and SUM all other fields"""
     # Submission Queryset is only built for Federal Account downloads since the TAS are rolled up into
     # the Federal Account. For cases such as Treasury Account download where there is no GROUP BY in
     # the resulting SQL query this is not needed.
@@ -351,6 +351,33 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "unobligated_balance",
         "status_of_budgetary_resources_total",
         "transaction_obligated_amount",
+        "obligations_undelivered_orders_unpaid_total",
+        "obligations_undelivered_orders_unpaid_total_FYB",
+        "USSGL480100_undelivered_orders_obligations_unpaid",
+        "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
+        "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
+        "obligations_delivered_orders_unpaid_total",
+        "obligations_delivered_orders_unpaid_total_FYB",
+        "USSGL490100_delivered_orders_obligations_unpaid",
+        "USSGL490100_delivered_orders_obligations_unpaid_FYB",
+        "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
+        "gross_outlay_amount_FYB",
+        "gross_outlays_undelivered_orders_prepaid_total",
+        "gross_outlays_undelivered_orders_prepaid_total_FYB",
+        "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
+        "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
+        "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
+        "gross_outlays_delivered_orders_paid_total",
+        "gross_outlays_delivered_orders_paid_total_FYB",
+        "USSGL490200_delivered_orders_obligations_paid",
+        "USSGL490800_authority_outlayed_not_yet_disbursed",
+        "USSGL490800_authority_outlayed_not_yet_disbursed_FYB",
+        "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
+        "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig",
+        "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig",
+        "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
+        "USSGL493100_delivered_orders_obligations_transferred_unpaid",
+        "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
     ]
 
     # Group by all columns within the file that can't be summed
@@ -371,161 +398,21 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
 
 def award_financial_derivations(derived_fields):
     derived_fields["award_type_code"] = Coalesce(
-        "award__latest_transaction__contract_data__contract_award_type",
-        "award__latest_transaction__assistance_data__assistance_type",
+        "award__latest_transaction_search__contract_award_type",
+        "award__latest_transaction_search__type",
         output_field=TextField(),
     )
     derived_fields["award_type"] = Coalesce(
-        "award__latest_transaction__contract_data__contract_award_type_desc",
-        "award__latest_transaction__assistance_data__assistance_type_desc",
-        output_field=TextField(),
-    )
-    derived_fields["awarding_agency_code"] = Coalesce(
-        "award__latest_transaction__contract_data__awarding_agency_code",
-        "award__latest_transaction__assistance_data__awarding_agency_code",
-        output_field=TextField(),
-    )
-    derived_fields["awarding_agency_name"] = Coalesce(
-        "award__latest_transaction__contract_data__awarding_agency_name",
-        "award__latest_transaction__assistance_data__awarding_agency_name",
-        output_field=TextField(),
-    )
-    derived_fields["awarding_subagency_code"] = Coalesce(
-        "award__latest_transaction__contract_data__awarding_sub_tier_agency_c",
-        "award__latest_transaction__assistance_data__awarding_sub_tier_agency_c",
-        output_field=TextField(),
-    )
-    derived_fields["awarding_subagency_name"] = Coalesce(
-        "award__latest_transaction__contract_data__awarding_sub_tier_agency_n",
-        "award__latest_transaction__assistance_data__awarding_sub_tier_agency_n",
-        output_field=TextField(),
-    )
-    derived_fields["awarding_office_code"] = Coalesce(
-        "award__latest_transaction__contract_data__awarding_office_code",
-        "award__latest_transaction__assistance_data__awarding_office_code",
-        output_field=TextField(),
-    )
-    derived_fields["awarding_office_name"] = Coalesce(
-        "award__latest_transaction__contract_data__awarding_office_name",
-        "award__latest_transaction__assistance_data__awarding_office_name",
-        output_field=TextField(),
-    )
-    derived_fields["funding_agency_code"] = Coalesce(
-        "award__latest_transaction__contract_data__funding_agency_code",
-        "award__latest_transaction__assistance_data__funding_agency_code",
-        output_field=TextField(),
-    )
-    derived_fields["funding_agency_name"] = Coalesce(
-        "award__latest_transaction__contract_data__funding_agency_name",
-        "award__latest_transaction__assistance_data__funding_agency_name",
-        output_field=TextField(),
-    )
-    derived_fields["funding_sub_agency_code"] = Coalesce(
-        "award__latest_transaction__contract_data__funding_sub_tier_agency_co",
-        "award__latest_transaction__assistance_data__funding_sub_tier_agency_co",
-        output_field=TextField(),
-    )
-    derived_fields["funding_sub_agency_name"] = Coalesce(
-        "award__latest_transaction__contract_data__funding_sub_tier_agency_na",
-        "award__latest_transaction__assistance_data__funding_sub_tier_agency_na",
-        output_field=TextField(),
-    )
-    derived_fields["funding_office_code"] = Coalesce(
-        "award__latest_transaction__contract_data__funding_office_code",
-        "award__latest_transaction__assistance_data__funding_office_code",
-        output_field=TextField(),
-    )
-    derived_fields["funding_office_name"] = Coalesce(
-        "award__latest_transaction__contract_data__funding_office_name",
-        "award__latest_transaction__assistance_data__funding_office_name",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_duns"] = Coalesce(
-        "award__latest_transaction__contract_data__awardee_or_recipient_uniqu",
-        "award__latest_transaction__assistance_data__awardee_or_recipient_uniqu",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_name"] = Coalesce(
-        "award__latest_transaction__contract_data__awardee_or_recipient_legal",
-        "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_uei"] = Coalesce(
-        "award__latest_transaction__contract_data__awardee_or_recipient_uei",
-        "award__latest_transaction__assistance_data__uei",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_parent_duns"] = Coalesce(
-        "award__latest_transaction__contract_data__ultimate_parent_unique_ide",
-        "award__latest_transaction__assistance_data__ultimate_parent_unique_ide",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_parent_name"] = Coalesce(
-        "award__latest_transaction__contract_data__ultimate_parent_legal_enti",
-        "award__latest_transaction__assistance_data__ultimate_parent_legal_enti",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_parent_uei"] = Coalesce(
-        "award__latest_transaction__contract_data__ultimate_parent_uei",
-        "award__latest_transaction__assistance_data__ultimate_parent_uei",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_country"] = Coalesce(
-        "award__latest_transaction__contract_data__legal_entity_country_code",
-        "award__latest_transaction__assistance_data__legal_entity_country_code",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_state"] = Coalesce(
-        "award__latest_transaction__contract_data__legal_entity_state_code",
-        "award__latest_transaction__assistance_data__legal_entity_state_code",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_county"] = Coalesce(
-        "award__latest_transaction__contract_data__legal_entity_county_name",
-        "award__latest_transaction__assistance_data__legal_entity_county_name",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_city"] = Coalesce(
-        "award__latest_transaction__contract_data__legal_entity_city_name",
-        "award__latest_transaction__assistance_data__legal_entity_city_name",
-        output_field=TextField(),
-    )
-    derived_fields["recipient_congressional_district"] = Coalesce(
-        "award__latest_transaction__contract_data__legal_entity_congressional",
-        "award__latest_transaction__assistance_data__legal_entity_congressional",
+        "award__latest_transaction_search__contract_award_type_desc",
+        "award__latest_transaction_search__type_description",
         output_field=TextField(),
     )
     derived_fields["recipient_zip_code"] = Coalesce(
-        "award__latest_transaction__contract_data__legal_entity_zip4",
+        "award__latest_transaction_search__legal_entity_zip4",
         Concat(
-            "award__latest_transaction__assistance_data__legal_entity_zip5",
-            "award__latest_transaction__assistance_data__legal_entity_zip_last4",
+            "award__latest_transaction_search__recipient_location_zip5",
+            "award__latest_transaction_search__legal_entity_zip_last4",
         ),
-        output_field=TextField(),
-    )
-    derived_fields["primary_place_of_performance_country"] = Coalesce(
-        "award__latest_transaction__contract_data__place_of_perf_country_desc",
-        "award__latest_transaction__assistance_data__place_of_perform_country_n",
-        output_field=TextField(),
-    )
-    derived_fields["primary_place_of_performance_state"] = Coalesce(
-        "award__latest_transaction__contract_data__place_of_perfor_state_desc",
-        "award__latest_transaction__assistance_data__place_of_perform_state_nam",
-        output_field=TextField(),
-    )
-    derived_fields["primary_place_of_performance_county"] = Coalesce(
-        "award__latest_transaction__contract_data__place_of_perform_county_na",
-        "award__latest_transaction__assistance_data__place_of_perform_county_na",
-        output_field=TextField(),
-    )
-    derived_fields["primary_place_of_performance_congressional_district"] = Coalesce(
-        "award__latest_transaction__contract_data__place_of_performance_congr",
-        "award__latest_transaction__assistance_data__place_of_performance_congr",
-        output_field=TextField(),
-    )
-    derived_fields["primary_place_of_performance_zip_code"] = Coalesce(
-        "award__latest_transaction__contract_data__place_of_performance_zip4a",
-        "award__latest_transaction__assistance_data__place_of_performance_zip4a",
         output_field=TextField(),
     )
     derived_fields["award_base_action_date_fiscal_year"] = FiscalYear("award__date_signed")

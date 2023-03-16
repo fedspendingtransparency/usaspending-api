@@ -5,6 +5,8 @@ AWARD_SEARCH_COLUMNS = {
     "transaction_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "latest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "earliest_transaction_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
+    "latest_transaction_search_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
+    "earliest_transaction_search_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "category": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -129,12 +131,15 @@ AWARD_SEARCH_COLUMNS = {
     "officer_4_name": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "officer_5_amount": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "officer_5_name": {"delta": "STRING", "postgres": "TEXT", "gold": True},
+    "iija_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": True},
+    "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
+    "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
 AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["gold"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 
-award_search_create_sql_string = fr"""
+award_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
     )
@@ -142,7 +147,7 @@ award_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-award_search_load_sql_string = fr"""
+award_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
             {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
@@ -154,6 +159,8 @@ award_search_load_sql_string = fr"""
   awards.transaction_unique_id,
   awards.latest_transaction_id,
   awards.earliest_transaction_id,
+  awards.latest_transaction_id AS latest_transaction_search_id,
+  awards.earliest_transaction_id AS earliest_transaction_search_id,
   awards.category,
   awards.type,
   awards.type_description,
@@ -324,9 +331,9 @@ award_search_load_sql_string = fr"""
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
   TREASURY_ACCT.disaster_emergency_fund_codes,
-  DEFC.covid_spending_by_defc,
-  DEFC.total_covid_outlay,
-  DEFC.total_covid_obligation,
+  COVID_DEFC.covid_spending_by_defc,
+  COVID_DEFC.total_covid_outlay,
+  COVID_DEFC.total_covid_obligation,
   awards.officer_1_amount,
   awards.officer_1_name,
   awards.officer_2_amount,
@@ -336,7 +343,11 @@ award_search_load_sql_string = fr"""
   awards.officer_4_amount,
   awards.officer_4_name,
   awards.officer_5_amount,
-  awards.officer_5_name
+  awards.officer_5_name,
+
+  IIJA_DEFC.iija_spending_by_defc,
+  IIJA_DEFC.total_iija_outlay,
+  IIJA_DEFC.total_iija_obligation
 FROM
   int.awards
 INNER JOIN
@@ -437,6 +448,7 @@ LEFT OUTER JOIN (
         )
         AND recipient_lookup.legal_business_name IS NOT NULL
     )
+-- COVID spending
 LEFT OUTER JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
@@ -474,7 +486,45 @@ LEFT OUTER JOIN (
         GROUPED_BY_DEFC.award_id IS NOT NULL
     GROUP BY
         GROUPED_BY_DEFC.award_id
-) DEFC on DEFC.award_id = awards.id
+) COVID_DEFC on COVID_DEFC.award_id = awards.id
+-- Infrastructure Investment and Jobs Act (IIJA) spending
+LEFT OUTER JOIN (
+    SELECT
+        GROUPED_BY_DEFC.award_id,
+        COLLECT_SET(
+            TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
+        ) AS iija_spending_by_defc,
+        sum(GROUPED_BY_DEFC.outlay) AS total_iija_outlay,
+        sum(GROUPED_BY_DEFC.obligation) AS total_iija_obligation
+    FROM (
+        SELECT
+            faba.award_id,
+            faba.disaster_emergency_fund_code AS def_code,
+            COALESCE(sum(
+                CASE
+                    WHEN sa.is_final_balances_for_fy = true THEN COALESCE(faba.gross_outlay_amount_by_award_cpe, 0) + COALESCE(
+                        faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+                        0
+                        ) + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                    ELSE NULL
+                END), 0) AS outlay,
+            COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
+        FROM
+            int.financial_accounts_by_awards AS faba
+        INNER JOIN
+            global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'infrastructure')
+        INNER JOIN
+            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id AND sa.reporting_period_start >= '2020-04-01')
+        INNER JOIN
+            global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
+        GROUP BY
+            faba.award_id, faba.disaster_emergency_fund_code
+    ) AS GROUPED_BY_DEFC
+    WHERE
+        GROUPED_BY_DEFC.award_id IS NOT NULL
+    GROUP BY
+        GROUPED_BY_DEFC.award_id
+) IIJA_DEFC on IIJA_DEFC.award_id = awards.id
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,

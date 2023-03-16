@@ -120,6 +120,9 @@ class AwardSearch(models.Model):
     covid_spending_by_defc = models.JSONField(null=True)
     total_covid_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_covid_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    iija_spending_by_defc = models.JSONField(null=True)
+    total_iija_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_iija_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_1_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_1_name = models.TextField(null=True)
     officer_2_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
@@ -156,6 +159,24 @@ class AwardSearch(models.Model):
         related_name="earliest_for_award",
         null=True,
         help_text="The earliest transaction by action_date and mod associated with this award",
+        db_constraint=False,
+    )
+    latest_transaction_search = models.ForeignKey(
+        "search.TransactionSearch",
+        on_delete=models.DO_NOTHING,
+        related_name="latest_for_award",
+        null=True,
+        help_text="The latest transaction in transaction_search table by action_date and mod associated with this "
+        "award",
+        db_constraint=False,
+    )
+    earliest_transaction_search = models.ForeignKey(
+        "search.TransactionSearch",
+        on_delete=models.DO_NOTHING,
+        related_name="earliest_for_award",
+        null=True,
+        help_text="The earliest transaction in transaction_search table by action_date and mod associated with this "
+        "award",
         db_constraint=False,
     )
     total_indirect_federal_sharing = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
