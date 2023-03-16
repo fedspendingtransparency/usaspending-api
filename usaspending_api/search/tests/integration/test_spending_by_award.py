@@ -520,7 +520,7 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
         fain="abc444",
         earliest_transaction_id=8,
         latest_transaction_id=8,
-        generated_unique_award_id="ASST_NON_TESTING_4",
+        generated_unique_award_id="ASST_NON_TESTING_5",
         date_signed="2019-01-01",
         total_obligation=12.00,
         naics_code="222233",
@@ -558,7 +558,7 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
             }
         ),
     )
-    expected_result = [{"internal_id": 5, "Award ID": None, "generated_internal_id": "ASST_NON_TESTING_4"}]
+    expected_result = [{"internal_id": 5, "Award ID": None, "generated_internal_id": "ASST_NON_TESTING_5"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
