@@ -59,7 +59,7 @@ class TransactionFPDS(models.Model):
     period_of_performance_curr = models.TextField(blank=True, null=True)
     period_of_perf_potential_e = models.TextField(blank=True, null=True)
     ordering_period_end_date = models.TextField(blank=True, null=True)
-    action_date = models.TextField(blank=True, null=True)
+    action_date = models.DateField(blank=True, null=True)
     action_type = models.TextField(blank=True, null=True)
     action_type_description = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
