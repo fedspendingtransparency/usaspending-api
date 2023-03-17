@@ -75,6 +75,7 @@ class DownloadSource:
     def row_emitter(self, headers_requested):
         headers = self.columns(headers_requested)
         query_paths = []
+        print(headers)
         for hn in headers:
             if self.query_paths[hn] is None:
                 if self.annotations[hn] is None:
