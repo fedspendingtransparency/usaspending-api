@@ -136,6 +136,10 @@ NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "description": "transaction_description",
 }
 
+NORM_CASTED_COL_MAP = {
+    # transaction_normalized col name : type casting search -> normalized
+}
+
 NORM_TO_TRANSACTION_SEARCH_COL_MAP = {
     f.column: NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH.get(f.column, f.column)
     for f in TransactionNormalized._meta.fields
@@ -144,7 +148,8 @@ NORM_TO_TRANSACTION_SEARCH_COL_MAP = {
 vw_transaction_normalized_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_normalized AS
         SELECT
-            {(','+os.linesep+' '*12).join([v.ljust(62)+' AS '+k.ljust(48)
+            {(','+os.linesep+' '*12).join([
+                (v+(f'::{NORM_CASTED_COL_MAP[k]}' if k in NORM_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
                 for k, v in NORM_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
         FROM
             rpt.transaction_search;
