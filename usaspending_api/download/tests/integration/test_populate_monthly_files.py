@@ -36,6 +36,8 @@ def generate_contract_data(fiscal_year, i):
         "",
         "",  # "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award", "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
         "",
+        "",  # "outlayed_amount_funded_by_IIJA_overall_award", "obligated_amount_funded_by_IIJA_overall_award",
+        "",
         "",  # "action_date", "action_date_fiscal_year",
         f"05/07{fiscal_year}",
         f"05/07/{fiscal_year}",
@@ -322,9 +324,11 @@ def generate_assistance_data(fiscal_year, i):
         "",  # "total_loan_subsidy_cost", "disaster_emergency_fund_codes_for_overall_award",
         "",
         "",
-        "",  # "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award", "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award","action_date",
+        "",  # "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award", "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
         "",
+        "",  # "outlayed_amount_funded_by_IIJA_overall_award", "obligated_amount_funded_by_IIJA_overall_award",
         "",
+        "",  # "action_date",
         "",  # "action_date_fiscal_year", "period_of_performance_start_date", "period_of_performance_current_end_date",
         "001",
         "Test_Agency",
@@ -547,7 +551,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
         row_count = 0
         for row in csv_reader:
             if row_count == 0:
-                assert row == [s[:63] for s in query_paths["transaction_search"]["d1"].keys()]
+                assert row == [s[:65] for s in query_paths["transaction_search"]["d1"].keys()]
             else:
                 assert row == contract_data
             row_count += 1
@@ -561,7 +565,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
         row_count = 0
         for row in csv_reader:
             if row_count == 0:
-                assert row == [s[:63] for s in query_paths["transaction_search"]["d2"].keys()]
+                assert row == [s[:65] for s in query_paths["transaction_search"]["d2"].keys()]
             else:
                 assert row == assistance_data
             row_count += 1
