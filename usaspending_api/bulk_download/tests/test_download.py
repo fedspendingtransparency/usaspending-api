@@ -341,7 +341,7 @@ def test_download_awards_with_all_award_types(client, award_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 9
-    assert resp.json()["total_columns"] == 595
+    assert resp.json()["total_columns"] == 599
 
 
 def test_download_awards_with_all_prime_awards(client, award_data):
