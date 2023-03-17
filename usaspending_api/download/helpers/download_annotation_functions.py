@@ -618,6 +618,20 @@ def subaward_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
+        "prime_award_outlayed_amount_funded_by_IIJA_supplementals": Case(
+            When(
+                sub_action_date__gte=datetime.date(2020, 4, 1),
+                then=_iija_outlay_subquery(def_codes=def_codes),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),
+        "prime_award_obligated_amount_funded_by_IIJA_supplementals": Case(
+            When(
+                sub_action_date__gte=datetime.date(2020, 4, 1),
+                then=_iija_obligation_subquery(def_codes=def_codes),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("latest_transaction__action_date"),
         "prime_award_cfda_numbers_and_titles": CFDAs("award__cfdas"),
     }
