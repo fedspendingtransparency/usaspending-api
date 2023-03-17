@@ -305,9 +305,9 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     # transaction_fpds col name : transaction_search col name
     "award_modification_amendme": "modification_number",
     "unique_award_key": "generated_unique_award_id",
-    "last_modified": "last_modified_date::TEXT",
-    "period_of_performance_star": "period_of_performance_start_date::TEXT",
-    "period_of_performance_curr": "period_of_performance_current_end_date::TEXT",
+    "last_modified": "last_modified_date",
+    "period_of_performance_star": "period_of_performance_start_date",
+    "period_of_performance_curr": "period_of_performance_current_end_date",
     "awarding_agency_name": "awarding_toptier_agency_name",
     "funding_agency_name": "funding_toptier_agency_name",
     "awarding_sub_tier_agency_n": "awarding_subtier_agency_name",
