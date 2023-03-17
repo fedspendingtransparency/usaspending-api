@@ -1807,13 +1807,13 @@ query_paths = {
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    "outlayed_amount_funded_by_IIJA_overall_award",
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    "obligated_amount_funded_by_IIJA_overall_award",
                     None,
-                ),  # Annotation is used to create this column
+                ),
                 ("action_date", NORM_TO_TRANSACTION_SEARCH_COL_MAP["action_date"]),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 (
@@ -2925,6 +2925,9 @@ query_paths["idv_orders"] = {"d1": copy.deepcopy(query_paths["award"]["d1"])}
 
 # IDV Transactions are identical to Transactions but only contain "d1"
 query_paths["idv_transaction_history"] = {"d1": copy.deepcopy(query_paths["transaction_search"]["d1"])}
+# idv_transasction_history doesn't require these new iija columns
+query_paths["idv_transaction_history"]["d1"].pop("obligated_amount_funded_by_IIJA_overall_award")
+query_paths["idv_transaction_history"]["d1"].pop("outlayed_amount_funded_by_IIJA_overall_award")
 
 # Assistance Transactions are identical to Transactions but only contain "d2"
 query_paths["assistance_transaction_history"] = {"d2": copy.deepcopy(query_paths["transaction_search"]["d2"])}
