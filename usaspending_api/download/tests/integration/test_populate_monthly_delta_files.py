@@ -400,7 +400,8 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         row_count = 0
         for row in csv_reader:
             if row_count == 0:
-                assert row == [s[:65] for s in query_paths["transaction_search"]["d1"].keys()]
+                # 63 is the character limit for column names
+                assert row == [s[:63] for s in query_paths["transaction_search"]["d1"].keys()]
             else:
                 assert row == contract_data
             row_count += 1
