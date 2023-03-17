@@ -1311,6 +1311,14 @@ query_paths = {
                     "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
+                (
+                    "outlayed_amount_funded_by_IIJA_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "obligated_amount_funded_by_IIJA_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
                 ("action_date", NORM_TO_TRANSACTION_SEARCH_COL_MAP["action_date"]),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["period_of_performance_star"]),
