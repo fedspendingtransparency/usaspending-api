@@ -139,6 +139,7 @@ def _iija_obligation_subquery(
     filters = [
         filter_limit_to_closed_periods(),
         Q(award_id=OuterRef(award_id_col)),
+        # TODO: DEV-9339 Date to change depending on Andrew's response
         Q(submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1))),
         Q(disaster_emergency_fund__group_name="infrastructure"),
     ]
@@ -158,6 +159,7 @@ def _iija_outlay_subquery(def_codes: Optional[List[str]] = None, award_id_col: O
     filters = [
         filter_by_latest_closed_periods(),
         Q(award_id=OuterRef(award_id_col)),
+        # TODO: DEV-9339 Date to change depending on Andrew's response
         Q(submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1))),
         Q(disaster_emergency_fund__group_name="infrastructure"),
     ]
@@ -228,6 +230,7 @@ def transaction_search_annotations(filters: dict):
         ),
         "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
+                # TODO: DEV-9339 Date to change depending on Andrew's response
                 action_date__gte=datetime.date(2020, 4, 1),
                 then=_covid_obligation_subquery(def_codes=def_codes),
             ),
@@ -235,6 +238,7 @@ def transaction_search_annotations(filters: dict):
         ),
         "outlayed_amount_funded_by_IIJA_overall_award": Case(
             When(
+                # TODO: DEV-9339 Date to change depending on Andrew's response
                 action_date__gte=datetime.date(2020, 4, 1),
                 then=_iija_outlay_subquery(def_codes=def_codes),
             ),
