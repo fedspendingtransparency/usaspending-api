@@ -1033,6 +1033,8 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("outlayed_amount_funded_by_IIJA_supplementals", None),  # Annotation is used to create this column
+                ("obligated_amount_funded_by_IIJA_supplementals", None),  # Annotation is used to create this column
                 (
                     "award_latest_action_date",
                     f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}",
