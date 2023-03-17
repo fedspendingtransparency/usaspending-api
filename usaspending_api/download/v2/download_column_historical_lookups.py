@@ -1959,6 +1959,14 @@ query_paths = {
                     "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
                     None,
                 ),  # Annotation is used to create this column
+                (
+                    "prime_award_outlayed_amount_funded_by_IIJA_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_obligated_amount_funded_by_IIJA_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_latest_action_date", "latest_transaction__action_date"),
