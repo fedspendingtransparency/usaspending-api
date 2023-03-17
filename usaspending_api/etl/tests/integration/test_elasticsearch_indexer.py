@@ -242,6 +242,7 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     # Now modify one of the DB objects
     tx = TransactionSearch.objects.first()  # type: TransactionSearch
     tx.federal_action_obligation = 9999
+    tx.etl_update_date = datetime.now(timezone.utc)
     tx.save()
 
     # Must use mock sql function to share test DB conn+transaction in ETL code
