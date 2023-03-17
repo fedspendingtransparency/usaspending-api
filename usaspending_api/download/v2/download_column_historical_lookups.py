@@ -2931,3 +2931,6 @@ query_paths["idv_transaction_history"]["d1"].pop("outlayed_amount_funded_by_IIJA
 
 # Assistance Transactions are identical to Transactions but only contain "d2"
 query_paths["assistance_transaction_history"] = {"d2": copy.deepcopy(query_paths["transaction_search"]["d2"])}
+# assistance_transaction_history doesn't require these new iija columns
+query_paths["assistance_transaction_history"]["d2"].pop("obligated_amount_funded_by_IIJA_overall_award")
+query_paths["assistance_transaction_history"]["d2"].pop("outlayed_amount_funded_by_IIJA_overall_award")
