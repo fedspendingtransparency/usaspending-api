@@ -197,6 +197,7 @@ def populate_usas_data(populate_broker_data):
         "search.AwardSearch",
         award_id=1,
         latest_transaction_id=2,
+        earliest_transaction_search_id=1,
         latest_transaction_search_id=2,
         type="07",
         category="loans",
