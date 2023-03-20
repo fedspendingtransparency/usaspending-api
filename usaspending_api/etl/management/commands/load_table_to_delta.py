@@ -55,6 +55,8 @@ from usaspending_api.awards.models import (
     TransactionNormalized,
 )
 
+from usaspending_api.etl.management.commands.load_zips_from_broker import TABLE_SPEC as LOAD_ZIPS_TABLE_SPEC
+
 
 TABLE_SPEC = {
     "awards": {
@@ -284,6 +286,7 @@ TABLE_SPEC = {
         "tsvectors": None,
     },
 }
+TABLE_SPEC = {**TABLE_SPEC, **LOAD_ZIPS_TABLE_SPEC}
 
 
 SPARK_PARTITION_ROWS = CONFIG.SPARK_PARTITION_ROWS
