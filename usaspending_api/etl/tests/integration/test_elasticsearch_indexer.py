@@ -262,7 +262,6 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     loader.prepare_for_etl()
     loader.dispatch_tasks()
     client.indices.refresh(elasticsearch_transaction_index.index_name)
-    elasticsearch_transaction_index.update_index()
 
     assert client.indices.exists(elasticsearch_transaction_index.index_name)
     es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
