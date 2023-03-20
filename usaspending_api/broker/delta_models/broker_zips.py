@@ -27,5 +27,5 @@ zips_load_sql_string = fr"""
     SELECT
         {", ".join([key for key in ZIPS_DELTA_COLUMNS])}
     FROM
-        subaward
+        zips
 """
