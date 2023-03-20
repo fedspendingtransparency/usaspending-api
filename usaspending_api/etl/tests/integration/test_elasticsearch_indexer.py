@@ -255,6 +255,9 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
         "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement", mock_execute_sql
     )
     monkeypatch.setattr(
+        "usaspending_api.etl.management.commands.elasticsearch_indexer.execute_sql_statement", mock_execute_sql
+    )
+    monkeypatch.setattr(
         "usaspending_api.conftest_helpers.execute_sql_statement", mock_execute_sql
     )
     # Also override SQL function listed in config object with the mock one
