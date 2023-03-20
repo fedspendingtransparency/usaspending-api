@@ -15,10 +15,11 @@ from usaspending_api.common.sqs.sqs_handler import (
     _FakeStatelessLoggingSQSDeadLetterQueue,
     UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME,
 )
-from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher, execute_sql_to_ordered_dictionary
+from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     create_award_type_aliases,
+    execute_sql_statement,
     TaskSpec,
     transform_award_data,
     transform_covid19_faba_data,
@@ -49,7 +50,7 @@ class TestElasticSearchIndex:
         self.worker = TaskSpec(
             base_table=None,
             base_table_id=None,
-            execute_sql_func=execute_sql_to_ordered_dictionary,
+            execute_sql_func=execute_sql_statement,
             field_for_es_id="award_id" if self.index_type == "award" else "transaction_id",
             index=self.index_name,
             is_incremental=None,
