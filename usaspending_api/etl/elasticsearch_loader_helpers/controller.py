@@ -169,6 +169,7 @@ class AbstractElasticsearchIndexerController(ABC):
     @abstractmethod
     def cleanup(self) -> None:
         """Method that can be overridden for any final cleanup. If nothing to cleanup, implement with ``pass``"""
+        close_all_django_db_conns()
         pass
 
     @abstractmethod
