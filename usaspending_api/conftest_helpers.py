@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from django.conf import settings
 from django.core.management import call_command
 from django.core.serializers.json import json, DjangoJSONEncoder
-from django.db import DEFAULT_DB_ALIAS
+from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
 from pathlib import Path
 from string import Template
@@ -15,7 +15,7 @@ from usaspending_api.common.sqs.sqs_handler import (
     _FakeStatelessLoggingSQSDeadLetterQueue,
     UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME,
 )
-from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher, get_connection
+from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     create_award_type_aliases,
@@ -111,7 +111,6 @@ class TestElasticSearchIndex:
             raise Exception("Invalid index type")
 
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
-        connection = get_connection()
         with connection.cursor() as cursor:
             cursor.execute(view_sql)
             cursor.execute(f"SELECT * FROM {view_name};")
@@ -204,7 +203,6 @@ def ensure_broker_server_dblink_exists():
         extensions_script = f1.read()
         broker_server_script = f2.read()
 
-    connection = get_connection()
     with connection.cursor() as cursor:
         # Ensure required extensions added to USAspending db
         cursor.execute(extensions_script)
