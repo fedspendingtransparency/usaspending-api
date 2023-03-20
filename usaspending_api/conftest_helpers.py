@@ -112,6 +112,7 @@ class TestElasticSearchIndex:
 
         view_sql = open(str(settings.APP_DIR / "database_scripts" / "etl" / view_sql_file), "r").read()
         with connection.cursor() as cursor:
+            cursor.execute('SELECT 1;')
             cursor.execute(view_sql)
             cursor.execute(f"SELECT * FROM {view_name};")
             records = ordered_dictionary_fetcher(cursor)
