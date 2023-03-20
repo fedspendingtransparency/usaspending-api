@@ -174,6 +174,10 @@ def django_db_setup(
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
 
+    from django import db
+    # Close any connections beforehand before confusing the database
+    db.connections.close_all()
+
 
 @pytest.fixture
 def elasticsearch_transaction_index(db):
