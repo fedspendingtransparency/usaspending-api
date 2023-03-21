@@ -22,8 +22,10 @@ def award_data(db):
     award_id = 987
 
     awards = [
-        baker.make("search.AwardSearch", award_id=award_id),
-        *baker.make("search.AwardSearch", award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]), _quantity=9),
+        baker.make("search.AwardSearch", award_id=award_id, action_date="2020-01-01"),
+        *baker.make(
+            "search.AwardSearch", award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]), _quantity=9, action_date="2020-01-01"
+        ),
     ]
 
     for index, award in enumerate(awards):
@@ -47,9 +49,11 @@ def award_data_old_and_new(db):
     award_id_too_new = 989
 
     awards = [
-        baker.make("search.AwardSearch", award_id=award_id_too_old),
-        baker.make("search.AwardSearch", award_id=award_id_too_new),
-        *baker.make("search.AwardSearch", award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]), _quantity=9),
+        baker.make("search.AwardSearch", award_id=award_id_too_old, action_date="2020-01-01"),
+        baker.make("search.AwardSearch", award_id=award_id_too_new, action_date="2020-01-01"),
+        *baker.make(
+            "search.AwardSearch", award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]), _quantity=9, action_date="2020-01-01"
+        ),
     ]
 
     for index, award in enumerate(awards):
@@ -70,7 +74,6 @@ def load_date(db):
     baker.make("broker.ExternalDataLoadDate", external_data_type=data_type, last_load_date=datetime(2000, 1, 31))
 
 
-@pytest.mark.skip
 def test_awards_updated(load_date, submissions, award_data):
 
     today = datetime.now(timezone.utc)
@@ -99,7 +102,6 @@ def test_awards_updated(load_date, submissions, award_data):
     assert after.update_date == after2.update_date
 
 
-@pytest.mark.skip
 def test_no_awards_updated(load_date, submissions, award_data_old_and_new):
     """
     'too_old' is a faba record associated with a submission already revealed, but not the newest

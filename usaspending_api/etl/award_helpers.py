@@ -335,7 +335,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
 
     _delete_parent_award_sql = "DELETE FROM parent_award WHERE award_id in ({});".format(_find_empty_awards_sql)
 
-    _prune_empty_awards_sql = "DELETE FROM vw_awards vw_WHERE id IN ({}) ".format(_find_empty_awards_sql)
+    _prune_empty_awards_sql = "DELETE FROM award_search WHERE award_id IN ({}) ".format(_find_empty_awards_sql)
 
     return execute_database_statement(
         _modify_subawards_sql + _modify_financial_accounts_sql + _delete_parent_award_sql + _prune_empty_awards_sql,

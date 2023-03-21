@@ -117,7 +117,7 @@ COUNT_OPERATION_SQL = """
 SELECT
     count(*)
 FROM
-    vw_awards AS award_to_update_count
+    award_search AS award_to_update_count
 """
 
 

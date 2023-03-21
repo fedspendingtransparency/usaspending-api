@@ -7,7 +7,6 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 url = "/api/v2/disaster/agency/count/"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_agency_count_success(client, monkeypatch, disaster_account_data, helpers, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -19,7 +18,7 @@ def test_agency_count_success(client, monkeypatch, disaster_account_data, helper
 
     resp = helpers.post_for_count_endpoint(client, url, ["N", "O"])
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["count"] == 2
+    assert resp.data["count"] == 3
 
     resp = helpers.post_for_count_endpoint(client, url, ["P"])
     assert resp.status_code == status.HTTP_200_OK
@@ -30,7 +29,6 @@ def test_agency_count_success(client, monkeypatch, disaster_account_data, helper
     assert resp.data["count"] == 0
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_agency_count_with_award_types(
     client, monkeypatch, faba_with_toptier_agencies, helpers, elasticsearch_award_index
