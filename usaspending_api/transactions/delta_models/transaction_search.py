@@ -92,7 +92,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
-    "recipient_location_congressional_code_current": {"delta": "INTEGER", "postgres": "INTEGER", "gold": True},
+    "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "legal_entity_zip4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},

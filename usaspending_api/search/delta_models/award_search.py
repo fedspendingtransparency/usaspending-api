@@ -79,7 +79,7 @@ AWARD_SEARCH_COLUMNS = {
     "recipient_location_county_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_county_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "recipient_location_congressional_code_current": {"delta": "INTEGER", "postgres": "INTEGER", "gold": True},
+    "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_city_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_state_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
