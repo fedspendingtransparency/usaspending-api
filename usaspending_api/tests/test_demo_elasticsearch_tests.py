@@ -19,7 +19,15 @@ def award_data_fixture(db):
         piid="IND12PB00323",
         recipient_location_zip5="abcde",
     )
-    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        latest_transaction_id=1,
+        is_fpds=True,
+        type="A",
+        piid="IND12PB00323",
+        action_date="2020-10-01",
+    )
 
 
 def test_positive_sample_query(award_data_fixture, elasticsearch_transaction_index):
