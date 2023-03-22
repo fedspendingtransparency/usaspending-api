@@ -556,7 +556,7 @@ transaction_search_load_sql_string = fr"""
             AS recipient_location_congressional_code,
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
         -- TODO: include recipient_location_congressional_code_current derivation
-        NULL AS recipient_location_congressional_code_current,
+        'TEST CUR REC CONGR TS' AS recipient_location_congressional_code_current,
         COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
             AS recipient_location_zip5,
         transaction_fpds.legal_entity_zip4,
@@ -598,7 +598,7 @@ transaction_search_load_sql_string = fr"""
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
         -- TODO: include pop_congressional_code_current derivation
-        NULL AS pop_congressional_code_current,
+        'TEST CUR POP CONGR TS' AS pop_congressional_code_current,
         COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
             AS pop_zip5,
         COALESCE(transaction_fpds.place_of_performance_zip4a, transaction_fabs.place_of_performance_zip4a)
