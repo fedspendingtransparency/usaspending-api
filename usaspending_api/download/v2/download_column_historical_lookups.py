@@ -40,8 +40,8 @@ query_paths = {
                     "disaster_emergency_fund_codes" + NAMING_CONFLICT_DISCRIMINATOR,
                     None,
                 ),  # Annotation is used to create this column
-                ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
-                ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("outlayed_amount_from_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("obligated_amount_from_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_IIJA_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_IIJA_supplementals", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "total_obligation"),
@@ -1032,7 +1032,7 @@ query_paths = {
                     None,
                 ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
-                ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("obligated_amount_from_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_IIJA_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_IIJA_supplementals", None),  # Annotation is used to create this column
                 (
