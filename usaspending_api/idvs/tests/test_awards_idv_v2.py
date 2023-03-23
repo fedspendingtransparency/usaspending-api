@@ -50,6 +50,7 @@ def awards_and_transactions(db):
         "awarding_agency_id": 1,
         "funding_agency_id": 1,
         "date_signed": "2005-04-03",
+        "action_date": "2020-01-01",
     }
     award_2_model = {
         "award_id": 2,
@@ -74,6 +75,7 @@ def awards_and_transactions(db):
         "officer_1_amount": 10000.00,
         "officer_2_name": "Stan Burger",
         "officer_2_amount": 1234.00,
+        "action_date": "2020-01-01",
     }
     award_3_model = {
         "award_id": 3,
@@ -94,6 +96,7 @@ def awards_and_transactions(db):
         "total_subaward_amount": 12345.00,
         "subaward_count": 10,
         "date_signed": "2004-03-02",
+        "action_date": "2020-01-01",
     }
     baker.make("search.AwardSearch", **award_1_model)
     baker.make("search.AwardSearch", **award_2_model)
