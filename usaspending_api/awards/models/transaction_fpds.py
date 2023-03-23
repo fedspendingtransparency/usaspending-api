@@ -314,7 +314,7 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "funding_sub_tier_agency_na": "funding_subtier_agency_name",
     "award_description": "transaction_description",
     "awardee_or_recipient_uei": "recipient_uei",
-    "awardee_or_recipient_legal": "recipient_name_raw",
+    "awardee_or_recipient_legal": "recipient_name",
     "awardee_or_recipient_uniqu": "recipient_unique_id",
     "ultimate_parent_uei": "parent_uei",
     "ultimate_parent_legal_enti": "parent_recipient_name",
