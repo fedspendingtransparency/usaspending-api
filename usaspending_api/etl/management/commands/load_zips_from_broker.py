@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from django.core.management import BaseCommand, call_command
-from pyspark.sql import SparkSession, functions
+from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.helpers.spark_helpers import (
@@ -10,6 +10,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+
 
 class Command(BaseCommand):
 
