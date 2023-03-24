@@ -9,7 +9,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_jvm_logger,
 )
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
 
 
 class Command(BaseCommand):
@@ -55,19 +54,14 @@ class Command(BaseCommand):
         logger = get_jvm_logger(spark)
 
         usaspending_last_load_date = get_last_load_date("zips")
-        table_spec = TABLE_SPEC["zips"]
-        destination_database = options["alt_db"] or table_spec["destination_database"]
         options["destination_table"] = "zips"
 
-        # Set the database that will be interacted with for all Delta Lake table Spark-based activity
-        logger.info(f"Using Spark Database: {destination_database}")
-        spark.sql(f"use {destination_database};")
-
         # Get the most recent updated_at datetime from zips_grouped since it's quicker to query than the zips table
+        # Note: Will be datetime or None
         broker_last_load_date = spark.sql("SELECT MAX(updated_at) FROM global_temp.zips_grouped").first()[0]
 
         # If the zips table from Broker has a newer updated_at datetime than raw.zips does, then call load_table_to_delta
-        if broker_last_load_date > usaspending_last_load_date:
+        if broker_last_load_date is None or broker_last_load_date > usaspending_last_load_date:
             logger.info("Broker's zips table is more recent, running load_table_to_delta")
             call_command("load_table_to_delta", *args, **options)
             update_last_load_date("zips", datetime.now())
