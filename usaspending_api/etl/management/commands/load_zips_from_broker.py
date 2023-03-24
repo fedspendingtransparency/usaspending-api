@@ -63,10 +63,10 @@ class Command(BaseCommand):
         spark.sql(f"use {destination_database};")
 
         # Get the most recent updated_at datetime from zips_grouped since it's quicker to query than the zips table
-        broker_latest_zip_date = spark.sql("SELECT MAX(updated_at) FROM global_temp.zips_grouped").first()[0]
+        broker_last_load_date = spark.sql("SELECT MAX(updated_at) FROM global_temp.zips_grouped").first()[0]
 
         # If the zips table from Broker has a newer updated_at datetime than raw.zips does, then call load_table_to_delta
-        if broker_latest_zip_date > usaspending_last_load_date:
+        if broker_last_load_date > usaspending_last_load_date:
             logger.info("Broker's zips table is more recent, running load_table_to_delta")
             call_command("load_table_to_delta", *args, **options)
             update_last_load_date("zips", datetime.now())
