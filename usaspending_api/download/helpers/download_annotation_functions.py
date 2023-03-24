@@ -471,8 +471,7 @@ def idv_transaction_annotations(filters: dict):
             When(
                 action_date__gte=COVID_19_PERIOD_START,
                 then=_outlay_amount_agg_subquery(
-                    emergency_fund_group_name="covid_19",
-                    reporting_period_start_date=COVID_19_PERIOD_START
+                    emergency_fund_group_name="covid_19", reporting_period_start_date=COVID_19_PERIOD_START
                 ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
