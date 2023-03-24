@@ -1316,11 +1316,11 @@ query_paths = {
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "outlayed_amount_from_IIJA_overall_award",
+                    "outlayed_amount_from_IIJA_supplemental_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "obligated_amount_from_IIJA_overall_award",
+                    "obligated_amount_from_IIJA_supplemental_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
                 ("action_date", NORM_TO_TRANSACTION_SEARCH_COL_MAP["action_date"]),
@@ -1811,11 +1811,11 @@ query_paths = {
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "outlayed_amount_from_IIJA_overall_award",
+                    "outlayed_amount_from_IIJA_supplemental_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "obligated_amount_from_IIJA_overall_award",
+                    "obligated_amount_from_IIJA_supplemental_for_overall_award",
                     None,
                 ),
                 ("action_date", NORM_TO_TRANSACTION_SEARCH_COL_MAP["action_date"]),
