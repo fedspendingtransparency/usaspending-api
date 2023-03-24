@@ -4,7 +4,7 @@ SELECT
     "subaward_search"."parent_award_id" AS "prime_award_parent_piid",
     "subaward_search"."award_amount" AS "prime_award_amount",
     DEFC."disaster_emergency_funds" AS "prime_award_disaster_emergency_fund_codes",
-    DEFC."gross_outlay_amount_by_award_cpe" + DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+    DEFC."gross_outlay_amount_by_award_cpe" + DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "prime_award_outlayed_amount_from_COVID-19_supplementals",
     DEFC."transaction_obligated_amount" AS "prime_award_obligated_amount_from_COVID-19_supplementals",
     "subaward_search"."action_date" AS "prime_award_base_action_date",
     EXTRACT (YEAR FROM ("awards"."date_signed") + INTERVAL '3 months') AS "prime_award_base_action_date_fiscal_year",
