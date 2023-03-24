@@ -92,6 +92,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
+    "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "legal_entity_zip4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -118,6 +119,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
+    "pop_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "pop_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "place_of_performance_zip4a": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "place_of_perform_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -395,6 +397,7 @@ transaction_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
+# TODO: include derivations for recipient_location_congressional_code_current and pop_congressional_code_current
 transaction_search_load_sql_string = fr"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -552,6 +555,8 @@ transaction_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
+        -- TODO: include recipient_location_congressional_code_current derivation
+        'TEST CUR REC CONGR TS' AS recipient_location_congressional_code_current,
         COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
             AS recipient_location_zip5,
         transaction_fpds.legal_entity_zip4,
@@ -592,6 +597,8 @@ transaction_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
+        -- TODO: include pop_congressional_code_current derivation
+        'TEST CUR POP CONGR TS' AS pop_congressional_code_current,
         COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
             AS pop_zip5,
         COALESCE(transaction_fpds.place_of_performance_zip4a, transaction_fabs.place_of_performance_zip4a)
