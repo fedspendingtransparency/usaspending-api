@@ -34,7 +34,9 @@ def generate_contract_data(fiscal_year, i):
         "",
         "",  # "potential_total_value_of_award", "disaster_emergency_fund_codes_for_overall_award",
         "",
-        "",  # "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award", "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
+        "",  # "outlayed_amount_from_COVID-19_supplementals_for_overall_award", "obligated_amount_from_COVID-19_supplementals_for_overall_award",
+        "",
+        "",  # "outlayed_amount_from_IIJA_overall_award", "obligated_amount_from_IIJA_overall_award",
         "",
         "",  # "action_date", "action_date_fiscal_year",
         f"05/07{fiscal_year}",
@@ -322,9 +324,11 @@ def generate_assistance_data(fiscal_year, i):
         "",  # "total_loan_subsidy_cost", "disaster_emergency_fund_codes_for_overall_award",
         "",
         "",
-        "",  # "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award", "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award","action_date",
+        "",  # "outlayed_amount_from_COVID-19_supplementals_for_overall_award", "obligated_amount_from_COVID-19_supplementals_for_overall_award",
         "",
+        "",  # "outlayed_amount_from_IIJA_overall_award", "obligated_amount_from_IIJA_overall_award",
         "",
+        "",  # "action_date",
         "",  # "action_date_fiscal_year", "period_of_performance_start_date", "period_of_performance_current_end_date",
         "001",
         "Test_Agency",
@@ -547,6 +551,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
         row_count = 0
         for row in csv_reader:
             if row_count == 0:
+                # 63 is the character limit for column names
                 assert row == [s[:63] for s in query_paths["transaction_search"]["d1"].keys()]
             else:
                 assert row == contract_data
@@ -561,6 +566,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
         row_count = 0
         for row in csv_reader:
             if row_count == 0:
+                # 63 is the character limit for column names
                 assert row == [s[:63] for s in query_paths["transaction_search"]["d2"].keys()]
             else:
                 assert row == assistance_data
