@@ -175,7 +175,7 @@ def transaction_search_annotations(filters: dict):
             ),
             output_field=TextField(),
         ),
-        "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
+        "outlayed_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte=datetime.date(2020, 4, 1),
                 then=_outlay_amount_agg_subquery(
@@ -186,7 +186,7 @@ def transaction_search_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
+        "obligated_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
                 # TODO: DEV-9339 Date to change depending on Andrew Ly's response
                 action_date__gte=datetime.date(2020, 4, 1),
@@ -198,7 +198,7 @@ def transaction_search_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "outlayed_amount_funded_by_IIJA_overall_award": Case(
+        "outlayed_amount_from_IIJA_overall_award": Case(
             When(
                 # TODO: DEV-9339 Date to change depending on Andrew Ly's response
                 action_date__gte=datetime.date(2020, 4, 1),
@@ -210,7 +210,7 @@ def transaction_search_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),  # Annotation is used to create this column
-        "obligated_amount_funded_by_IIJA_overall_award": Case(
+        "obligated_amount_from_IIJA_overall_award": Case(
             When(
                 # TODO: DEV-9339 Date to change depending on Andrew Ly's response
                 action_date__gte=datetime.date(2020, 4, 1),
@@ -287,19 +287,19 @@ def award_annotations(filters: dict):
         ),
         "disaster_emergency_fund_codes"
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(def_codes=def_codes, award_id_col="award_id"),
-        "outlayed_amount_funded_by_COVID-19_supplementals": _outlay_amount_agg_subquery(
+        "outlayed_amount_from_COVID-19_supplementals": _outlay_amount_agg_subquery(
             emergency_fund_group_name="covid_19",
             reporting_period_start_date=COVID_19_PERIOD_START,
             def_codes=def_codes,
             award_id_col="award_id",
         ),
-        "obligated_amount_funded_by_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
+        "obligated_amount_from_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
             emergency_fund_group_name="covid_19",
             reporting_period_start_date=COVID_19_PERIOD_START,
             def_codes=def_codes,
             award_id_col="award_id",
         ),
-        "outlayed_amount_funded_by_IIJA_supplementals": Case(
+        "outlayed_amount_from_IIJA_supplementals": Case(
             When(
                 # TODO: DEV-9339 Date to change depending on Andrew Ly's response
                 action_date__gte=datetime.date(2020, 4, 1),
@@ -311,7 +311,7 @@ def award_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),  # Annotation is used to create this column
-        "obligated_amount_funded_by_IIJA_supplementals": Case(
+        "obligated_amount_from_IIJA_supplementals": Case(
             When(
                 # TODO: DEV-9339 Date to change depending on Andrew Ly's response
                 action_date__gte=datetime.date(2020, 4, 1),
@@ -391,12 +391,12 @@ def idv_order_annotations(filters: dict):
         ),
         "disaster_emergency_fund_codes"
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(award_id_col="award_id"),
-        "outlayed_amount_funded_by_COVID-19_supplementals": _outlay_amount_agg_subquery(
+        "outlayed_amount_from_COVID-19_supplementals": _outlay_amount_agg_subquery(
             emergency_fund_group_name="covid_19",
             reporting_period_start_date=COVID_19_PERIOD_START,
             award_id_col="award_id",
         ),
-        "obligated_amount_funded_by_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
+        "obligated_amount_from_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
             emergency_fund_group_name="covid_19",
             reporting_period_start_date=COVID_19_PERIOD_START,
             award_id_col="award_id",
@@ -471,7 +471,7 @@ def idv_transaction_annotations(filters: dict):
             ),
             output_field=TextField(),
         ),
-        "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
+        "outlayed_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte="2020-04-01",
                 then=_outlay_amount_agg_subquery(
@@ -480,7 +480,7 @@ def idv_transaction_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
+        "obligated_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte="2020-04-01",
                 then=_obligation_txn_amount_agg_subquery(
@@ -602,7 +602,7 @@ def subaward_annotations(filters: dict):
             ),
             output_field=TextField(),
         ),
-        "prime_award_outlayed_amount_funded_by_COVID-19_supplementals": Case(
+        "prime_award_outlayed_amount_from_COVID-19_supplementals": Case(
             When(
                 sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_outlay_amount_agg_subquery(
@@ -613,7 +613,7 @@ def subaward_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "prime_award_obligated_amount_funded_by_COVID-19_supplementals": Case(
+        "prime_award_obligated_amount_from_COVID-19_supplementals": Case(
             When(
                 sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_obligation_txn_amount_agg_subquery(
@@ -624,7 +624,7 @@ def subaward_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "prime_award_outlayed_amount_funded_by_IIJA_supplementals": Case(
+        "prime_award_outlayed_amount_from_IIJA_supplementals": Case(
             When(
                 sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_outlay_amount_agg_subquery(
@@ -635,7 +635,7 @@ def subaward_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "prime_award_obligated_amount_funded_by_IIJA_supplementals": Case(
+        "prime_award_obligated_amount_from_IIJA_supplementals": Case(
             When(
                 sub_action_date__gte=datetime.date(2020, 4, 1),
                 then=_obligation_txn_amount_agg_subquery(
