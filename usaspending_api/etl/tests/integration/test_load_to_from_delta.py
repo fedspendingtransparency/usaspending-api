@@ -328,11 +328,13 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
         pop_state_code="VA",
         pop_county_code="001",
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
+        pop_congressional_code_current="TEST CUR POP CONGR TS",
     )
 
     update_awards()

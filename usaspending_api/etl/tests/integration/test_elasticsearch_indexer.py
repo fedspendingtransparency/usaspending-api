@@ -85,6 +85,8 @@ def award_data_fixture(db):
         award_id=1,
         generated_unique_award_id="CONT_AWD_IND12PB00323",
         latest_transaction_id=1,
+        earliest_transaction_search_id=1,
+        latest_transaction_search_id=1,
         is_fpds=True,
         type="A",
         category="contracts",
@@ -102,6 +104,8 @@ def award_data_fixture(db):
         award_id=2,
         generated_unique_award_id="ASST_NON_P063P100612",
         latest_transaction_id=2,
+        earliest_transaction_search_id=2,
+        latest_transaction_search_id=2,
         is_fpds=False,
         type="02",
         category="grants",
@@ -242,6 +246,7 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     # Now modify one of the DB objects
     tx = TransactionSearch.objects.first()  # type: TransactionSearch
     tx.federal_action_obligation = 9999
+    tx.etl_update_date = datetime.now(timezone.utc)
     tx.save()
 
     # Must use mock sql function to share test DB conn+transaction in ETL code
@@ -257,7 +262,6 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     loader.prepare_for_etl()
     loader.dispatch_tasks()
     client.indices.refresh(elasticsearch_transaction_index.index_name)
-    elasticsearch_transaction_index.update_index()
 
     assert client.indices.exists(elasticsearch_transaction_index.index_name)
     es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
