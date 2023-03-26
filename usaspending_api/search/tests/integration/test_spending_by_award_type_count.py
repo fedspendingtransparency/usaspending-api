@@ -63,6 +63,7 @@ def award_data_fixture():
         type="07",
         type_description="DIRECT LOAN (E)",
         uri=None,
+        action_date="2018-10-01",
     )
 
 
@@ -104,7 +105,6 @@ def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -132,7 +132,6 @@ def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_aw
     }, "Results returned, they should all be 0"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_spending_by_award_subawards_no_intersection(client):
     baker.make("search.AwardSearch", award_id=90)
@@ -168,7 +167,6 @@ def test_spending_by_award_subawards_no_intersection(client):
     assert resp.data["results"] == {"subcontracts": 0, "subgrants": 0}, "Results returned, there should all be 0"
 
 
-@pytest.mark.skip
 @pytest.fixture
 def awards_over_different_date_ranges_with_different_counts():
     award_category_list_and_counts = {
@@ -223,6 +221,7 @@ def awards_over_different_date_ranges_with_different_counts():
                 uri=None,
                 fain=None,
                 date_signed=date_range["date_signed"],
+                action_date=date_range["action_date"],
             )
             baker.make(
                 "search.TransactionSearch",
@@ -234,7 +233,6 @@ def awards_over_different_date_ranges_with_different_counts():
             )
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_date_range_search_counts_with_one_range(
     client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges_with_different_counts
@@ -299,7 +297,6 @@ def test_date_range_search_counts_with_one_range(
     assert resp.data["results"]["other"] == 0
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_date_range_search_counts_with_two_ranges(
     client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges_with_different_counts

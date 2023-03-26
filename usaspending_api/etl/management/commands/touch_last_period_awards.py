@@ -12,7 +12,7 @@ logger = logging.getLogger("script")
 TOUCH_AWARD_SQL = """
 UPDATE award_search
 SET update_date = now()
-WHERE id IN (
+WHERE award_id IN (
     SELECT DISTINCT faba.award_id
     FROM
         financial_accounts_by_awards faba

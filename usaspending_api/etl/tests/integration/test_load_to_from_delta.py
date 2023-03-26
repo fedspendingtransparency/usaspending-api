@@ -3,6 +3,7 @@
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
 import json
+
 import psycopg2
 import pytz
 from datetime import date, datetime
@@ -129,8 +130,12 @@ def populate_usas_data(populate_broker_data):
     )
 
     # Create agency data
-    funding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
-    funding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
+    funding_toptier_agency = baker.make(
+        "references.ToptierAgency", name="TEST AGENCY 1", abbreviation="TA1", _fill_optional=True
+    )
+    funding_subtier_agency = baker.make(
+        "references.SubtierAgency", name="TEST SUBTIER 1", abbreviation="SA1", _fill_optional=True
+    )
     funding_agency = baker.make(
         "references.Agency",
         toptier_agency=funding_toptier_agency,
@@ -141,10 +146,14 @@ def populate_usas_data(populate_broker_data):
 
     toptier = baker.make("references.ToptierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
     subtier = baker.make("references.SubtierAgency", name="subtier", abbreviation="st", _fill_optional=True)
-    baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, toptier_flag=True, id=32)
+    agency = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, toptier_flag=True, id=32)
 
-    awarding_toptier_agency = baker.make("references.ToptierAgency", _fill_optional=True)
-    awarding_subtier_agency = baker.make("references.SubtierAgency", _fill_optional=True)
+    awarding_toptier_agency = baker.make(
+        "references.ToptierAgency", name="TEST AGENCY 2", abbreviation="TA2", _fill_optional=True
+    )
+    awarding_subtier_agency = baker.make(
+        "references.SubtierAgency", name="TEST SUBTIER 2", abbreviation="SA2", _fill_optional=True
+    )
     awarding_agency = baker.make(
         "references.Agency",
         toptier_agency=awarding_toptier_agency,
@@ -155,8 +164,8 @@ def populate_usas_data(populate_broker_data):
 
     # Create reference data
     baker.make("references.NAICS", code="123456", _fill_optional=True)
-    baker.make("references.PSC", code="12", _fill_optional=True)
-    baker.make("references.Cfda", program_number="12.456", _fill_optional=True)
+    psc = baker.make("references.PSC", code="12", _fill_optional=True)
+    cfda = baker.make("references.Cfda", program_number="12.456", _fill_optional=True)
     baker.make(
         "references.CityCountyStateCode",
         state_alpha="VA",
@@ -166,78 +175,277 @@ def populate_usas_data(populate_broker_data):
     )
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
     baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
-    baker.make("references.PopCounty", state_code="51", county_number="000", _fill_optional=True)
-    baker.make("references.PopCounty", state_code="51", county_number="001", _fill_optional=True)
-    baker.make("references.PopCongressionalDistrict", state_code="51", congressional_district="01")
+    baker.make("references.PopCounty", state_code="51", county_number="000", latest_population=1, _fill_optional=True)
+    baker.make("references.PopCounty", state_code="51", county_number="001", latest_population=1, _fill_optional=True)
+    baker.make("references.PopCongressionalDistrict", state_code="51", latest_population=1, congressional_district="01")
     defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", _fill_optional=True)
     defc_m = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19", _fill_optional=True)
     defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
 
+    # Create account data
+    federal_account = baker.make(
+        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
+    )
+    tas = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        federal_account=federal_account,
+        allocation_transfer_agency_id=None,
+        _fill_optional=True,
+    )
     # Create awards and transactions
     asst_award = baker.make(
         "search.AwardSearch",
         award_id=1,
+        latest_transaction_id=2,
+        earliest_transaction_search_id=1,
+        latest_transaction_search_id=2,
         type="07",
         category="loans",
         generated_unique_award_id="UNIQUE AWARD KEY B",
         period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
         date_signed="2020-01-01",
-        certified_date="2020-01-01",
+        certified_date="2020-04-01",
         update_date="2020-01-01",
-        total_obligation=100.00,
-        total_subsidy_cost=100.00,
+        action_date="2020-04-01",
+        fiscal_year=2020,
+        award_amount=0.00,
+        total_obligation=0.00,
+        total_subsidy_cost=0.00,
+        total_loan_value=0.00,
+        total_obl_bin="<1M",
         type_description="Direct Loan",
+        display_award_id="FAIN",
         fain="FAIN",
         uri="URI",
         piid=None,
+        subaward_count=0,
+        transaction_unique_id=2,
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_code=awarding_toptier_agency.toptier_code,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_code=funding_toptier_agency.toptier_code,
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_code=awarding_subtier_agency.subtier_code,
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_code=funding_subtier_agency.subtier_code,
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        funding_toptier_agency_id=funding_agency.id,
+        funding_subtier_agency_id=funding_agency.id,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        cfda_number="12.456",
+        cfdas=[json.dumps({"cfda_number": "12.456", "cfda_program_title": None})],
+        recipient_uei="FABSUEI12345",
+        recipient_unique_id="FABSDUNS12345",
+        recipient_name="FABS RECIPIENT 12345",
+        raw_recipient_name="FABS RECIPIENT 12345",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        recipient_levels=["C"],
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_state_fips=51,
+        recipient_location_county_code="001",
+        recipient_location_county_name="COUNTY NAME",
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code="01",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_state_fips=51,
+        pop_county_code="001",
+        pop_county_name="COUNTY NAME",
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code="01",
+        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        recipient_location_state_population=1,
+        pop_state_population=1,
+        recipient_location_county_population=1,
+        pop_county_population=1,
+        recipient_location_congressional_population=1,
+        pop_congressional_population=1,
+        tas_paths=[
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        tas_components=[
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        disaster_emergency_fund_codes=["L", "M"],
+        total_covid_outlay=0.0,
+        total_covid_obligation=2.0,
+        covid_spending_by_defc=[
+            {"defc": "L", "outlay": 0.0, "obligation": 1.0},
+            {"defc": "M", "outlay": 0.0, "obligation": 1.0},
+        ],
+        business_categories=None,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
     )
     cont_award = baker.make(
         "search.AwardSearch",
         award_id=2,
         type="A",
-        category="contracts",
+        category="contract",
         generated_unique_award_id="UNIQUE AWARD KEY C",
+        latest_transaction_id=4,
+        earliest_transaction_search_id=3,
+        latest_transaction_search_id=4,
         period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
-        date_signed="2020-01-01",
-        certified_date="2020-01-01",
+        date_signed="2020-07-01",
+        certified_date="2020-10-01",
         update_date="2020-01-01",
-        total_obligation=100.00,
+        action_date="2020-10-01",
+        award_amount=0.00,
+        total_obligation=0.00,
+        total_subsidy_cost=0.00,
+        total_obl_bin="<1M",
+        display_award_id="PIID",
         piid="PIID",
         fain=None,
         uri=None,
+        subaward_count=0,
+        transaction_unique_id=2,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        recipient_uei="FPDSUEI12345",
+        recipient_unique_id="FPDSDUNS12345",
+        recipient_name="FPDS RECIPIENT 12345",
+        raw_recipient_name="FPDS RECIPIENT 12345",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        recipient_levels=["C"],
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        awarding_agency_id=awarding_agency.id,
+        funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_code=awarding_toptier_agency.toptier_code,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_code=funding_toptier_agency.toptier_code,
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_code=awarding_subtier_agency.subtier_code,
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_code=funding_subtier_agency.subtier_code,
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        funding_toptier_agency_id=funding_agency.id,
+        funding_subtier_agency_id=funding_agency.id,
+        recipient_location_state_code="VA",
+        recipient_location_state_name="Virginia",
+        recipient_location_state_fips=51,
+        recipient_location_country_code="USA",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
+        cfdas=None,
+        pop_state_code="VA",
+        pop_state_name="Virginia",
+        pop_state_fips=51,
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        recipient_location_state_population=1,
+        pop_state_population=1,
+        tas_paths=[
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        tas_components=[
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        disaster_emergency_fund_codes=["Q"],
+        business_categories=None,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
+        ordering_period_end_date="2020-07-01",
+        naics_code="123456",
+        product_or_service_code="12",
+        product_or_service_description=psc.description,
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
         award_id=3,
         generated_unique_award_id="UNIQUE AWARD KEY A",
+        latest_transaction_id=434,
+        earliest_transaction_search_id=434,
+        latest_transaction_search_id=434,
         type="A",
-        category="contracts",
+        category="contract",
         period_of_performance_start_date="2020-01-01",
         period_of_performance_current_end_date="2022-01-01",
         date_signed="2020-01-01",
-        certified_date="2020-01-01",
-        total_obligation=100.00,
+        award_amount=0.00,
+        total_obligation=0.00,
+        total_subsidy_cost=0.00,
+        total_obl_bin="<1M",
         last_modified_date="2020-01-01",
         update_date="2020-01-01",
         awarding_agency_id=32,
         funding_agency_id=32,
+        awarding_toptier_agency_name=toptier.name,
+        awarding_toptier_agency_name_raw="toptier",
+        awarding_toptier_agency_code=toptier.toptier_code,
+        funding_toptier_agency_name=toptier.name,
+        funding_toptier_agency_name_raw="toptier",
+        funding_toptier_agency_code=toptier.toptier_code,
+        awarding_subtier_agency_name=subtier.name,
+        awarding_subtier_agency_name_raw="subtier",
+        awarding_subtier_agency_code=subtier.subtier_code,
+        funding_subtier_agency_name=subtier.name,
+        funding_subtier_agency_name_raw="subtier",
+        funding_subtier_agency_code=subtier.subtier_code,
+        funding_toptier_agency_id=agency.id,
+        funding_subtier_agency_id=agency.id,
+        display_award_id="PIID",
         piid="PIID",
         fain=None,
         uri=None,
+        subaward_count=0,
+        transaction_unique_id=434,
+        is_fpds=True,
+        recipient_uei="FPDSUEI12345",
+        recipient_unique_id="FPDSDUNS12345",
+        recipient_name="FPDS RECIPIENT 12345",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        recipient_levels=["C"],
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        ordering_period_end_date="2020-07-01",
+        recipient_location_country_code="USA",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
+        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        pop_country_code="USA",
+        business_categories=None,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
+        treasury_account_identifiers=None,
+        cfdas=None,
+        tas_paths=None,
+        tas_components=None,
+        disaster_emergency_fund_codes=None,
+        covid_spending_by_defc=None,
     )
 
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,
+        transaction_unique_id=1,
         afa_generated_unique=1,
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
         award_id=asst_award.award_id,
+        award_amount=asst_award.total_subsidy_cost,
         generated_unique_award_id=asst_award.generated_unique_award_id,
         award_certified_date=asst_award.certified_date,
         award_fiscal_year=2020,
+        fiscal_year=2020,
         award_date_signed=asst_award.date_signed,
         etl_update_date=asst_award.update_date,
         award_category=asst_award.category,
@@ -248,43 +456,96 @@ def populate_usas_data(populate_broker_data):
         type="07",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_abbreviation=awarding_toptier_agency.abbreviation,
+        funding_toptier_agency_abbreviation=funding_toptier_agency.abbreviation,
+        awarding_subtier_agency_abbreviation=awarding_subtier_agency.abbreviation,
+        funding_subtier_agency_abbreviation=funding_subtier_agency.abbreviation,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        awarding_toptier_agency_id=awarding_agency.id,
+        funding_toptier_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
         federal_action_obligation=0,
         cfda_number="12.456",
+        cfda_id=cfda.id,
         recipient_uei="FABSUEI12345",
         recipient_unique_id="FABSDUNS12345",
         recipient_name="FABS RECIPIENT 12345",
         recipient_name_raw="FABS RECIPIENT 12345",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        recipient_levels=["C"],
         parent_uei="PARENTUEI12345",
+        parent_recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
         parent_recipient_unique_id="PARENTDUNS12345",
         parent_recipient_name="PARENT RECIPIENT 12345",
-        indirect_federal_sharing=1.0,
-        total_funding_amount="2.23",
+        parent_recipient_name_raw="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=0.0,
+        funding_amount=0.00,
+        total_funding_amount=0.00,
         recipient_location_state_code="VA",
+        recipient_location_state_fips=51,
         recipient_location_state_name="Virginia",
         recipient_location_county_code="001",
         recipient_location_county_name="COUNTY NAME",
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
         pop_state_code="VA",
+        pop_state_fips=51,
         pop_state_name="Virginia",
         pop_county_code="001",
         pop_county_name="COUNTY NAME",
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
+        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        recipient_location_state_population=1,
+        pop_state_population=1,
+        recipient_location_county_population=1,
+        pop_county_population=1,
+        recipient_location_congressional_population=1,
+        pop_congressional_population=1,
+        award_update_date=asst_award.update_date,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
+        non_federal_funding_amount=0.00,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        tas_paths=[
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        tas_components=[
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        federal_accounts=[
+            {
+                "id": federal_account.id,
+                "account_title": federal_account.account_title,
+                "federal_account_code": federal_account.federal_account_code,
+            }
+        ],
+        disaster_emergency_fund_codes=["L", "M"],
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=2,
+        transaction_unique_id=2,
         afa_generated_unique=2,
         action_date="2020-04-01",
         fiscal_action_date="2020-07-01",
         award_id=asst_award.award_id,
+        award_amount=asst_award.total_subsidy_cost,
         generated_unique_award_id=asst_award.generated_unique_award_id,
         award_certified_date=asst_award.certified_date,
         award_fiscal_year=2020,
+        fiscal_year=2020,
         award_date_signed=asst_award.date_signed,
         etl_update_date=asst_award.update_date,
         award_category=asst_award.category,
@@ -295,44 +556,97 @@ def populate_usas_data(populate_broker_data):
         type="07",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        awarding_toptier_agency_abbreviation=awarding_toptier_agency.abbreviation,
+        funding_toptier_agency_abbreviation=funding_toptier_agency.abbreviation,
+        awarding_subtier_agency_abbreviation=awarding_subtier_agency.abbreviation,
+        funding_subtier_agency_abbreviation=funding_subtier_agency.abbreviation,
+        awarding_toptier_agency_id=awarding_agency.id,
+        funding_toptier_agency_id=funding_agency.id,
         last_modified_date="2020-01-01",
         federal_action_obligation=0,
         published_fabs_id=2,
         cfda_number="12.456",
+        cfda_id=cfda.id,
         recipient_uei="FABSUEI12345",
         recipient_unique_id="FABSDUNS12345",
         recipient_name="FABS RECIPIENT 12345",
         recipient_name_raw="FABS RECIPIENT 12345",
+        recipient_hash="53aea6c7-bbda-4e4b-1ebe-755157592bbf",
+        recipient_levels=["C"],
         parent_uei="PARENTUEI12345",
+        parent_recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
         parent_recipient_unique_id="PARENTDUNS12345",
         parent_recipient_name="PARENT RECIPIENT 12345",
-        indirect_federal_sharing=1.0,
-        total_funding_amount="2.23",
+        parent_recipient_name_raw="PARENT RECIPIENT 12345",
+        indirect_federal_sharing=0.00,
+        funding_amount=0.00,
+        total_funding_amount=0.00,
         recipient_location_state_code="VA",
+        recipient_location_state_fips=51,
         recipient_location_state_name="Virginia",
         recipient_location_county_code="001",
         recipient_location_county_name="COUNTY NAME",
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
         pop_state_code="VA",
+        pop_state_fips=51,
         pop_state_name="Virginia",
         pop_county_code="001",
         pop_county_name="COUNTY NAME",
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
+        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        recipient_location_state_population=1,
+        pop_state_population=1,
+        recipient_location_county_population=1,
+        pop_county_population=1,
+        recipient_location_congressional_population=1,
+        pop_congressional_population=1,
+        award_update_date=asst_award.update_date,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
+        non_federal_funding_amount=0.00,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        tas_paths=[
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        tas_components=[
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        federal_accounts=[
+            {
+                "id": federal_account.id,
+                "account_title": federal_account.account_title,
+                "federal_account_code": federal_account.federal_account_code,
+            }
+        ],
+        disaster_emergency_fund_codes=["L", "M"],
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=3,
+        transaction_unique_id=3,
         detached_award_procurement_id=3,
         action_date="2020-07-01",
         fiscal_action_date="2020-10-01",
         award_id=cont_award.award_id,
+        award_amount=cont_award.total_obligation,
         generated_unique_award_id=cont_award.generated_unique_award_id,
         award_certified_date=cont_award.certified_date,
-        award_fiscal_year=2020,
+        award_fiscal_year=2021,
+        fiscal_year=2020,
         award_date_signed=cont_award.date_signed,
         etl_update_date=cont_award.update_date,
         award_category=cont_award.category,
@@ -343,6 +657,20 @@ def populate_usas_data(populate_broker_data):
         type="A",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        awarding_toptier_agency_id=awarding_agency.id,
+        funding_toptier_agency_id=funding_agency.id,
+        awarding_toptier_agency_abbreviation=awarding_toptier_agency.abbreviation,
+        funding_toptier_agency_abbreviation=funding_toptier_agency.abbreviation,
+        awarding_subtier_agency_abbreviation=awarding_subtier_agency.abbreviation,
+        funding_subtier_agency_abbreviation=funding_subtier_agency.abbreviation,
         last_modified_date="2020-01-01",
         federal_action_obligation=0,
         naics_code="123456",
@@ -351,29 +679,65 @@ def populate_usas_data(populate_broker_data):
         recipient_unique_id="FPDSDUNS12345",
         recipient_name="FPDS RECIPIENT 12345",
         recipient_name_raw="FPDS RECIPIENT 12345",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        recipient_levels=["C"],
         parent_uei="PARENTUEI12345",
+        parent_recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
         parent_recipient_unique_id="PARENTDUNS12345",
         parent_recipient_name="PARENT RECIPIENT 12345",
+        parent_recipient_name_raw="PARENT RECIPIENT 12345",
         ordering_period_end_date="2020-07-01",
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_state_code="VA",
+        recipient_location_state_fips=51,
         recipient_location_state_name="Virginia",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
+        pop_state_fips=51,
         pop_state_name="Virginia",
+        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        recipient_location_state_population=1,
+        pop_state_population=1,
+        award_update_date=cont_award.update_date,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
+        non_federal_funding_amount=0.00,
+        indirect_federal_sharing=0.00,
+        funding_amount=0.00,
+        total_funding_amount=0.00,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        tas_paths=[
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        tas_components=[
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        federal_accounts=[
+            {
+                "id": federal_account.id,
+                "account_title": federal_account.account_title,
+                "federal_account_code": federal_account.federal_account_code,
+            }
+        ],
+        disaster_emergency_fund_codes=["Q"],
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=4,
+        transaction_unique_id=4,
         detached_award_procurement_id=4,
         action_date="2020-10-01",
         fiscal_action_date="2021-01-01",
         award_id=cont_award.award_id,
+        award_amount=cont_award.total_obligation,
         generated_unique_award_id=cont_award.generated_unique_award_id,
         award_certified_date=cont_award.certified_date,
-        award_fiscal_year=2020,
+        award_fiscal_year=2021,
+        fiscal_year=2021,
         award_date_signed=cont_award.date_signed,
         etl_update_date=cont_award.update_date,
         award_category=cont_award.category,
@@ -384,6 +748,20 @@ def populate_usas_data(populate_broker_data):
         type="A",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
+        awarding_toptier_agency_name=awarding_toptier_agency.name,
+        awarding_toptier_agency_name_raw="TEST AGENCY 2",
+        funding_toptier_agency_name=funding_toptier_agency.name,
+        funding_toptier_agency_name_raw="TEST AGENCY 1",
+        awarding_subtier_agency_name=awarding_subtier_agency.name,
+        awarding_subtier_agency_name_raw="TEST SUBTIER 2",
+        funding_subtier_agency_name=funding_subtier_agency.name,
+        funding_subtier_agency_name_raw="TEST SUBTIER 1",
+        awarding_toptier_agency_id=awarding_agency.id,
+        funding_toptier_agency_id=funding_agency.id,
+        awarding_toptier_agency_abbreviation=awarding_toptier_agency.abbreviation,
+        funding_toptier_agency_abbreviation=funding_toptier_agency.abbreviation,
+        awarding_subtier_agency_abbreviation=awarding_subtier_agency.abbreviation,
+        funding_subtier_agency_abbreviation=funding_subtier_agency.abbreviation,
         last_modified_date="2020-01-01",
         federal_action_obligation=0,
         naics_code="123456",
@@ -392,38 +770,107 @@ def populate_usas_data(populate_broker_data):
         recipient_unique_id="FPDSDUNS12345",
         recipient_name="FPDS RECIPIENT 12345",
         recipient_name_raw="FPDS RECIPIENT 12345",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        recipient_levels=["C"],
         parent_uei="PARENTUEI12345",
+        parent_recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
         parent_recipient_unique_id="PARENTDUNS12345",
         parent_recipient_name="PARENT RECIPIENT 12345",
+        parent_recipient_name_raw="PARENT RECIPIENT 12345",
         ordering_period_end_date="2020-07-01",
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_state_code="VA",
+        recipient_location_state_fips=51,
         recipient_location_state_name="Virginia",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
+        pop_state_fips=51,
         pop_state_name="Virginia",
+        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        recipient_location_state_population=1,
+        pop_state_population=1,
+        award_update_date=cont_award.update_date,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
+        non_federal_funding_amount=0.00,
+        indirect_federal_sharing=0.00,
+        funding_amount=0.00,
+        total_funding_amount=0.00,
+        treasury_account_identifiers=[tas.treasury_account_identifier],
+        tas_paths=[
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        tas_components=[
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+        ],
+        federal_accounts=[
+            {
+                "id": federal_account.id,
+                "account_title": federal_account.account_title,
+                "federal_account_code": federal_account.federal_account_code,
+            }
+        ],
+        disaster_emergency_fund_codes=["Q"],
     )
     baker.make(
         "search.TransactionSearch",
         transaction_id=434,
+        transaction_unique_id=434,
         detached_award_procurement_id=434,
         is_fpds=True,
         award_id=cont_award2.award_id,
+        award_amount=cont_award2.total_obligation,
         generated_unique_award_id=cont_award2.generated_unique_award_id,
         award_certified_date=cont_award2.certified_date,
-        award_fiscal_year=2020,
-        award_date_signed=cont_award2.date_signed,
         etl_update_date=cont_award2.update_date,
         award_category=cont_award2.category,
         piid=cont_award2.piid,
         fain=cont_award2.fain,
         uri=cont_award2.uri,
         type="A",
-        awarding_agency_id=32,
-        funding_agency_id=32,
+        awarding_agency_id=agency.id,
+        funding_agency_id=agency.id,
+        awarding_toptier_agency_name=toptier.name,
+        awarding_toptier_agency_name_raw="toptier",
+        funding_toptier_agency_name=toptier.name,
+        funding_toptier_agency_name_raw="toptier",
+        awarding_subtier_agency_name=subtier.name,
+        awarding_subtier_agency_name_raw="subtier",
+        funding_subtier_agency_name=subtier.name,
+        funding_subtier_agency_name_raw="subtier",
+        awarding_toptier_agency_abbreviation=toptier.abbreviation,
+        funding_toptier_agency_abbreviation=toptier.abbreviation,
+        awarding_subtier_agency_abbreviation=subtier.abbreviation,
+        funding_subtier_agency_abbreviation=subtier.abbreviation,
+        awarding_toptier_agency_id=agency.id,
+        funding_toptier_agency_id=agency.id,
         last_modified_date="2020-01-01",
+        award_update_date=cont_award2.update_date,
+        generated_pragmatic_obligation=0.00,
+        original_loan_subsidy_cost=0.00,
+        face_value_loan_guarantee=0.00,
+        non_federal_funding_amount=0.00,
+        indirect_federal_sharing=0.00,
+        funding_amount=0.00,
+        total_funding_amount=0.00,
+        federal_action_obligation=0.00,
+        recipient_uei="FPDSUEI12345",
+        recipient_unique_id="FPDSDUNS12345",
+        recipient_name="FPDS RECIPIENT 12345",
+        recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
+        recipient_levels=["C"],
+        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        parent_uei="PARENTUEI12345",
+        parent_recipient_unique_id="PARENTDUNS12345",
+        parent_recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
+        parent_recipient_name="PARENT RECIPIENT 12345",
+        parent_recipient_name_raw="PARENT RECIPIENT 12345",
+        ordering_period_end_date="2020-07-01",
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
@@ -472,16 +919,7 @@ def populate_usas_data(populate_broker_data):
         submission_id=33.00,
         _fill_optional=True,
     )
-    # Create account data
-    federal_account = baker.make(
-        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
-    )
-    tas = baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account=federal_account,
-        allocation_transfer_agency_id=None,
-        _fill_optional=True,
-    )
+
     dabs = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01")
     sa = baker.make("submissions.SubmissionAttributes", reporting_period_start="2020-04-02", submission_window=dabs)
 
@@ -490,6 +928,10 @@ def populate_usas_data(populate_broker_data):
         award_id=asst_award.award_id,
         treasury_account=tas,
         disaster_emergency_fund=defc_l,
+        gross_outlay_amount_by_award_cpe=1,
+        transaction_obligated_amount=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         submission=sa,
         _fill_optional=True,
     )
@@ -499,6 +941,10 @@ def populate_usas_data(populate_broker_data):
         treasury_account=tas,
         disaster_emergency_fund=defc_m,
         submission=sa,
+        gross_outlay_amount_by_award_cpe=1,
+        transaction_obligated_amount=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         _fill_optional=True,
     )
     baker.make(
@@ -506,6 +952,10 @@ def populate_usas_data(populate_broker_data):
         award_id=cont_award.award_id,
         treasury_account=tas,
         disaster_emergency_fund=defc_q,
+        gross_outlay_amount_by_award_cpe=1,
+        transaction_obligated_amount=1,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         submission=sa,
         _fill_optional=True,
     )
@@ -773,11 +1223,41 @@ def verify_delta_table_loaded_from_delta(
 def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
     load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
     load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
-    for dest_table in load_query_tables + load_table_tables:
-        call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
+    for dest_table in load_table_tables + load_query_tables:
+        if dest_table in [
+            "awards",
+            "transaction_fabs",
+            "transaction_normalized",
+            "transaction_fpds",
+            "financial_accounts_by_awards",
+        ]:
+            call_command(
+                "create_delta_table",
+                f"--destination-table={dest_table}",
+                "--alt-db=int",
+                f"--spark-s3-bucket={s3_bucket}",
+            )
+        else:
+            call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
 
     for dest_table in load_table_tables:
-        call_command("load_table_to_delta", f"--destination-table={dest_table}")
+        if dest_table in [
+            "awards",
+            "transaction_fabs",
+            "transaction_normalized",
+            "transaction_fpds",
+            "financial_accounts_by_awards",
+        ]:
+            call_command(
+                "load_table_to_delta",
+                f"--destination-table={dest_table}",
+                "--alt-db=int",
+            )
+        else:
+            call_command(
+                "load_table_to_delta",
+                f"--destination-table={dest_table}",
+            )
 
     for dest_table in load_query_tables:
         call_command("load_query_to_delta", f"--destination-table={dest_table}")
@@ -785,7 +1265,6 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
     create_ref_temp_views(spark)
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -815,6 +1294,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         total_obligation=100.00,
         total_subsidy_cost=100.00,
         type_description="Direct Loan",
+        subaward_count=0,
     )
     baker.make(
         "search.TransactionSearch",
@@ -822,7 +1302,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         afa_generated_unique=1001,
         action_date="2021-01-01",
         fiscal_action_date="2021-04-01",
-        award_id=new_award.id,
+        award_id=new_award.award_id,
         is_fpds=False,
         type="07",
         last_modified_date="2021-01-01",
@@ -841,11 +1321,13 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
+        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
         pop_state_code="VA",
         pop_county_code="001",
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
+        pop_congressional_code_current="TEST CUR POP CONGR TS",
     )
 
     update_awards()
@@ -874,7 +1356,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     )  # test alt write strategy
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
 
@@ -896,7 +1377,6 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -917,30 +1397,6 @@ def test_load_table_to_from_delta_for_recipient_profile(
     verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True, ignore_fields=["id"])
 
 
-@mark.skip
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    # Baker doesn't support autofilling Numeric fields, so we're manually setting them here
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=1,
-        award_id=1,
-        is_fpds=False,
-        indirect_federal_sharing=1.0,
-        _fill_optional=True,
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=2,
-        award_id=1,
-        is_fpds=False,
-        indirect_federal_sharing=1.0,
-        _fill_optional=True,
-    )
-    verify_delta_table_loaded_to_delta(spark, "transaction_fabs", s3_unittest_data_bucket)
-
-
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_timezone_aware(spark, monkeypatch, s3_unittest_data_bucket, hive_unittest_metastore_db):
     """Test that timestamps are not inadvertently shifted due to loss of timezone during reads and writes.
@@ -1080,7 +1536,6 @@ def test_load_table_to_delta_timezone_aware(spark, monkeypatch, s3_unittest_data
                 cursor.execute("DROP TABLE test_table")
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make(
@@ -1103,24 +1558,6 @@ def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_d
     verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
 
 
-@mark.skip
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_fpds(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    baker.make("search.TransactionSearch", transaction_id="1", is_fpds=True, _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", is_fpds=True, _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "transaction_fpds", s3_unittest_data_bucket)
-
-
-@mark.skip
-@mark.django_db(transaction=True)
-def test_load_table_to_from_delta_for_transaction_normalized(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
-    baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
-    verify_delta_table_loaded_to_delta(spark, "transaction_normalized", s3_unittest_data_bucket)
-
-
 @mark.django_db(transaction=True)
 @mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
 def test_load_table_to_from_delta_for_recipient_profile_testing(
@@ -1139,7 +1576,6 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
     )
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -1156,7 +1592,11 @@ def test_load_table_to_from_delta_for_transaction_search(
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
-        spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark,
+        "transaction_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=["award_update_date", "etl_update_date"],
     )
     # TODO: Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC
     #       as by design the data in delta will be different from the data in postgres
@@ -1164,7 +1604,6 @@ def test_load_table_to_from_delta_for_transaction_search(
     # verify_delta_table_loaded_from_delta(spark, "transaction_search", jdbc_inserts=True)  # test alt write strategy
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search_testing(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -1179,13 +1618,12 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
     pass
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make("search.TransactionSearch", transaction_id="1", _fill_optional=True)
-    baker.make("search.TransactionSearch", transaction_id="2", _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="1", award_id=1, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", award_id=2, _fill_optional=True)
     verify_delta_table_loaded_to_delta(
         spark,
         "transaction_normalized",
@@ -1230,7 +1668,6 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     # )
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
@@ -1253,7 +1690,6 @@ def test_load_table_to_from_delta_for_award_search(
     verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
     expected_data = [
@@ -1284,7 +1720,6 @@ def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, p
     )
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_summary_state_view(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
