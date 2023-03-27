@@ -90,7 +90,6 @@ def _obligation_txn_amount_agg_subquery(
     filters = [
         filter_limit_to_closed_periods(),
         Q(award_id=OuterRef(award_id_col)),
-        # TODO: DEV-9339 Date to change depending on Andrew Ly's response
         Q(submission__reporting_period_start__gte=str(reporting_period_start_date)),
         Q(disaster_emergency_fund__group_name=emergency_fund_group_name),
     ]
