@@ -450,6 +450,9 @@
       "pop_congressional_code": {
         "type": "keyword"
       },
+      "pop_congressional_code_current": {
+        "type": "keyword"
+      },
       "pop_city_name": {
         "type": "text",
         "fields": {
@@ -468,6 +471,15 @@
         }
       },
       "pop_congressional_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
+      "pop_congressional_cur_agg_key": {
         "type": "keyword",
         "eager_global_ordinals": true,
         "fields": {
@@ -515,6 +527,9 @@
       "recipient_location_congressional_code": {
         "type": "keyword"
       },
+      "recipient_location_congressional_code_current": {
+        "type": "keyword"
+      },
       "recipient_location_city_name": {
         "type": "text",
         "fields": {
@@ -533,6 +548,15 @@
         }
       },
       "recipient_location_congressional_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
+      "recipient_location_congressional_cur_agg_key": {
         "type": "keyword",
         "eager_global_ordinals": true,
         "fields": {

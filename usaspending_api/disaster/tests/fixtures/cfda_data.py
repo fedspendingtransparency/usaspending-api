@@ -11,11 +11,13 @@ def cfda_awards_and_transactions(db):
         latest_transaction_id=10,
         type="07",
         total_loan_value=3,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
         cfda_number="10.100",
+        cfda_program_title="CFDA 1",
         disaster_emergency_fund_codes=["L"],
-        total_covid_outlay=101,
-        total_covid_obligation=202,
+        total_covid_outlay=0,
+        total_covid_obligation=2,
+        covid_spending_by_defc=[{"defc": "L", "outlay": 0, "obligation": 2}],
     )
     award2 = baker.make(
         "search.AwardSearch",
@@ -23,11 +25,13 @@ def cfda_awards_and_transactions(db):
         latest_transaction_id=20,
         type="07",
         total_loan_value=30,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
         cfda_number="20.200",
+        cfda_program_title="CFDA 2",
         disaster_emergency_fund_codes=["L"],
-        total_covid_outlay=10,
+        total_covid_outlay=0,
         total_covid_obligation=20,
+        covid_spending_by_defc=[{"defc": "L", "outlay": 0, "obligation": 20}],
     )
     award3 = baker.make(
         "search.AwardSearch",
@@ -35,11 +39,13 @@ def cfda_awards_and_transactions(db):
         latest_transaction_id=30,
         type="08",
         total_loan_value=300,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
         cfda_number="20.200",
+        cfda_program_title="CFDA 2",
         disaster_emergency_fund_codes=["M"],
         total_covid_outlay=100,
         total_covid_obligation=200,
+        covid_spending_by_defc=[{"defc": "M", "outlay": 100, "obligation": 200}],
     )
     award4 = baker.make(
         "search.AwardSearch",
@@ -47,11 +53,13 @@ def cfda_awards_and_transactions(db):
         latest_transaction_id=40,
         type="02",
         total_loan_value=0,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
         cfda_number="30.300",
+        cfda_program_title="CFDA 3",
         disaster_emergency_fund_codes=["L"],
         total_covid_outlay=1000,
         total_covid_obligation=2000,
+        covid_spending_by_defc=[{"defc": "L", "outlay": 1000, "obligation": 2000}],
     )
     award5 = baker.make(
         "search.AwardSearch",
@@ -59,7 +67,7 @@ def cfda_awards_and_transactions(db):
         latest_transaction_id=50,
         type="A",
         total_loan_value=0,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
         disaster_emergency_fund_codes=["M"],
         total_covid_outlay=10000,
         total_covid_obligation=20000,
@@ -258,7 +266,7 @@ def cfda_awards_and_transactions(db):
         transaction_id=1,
         award=award1,
         federal_action_obligation=5,
-        action_date="2020-01-01",
+        action_date="2020-10-01",
         is_fpds=False,
     )
     baker.make(
