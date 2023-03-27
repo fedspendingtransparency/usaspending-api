@@ -29,7 +29,7 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.settings import HOST
 
 COVID_19_PERIOD_START = datetime.date(2020, 4, 1)
-IIJA_PERIOD_START = datetime.date(2020, 4, 1)
+IIJA_PERIOD_START = datetime.date(2021, 11, 15)
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
