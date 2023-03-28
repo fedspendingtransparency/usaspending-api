@@ -259,11 +259,12 @@ def test_create_ref_temp_views(spark: SparkSession):
 
     # Setup for testing the Broker table(s)
     mock_spark_session = MagicMock(autospec=SparkSession)
-    mock_broker_sql_string: list[str] = []
+    mock_broker_sql_strings: list[str] = []
     jdbc_conn_props = get_jdbc_connection_properties()
 
     for broker_table in _BROKER_REF_TABLES:
-        mock_broker_sql_string.append(f"""
+        mock_broker_sql_strings.append(
+            f"""
             CREATE OR REPLACE GLOBAL TEMPORARY VIEW {broker_table}
             USING JDBC
             OPTIONS (
@@ -275,7 +276,7 @@ def test_create_ref_temp_views(spark: SparkSession):
             """
         )
 
-    for sql_string in mock_broker_sql_string:
+    for sql_string in mock_broker_sql_strings:
         # Test that the Broker's SQL is being run when create_broker_views=True
         create_ref_temp_views(mock_spark_session, create_broker_views=True)
         mock_spark_session.sql.assert_called()
