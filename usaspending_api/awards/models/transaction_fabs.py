@@ -132,7 +132,7 @@ FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "assistance_type_desc": "type_description",
     "award_description": "transaction_description",
     "uei": "recipient_uei",
-    "awardee_or_recipient_legal": "recipient_name_raw",
+    "awardee_or_recipient_legal": "recipient_name",
     "awardee_or_recipient_uniqu": "recipient_unique_id",
     "ultimate_parent_uei": "parent_uei",
     "ultimate_parent_legal_enti": "parent_recipient_name",
