@@ -150,11 +150,11 @@ query_paths = {
                 ),
                 (
                     "recipient_name",
-                    f"latest_transaction_search__recipient_name",
+                    "latest_transaction_search__recipient_name",
                 ),
                 (
                     "recipient_name_raw",
-                    f"latest_transaction_search__recipient_name_raw",
+                    "latest_transaction_search__recipient_name_raw",
                 ),
                 (
                     "recipient_doing_business_as_name",
@@ -171,11 +171,11 @@ query_paths = {
                 ),
                 (
                     "recipient_parent_name",
-                    f"latest_transaction_search__parent_recipient_name",
+                    "latest_transaction_search__parent_recipient_name",
                 ),
                 (
                     "recipient_parent_name_raw",
-                    f"latest_transaction_search__parent_recipient_name_raw",
+                    "latest_transaction_search__parent_recipient_name_raw",
                 ),
                 (
                     "recipient_country_code",
@@ -1113,11 +1113,11 @@ query_paths = {
                 ),
                 (
                     "recipient_name",
-                    f"latest_transaction_search__recipient_name",
+                    "latest_transaction_search__recipient_name",
                 ),
                 (
                     "recipient_name_raw",
-                    f"latest_transaction_search__recipient_name_raw",
+                    "latest_transaction_search__recipient_name_raw",
                 ),
                 (
                     "recipient_parent_uei",
