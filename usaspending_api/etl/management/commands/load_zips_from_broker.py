@@ -4,6 +4,7 @@ from django.core.management import BaseCommand, call_command
 from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -52,6 +53,9 @@ class Command(BaseCommand):
 
         # Setup Logger
         logger = get_jvm_logger(spark)
+
+        logger.info("Creating global_temp views")
+        create_ref_temp_views(spark=spark, create_broker_views=True)
 
         usaspending_last_load_date = get_last_load_date("zips")
         options["destination_table"] = "zips"
