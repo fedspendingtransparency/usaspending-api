@@ -5,7 +5,7 @@ ZIPS_COLUMNS = {
     "zip5": {"delta": "STRING", "postgres": "TEXT"},
     "zip_last4": {"delta": "STRING", "postgres": "TEXT"},
     "state_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
-    "country_number": {"delta": "STRING", "postgres": "TEXT"},
+    "county_number": {"delta": "STRING", "postgres": "TEXT"},
     "congressional_district_no": {"delta": "STRING", "postgres": "TEXT"},
 }
 ZIPS_DELTA_COLUMNS = {k: v["delta"] for k, v in ZIPS_COLUMNS.items()}
