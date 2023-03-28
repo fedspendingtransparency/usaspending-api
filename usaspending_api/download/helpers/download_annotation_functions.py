@@ -28,6 +28,8 @@ from usaspending_api.disaster.v2.views.disaster_base import (
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.settings import HOST
 
+COVID_19_PERIOD_START = datetime.date(2020, 4, 1)
+IIJA_PERIOD_START = datetime.date(2021, 11, 15)
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
@@ -79,12 +81,41 @@ def _disaster_emergency_fund_codes(
     )
 
 
-def _covid_outlay_subquery(def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id") -> Subquery:
+def _obligation_txn_amount_agg_subquery(
+    emergency_fund_group_name: str,
+    reporting_period_start_date: datetime.date,
+    def_codes: Optional[List[str]] = None,
+    award_id_col: Optional[str] = "award_id",
+) -> Subquery:
+    filters = [
+        filter_limit_to_closed_periods(),
+        Q(award_id=OuterRef(award_id_col)),
+        Q(submission__reporting_period_start__gte=str(reporting_period_start_date)),
+        Q(disaster_emergency_fund__group_name=emergency_fund_group_name),
+    ]
+    if def_codes:
+        filters.append(Q(disaster_emergency_fund__code__in=def_codes))
+
+    return Subquery(
+        FinancialAccountsByAwards.objects.filter(*filters)
+        .values("award_id")
+        .annotate(sum=Sum("transaction_obligated_amount"))
+        .values("sum"),
+        output_field=DecimalField(max_digits=23, decimal_places=2),
+    )
+
+
+def _outlay_amount_agg_subquery(
+    emergency_fund_group_name: str,
+    reporting_period_start_date: datetime.date,
+    def_codes: Optional[List[str]] = None,
+    award_id_col: Optional[str] = "award_id",
+) -> Subquery:
     filters = [
         filter_by_latest_closed_periods(),
         Q(award_id=OuterRef(award_id_col)),
-        Q(submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1))),
-        Q(disaster_emergency_fund__group_name="covid_19"),
+        Q(submission__reporting_period_start__gte=str(reporting_period_start_date)),
+        Q(disaster_emergency_fund__group_name=emergency_fund_group_name),
     ]
     if def_codes:
         filters.append(Q(disaster_emergency_fund__code__in=def_codes))
@@ -107,27 +138,6 @@ def _covid_outlay_subquery(def_codes: Optional[List[str]] = None, award_id_col: 
                 output_field=DecimalField(max_digits=23, decimal_places=2),
             )
         )
-        .values("sum"),
-        output_field=DecimalField(max_digits=23, decimal_places=2),
-    )
-
-
-def _covid_obligation_subquery(
-    def_codes: Optional[List[str]] = None, award_id_col: Optional[str] = "award_id"
-) -> Subquery:
-    filters = [
-        filter_limit_to_closed_periods(),
-        Q(award_id=OuterRef(award_id_col)),
-        Q(submission__reporting_period_start__gte=str(datetime.date(2020, 4, 1))),
-        Q(disaster_emergency_fund__group_name="covid_19"),
-    ]
-    if def_codes:
-        filters.append(Q(disaster_emergency_fund__code__in=def_codes))
-
-    return Subquery(
-        FinancialAccountsByAwards.objects.filter(*filters)
-        .values("award_id")
-        .annotate(sum=Sum("transaction_obligated_amount"))
         .values("sum"),
         output_field=DecimalField(max_digits=23, decimal_places=2),
     )
@@ -165,20 +175,50 @@ def transaction_search_annotations(filters: dict):
             ),
             output_field=TextField(),
         ),
-        "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
+        "outlayed_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
-                action_date__gte=datetime.date(2020, 4, 1),
-                then=_covid_outlay_subquery(def_codes=def_codes),
+                action_date__gte=COVID_19_PERIOD_START,
+                then=_outlay_amount_agg_subquery(
+                    emergency_fund_group_name="covid_19",
+                    reporting_period_start_date=COVID_19_PERIOD_START,
+                    def_codes=def_codes,
+                ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
+        "obligated_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
-                action_date__gte=datetime.date(2020, 4, 1),
-                then=_covid_obligation_subquery(def_codes=def_codes),
+                action_date__gte=COVID_19_PERIOD_START,
+                then=_obligation_txn_amount_agg_subquery(
+                    emergency_fund_group_name="covid_19",
+                    reporting_period_start_date=COVID_19_PERIOD_START,
+                    def_codes=def_codes,
+                ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
+        "outlayed_amount_from_IIJA_supplemental_for_overall_award": Case(
+            When(
+                action_date__gte=IIJA_PERIOD_START,
+                then=_outlay_amount_agg_subquery(
+                    emergency_fund_group_name="infastructure",
+                    reporting_period_start_date=IIJA_PERIOD_START,
+                    def_codes=def_codes,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),  # Annotation is used to create this column
+        "obligated_amount_from_IIJA_supplemental_for_overall_award": Case(
+            When(
+                action_date__gte=IIJA_PERIOD_START,
+                then=_obligation_txn_amount_agg_subquery(
+                    emergency_fund_group_name="infastructure",
+                    reporting_period_start_date=IIJA_PERIOD_START,
+                    def_codes=def_codes,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),  # Annotation is used to create this column
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
                 filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
@@ -244,11 +284,29 @@ def award_annotations(filters: dict):
         ),
         "disaster_emergency_fund_codes"
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(def_codes=def_codes, award_id_col="award_id"),
-        "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(
-            def_codes=def_codes, award_id_col="award_id"
+        "outlayed_amount_from_COVID-19_supplementals": _outlay_amount_agg_subquery(
+            emergency_fund_group_name="covid_19",
+            reporting_period_start_date=COVID_19_PERIOD_START,
+            def_codes=def_codes,
+            award_id_col="award_id",
         ),
-        "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(
-            def_codes=def_codes, award_id_col="award_id"
+        "obligated_amount_from_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
+            emergency_fund_group_name="covid_19",
+            reporting_period_start_date=COVID_19_PERIOD_START,
+            def_codes=def_codes,
+            award_id_col="award_id",
+        ),
+        "outlayed_amount_from_IIJA_supplemental": _outlay_amount_agg_subquery(
+            emergency_fund_group_name="infastructure",
+            reporting_period_start_date=IIJA_PERIOD_START,
+            def_codes=def_codes,
+            award_id_col="award_id",
+        ),
+        "obligated_amount_from_IIJA_supplemental": _obligation_txn_amount_agg_subquery(
+            emergency_fund_group_name="infastructure",
+            reporting_period_start_date=IIJA_PERIOD_START,
+            def_codes=def_codes,
+            award_id_col="award_id",
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
@@ -318,8 +376,26 @@ def idv_order_annotations(filters: dict):
         ),
         "disaster_emergency_fund_codes"
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(award_id_col="award_id"),
-        "outlayed_amount_funded_by_COVID-19_supplementals": _covid_outlay_subquery(award_id_col="award_id"),
-        "obligated_amount_funded_by_COVID-19_supplementals": _covid_obligation_subquery(award_id_col="award_id"),
+        "outlayed_amount_from_COVID-19_supplementals": _outlay_amount_agg_subquery(
+            emergency_fund_group_name="covid_19",
+            reporting_period_start_date=COVID_19_PERIOD_START,
+            award_id_col="award_id",
+        ),
+        "obligated_amount_from_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
+            emergency_fund_group_name="covid_19",
+            reporting_period_start_date=COVID_19_PERIOD_START,
+            award_id_col="award_id",
+        ),
+        "outlayed_amount_from_IIJA_supplemental": _outlay_amount_agg_subquery(
+            emergency_fund_group_name="infrastructure",
+            reporting_period_start_date=IIJA_PERIOD_START,
+            award_id_col="award_id",
+        ),
+        "obligated_amount_from_IIJA_supplemental": _obligation_txn_amount_agg_subquery(
+            emergency_fund_group_name="infrastructure",
+            reporting_period_start_date=IIJA_PERIOD_START,
+            award_id_col="award_id",
+        ),
         "award_latest_action_date_fiscal_year": FiscalYear(
             F(f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}")
         ),
@@ -390,17 +466,42 @@ def idv_transaction_annotations(filters: dict):
             ),
             output_field=TextField(),
         ),
-        "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
+        "outlayed_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
-                action_date__gte="2020-04-01",
-                then=_covid_outlay_subquery(),
+                action_date__gte=COVID_19_PERIOD_START,
+                then=_outlay_amount_agg_subquery(
+                    emergency_fund_group_name="covid_19", reporting_period_start_date=COVID_19_PERIOD_START
+                ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
+        "obligated_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
-                action_date__gte="2020-04-01",
-                then=_covid_obligation_subquery(),
+                action_date__gte=COVID_19_PERIOD_START,
+                then=_obligation_txn_amount_agg_subquery(
+                    emergency_fund_group_name="covid_19",
+                    reporting_period_start_date=COVID_19_PERIOD_START,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),
+        "outlayed_amount_from_IIJA_supplemental_for_overall_award": Case(
+            When(
+                action_date__gte=IIJA_PERIOD_START,
+                then=_outlay_amount_agg_subquery(
+                    emergency_fund_group_name="infrastructure",
+                    reporting_period_start_date=IIJA_PERIOD_START,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),
+        "obligated_amount_from_IIJA_supplemental_for_overall_award": Case(
+            When(
+                action_date__gte=IIJA_PERIOD_START,
+                then=_obligation_txn_amount_agg_subquery(
+                    emergency_fund_group_name="infrastructure",
+                    reporting_period_start_date=IIJA_PERIOD_START,
+                ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
@@ -516,17 +617,47 @@ def subaward_annotations(filters: dict):
             ),
             output_field=TextField(),
         ),
-        "prime_award_outlayed_amount_funded_by_COVID-19_supplementals": Case(
+        "prime_award_outlayed_amount_from_COVID-19_supplementals": Case(
             When(
-                sub_action_date__gte=datetime.date(2020, 4, 1),
-                then=_covid_outlay_subquery(def_codes=def_codes),
+                sub_action_date__gte=COVID_19_PERIOD_START,
+                then=_outlay_amount_agg_subquery(
+                    emergency_fund_group_name="covid_19",
+                    reporting_period_start_date=COVID_19_PERIOD_START,
+                    def_codes=def_codes,
+                ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "prime_award_obligated_amount_funded_by_COVID-19_supplementals": Case(
+        "prime_award_obligated_amount_from_COVID-19_supplementals": Case(
             When(
-                sub_action_date__gte=datetime.date(2020, 4, 1),
-                then=_covid_obligation_subquery(def_codes=def_codes),
+                sub_action_date__gte=COVID_19_PERIOD_START,
+                then=_obligation_txn_amount_agg_subquery(
+                    emergency_fund_group_name="covid_19",
+                    reporting_period_start_date=COVID_19_PERIOD_START,
+                    def_codes=def_codes,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),
+        "prime_award_outlayed_amount_from_IIJA_supplemental": Case(
+            When(
+                sub_action_date__gte=IIJA_PERIOD_START,
+                then=_outlay_amount_agg_subquery(
+                    emergency_fund_group_name="infastructure",
+                    reporting_period_start_date=IIJA_PERIOD_START,
+                    def_codes=def_codes,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),
+        "prime_award_obligated_amount_from_IIJA_supplemental": Case(
+            When(
+                sub_action_date__gte=IIJA_PERIOD_START,
+                then=_obligation_txn_amount_agg_subquery(
+                    emergency_fund_group_name="infastructure",
+                    reporting_period_start_date=IIJA_PERIOD_START,
+                    def_codes=def_codes,
+                ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
