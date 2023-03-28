@@ -5,7 +5,7 @@ NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helper
 functions for setup and configuration of the spark environment
 """
 from itertools import chain
-from typing import Dict, List
+from typing import List
 from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
 from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
