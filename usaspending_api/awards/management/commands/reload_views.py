@@ -36,4 +36,5 @@ class Command(BaseCommand):
             for view_name, view_sql in self.views.items():
                 if view_name in options.get("views"):
                     self.logger.info(f"Reloading {view_name}")
+                    cursor.execute(f"DROP VIEW IF EXISTS {view_name}")
                     cursor.execute(view_sql)
