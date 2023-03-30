@@ -80,6 +80,15 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 		done; \
 	)
 
+.PHONY: requirements-dev.txt
+requirements-dev.txt: .venv ## Install or update pip packages in dev virtual env if requirements-dev.txt file changed
+	@( \
+		src_roots=(${src_root_paths}); \
+		for src_root in "$${src_roots[@]}"; do \
+			pip install --editable "$${src_root}[dev]"; \
+		done; \
+	)
+
 .ivy2: ## Ensure user has a ~/.ivy2 dir, which will be bound to in a docker container volume to save on dependency downloads
 	@mkdir -p ~/.ivy2
 

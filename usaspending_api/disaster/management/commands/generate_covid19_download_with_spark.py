@@ -44,7 +44,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            This new linecache
             "--skip-upload",
             action="store_true",
             help="Don't store the list of IDs for downline ETL. Automatically skipped if --dry-run is provided",

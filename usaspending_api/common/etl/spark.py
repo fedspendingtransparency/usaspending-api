@@ -579,14 +579,12 @@ def load_csv_file(
     header = ",".join([_.name for _ in df.schema.fields])
     start = time.time()
     logger.info("Writing source data DataFrame to csv part files ...")
-
-    # df.write.csv(header=False, compression=compression, path=parts_dir)
     num_partitions = df.rdd.getNumPartitions()
     df_record_count = df.count()
     target_partitions = ceil(df_record_count / max_rows_per_merged_file)
-    df = df.repartition(target_partitions)
     logger.info(
-        f"Repartitioning from {num_partitions} to {target_partitions} for {df_record_count} records to get each file close to {max_records_per_file} records."
+        f"Repartitioning from {num_partitions:,} to {target_partitions:,} for {df_record_count:,} records, "
+        f"to get each file close to {max_rows_per_merged_file:,} records."
     )
     df.write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
@@ -600,7 +598,7 @@ def load_csv_file(
         ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
         ignoreTrailingWhiteSpace=False,  # must set for CSV write, as it defaults to true
         timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
-        mode="overwrite" if not overwrite else "errorifexists",
+        mode="overwrite" if overwrite else "errorifexists",
     )
 
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
@@ -616,6 +614,7 @@ def load_csv_file(
         delete_parts_dir=False,
         rows_per_part=max_rows_per_merged_file,
         max_rows_per_merged_file=max_rows_per_merged_file,
+        logger=logger,
     )
     logger.info(f"Completed file concatenation and Zip in {(time.time() - start):3f}s")
 
@@ -789,7 +788,7 @@ def hadoop_copy_merge(
 
         try:
             fs.rename(partial_merged_file_path, merge_group_file_path)
-        except:
+        except Exception:
             if fs.exists(partial_merged_file_path):
                 fs.delete(partial_merged_file_path, True)
             raise
@@ -797,7 +796,9 @@ def hadoop_copy_merge(
         merged_file_paths.append(merge_group_file_path)
 
     # Take each merged file, and add to a Zip archive for one bundled download
-    logger.info(f"Starting zip of {len(merged_file_paths)} {extension} files ...")
+    logger.info(
+        f"Starting zip of {len(merged_file_paths)} {extension} files into compressed file {str(zip_file_path)} ..."
+    )
     zip_start = time.time()
     out_stream = None
     zip_out_stream = None
@@ -835,12 +836,15 @@ def hadoop_copy_merge(
         if overwrite and fs.exists(zip_file_path):
             fs.delete(zip_file_path, True)
         fs.rename(partial_zipped_file_path, zip_file_path)
-    except:
+    except Exception:
         if fs.exists(partial_zipped_file_path):
             fs.delete(partial_zipped_file_path, True)  # drop partial zip file if rename completes or not
         raise
 
-    logger.info(f"Completed zip of {len(merged_file_paths)} {extension} files in {(time.time() - zip_start):3f}s")
+    logger.info(
+        f"Completed zip of {len(merged_file_paths)} {extension} files into file "
+        f"{str(zip_file_path)} in {(time.time() - zip_start):3f}s"
+    )
 
     if delete_parts_dir:
         fs.delete(parts_dir_path, True)
