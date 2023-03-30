@@ -10,6 +10,7 @@ from collections import namedtuple
 from math import ceil
 
 from py4j.protocol import Py4JError
+from typing import List
 from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
 from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
@@ -20,6 +21,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
+    get_broker_jdbc_url,
 )
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
 from usaspending_api.recipient.models import StateData
@@ -62,6 +64,10 @@ _USAS_RDS_REF_TABLES = [
     SubtierAgency,
     ToptierAgency,
     TreasuryAppropriationAccount,
+]
+
+_BROKER_REF_TABLES = [
+    "zips_grouped",
 ]
 
 
@@ -515,28 +521,56 @@ def build_ref_table_name_list():
     return [rds_ref_table._meta.db_table for rds_ref_table in _USAS_RDS_REF_TABLES]
 
 
-def create_ref_temp_views(spark: SparkSession, logger=None):
+def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[str]:
+    """Generates the CREATE OR REPLACE SQL strings for each of the given tables and JDBC URL"""
+
+    sql_strings: List[str] = []
+    jdbc_conn_props = get_jdbc_connection_properties()
+
+    for table_name in tables:
+        sql_strings.append(
+            f"""
+            CREATE OR REPLACE GLOBAL TEMPORARY VIEW {table_name}
+            USING JDBC
+            OPTIONS (
+                driver '{jdbc_conn_props["driver"]}',
+                fetchsize '{jdbc_conn_props["fetchsize"]}',
+                url '{jdbc_url}',
+                dbtable '{table_name}'
+            )
+            """
+        )
+
+    return sql_strings
+
+
+def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False):
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
+    Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
     """
-    if not logger:
-        logger = get_jvm_logger(spark)
-    jdbc_conn_props = get_jdbc_connection_properties()
-    rds_ref_tables = build_ref_table_name_list()
+    logger = get_jvm_logger(spark)
 
+    # Create USAS temp views
+    rds_ref_tables = build_ref_table_name_list()
+    rds_sql_strings = _generate_global_view_sql_strings(
+        tables=rds_ref_tables,
+        jdbc_url=get_usas_jdbc_url(),
+    )
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
-    for ref_rdf_table in rds_ref_tables:
-        spark_sql = f"""
-        CREATE OR REPLACE GLOBAL TEMPORARY VIEW {ref_rdf_table}
-        USING JDBC
-        OPTIONS (
-          driver '{jdbc_conn_props["driver"]}',
-          fetchsize '{jdbc_conn_props["fetchsize"]}',
-          url '{get_usas_jdbc_url()}',
-          dbtable '{ref_rdf_table}'
+    for sql_statement in rds_sql_strings:
+        spark.sql(sql_statement)
+
+    # Create Broker temp views
+    if create_broker_views:
+        broker_sql_strings = _generate_global_view_sql_strings(
+            tables=_BROKER_REF_TABLES,
+            jdbc_url=get_broker_jdbc_url(),
         )
-        """
-        spark.sql(spark_sql)
+        logger.info(f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}")
+        for sql_statement in broker_sql_strings:
+            spark.sql(sql_statement)
+
     logger.info(f"Created the reference views in the global_temp database")
 
 

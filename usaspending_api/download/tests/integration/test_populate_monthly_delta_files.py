@@ -114,6 +114,8 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "",
         "",
         "",
+        "",
+        "",
         "2020-05-07",
         "2020",
         "2020-05-07",
@@ -125,6 +127,8 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "Test_Agency",
         "001",
         "Test_Agency",
+        "",
+        "",
         "",
         "",
         "",
@@ -398,6 +402,7 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         row_count = 0
         for row in csv_reader:
             if row_count == 0:
+                # 63 is the character limit for column names
                 assert row == [s[:63] for s in query_paths["transaction_search"]["d1"].keys()]
             else:
                 assert row == contract_data

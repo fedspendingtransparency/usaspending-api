@@ -9,6 +9,7 @@ from usaspending_api.awards.delta_models import (
     BROKER_SUBAWARDS_COLUMNS,
     broker_subawards_sql_string,
 )
+from usaspending_api.broker.delta_models.broker_zips import ZIPS_COLUMNS, zips_sql_string
 from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -194,6 +195,23 @@ TABLE_SPEC = {
         "column_names": list(BROKER_SUBAWARDS_COLUMNS),
         "tsvectors": None,
     },
+    "zips": {
+        "model": None,
+        "is_from_broker": True,
+        "source_table": "zips",
+        "source_database": None,
+        "destination_database": "raw",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "zips_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": zips_sql_string,
+        "source_schema": None,
+        "custom_schema": "",
+        "column_names": list(ZIPS_COLUMNS),
+        "tsvectors": None,
+    },
     # Additional definitions for use in testing;
     # These are copies of Views / Materialized Views / Tables from Postgres to Spark to aid in
     # data comparison between current Postgres data and the data transformed via Spark.
@@ -284,7 +302,6 @@ TABLE_SPEC = {
         "tsvectors": None,
     },
 }
-
 
 SPARK_PARTITION_ROWS = CONFIG.SPARK_PARTITION_ROWS
 

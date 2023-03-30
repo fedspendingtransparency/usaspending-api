@@ -40,8 +40,10 @@ query_paths = {
                     "disaster_emergency_fund_codes" + NAMING_CONFLICT_DISCRIMINATOR,
                     None,
                 ),  # Annotation is used to create this column
-                ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
-                ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("outlayed_amount_from_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("obligated_amount_from_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("outlayed_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
+                ("obligated_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "total_obligation"),
                 (
                     "current_total_value_of_award",
@@ -150,7 +152,11 @@ query_paths = {
                 ),
                 (
                     "recipient_name",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['awardee_or_recipient_legal']}",
+                    "latest_transaction_search__recipient_name",
+                ),
+                (
+                    "recipient_name_raw",
+                    "latest_transaction_search__recipient_name_raw",
                 ),
                 (
                     "recipient_doing_business_as_name",
@@ -167,7 +173,11 @@ query_paths = {
                 ),
                 (
                     "recipient_parent_name",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['ultimate_parent_legal_enti']}",
+                    "latest_transaction_search__parent_recipient_name",
+                ),
+                (
+                    "recipient_parent_name_raw",
+                    "latest_transaction_search__parent_recipient_name_raw",
                 ),
                 (
                     "recipient_country_code",
@@ -1029,8 +1039,10 @@ query_paths = {
                     "disaster_emergency_fund_codes" + NAMING_CONFLICT_DISCRIMINATOR,
                     None,
                 ),  # Annotation is used to create this column
-                ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
-                ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("outlayed_amount_from_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("obligated_amount_from_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("outlayed_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
+                ("obligated_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
                 (
                     "award_latest_action_date",
                     f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}",
@@ -1105,7 +1117,11 @@ query_paths = {
                 ),
                 (
                     "recipient_name",
-                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['awardee_or_recipient_legal']}",
+                    "latest_transaction_search__recipient_name",
+                ),
+                (
+                    "recipient_name_raw",
+                    "latest_transaction_search__recipient_name_raw",
                 ),
                 (
                     "recipient_parent_uei",
@@ -1304,11 +1320,19 @@ query_paths = {
                 ("potential_total_value_of_award", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["potential_total_value_awar"]),
                 ("disaster_emergency_fund_codes_for_overall_award", None),  # Annotation is used to create this column
                 (
-                    "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    "outlayed_amount_from_COVID-19_supplementals_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    "obligated_amount_from_COVID-19_supplementals_for_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "outlayed_amount_from_IIJA_supplemental_for_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "obligated_amount_from_IIJA_supplemental_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
                 ("action_date", NORM_TO_TRANSACTION_SEARCH_COL_MAP["action_date"]),
@@ -1346,12 +1370,14 @@ query_paths = {
                 ("sam_exception_description", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["sam_exception_description"]),
                 ("recipient_uei", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["awardee_or_recipient_uei"]),
                 ("recipient_duns", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["awardee_or_recipient_uniqu"]),
-                ("recipient_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["awardee_or_recipient_legal"]),
+                ("recipient_name", "recipient_name"),
+                ("recipient_name_raw", "recipient_name_raw"),
                 ("recipient_doing_business_as_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["vendor_doing_as_business_n"]),
                 ("cage_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["cage_code"]),
                 ("recipient_parent_uei", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["ultimate_parent_uei"]),
                 ("recipient_parent_duns", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["ultimate_parent_unique_ide"]),
-                ("recipient_parent_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["ultimate_parent_legal_enti"]),
+                ("recipient_parent_name", "parent_recipient_name"),
+                ("recipient_parent_name_raw", "parent_recipient_name_raw"),
                 ("recipient_country_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_country_code"]),
                 ("recipient_country_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_country_name"]),
                 ("recipient_address_line_1", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_address_line1"]),
@@ -1791,13 +1817,21 @@ query_paths = {
                 ("total_loan_subsidy_cost", "award__total_subsidy_cost"),
                 ("disaster_emergency_fund_codes_for_overall_award", None),  # Annotation is used to create this column
                 (
-                    "outlayed_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    "outlayed_amount_from_COVID-19_supplementals_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
+                    "obligated_amount_from_COVID-19_supplementals_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
+                (
+                    "outlayed_amount_from_IIJA_supplemental_for_overall_award",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "obligated_amount_from_IIJA_supplemental_for_overall_award",
+                    None,
+                ),
                 ("action_date", NORM_TO_TRANSACTION_SEARCH_COL_MAP["action_date"]),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 (
@@ -1826,10 +1860,12 @@ query_paths = {
                 ("program_activities_funding_this_award", None),  # Annotation is used to create this column
                 ("recipient_uei", FABS_TO_TRANSACTION_SEARCH_COL_MAP["uei"]),
                 ("recipient_duns", FABS_TO_TRANSACTION_SEARCH_COL_MAP["awardee_or_recipient_uniqu"]),
-                ("recipient_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["awardee_or_recipient_legal"]),
+                ("recipient_name", "recipient_name"),
+                ("recipient_name_raw", "recipient_name_raw"),
                 ("recipient_parent_uei", FABS_TO_TRANSACTION_SEARCH_COL_MAP["ultimate_parent_uei"]),
                 ("recipient_parent_duns", FABS_TO_TRANSACTION_SEARCH_COL_MAP["ultimate_parent_unique_ide"]),
-                ("recipient_parent_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["ultimate_parent_legal_enti"]),
+                ("recipient_parent_name", "parent_recipient_name"),
+                ("recipient_parent_name_raw", "parent_recipient_name_raw"),
                 ("recipient_country_code", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_country_code"]),
                 ("recipient_country_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_country_name"]),
                 ("recipient_address_line_1", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_address_line1"]),
@@ -1932,11 +1968,19 @@ query_paths = {
                 ("prime_award_amount", "award_amount"),
                 ("prime_award_disaster_emergency_fund_codes", None),  # Annotation is used to create this column
                 (
-                    "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+                    "prime_award_outlayed_amount_from_COVID-19_supplementals",
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
+                    "prime_award_obligated_amount_from_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_outlayed_amount_from_IIJA_supplemental",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_obligated_amount_from_IIJA_supplemental",
                     None,
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
@@ -2087,11 +2131,19 @@ query_paths = {
                 ("prime_award_amount", "award_amount"),
                 ("prime_award_disaster_emergency_fund_codes", None),  # Annotation is used to create this column
                 (
-                    "prime_award_outlayed_amount_funded_by_COVID-19_supplementals",
+                    "prime_award_outlayed_amount_from_COVID-19_supplementals",
                     None,
                 ),  # Annotation is used to create this column
                 (
-                    "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
+                    "prime_award_obligated_amount_from_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_outlayed_amount_from_IIJA_supplemental",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_obligated_amount_from_IIJA_supplemental",
                     None,
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
@@ -2739,10 +2791,12 @@ query_paths = {
                 ("funding_office_name", "award__latest_transaction_search__funding_office_name"),
                 ("recipient_uei", "award__latest_transaction_search__recipient_uei"),
                 ("recipient_duns", "award__latest_transaction_search__recipient_unique_id"),
-                ("recipient_name", "award__latest_transaction_search__recipient_name_raw"),
+                ("recipient_name", "award__latest_transaction_search__recipient_name"),
+                ("recipient_name_raw", "award__latest_transaction_search__recipient_name_raw"),
                 ("recipient_parent_uei", "award__latest_transaction_search__parent_uei"),
                 ("recipient_parent_duns", "award__latest_transaction_search__parent_uei"),
-                ("recipient_parent_name", "award__latest_transaction_search__parent_recipient_name_raw"),
+                ("recipient_parent_name", "award__latest_transaction_search__parent_recipient_name"),
+                ("recipient_parent_name_raw", "award__latest_transaction_search__parent_recipient_name_raw"),
                 ("recipient_country", "award__latest_transaction_search__recipient_location_country_code"),
                 ("recipient_state", "award__latest_transaction_search__recipient_location_state_code"),
                 ("recipient_county", "award__latest_transaction_search__recipient_location_county_name"),
@@ -2848,10 +2902,12 @@ query_paths = {
                 ("funding_office_name", "award__latest_transaction_search__funding_office_name"),
                 ("recipient_uei", "award__latest_transaction_search__recipient_uei"),
                 ("recipient_duns", "award__latest_transaction_search__recipient_unique_id"),
-                ("recipient_name", "award__latest_transaction_search__recipient_name_raw"),
+                ("recipient_name", "award__latest_transaction_search__recipient_name"),
+                ("recipient_name_raw", "award__latest_transaction_search__recipient_name_raw"),
                 ("recipient_parent_uei", "award__latest_transaction_search__parent_uei"),
                 ("recipient_parent_duns", "award__latest_transaction_search__parent_uei"),
-                ("recipient_parent_name", "award__latest_transaction_search__parent_recipient_name_raw"),
+                ("recipient_parent_name", "award__latest_transaction_search__parent_recipient_name"),
+                ("recipient_parent_name_raw", "award__latest_transaction_search__parent_recipient_name_raw"),
                 ("recipient_country", "award__latest_transaction_search__recipient_location_country_code"),
                 ("recipient_state", "award__latest_transaction_search__recipient_location_state_code"),
                 ("recipient_county", "award__latest_transaction_search__recipient_location_county_name"),
