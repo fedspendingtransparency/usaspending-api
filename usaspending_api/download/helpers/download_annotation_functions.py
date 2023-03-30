@@ -201,7 +201,7 @@ def transaction_search_annotations(filters: dict):
             When(
                 action_date__gte=IIJA_PERIOD_START,
                 then=_outlay_amount_agg_subquery(
-                    emergency_fund_group_name="infastructure",
+                    emergency_fund_group_name="infrastructure",
                     reporting_period_start_date=IIJA_PERIOD_START,
                     def_codes=def_codes,
                 ),
@@ -212,7 +212,7 @@ def transaction_search_annotations(filters: dict):
             When(
                 action_date__gte=IIJA_PERIOD_START,
                 then=_obligation_txn_amount_agg_subquery(
-                    emergency_fund_group_name="infastructure",
+                    emergency_fund_group_name="infrastructure",
                     reporting_period_start_date=IIJA_PERIOD_START,
                     def_codes=def_codes,
                 ),
@@ -297,13 +297,13 @@ def award_annotations(filters: dict):
             award_id_col="award_id",
         ),
         "outlayed_amount_from_IIJA_supplemental": _outlay_amount_agg_subquery(
-            emergency_fund_group_name="infastructure",
+            emergency_fund_group_name="infrastructure",
             reporting_period_start_date=IIJA_PERIOD_START,
             def_codes=def_codes,
             award_id_col="award_id",
         ),
         "obligated_amount_from_IIJA_supplemental": _obligation_txn_amount_agg_subquery(
-            emergency_fund_group_name="infastructure",
+            emergency_fund_group_name="infrastructure",
             reporting_period_start_date=IIJA_PERIOD_START,
             def_codes=def_codes,
             award_id_col="award_id",
@@ -643,7 +643,7 @@ def subaward_annotations(filters: dict):
             When(
                 sub_action_date__gte=IIJA_PERIOD_START,
                 then=_outlay_amount_agg_subquery(
-                    emergency_fund_group_name="infastructure",
+                    emergency_fund_group_name="infrastructure",
                     reporting_period_start_date=IIJA_PERIOD_START,
                     def_codes=def_codes,
                 ),
@@ -654,7 +654,7 @@ def subaward_annotations(filters: dict):
             When(
                 sub_action_date__gte=IIJA_PERIOD_START,
                 then=_obligation_txn_amount_agg_subquery(
-                    emergency_fund_group_name="infastructure",
+                    emergency_fund_group_name="infrastructure",
                     reporting_period_start_date=IIJA_PERIOD_START,
                     def_codes=def_codes,
                 ),
