@@ -236,7 +236,6 @@ def test_constraint_validation(caplog, monkeypatch):
             assert False, "No exception was raised"
 
 
-@mark.skip
 @mark.django_db()
 def test_column_validation(caplog, monkeypatch):
     monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
@@ -272,7 +271,6 @@ def test_column_validation(caplog, monkeypatch):
             assert False, "No exception was raised"
 
 
-@mark.skip
 @mark.django_db(transaction=True)
 def test_happy_path():
     # Create the Award records for testing with Foreign Keys
@@ -283,7 +281,6 @@ def test_happy_path():
         with connection.cursor() as cursor:
             # Test without Foreign Keys
             cursor.execute(
-                "CREATE TABLE rpt.test_table_old (col1 TEXT, col2 INT NOT NULL);"
                 "CREATE TABLE rpt.test_table (col1 TEXT, col2 INT NOT NULL);"
                 "CREATE TABLE temp.test_table_temp (col1 TEXT, col2 INT NOT NULL);"
                 "INSERT INTO test_table (col1, col2) VALUES ('goodbye', 1);"
@@ -306,7 +303,8 @@ def test_happy_path():
             assert result == [{"col1": "hello", "col2": 2}, {"col1": "world", "col2": 3}]
 
             cursor.execute(
-                "SELECT * FROM information_schema.tables WHERE table_name IN ('test_table_temp', 'test_table_old')"
+                "SELECT * FROM information_schema.tables"
+                " WHERE table_name = 'test_table_temp' OR LEFT(table_name, 14) = 'test_table_old'"
             )
             result = cursor.fetchall()
             assert len(result) == 0
@@ -322,8 +320,8 @@ def test_happy_path():
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
-                "ALTER TABLE test_table ADD CONSTRAINT test_table_award_fk FOREIGN KEY (col2) REFERENCES awards (id);"
-                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
+                "ALTER TABLE test_table ADD CONSTRAINT test_table_award_fk FOREIGN KEY (col2) REFERENCES award_search (award_id);"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES award_search (award_id);"
                 "CREATE OR REPLACE VIEW vw_test_table AS SELECT * FROM test_table;"
             )
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key")
@@ -332,7 +330,8 @@ def test_happy_path():
             assert result == [{"col1": "foo", "col2": 4}, {"col1": "bar", "col2": 5}]
 
             cursor.execute(
-                "SELECT * FROM information_schema.tables WHERE table_name IN ('test_table_temp', 'test_table_old')"
+                "SELECT * FROM information_schema.tables"
+                " WHERE table_name = 'test_table_temp' OR LEFT(table_name, 14) = 'test_table_old'"
             )
             result = cursor.fetchall()
             assert len(result) == 0
@@ -344,7 +343,7 @@ def test_happy_path():
                 "CREATE INDEX test_table_col1_index_temp ON test_table_temp(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_unique_temp UNIQUE(col1);"
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_col_1_constraint_temp CHECK (col1 != 'TEST');"
-                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES awards (id);"
+                "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES award_search (award_id);"
                 "CREATE OR REPLACE VIEW vw_test_table AS SELECT * FROM test_table;"
             )
             call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key", "--keep-old-data")
@@ -353,16 +352,18 @@ def test_happy_path():
             assert result == [{"col1": "the end", "col2": 6}]
 
             cursor.execute(
-                "SELECT * FROM information_schema.tables WHERE table_name IN ('test_table_temp', 'test_table_old')"
+                "SELECT table_name FROM information_schema.tables"
+                " WHERE table_name = 'test_table_temp' OR LEFT(table_name, 14) = 'test_table_old'"
             )
             result = cursor.fetchall()
             assert len(result) == 1
+            test_table_old_name = result[0][0]
 
-            cursor.execute("SELECT * FROM test_table_old ORDER BY col2")
+            cursor.execute(f"SELECT * FROM {test_table_old_name} ORDER BY col2")
             result = ordered_dictionary_fetcher(cursor)
             assert result == [{"col1": "foo", "col2": 4}, {"col1": "bar", "col2": 5}]
 
-            cursor.execute("SELECT * FROM vw_test_table_old ORDER BY col2")
+            cursor.execute(f"SELECT * FROM vw_{test_table_old_name} ORDER BY col2")
             result = ordered_dictionary_fetcher(cursor)
             assert result == [{"col1": "foo", "col2": 4}, {"col1": "bar", "col2": 5}]
     finally:
@@ -371,8 +372,16 @@ def test_happy_path():
             cursor.execute(
                 "DROP VIEW IF EXISTS vw_test_table;"
                 "DROP VIEW IF EXISTS vw_test_table_temp;"
-                "DROP VIEW IF EXISTS vw_test_table_old;"
                 "DROP TABLE IF EXISTS test_table CASCADE;"
                 "DROP TABLE IF EXISTS test_table_temp CASCADE;"
-                "DROP TABLE IF EXISTS test_table_old CASCADE;"
             )
+            cursor.execute(
+                "SELECT table_name FROM information_schema.tables" " WHERE LEFT(table_name, 14) = 'test_table_old'"
+            )
+            result = cursor.fetchall()
+            test_table_old_name = result[0][0]
+            if test_table_old_name:
+                cursor.execute(
+                    f"DROP VIEW IF EXISTS vw_{test_table_old_name};"
+                    f"DROP TABLE IF EXISTS {test_table_old_name} CASCADE;"
+                )

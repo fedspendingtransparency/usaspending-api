@@ -172,6 +172,8 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "",
         "",
         "",
+        "",
+        "",
         "B",
         "Contract",
         "",

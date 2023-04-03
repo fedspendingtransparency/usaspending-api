@@ -20,7 +20,7 @@ def award_data1(db):
     award_id = 111  # used below
     defc = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
 
-    aw1 = baker.make("search.AwardSearch", award_id=award_id)
+    aw1 = baker.make("search.AwardSearch", award_id=award_id, action_date="2020-01-01")
     baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=aw1, disaster_emergency_fund=defc)
 
     yield award_id
@@ -36,8 +36,14 @@ def award_data2(db):
     award_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     awards = [
-        baker.make("search.AwardSearch", piid=random.choice(piids), award_id=award_id),
-        *baker.make("search.AwardSearch", piid=random.choice(piids), award_id=cycle(award_ids), _quantity=9),
+        baker.make("search.AwardSearch", piid=random.choice(piids), award_id=award_id, action_date="2020-01-01"),
+        *baker.make(
+            "search.AwardSearch",
+            piid=random.choice(piids),
+            award_id=cycle(award_ids),
+            _quantity=9,
+            action_date="2020-01-01",
+        ),
     ]
 
     for index, award in enumerate(awards):
@@ -58,8 +64,8 @@ def award_data2(db):
 def award_data3(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
 
-    aw1 = baker.make("search.AwardSearch", award_id=19834, fain="abc123")
-    aw2 = baker.make("search.AwardSearch", award_id=10938, fain="zyx987")
+    aw1 = baker.make("search.AwardSearch", award_id=19834, fain="abc123", action_date="2020-01-01")
+    aw2 = baker.make("search.AwardSearch", award_id=10938, fain="zyx987", action_date="2020-01-01")
 
     AwardSearch.objects.filter(award_id=aw1.award_id).update(
         update_date=OLD_DATE
@@ -79,8 +85,8 @@ def award_data3(db):
 def award_data4(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="P", group_name="covid_19")
 
-    aw1 = baker.make("search.AwardSearch", award_id=284, fain="abc123")
-    aw2 = baker.make("search.AwardSearch", award_id=9081, fain="zyx987")
+    aw1 = baker.make("search.AwardSearch", award_id=284, fain="abc123", action_date="2020-01-01")
+    aw2 = baker.make("search.AwardSearch", award_id=9081, fain="zyx987", action_date="2020-01-01")
 
     AwardSearch.objects.filter(award_id=aw1.award_id).update(
         update_date=OLD_DATE
@@ -100,10 +106,10 @@ def award_data4(db):
 def award_mixed_periods(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="O", group_name="covid_19")
 
-    aw1 = baker.make("search.AwardSearch", award_id=1, piid="abc123")
-    aw2 = baker.make("search.AwardSearch", award_id=2, piid="zyx987")
-    aw3 = baker.make("search.AwardSearch", award_id=3, piid="ABC321")
-    aw4 = baker.make("search.AwardSearch", award_id=4, piid="ZYX789")
+    aw1 = baker.make("search.AwardSearch", award_id=1, piid="abc123", action_date="2020-01-01")
+    aw2 = baker.make("search.AwardSearch", award_id=2, piid="zyx987", action_date="2020-01-01")
+    aw3 = baker.make("search.AwardSearch", award_id=3, piid="ABC321", action_date="2020-01-01")
+    aw4 = baker.make("search.AwardSearch", award_id=4, piid="ZYX789", action_date="2020-01-01")
 
     AwardSearch.objects.filter(award_id=aw1.award_id).update(
         update_date=OLD_DATE
@@ -145,7 +151,6 @@ def test_happy_path(submissions, award_data1):
     assert after.update_date - today < timedelta(minutes=1), "New datetime isn't today"
 
 
-@pytest.mark.skip
 def test_count_only_flag(submissions, award_data1):
     """No awards should be updated when --count-only flag is present"""
 
