@@ -85,6 +85,8 @@ def award_data_fixture(db):
         award_id=1,
         generated_unique_award_id="CONT_AWD_IND12PB00323",
         latest_transaction_id=1,
+        earliest_transaction_search_id=1,
+        latest_transaction_search_id=1,
         is_fpds=True,
         type="A",
         category="contracts",
@@ -102,6 +104,8 @@ def award_data_fixture(db):
         award_id=2,
         generated_unique_award_id="ASST_NON_P063P100612",
         latest_transaction_id=2,
+        earliest_transaction_search_id=2,
+        latest_transaction_search_id=2,
         is_fpds=False,
         type="02",
         category="grants",
@@ -130,7 +134,6 @@ def mock_execute_sql(sql, results, verbosity=None):
     return execute_sql_to_ordered_dictionary(sql)
 
 
-@pytest.mark.skip
 def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to create a new awards index and load it
     with data from the DB
@@ -164,7 +167,6 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
     assert es_award_docs == original_db_awards_count
 
 
-@pytest.mark.skip
 def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to create a new transactions index and load it
     with data from the DB
@@ -182,7 +184,6 @@ def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch
     assert es_award_docs == original_db_tx_count
 
 
-@pytest.mark.skip
 def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to incrementally load updated data into the awards ES
     index from the DB, overwriting the doc that was already there
@@ -212,7 +213,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     # Also override SQL function listed in config object with the mock one
     es_etl_config["execute_sql_func"] = mock_execute_sql
     ensure_view_exists(es_etl_config["sql_view"], force=True)
-    loader = (PostgresElasticsearchIndexerController(es_etl_config),)
+    loader = PostgresElasticsearchIndexerController(es_etl_config)
     assert loader.__class__.__name__ == "PostgresElasticsearchIndexerController"
     loader.prepare_for_etl()
     loader.dispatch_tasks()
@@ -222,11 +223,10 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     es_awards = client.search(index=elasticsearch_award_index.index_name)
-    updated_award = [a for a in es_awards["hits"]["hits"] if a["_source"]["award_id"] == awd.id][0]
+    updated_award = [a for a in es_awards["hits"]["hits"] if a["_source"]["award_id"] == awd.award_id][0]
     assert int(updated_award["_source"]["total_obligation"]) == 9999
 
 
-@pytest.mark.skip
 def test_incremental_load_into_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to incrementally load updated data into
     the transactions ES index from the DB, overwriting the doc that was already there
@@ -246,6 +246,7 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     # Now modify one of the DB objects
     tx = TransactionSearch.objects.first()  # type: TransactionSearch
     tx.federal_action_obligation = 9999
+    tx.etl_update_date = datetime.now(timezone.utc)
     tx.save()
 
     # Must use mock sql function to share test DB conn+transaction in ETL code
@@ -261,7 +262,6 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     loader.prepare_for_etl()
     loader.dispatch_tasks()
     client.indices.refresh(elasticsearch_transaction_index.index_name)
-    elasticsearch_transaction_index.update_index()
 
     assert client.indices.exists(elasticsearch_transaction_index.index_name)
     es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
@@ -406,7 +406,6 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     assert es_award_docs == 0
 
 
-@pytest.mark.skip
 def test_delete_awards_zero_for_unmatched_transactions(
     award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db
 ):
@@ -442,7 +441,6 @@ def test_delete_awards_zero_for_unmatched_transactions(
     assert es_award_docs == Award.objects.count()
 
 
-@pytest.mark.skip
 def test_delete_one_assistance_award(
     award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db
 ):
@@ -487,7 +485,6 @@ def test_delete_one_assistance_award(
     assert es_award_docs == original_db_awards_count - 1
 
 
-@pytest.mark.skip
 def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_transaction_index, monkeypatch, db):
     """Ensure that transactions not logged for delete don't get deleted but those logged for delete do"""
     elasticsearch_transaction_index.update_index()

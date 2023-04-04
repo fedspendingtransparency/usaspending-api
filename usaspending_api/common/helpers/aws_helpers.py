@@ -1,5 +1,6 @@
 from urllib.request import urlopen
 from urllib.error import URLError
+import socket
 
 
 def is_aws():
@@ -8,7 +9,7 @@ def is_aws():
     meta = "http://169.254.169.254/latest/meta-data/"
     try:
         result = urlopen(meta, timeout=2).status == 200
-    except (ConnectionError, TimeoutError, URLError):
+    except (ConnectionError, TimeoutError, URLError, socket.timeout):
         return result
     return result
 
