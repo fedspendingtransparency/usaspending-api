@@ -223,6 +223,7 @@ List of table columns
 + `county` (optional, string)
 + `city` (optional, string)
 + `district` (optional, string)
++ `district_current` (optional, string)
 + `zip` (optional, string)
 
 ### AgencyObject (object)

@@ -67,12 +67,21 @@ A US county:
 }
 ```
 
-A US congressional district:
+Original US congressional district:
 ```
 {
     "country": "USA",
     "state": "VA",
     "district": "11"
+}
+```
+
+Current US congressional district:
+```
+{
+    "country": "USA",
+    "state": "VA",
+    "district_current": "11" 
 }
 ```
 
@@ -85,9 +94,12 @@ Keys in a location object include:
 * **county** - a 3 digit FIPS code indicating the county
     * If `county` is provided, a `state` must always be provided as well.
     * If `county` is provided, a `district` value *must never* be provided.
-* **district** - a 2 character code indicating the congressional district
+* **district** - a 2 character code indicating the original congressional district, before any redistricting
     * If `district` is provided, a `state` must always be provided as well.
     * If `district` is provided, a `county` *must never* be provided.
+* **district_current** - a 2 character code indicating the current congressional district, after any redistricting
+    * If `district_current` is provided, a `state` must always be provided as well.
+    * If `district_current` is provided, a `county` *must never* be provided.
 
 
 ## Keyword Search

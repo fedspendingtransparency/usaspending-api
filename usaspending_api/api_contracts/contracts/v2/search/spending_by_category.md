@@ -132,6 +132,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `county` (optional, string)
 + `city` (optional, string)
 + `district` (optional, string)
++ `district_current` (optional, string)
 + `zip` (optional, string)
 
 ### AgencyObject (object)
