@@ -64,10 +64,10 @@ TRANSACTION_SEARCH_COLUMNS = {
     "federal_action_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
+    "indirect_federal_sharing": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     "funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     "total_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     "non_federal_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
-    "indirect_federal_sharing": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     # Recipient
     "recipient_hash": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
