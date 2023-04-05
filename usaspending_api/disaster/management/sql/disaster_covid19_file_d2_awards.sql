@@ -149,7 +149,7 @@ LEFT OUTER JOIN (
         AND defc.group_name = 'infrastructure'
     INNER JOIN submission_attributes sa
         ON faba.submission_id = sa.submission_id
-        AND sa.reporting_period_start >= '2020-04-01'
+        AND sa.reporting_period_start >= '2021-11-15'
     INNER JOIN dabs_submission_window_schedule ON (
         sa."submission_window_id" = dabs_submission_window_schedule."id"
         AND dabs_submission_window_schedule."submission_reveal_date" <= now()
