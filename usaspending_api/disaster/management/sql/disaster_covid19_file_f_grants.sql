@@ -149,7 +149,7 @@ INNER JOIN (
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
 ) DEFC ON (DEFC.award_id = awards.award_id)
 -- Infrastructure Investment and Jobs Act (IIJA) spending
-LEFT JOIN (
+LEFT OUTER JOIN (
     SELECT
         faba.award_id,
         COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
@@ -185,7 +185,8 @@ LEFT JOIN (
             0
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) IIJA_DEFC on (IIJA_DEFC.award_id = awards.award_id)
+) IIJA_DEFC
+ON IIJA_DEFC.award_id = rpt.subaward_search.award_id
 WHERE (
     "subaward_search"."prime_award_group" IN ('grant')
     AND "subaward_search"."sub_action_date" >= '2020-04-01'
