@@ -18,7 +18,6 @@ def test_correct_response_defc_no_results(
     assert resp.json()["results"] == expected_results
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -54,7 +53,6 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
     assert resp.json()["results"] == expected_results
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_multiple_defc(
     client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions
@@ -108,7 +106,6 @@ def test_correct_response_multiple_defc(
     assert resp.json()["results"] == expected_results
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -161,7 +158,6 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
     assert resp.json()["results"] == expected_results
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_correct_response_with_award_type_codes(
     client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions
@@ -241,7 +237,6 @@ def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, a
     assert resp.data["detail"] == "Missing value: 'filter|def_codes' is a required field"
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_pagination_page_and_limit(client, monkeypatch, helpers, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)

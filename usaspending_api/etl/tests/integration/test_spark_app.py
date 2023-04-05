@@ -8,6 +8,7 @@ import random
 import sys
 import uuid
 from datetime import date
+from unittest.mock import MagicMock
 
 import boto3
 from model_bakery import baker
@@ -18,8 +19,9 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_jdbc_url_from_pg_uri,
     get_jdbc_connection_properties,
+    get_broker_jdbc_url,
 )
-from usaspending_api.common.etl.spark import _USAS_RDS_REF_TABLES, create_ref_temp_views
+from usaspending_api.common.etl.spark import _USAS_RDS_REF_TABLES, _BROKER_REF_TABLES, create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 
@@ -254,3 +256,33 @@ def test_create_ref_temp_views(spark: SparkSession):
     for rds_ref_table in _USAS_RDS_REF_TABLES:
         spark_count = spark.sql(f"select count(*) from global_temp.{rds_ref_table._meta.db_table}").collect()[0][0]
         assert rds_ref_table.objects.count() == spark_count
+
+    # Setup for testing the Broker table(s)
+    mock_spark_session = MagicMock(autospec=SparkSession)
+    mock_broker_sql_strings: list[str] = []
+    jdbc_conn_props = get_jdbc_connection_properties()
+
+    for broker_table in _BROKER_REF_TABLES:
+        mock_broker_sql_strings.append(
+            f"""
+            CREATE OR REPLACE GLOBAL TEMPORARY VIEW {broker_table}
+            USING JDBC
+            OPTIONS (
+                driver '{jdbc_conn_props["driver"]}',
+                fetchsize '{jdbc_conn_props["fetchsize"]}',
+                url '{get_broker_jdbc_url()}',
+                dbtable '{broker_table}'
+            )
+            """
+        )
+
+    for sql_string in mock_broker_sql_strings:
+        # Test that the Broker's SQL is being run when create_broker_views=True
+        create_ref_temp_views(mock_spark_session, create_broker_views=True)
+        mock_spark_session.sql.assert_called()
+        mock_spark_session.sql.assert_called_with(sql_string)
+
+        # Test that the Broker's SQL is NOT being called when create_broker_views=False
+        create_ref_temp_views(mock_spark_session)
+        # call_args[0] is the SQL string that spark.sql() was given
+        assert sql_string != mock_spark_session.sql.call_args[0]
