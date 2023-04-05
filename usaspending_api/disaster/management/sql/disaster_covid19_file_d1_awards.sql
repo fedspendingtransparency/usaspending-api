@@ -318,7 +318,6 @@ INNER JOIN (
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
 ) DEFC ON (DEFC.award_id = "award_search"."award_id")
--- Infrastructure Investment and Jobs Act (IIJA) spending
 LEFT OUTER JOIN (
     SELECT
         faba.award_id,
