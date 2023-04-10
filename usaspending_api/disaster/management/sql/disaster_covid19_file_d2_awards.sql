@@ -3,9 +3,9 @@ SELECT
     "award_search"."fain" AS "award_id_fain",
     "award_search"."uri" AS "award_id_uri",
     "latest_transaction"."sai_number" AS "sai_number",
-    DEFC."disaster_emergency_funds" AS "disaster_emergency_fund_codes",
-    DEFC."gross_outlay_amount_by_award_cpe" + DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_COVID-19_supplementals",
-    DEFC."transaction_obligated_amount" AS "obligated_amount_from_COVID-19_supplementals",
+    COVID_DEFC."disaster_emergency_funds" AS "disaster_emergency_fund_codes",
+    COVID_DEFC."gross_outlay_amount_by_award_cpe" + COVID_DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + COVID_DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_COVID-19_supplementals",
+    COVID_DEFC."transaction_obligated_amount" AS "obligated_amount_from_COVID-19_supplementals",
     IIJA_DEFC."gross_outlay_amount_by_award_cpe" + IIJA_DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + IIJA_DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_IIJA_supplemental",
     IIJA_DEFC."transaction_obligated_amount" AS "obligated_amount_from_IIJA_supplemental",
     "award_search"."total_obligation" AS "total_obligated_amount",
@@ -133,7 +133,7 @@ INNER JOIN (
             0
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = "award_search"."award_id")
+) COVID_DEFC ON (COVID_DEFC.award_id = "award_search"."award_id")
 LEFT OUTER JOIN (
     SELECT
         faba.award_id,
