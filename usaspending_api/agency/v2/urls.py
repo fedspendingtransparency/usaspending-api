@@ -16,6 +16,7 @@ from usaspending_api.agency.v2.views.program_activity_list import ProgramActivit
 from usaspending_api.agency.v2.views.sub_agency import SubAgencyList
 from usaspending_api.agency.v2.views.sub_agency_count import SubAgencyCount
 from usaspending_api.agency.v2.views.subcomponents import SubcomponentList
+from usaspending_api.agency.v2.views.tas_object_class_list import TASObjectClassList
 
 urlpatterns = [
     re_path(
@@ -32,6 +33,7 @@ urlpatterns = [
                 path("federal_account/count/", FederalAccountCount.as_view()),
                 path("object_class/", ObjectClassList.as_view()),
                 path("object_class/count/", ObjectClassCount.as_view()),
+                path("treasury_account/<slug:treasury_account_symbol>/object_class", TASObjectClassList.as_view()),
                 path("obligations_by_award_category/", ObligationsByAwardCategory.as_view()),
                 path("program_activity/", ProgramActivityList.as_view()),
                 path("program_activity/count/", ProgramActivityCount.as_view()),
