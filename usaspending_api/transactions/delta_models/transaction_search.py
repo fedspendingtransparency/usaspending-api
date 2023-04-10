@@ -435,7 +435,7 @@ transaction_search_load_sql_string = fr"""
         TFA.name AS funding_toptier_agency_name,
         COALESCE(transaction_fabs.funding_agency_name, transaction_fpds.funding_agency_name) AS funding_toptier_agency_name_raw,
         COALESCE(transaction_fabs.awarding_sub_tier_agency_c, transaction_fpds.awarding_sub_tier_agency_c) AS awarding_sub_tier_agency_c,
-        SAA.name AS awarding_subtier_agenfunding_subtier_agency_abbreviationcy_name,
+        SAA.name AS awarding_subtier_agency_name,
         COALESCE(transaction_fabs.awarding_sub_tier_agency_n, transaction_fpds.awarding_sub_tier_agency_n) AS awarding_subtier_agency_name_raw,
         COALESCE(transaction_fabs.funding_sub_tier_agency_co, transaction_fpds.funding_sub_tier_agency_co) AS funding_sub_tier_agency_co,
         SFA.name AS funding_subtier_agency_name,
