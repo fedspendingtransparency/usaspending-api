@@ -19,6 +19,7 @@ from usaspending_api.agency.v2.views.subcomponents import SubcomponentList
 from usaspending_api.agency.v2.views.tas_object_class_list import TASObjectClassList
 
 urlpatterns = [
+    path("treasury_account/<slug:tas>/object_class", TASObjectClassList.as_view()),
     re_path(
         "(?P<toptier_code>[0-9]{3,4})/",
         include(
@@ -33,7 +34,6 @@ urlpatterns = [
                 path("federal_account/count/", FederalAccountCount.as_view()),
                 path("object_class/", ObjectClassList.as_view()),
                 path("object_class/count/", ObjectClassCount.as_view()),
-                path("treasury_account/<slug:treasury_account_symbol>/object_class", TASObjectClassList.as_view()),
                 path("obligations_by_award_category/", ObligationsByAwardCategory.as_view()),
                 path("program_activity/", ProgramActivityList.as_view()),
                 path("program_activity/count/", ProgramActivityCount.as_view()),
