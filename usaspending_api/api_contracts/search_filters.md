@@ -58,6 +58,14 @@ A US state:
 }
 ```
 
+A ZIP code:
+```
+{
+    "country": "USA",
+    "zip": "60661"
+}
+```
+
 A US county:
 ```
 {
@@ -67,12 +75,30 @@ A US county:
 }
 ```
 
+All US cities with a given name:
+```
+{
+    "country": "USA",
+    "city": "Washington"
+}
+```
+
+A US city in a specific state:
+```
+{
+    "country": "USA",
+    "city": "Washington",
+    "state": "DC"
+}
+```
+
+
 Original US congressional district:
 ```
 {
     "country": "USA",
     "state": "VA",
-    "district": "11"
+    "district_original": "11"
 }
 ```
 
@@ -91,16 +117,18 @@ Keys in a location object include:
     * If the country code is *not* `USA`, all further parameters can be ignored.
     * A special country code - `FOREIGN` - represents all non-US countries.
 * **state** - a 2 character string abbreviation for the state or territory
+* **city** - string city name
+  * If no `state` is provided, this will return results for all cities in any state with the provided name
+* **zip** - a 5 digit string indicating the postal area to search within.
 * **county** - a 3 digit FIPS code indicating the county
     * If `county` is provided, a `state` must always be provided as well.
     * If `county` is provided, a `district` value *must never* be provided.
-* **district** - a 2 character code indicating the original congressional district, before any redistricting
+* **district_original** - a 2 character code indicating the original congressional district, before any redistricting
     * If `district` is provided, a `state` must always be provided as well.
     * If `district` is provided, a `county` *must never* be provided.
 * **district_current** - a 2 character code indicating the current congressional district, after any redistricting
     * If `district_current` is provided, a `state` must always be provided as well.
     * If `district_current` is provided, a `county` *must never* be provided.
-
 
 ## Keyword Search
 
