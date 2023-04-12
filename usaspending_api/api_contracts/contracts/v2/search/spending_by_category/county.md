@@ -107,7 +107,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
     + Members
         + `domestic`
         + `foreign`
-+ `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
++ `place_of_performance_locations` (optional, array[StandardLocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`] (optional, array[string])
 + `recipient_id` (optional, string)
@@ -116,7 +116,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
     + Members
         + `domestic`
         + `foreign`
-+ `recipient_locations` (optional, array[LocationObject], fixed-type)
++ `recipient_locations` (optional, array[StandardLocationObject], fixed-type)
 + `recipient_type_names`: [`category_business`] (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
 + `award_ids`: [`SPE30018FLGFZ`, `SPE30018FLJFN`] (optional, array[string])
@@ -146,13 +146,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
         + `action_date`
         + `last_modified_date`
 
-### LocationObject (object)
-+ `country`: `USA` (required, string)
-+ `state`: `VA` (optional, string)
-+ `county` (optional, string)
-+ `city` (optional, string)
-+ `district` (optional, string)
-+ `zip` (optional, string)
+### [StandardLocationObject](../../../../search_filters.md#standard-location-object) (object)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])

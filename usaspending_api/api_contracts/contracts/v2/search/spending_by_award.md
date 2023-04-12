@@ -175,7 +175,7 @@ List of table columns
     + Members
         + `domestic`
         + `foreign`
-+ `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
++ `place_of_performance_locations` (optional, array[StandardLocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`, `Roads`] (optional, array[string])
     + Text searched across a recipient’s name, UEI, and DUNS
@@ -183,7 +183,7 @@ List of table columns
     + Members
         + `domestic`
         + `foreign`
-+ `recipient_locations` (optional, array[LocationObject], fixed-type)
++ `recipient_locations` (optional, array[StandardLocationObject], fixed-type)
 + `recipient_type_names`: [`category_business`, `sole_proprietorship`] (optional, array[string])
 + `award_type_codes` (required, FilterObjectAwardTypes)
 + `award_ids`: [`SPE30018FLGFZ`, `SPE30018FLJFN`] (optional, array[string])
@@ -217,14 +217,7 @@ List of table columns
         + `last_modified_date`
         + `date_signed`
 
-### LocationObject (object)
-+ `country`: `USA` (required, string)
-+ `state`: `VA` (optional, string)
-+ `county` (optional, string)
-+ `city` (optional, string)
-+ `district` (optional, string)
-+ `district_current` (optional, string)
-+ `zip` (optional, string)
+### [StandardLocationObject](../../../search_filters.md#standard-location-object) (object)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])
