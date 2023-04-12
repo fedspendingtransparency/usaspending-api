@@ -49,4 +49,36 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-# TODO: Test where a tas has an object class with multiple program activities.
+@pytest.mark.django_db
+def test_tas_object_class_multiple_pa_per_oc_success(client, monkeypatch, tas_mulitple_pas_per_oc, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
+    resp = client.get(url.format(tas="001-X-0000-000", query_params=""))
+    expected_result = {
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
+        "treasury_account_symbol": "001-X-0000-000",
+        "messages": [],
+        "page_metadata": {
+            "hasNext": False,
+            "hasPrevious": False,
+            "limit": 10,
+            "next": None,
+            "page": 1,
+            "previous": None,
+            "total": 1,
+        },
+        "results": [
+            {
+                "gross_outlay_amount": 11000000.0,
+                "name": "equipment",
+                "obligated_amount": 11.0,
+                "children": [
+                    {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+                    {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0}
+
+                ]
+            },
+        ],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
