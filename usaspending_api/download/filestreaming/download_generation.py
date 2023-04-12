@@ -225,17 +225,44 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
 
         elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
             # Account downloads
-            account_source = DownloadSource(
-                VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
-            )
             filters = {**json_request["filters"], **json_request.get("account_filters", {})}
-            account_source.queryset = filter_function(
-                download_type,
-                VALUE_MAPPINGS[download_type]["table"],
-                filters,
-                json_request["account_level"],
-            )
-            download_sources.append(account_source)
+
+            if "is_fpds_join" in VALUE_MAPPINGS[download_type]:
+                d1_account_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
+                )
+                d1_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": False}
+                d1_account_source.queryset = filter_function(
+                    download_type,
+                    VALUE_MAPPINGS[download_type]["table"],
+                    d1_filters,
+                    json_request["account_level"],
+                )
+                download_sources.append(d1_account_source)
+
+                d2_account_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
+                )
+                d2_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True}
+                d2_account_source.queryset = filter_function(
+                    download_type,
+                    VALUE_MAPPINGS[download_type]["table"],
+                    d2_filters,
+                    json_request["account_level"],
+                )
+                download_sources.append(d2_account_source)
+
+            else:
+                account_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
+                )
+                account_source.queryset = filter_function(
+                    download_type,
+                    VALUE_MAPPINGS[download_type]["table"],
+                    filters,
+                    json_request["account_level"],
+                )
+                download_sources.append(account_source)
 
         elif VALUE_MAPPINGS[download_type]["source_type"] == "disaster":
             # Disaster Page downloads

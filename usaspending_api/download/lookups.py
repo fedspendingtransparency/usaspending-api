@@ -139,6 +139,7 @@ VALUE_MAPPINGS = {
         "table_name": "award_financial",
         "download_name": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
         "zipfile_template": "{data_quarters}_{agency}_{level}_AccountBreakdownByAward_{timestamp}",
+        "is_fpds_join": "award__latest_transaction_search__",
         "filter_function": account_download_filter,
     },
     "idv_orders": {
