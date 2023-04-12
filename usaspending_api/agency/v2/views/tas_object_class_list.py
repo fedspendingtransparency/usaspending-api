@@ -134,7 +134,7 @@ class TASObjectClassList(AgencyBase, PaginationMixin):
         for child in children:
             response.append(
                 {
-                    "name": child.get("key"),
+                    "name": child.get("name"),
                     "obligated_amount": child.get("obligated_amount"),
                     "gross_outlay_amount": child.get("gross_outlay_amount"),
                 }
