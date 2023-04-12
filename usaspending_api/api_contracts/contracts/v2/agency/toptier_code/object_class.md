@@ -110,8 +110,3 @@ Returns a list of Object Classes in the Agency's appropriations for a single fis
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
-
-
-
-[/api/v2/agency/treasury_account/{tas}/object_class/{?fiscal_year,filter,order,sort,page,limit}]
-[/api/v2/agency/treasury_account/{tas}/program_activity/{?fiscal_year,filter,order,sort,page,limit}]
