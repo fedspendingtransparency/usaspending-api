@@ -36,7 +36,9 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         pagination_limit_results = results[: self.pagination.limit]
-        pagination_limit_results = sorted(pagination_limit_results, key=lambda x: x[self.pagination.sort_key], reverse=order)
+        pagination_limit_results = sorted(
+            pagination_limit_results, key=lambda x: x[self.pagination.sort_key], reverse=order
+        )
         response_dict = {
             "treasury_account_symbol": self.tas_rendering_label,
             "fiscal_year": self.fiscal_year,
@@ -47,9 +49,7 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
         # There isn't a direct relationship between ObjectClass and RefProgramActivity
         # That's why we opted to query for RefProgramActivity for each ObjectClass
         for idx, object_class_row in enumerate(pagination_limit_results):
-            program_activity_results = self.get_program_activity_by_object_class_list(
-                object_class_row["id"]
-            )
+            program_activity_results = self.get_program_activity_by_object_class_list(object_class_row["id"])
             child_response_dict = self.format_program_activity_children_response(program_activity_results)
             # "id" column should not be in the response
             # Instead of adding another for loop to remove this column from the object class list results

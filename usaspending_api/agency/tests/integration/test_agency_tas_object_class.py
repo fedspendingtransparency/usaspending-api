@@ -7,6 +7,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_ye
 
 url = "/api/v2/agency/treasury_account/{tas}/object_class/{query_params}"
 
+
 @pytest.mark.django_db
 def test_tas_object_class_success(client, monkeypatch, agency_account_data, helpers):
     helpers.mock_current_fiscal_year(monkeypatch)
@@ -30,19 +31,19 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
                 "gross_outlay_amount": 100000.0,
                 "name": "supplies",
                 "obligated_amount": 100.0,
-                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0}]
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0}],
             },
             {
                 "gross_outlay_amount": 1000000.0,
                 "name": "hvac",
                 "obligated_amount": 10.0,
-                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0}]
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0}],
             },
             {
                 "gross_outlay_amount": 10000000.0,
                 "name": "equipment",
                 "obligated_amount": 1.0,
-                "children": [{"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0}]
+                "children": [{"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0}],
             },
         ],
     }
@@ -70,6 +71,7 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
         "results": [],
     }
 
+
 @pytest.mark.django_db
 def test_tas_object_class_multiple_pa_per_oc(client, monkeypatch, tas_mulitple_pas_per_oc, helpers):
     helpers.mock_current_fiscal_year(monkeypatch)
@@ -95,9 +97,8 @@ def test_tas_object_class_multiple_pa_per_oc(client, monkeypatch, tas_mulitple_p
                 "obligated_amount": 11.0,
                 "children": [
                     {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-                    {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0}
-
-                ]
+                    {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+                ],
             },
         ],
     }
@@ -130,9 +131,9 @@ def test_tas_object_class_multiple_submission_years(client, agency_account_data)
                 "gross_outlay_amount": 10000.0,
                 "name": "interest",
                 "obligated_amount": 1000.0,
-                "children": [{"gross_outlay_amount": 10000.0, "name": "NAME 4", "obligated_amount": 1000.0}]
+                "children": [{"gross_outlay_amount": 10000.0, "name": "NAME 4", "obligated_amount": 1000.0}],
             }
-        ]
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
