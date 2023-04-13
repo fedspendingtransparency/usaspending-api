@@ -11,7 +11,6 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.mark.django_db
 def test_spending_by_award_subaward_success(client, spending_by_award_test_data):
-
     # Testing all filters
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -99,7 +98,6 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
 
 @pytest.mark.django_db
 def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
-
     baker.make("search.AwardSearch", award_id=1, type="A", latest_transaction_id=1, action_date="2020-10-10")
     baker.make("search.TransactionSearch", transaction_id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
 
@@ -1020,7 +1018,7 @@ def _test_correct_response_for_psc_code_object(client):
 
 
 def _test_correct_response_for_psc_code_list_subawards(client):
-    """ As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both. """
+    """As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both."""
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -1054,7 +1052,7 @@ def _test_correct_response_for_psc_code_list_subawards(client):
 
 
 def _test_correct_response_for_psc_code_object_subawards(client):
-    """ As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both. """
+    """As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both."""
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -1327,6 +1325,12 @@ def _test_correct_response_for_def_codes_subaward(client):
     )
     expected_result = [
         {
+            "internal_id": "33333",
+            "prime_award_internal_id": 2,
+            "Sub-Award ID": "33333",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_2",
+        },
+        {
             "internal_id": "22222",
             "prime_award_internal_id": 1,
             "Sub-Award ID": "22222",
@@ -1340,7 +1344,7 @@ def _test_correct_response_for_def_codes_subaward(client):
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 2
+    assert len(resp.json().get("results")) == 3
     assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
 
     resp = client.post(
