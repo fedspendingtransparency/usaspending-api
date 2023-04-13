@@ -11,18 +11,17 @@ from usaspending_api.references.models import ObjectClass
 from usaspending_api.references.models import RefProgramActivity
 
 
-class TASObjectClassList(AgencyBase, PaginationMixin):
+class TASObjectClassList(PaginationMixin, AgencyBase):
     """
     Obtain the list of object classes for a specific agency's treasury
     account (TAS).
     """
 
-    # TODO: DEV-9625
-    # endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/treasury_account/tas/object_class.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/treasury_account/tas/object_class.md"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self._treasury_account_symbol =
+        self.params_to_validate = ["fiscal_year", "filter"]
 
     @property
     def tas_rendering_label(self):
