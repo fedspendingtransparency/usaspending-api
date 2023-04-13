@@ -101,7 +101,6 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
 
     def get_program_activity_by_object_class_list(self, object_class_id) -> List[dict]:
         submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
-        # TODO: DEV-9625 Re-use filters
         filters = [
             Q(financialaccountsbyprogramactivityobjectclass__submission_id__in=submission_ids),
             Q(financialaccountsbyprogramactivityobjectclass__object_class__id=object_class_id),
