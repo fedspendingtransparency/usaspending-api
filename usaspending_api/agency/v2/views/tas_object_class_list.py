@@ -36,9 +36,6 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         pagination_limit_results = results[: self.pagination.limit]
-        pagination_limit_results = sorted(
-            pagination_limit_results, key=lambda x: x[self.pagination.sort_key], reverse=order
-        )
         response_dict = {
             "treasury_account_symbol": self.tas_rendering_label,
             "fiscal_year": self.fiscal_year,
