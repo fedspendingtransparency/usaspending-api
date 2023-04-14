@@ -235,7 +235,7 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
                     agency_id,
                     extra_file_type="Contracts_",
                 )
-                d1_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": False}
+                d1_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True}
                 d1_account_source.queryset = filter_function(
                     download_type,
                     VALUE_MAPPINGS[download_type]["table"],
@@ -251,7 +251,7 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
                     agency_id,
                     extra_file_type="Assistance_",
                 )
-                d2_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True}
+                d2_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": False}
                 d2_account_source.queryset = filter_function(
                     download_type,
                     VALUE_MAPPINGS[download_type]["table"],
