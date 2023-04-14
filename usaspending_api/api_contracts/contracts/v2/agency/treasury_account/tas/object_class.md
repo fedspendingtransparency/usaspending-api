@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Treasury Account's Object Classes [/api/v2/agency/treasury_account/{tas}/object_class/{?fiscal_year,filter,order,sort,page,limit}]
 
-Returns a list of Object Classes for the specified Treasury Account (tas).
+Returns a list of Object Classes for the specified Treasury Account Symbol (tas).
 
 ## GET
 
@@ -40,7 +40,6 @@ Returns a list of Object Classes for the specified Treasury Account (tas).
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `totals` (required, Totals, fixed-type)
         + `results` (required, array[ObjectClass], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -83,7 +82,7 @@ Returns a list of Object Classes for the specified Treasury Account (tas).
 
 # Data Structures
 
-## MajorObjectClass (object)
+## ObjectClass (object)
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
