@@ -117,8 +117,6 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
                 )
             ),
         ]
-        if self.filter:
-            filters.append(Q(program_activity_name__icontains=self.filter))
         queryset_results = (
             RefProgramActivity.objects.filter(*filters)
             .annotate(
