@@ -669,4 +669,11 @@ def tas_with_no_object_class():
     baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
 
 
-__all__ = ["tas_with_no_object_class", "tas_submissions_across_multiple_years", "agency_account_data", "tas_mulitple_pas_per_oc", "helpers", "bureau_data"]
+__all__ = [
+    "tas_with_no_object_class",
+    "tas_submissions_across_multiple_years",
+    "agency_account_data",
+    "tas_mulitple_pas_per_oc",
+    "helpers",
+    "bureau_data"
+]
