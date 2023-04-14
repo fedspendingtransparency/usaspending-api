@@ -237,6 +237,7 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
                     VALUE_MAPPINGS[download_type]["table"],
                     d1_filters,
                     json_request["account_level"],
+                    extra_file_type="d1",
                 )
                 download_sources.append(d1_account_source)
 
@@ -249,6 +250,7 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
                     VALUE_MAPPINGS[download_type]["table"],
                     d2_filters,
                     json_request["account_level"],
+                    extra_file_type="d2",
                 )
                 download_sources.append(d2_account_source)
 
@@ -331,6 +333,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
             "level": d_map[source.file_type],
             "timestamp": timestamp,
             "type": d_map[source.file_type],
+            "extra_file_type": d_map[source.extra_file_type],
         }
 
     return file_name_pattern.format(**file_name_values)
