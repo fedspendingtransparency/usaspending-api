@@ -457,6 +457,7 @@ def agency_account_data():
         gross_outlay_amount_by_program_object_class_cpe=7100,
     )
 
+
 @pytest.fixture
 def tas_mulitple_pas_per_oc():
     """Sets up test data such that for a specific treasury account there are multiple
@@ -578,7 +579,6 @@ def tas_submissions_across_multiple_years():
         tas_rendering_label="001-X-0000-000",
     )
 
-
     baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
     baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub2)
 
@@ -675,5 +675,5 @@ __all__ = [
     "agency_account_data",
     "tas_mulitple_pas_per_oc",
     "helpers",
-    "bureau_data"
+    "bureau_data",
 ]
