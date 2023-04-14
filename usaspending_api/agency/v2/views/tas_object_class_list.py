@@ -22,10 +22,18 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.params_to_validate = ["fiscal_year", "filter"]
+        self._submission_ids = None
 
     @property
     def tas_rendering_label(self):
         return self.kwargs["tas"]
+
+    @property
+    def submission_ids(self):
+        if self._submission_ids is not None:
+            return self._submission_ids
+        self._submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
+        return self._submission_ids
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -58,9 +66,8 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
         return Response(response_dict)
 
     def get_object_class_list(self) -> List[dict]:
-        submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         filters = [
-            Q(financialaccountsbyprogramactivityobjectclass__submission_id__in=submission_ids),
+            Q(financialaccountsbyprogramactivityobjectclass__submission_id__in=self.submission_ids),
             Q(
                 financialaccountsbyprogramactivityobjectclass__treasury_account__tas_rendering_label=self.tas_rendering_label
             ),
@@ -97,9 +104,8 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
         return queryset_results
 
     def get_program_activity_by_object_class_list(self, object_class_id) -> List[dict]:
-        submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         filters = [
-            Q(financialaccountsbyprogramactivityobjectclass__submission_id__in=submission_ids),
+            Q(financialaccountsbyprogramactivityobjectclass__submission_id__in=self.submission_ids),
             Q(financialaccountsbyprogramactivityobjectclass__object_class__id=object_class_id),
             Q(
                 financialaccountsbyprogramactivityobjectclass__treasury_account__tas_rendering_label=self.tas_rendering_label
