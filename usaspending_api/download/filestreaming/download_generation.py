@@ -229,7 +229,11 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
 
             if "is_fpds_join" in VALUE_MAPPINGS[download_type]:
                 d1_account_source = DownloadSource(
-                    VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
+                    VALUE_MAPPINGS[download_type]["table_name"],
+                    json_request["account_level"],
+                    download_type,
+                    agency_id,
+                    extra_file_type="Contracts_",
                 )
                 d1_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": False}
                 d1_account_source.queryset = filter_function(
@@ -237,12 +241,15 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
                     VALUE_MAPPINGS[download_type]["table"],
                     d1_filters,
                     json_request["account_level"],
-                    extra_file_type="d1",
                 )
                 download_sources.append(d1_account_source)
 
                 d2_account_source = DownloadSource(
-                    VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
+                    VALUE_MAPPINGS[download_type]["table_name"],
+                    json_request["account_level"],
+                    download_type,
+                    agency_id,
+                    extra_file_type="Assistance_",
                 )
                 d2_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True}
                 d2_account_source.queryset = filter_function(
@@ -250,7 +257,6 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
                     VALUE_MAPPINGS[download_type]["table"],
                     d2_filters,
                     json_request["account_level"],
-                    extra_file_type="d2",
                 )
                 download_sources.append(d2_account_source)
 
@@ -333,7 +339,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
             "level": d_map[source.file_type],
             "timestamp": timestamp,
             "type": d_map[source.file_type],
-            "extra_file_type": d_map[source.extra_file_type],
+            "extra_file_type": source.extra_file_type,
         }
 
     return file_name_pattern.format(**file_name_values)
