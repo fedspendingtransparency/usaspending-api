@@ -50,13 +50,13 @@ Returns a list of Object Classes for the specified Treasury Account Symbol (tas)
                 "treasury_account_symbol": "001-X-0000-000",
                 "fiscal_year": 2020,
                 "page_metadata": {
-                    "limit": 2,
+                    "hasNext": False,
+                    "hasPrevious": False,
+                    "limit": 10,
+                    "next": None,
                     "page": 1,
-                    "next": 2,
-                    "previous": null,
-                    "hasNext": true,
-                    "hasPrevious": false,
-                    "count": 10
+                    "previous": None,
+                    "total": 1,
                 },
                 "results": [
                     {
