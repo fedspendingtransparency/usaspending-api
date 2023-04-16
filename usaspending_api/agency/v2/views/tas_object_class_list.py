@@ -58,7 +58,6 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
             # Instead of adding another loop to remove this column from the object class list results,
             # just delete it during this already existing loop over the list
             del response_dict["results"][idx]["id"]
-            child_response_dict = sorted(child_response_dict, key=lambda x: x[self.pagination.sort_key], reverse=order)
             response_dict["results"][idx]["children"] = child_response_dict
 
         return Response(response_dict)
