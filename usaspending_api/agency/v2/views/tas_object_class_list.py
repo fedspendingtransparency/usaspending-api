@@ -13,7 +13,7 @@ from usaspending_api.references.models import RefProgramActivity
 class TASObjectClassList(PaginationMixin, AgencyBase):
     """
     Obtain the list of object classes for a specific agency's treasury
-    account (TAS).
+    account using a treasury account symbol (TAS).
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/treasury_account/tas/object_class.md"
@@ -55,8 +55,8 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
             program_activity_results = self.get_program_activity_by_object_class_list(object_class_row["id"])
             child_response_dict = self.format_program_activity_children_response(program_activity_results)
             # "id" column should not be in the response
-            # Instead of adding another for loop to remove this column from the object class list results
-            # Just delete it during an already existing loop over the list
+            # Instead of adding another loop to remove this column from the object class list results,
+            # just delete it during this already existing loop over the list
             del response_dict["results"][idx]["id"]
             child_response_dict = sorted(child_response_dict, key=lambda x: x[self.pagination.sort_key], reverse=order)
             response_dict["results"][idx]["children"] = child_response_dict
