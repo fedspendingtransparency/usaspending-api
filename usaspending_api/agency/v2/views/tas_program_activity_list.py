@@ -13,7 +13,7 @@ from usaspending_api.references.models import RefProgramActivity
 class TASProgramActivityList(PaginationMixin, AgencyBase):
     """
     Obtain the list of program activities for a specific agency's treasury
-    account using a treasury account symbol  (TAS).
+    account using a treasury account symbol (TAS).
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/treasury_account/tas/program_activity.md"
