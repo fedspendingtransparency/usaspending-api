@@ -29,14 +29,12 @@ def create_unique_filename(json_request, origination=None):
         agency = obtain_filename_prefix_from_agency_id(request_agency)
         level = "FA" if json_request["account_level"] == "federal_account" else "TAS"
         data_quarters = construct_data_date_range(json_request["filters"])
-        extra_file_type = ""
 
         download_name = file_name_template.format(
             agency=agency,
             data_quarters=data_quarters,
             level=level,
             timestamp=timestamp,
-            extra_file_type=extra_file_type,
         )
     else:  # "award" downloads
         agency = ""
