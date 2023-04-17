@@ -38,7 +38,6 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         self.sortable_columns = ["name", "obligated_amount", "gross_outlay_amount"]
         self.default_sort_column = "obligated_amount"
-        order = self.pagination.sort_order == "desc"
         results = list(self.get_program_activity_list())
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
