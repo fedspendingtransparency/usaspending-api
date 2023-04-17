@@ -16,8 +16,10 @@ from usaspending_api.agency.v2.views.program_activity_list import ProgramActivit
 from usaspending_api.agency.v2.views.sub_agency import SubAgencyList
 from usaspending_api.agency.v2.views.sub_agency_count import SubAgencyCount
 from usaspending_api.agency.v2.views.subcomponents import SubcomponentList
+from usaspending_api.agency.v2.views.tas_object_class_list import TASObjectClassList
 
 urlpatterns = [
+    path("treasury_account/<slug:tas>/object_class/", TASObjectClassList.as_view()),
     re_path(
         "(?P<toptier_code>[0-9]{3,4})/",
         include(
