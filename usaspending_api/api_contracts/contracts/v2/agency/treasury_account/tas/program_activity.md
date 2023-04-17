@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Treasury Account's Object Classes [/api/v2/agency/treasury_account/{tas}/object_class/{?fiscal_year,filter,order,sort,page,limit}]
+# Treasury Account's Program Activities [/api/v2/agency/treasury_account/{tas}/program_activity/{?fiscal_year,filter,order,sort,page,limit}]
 
-Returns a list of Object Classes for the specified Treasury Account Symbol (tas).
+Returns a list of Program Activities for the specified Treasury Account Symbol (tas).
 
 ## GET
 
@@ -40,7 +40,7 @@ Returns a list of Object Classes for the specified Treasury Account Symbol (tas)
         + `fiscal_year` (required, number)
         + `page_metadata` (required, PageMetadata, fixed-type)
             Information used for pagination of results.
-        + `results` (required, array[ObjectClass], fixed-type)
+        + `results` (required, array[ProgramActivity], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
@@ -56,23 +56,30 @@ Returns a list of Object Classes for the specified Treasury Account Symbol (tas)
                     "next": None,
                     "page": 1,
                     "previous": None,
-                    "total": 1,
+                    "total": 2,
                 },
                 "results": [
                     {
-                        "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
-                        "obligated_amount": 350.0,
-                        "gross_outlay_amount": 200.36
+                        "name": "EMPLOYEE RETENTION CREDIT",
+                        "obligated_amount": 150.0,
+                        "gross_outlay_amount": 100.26
                         "children": [
                             {
-                                "name": "EMPLOYEE RETENTION CREDIT",
-                                "obligated_amount": 150.0,
-                                "gross_outlay_amount": 100.26
-                            },
+                                "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
+                                "obligated_amount": 350.0,
+                                "gross_outlay_amount": 200.36
+                            }
+                        ]
+                    },
+                    {
+                        "name": "BASIC HEALTH PROGRAM",
+                        "obligated_amount": 200.0,
+                        "gross_outlay_amount": 100.10
+                        "children": [
                             {
-                                "name": "BASIC HEALTH PROGRAM",
-                                "obligated_amount": 200.0,
-                                "gross_outlay_amount": 100.10
+                                "name": "Tenant-Based Rental Assistance, Public and Indian Housing, Housing and Urban Development",
+                                "obligated_amount": 350.0,
+                                "gross_outlay_amount": 200.36
                             }
                         ]
                     }
@@ -82,13 +89,13 @@ Returns a list of Object Classes for the specified Treasury Account Symbol (tas)
 
 # Data Structures
 
-## ObjectClass (object)
+## ProgramActivity (object)
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
-+ `children` (required, array[ProgramActivity], fixed-type)
++ `children` (required, array[ObjectClass], fixed-type)
 
-## ProgramActivity (object)
+## ObjectClass (object)
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)

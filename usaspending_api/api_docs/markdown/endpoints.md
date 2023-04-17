@@ -46,6 +46,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/sub_components/<BUREAU_SLUG\>/](/api/v2/agency/012/sub_components/farm-service-agency/)|GET| Returns a list of federal_accounts by bureau for the agency in a single fiscal year |
 |[/api/v2/agency/<TOPTIER_AGENCY_CODE\>/sub_components/](/api/v2/agency/012/sub_components/)|GET| Returns a list of bureaus for the agency in a single fiscal year |
 |[/api/v2/agency/treasury_account/<TREASURY_ACCOUNT_SYMBOL\>/object_class/](/api/v2/agency/treasury_account/001-X-0000-000/object_class/)|GET| Returns a list of Object Classes for the specified Treasury Account Symbol (tas). |
+|[/api/v2/agency/treasury_account/<TREASURY_ACCOUNT_SYMBOL\>/program_activity/](/api/v2/agency/treasury_account/001-X-0000-000/program_activity/)|GET| Returns a list of Program Activities for the specified Treasury Account Symbol (tas). |
 |[/api/v2/autocomplete/accounts/a/](/api/v2/autocomplete/accounts/a/)|POST| Returns Treasury Account Symbol Availability Type Code (A) filtered by other components provided in the request filter |
 |[/api/v2/autocomplete/accounts/aid/](/api/v2/autocomplete/accounts/aid/)|POST| Returns Treasury Account Symbol/Federal Account Agency Identifier (AID) filtered by other components provided in the request filter |
 |[/api/v2/autocomplete/accounts/ata/](/api/v2/autocomplete/accounts/ata/)|POST| Returns Treasury Account Symbol Allocation Transfer Agency Identifier (ATA) filtered by other components provided in the request filter |
