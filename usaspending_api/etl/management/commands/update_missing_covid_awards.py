@@ -18,8 +18,7 @@ WITH recent_covid_awards AS (
         defc.code = faba.disaster_emergency_fund_code
         AND defc.group_name = 'covid_19'
     INNER JOIN submission_attributes sa ON
-        sa.reporting_period_start >= '2020-04-01'
-        AND faba.submission_id = sa.submission_id
+        faba.submission_id = sa.submission_id
     INNER JOIN dabs_submission_window_schedule dabs ON
         dabs.id = sa.submission_window_id
         AND dabs.submission_reveal_date <= now()
@@ -83,8 +82,7 @@ WITH covid_awards AS (
         defc.code = faba.disaster_emergency_fund_code
         AND defc.group_name = 'covid_19'
     INNER JOIN submission_attributes sa ON
-        sa.reporting_period_start >= '2020-04-01'
-        AND faba.submission_id = sa.submission_id
+        faba.submission_id = sa.submission_id
     INNER JOIN dabs_submission_window_schedule dabs ON
         dabs.id = sa.submission_window_id
         AND dabs.submission_reveal_date <= now()
@@ -180,7 +178,6 @@ class Command(BaseCommand):
         self.execute_sql(formatted_update_sql, dry_run)
 
     def execute_sql(self, update_sql, dry_run):
-
         # Open connection to database
         with connection.cursor() as cursor:
             cursor.execute(update_sql)

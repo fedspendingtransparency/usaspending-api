@@ -33,8 +33,7 @@ FROM (
         defc.code = faba.disaster_emergency_fund_code
         AND defc.group_name = 'covid_19'
     INNER JOIN submission_attributes sa ON
-        sa.reporting_period_start >= '2020-04-01'
-        AND faba.submission_id = sa.submission_id
+        faba.submission_id = sa.submission_id
     INNER JOIN dabs_submission_window_schedule dabs ON
         dabs.id = sa.submission_window_id
         AND dabs.submission_reveal_date <= now()
@@ -49,7 +48,6 @@ WHERE covid_awards.is_final_balances_for_fy = FALSE
 
 
 class Command(BaseCommand):
-
     FETCH_COUNT = 50000
 
     help = (
@@ -59,13 +57,11 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-
         # Initialize client to connect to Elasticsearch
         es_client = instantiate_elasticsearch_client()
 
         # Open connection to database
         with connection.cursor() as cursor:
-
             # Queries for Covid Awards not present in latest File C Submission
             cursor.execute(MISSING_COVID_AWARD_SQL)
 
