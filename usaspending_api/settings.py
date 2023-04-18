@@ -18,7 +18,7 @@ REPO_DIR = APP_DIR.parent
 MAX_DOWNLOAD_LIMIT = 500000
 
 # Timeout limit for streaming downloads
-DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
+DOWNLOAD_TIMEOUT_MIN_LIMIT = 4
 
 # Default timeout for SQL statements in Django
 DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
