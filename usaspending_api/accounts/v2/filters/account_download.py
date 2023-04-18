@@ -133,6 +133,10 @@ def build_query_filters(account_type, filters, account_level):
             # joining to disaster_emergency_fund_code table for observed performance benefits
             query_filters["disaster_emergency_fund__code__in"] = filters["def_codes"]
 
+    for filter in filters.keys():
+        if "is_fpds" in filter:
+            query_filters = {filter: filters[filter], **query_filters}
+
     return query_filters, tas_id
 
 
