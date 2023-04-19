@@ -587,22 +587,52 @@ def subaward_annotations(filters: dict):
             .values("total"),
             output_field=TextField(),
         ),
-        "prime_award_disaster_emergency_fund_codes": _disaster_emergency_fund_codes(def_codes=def_codes),
-        "prime_award_outlayed_amount_from_COVID-19_supplementals": _outlay_amount_agg_subquery(
-            emergency_fund_group_name="covid_19",
-            def_codes=def_codes,
+        "prime_award_disaster_emergency_fund_codes": Case(
+            When(
+                sub_action_date__gte=datetime.date(2020, 4, 1),
+                then=_disaster_emergency_fund_codes(def_codes=def_codes),
+            ),
+            output_field=TextField(),
         ),
-        "prime_award_obligated_amount_from_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
-            emergency_fund_group_name="covid_19",
-            def_codes=def_codes,
+        "prime_award_outlayed_amount_from_COVID-19_supplementals": Case(
+            When(
+                sub_action_date__gte=COVID_19_PERIOD_START,
+                then=_outlay_amount_agg_subquery(
+                    emergency_fund_group_name="covid_19",
+                    def_codes=def_codes,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "prime_award_outlayed_amount_from_IIJA_supplemental": _outlay_amount_agg_subquery(
-            emergency_fund_group_name="infrastructure",
-            def_codes=def_codes,
+        "prime_award_obligated_amount_from_COVID-19_supplementals": Case(
+            When(
+                sub_action_date__gte=COVID_19_PERIOD_START,
+                then=_obligation_txn_amount_agg_subquery(
+                    emergency_fund_group_name="covid_19",
+                    def_codes=def_codes,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
-        "prime_award_obligated_amount_from_IIJA_supplemental": _obligation_txn_amount_agg_subquery(
-            emergency_fund_group_name="infrastructure",
-            def_codes=def_codes,
+        "prime_award_outlayed_amount_from_IIJA_supplemental": Case(
+            When(
+                sub_action_date__gte=IIJA_PERIOD_START,
+                then=_outlay_amount_agg_subquery(
+                    emergency_fund_group_name="infrastructure",
+                    def_codes=def_codes,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
+        ),
+        "prime_award_obligated_amount_from_IIJA_supplemental": Case(
+            When(
+                sub_action_date__gte=IIJA_PERIOD_START,
+                then=_obligation_txn_amount_agg_subquery(
+                    emergency_fund_group_name="infrastructure",
+                    def_codes=def_codes,
+                ),
+            ),
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("latest_transaction__action_date"),
         "prime_award_cfda_numbers_and_titles": CFDAs("award__cfdas"),
