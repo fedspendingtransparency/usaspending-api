@@ -11,6 +11,7 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.mark.django_db
 def test_spending_by_award_subaward_success(client, spending_by_award_test_data):
+
     # Testing all filters
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -98,6 +99,7 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
 
 @pytest.mark.django_db
 def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
+
     baker.make("search.AwardSearch", award_id=1, type="A", latest_transaction_id=1, action_date="2020-10-10")
     baker.make("search.TransactionSearch", transaction_id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
 
@@ -1018,7 +1020,7 @@ def _test_correct_response_for_psc_code_object(client):
 
 
 def _test_correct_response_for_psc_code_list_subawards(client):
-    """As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both."""
+    """ As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both. """
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
@@ -1052,7 +1054,7 @@ def _test_correct_response_for_psc_code_list_subawards(client):
 
 
 def _test_correct_response_for_psc_code_object_subawards(client):
-    """As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both."""
+    """ As of this writing, subawards query postgres whereas prime awards query elasticsearch.  Let's test both. """
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
