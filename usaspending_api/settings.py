@@ -23,6 +23,7 @@ DOWNLOAD_TIMEOUT_MIN_LIMIT = 10
 # Default timeout for SQL statements in Django
 DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
 # Temporarily increase this limit to 6 hours
+# TODO - Change this back to 4 hours
 DOWNLOAD_DB_TIMEOUT_IN_HOURS = 6
 CONNECTION_MAX_SECONDS = 10
 
