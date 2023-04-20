@@ -11,7 +11,6 @@ defc_sql = """
         ON defc.code = faba.disaster_emergency_fund_code
     INNER JOIN submission_attributes sa
         ON faba.submission_id = sa.submission_id
-        AND sa.reporting_period_start >= '2020-04-01'
     WHERE {award_id_sql}
     GROUP BY disaster_emergency_fund_code
     ORDER BY obligated_amount desc

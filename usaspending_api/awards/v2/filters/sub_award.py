@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def subaward_download(filters):
-    """ Used by the Custom download"""
+    """Used by the Custom download"""
     return subaward_filter(filters, for_downloads=True)
 
 
@@ -58,7 +58,6 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
         state_qs = Q()
 
         for state_zip_key, location_values in state_zip.items():
-
             if state_zip_key == "city":
                 state_inner_qs = Q(**{f"{scope}_{location_mappings['city_name']}__in": location_values})
             elif state_zip_key == "zip":
@@ -95,7 +94,6 @@ def subaward_filter(filters, for_downloads=False):
     pop_scope_q = Q(sub_place_of_perform_country_co="USA") | Q(sub_place_of_perform_country_name="UNITED STATES")
 
     for key, value in filters.items():
-
         if value is None:
             raise InvalidParameterException("Invalid filter: " + key + " has null as its value.")
 

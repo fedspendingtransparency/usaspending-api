@@ -83,14 +83,12 @@ def _disaster_emergency_fund_codes(
 
 def _obligation_txn_amount_agg_subquery(
     emergency_fund_group_name: str,
-    reporting_period_start_date: datetime.date,
     def_codes: Optional[List[str]] = None,
     award_id_col: Optional[str] = "award_id",
 ) -> Subquery:
     filters = [
         filter_limit_to_closed_periods(),
         Q(award_id=OuterRef(award_id_col)),
-        Q(submission__reporting_period_start__gte=str(reporting_period_start_date)),
         Q(disaster_emergency_fund__group_name=emergency_fund_group_name),
     ]
     if def_codes:
@@ -107,14 +105,12 @@ def _obligation_txn_amount_agg_subquery(
 
 def _outlay_amount_agg_subquery(
     emergency_fund_group_name: str,
-    reporting_period_start_date: datetime.date,
     def_codes: Optional[List[str]] = None,
     award_id_col: Optional[str] = "award_id",
 ) -> Subquery:
     filters = [
         filter_by_latest_closed_periods(),
         Q(award_id=OuterRef(award_id_col)),
-        Q(submission__reporting_period_start__gte=str(reporting_period_start_date)),
         Q(disaster_emergency_fund__group_name=emergency_fund_group_name),
     ]
     if def_codes:
@@ -180,7 +176,6 @@ def transaction_search_annotations(filters: dict):
                 action_date__gte=COVID_19_PERIOD_START,
                 then=_outlay_amount_agg_subquery(
                     emergency_fund_group_name="covid_19",
-                    reporting_period_start_date=COVID_19_PERIOD_START,
                     def_codes=def_codes,
                 ),
             ),
@@ -191,7 +186,6 @@ def transaction_search_annotations(filters: dict):
                 action_date__gte=COVID_19_PERIOD_START,
                 then=_obligation_txn_amount_agg_subquery(
                     emergency_fund_group_name="covid_19",
-                    reporting_period_start_date=COVID_19_PERIOD_START,
                     def_codes=def_codes,
                 ),
             ),
@@ -202,7 +196,6 @@ def transaction_search_annotations(filters: dict):
                 action_date__gte=IIJA_PERIOD_START,
                 then=_outlay_amount_agg_subquery(
                     emergency_fund_group_name="infrastructure",
-                    reporting_period_start_date=IIJA_PERIOD_START,
                     def_codes=def_codes,
                 ),
             ),
@@ -213,7 +206,6 @@ def transaction_search_annotations(filters: dict):
                 action_date__gte=IIJA_PERIOD_START,
                 then=_obligation_txn_amount_agg_subquery(
                     emergency_fund_group_name="infrastructure",
-                    reporting_period_start_date=IIJA_PERIOD_START,
                     def_codes=def_codes,
                 ),
             ),
@@ -286,25 +278,21 @@ def award_annotations(filters: dict):
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(def_codes=def_codes, award_id_col="award_id"),
         "outlayed_amount_from_COVID-19_supplementals": _outlay_amount_agg_subquery(
             emergency_fund_group_name="covid_19",
-            reporting_period_start_date=COVID_19_PERIOD_START,
             def_codes=def_codes,
             award_id_col="award_id",
         ),
         "obligated_amount_from_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
             emergency_fund_group_name="covid_19",
-            reporting_period_start_date=COVID_19_PERIOD_START,
             def_codes=def_codes,
             award_id_col="award_id",
         ),
         "outlayed_amount_from_IIJA_supplemental": _outlay_amount_agg_subquery(
             emergency_fund_group_name="infrastructure",
-            reporting_period_start_date=IIJA_PERIOD_START,
             def_codes=def_codes,
             award_id_col="award_id",
         ),
         "obligated_amount_from_IIJA_supplemental": _obligation_txn_amount_agg_subquery(
             emergency_fund_group_name="infrastructure",
-            reporting_period_start_date=IIJA_PERIOD_START,
             def_codes=def_codes,
             award_id_col="award_id",
         ),
@@ -378,22 +366,18 @@ def idv_order_annotations(filters: dict):
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(award_id_col="award_id"),
         "outlayed_amount_from_COVID-19_supplementals": _outlay_amount_agg_subquery(
             emergency_fund_group_name="covid_19",
-            reporting_period_start_date=COVID_19_PERIOD_START,
             award_id_col="award_id",
         ),
         "obligated_amount_from_COVID-19_supplementals": _obligation_txn_amount_agg_subquery(
             emergency_fund_group_name="covid_19",
-            reporting_period_start_date=COVID_19_PERIOD_START,
             award_id_col="award_id",
         ),
         "outlayed_amount_from_IIJA_supplemental": _outlay_amount_agg_subquery(
             emergency_fund_group_name="infrastructure",
-            reporting_period_start_date=IIJA_PERIOD_START,
             award_id_col="award_id",
         ),
         "obligated_amount_from_IIJA_supplemental": _obligation_txn_amount_agg_subquery(
             emergency_fund_group_name="infrastructure",
-            reporting_period_start_date=IIJA_PERIOD_START,
             award_id_col="award_id",
         ),
         "award_latest_action_date_fiscal_year": FiscalYear(
@@ -469,19 +453,14 @@ def idv_transaction_annotations(filters: dict):
         "outlayed_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte=COVID_19_PERIOD_START,
-                then=_outlay_amount_agg_subquery(
-                    emergency_fund_group_name="covid_19", reporting_period_start_date=COVID_19_PERIOD_START
-                ),
+                then=_outlay_amount_agg_subquery(emergency_fund_group_name="covid_19"),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "obligated_amount_from_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte=COVID_19_PERIOD_START,
-                then=_obligation_txn_amount_agg_subquery(
-                    emergency_fund_group_name="covid_19",
-                    reporting_period_start_date=COVID_19_PERIOD_START,
-                ),
+                then=_obligation_txn_amount_agg_subquery(emergency_fund_group_name="covid_19"),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
@@ -490,7 +469,6 @@ def idv_transaction_annotations(filters: dict):
                 action_date__gte=IIJA_PERIOD_START,
                 then=_outlay_amount_agg_subquery(
                     emergency_fund_group_name="infrastructure",
-                    reporting_period_start_date=IIJA_PERIOD_START,
                 ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
@@ -500,7 +478,6 @@ def idv_transaction_annotations(filters: dict):
                 action_date__gte=IIJA_PERIOD_START,
                 then=_obligation_txn_amount_agg_subquery(
                     emergency_fund_group_name="infrastructure",
-                    reporting_period_start_date=IIJA_PERIOD_START,
                 ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
@@ -610,19 +587,12 @@ def subaward_annotations(filters: dict):
             .values("total"),
             output_field=TextField(),
         ),
-        "prime_award_disaster_emergency_fund_codes": Case(
-            When(
-                sub_action_date__gte=datetime.date(2020, 4, 1),
-                then=_disaster_emergency_fund_codes(def_codes=def_codes),
-            ),
-            output_field=TextField(),
-        ),
+        "prime_award_disaster_emergency_fund_codes": _disaster_emergency_fund_codes(def_codes=def_codes),
         "prime_award_outlayed_amount_from_COVID-19_supplementals": Case(
             When(
                 sub_action_date__gte=COVID_19_PERIOD_START,
                 then=_outlay_amount_agg_subquery(
                     emergency_fund_group_name="covid_19",
-                    reporting_period_start_date=COVID_19_PERIOD_START,
                     def_codes=def_codes,
                 ),
             ),
@@ -633,7 +603,6 @@ def subaward_annotations(filters: dict):
                 sub_action_date__gte=COVID_19_PERIOD_START,
                 then=_obligation_txn_amount_agg_subquery(
                     emergency_fund_group_name="covid_19",
-                    reporting_period_start_date=COVID_19_PERIOD_START,
                     def_codes=def_codes,
                 ),
             ),
@@ -644,7 +613,6 @@ def subaward_annotations(filters: dict):
                 sub_action_date__gte=IIJA_PERIOD_START,
                 then=_outlay_amount_agg_subquery(
                     emergency_fund_group_name="infrastructure",
-                    reporting_period_start_date=IIJA_PERIOD_START,
                     def_codes=def_codes,
                 ),
             ),
@@ -655,7 +623,6 @@ def subaward_annotations(filters: dict):
                 sub_action_date__gte=IIJA_PERIOD_START,
                 then=_obligation_txn_amount_agg_subquery(
                     emergency_fund_group_name="infrastructure",
-                    reporting_period_start_date=IIJA_PERIOD_START,
                     def_codes=def_codes,
                 ),
             ),
