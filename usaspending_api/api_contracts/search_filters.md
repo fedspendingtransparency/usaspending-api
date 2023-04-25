@@ -122,10 +122,10 @@ Keys in a location object include:
 * **zip** - a 5 digit string indicating the postal area to search within.
 * **county** - a 3 digit FIPS code indicating the county
     * If `county` is provided, a `state` must always be provided as well.
-    * If `county` is provided, a `district` value *must never* be provided.
+    * If `county` is provided, a `district_original` or `district_current` value *must never* be provided.
 * **district_original** - a 2 character code indicating the original congressional district, before any redistricting
-    * If `district` is provided, a `state` must always be provided as well.
-    * If `district` is provided, a `county` *must never* be provided.
+    * If `district_original` is provided, a `state` must always be provided as well.
+    * If `district_original` is provided, a `county` *must never* be provided.
 * **district_current** - a 2 character code indicating the current congressional district, after any redistricting
     * If `district_current` is provided, a `state` must always be provided as well.
     * If `district_current` is provided, a `county` *must never* be provided.
