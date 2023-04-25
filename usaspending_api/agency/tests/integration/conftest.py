@@ -458,4 +458,123 @@ def agency_account_data():
     )
 
 
-__all__ = ["agency_account_data", "helpers", "bureau_data"]
+@pytest.fixture
+def tas_mulitple_pas_per_oc():
+    """Sets up test data such that for a specific treasury account there are multiple
+    program activites associated with that treasury account and one object class.
+    """
+    dabs = baker.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date=f"{CURRENT_FISCAL_YEAR}-10-09",
+        submission_fiscal_year=CURRENT_FISCAL_YEAR,
+        submission_fiscal_month=12,
+        submission_fiscal_quarter=4,
+        is_quarter=False,
+        period_start_date=f"{CURRENT_FISCAL_YEAR}-09-01",
+        period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
+    )
+
+    ta1 = baker.make("references.ToptierAgency", toptier_code="007")
+    fa1 = baker.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
+
+    pa1 = baker.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
+    pa2 = baker.make("references.RefProgramActivity", program_activity_code="1000", program_activity_name="NAME 2")
+
+    oc = "references.ObjectClass"
+    oc1 = baker.make(
+        oc, major_object_class=10, major_object_class_name="Other", object_class=100, object_class_name="equipment"
+    )
+
+    sub1 = baker.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=CURRENT_FISCAL_YEAR,
+        reporting_fiscal_period=12,
+        toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs.id,
+    )
+
+    tas1 = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        funding_toptier_agency=ta1,
+        budget_function_code=100,
+        budget_function_title="NAME 1",
+        budget_subfunction_code=1100,
+        budget_subfunction_title="NAME 1A",
+        federal_account=fa1,
+        account_title="TA 1",
+        tas_rendering_label="001-X-0000-000",
+    )
+
+    fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
+
+    baker.make(
+        fabpaoc,
+        treasury_account=tas1,
+        submission=sub1,
+        program_activity=pa1,
+        object_class=oc1,
+        obligations_incurred_by_program_object_class_cpe=1,
+        gross_outlay_amount_by_program_object_class_cpe=10000000,
+    )
+
+    baker.make(
+        fabpaoc,
+        treasury_account=tas1,
+        submission=sub1,
+        program_activity=pa2,
+        object_class=oc1,
+        obligations_incurred_by_program_object_class_cpe=10,
+        gross_outlay_amount_by_program_object_class_cpe=1000000,
+    )
+
+
+@pytest.fixture
+def tas_with_no_object_class():
+    dabs = baker.make(
+        "submissions.DABSSubmissionWindowSchedule",
+        submission_reveal_date=f"{CURRENT_FISCAL_YEAR}-10-09",
+        submission_fiscal_year=CURRENT_FISCAL_YEAR,
+        submission_fiscal_month=12,
+        submission_fiscal_quarter=4,
+        is_quarter=False,
+        period_start_date=f"{CURRENT_FISCAL_YEAR}-09-01",
+        period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
+    )
+
+    ta1 = baker.make("references.ToptierAgency", toptier_code="007")
+
+    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1)
+
+    sub1 = baker.make(
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=CURRENT_FISCAL_YEAR,
+        reporting_fiscal_period=12,
+        toptier_code=ta1.toptier_code,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs.id,
+    )
+
+    fa1 = baker.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
+    tas1 = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        funding_toptier_agency=ta1,
+        budget_function_code=100,
+        budget_function_title="NAME 1",
+        budget_subfunction_code=1100,
+        budget_subfunction_title="NAME 1A",
+        federal_account=fa1,
+        account_title="TA 1",
+        tas_rendering_label="001-X-0000-000",
+    )
+
+    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
+
+
+__all__ = [
+    "tas_with_no_object_class",
+    "agency_account_data",
+    "tas_mulitple_pas_per_oc",
+    "helpers",
+    "bureau_data",
+]
