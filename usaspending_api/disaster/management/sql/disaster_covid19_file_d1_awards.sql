@@ -4,9 +4,11 @@ SELECT
     "latest_transaction"."referenced_idv_agency_iden" AS "parent_award_agency_id",
     "latest_transaction"."referenced_idv_agency_desc" AS "parent_award_agency_name",
     "award_search"."parent_award_piid" AS "parent_award_id_piid",
-    DEFC."disaster_emergency_funds" AS "disaster_emergency_fund_codes",
-    DEFC."gross_outlay_amount_by_award_cpe" + DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_COVID-19_supplementals",
-    DEFC."transaction_obligated_amount" AS "obligated_amount_from_COVID-19_supplementals",
+    COVID_DEFC."disaster_emergency_funds" AS "disaster_emergency_fund_codes",
+    COVID_DEFC."gross_outlay_amount_by_award_cpe" + COVID_DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + COVID_DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_COVID-19_supplementals",
+    COVID_DEFC."transaction_obligated_amount" AS "obligated_amount_from_COVID-19_supplementals",
+    IIJA_DEFC."gross_outlay_amount_by_award_cpe" + IIJA_DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + IIJA_DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_IIJA_supplemental",
+    IIJA_DEFC."transaction_obligated_amount" AS "obligated_amount_from_IIJA_supplemental",
     "award_search"."total_obligation" AS "total_obligated_amount",
     "latest_transaction"."current_total_value_award" AS "current_total_value_of_award",
     "latest_transaction"."potential_total_value_awar" AS "potential_total_value_of_award",
@@ -315,4 +317,42 @@ INNER JOIN (
             0
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = "award_search"."award_id")
+) COVID_DEFC ON (COVID_DEFC.award_id = "award_search"."award_id")
+LEFT OUTER JOIN (
+    SELECT
+        faba.award_id,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe END), 0) AS ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END), 0) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
+        COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN disaster_emergency_fund_code defc
+        ON defc.code = faba.disaster_emergency_fund_code
+        AND defc.group_name = 'infrastructure'
+    INNER JOIN submission_attributes sa
+        ON faba.submission_id = sa.submission_id
+        AND sa.reporting_period_start >= '2021-11-15'
+    INNER JOIN dabs_submission_window_schedule ON (
+        sa."submission_window_id" = dabs_submission_window_schedule."id"
+        AND dabs_submission_window_schedule."submission_reveal_date" <= now()
+    )
+    WHERE faba.award_id IS NOT NULL
+    GROUP BY
+        faba.award_id
+    HAVING
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN sa.is_final_balances_for_fy = TRUE
+                    THEN
+                        COALESCE(faba.gross_outlay_amount_by_award_cpe, 0)
+                        + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                        + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                END
+            ),
+            0
+        ) != 0
+        OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
+) IIJA_DEFC
+ON IIJA_DEFC.award_id = rpt.award_search.award_id
