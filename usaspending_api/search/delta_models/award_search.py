@@ -483,7 +483,7 @@ LEFT OUTER JOIN (
         INNER JOIN
             global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
         INNER JOIN
-            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id AND sa.reporting_period_start >= '2020-04-01')
+            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id)
         INNER JOIN
             global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
         GROUP BY
@@ -521,7 +521,7 @@ LEFT OUTER JOIN (
         INNER JOIN
             global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'infrastructure')
         INNER JOIN
-            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id AND sa.reporting_period_start >= '2020-04-01')
+            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id)
         INNER JOIN
             global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
         GROUP BY

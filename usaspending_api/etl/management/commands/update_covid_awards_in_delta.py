@@ -21,7 +21,7 @@ UPDATE_AWARDS_SQL = """
         dabs.id = sa.submission_window_id
     INNER JOIN global_temp.disaster_emergency_fund_code defc ON
         defc.code = faba.disaster_emergency_fund_code
-        AND defc.group_name = 'covid_19'
+        AND (defc.group_name = 'covid_19' or defc.group_name = 'infrastructure')
     WHERE
         (
             submission_fiscal_year = {last_months_year}
@@ -71,11 +71,11 @@ FROM
 
 
 class Command(BaseCommand):
-
     help = (
         "This command updates the `update_date` field on the `int.awards` table in Delta Lake for",
-        "awards that had Covid data in the previous two submission periods when a new submission period",
-        "is revealed. This is to signal to Elasticsearch that the award records should be reindexed.",
+        "awards that had Covid or Infrastructure data in the previous two submission periods when a",
+        "new submission period is revealed. This is to signal to Elasticsearch that the award records",
+        "should be reindexed.",
     )
 
     spark: SparkSession
@@ -89,7 +89,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
