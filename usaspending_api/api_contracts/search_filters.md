@@ -84,13 +84,21 @@ A city in a state:
 }
 ```
 
-
-A US congressional district:
+Original US congressional district:
 ```
 {
     "country": "USA",
     "state": "VA",
-    "district": "11"
+    "district_original": "11"
+}
+```
+
+Current US congressional district:
+```
+{
+    "country": "USA",
+    "state": "VA",
+    "district_current": "11"
 }
 ```
 
@@ -113,9 +121,12 @@ Keys in a location object include:
     * If `county` is provided, a `district` value *must never* be provided.
 * **city** - string city name
     * If no `state` is provided, this will return results for all cities in any state with the provided name
-* **district** - a 2 character code indicating the congressional district
-    * If `district` is provided, a `state` must always be provided as well.
-    * If `district` is provided, a `county` *must never* be provided.
+* **district_original** - a 2 character code indicating the original congressional district, before redistricting
+    * If `district_original` is provided, a `state` must always be provided as well.
+    * If `district_original` is provided, a `county` *must never* be provided.
+* **district_current** - a 2 character code indicating the current congressional district, after redistricting
+    * If `district_current` is provided, a `state` must always be provided as well.
+    * If `district_current` is provided, a `county` *must never* be provided.
 * **zip** - a 5 digit string indicating the postal area to search within.
 
 
