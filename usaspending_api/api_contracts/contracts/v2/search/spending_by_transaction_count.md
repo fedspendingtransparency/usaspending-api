@@ -50,4 +50,4 @@ Returns the counts of transaction records which match the keyword grouped by awa
 # Data Structures
 
 ## AdvancedFilterObject (object)
-+ `keywords`: [[`lockheed`]] (required, array[string], fixed-type)
++ `keywords`: [`lockheed`] (required, array[string], fixed-type)
