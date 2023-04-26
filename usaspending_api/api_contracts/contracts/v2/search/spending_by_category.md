@@ -127,12 +127,7 @@ This endpoint returns a list of the top results of specific categories sorted by
         + `last_modified_date`
 
 ### LocationObject (object)
-+ `country` (required, string)
-+ `state` (optional, string)
-+ `county` (optional, string)
-+ `city` (optional, string)
-+ `district` (optional, string)
-+ `zip` (optional, string)
+These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])

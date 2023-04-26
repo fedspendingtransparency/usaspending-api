@@ -108,12 +108,7 @@ Returns the number of transactions that would be included in a download request 
         + `last_modified_date`
 
 ## LocationObject (object)
-+ `country`: `USA` (required, string)
-+ `state`: `VA` (optional, string)
-+ `county` (optional, string)
-+ `city` (optional, string)
-+ `district` (optional, string)
-+ `zip` (optional, string)
+These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
 
 ## AgencyObject (object)
 + `type` (required, enum[string])
