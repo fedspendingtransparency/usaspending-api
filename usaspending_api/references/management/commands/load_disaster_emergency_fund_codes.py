@@ -1,7 +1,8 @@
 import logging
 import re
-
 from collections import namedtuple
+from datetime import datetime
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from psycopg2.extras import execute_values
@@ -25,14 +26,15 @@ CREATE_TEMP_TABLE = """
         public_law text,
         title text,
         group_name text,
-        urls text
+        urls text,
+        enactment_date date
     );
 """
 
 logger = logging.getLogger("script")
 
 DisasterEmergencyFundCode = namedtuple(
-    "DisasterEmergencyFundCode", ["row_number", "code", "public_law", "title", "group_name", "urls"]
+    "DisasterEmergencyFundCode", ["row_number", "code", "public_law", "title", "group_name", "urls", "enactment_date"]
 )
 
 
@@ -44,7 +46,6 @@ class Command(mixins.ETLMixin, BaseCommand):
     etl_logger_function = logger.info
 
     def add_arguments(self, parser):
-
         parser.add_argument(
             "--def-code-file",
             metavar="FILE",
@@ -57,7 +58,6 @@ class Command(mixins.ETLMixin, BaseCommand):
         logger.info(f"Attempting to load from file: {self.def_code_file}")
 
         with Timer("Load DEF Code"):
-
             try:
                 with transaction.atomic():
                     self._perform_load()
@@ -85,7 +85,6 @@ class Command(mixins.ETLMixin, BaseCommand):
         return text
 
     def _read_raw_def_code_csv(self):
-
         raw_def_codes = read_csv_file_as_list_of_dictionaries(self.def_code_file)
         if len(raw_def_codes) < 1:
             raise RuntimeError(f"File '{self.def_code_file}' appears to be empty")
@@ -97,6 +96,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 title=self._prep(def_code["Public Law Short Title"]) or None,
                 group_name=self._prep(def_code["Group Name"]) or None,
                 urls=self._prep(def_code["URLs"]) or None,
+                enactment_date=datetime.strptime(def_code["Enactment Date"], "%m-%d-%Y"),
             )
             for row_number, def_code in enumerate(raw_def_codes, start=1)
         ]
@@ -105,7 +105,6 @@ class Command(mixins.ETLMixin, BaseCommand):
 
     @staticmethod
     def _validate_raw_def_code(raw_def_codes):
-
         messages = []
 
         if not DEF_CODE_PATTERN.fullmatch(raw_def_codes.code):
@@ -120,7 +119,6 @@ class Command(mixins.ETLMixin, BaseCommand):
         return messages
 
     def _validate_raw_def_codes(self):
-
         messages = []
 
         for raw_def_code in self.def_codes:
@@ -134,7 +132,6 @@ class Command(mixins.ETLMixin, BaseCommand):
             )
 
     def _import_def_codes(self):
-
         with get_connection(read_only=False).cursor() as cursor:
             execute_values(
                 cursor.cursor,
@@ -145,7 +142,8 @@ class Command(mixins.ETLMixin, BaseCommand):
                         public_law,
                         title,
                         group_name,
-                        urls
+                        urls,
+                        enactment_date
                     ) values %s
                 """,
                 self.def_codes,
@@ -154,7 +152,6 @@ class Command(mixins.ETLMixin, BaseCommand):
             return cursor.rowcount
 
     def _perform_load(self):
-
         overrides = {
             "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
             "update_overrides": {"update_date": SQL("now()")},
