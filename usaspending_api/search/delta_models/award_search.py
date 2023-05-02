@@ -551,35 +551,7 @@ LEFT JOIN (
             financial_accounts_by_awards faba
 
         INNER JOIN submission_attributes sa
-            ON faba.submission_id = sa.submission_id
-
-        INNER JOIN (
-            SELECT faba.award_id
-                    , COALESCE(
-                        sum(
-                            COALESCE(faba.gross_outlay_amount_by_award_cpe, 0)
-                            + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
-                            + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
-                        ), 0) AS last_period_total_outlay
-                FROM financial_accounts_by_awards faba
-
-                INNER JOIN submission_attributes sa
-                ON faba.submission_id = sa.submission_id
-
-                INNER JOIN vw_awards a
-                ON faba.award_id = a.id
-
-                -- We want to use vw_transaction_normalized but we are using transaction_normalized as this Delta
-                -- Table is sourced from vw_transaction_normalized
-                INNER JOIN transaction_normalized tn
-                ON tn.id = a.earliest_transaction_id
-
-                WHERE sa.is_final_balances_for_fy
-                    AND sa.reporting_fiscal_year = tn.fiscal_year
-                GROUP BY faba.award_id
-        ) o
-        ON faba.award_id = o.award_id
-            AND o.last_period_total_outlay != 0;
+            ON faba.submission_id = sa.submission_id;
 ) AWARD_TOTAL_OUTLAYS
     ON awards.id = AWARD_TOTAL_OUTLAYS.award_id
 LEFT OUTER JOIN (
