@@ -1041,12 +1041,12 @@ transaction_search_load_sql_string = fr"""
         )
     LEFT OUTER JOIN
         global_temp.cd_state_grouped pop_state_cd ON (
-            pop_state_cd.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)\
+            pop_state_cd.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
             AND pop_state_cd.congressional_district_no <> '90'
         )
     LEFT OUTER JOIN
         global_temp.cd_state_grouped rl_state_cd ON (
-            rl_state_cd.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)\
+            rl_state_cd.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
             AND rl_state_cd.congressional_district_no <> '90'
         )
     LEFT OUTER JOIN
