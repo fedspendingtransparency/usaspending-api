@@ -2,18 +2,18 @@ import logging
 import re
 from collections import namedtuple
 from datetime import datetime
+from typing import Union
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from psycopg2.extras import execute_values
 from psycopg2.sql import SQL
+
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable
-from usaspending_api.common.etl.postgres import mixins
+from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable, mixins
 from usaspending_api.common.etl.postgres.operations import insert_missing_rows, update_changed_rows
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
-
 
 DEF_CODE_PATTERN = re.compile("[a-zA-Z0-9]+")
 
@@ -27,14 +27,15 @@ CREATE_TEMP_TABLE = """
         title text,
         group_name text,
         urls text,
-        enactment_date date
+        earliest_public_law_enactment_date date
     );
 """
 
 logger = logging.getLogger("script")
 
 DisasterEmergencyFundCode = namedtuple(
-    "DisasterEmergencyFundCode", ["row_number", "code", "public_law", "title", "group_name", "urls", "enactment_date"]
+    "DisasterEmergencyFundCode",
+    ["row_number", "code", "public_law", "title", "group_name", "urls", "earliest_public_law_enactment_date"],
 )
 
 
@@ -84,6 +85,23 @@ class Command(mixins.ETLMixin, BaseCommand):
             return text.strip()
         return text
 
+    @staticmethod
+    def _prep_date(date_string: str) -> Union[datetime, None]:
+        """Convert a string to a datetime object or None if no string was provided.
+        This assumes the date is in the following format: 12-25-2023 (mm-dd-yyyy)
+
+        Args:
+            date_string (str): `Earliest Public Law Enactment Date` value from def_codes.csv file
+
+        Returns:
+            Union[datetime, None]: Return the `Earliest Public Law Enactment Date` converted to a datetime
+                or None
+        """
+        if date_string and type(date_string) is str:
+            return datetime.strptime(date_string, "%m-%d-%Y")
+        else:
+            return None
+
     def _read_raw_def_code_csv(self):
         raw_def_codes = read_csv_file_as_list_of_dictionaries(self.def_code_file)
         if len(raw_def_codes) < 1:
@@ -96,7 +114,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 title=self._prep(def_code["Public Law Short Title"]) or None,
                 group_name=self._prep(def_code["Group Name"]) or None,
                 urls=self._prep(def_code["URLs"]) or None,
-                enactment_date=datetime.strptime(def_code["Enactment Date"], "%m-%d-%Y"),
+                earliest_public_law_enactment_date=self._prep_date(def_code["Earliest Public Law Enactment Date"]),
             )
             for row_number, def_code in enumerate(raw_def_codes, start=1)
         ]
@@ -143,7 +161,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                         title,
                         group_name,
                         urls,
-                        enactment_date
+                        earliest_public_law_enactment_date
                     ) values %s
                 """,
                 self.def_codes,
