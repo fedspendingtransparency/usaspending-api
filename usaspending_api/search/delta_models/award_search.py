@@ -22,6 +22,7 @@ AWARD_SEARCH_COLUMNS = {
     "parent_award_piid": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "award_amount": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "total_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
+    "total_ooutlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "total_obl_bin": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "total_subsidy_cost": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
@@ -189,6 +190,7 @@ award_search_load_sql_string = rf"""
     COALESCE(
         CASE WHEN awards.type IN('07', '08') THEN 0
             ELSE awards.total_obligation END, 0) AS NUMERIC(23, 2) ) AS total_obligation,
+  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays,
   awards.description,
   CASE WHEN COALESCE(
         CASE WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
@@ -532,6 +534,54 @@ LEFT OUTER JOIN (
     GROUP BY
         GROUPED_BY_DEFC.award_id
 ) IIJA_DEFC on IIJA_DEFC.award_id = awards.id
+-- Total outlays calculation
+LEFT JOIN (
+
+    SELECT sum(
+                CASE
+                    WHEN sa.is_final_balances_for_fy = TRUE
+                    THEN (
+                            COALESCE(faba.gross_outlay_amount_by_award_cpe, 0)
+                            + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                            + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                        )
+                END
+            ) AS total_outlay
+        FROM
+            financial_accounts_by_awards faba
+
+        INNER JOIN submission_attributes sa
+            ON faba.submission_id = sa.submission_id
+
+        INNER JOIN (
+            SELECT faba.award_id
+                    , COALESCE(
+                        sum(
+                            COALESCE(faba.gross_outlay_amount_by_award_cpe, 0)
+                            + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                            + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                        ), 0) AS last_period_total_outlay
+                FROM financial_accounts_by_awards faba
+
+                INNER JOIN submission_attributes sa
+                ON faba.submission_id = sa.submission_id
+
+                INNER JOIN vw_awards a
+                ON faba.award_id = a.id
+
+                -- We want to use vw_transaction_normalized but we are using transaction_normalized as this Delta
+                -- Table is sourced from vw_transaction_normalized
+                INNER JOIN transaction_normalized tn
+                ON tn.id = a.earliest_transaction_id
+
+                WHERE sa.is_final_balances_for_fy
+                    AND sa.reporting_fiscal_year = tn.fiscal_year
+                GROUP BY faba.award_id
+        ) o
+        ON faba.award_id = o.award_id
+            AND o.last_period_total_outlay != 0;
+) AWARD_TOTAL_OUTLAYS
+    ON awards.id = AWARD_TOTAL_OUTLAYS.award_id
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,
