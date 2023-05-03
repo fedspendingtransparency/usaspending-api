@@ -60,13 +60,7 @@ _USAS_RDS_REF_TABLES = [
     TreasuryAppropriationAccount,
 ]
 
-_BROKER_REF_TABLES = [
-    "zips_grouped",
-    "cd_state_grouped",
-    "cd_zips_grouped",
-    "cd_county_grouped",
-    "cd_city_grouped"
-]
+_BROKER_REF_TABLES = ["zips_grouped", "cd_state_grouped", "cd_zips_grouped", "cd_county_grouped", "cd_city_grouped"]
 
 
 def extract_db_data_frame(
