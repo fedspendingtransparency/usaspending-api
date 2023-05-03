@@ -45,6 +45,7 @@ query_paths = {
                 ("outlayed_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
                 ("obligated_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "total_obligation"),
+                ("total_outlayed_amount", "total_outlays"),
                 (
                     "current_total_value_of_award",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['current_total_value_award']}",
@@ -1049,6 +1050,7 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("award_latest_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "total_obligation"),
+                ("total_outlayed_amount", "total_outlays"),
                 ("indirect_cost_federal_share_amount", "total_indirect_federal_sharing"),
                 ("total_non_federal_funding_amount", "non_federal_funding_amount"),
                 ("total_funding_amount", "total_funding_amount"),
