@@ -546,10 +546,9 @@ LEFT JOIN (
                         )
                 END
             ) AS total_outlay
-        FROM
-            financial_accounts_by_awards faba
+        FROM int.financial_accounts_by_awards faba
 
-        INNER JOIN submission_attributes sa
+        INNER JOIN global_temp.submission_attributes sa
             ON faba.submission_id = sa.submission_id
 ) AWARD_TOTAL_OUTLAYS
     ON awards.id = AWARD_TOTAL_OUTLAYS.award_id
