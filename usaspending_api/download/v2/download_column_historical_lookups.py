@@ -1985,6 +1985,10 @@ query_paths = {
                     "prime_award_obligated_amount_from_IIJA_supplemental",
                     None,
                 ),  # Annotation is used to create this column
+                (
+                    "prime_award_total_outlayed_amount",
+                    None,
+                ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
                 ("prime_award_base_action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("prime_award_latest_action_date", "latest_transaction__action_date"),
@@ -2146,6 +2150,10 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 (
                     "prime_award_obligated_amount_from_IIJA_supplemental",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_total_outlayed_amount",
                     None,
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
