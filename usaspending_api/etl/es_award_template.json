@@ -91,7 +91,7 @@
                 "type": "keyword"
               }
             }
-          },
+        },
         "description": {
           "type": "text",
           "analyzer": "stemmer_analyzer",
