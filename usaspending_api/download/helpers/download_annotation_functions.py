@@ -170,7 +170,7 @@ def _outlay_amount_agg_subquery_no_coalesce(
         .filter(
             *[
                 Q(
-                    Q(total_gross_outlay_amount_by_award_cpe_isnull=False)
+                    Q(total_gross_outlay_amount_by_award_cpe__isnull=False)
                     | Q(total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe__isnull=False)
                     | Q(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe__isnull=False)
                 )
