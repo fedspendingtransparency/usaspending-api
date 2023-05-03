@@ -22,7 +22,7 @@ AWARD_SEARCH_COLUMNS = {
     "parent_award_piid": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "award_amount": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "total_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
-    "total_ooutlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
+    "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "total_obl_bin": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "total_subsidy_cost": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
