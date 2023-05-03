@@ -536,7 +536,6 @@ LEFT OUTER JOIN (
 ) IIJA_DEFC on IIJA_DEFC.award_id = awards.id
 -- Total outlays calculation
 LEFT JOIN (
-
     SELECT sum(
                 CASE
                     WHEN sa.is_final_balances_for_fy = TRUE
