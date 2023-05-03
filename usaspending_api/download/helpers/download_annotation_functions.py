@@ -171,45 +171,21 @@ def transaction_search_annotations(filters: dict):
             ),
             output_field=TextField(),
         ),
-        "outlayed_amount_from_COVID-19_supplementals_for_overall_award": Case(
-            When(
-                action_date__gte=COVID_19_PERIOD_START,
-                then=_outlay_amount_agg_subquery(
-                    emergency_fund_group_name="covid_19",
-                    def_codes=def_codes,
-                ),
-            ),
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "outlayed_amount_from_COVID-19_supplementals_for_overall_award": _outlay_amount_agg_subquery(
+            emergency_fund_group_name="covid_19",
+            def_codes=def_codes,
         ),
-        "obligated_amount_from_COVID-19_supplementals_for_overall_award": Case(
-            When(
-                action_date__gte=COVID_19_PERIOD_START,
-                then=_obligation_txn_amount_agg_subquery(
-                    emergency_fund_group_name="covid_19",
-                    def_codes=def_codes,
-                ),
-            ),
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "obligated_amount_from_COVID-19_supplementals_for_overall_award": _obligation_txn_amount_agg_subquery(
+            emergency_fund_group_name="covid_19",
+            def_codes=def_codes,
         ),
-        "outlayed_amount_from_IIJA_supplemental_for_overall_award": Case(
-            When(
-                action_date__gte=IIJA_PERIOD_START,
-                then=_outlay_amount_agg_subquery(
-                    emergency_fund_group_name="infrastructure",
-                    def_codes=def_codes,
-                ),
-            ),
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "outlayed_amount_from_IIJA_supplemental_for_overall_award": _outlay_amount_agg_subquery(
+            emergency_fund_group_name="infrastructure",
+            def_codes=def_codes,
         ),  # Annotation is used to create this column
-        "obligated_amount_from_IIJA_supplemental_for_overall_award": Case(
-            When(
-                action_date__gte=IIJA_PERIOD_START,
-                then=_obligation_txn_amount_agg_subquery(
-                    emergency_fund_group_name="infrastructure",
-                    def_codes=def_codes,
-                ),
-            ),
-            output_field=DecimalField(max_digits=23, decimal_places=2),
+        "obligated_amount_from_IIJA_supplemental_for_overall_award": _obligation_txn_amount_agg_subquery(
+            emergency_fund_group_name="infrastructure",
+            def_codes=def_codes,
         ),  # Annotation is used to create this column
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
