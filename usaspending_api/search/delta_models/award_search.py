@@ -550,7 +550,7 @@ LEFT JOIN (
             financial_accounts_by_awards faba
 
         INNER JOIN submission_attributes sa
-            ON faba.submission_id = sa.submission_id;
+            ON faba.submission_id = sa.submission_id
 ) AWARD_TOTAL_OUTLAYS
     ON awards.id = AWARD_TOTAL_OUTLAYS.award_id
 LEFT OUTER JOIN (
