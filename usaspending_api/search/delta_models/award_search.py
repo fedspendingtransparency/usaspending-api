@@ -539,7 +539,7 @@ LEFT JOIN (
     SELECT award_id,
             COALESCE(total_gross_outlay_amount_by_award_cpe, 0)
             + COALESCE(total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
-            + COALESCE(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0) AS total_outlay
+            + COALESCE(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0) AS total_outlays
         FROM (
             SELECT faba.award_id,
                     SUM(
