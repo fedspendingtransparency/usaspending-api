@@ -1316,6 +1316,7 @@ query_paths = {
                 ("parent_award_modification_number", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["referenced_idv_modificatio"]),
                 ("federal_action_obligation", NORM_TO_TRANSACTION_SEARCH_COL_MAP["federal_action_obligation"]),
                 ("total_dollars_obligated", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["total_obligated_amount"]),
+                ("total_outlayed_amount_for_overall_award", None),  # Annotation is used to create this column
                 ("base_and_exercised_options_value", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["base_exercised_options_val"]),
                 ("current_total_value_of_award", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["current_total_value_award"]),
                 ("base_and_all_options_value", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["base_and_all_options_value"]),
@@ -1810,6 +1811,7 @@ query_paths = {
                 ("sai_number", FABS_TO_TRANSACTION_SEARCH_COL_MAP["sai_number"]),
                 ("federal_action_obligation", NORM_TO_TRANSACTION_SEARCH_COL_MAP["federal_action_obligation"]),
                 ("total_obligated_amount", "award__total_obligation"),
+                ("total_outlayed_amount_for_overall_award", None),  # Annotation is used to create this column
                 ("indirect_cost_federal_share_amount", FABS_TO_TRANSACTION_SEARCH_COL_MAP["indirect_federal_sharing"]),
                 ("non_federal_funding_amount", FABS_TO_TRANSACTION_SEARCH_COL_MAP["non_federal_funding_amount"]),
                 ("total_non_federal_funding_amount", "award__non_federal_funding_amount"),

@@ -257,7 +257,7 @@ def transaction_search_annotations(filters: dict):
                 ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
-        ),  # Annotation is used to create this column
+        ),
         "obligated_amount_from_IIJA_supplemental_for_overall_award": Case(
             When(
                 action_date__gte=IIJA_PERIOD_START,
@@ -267,7 +267,8 @@ def transaction_search_annotations(filters: dict):
                 ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
-        ),  # Annotation is used to create this column
+        ),
+        "total_outlayed_amount_for_overall_award": _outlay_amount_agg_subquery_no_coalesce(award_id_col="award_id"),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
                 filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
@@ -539,6 +540,7 @@ def idv_transaction_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
+        "total_outlayed_amount_for_overall_award": _outlay_amount_agg_subquery_no_coalesce(award_id_col="award_id"),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
                 filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
