@@ -561,24 +561,8 @@ transaction_search_load_sql_string = fr"""
             ) THEN NULL
             WHEN (
                 COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) = 'USA'
-                AND rl_state_cd.congressional_district_no IS NOT NULL
-            ) THEN rl_state_cd.congressional_district_no
-            WHEN (
-                COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) = 'USA'
-                AND rl_zips.congressional_district_no IS NOT NULL
-            ) THEN rl_zips.congressional_district_no
-            WHEN (
-                COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) = 'USA'
-                AND rl_cd_zips_grouped.congressional_district_no IS NOT NULL
-            ) THEN rl_cd_zips_grouped.congressional_district_no
-            WHEN (
-                COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) = 'USA'
-                AND rl_cd_city_grouped.congressional_district_no IS NOT NULL
-            ) THEN rl_cd_city_grouped.congressional_district_no
-            WHEN (
-                COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) = 'USA'
-                AND rl_cd_county_grouped.congressional_district_no IS NOT NULL
-            ) THEN rl_cd_county_grouped.congressional_district_no
+                AND COALESCE(rl_state_cd.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no) IS NOT NULL
+            ) THEN COALESCE(rl_state_cd.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no)
             ELSE NULL
         END) AS recipient_location_congressional_code_current,
         COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
@@ -637,13 +621,8 @@ transaction_search_load_sql_string = fr"""
             WHEN (
                 (transaction_fabs.place_of_performance_scope = 'Single ZIP Code'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
-                AND pop_zips.congressional_district_no IS NOT NULL
-            ) THEN pop_zips.congressional_district_no
-            WHEN (
-                (transaction_fabs.place_of_performance_scope = 'Single ZIP Code'
-                OR transaction_fpds.place_of_perform_country_c = 'USA')
-                AND pop_cd_zips_grouped.congressional_district_no IS NOT NULL
-            ) THEN pop_cd_zips_grouped.congressional_district_no
+                AND COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no) IS NOT NULL
+            ) THEN COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no)
             WHEN (
                 (transaction_fabs.place_of_performance_scope = 'City-wide'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
