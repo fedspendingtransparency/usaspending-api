@@ -542,29 +542,15 @@ LEFT JOIN (
             + COALESCE(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0) AS total_outlays
         FROM (
             SELECT faba.award_id,
-                    SUM(
-                        CASE
-                            WHEN sa.is_final_balances_for_fy = TRUE
-                            THEN faba.gross_outlay_amount_by_award_cpe
-                        END
-                    ) AS total_gross_outlay_amount_by_award_cpe,
-                    SUM(
-                        CASE
-                            WHEN sa.is_final_balances_for_fy = TRUE
-                            THEN faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
-                        END
-                    ) AS total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
-                    SUM(
-                        CASE
-                            WHEN sa.is_final_balances_for_fy = TRUE
-                            THEN ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
-                        END
-                    ) AS total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
+                    SUM(faba.gross_outlay_amount_by_award_cpe) AS total_gross_outlay_amount_by_award_cpe,
+                    SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) AS total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+                    SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) AS total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
                 FROM int.financial_accounts_by_awards faba
 
                 INNER JOIN global_temp.submission_attributes sa
                     ON faba.submission_id = sa.submission_id
 
+                WHERE sa.is_final_balances_for_fy = TRUE
                 GROUP BY faba.award_id
             ) s
         WHERE total_gross_outlay_amount_by_award_cpe IS NOT NULL
