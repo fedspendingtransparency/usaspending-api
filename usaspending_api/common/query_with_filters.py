@@ -1,9 +1,11 @@
 import copy
 import logging
+from datetime import datetime
+from typing import List, Tuple
 
 from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
-from typing import List, Tuple
+
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
@@ -433,30 +435,40 @@ class _DisasterEmergencyFundCodes(_Filter):
         def_codes_query = []
         def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{'s' if query_type != _QueryType.ACCOUNTS else ''}"
 
-        all_covid_defc = set(
-            DisasterEmergencyFundCode.objects.filter(group_name="covid_19").values_list("code", flat=True)
+        all_covid_iija_defc = set(
+            DisasterEmergencyFundCode.objects.filter(group_name__in=["covid_19", "infrastructure"]).values_list(
+                "code", "earliest_public_law_enactment_date"
+            )
         )
-        covid_filters = list(set(filter_values) & all_covid_defc)
-        other_filters = list(set(filter_values) - all_covid_defc)
+        all_covid_iija_defc = dict(all_covid_iija_defc)
 
-        covid_queries = [ES_Q("match", **{def_code_field: v}) for v in covid_filters]
+        other_filters = list(set(filter_values) - set(all_covid_iija_defc.keys()))
         other_queries = [ES_Q("match", **{def_code_field: v}) for v in other_filters]
 
-        if covid_queries:
+        covid_iija_filters = {k: all_covid_iija_defc[k] for k in filter_values if k in all_covid_iija_defc.keys()}
+        # For any COVID or IIJA transactions, check that the `action_date` is on/after the law's enactment date
+        # If a transaction has a DEFC of 'L' then the transaction's action date should be >= 2023-03-06 to be included
+        covid_iija_queries = []
+        for code, enactment_date in covid_iija_filters.items():
+            covid_iija_queries.append(
+                ES_Q("match", disaster_emergency_fund_code=code)
+                & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+            )
+
+        if covid_iija_queries:
             if query_type == _QueryType.TRANSACTIONS:
                 query = ES_Q(
                     "bool",
-                    must=ES_Q("range", action_date={"gte": "2020-04-01"}),
-                    should=covid_queries,
+                    should=covid_iija_queries,
                     minimum_should_match=1,
                 )
             elif query_type == _QueryType.AWARDS:
                 nonzero_limit = _NonzeroFields.generate_elasticsearch_query(
                     ["total_covid_outlay", "total_covid_obligation"], query_type
                 )
-                query = ES_Q("bool", must=[nonzero_limit], should=covid_queries, minimum_should_match=1)
+                query = ES_Q("bool", must=[nonzero_limit], should=covid_iija_queries, minimum_should_match=1)
             else:
-                query = ES_Q("bool", should=covid_queries, minimum_should_match=1)
+                query = ES_Q("bool", should=covid_iija_queries, minimum_should_match=1)
 
             def_codes_query.append(query)
 
