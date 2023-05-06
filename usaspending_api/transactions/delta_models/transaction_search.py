@@ -1041,12 +1041,12 @@ transaction_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         global_temp.cd_zips_grouped pop_cd_zips_grouped ON (
             pop_cd_zips_grouped.zip5=COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
-            AND pop_cd_zips_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) 
+            AND pop_cd_zips_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
         )
     LEFT OUTER JOIN
         global_temp.cd_zips_grouped rl_cd_zips_grouped ON (
             rl_cd_zips_grouped.zip5=COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
-            AND rl_cd_zips_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) 
+            AND rl_cd_zips_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
         )
     LEFT OUTER JOIN
         global_temp.cd_city_grouped pop_cd_city_grouped ON (
