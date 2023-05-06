@@ -8,7 +8,7 @@ import random
 import sys
 import uuid
 from datetime import date
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import boto3
 from model_bakery import baker
@@ -259,12 +259,13 @@ def test_create_ref_temp_views(spark: SparkSession):
 
     # Setup for testing the Broker table(s)
     mock_spark_session = MagicMock(autospec=SparkSession)
-    mock_broker_sql_strings: list[str] = []
+    mock_broker_sql_strings = []
     jdbc_conn_props = get_jdbc_connection_properties()
 
     for broker_table in _BROKER_REF_TABLES:
         mock_broker_sql_strings.append(
-            f"""
+            call(
+                f"""
             CREATE OR REPLACE GLOBAL TEMPORARY VIEW {broker_table}
             USING JDBC
             OPTIONS (
@@ -274,15 +275,16 @@ def test_create_ref_temp_views(spark: SparkSession):
                 dbtable '{broker_table}'
             )
             """
+            )
         )
 
-    for sql_string in mock_broker_sql_strings:
-        # Test that the Broker's SQL is being run when create_broker_views=True
-        create_ref_temp_views(mock_spark_session, create_broker_views=True)
-        mock_spark_session.sql.assert_called()
-        mock_spark_session.sql.assert_called_with(sql_string)
+    # Test that the Broker's SQL is being run when create_broker_views=True
+    create_ref_temp_views(mock_spark_session, create_broker_views=True)
+    mock_spark_session.sql.assert_called()
+    mock_spark_session.sql.assert_has_calls(mock_broker_sql_strings, any_order=True)
 
-        # Test that the Broker's SQL is NOT being called when create_broker_views=False
-        create_ref_temp_views(mock_spark_session)
-        # call_args[0] is the SQL string that spark.sql() was given
-        assert sql_string != mock_spark_session.sql.call_args[0]
+    # Test that the Broker's SQL is NOT being called when create_broker_views=False
+    mock_spark_session.sql.reset_mock()
+    create_ref_temp_views(mock_spark_session)
+    for broker_mock_call in mock_broker_sql_strings:
+        assert broker_mock_call not in mock_spark_session.sql.mock_calls
