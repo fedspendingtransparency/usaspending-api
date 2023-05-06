@@ -36,6 +36,15 @@ def populate_broker_data(broker_server_dblink_setup):
     broker_data = {
         "sam_recipient": json.loads(Path("usaspending_api/recipient/tests/data/broker_sam_recipient.json").read_text()),
         "subaward": json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text()),
+        "cd_state_grouped": json.loads(
+            Path("usaspending_api/transactions/tests/data/cd_state_grouped.json").read_text()
+        ),
+        "zips": json.loads(Path("usaspending_api/transactions/tests/data/zips.json").read_text()),
+        "cd_zips_grouped": json.loads(Path("usaspending_api/transactions/tests/data/cd_zips_grouped.json").read_text()),
+        "cd_city_grouped": json.loads(Path("usaspending_api/transactions/tests/data/cd_city_grouped.json").read_text()),
+        "cd_county_grouped": json.loads(
+            Path("usaspending_api/transactions/tests/data/cd_county_grouped.json").read_text()
+        ),
     }
     insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
     with connections["data_broker"].cursor() as cursor:
@@ -1592,6 +1601,7 @@ def test_load_table_to_from_delta_for_transaction_search(
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
@@ -1650,6 +1660,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
@@ -1684,6 +1695,7 @@ def test_load_table_to_from_delta_for_award_search(
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(

@@ -1,0 +1,42 @@
+[
+  {
+    "created_at": "2023-05-02 19:11:34.102432",
+    "updated_at": "2023-05-02 19:11:34.102432",
+    "cd_city_grouped_id": "1",
+    "city_name": "1000 PALMS",
+    "state_abbreviation": "CA",
+    "congressional_district_no": "25"
+  },
+  {
+    "created_at": "2023-05-02 19:11:34.102432",
+    "updated_at": "2023-05-02 19:11:34.102432",
+    "cd_city_grouped_id": "2",
+    "city_name": "100 PALMS",
+    "state_abbreviation": "CA",
+    "congressional_district_no": "25"
+  },
+  {
+    "created_at": "2023-05-02 19:11:34.102432",
+    "updated_at": "2023-05-02 19:11:34.102432",
+    "cd_city_grouped_id": "3",
+    "city_name": "12 MILE",
+    "state_abbreviation": "IN",
+    "congressional_district_no": "02"
+  },
+  {
+    "created_at": "2023-05-02 19:11:34.102432",
+    "updated_at": "2023-05-02 19:11:34.102432",
+    "cd_city_grouped_id": "4",
+    "city_name": "1ST NATIONAL BANK OF OMAHA",
+    "state_abbreviation": "NE",
+    "congressional_district_no": "02"
+  },
+  {
+    "created_at": "2023-05-02 19:11:34.102432",
+    "updated_at": "2023-05-02 19:11:34.102432",
+    "cd_city_grouped_id": "5",
+    "city_name": "29 PALMS",
+    "state_abbreviation": "CA",
+    "congressional_district_no": "23"
+  }
+]
