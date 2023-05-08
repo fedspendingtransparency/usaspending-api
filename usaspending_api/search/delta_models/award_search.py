@@ -295,11 +295,7 @@ award_search_load_sql_string = rf"""
       WHEN (
           COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) <> 'USA'
       ) THEN NULL
-      WHEN (
-          COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) = 'USA'
-          AND COALESCE(rl_state_cd.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no) IS NOT NULL
-      ) THEN COALESCE(rl_state_cd.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no)
-      ELSE NULL
+      ELSE COALESCE(rl_cd_state_grouped.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no)
   END) AS recipient_location_congressional_code_current,
   COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)) AS recipient_location_city_name,
@@ -330,8 +326,8 @@ award_search_load_sql_string = rf"""
       WHEN (
           (transaction_fabs.place_of_performance_scope = 'State-wide'
           OR transaction_fpds.place_of_perform_country_c = 'USA')
-          AND pop_state_cd.congressional_district_no IS NOT NULL
-      ) THEN pop_state_cd.congressional_district_no
+          AND pop_cd_state_grouped.congressional_district_no IS NOT NULL
+      ) THEN pop_cd_state_grouped.congressional_district_no
       WHEN (
           (transaction_fabs.place_of_performance_scope = 'Single ZIP Code'
           OR transaction_fpds.place_of_perform_country_c = 'USA')
@@ -475,14 +471,14 @@ LEFT OUTER JOIN
         AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
 )
 LEFT OUTER JOIN
-    global_temp.cd_state_grouped pop_state_cd ON (
-        pop_state_cd.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
-        AND pop_state_cd.congressional_district_no <> '90'
+    global_temp.cd_state_grouped pop_cd_state_grouped ON (
+        pop_cd_state_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
+        AND pop_cd_state_grouped.congressional_district_no <> '90'
     )
 LEFT OUTER JOIN
-    global_temp.cd_state_grouped rl_state_cd ON (
-        rl_state_cd.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
-        AND rl_state_cd.congressional_district_no <> '90'
+    global_temp.cd_state_grouped rl_cd_state_grouped ON (
+        rl_cd_state_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
+        AND rl_cd_state_grouped.congressional_district_no <> '90'
     )
 LEFT OUTER JOIN
     raw.zips pop_zips ON (
