@@ -139,6 +139,63 @@ def _outlay_amount_agg_subquery(
     )
 
 
+def _outlay_amount_agg_subquery_no_coalesce(
+    emergency_fund_group_name: str = None,
+    def_codes: Optional[List[str]] = None,
+    award_id_col: Optional[str] = "award_id",
+) -> Subquery:
+    """This function returns a total outlay aggregation
+    where NULLs are not represented as 0s. This function
+    is useful for when you want to show data that doesn't have outlay values
+    as a blank/NULL (i.e. do NOT show “0”).
+    """
+    filters = [filter_by_latest_closed_periods(), Q(award_id=OuterRef(award_id_col))]
+    if emergency_fund_group_name is not None:
+        filters.append(Q(disaster_emergency_fund__group_name=emergency_fund_group_name))
+    if def_codes:
+        filters.append(Q(disaster_emergency_fund__code__in=def_codes))
+
+    return Subquery(
+        FinancialAccountsByAwards.objects.filter(*filters)
+        .values("award_id")
+        .annotate(
+            total_gross_outlay_amount_by_award_cpe=Sum("gross_outlay_amount_by_award_cpe"),
+            total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=Sum(
+                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"
+            ),
+            total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=Sum(
+                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"
+            ),
+        )
+        .filter(
+            *[
+                Q(
+                    Q(total_gross_outlay_amount_by_award_cpe__isnull=False)
+                    | Q(total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe__isnull=False)
+                    | Q(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe__isnull=False)
+                )
+            ]
+        )
+        .annotate(
+            sum=Coalesce(
+                "total_gross_outlay_amount_by_award_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+            )
+            + Coalesce(
+                "total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+                0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
+            )
+            + Coalesce(
+                "total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
+                0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
+            )
+        )
+        .values("sum"),
+        output_field=DecimalField(max_digits=23, decimal_places=2),
+    )
+
+
 def transaction_search_annotations(filters: dict):
     def_codes = filters.get("def_codes", [])
     annotation_fields = {
@@ -200,7 +257,7 @@ def transaction_search_annotations(filters: dict):
                 ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
-        ),  # Annotation is used to create this column
+        ),
         "obligated_amount_from_IIJA_supplemental_for_overall_award": Case(
             When(
                 action_date__gte=IIJA_PERIOD_START,
@@ -210,7 +267,8 @@ def transaction_search_annotations(filters: dict):
                 ),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
-        ),  # Annotation is used to create this column
+        ),
+        "total_outlayed_amount_for_overall_award": _outlay_amount_agg_subquery_no_coalesce(award_id_col="award_id"),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
                 filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
@@ -482,6 +540,7 @@ def idv_transaction_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
+        "total_outlayed_amount_for_overall_award": _outlay_amount_agg_subquery_no_coalesce(award_id_col="award_id"),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
                 filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
@@ -628,6 +687,7 @@ def subaward_annotations(filters: dict):
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
+        "prime_award_total_outlayed_amount": _outlay_amount_agg_subquery_no_coalesce(award_id_col="award_id"),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("latest_transaction__action_date"),
         "prime_award_cfda_numbers_and_titles": CFDAs("award__cfdas"),
     }
