@@ -391,6 +391,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 row["Subsidy Cost"] = float(row["Subsidy Cost"])
             if row.get("Award Amount"):
                 row["Award Amount"] = float(row["Award Amount"])
+            if row.get("Total Outlays"):
+                row["Total Outlays"] = float(row["Total Outlays"])
             if row.get("Awarding Agency"):
                 code = row.pop("agency_code")
                 row["awarding_agency_id"] = self.get_agency_database_id(code)

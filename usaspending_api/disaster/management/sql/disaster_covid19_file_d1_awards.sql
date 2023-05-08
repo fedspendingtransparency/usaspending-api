@@ -10,6 +10,7 @@ SELECT
     IIJA_DEFC."gross_outlay_amount_by_award_cpe" + IIJA_DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + IIJA_DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_IIJA_supplemental",
     IIJA_DEFC."transaction_obligated_amount" AS "obligated_amount_from_IIJA_supplemental",
     "award_search"."total_obligation" AS "total_obligated_amount",
+    "award_search"."total_outlays" AS "total_outlayed_amount",
     "latest_transaction"."current_total_value_award" AS "current_total_value_of_award",
     "latest_transaction"."potential_total_value_awar" AS "potential_total_value_of_award",
     "award_search"."date_signed" AS "award_base_action_date",
