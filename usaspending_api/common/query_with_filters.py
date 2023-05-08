@@ -446,14 +446,17 @@ class _DisasterEmergencyFundCodes(_Filter):
         other_queries = [ES_Q("match", **{def_code_field: v}) for v in other_filters]
 
         covid_iija_filters = {k: all_covid_iija_defc[k] for k in filter_values if k in all_covid_iija_defc.keys()}
-        # For any COVID or IIJA transactions, check that the `action_date` is on/after the law's enactment date
-        # If a transaction has a DEFC of 'L' then the transaction's action date should be >= 2023-03-06 to be included
         covid_iija_queries = []
+
+        # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
         for code, enactment_date in covid_iija_filters.items():
-            covid_iija_queries.append(
-                ES_Q("match", disaster_emergency_fund_code=code)
-                & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
-            )
+            if query_type == _QueryType.TRANSACTIONS:
+                covid_iija_queries.append(
+                    ES_Q("match", disaster_emergency_fund_code=code)
+                    & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+                )
+            else:
+                covid_iija_queries.append(ES_Q("match", disaster_emergency_fund_code=code))
 
         if covid_iija_queries:
             if query_type == _QueryType.TRANSACTIONS:
