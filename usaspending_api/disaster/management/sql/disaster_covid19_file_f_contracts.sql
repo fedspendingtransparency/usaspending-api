@@ -189,21 +189,22 @@ ON IIJA_DEFC.award_id = rpt.subaward_search.award_id
 LEFT OUTER JOIN (
     SELECT
         faba.award_id,
-        SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END) AS gross_outlay_amount_by_award_cpe,
-        SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe END) AS ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
-        SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
+        SUM(faba.gross_outlay_amount_by_award_cpe) AS gross_outlay_amount_by_award_cpe,
+        SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) AS ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+        SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
     FROM
         financial_accounts_by_awards faba
     INNER JOIN submission_attributes sa
         ON faba.submission_id = sa.submission_id
     WHERE faba.award_id IS NOT NULL
+        AND sa.is_final_balances_for_fy = TRUE
     GROUP BY
         faba.award_id
     /* If all outlay columns are NULL then we are saying there is no outlay data
         and we want it to show as a blank/NULL (we do NOT show “0”) */
-    HAVING SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END) IS NOT NULL
-        OR SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe END) IS NOT NULL
-        OR SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END) IS NOT NULL
+    HAVING SUM(faba.gross_outlay_amount_by_award_cpe) IS NOT NULL
+        OR SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) IS NOT NULL
+        OR SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) IS NOT NULL
 ) TOTAL_OUTLAYS
 ON TOTAL_OUTLAYS.award_id = rpt.subaward_search.award_id
 WHERE (
