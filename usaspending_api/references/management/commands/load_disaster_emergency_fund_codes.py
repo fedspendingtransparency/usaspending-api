@@ -88,7 +88,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     @staticmethod
     def _prep_date(date_string: str) -> Union[datetime, None]:
         """Convert a string to a datetime object or None if no string was provided.
-        This assumes the date is in the following format: 12-25-2023 (mm-dd-yyyy)
+        This assumes the date is in the following format: 2023-12-25 (yyyy-mm-dd)
 
         Args:
             date_string (str): `Earliest Public Law Enactment Date` value from def_codes.csv file
@@ -98,7 +98,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 or None
         """
         if date_string and type(date_string) is str:
-            return datetime.strptime(date_string, "%m-%d-%Y")
+            return datetime.strptime(date_string, "%Y-%m-%d")
         else:
             return None
 
