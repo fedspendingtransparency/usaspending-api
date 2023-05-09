@@ -1051,7 +1051,7 @@ transaction_search_load_sql_string = fr"""
         )
     LEFT OUTER JOIN
         global_temp.cd_city_grouped rl_cd_city_grouped ON (
-            rl_cd_city_grouped.city_name=TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name))
+            rl_cd_city_grouped.city_name=UPPER(TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)))
             AND rl_cd_city_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
         )
     LEFT OUTER JOIN
