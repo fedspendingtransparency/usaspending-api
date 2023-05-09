@@ -67,12 +67,38 @@ A US county:
 }
 ```
 
+All US cities with a given name:
+```
+{
+    "country": "USA",
+    "city": "Portland"
+}
+```
+
+A city in a state:
+```
+{
+    "country": "USA",
+    "state": "OR",
+    "city": "Portland"
+}
+```
+
+
 A US congressional district:
 ```
 {
     "country": "USA",
     "state": "VA",
     "district": "11"
+}
+```
+
+A ZIP code:
+```
+{
+    "country": "USA",
+    "zip": "60661"
 }
 ```
 
@@ -85,9 +111,12 @@ Keys in a location object include:
 * **county** - a 3 digit FIPS code indicating the county
     * If `county` is provided, a `state` must always be provided as well.
     * If `county` is provided, a `district` value *must never* be provided.
+* **city** - string city name
+    * If no `state` is provided, this will return results for all cities in any state with the provided name
 * **district** - a 2 character code indicating the congressional district
     * If `district` is provided, a `state` must always be provided as well.
     * If `district` is provided, a `county` *must never* be provided.
+* **zip** - a 5 digit string indicating the postal area to search within.
 
 
 ## Keyword Search
