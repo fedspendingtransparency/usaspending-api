@@ -445,18 +445,21 @@ class _DisasterEmergencyFundCodes(_Filter):
         other_filters = list(set(filter_values) - set(all_covid_iija_defc.keys()))
         other_queries = [ES_Q("match", **{def_code_field: v}) for v in other_filters]
 
-        covid_iija_filters = {k: all_covid_iija_defc[k] for k in filter_values if k in all_covid_iija_defc.keys()}
-        covid_iija_queries = []
-
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
-        for code, enactment_date in covid_iija_filters.items():
-            if query_type == _QueryType.TRANSACTIONS:
-                covid_iija_queries.append(
-                    ES_Q("match", disaster_emergency_fund_code=code)
-                    & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
-                )
-            else:
-                covid_iija_queries.append(ES_Q("match", disaster_emergency_fund_code=code))
+        if query_type == _QueryType.TRANSACTIONS:
+            covid_iija_queries = [
+                ES_Q("match", **{def_code_field: def_code})
+                & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+                for def_code, enactment_date in all_covid_iija_defc.items()
+                if def_code in filter_values
+            ]
+        # Only filter on the DEFC value for other types of queries
+        else:
+            covid_iija_queries = [
+                ES_Q("match", **{def_code_field: def_code})
+                for def_code in all_covid_iija_defc.keys()
+                if def_code in filter_values
+            ]
 
         if covid_iija_queries:
             if query_type == _QueryType.TRANSACTIONS:
