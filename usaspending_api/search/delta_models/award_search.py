@@ -136,6 +136,7 @@ AWARD_SEARCH_COLUMNS = {
     "iija_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": True},
     "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
+    "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
@@ -354,7 +355,8 @@ award_search_load_sql_string = rf"""
 
   IIJA_DEFC.iija_spending_by_defc,
   IIJA_DEFC.total_iija_outlay,
-  IIJA_DEFC.total_iija_obligation
+  IIJA_DEFC.total_iija_obligation,
+  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays
 FROM
   int.awards
 INNER JOIN
@@ -532,6 +534,30 @@ LEFT OUTER JOIN (
     GROUP BY
         GROUPED_BY_DEFC.award_id
 ) IIJA_DEFC on IIJA_DEFC.award_id = awards.id
+-- Total outlays calculation
+LEFT JOIN (
+    SELECT award_id,
+            COALESCE(total_gross_outlay_amount_by_award_cpe, 0)
+            + COALESCE(total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+            + COALESCE(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0) AS total_outlays
+        FROM (
+            SELECT faba.award_id,
+                    SUM(faba.gross_outlay_amount_by_award_cpe) AS total_gross_outlay_amount_by_award_cpe,
+                    SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) AS total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+                    SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) AS total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
+                FROM int.financial_accounts_by_awards faba
+
+                INNER JOIN global_temp.submission_attributes sa
+                    ON faba.submission_id = sa.submission_id
+
+                WHERE sa.is_final_balances_for_fy = TRUE
+                GROUP BY faba.award_id
+            ) s
+        WHERE total_gross_outlay_amount_by_award_cpe IS NOT NULL
+            OR total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe IS NOT NULL
+            OR total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe IS NOT NULL
+) AWARD_TOTAL_OUTLAYS
+    ON awards.id = AWARD_TOTAL_OUTLAYS.award_id
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,
