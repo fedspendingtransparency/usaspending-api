@@ -1,7 +1,7 @@
 BROKER_SUBAWARDS_COLUMNS = {
     "created_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "updated_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
-    "id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
+    "id": {"delta": "LONG NOT NULL", "postgres": "LONG NOT NULL"},
     # Prime Award Data
     "unique_award_key": {"delta": "STRING", "postgres": "TEXT"},
     "award_id": {"delta": "STRING", "postgres": "TEXT"},
