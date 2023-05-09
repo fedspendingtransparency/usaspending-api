@@ -259,7 +259,6 @@ def spending_over_time_test_data():
 
 @pytest.mark.django_db
 def test_spending_over_time_success(client, monkeypatch, elasticsearch_transaction_index):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     # test for needed filters
@@ -293,7 +292,6 @@ def test_spending_over_time_failure(client, monkeypatch, elasticsearch_transacti
 
 @pytest.mark.django_db
 def test_spending_over_time_subawards_success(client):
-
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
@@ -1030,6 +1028,7 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         public_law="PUBLIC LAW FOR CODE L",
         title="TITLE FOR CODE L",
         group_name="covid_19",
+        earliest_public_law_enactment_date="2020-03-06",
     )
     baker.make("accounts.FederalAccount", id=99)
     baker.make("accounts.TreasuryAppropriationAccount", federal_account_id=99, treasury_account_identifier=99)
