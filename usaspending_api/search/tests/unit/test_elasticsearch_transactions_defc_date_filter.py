@@ -47,18 +47,23 @@ def test_transactions_elasticsearch_query():
         filters={"def_codes": def_code_filters}
     )
 
-    covid_iija_es_queries = (
-        def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["bool"]["should"][0]["bool"]["must"]
-        + def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["bool"]["should"][1]["bool"]["must"]
-    )
+    covid_iija_es_queries = [
+        def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["bool"]["should"][0]["bool"]["must"],
+        def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["bool"]["should"][1]["bool"]["must"],
+    ]
 
     other_es_queries = def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][1]["bool"]["should"]
 
     # check the COVID-19 and IIJA part of the ES query
-    assert {"match": {"disaster_emergency_fund_codes": "L"}} in covid_iija_es_queries
-    assert {"range": {"action_date": {"gte": "2020-03-06"}}} in covid_iija_es_queries
-    assert {"match": {"disaster_emergency_fund_codes": "Z"}} in covid_iija_es_queries
-    assert {"range": {"action_date": {"gte": "2021-11-15"}}} in covid_iija_es_queries
+    assert [
+        {"match": {"disaster_emergency_fund_codes": "L"}},
+        {"range": {"action_date": {"gte": "2020-03-06"}}},
+    ] in covid_iija_es_queries
+
+    assert [
+        {"match": {"disaster_emergency_fund_codes": "Z"}},
+        {"range": {"action_date": {"gte": "2021-11-15"}}},
+    ] in covid_iija_es_queries
 
     # check the non-COVID-19/non-IIJA part of the ES query
     assert {"match": {"disaster_emergency_fund_codes": "A"}} in other_es_queries
@@ -107,15 +112,20 @@ def test_transactions_elasticsearch_query_only_covid_iija():
         filters={"def_codes": def_code_filters}
     )
 
-    covid_iija_es_queries = (
-        def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["bool"]["must"]
-        + def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][1]["bool"]["must"]
-    )
+    covid_iija_es_queries = [
+        def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["bool"]["must"],
+        def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][1]["bool"]["must"],
+    ]
 
-    assert {"match": {"disaster_emergency_fund_codes": "L"}} in covid_iija_es_queries
-    assert {"range": {"action_date": {"gte": "2020-03-06"}}} in covid_iija_es_queries
-    assert {"match": {"disaster_emergency_fund_codes": "Z"}} in covid_iija_es_queries
-    assert {"range": {"action_date": {"gte": "2021-11-15"}}} in covid_iija_es_queries
+    assert [
+        {"match": {"disaster_emergency_fund_codes": "L"}},
+        {"range": {"action_date": {"gte": "2020-03-06"}}},
+    ] in covid_iija_es_queries
+
+    assert [
+        {"match": {"disaster_emergency_fund_codes": "Z"}},
+        {"range": {"action_date": {"gte": "2021-11-15"}}},
+    ] in covid_iija_es_queries
 
 
 @pytest.mark.django_db
