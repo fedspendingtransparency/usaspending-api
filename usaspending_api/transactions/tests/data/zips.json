@@ -1,0 +1,52 @@
+[
+  {
+    "created_at": "2023-04-15 17:06:43.728395",
+    "updated_at": "2023-04-15 17:06:43.728395",
+    "zips_id": "32524577",
+    "zip5": "45699",
+    "zip_last4": "0730",
+    "state_abbreviation": "OH",
+    "county_number": "145",
+    "congressional_district_no": "02"
+  },
+  {
+    "created_at": "2023-04-15 17:06:43.728395",
+    "updated_at": "2023-04-15 17:06:43.728395",
+    "zips_id": "32524578",
+    "zip5": "45699",
+    "zip_last4": "0731",
+    "state_abbreviation": "OH",
+    "county_number": "145",
+    "congressional_district_no": "02"
+  },
+  {
+    "created_at": "2023-04-15 17:06:43.728395",
+    "updated_at": "2023-04-15 17:06:43.728395",
+    "zips_id": "32524579",
+    "zip5": "45699",
+    "zip_last4": "0732",
+    "state_abbreviation": "OH",
+    "county_number": "145",
+    "congressional_district_no": "02"
+  },
+  {
+    "created_at": "2023-04-15 17:06:43.728395",
+    "updated_at": "2023-04-15 17:06:43.728395",
+    "zips_id": "32524580",
+    "zip5": "45699",
+    "zip_last4": "0733",
+    "state_abbreviation": "OH",
+    "county_number": "145",
+    "congressional_district_no": "02"
+  },
+  {
+    "created_at": "2023-04-15 17:06:43.728395",
+    "updated_at": "2023-04-15 17:06:43.728395",
+    "zips_id": "32524581",
+    "zip5": "45699",
+    "zip_last4": "0734",
+    "state_abbreviation": "OH",
+    "county_number": "145",
+    "congressional_district_no": "02"
+  }
+]
