@@ -1,0 +1,42 @@
+[
+  {
+    "created_at": "2023-04-19 16:02:31.051707",
+    "updated_at": "2023-04-19 16:02:31.051707",
+    "cd_county_grouped_id": "1",
+    "county_number": "001",
+    "state_abbreviation": "AL",
+    "congressional_district_no": "02"
+  },
+  {
+    "created_at": "2023-04-19 16:02:31.051707",
+    "updated_at": "2023-04-19 16:02:31.051707",
+    "cd_county_grouped_id": "2",
+    "county_number": "001",
+    "state_abbreviation": "AR",
+    "congressional_district_no": "01"
+  },
+  {
+    "created_at": "2023-04-19 16:02:31.051707",
+    "updated_at": "2023-04-19 16:02:31.051707",
+    "cd_county_grouped_id": "3",
+    "county_number": "001",
+    "state_abbreviation": "AZ",
+    "congressional_district_no": "90"
+  },
+  {
+    "created_at": "2023-04-19 16:02:31.051707",
+    "updated_at": "2023-04-19 16:02:31.051707",
+    "cd_county_grouped_id": "4",
+    "county_number": "001",
+    "state_abbreviation": "CA",
+    "congressional_district_no": "90"
+  },
+  {
+    "created_at": "2023-04-19 16:02:31.051707",
+    "updated_at": "2023-04-19 16:02:31.051707",
+    "cd_county_grouped_id": "5",
+    "county_number": "001",
+    "state_abbreviation": "CO",
+    "congressional_district_no": "90"
+  }
+]
