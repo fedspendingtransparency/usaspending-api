@@ -36,6 +36,15 @@ def populate_broker_data(broker_server_dblink_setup):
     broker_data = {
         "sam_recipient": json.loads(Path("usaspending_api/recipient/tests/data/broker_sam_recipient.json").read_text()),
         "subaward": json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text()),
+        "cd_state_grouped": json.loads(
+            Path("usaspending_api/transactions/tests/data/cd_state_grouped.json").read_text()
+        ),
+        "zips": json.loads(Path("usaspending_api/transactions/tests/data/zips.json").read_text()),
+        "cd_zips_grouped": json.loads(Path("usaspending_api/transactions/tests/data/cd_zips_grouped.json").read_text()),
+        "cd_city_grouped": json.loads(Path("usaspending_api/transactions/tests/data/cd_city_grouped.json").read_text()),
+        "cd_county_grouped": json.loads(
+            Path("usaspending_api/transactions/tests/data/cd_county_grouped.json").read_text()
+        ),
     }
     insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
     with connections["data_broker"].cursor() as cursor:
@@ -256,7 +265,7 @@ def populate_usas_data(populate_broker_data):
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
+        recipient_location_congressional_code_current=None,
         pop_state_code="VA",
         pop_state_name="Virginia",
         pop_state_fips=51,
@@ -265,7 +274,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         recipient_location_county_population=1,
@@ -344,14 +353,14 @@ def populate_usas_data(populate_broker_data):
         recipient_location_state_fips=51,
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
+        recipient_location_congressional_code_current=None,
         cfdas=None,
         pop_state_code="VA",
         pop_state_name="Virginia",
         pop_state_fips=51,
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
-        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         tas_paths=[
@@ -420,8 +429,8 @@ def populate_usas_data(populate_broker_data):
         parent_recipient_unique_id="PARENTDUNS12345",
         ordering_period_end_date="2020-07-01",
         recipient_location_country_code="USA",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
-        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        recipient_location_congressional_code_current=None,
+        pop_congressional_code_current=None,
         pop_country_code="USA",
         business_categories=None,
         original_loan_subsidy_cost=0.00,
@@ -497,7 +506,7 @@ def populate_usas_data(populate_broker_data):
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_state_code="VA",
         pop_state_fips=51,
         pop_state_name="Virginia",
@@ -506,7 +515,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         recipient_location_county_population=1,
@@ -598,7 +607,7 @@ def populate_usas_data(populate_broker_data):
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_state_code="VA",
         pop_state_fips=51,
         pop_state_name="Virginia",
@@ -607,7 +616,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         recipient_location_county_population=1,
@@ -693,13 +702,13 @@ def populate_usas_data(populate_broker_data):
         recipient_location_state_code="VA",
         recipient_location_state_fips=51,
         recipient_location_state_name="Virginia",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_fips=51,
         pop_state_name="Virginia",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         award_update_date=cont_award.update_date,
@@ -784,13 +793,13 @@ def populate_usas_data(populate_broker_data):
         recipient_location_state_code="VA",
         recipient_location_state_fips=51,
         recipient_location_state_name="Virginia",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_fips=51,
         pop_state_name="Virginia",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         award_update_date=cont_award.update_date,
@@ -865,8 +874,8 @@ def populate_usas_data(populate_broker_data):
         recipient_name_raw="FPDS RECIPIENT 12345",
         recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
         recipient_levels=["C"],
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        recipient_location_congressional_code_current=None,
+        pop_congressional_code_current=None,
         parent_uei="PARENTUEI12345",
         parent_recipient_unique_id="PARENTDUNS12345",
         parent_recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
@@ -1324,13 +1333,13 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_state_code="VA",
         pop_county_code="001",
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
     )
 
     update_awards()
@@ -1592,6 +1601,7 @@ def test_load_table_to_from_delta_for_transaction_search(
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
@@ -1650,6 +1660,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
@@ -1684,6 +1695,7 @@ def test_load_table_to_from_delta_for_award_search(
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
