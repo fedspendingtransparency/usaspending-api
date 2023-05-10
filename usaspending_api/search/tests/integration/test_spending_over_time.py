@@ -1072,3 +1072,102 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert {"aggregated_amount": 10, "time_period": {"fiscal_year": "2020"}} in resp.json().get("results")
+
+
+@pytest.mark.django_db
+def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
+    """Test that the Transactions ES query does NOT return transactions with an
+    `action_date` before the applicable `earliest_public_law_enactment_date`"""
+
+    defc1 = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        public_law="PUBLIC LAW FOR CODE L",
+        title="TITLE FOR CODE L",
+        group_name="covid_19",
+        earliest_public_law_enactment_date="2020-03-06",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="A",
+        public_law="PUBLIC LAW FOR CODE A",
+        title="TITLE FOR CODE L",
+        group_name=None,
+        earliest_public_law_enactment_date=None,
+    )
+    baker.make("accounts.FederalAccount", id=99)
+    baker.make("accounts.TreasuryAppropriationAccount", federal_account_id=99, treasury_account_identifier=99)
+    baker.make(
+        "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
+    )
+    baker.make("search.AwardSearch", award_id=99, total_obligation=20, piid="0001", action_date="2020-01-01")
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=99,
+        action_date="2020-04-02",
+        fiscal_action_date="2020-04-02",
+        fiscal_year=2020,
+        federal_action_obligation=10,
+        generated_pragmatic_obligation=10,
+        award_amount=20,
+        award_id=99,
+        is_fpds=True,
+        type="A",
+        piid="0001",
+        disaster_emergency_fund_codes=["L"],
+    )
+
+    # Transaction that should be filtered out due to it's `action_date` being too early
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=100,
+        action_date="2019-01-01",
+        fiscal_action_date="2019-01-01",
+        federal_action_obligation=22,
+        generated_pragmatic_obligation=22,
+        award_amount=20,
+        award_id=99,
+        is_fpds=True,
+        type="A",
+        disaster_emergency_fund_codes=["L"],
+    )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=101,
+        action_date="2018-06-06",
+        fiscal_action_date="2018-06-06",
+        federal_action_obligation=30,
+        generated_pragmatic_obligation=30,
+        award_amount=30,
+        award_id=99,
+        is_fpds=True,
+        type="A",
+        disaster_emergency_fund_codes=["A"],
+    )
+
+    # Should be added to `transaction_id=99` since the `action_date` filter doesn't apply to it
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=102,
+        action_date="2020-01-01",
+        fiscal_action_date="2020-01-01",
+        federal_action_obligation=40,
+        generated_pragmatic_obligation=40,
+        award_amount=40,
+        award_id=99,
+        is_fpds=True,
+        type="A",
+        disaster_emergency_fund_codes=["A"],
+    )
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps({"group": "fiscal_year", "filters": {"def_codes": ["A", "L"]}}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert {"aggregated_amount": 50, "time_period": {"fiscal_year": "2020"}} in resp.json().get("results")
+    assert {"aggregated_amount": 30, "time_period": {"fiscal_year": "2018"}} in resp.json().get("results")
