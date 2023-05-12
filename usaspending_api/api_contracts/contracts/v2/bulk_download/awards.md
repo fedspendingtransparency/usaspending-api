@@ -169,7 +169,7 @@ This route sends a request to the backend to begin generating a zipfile of award
         + `D`
 + `date_range` (required, TimePeriod, fixed-type)
     Object with start and end dates
-+ `date_type` (required, enum[string])
++ `date_type` (optional, enum[string])
     + Members
         + `action_date`
         + `last_modified_date`
