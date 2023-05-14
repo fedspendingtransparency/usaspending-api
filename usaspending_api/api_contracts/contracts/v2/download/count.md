@@ -104,6 +104,7 @@ Returns the number of transactions that would be included in a download request 
     feature on the website or one of our `download` or `bulk_download` API endpoints.
 + `date_type` (optional, enum[string])
     + Members
+        + `date_signed`
         + `action_date`
         + `last_modified_date`
 
