@@ -21,6 +21,7 @@ class AwardSearch(models.Model):
     uri = models.TextField(null=True, db_index=True)
     award_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True, db_index=True)
+    total_outlays = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True, db_index=True)
     description = models.TextField(null=True)
     total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)

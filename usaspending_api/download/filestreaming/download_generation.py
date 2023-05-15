@@ -228,6 +228,7 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
             filters = {**json_request["filters"], **json_request.get("account_filters", {})}
 
             if "is_fpds_join" in VALUE_MAPPINGS[download_type]:
+                # Contracts
                 d1_account_source = DownloadSource(
                     VALUE_MAPPINGS[download_type]["table_name"],
                     json_request["account_level"],
@@ -244,6 +245,7 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
                 )
                 download_sources.append(d1_account_source)
 
+                # Assistance
                 d2_account_source = DownloadSource(
                     VALUE_MAPPINGS[download_type]["table_name"],
                     json_request["account_level"],
@@ -259,6 +261,23 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
                     json_request["account_level"],
                 )
                 download_sources.append(d2_account_source)
+
+                # Unlinked
+                unlinked_account_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"],
+                    json_request["account_level"],
+                    download_type,
+                    agency_id,
+                    extra_file_type="Unlinked_",
+                )
+                unlinked_filters = {**filters, "unlinked": True}
+                unlinked_account_source.queryset = filter_function(
+                    download_type,
+                    VALUE_MAPPINGS[download_type]["table"],
+                    unlinked_filters,
+                    json_request["account_level"],
+                )
+                download_sources.append(unlinked_account_source)
 
             else:
                 account_source = DownloadSource(
@@ -699,6 +718,7 @@ def strip_file_extension(file_name):
 
 
 def fail_download(download_job, exception, message):
+    write_to_log(message=message, is_error=True, download_job=download_job)
     stack_trace = "".join(
         traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__)
     )

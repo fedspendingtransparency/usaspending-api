@@ -95,7 +95,7 @@ def test_get_award_financial_csv_sources():
         {"download_types": ["award_financial"], "account_level": "treasury_account", "filters": {}}
     )
     VALUE_MAPPINGS["award_financial"]["filter_function"] = original
-    assert len(csv_sources) == 2
+    assert len(csv_sources) == 3
     assert csv_sources[0].file_type == "treasury_account"
     assert csv_sources[0].source_type == "award_financial"
     assert csv_sources[0].extra_file_type == "Contracts_"

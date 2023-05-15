@@ -7,6 +7,7 @@ SELECT
     COVID_DEFC."transaction_obligated_amount" AS "prime_award_obligated_amount_from_COVID-19_supplementals",
     IIJA_DEFC."gross_outlay_amount_by_award_cpe" + IIJA_DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + IIJA_DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_IIJA_supplemental",
     IIJA_DEFC."transaction_obligated_amount" AS "obligated_amount_from_IIJA_supplemental",
+    COALESCE(TOTAL_OUTLAYS."gross_outlay_amount_by_award_cpe", 0) + COALESCE(TOTAL_OUTLAYS."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe", 0) + COALESCE(TOTAL_OUTLAYS."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe", 0) AS "prime_award_total_outlayed_amount",
     "subaward_search"."action_date" AS "prime_award_base_action_date",
     EXTRACT (YEAR FROM ("awards"."date_signed") + INTERVAL '3 months') AS "prime_award_base_action_date_fiscal_year",
     "awards"."certified_date" AS "prime_award_latest_action_date",
@@ -186,6 +187,27 @@ LEFT OUTER JOIN (
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
 ) IIJA_DEFC
 ON IIJA_DEFC.award_id = rpt.subaward_search.award_id
+LEFT OUTER JOIN (
+    SELECT
+        faba.award_id,
+        SUM(faba.gross_outlay_amount_by_award_cpe) AS gross_outlay_amount_by_award_cpe,
+        SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) AS ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+        SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN submission_attributes sa
+        ON faba.submission_id = sa.submission_id
+    WHERE faba.award_id IS NOT NULL
+        AND sa.is_final_balances_for_fy = TRUE
+    GROUP BY
+        faba.award_id
+    /* If all outlay columns are NULL then we are saying there is no outlay data
+        and we want it to show as a blank/NULL (we do NOT show “0”) */
+    HAVING SUM(faba.gross_outlay_amount_by_award_cpe) IS NOT NULL
+        OR SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) IS NOT NULL
+        OR SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) IS NOT NULL
+) TOTAL_OUTLAYS
+ON TOTAL_OUTLAYS.award_id = rpt.subaward_search.award_id
 WHERE (
     "subaward_search"."prime_award_group" IN ('grant')
     AND "subaward_search"."sub_action_date" >= '2020-04-01'

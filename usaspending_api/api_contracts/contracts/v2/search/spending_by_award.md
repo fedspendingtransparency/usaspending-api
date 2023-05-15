@@ -93,6 +93,7 @@ List of table columns
 ## SpendingByAwardResponse (object)
 + `internal_id` (required, number)
 + `Award Amount` (optional, number)
++ `Total Outlays` (optional, number)
 + `Award ID` (optional, string)
 + `Award Type` (optional, string, nullable)
 + `Awarding Agency Code` (optional, string, nullable)

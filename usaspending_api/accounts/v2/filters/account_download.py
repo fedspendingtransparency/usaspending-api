@@ -137,6 +137,9 @@ def build_query_filters(account_type, filters, account_level):
         if "is_fpds" in filter:
             query_filters = {filter: filters[filter], **query_filters}
 
+    if filters.get("unlinked"):
+        query_filters["award_id__isnull"] = True
+
     return query_filters, tas_id
 
 
