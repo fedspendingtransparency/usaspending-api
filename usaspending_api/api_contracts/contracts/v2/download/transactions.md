@@ -169,6 +169,10 @@ This route sends a request to the backend to begin generating a zipfile of trans
 + `start_date` (required, string)
 + `end_date` (required, string)
 + `date_type` (optional, enum[string])
+    + Members
+        + `date_signed`
+        + `action_date`
+        + `last_modified_date`
 
 ### Location (object)
 + `country`(required, string)
