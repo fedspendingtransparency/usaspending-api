@@ -93,6 +93,7 @@ List of table columns
 ## SpendingByAwardResponse (object)
 + `internal_id` (required, number)
 + `Award Amount` (optional, number)
++ `Total Outlays` (optional, number)
 + `Award ID` (optional, string)
 + `Award Type` (optional, string, nullable)
 + `Awarding Agency Code` (optional, string, nullable)
@@ -218,12 +219,7 @@ List of table columns
         + `date_signed`
 
 ### LocationObject (object)
-+ `country`: `USA` (required, string)
-+ `state`: `VA` (optional, string)
-+ `county` (optional, string)
-+ `city` (optional, string)
-+ `district` (optional, string)
-+ `zip` (optional, string)
+These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])

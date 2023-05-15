@@ -718,6 +718,7 @@ def strip_file_extension(file_name):
 
 
 def fail_download(download_job, exception, message):
+    write_to_log(message=message, is_error=True, download_job=download_job)
     stack_trace = "".join(
         traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__)
     )

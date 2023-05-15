@@ -11,6 +11,7 @@ class DisasterEmergencyFundCode(models.Model):
     urls = models.TextField(null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    earliest_public_law_enactment_date = models.DateField(null=True)
 
     class Meta:
         managed = True
