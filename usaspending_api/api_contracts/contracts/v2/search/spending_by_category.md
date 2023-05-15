@@ -45,7 +45,7 @@ This endpoint returns a list of the top results of specific categories sorted by
             The page of results to return based on the limit
     + Body
 
-            
+
             {
                 "category": "awarding_agency",
                 "filters": {
@@ -123,6 +123,7 @@ This endpoint returns a list of the top results of specific categories sorted by
     feature on the website or one of our `download` or `bulk_download` API endpoints.
 + `date_type` (optional, enum[string])
     + Members
+        + `date_signed`
         + `action_date`
         + `last_modified_date`
 
