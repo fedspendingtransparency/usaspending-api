@@ -13,6 +13,7 @@ SELECT
   "fain",
   "uri",
   "total_obligation",
+  "total_outlays",
   "description",
   "award_amount",
   "total_subsidy_cost",

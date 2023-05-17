@@ -60,6 +60,7 @@ contracts_mapping = {
         "Start Date": "period_of_performance_start_date",
         "End Date": "period_of_performance_current_end_date",
         "Award Amount": "total_obligation",
+        "Total Outlays": "total_outlays",
         "Contract Award Type": "type_description",
     },
 }
@@ -68,6 +69,7 @@ idv_mapping = {
     **{
         "Start Date": "period_of_performance_start_date",
         "Award Amount": "total_obligation",
+        "Total Outlays": "total_outlays",
         "Contract Award Type": "type_description",
         "Last Date to Order": "ordering_period_end_date",
     },
@@ -88,6 +90,7 @@ non_loan_assist_mapping = {
         "Start Date": "period_of_performance_start_date",
         "End Date": "period_of_performance_current_end_date",
         "Award Amount": "total_obligation",
+        "Total Outlays": "total_outlays",
         "Award Type": "type_description",
         "SAI Number": "sai_number.keyword",
         "CFDA Number": "cfda_number.keyword",
