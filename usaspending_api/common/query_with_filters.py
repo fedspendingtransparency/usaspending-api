@@ -106,19 +106,13 @@ class _TimePeriods(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         time_period_query = []
-        if options:
-            gte_field = options.get("gte_field", "action_date")
-            lte_field = options.get("lte_field", "date_signed" if query_type == _QueryType.AWARDS else "action_date")
-
         for v in filter_values:
             start_date = v.get("start_date") or settings.API_SEARCH_MIN_DATE
             end_date = v.get("end_date") or settings.API_MAX_DATE
 
-            gte_range = {gte_field if options else v.get("gte_date_type", "action_date"): {"gte": start_date}}
+            gte_range = {v.get("gte_date_type", "action_date"): {"gte": start_date}}
             lte_range = {
-                lte_field
-                if options
-                else v.get("lte_date_type", "date_signed" if query_type == _QueryType.AWARDS else "action_date"): {
+                v.get("lte_date_type", "date_signed" if query_type == _QueryType.AWARDS else "action_date"): {
                     "lte": end_date
                 }
             }
