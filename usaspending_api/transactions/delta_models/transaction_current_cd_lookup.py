@@ -1,12 +1,12 @@
 # The order of these fields should always match the order of the
 # SELECT statement in "transaction_current_cd_lookup_load_sql_string"
 TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS = {
-    "transaction_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
-    "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
-    "pop_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
+    "transaction_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
+    "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_congressional_code_current": {"delta": "STRING", "postgres": "TEXT"},
 }
 TRANSACTION_CURRENT_CD_LOOKUP_DELTA_COLUMNS = {
-    k: v["delta"] for k, v in TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS.items() if not v["gold"]
+    k: v["delta"] for k, v in TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS.items()
 }
 
 transaction_current_cd_lookup_create_sql_string = fr"""
