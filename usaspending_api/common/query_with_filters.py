@@ -435,6 +435,14 @@ class _DisasterEmergencyFundCodes(_Filter):
         def_codes_query = []
         def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{'s' if query_type != _QueryType.ACCOUNTS else ''}"
 
+        # Get all COVID and IIJA disaster codes from the database
+        covid_disaster_codes = list(
+            DisasterEmergencyFundCode.objects.filter(group_name="covid_19").values_list("code", flat=True)
+        )
+        iija_disaster_codes = list(
+            DisasterEmergencyFundCode.objects.filter(group_name="infrastructure").values_list("code", flat=True)
+        )
+
         all_covid_iija_defc = set(
             DisasterEmergencyFundCode.objects.filter(group_name__in=["covid_19", "infrastructure"]).values_list(
                 "code", "earliest_public_law_enactment_date"
@@ -442,45 +450,83 @@ class _DisasterEmergencyFundCodes(_Filter):
         )
         all_covid_iija_defc = dict(all_covid_iija_defc)
 
+        # Dictionaries with the given COVID or IIJA DEF code(s) and their associated enactment date
+        covid_filters = {
+            code: enactment_date
+            for code, enactment_date in all_covid_iija_defc.items()
+            if code in covid_disaster_codes and code in filter_values
+        }
+        iija_filters = {
+            code: enactment_date
+            for code, enactment_date in all_covid_iija_defc.items()
+            if code in iija_disaster_codes and code in filter_values
+        }
+
+        # Everything that isn't COVID or IIJA
         other_filters = list(set(filter_values) - set(all_covid_iija_defc.keys()))
         other_queries = [ES_Q("match", **{def_code_field: v}) for v in other_filters]
 
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
         if query_type == _QueryType.TRANSACTIONS:
-            covid_iija_queries = [
+            covid_es_queries = [
                 ES_Q("match", **{def_code_field: def_code})
                 & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
-                for def_code, enactment_date in all_covid_iija_defc.items()
-                if def_code in filter_values
+                for def_code, enactment_date in covid_filters.items()
             ]
-        # Only filter on the DEFC value for other types of queries
-        else:
-            covid_iija_queries = [
+            iija_es_queries = [
                 ES_Q("match", **{def_code_field: def_code})
-                for def_code in all_covid_iija_defc.keys()
-                if def_code in filter_values
+                & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+                for def_code, enactment_date in iija_filters.items()
             ]
 
-        if covid_iija_queries:
-            if query_type == _QueryType.TRANSACTIONS:
-                query = ES_Q(
-                    "bool",
-                    should=covid_iija_queries,
-                    minimum_should_match=1,
+            if covid_es_queries or iija_es_queries:
+                covid_iija_queries = covid_es_queries + iija_es_queries
+                def_codes_query.append(
+                    ES_Q(
+                        "bool",
+                        should=covid_iija_queries,
+                        minimum_should_match=1,
+                    )
                 )
-            elif query_type == _QueryType.AWARDS:
-                nonzero_limit = _NonzeroFields.generate_elasticsearch_query(
+
+        # Only filter on the DEFC value, but also filter out results where
+        #   `covid/iija_outlay` and `covid/iija_obligation` are 0
+        elif query_type == _QueryType.AWARDS:
+            covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
+            iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
+
+            if covid_es_queries:
+                covid_nonzero_limit = _NonzeroFields.generate_elasticsearch_query(
                     ["total_covid_outlay", "total_covid_obligation"], query_type
                 )
-                query = ES_Q("bool", must=[nonzero_limit], should=covid_iija_queries, minimum_should_match=1)
-            else:
-                query = ES_Q("bool", should=covid_iija_queries, minimum_should_match=1)
+                covid_nonzero_query = ES_Q(
+                    "bool", must=[covid_nonzero_limit], should=covid_es_queries, minimum_should_match=1
+                )
 
-            def_codes_query.append(query)
+                def_codes_query.append(ES_Q("bool", should=covid_nonzero_query, minimum_should_match=1))
+
+            if iija_es_queries:
+                iija_nonzero_limit = _NonzeroFields.generate_elasticsearch_query(
+                    ["total_iija_outlay", "total_iija_obligation"], query_type
+                )
+                iija_nonzero_query = ES_Q(
+                    "bool", must=[iija_nonzero_limit], should=iija_es_queries, minimum_should_match=1
+                )
+
+                def_codes_query.append(ES_Q("bool", should=iija_nonzero_query, minimum_should_match=1))
+
+        # Only filter on the DEFC value for other types of queries
+        else:
+            covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
+            iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
+
+            if covid_es_queries or iija_es_queries:
+                covid_iija_queries = covid_es_queries + iija_es_queries
+
+                def_codes_query.append(ES_Q("bool", should=covid_iija_queries, minimum_should_match=1))
 
         if other_queries:
-            query = ES_Q("bool", should=other_queries, minimum_should_match=1)
-            def_codes_query.append(query)
+            def_codes_query.append(ES_Q("bool", should=other_queries, minimum_should_match=1))
 
         if len(def_codes_query) != 1:
             final_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
