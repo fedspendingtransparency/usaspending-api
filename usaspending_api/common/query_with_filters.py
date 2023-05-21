@@ -7,6 +7,7 @@ from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.filters.time_period import TransactionSearchTimePeriod
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
@@ -105,6 +106,31 @@ class _TimePeriods(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
+
+        # Temporary until rest of dependencies are updated
+        if "time_period_obj" not in options or options.get("time_period_obj") is None:
+            return cls._default_elasticsearch_query(filter_values, query_type, **options)
+
+        time_period_query = []
+        for v in filter_values:
+            time_period_obj = options["time_period_obj"]
+            time_period_obj.filter_value = v
+
+            start_date = time_period_obj.start_date()
+            end_date = time_period_obj.end_date()
+
+            # Keywords must be strings, hence f-strings here
+            gte_range = {f"{time_period_obj.gte_date_type()}": {"gte": start_date}}
+            lte_range = {f"{time_period_obj.lte_date_type()}": {"lte": end_date}}
+
+            time_period_query.append(
+                ES_Q("bool", should=[ES_Q("range", **gte_range), ES_Q("range", **lte_range)], minimum_should_match=2)
+            )
+
+        return ES_Q("bool", should=time_period_query, minimum_should_match=1)
+
+    @classmethod
+    def _default_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options):
         time_period_query = []
         for v in filter_values:
             start_date = v.get("start_date") or settings.API_SEARCH_MIN_DATE
@@ -619,6 +645,10 @@ class QueryWithFilters:
 
     @classmethod
     def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
+        time_period_obj = TransactionSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        options["time_period_obj"] = time_period_obj
         return cls._generate_elasticsearch_query(filters, _QueryType.TRANSACTIONS, **options)
 
     @classmethod
