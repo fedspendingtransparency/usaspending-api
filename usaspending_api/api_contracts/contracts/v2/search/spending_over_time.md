@@ -110,7 +110,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `date_type` (optional, enum[string])
     + Members
         + `date_signed`
-          + This date type value is equivalent to `award_date_signed`. Behind the scense, if you provide this input we map it to `award_date_signed`.
+          + This date type value is equivalent to `award_date_signed`. Behind the scenes, if you provide this input we map it to `award_date_signed`.
         + `action_date`
           + This date type value is the default.
         + `last_modified_date`
