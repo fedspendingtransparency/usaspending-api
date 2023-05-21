@@ -116,7 +116,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
         + `last_modified_date`
 
 ### LocationObject (object)
-These fields are defined in the [StandardLocationObject](../../../../search_filters.md#standard-location-object)
+These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])
