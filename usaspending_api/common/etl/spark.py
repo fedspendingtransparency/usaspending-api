@@ -544,12 +544,13 @@ def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[
     return sql_strings
 
 
-def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False):
+def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False, logger = None):
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
     """
-    logger = get_jvm_logger(spark)
+    if not logger:
+        logger = get_jvm_logger(spark)
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
@@ -574,7 +575,7 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
     logger.info(f"Created the reference views in the global_temp database")
 
 
-def load_csv_file(
+def write_csv_file(
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
@@ -582,8 +583,8 @@ def load_csv_file(
     compress=True,
     overwrite=True,
     logger=None,
-) -> None:
-    """Load DataFrame data into a SINGLE CSV file, that is packaged in a .zip file and uploaded to S3.
+) -> int:
+    """Write DataFrame data to CSV file parts
 
     Args:
         spark: passed-in active SparkSession
@@ -593,11 +594,12 @@ def load_csv_file(
             - Can be relative if using the SparkSession's fs.defaultFS FileSystem impl
         compress: Whether the file content parts are compressed in GZIP format (*.csv.gz)
         overwrite: Whether to replace the file CSV files if they already exist by that name
-        max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
-            this many rows in any file written. Only if the total data exceeds this value will multiple files be
-            created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
+        max_rows_per_merged_file: Suggestion to Spark of how many records to put in each written CSV file part,
+        if it will end up writing multiple files.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+    Returns:
+        record count of the DataFrame that was used to populate the CSV file(s)
     """
     if not logger:
         logger = get_jvm_logger(spark)
@@ -607,10 +609,6 @@ def load_csv_file(
     if fs.exists(parts_dir_path):
         fs.delete(parts_dir_path, True)
     compression = "gzip" if compress else None
-    extension = "csv.gz" if compress else "csv"
-    # When combining these later, will prepend the extracted header to each resultant file.
-    # The parts therefore must NOT have headers or the headers will show up in the data when combined.
-    header = ",".join([_.name for _ in df.schema.fields])
     start = time.time()
     logger.info("Writing source data DataFrame to csv part files ...")
     num_partitions = df.rdd.getNumPartitions()
@@ -634,8 +632,55 @@ def load_csv_file(
         timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
         mode="overwrite" if overwrite else "errorifexists",
     )
-
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
+    return df_record_count
+
+
+def load_csv_file_and_zip(
+    spark: SparkSession,
+    df: DataFrame,
+    parts_dir: str,
+    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+    compress=True,
+    overwrite=True,
+    logger=None,
+) -> int:
+    """Load DataFrame data into a SINGLE CSV file, that is packaged in a .zip file and uploaded to S3.
+
+    Args:
+        spark: passed-in active SparkSession
+        df: the DataFrame wrapping the data source to be dumped to CSV.
+        parts_dir: Path to dir that contains the outputted parts files from partitions
+            - Should be full path ``"s3a://.../.../"`` if using S3
+            - Can be relative if using the SparkSession's fs.defaultFS FileSystem impl
+        compress: Whether the file content parts are compressed in GZIP format (*.csv.gz)
+        overwrite: Whether to replace the file CSV files if they already exist by that name
+        max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
+            this many rows in any file written. Only if the total data exceeds this value will multiple files be
+            created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
+        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
+            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+    Returns:
+        record count of the DataFrame that was used to populate the CSV file
+    """
+    if not logger:
+        logger = get_jvm_logger(spark)
+
+    df_record_count = write_csv_file(
+        spark=spark,
+        df=df,
+        parts_dir=parts_dir,
+        max_rows_per_merged_file=max_rows_per_merged_file,
+        compress=compress,
+        overwrite=overwrite,
+        logger=logger,
+    )
+
+    extension = "csv.gz" if compress else "csv"
+    # When combining these later, will prepend the extracted header to each resultant file.
+    # The parts therefore must NOT have headers or the headers will show up in the data when combined.
+    header = ",".join([_.name for _ in df.schema.fields])
+
     logger.info("Concatenating partitioned output files and Zipping into downloadable file ...")
     start = time.time()
     hadoop_copy_merge(
@@ -651,6 +696,7 @@ def load_csv_file(
         logger=logger,
     )
     logger.info(f"Completed file concatenation and Zip in {(time.time() - start):3f}s")
+    return df_record_count
 
 
 def hadoop_copy_merge(
@@ -665,7 +711,7 @@ def hadoop_copy_merge(
     rows_per_part=CONFIG.SPARK_PARTITION_ROWS,
     max_rows_per_merged_file=EXCEL_ROW_LIMIT,
     logger=None,
-):
+) -> None:
     """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
     It uses the underlying Hadoop FileSystem API to combine all part files under a directory
     into a single specified destination file

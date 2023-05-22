@@ -10,8 +10,13 @@ from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
 from pathlib import Path
 
+from pyspark.sql import SparkSession
+
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
+from usaspending_api.common.etl.spark import load_csv_file_and_zip
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
+from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.download_generation import (
     split_and_zip_data_files,
     wait_for_process,
@@ -38,26 +43,31 @@ class Command(BaseCommand):
     total_download_count = 0
     total_download_columns = 0
     total_download_size = 0
-    working_dir_path = Path(settings.CSV_LOCAL_PATH)
     readme_path = Path(settings.COVID19_DOWNLOAD_README_FILE_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
-
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--skip-upload",
-            action="store_true",
-            help="Don't store the list of IDs for downline ETL. Automatically skipped if --dry-run is provided",
-        )
+    zip_file_name = f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{full_timestamp}.zip"
+    csv_working_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.SPARK_CSV_S3_PATH}/{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{full_timestamp}"
+    spark = None
+    spark_created_by_command = False
 
     def handle(self, *args, **options):
         """
         Generates a download data package specific to COVID-19 spending
         """
-        self.upload = not options["skip_upload"]
-        self.zip_file_path = (
-            self.working_dir_path / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
-        )
         try:
+            extra_conf = {
+                # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
+                "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
+                "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+                # See comment below about old date and time values cannot be parsed without these
+                "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
+                "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+                "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
+            }
+            spark = get_active_spark_session()
+            if not spark:
+                self.spark_created_by_command = True
+                self.spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
             self.prep_filesystem()
             self.process_data_copy_jobs()
             self.complete_zip_and_upload()
@@ -67,62 +77,60 @@ class Command(BaseCommand):
         finally:
             # "best-effort" attempt to cleanup temp files after a failure. Isn't 100% effective
             self.cleanup()
+            if self.spark_created_by_command:
+                self.spark.stop()
 
     def process_data_copy_jobs(self):
-        logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_path}")
-        self.filepaths_to_delete.append(self.zip_file_path)
+        logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_name}")
+        # TODO: ensure final .zip file is cleaned out of s3 after copied to S3 BD location
 
         for sql_file, final_name in self.download_file_list:
-            intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
+            df = self.spark.sql(sql_file.read_text())
+            load_csv_file_and_zip(self.spark, df, f"{self.csv_working_path}/{final_name}/", logger=logger)
             data_file, count = self.download_to_csv(sql_file, final_name, str(intermediate_data_file_path))
             if count <= 0:
                 logger.warning(f"Empty data file generated: {final_name}!")
+            # TODO: ensure temp s3 folder for this file is removed (or the whole working folder is)
 
             self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_name.stem}*"))
 
     def complete_zip_and_upload(self):
         self.finalize_zip_contents()
-        if self.upload:
-            logger.info("Upload final zip file to S3")
-            upload_download_file_to_s3(self.zip_file_path)
-            db_id = self.store_record_in_database()
-            logger.info(f"Created database record {db_id} for future retrieval")
-            logger.info("Marking zip file for deletion in cleanup")
-        else:
-            logger.warn("Not uploading zip file to S3. Leaving file locally")
-            self.filepaths_to_delete.remove(self.zip_file_path)
-            logger.warn("Not creating database record")
+        logger.info("Upload final zip file to S3")
+        # TODO: copy from staged s3 bucket to settings.BULK_DOWNLOAD_S3_BUCKET_NAME; ensure extra_args={"ACL": "bucket-owner-full-control"}
+        upload_download_file_to_s3(self.zip_file_path)
+        db_id = self.store_record_in_database()
+        logger.info(f"Created database record {db_id} for future retrieval")
+        logger.info("Marking zip file for deletion in cleanup")
 
     @property
     def download_file_list(self):
         short_timestamp = self.full_timestamp[:-6]
-        sql_dir = Path("usaspending_api/disaster/management/sql")
+        spark_sql_dir = Path("usaspending_api/disaster/management/sql/delta")
         return [
             (
-                sql_dir / "disaster_covid19_file_a.sql",
-                self.working_dir_path
-                / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
+                spark_sql_dir / "disaster_covid19_file_a.sql",
+                f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_b.sql",
-                self.working_dir_path
-                / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
+                spark_sql_dir / "disaster_covid19_file_b.sql",
+                f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_d1_awards.sql",
-                self.working_dir_path / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
+                spark_sql_dir / "disaster_covid19_file_d1_awards.sql",
+                f"Contracts_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_d2_awards.sql",
-                self.working_dir_path / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
+                spark_sql_dir / "disaster_covid19_file_d2_awards.sql",
+                f"Assistance_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_f_contracts.sql",
-                self.working_dir_path / f"Contracts_Subawards_{short_timestamp}",
+                spark_sql_dir / "disaster_covid19_file_f_contracts.sql",
+                f"Contracts_Subawards_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_f_grants.sql",
-                self.working_dir_path / f"Assistance_Subawards_{short_timestamp}",
+                spark_sql_dir / "disaster_covid19_file_f_grants.sql",
+                f"Assistance_Subawards_{short_timestamp}",
             ),
         ]
 
@@ -150,12 +158,8 @@ class Command(BaseCommand):
         self.total_download_size = self.zip_file_path.stat().st_size
 
     def prep_filesystem(self):
-        if self.zip_file_path.exists():
-            # Clean up a zip file that might exist from a prior attempt at this download
-            self.zip_file_path.unlink()
-
-        if not self.zip_file_path.parent.exists():
-            self.zip_file_path.parent.mkdir()
+        # TODO: ensure no prior .zip file exists in the s3 location, or that it is overwritten or cleaned up prior
+        pass
 
     def download_to_csv(self, sql_filepath, destination_path, intermediate_data_filename):
         start_time = time.perf_counter()
