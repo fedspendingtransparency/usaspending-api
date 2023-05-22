@@ -195,17 +195,17 @@ def test_tas_program_activity_multiple_object_classes(client, tas_mulitple_oc_pe
         "results": [
             {
                 "name": "NAME 4",
-                "gross_outlay_amount": 11000.0,
-                "obligated_amount": 11000.0,
+                "gross_outlay_amount": 111000.0,
+                "obligated_amount": 11100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1000.0,
+                        "gross_outlay_amount": 101000.0,
                         "name": "Other",
-                        "obligated_amount": 10000.0,
+                        "obligated_amount": 10100.0,
                     },
                     {
                         "gross_outlay_amount": 10000.0,
-                        "name": "Other",
+                        "name": "Other2",
                         "obligated_amount": 1000.0,
                     },
                 ],
@@ -293,7 +293,10 @@ def tas_mulitple_oc_per_tas():
         oc, major_object_class=10, major_object_class_name="Other", object_class=120, object_class_name="supplies"
     )
     oc2 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=130, object_class_name="interest"
+        oc, major_object_class=10, major_object_class_name="Other2", object_class=130, object_class_name="interest"
+    )
+    oc3 = baker.make(
+        oc, major_object_class=10, major_object_class_name="Other", object_class=120, object_class_name="supplies"
     )
 
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
@@ -314,4 +317,13 @@ def tas_mulitple_oc_per_tas():
         object_class=oc1,
         obligations_incurred_by_program_object_class_cpe=10000,
         gross_outlay_amount_by_program_object_class_cpe=1000,
+    )
+    baker.make(
+        fabpaoc,
+        treasury_account=tas1,
+        submission=sub1,
+        program_activity=pa1,
+        object_class=oc3,
+        obligations_incurred_by_program_object_class_cpe=100,
+        gross_outlay_amount_by_program_object_class_cpe=100000,
     )

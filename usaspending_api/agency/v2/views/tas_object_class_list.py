@@ -94,6 +94,7 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
                 ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
+            .values("name", "obligated_amount", "gross_outlay_amount")
         )
         return queryset_results
 
@@ -132,6 +133,7 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
                 ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
+            .values("name", "obligated_amount", "gross_outlay_amount")
         )
         return queryset_results
 
