@@ -52,12 +52,9 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
         # There isn't a direct relationship between ObjectClass and RefProgramActivity
         # That's why we opted to query for RefProgramActivity for each ObjectClass
         for idx, object_class_row in enumerate(pagination_limit_results):
-            program_activity_results = self.get_program_activity_by_object_class_list(object_class_row["id"])
+            program_activity_results = self.get_program_activity_by_object_class_list(object_class_row["name"])
             child_response_dict = self.format_program_activity_children_response(program_activity_results)
-            # "id" column should not be in the response
-            # Instead of adding another loop to remove this column from the object class list results,
-            # just delete it during this already existing loop over the list
-            del response_dict["results"][idx]["id"]
+
             response_dict["results"][idx]["children"] = child_response_dict
 
         return Response(response_dict)
@@ -87,7 +84,7 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
         queryset_results = (
             ObjectClass.objects.filter(*filters)
             .annotate(
-                name=F("object_class_name"),
+                name=F("major_object_class_name"),
                 obligated_amount=Sum(
                     "financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe"
                 ),
@@ -96,14 +93,16 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
                 ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("id", "name", "obligated_amount", "gross_outlay_amount")
+            .values("name", "obligated_amount", "gross_outlay_amount")
         )
         return queryset_results
 
-    def get_program_activity_by_object_class_list(self, object_class_id) -> List[dict]:
+    def get_program_activity_by_object_class_list(self, major_object_class_name) -> List[dict]:
         filters = [
             Q(financialaccountsbyprogramactivityobjectclass__submission_id__in=self.submission_ids),
-            Q(financialaccountsbyprogramactivityobjectclass__object_class__id=object_class_id),
+            Q(
+                financialaccountsbyprogramactivityobjectclass__object_class__major_object_class_name=major_object_class_name
+            ),
             Q(
                 financialaccountsbyprogramactivityobjectclass__treasury_account__tas_rendering_label=self.tas_rendering_label
             ),

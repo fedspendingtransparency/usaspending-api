@@ -52,12 +52,8 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
         # There isn't a direct relationship between RefProgramActivity and ObjectClass
         # That's why we opted to query for ObjectClass for each RefProgramActivity
         for idx, program_activity_row in enumerate(pagination_limit_results):
-            object_class_results = self.get_object_class_by_program_activity_list(program_activity_row["id"])
+            object_class_results = self.get_object_class_by_program_activity_list(program_activity_row["name"])
             child_response_dict = self.format_object_class_children_response(object_class_results)
-            # "id" column should not be in the response
-            # Instead of adding another loop to remove this column from the object class list results,
-            # just delete it during this already existing loop over the list
-            del response_dict["results"][idx]["id"]
             response_dict["results"][idx]["children"] = child_response_dict
 
         return Response(response_dict)
@@ -96,14 +92,16 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
                 ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("id", "name", "obligated_amount", "gross_outlay_amount")
+            .values("name", "obligated_amount", "gross_outlay_amount")
         )
         return queryset_results
 
-    def get_object_class_by_program_activity_list(self, program_activity_id) -> List[dict]:
+    def get_object_class_by_program_activity_list(self, program_activity_name) -> List[dict]:
         filters = [
             Q(financialaccountsbyprogramactivityobjectclass__submission_id__in=self.submission_ids),
-            Q(financialaccountsbyprogramactivityobjectclass__program_activity__id=program_activity_id),
+            Q(
+                financialaccountsbyprogramactivityobjectclass__program_activity__program_activity_name=program_activity_name
+            ),
             Q(
                 financialaccountsbyprogramactivityobjectclass__treasury_account__tas_rendering_label=self.tas_rendering_label
             ),
@@ -124,7 +122,7 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
         queryset_results = (
             ObjectClass.objects.filter(*filters)
             .annotate(
-                name=F("object_class_name"),
+                name=F("major_object_class_name"),
                 obligated_amount=Sum(
                     "financialaccountsbyprogramactivityobjectclass__obligations_incurred_by_program_object_class_cpe"
                 ),
@@ -133,7 +131,7 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
                 ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("id", "name", "obligated_amount", "gross_outlay_amount")
+            .values("name", "obligated_amount", "gross_outlay_amount")
         )
         return queryset_results
 
