@@ -83,6 +83,7 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
             filters.append(Q(object_class_name__icontains=self.filter))
         queryset_results = (
             ObjectClass.objects.filter(*filters)
+            .values("major_object_class_name")
             .annotate(
                 name=F("major_object_class_name"),
                 obligated_amount=Sum(
@@ -93,7 +94,6 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
                 ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("name", "obligated_amount", "gross_outlay_amount")
         )
         return queryset_results
 
@@ -121,6 +121,7 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
         ]
         queryset_results = (
             RefProgramActivity.objects.filter(*filters)
+            .values("program_activity_name")
             .annotate(
                 name=F("program_activity_name"),
                 obligated_amount=Sum(
@@ -131,7 +132,6 @@ class TASObjectClassList(PaginationMixin, AgencyBase):
                 ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("name", "obligated_amount", "gross_outlay_amount")
         )
         return queryset_results
 
