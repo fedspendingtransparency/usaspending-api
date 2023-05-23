@@ -122,27 +122,19 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 1,
         },
         "results": [
             {
-                "gross_outlay_amount": 100000.0,
-                "name": "supplies",
-                "obligated_amount": 100.0,
-                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0}],
-            },
-            {
-                "gross_outlay_amount": 1000000.0,
-                "name": "hvac",
-                "obligated_amount": 10.0,
-                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0}],
-            },
-            {
-                "gross_outlay_amount": 10000000.0,
-                "name": "equipment",
-                "obligated_amount": 1.0,
-                "children": [{"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0}],
-            },
+                "gross_outlay_amount": 11100000.0,
+                "name": "Other",
+                "obligated_amount": 111.0,
+                "children": [
+                    {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+                    {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+                    {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+                ],
+            }
         ],
     }
 
@@ -191,7 +183,7 @@ def test_tas_object_class_multiple_pa_per_oc(client, monkeypatch, tas_mulitple_p
         "results": [
             {
                 "gross_outlay_amount": 11000000.0,
-                "name": "equipment",
+                "name": "Other",
                 "obligated_amount": 11.0,
                 "children": [
                     {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
@@ -227,7 +219,7 @@ def test_tas_object_class_multiple_submission_years(client, agency_account_data)
         "results": [
             {
                 "gross_outlay_amount": 10000.0,
-                "name": "interest",
+                "name": "Other",
                 "obligated_amount": 1000.0,
                 "children": [{"gross_outlay_amount": 10000.0, "name": "NAME 4", "obligated_amount": 1000.0}],
             }

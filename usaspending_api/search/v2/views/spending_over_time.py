@@ -33,6 +33,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.common.filters.time_period import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch_for_prime_awards(self, time_periods: list) -> list:
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
+        options = {}
+        time_period_obj = TransactionSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        options["time_period_obj"] = time_period_obj
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **options)
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
