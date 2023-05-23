@@ -5,9 +5,7 @@ TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS = {
     "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT"},
     "pop_congressional_code_current": {"delta": "STRING", "postgres": "TEXT"},
 }
-TRANSACTION_CURRENT_CD_LOOKUP_DELTA_COLUMNS = {
-    k: v["delta"] for k, v in TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS.items()
-}
+TRANSACTION_CURRENT_CD_LOOKUP_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS.items()}
 
 transaction_current_cd_lookup_create_sql_string = fr"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
