@@ -7,7 +7,6 @@ from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.filters.time_period import TransactionSearchTimePeriod
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
@@ -645,10 +644,6 @@ class QueryWithFilters:
 
     @classmethod
     def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        time_period_obj = TransactionSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-        options["time_period_obj"] = time_period_obj
         return cls._generate_elasticsearch_query(filters, _QueryType.TRANSACTIONS, **options)
 
     @classmethod
