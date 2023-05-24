@@ -78,12 +78,3 @@ class ITimePeriod(ABC):
             date (the value in the nested dictionary).
         """
         pass
-
-    @abstractmethod
-    def new_awards_only(self):
-        """Indicates if the time period filter requires only new awards.
-
-        Returns:
-            bool
-        """
-        pass

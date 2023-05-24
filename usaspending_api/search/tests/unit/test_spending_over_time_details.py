@@ -358,9 +358,6 @@ def test_spending_over_time_funny_dates_ordering(client, monkeypatch, elasticsea
 def test_spending_over_time_new_awards_only_filter(
     client, monkeypatch, elasticsearch_transaction_index, populate_models
 ):
-    # Testing the ability for spending over time to consume the "date_type": "date_signed" value
-    # The business considers any awards whose base transaction falls within two dates as a new award
-    # See, [DEV-8603] (https://federal-spending-transparency.atlassian.net/browse/DEV-8603)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     # Test where awards have a base transaction date within the specified time period filter bounds
@@ -393,7 +390,7 @@ def test_spending_over_time_new_awards_only_filter(
     # ensure ordering is correct
     confirm_proper_ordering(group, resp.data["results"])
 
-    # Test where awards do not a base transaction date within the specified time period filter bounds
+    # Test where awards do not have a base transaction date within the specified time period filter bounds
     group = "month"
     test_payload = {
         "group": group,
@@ -452,6 +449,75 @@ def test_spending_over_time_new_awards_only_filter(
             {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "4"}},
             {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "5"}},
             {"aggregated_amount": 110.00, "time_period": {"fiscal_year": "2011", "month": "6"}},
+        ],
+        "group": "month",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+    # Test that new awards only set to true requires action date to be in bounds
+    group = "month"
+    test_payload = {
+        "group": group,
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {
+                    "new_awards_only": True,
+                    "date_type": "date_signed",
+                    "start_date": "2010-02-14",
+                    "end_date": "2010-02-16",
+                },
+            ]
+        },
+        "messages": [get_time_period_message()],
+    }
+
+    expected_response = {
+        "results": [
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "5"}},
+        ],
+        "group": "month",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+    # Test that new awards only set to false doesn't require action date to be in bounds
+    group = "month"
+    test_payload = {
+        "group": group,
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {
+                    "new_awards_only": True,
+                    "date_type": "date_signed",
+                    "start_date": "2010-02-13",
+                    "end_date": "2010-03-02",
+                },
+            ]
+        },
+        "messages": [get_time_period_message()],
+    }
+
+    expected_response = {
+        "results": [
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "5"}},
+            {"aggregated_amount": 100.00, "time_period": {"fiscal_year": "2010", "month": "6"}},
         ],
         "group": "month",
         "messages": [get_time_period_message()],

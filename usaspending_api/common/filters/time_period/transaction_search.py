@@ -47,6 +47,3 @@ class TransactionSearchTimePeriod(ITimePeriod):
         if ret_date_type in self._date_type_transaction_search_map:
             ret_date_type = self._date_type_transaction_search_map[ret_date_type]
         return ret_date_type
-
-    def new_awards_only(self):
-        return self._filter_value.get("new_awards_only")

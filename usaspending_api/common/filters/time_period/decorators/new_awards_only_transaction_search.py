@@ -32,18 +32,23 @@ class NewAwardsOnlyTransactionSearch(ITimePeriod):
 
     def gte_date_range(self):
         wrapped_range = self._transaction_search_time_period_obj.gte_date_range()
-        if self.new_awards_only():
+        if self._new_awards_only():
             wrapped_range.append({"action_date": {"gte": self.start_date()}})
         return wrapped_range
 
     def lte_date_range(self):
         wrapped_range = self._transaction_search_time_period_obj.lte_date_range()
-        if self.new_awards_only():
+        if self._new_awards_only():
             wrapped_range.append({"action_date": {"lte": self.end_date()}})
         return wrapped_range
 
-    def new_awards_only(self):
+    def _new_awards_only(self):
+        """Indicates if the time period filter requires only new awards.
+
+        Returns:
+            bool
+        """
         return (
-            self._transaction_search_time_period_obj.new_awards_only()
+            self._transaction_search_time_period_obj.filter_value.get("new_awards_only")
             and self._transaction_search_time_period_obj.filter_value.get("date_type") == "date_signed"
         )

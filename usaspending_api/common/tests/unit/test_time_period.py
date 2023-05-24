@@ -14,10 +14,8 @@ def test_transaction_search_time_period():
     transaction_search.filter_value = time_period_filter
     expected_start_date = "2020-10-01"
     expected_end_date = "2021-09-30"
-    expected_new_awards_only = None
     assert transaction_search.start_date() == expected_start_date
     assert transaction_search.end_date() == expected_end_date
-    assert transaction_search.new_awards_only() == expected_new_awards_only
 
     time_period_filter = {"end_date": "2021-09-30"}
     transaction_search.filter_value = time_period_filter
@@ -52,10 +50,8 @@ def test_transaction_search_time_period():
     transaction_search.filter_value = time_period_filter
     expected_start_date = "2020-10-01"
     expected_end_date = "2021-09-30"
-    expected_new_awards_only = True
     assert transaction_search.start_date() == expected_start_date
     assert transaction_search.end_date() == expected_end_date
-    assert transaction_search.new_awards_only() == expected_new_awards_only
 
     time_period_filter = {
         "new_awards_only": True,
@@ -66,10 +62,8 @@ def test_transaction_search_time_period():
     transaction_search.filter_value = time_period_filter
     expected_gte_date_type = "award_date_signed"
     expected_lte_date_type = "award_date_signed"
-    expected_new_awards_only = True
     assert transaction_search.gte_date_type() == expected_gte_date_type
     assert transaction_search.gte_date_type() == expected_lte_date_type
-    assert transaction_search.new_awards_only() == expected_new_awards_only
 
 
 def test_new_awards_only_transaction_search_time_period():
@@ -88,7 +82,7 @@ def test_new_awards_only_transaction_search_time_period():
     expected_new_awards_only = None
     assert transaction_search_decorator.start_date() == expected_start_date
     assert transaction_search_decorator.end_date() == expected_end_date
-    assert transaction_search_decorator.new_awards_only() == expected_new_awards_only
+    assert transaction_search_decorator._new_awards_only() == expected_new_awards_only
 
     time_period_filter = {"end_date": "2021-09-30"}
     transaction_search_decorator.filter_value = time_period_filter
@@ -126,7 +120,7 @@ def test_new_awards_only_transaction_search_time_period():
     expected_new_awards_only = False
     assert transaction_search_decorator.start_date() == expected_start_date
     assert transaction_search_decorator.end_date() == expected_end_date
-    assert transaction_search_decorator.new_awards_only() == expected_new_awards_only
+    assert transaction_search_decorator._new_awards_only() == expected_new_awards_only
 
     time_period_filter = {
         "new_awards_only": True,
@@ -140,4 +134,4 @@ def test_new_awards_only_transaction_search_time_period():
     expected_new_awards_only = True
     assert transaction_search_decorator.gte_date_type() == expected_gte_date_type
     assert transaction_search_decorator.gte_date_type() == expected_lte_date_type
-    assert transaction_search_decorator.new_awards_only() == expected_new_awards_only
+    assert transaction_search_decorator._new_awards_only() == expected_new_awards_only
