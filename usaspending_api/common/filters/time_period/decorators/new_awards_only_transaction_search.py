@@ -43,4 +43,7 @@ class NewAwardsOnlyTransactionSearch(ITimePeriod):
         return wrapped_range
 
     def new_awards_only(self):
-        return self._transaction_search_time_period_obj.new_awards_only()
+        return (
+            self._transaction_search_time_period_obj.new_awards_only()
+            and self._transaction_search_time_period_obj.filter_value.get("date_type") == "date_signed"
+        )
