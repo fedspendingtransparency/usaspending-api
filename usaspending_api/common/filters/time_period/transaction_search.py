@@ -2,7 +2,7 @@ from .time_period import ITimePeriod
 
 
 class TransactionSearchTimePeriod(ITimePeriod):
-    """A time period implementation that's designed to suit the time period filters
+    """A base time period implementation that's designed to suit the time period filters
     on transaction search.
     """
 
@@ -36,8 +36,17 @@ class TransactionSearchTimePeriod(ITimePeriod):
     def lte_date_type(self):
         return self._return_date_type()
 
+    def gte_date_range(self):
+        return [{f"{self.gte_date_type()}": {"gte": self.start_date()}}]
+
+    def lte_date_range(self):
+        return [{f"{self.lte_date_type()}": {"lte": self.end_date()}}]
+
     def _return_date_type(self):
         ret_date_type = self._filter_value.get("date_type", "action_date")
         if ret_date_type in self._date_type_transaction_search_map:
             ret_date_type = self._date_type_transaction_search_map[ret_date_type]
         return ret_date_type
+
+    def new_awards_only(self):
+        return self._filter_value.get("new_awards_only")

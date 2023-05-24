@@ -16,6 +16,7 @@ from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.search.models import AwardSearch as DBAwardSearch, TransactionSearch as DBTransactionSearch
+from usaspending_api.common.filters.time_period import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -64,11 +65,13 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             yield results
 
     @classmethod
-    def _populate_download_lookups(cls, filters: dict, download_job: DownloadJob, size: int = 10000) -> None:
+    def _populate_download_lookups(
+        cls, filters: dict, download_job: DownloadJob, size: int = 10000, **filter_options
+    ) -> None:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
-        filter_query = cls._filter_query_func(filters)
+        filter_query = cls._filter_query_func(filters, **filter_options)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
         lookup_id_type = cls._search_type.type_as_string()
@@ -157,8 +160,13 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+        filter_options = {}
+        time_period_obj = TransactionSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        filter_options["time_period_obj"] = time_period_obj
         base_queryset = DBTransactionSearch.objects.all()
-        cls._populate_download_lookups(filters, download_job)
+        cls._populate_download_lookups(filters, download_job, **filter_options)
         queryset = base_queryset.extra(
             tables=["download_job_lookup"],
             where=[

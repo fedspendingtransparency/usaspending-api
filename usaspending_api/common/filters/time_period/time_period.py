@@ -54,7 +54,36 @@ class ITimePeriod(ABC):
         """
         Returns:
             A date type that indicates the name of a column in which
-            stores the date values that end date must be less than.
+            stores the date values that end date must be less than or equal to.
             Can return None when lte_date_type doesn't exist.
+        """
+        pass
+
+    @abstractmethod
+    def gte_date_range(self):
+        """
+        Returns:
+            A nested dictionary indicating a column (the key) which should
+            store a value greater than or equal to (as specified in a key in the nested dictionary) a
+            date (the value in the nested dictionary).
+        """
+        pass
+
+    @abstractmethod
+    def lte_date_range(self):
+        """
+        Returns:
+            A nested dictionary indicating a column (the key) which should
+            store a value less than or equal to (as specified in a key in the nested dictionary) a
+            date (the value in the nested dictionary).
+        """
+        pass
+
+    @abstractmethod
+    def new_awards_only(self):
+        """Indicates if the time period filter requires only new awards.
+
+        Returns:
+            bool
         """
         pass
