@@ -1,3 +1,3 @@
-from .new_awards_only_transaction_search import NewAwardsOnlyTransactionSearch
+from .new_awards_only import NewAwardsOnlyTimePeriod
 
-__all__ = ["NewAwardsOnlyTransactionSearch"]
+__all__ = ["NewAwardsOnlyTimePeriod"]

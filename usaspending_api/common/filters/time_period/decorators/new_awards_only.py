@@ -1,14 +1,22 @@
 from usaspending_api.common.filters.time_period.time_period import ITimePeriod
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 
-class NewAwardsOnlyTransactionSearch(ITimePeriod):
+class NewAwardsOnlyTimePeriod(ITimePeriod):
     """A decorator class that can be used to apply a new awards only filter
-    ONTOP of an existing transaction search time period filter.
+    ON TOP of an existing time period filter.
     """
 
-    def __init__(self, transaction_search_time_period_obj, *args, **kwargs):
+    def __init__(self, transaction_search_time_period_obj, query_type, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._query_type = query_type
         self._transaction_search_time_period_obj = transaction_search_time_period_obj
+        self._additional_gte_filters_for_new_awards_only = {
+            _QueryType.TRANSACTIONS: [{"action_date": {"gte": self.start_date()}}]
+        }
+        self._additional_lte_filters_for_new_awards_only = {
+            _QueryType.TRANSACTIONS: [{"action_date": {"lte": self.end_date()}}]
+        }
 
     @property
     def filter_value(self):
@@ -33,13 +41,15 @@ class NewAwardsOnlyTransactionSearch(ITimePeriod):
     def gte_date_range(self):
         wrapped_range = self._transaction_search_time_period_obj.gte_date_range()
         if self._new_awards_only():
-            wrapped_range.append({"action_date": {"gte": self.start_date()}})
+            for additional_filter in self._additional_gte_filters_for_new_awards_only[self._query_type]:
+                wrapped_range.append(additional_filter)
         return wrapped_range
 
     def lte_date_range(self):
         wrapped_range = self._transaction_search_time_period_obj.lte_date_range()
         if self._new_awards_only():
-            wrapped_range.append({"action_date": {"lte": self.end_date()}})
+            for additional_filter in self._additional_lte_filters_for_new_awards_only[self._query_type]:
+                wrapped_range.append(additional_filter)
         return wrapped_range
 
     def _new_awards_only(self):
