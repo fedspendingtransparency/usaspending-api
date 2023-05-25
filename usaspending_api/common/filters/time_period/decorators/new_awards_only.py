@@ -13,16 +13,28 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
         super().__init__(*args, **kwargs)
         self._query_type = query_type
         self._transaction_search_time_period_obj = transaction_search_time_period_obj
-        self._additional_gte_filters_for_new_awards_only = {
-            _QueryType.TRANSACTIONS: [
-                {"action_date": {"gte": self.start_date()}},
-                {"award_date_signed": {"gte": self.start_date()}},
-            ]
-        }
-        self._additional_lte_filters_for_new_awards_only = {
+
+    @property
+    def _additional_lte_filters_for_new_awards_only(self):
+        # Making this variable a property to ensure it grabs
+        # end date on the fly in case it wasn't set beofre
+        # instantiating this class.
+        return {
             _QueryType.TRANSACTIONS: [
                 {"action_date": {"lte": self.end_date()}},
                 {"award_date_signed": {"lte": self.end_date()}},
+            ]
+        }
+
+    @property
+    def _additional_gte_filters_for_new_awards_only(self):
+        # Making this variable a property to ensure it grabs
+        # end date on the fly in case it wasn't set beofre
+        # instantiating this class.
+        return {
+            _QueryType.TRANSACTIONS: [
+                {"action_date": {"gte": self.start_date()}},
+                {"award_date_signed": {"gte": self.start_date()}},
             ]
         }
 
