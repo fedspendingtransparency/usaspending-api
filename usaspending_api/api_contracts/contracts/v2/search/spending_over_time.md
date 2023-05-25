@@ -115,7 +115,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
           + This date type value is the default.
         + `last_modified_date`
 + `new_awards_only` (optional, boolean)
-  + Indicates when the results should reflect new awards only. When `new_awards_only` is TRUE, `date_type` must equal `date_signed`
+    Indicates when the results should reflect new awards only. When `new_awards_only` is TRUE, `date_type` must equal `date_signed`
 
 ### LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
