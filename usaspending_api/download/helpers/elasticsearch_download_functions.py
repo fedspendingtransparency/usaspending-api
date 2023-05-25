@@ -11,14 +11,14 @@ from django.db.models import QuerySet
 from elasticsearch_dsl import A
 
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
-from usaspending_api.common.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.models import AwardSearch as DBAwardSearch, TransactionSearch as DBTransactionSearch
-from usaspending_api.common.filters.time_period import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_type.transactions import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
