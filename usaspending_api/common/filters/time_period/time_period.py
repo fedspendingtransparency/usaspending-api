@@ -1,21 +1,23 @@
 from abc import ABC, abstractmethod
-from types import List
+from typing import List
 
 
 class AbstractTimePeriod(ABC):
-    """Time period interface for storing data related to a time period filter."""
+    """A composable class that can be used according to the Decorator software design pattern, to generate
+    and provide time period filtering logic from a API request's time period filter value.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @property
     @abstractmethod
-    def filter_value(self) -> dict:
+    def filter_value(self) -> dict[str, str]:
         pass
 
     @filter_value.setter
     @abstractmethod
-    def filter_value(self, filter_value: dict):
+    def filter_value(self, filter_value: dict[str, str]):
         """
         Arguments:
             filter_value -- A single time period filter provided by the user.
@@ -61,7 +63,7 @@ class AbstractTimePeriod(ABC):
         pass
 
     @abstractmethod
-    def gte_date_range(self) -> List[dict]:
+    def gte_date_range(self) -> List[dict[str, str]]:
         """
         Returns:
             A nested dictionary indicating a column (the key) which should
@@ -71,7 +73,7 @@ class AbstractTimePeriod(ABC):
         pass
 
     @abstractmethod
-    def lte_date_range(self) -> List[dict]:
+    def lte_date_range(self) -> List[dict[str, str]]:
         """
         Returns:
             A nested dictionary indicating a column (the key) which should

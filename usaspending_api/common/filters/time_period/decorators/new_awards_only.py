@@ -1,21 +1,23 @@
 from usaspending_api.common.filters.time_period.time_period import AbstractTimePeriod
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from typing import List
+
 
 NEW_AWARDS_ONLY_KEYWORD = "new_awards_only"
 
 
 class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
-    """A decorator class that can be used to apply a new awards only filter
-    ON TOP of an existing time period filter.
+    """A composable class that can be used according to the Decorator software design pattern, to apply
+    new awards only filter logic on top of a concrete AbstractTimePeriod subclass.
     """
 
-    def __init__(self, transaction_search_time_period_obj, query_type, *args, **kwargs):
+    def __init__(self, transaction_search_time_period_obj: AbstractTimePeriod, query_type: _QueryType, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._query_type = query_type
         self._transaction_search_time_period_obj = transaction_search_time_period_obj
 
     @property
-    def _additional_lte_filters_for_new_awards_only(self):
+    def _additional_lte_filters_for_new_awards_only(self) -> dict[_QueryType : List[dict[str, str]]]:
         # Making this variable a property to ensure it grabs
         # end date on the fly in case it wasn't set beofre
         # instantiating this class.
@@ -27,7 +29,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
         }
 
     @property
-    def _additional_gte_filters_for_new_awards_only(self):
+    def _additional_gte_filters_for_new_awards_only(self) -> dict[_QueryType : List[dict[str, str]]]:
         # Making this variable a property to ensure it grabs
         # end date on the fly in case it wasn't set beofre
         # instantiating this class.
@@ -43,7 +45,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
         return self._transaction_search_time_period_obj.filter_value
 
     @filter_value.setter
-    def filter_value(self, filter_value: dict):
+    def filter_value(self, filter_value):
         self._transaction_search_time_period_obj.filter_value = filter_value
 
     def start_date(self):
@@ -78,10 +80,6 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
                 wrapped_range.append(additional_filter)
         return wrapped_range
 
-    def _new_awards_only(self):
-        """Indicates if the time period filter requires only new awards.
-
-        Returns:
-            bool
-        """
+    def _new_awards_only(self) -> bool:
+        """Indicates if the time period filter requires only new awards."""
         return self._transaction_search_time_period_obj.filter_value.get("date_type") == NEW_AWARDS_ONLY_KEYWORD
