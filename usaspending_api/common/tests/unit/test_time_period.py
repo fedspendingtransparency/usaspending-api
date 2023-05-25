@@ -73,7 +73,9 @@ def test_new_awards_only_transaction_search_time_period():
     transaction_search = TransactionSearchTimePeriod(
         default_start_date=default_start_date, default_end_date=default_end_date
     )
-    transaction_search_decorator = NewAwardsOnlyTimePeriod(transaction_search_time_period_obj=transaction_search, query_type=_QueryType.TRANSACTIONS)
+    transaction_search_decorator = NewAwardsOnlyTimePeriod(
+        transaction_search_time_period_obj=transaction_search, query_type=_QueryType.TRANSACTIONS
+    )
 
     # Testing for correct output of start and end date
     time_period_filter = {"start_date": "2020-10-01", "end_date": "2021-09-30"}
