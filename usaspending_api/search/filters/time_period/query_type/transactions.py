@@ -1,4 +1,4 @@
-from .time_period import AbstractTimePeriod
+from usaspending_api.search.filters.time_period import AbstractTimePeriod
 
 
 class TransactionSearchTimePeriod(AbstractTimePeriod):

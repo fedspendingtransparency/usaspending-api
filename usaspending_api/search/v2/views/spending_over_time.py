@@ -18,7 +18,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     bolster_missing_time_periods,
     generate_fiscal_date_range,
@@ -34,8 +34,8 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.filters.time_period import TransactionSearchTimePeriod
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.query_type.transactions import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 

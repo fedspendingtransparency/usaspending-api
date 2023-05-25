@@ -1,6 +1,7 @@
-from usaspending_api.common.filters.time_period.time_period import AbstractTimePeriod
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from typing import List
+
+from usaspending_api.search.filters.time_period import AbstractTimePeriod
 
 
 NEW_AWARDS_ONLY_KEYWORD = "new_awards_only"
@@ -25,7 +26,10 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
             _QueryType.TRANSACTIONS: [
                 {"action_date": {"lte": self.end_date()}},
                 {"award_date_signed": {"lte": self.end_date()}},
-            ]
+            ],
+            _QueryType.AWARDS: [
+                {"date_signed": {"lte": self.end_date()}},
+            ],
         }
 
     @property
@@ -37,7 +41,10 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
             _QueryType.TRANSACTIONS: [
                 {"action_date": {"gte": self.start_date()}},
                 {"award_date_signed": {"gte": self.start_date()}},
-            ]
+            ],
+            _QueryType.AWARDS: [
+                {"date_signed": {"lte": self.start_date()}},
+            ],
         }
 
     @property

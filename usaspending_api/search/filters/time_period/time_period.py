@@ -5,6 +5,9 @@ from typing import List, Dict
 class AbstractTimePeriod(ABC):
     """A composable class that can be used according to the Decorator software design pattern, to generate
     and provide time period filtering logic from a API request's time period filter value.
+
+    Interface represents and encapsulates a
+    [TimePeriodFilterObject] (https://vscode.dev/github/fedspendingtransparency/usaspending-api/blob/mod/DEV-9834-new-awards-only/usaspending_api/api_contracts/search_filters.md#L142)
     """
 
     def __init__(self, *args, **kwargs):
