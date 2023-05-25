@@ -4,6 +4,8 @@ from usaspending_api.search.filters.time_period import AbstractTimePeriod
 class TransactionSearchTimePeriod(AbstractTimePeriod):
     """A time period implementation that's designed to suit the time period filters
     on transaction search.
+
+    This concrete implementation supports the filter [TransactionSearchTimePeriodObject](#usaspending_api/api_contracts/search_filters.md#transaction-search-time-period-object).
     """
 
     def __init__(self, default_start_date: str, default_end_date: str, *args, **kwargs):

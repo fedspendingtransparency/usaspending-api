@@ -101,24 +101,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
   If the `def_codes` provided are in the COVID-19 group, the query will only return results of transactions where the `action_date` is on or after `2020-04-01`.
 
 ### TimePeriodObject (object)
-+ `start_date`: `2017-10-01` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `end_date`: `2018-09-30` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `date_type` (optional, enum[string])
-    + Members
-        + `date_signed`
-            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed`.
-            `date_signed` is not supported when `subawards` field is set to true.
-        + `action_date`
-            This date type value is the default.
-        + `last_modified_date`
-        + `new_awards_only`
-            Indicates when the results should reflect new awards only. You should expect only
-            transactions that have a date within the time period bounds and are associated with a new award to be returned.
-            `new_awards_only` is not supported when `subawards` field is set to true.
+This TimePeriodObject falls into the Transaction Search category and are defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 
 ### LocationObject (object)
