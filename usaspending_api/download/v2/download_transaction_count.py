@@ -12,7 +12,9 @@ from usaspending_api.common.helpers.generic_helper import get_generic_filters_me
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.filters.time_period import TransactionSearchTimePeriod
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.query_type.transactions import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,10 @@ class DownloadTransactionCountViewSet(APIView):
             time_period_obj = TransactionSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
-            options["time_period_obj"] = time_period_obj
+            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+                transaction_search_time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+            )
+            options["time_period_obj"] = new_awards_only_decorator
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters, **options)
             search = TransactionSearch().filter(filter_query)
             total_count = search.handle_count()
