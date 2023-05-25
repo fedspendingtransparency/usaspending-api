@@ -116,7 +116,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
             This date type value is the default.
         + `last_modified_date`
         + `new_awards_only`
-            Indicates when the results should reflect new awards only. When the `date_type` field equals `new_awards_only` you should expect only
+            Indicates when the results should reflect new awards only. You should expect only
             transactions that have a date within the time period bounds and are associated with a new award to be returned.
             `new_awards_only` is not supported when `subawards` field is set to true.
 
