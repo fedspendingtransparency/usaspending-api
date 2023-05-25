@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from types import list
 
 
-class ITimePeriod(ABC):
+class TimePeriod(ABC):
     """Time period interface for storing data related to a time period filter."""
 
     def __init__(self, *args, **kwargs):

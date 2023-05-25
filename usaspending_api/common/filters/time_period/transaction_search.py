@@ -1,7 +1,7 @@
-from .time_period import ITimePeriod
+from .time_period import TimePeriod
 
 
-class TransactionSearchTimePeriod(ITimePeriod):
+class TransactionSearchTimePeriod(TimePeriod):
     """A base time period implementation that's designed to suit the time period filters
     on transaction search.
     """
