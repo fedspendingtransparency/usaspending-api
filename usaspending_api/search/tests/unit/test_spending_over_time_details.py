@@ -470,8 +470,7 @@ def test_spending_over_time_new_awards_only_filter(
         "filters": {
             "time_period": [
                 {
-                    "new_awards_only": True,
-                    "date_type": "date_signed",
+                    "date_type": "new_awards_only",
                     "start_date": "2010-02-14",
                     "end_date": "2010-02-16",
                 },
@@ -504,8 +503,7 @@ def test_spending_over_time_new_awards_only_filter(
         "filters": {
             "time_period": [
                 {
-                    "new_awards_only": True,
-                    "date_type": "date_signed",
+                    "date_type": "new_awards_only",
                     "start_date": "2010-02-13",
                     "end_date": "2010-03-02",
                 },
