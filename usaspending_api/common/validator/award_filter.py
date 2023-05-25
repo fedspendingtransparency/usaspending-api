@@ -105,12 +105,7 @@ AWARD_FILTER = [
             },
             "date_type": {
                 "type": "enum",
-                "enum_values": ["action_date", "last_modified_date", "date_signed"],
-                "optional": True,
-            },
-            "new_awards_only": {
-                "type": "boolean",
-                "default": False,
+                "enum_values": ["action_date", "last_modified_date", "date_signed", "new_awards_only"],
                 "optional": True,
             },
         },

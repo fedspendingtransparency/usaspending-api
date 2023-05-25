@@ -1,6 +1,8 @@
 from usaspending_api.common.filters.time_period.time_period import ITimePeriod
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
+NEW_AWARDS_ONLY_KEYWORD = "new_awards_only"
+
 
 class NewAwardsOnlyTimePeriod(ITimePeriod):
     """A decorator class that can be used to apply a new awards only filter
@@ -12,10 +14,16 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
         self._query_type = query_type
         self._transaction_search_time_period_obj = transaction_search_time_period_obj
         self._additional_gte_filters_for_new_awards_only = {
-            _QueryType.TRANSACTIONS: [{"action_date": {"gte": self.start_date()}}]
+            _QueryType.TRANSACTIONS: [
+                {"action_date": {"gte": self.start_date()}},
+                {"award_date_signed": {"gte": self.start_date()}},
+            ]
         }
         self._additional_lte_filters_for_new_awards_only = {
-            _QueryType.TRANSACTIONS: [{"action_date": {"lte": self.end_date()}}]
+            _QueryType.TRANSACTIONS: [
+                {"action_date": {"lte": self.end_date()}},
+                {"award_date_signed": {"lte": self.start_date()}},
+            ]
         }
 
     @property
@@ -41,6 +49,9 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
     def gte_date_range(self):
         wrapped_range = self._transaction_search_time_period_obj.gte_date_range()
         if self._new_awards_only():
+            # When date type is new awards only we don't use date type directly in
+            # the range
+            wrapped_range = []
             for additional_filter in self._additional_gte_filters_for_new_awards_only[self._query_type]:
                 wrapped_range.append(additional_filter)
         return wrapped_range
@@ -48,6 +59,9 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
     def lte_date_range(self):
         wrapped_range = self._transaction_search_time_period_obj.lte_date_range()
         if self._new_awards_only():
+            # When date type is new awards only we don't use date type directly in
+            # the range
+            wrapped_range = []
             for additional_filter in self._additional_lte_filters_for_new_awards_only[self._query_type]:
                 wrapped_range.append(additional_filter)
         return wrapped_range
@@ -58,7 +72,4 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
         Returns:
             bool
         """
-        return (
-            self._transaction_search_time_period_obj.filter_value.get("new_awards_only")
-            and self._transaction_search_time_period_obj.filter_value.get("date_type") == "date_signed"
-        )
+        return self._transaction_search_time_period_obj.filter_value.get("date_type") == NEW_AWARDS_ONLY_KEYWORD
