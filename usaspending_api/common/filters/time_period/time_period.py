@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict
 
 
 class AbstractTimePeriod(ABC):
@@ -12,12 +12,12 @@ class AbstractTimePeriod(ABC):
 
     @property
     @abstractmethod
-    def filter_value(self) -> dict[str, str]:
+    def filter_value(self) -> Dict[str, str]:
         pass
 
     @filter_value.setter
     @abstractmethod
-    def filter_value(self, filter_value: dict[str, str]):
+    def filter_value(self, filter_value: Dict[str, str]):
         """
         Arguments:
             filter_value -- A single time period filter provided by the user.
@@ -63,7 +63,7 @@ class AbstractTimePeriod(ABC):
         pass
 
     @abstractmethod
-    def gte_date_range(self) -> List[dict[str, str]]:
+    def gte_date_range(self) -> List[Dict[str, str]]:
         """
         Returns:
             A nested dictionary indicating a column (the key) which should
@@ -73,7 +73,7 @@ class AbstractTimePeriod(ABC):
         pass
 
     @abstractmethod
-    def lte_date_range(self) -> List[dict[str, str]]:
+    def lte_date_range(self) -> List[Dict[str, str]]:
         """
         Returns:
             A nested dictionary indicating a column (the key) which should
