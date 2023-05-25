@@ -461,6 +461,7 @@ subaward_search_load_sql_string = fr"""
         fpds.product_or_service_code,
         psc.description AS product_or_service_description,
 
+        LATEST_CURRENT_CD.recipient_location_congressional_code_current AS legal_entity_congressional_current,
         COALESCE(UPPER(bs.sub_legal_entity_country_code), 'USA') AS sub_legal_entity_country_code,
         rcc.country_name AS sub_legal_entity_country_name,
         LPAD(CAST(CAST(REGEXP_EXTRACT(rec.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0') AS sub_legal_entity_county_code,
@@ -468,7 +469,14 @@ subaward_search_load_sql_string = fr"""
         LEFT(COALESCE(bs.sub_legal_entity_zip, ''), 5) AS sub_legal_entity_zip5,
         rec.census_code AS sub_legal_entity_city_code,
         LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_legal_entity_congressional,
+        (CASE
+            WHEN (
+                UPPER(bs.sub_legal_entity_country_code) <> 'USA'
+            ) THEN NULL
+            ELSE COALESCE(rl_cd_state_grouped.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no)
+        END) AS sub_legal_entity_congressional_current,
 
+        LATEST_CURRENT_CD.pop_congressional_code_current AS place_of_performance_congressional_current,
         fabs.place_of_performance_scope AS place_of_perform_scope,
         COALESCE(UPPER(bs.sub_place_of_perform_country_co), 'USA') AS sub_place_of_perform_country_co,
         pcc.country_name AS sub_place_of_perform_country_name,
@@ -476,7 +484,13 @@ subaward_search_load_sql_string = fr"""
         pop.county_name AS sub_place_of_perform_county_name,
         LEFT(COALESCE(sub_place_of_performance_zip, ''), 5) AS sub_place_of_perform_zip5,
         pop.census_code AS sub_place_of_perform_city_code,
-        LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio
+        LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio,
+        (CASE
+            WHEN (
+                UPPER(bs.sub_place_of_perform_country_co) <> 'USA'
+            ) THEN NULL
+            ELSE COALESCE(pop_cd_state_grouped.congressional_district_no, pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no, pop_cd_city_grouped.congressional_district_no, pop_cd_county_grouped.congressional_district_no)
+        END) AS sub_place_of_performance_congressional_current
 
     FROM
         raw.subaward AS bs
@@ -521,6 +535,59 @@ subaward_search_load_sql_string = fr"""
         recipient_summary AS parent_recipient_lookup
             ON (parent_recipient_lookup.uei = UPPER(bs.sub_ultimate_parent_uei)
                 AND bs.sub_ultimate_parent_uei IS NOT NULL AND parent_recipient_lookup.row = 1)
+    LEFT OUTER JOIN
+        int.transaction_current_cd_lookup AS LATEST_CURRENT_CD
+            ON awards.latest_transaction_id = LATEST_CURRENT_CD.transaction_id
+    LEFT OUTER JOIN
+        global_temp.cd_state_grouped pop_cd_state_grouped ON (
+            pop_cd_state_grouped.state_abbreviation=UPPER(bs.sub_place_of_perform_state_code)
+            AND pop_cd_state_grouped.congressional_district_no <> '90'
+        )
+    LEFT OUTER JOIN
+        global_temp.cd_state_grouped rl_cd_state_grouped ON (
+            rl_cd_state_grouped.state_abbreviation=UPPER(bs.sub_legal_entity_state_code)
+            AND rl_cd_state_grouped.congressional_district_no <> '90'
+        )
+    LEFT OUTER JOIN
+        raw.zips pop_zips ON (
+            pop_zips.zip5=LEFT(COALESCE(sub_place_of_performance_zip, ''), 5)
+            AND pop_zips.zip_last4=RIGHT(COALESCE(sub_place_of_performance_zip, ''), 4)
+        )
+    LEFT OUTER JOIN
+        raw.zips rl_zips ON (
+            rl_zips.zip5=LEFT(COALESCE(bs.sub_legal_entity_zip, ''), 5)
+            AND rl_zips.zip_last4=RIGHT(COALESCE(bs.sub_legal_entity_zip, ''), 4)
+        )
+    LEFT OUTER JOIN
+        global_temp.cd_zips_grouped pop_cd_zips_grouped ON (
+            pop_cd_zips_grouped.zip5=LEFT(COALESCE(sub_place_of_performance_zip, ''), 5)
+            AND pop_cd_zips_grouped.state_abbreviation=UPPER(bs.sub_place_of_perform_state_code)
+        )
+    LEFT OUTER JOIN
+        global_temp.cd_zips_grouped rl_cd_zips_grouped ON (
+            rl_cd_zips_grouped.zip5=LEFT(COALESCE(bs.sub_legal_entity_zip, ''), 5)
+            AND rl_cd_zips_grouped.state_abbreviation=UPPER(bs.sub_legal_entity_state_code)
+        )
+    LEFT OUTER JOIN
+        global_temp.cd_city_grouped pop_cd_city_grouped ON (
+            pop_cd_city_grouped.city_name=UPPER(bs.sub_place_of_perform_city_name)
+            AND pop_cd_city_grouped.state_abbreviation=UPPER(bs.sub_place_of_perform_state_code)
+        )
+    LEFT OUTER JOIN
+        global_temp.cd_city_grouped rl_cd_city_grouped ON (
+            rl_cd_city_grouped.city_name=UPPER(bs.sub_legal_entity_city_name)
+            AND rl_cd_city_grouped.state_abbreviation=UPPER(bs.sub_legal_entity_state_code)
+        )
+    LEFT OUTER JOIN
+        global_temp.cd_county_grouped pop_cd_county_grouped ON (
+            pop_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(pop.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+            AND pop_cd_county_grouped.state_abbreviation=UPPER(bs.sub_place_of_perform_state_code)
+        )
+    LEFT OUTER JOIN
+        global_temp.cd_county_grouped rl_cd_county_grouped ON (
+            rl_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(rec.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+            AND rl_cd_county_grouped.state_abbreviation=UPPER(bs.sub_legal_entity_state_code)
+        )
     LEFT OUTER JOIN
         location_summary AS pop
             ON (pop.feature_name = UPPER(bs.sub_place_of_perform_city_name)
