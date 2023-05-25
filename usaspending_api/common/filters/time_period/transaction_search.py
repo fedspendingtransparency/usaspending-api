@@ -6,10 +6,10 @@ class TransactionSearchTimePeriod(AbstractTimePeriod):
     on transaction search.
     """
 
-    def __init__(self, default_filter_input_start_date: str, default_filter_input_end_date: str, *args, **kwargs):
+    def __init__(self, default_start_date: str, default_end_date: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._default_filter_input_start_date = default_filter_input_start_date
-        self._default_filter_input_end_date = default_filter_input_end_date
+        self._default_start_date = default_start_date
+        self._default_end_date = default_end_date
         self._filter_value = {}
         # Key/Value pairs where the key is some column
         # and the value is the equivalent column as found in
@@ -25,10 +25,10 @@ class TransactionSearchTimePeriod(AbstractTimePeriod):
         self._filter_value = filter_value
 
     def start_date(self):
-        return self._filter_value.get("start_date") or self._default_filter_input_start_date
+        return self._filter_value.get("start_date") or self._default_start_date
 
     def end_date(self):
-        return self._filter_value.get("end_date") or self._default_filter_input_end_date
+        return self._filter_value.get("end_date") or self._default_end_date
 
     def gte_date_type(self):
         return self._return_date_type()
