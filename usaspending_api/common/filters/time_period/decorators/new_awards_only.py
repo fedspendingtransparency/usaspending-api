@@ -22,7 +22,7 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
         self._additional_lte_filters_for_new_awards_only = {
             _QueryType.TRANSACTIONS: [
                 {"action_date": {"lte": self.end_date()}},
-                {"award_date_signed": {"lte": self.start_date()}},
+                {"award_date_signed": {"lte": self.end_date()}},
             ]
         }
 
