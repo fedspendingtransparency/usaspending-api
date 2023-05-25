@@ -1,5 +1,5 @@
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from typing import List
+from typing import List, Dict
 
 from usaspending_api.search.filters.time_period import AbstractTimePeriod
 
@@ -18,7 +18,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
         self._transaction_search_time_period_obj = transaction_search_time_period_obj
 
     @property
-    def _additional_lte_filters_for_new_awards_only(self) -> dict[_QueryType : List[dict[str, str]]]:
+    def _additional_lte_filters_for_new_awards_only(self) -> Dict[_QueryType : List[Dict[str, str]]]:
         # Making this variable a property to ensure it grabs
         # end date on the fly in case it wasn't set beofre
         # instantiating this class.
@@ -33,7 +33,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
         }
 
     @property
-    def _additional_gte_filters_for_new_awards_only(self) -> dict[_QueryType : List[dict[str, str]]]:
+    def _additional_gte_filters_for_new_awards_only(self) -> Dict[_QueryType : List[Dict[str, str]]]:
         # Making this variable a property to ensure it grabs
         # end date on the fly in case it wasn't set beofre
         # instantiating this class.
