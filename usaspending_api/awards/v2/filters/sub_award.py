@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
@@ -15,7 +15,6 @@ from usaspending_api.search.helpers.matview_filter_helpers import build_award_id
 from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
-
 
 logger = logging.getLogger(__name__)
 
@@ -337,5 +336,5 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key == "def_codes":
             queryset = queryset.filter(DefCodes.build_def_codes_filter(queryset, value))
-            queryset = queryset.filter(sub_action_date__gte="2020-04-01")
+
     return queryset
