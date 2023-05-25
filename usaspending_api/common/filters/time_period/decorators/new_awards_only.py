@@ -1,10 +1,10 @@
-from usaspending_api.common.filters.time_period.time_period import ITimePeriod
+from usaspending_api.common.filters.time_period.time_period import AbstractTimePeriod
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 NEW_AWARDS_ONLY_KEYWORD = "new_awards_only"
 
 
-class NewAwardsOnlyTimePeriod(ITimePeriod):
+class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
     """A decorator class that can be used to apply a new awards only filter
     ON TOP of an existing time period filter.
     """

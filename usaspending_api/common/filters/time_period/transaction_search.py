@@ -1,7 +1,7 @@
-from .time_period import TimePeriod
+from .time_period import AbstractTimePeriod
 
 
-class TransactionSearchTimePeriod(TimePeriod):
+class TransactionSearchTimePeriod(AbstractTimePeriod):
     """A base time period implementation that's designed to suit the time period filters
     on transaction search.
     """
