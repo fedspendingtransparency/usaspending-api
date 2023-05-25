@@ -171,13 +171,13 @@ This route sends a request to the backend to begin generating a zipfile of trans
 + `date_type` (optional, enum[string])
     + Members
         + `date_signed`
-            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed`
-            to generate the transaction based files. Otherwise, for subawards `date_signed` is not supported.
+            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed` to generate the transaction based files. Otherwise, for subawards, `date_signed` is not supported.
         + `action_date`
             This date type value is the default.
         + `last_modified_date`
-+ `new_awards_only` (optional, boolean)
-    Indicates when the results should reflect new awards only. When `new_awards_only` is true, `date_type` must equal `date_signed`
+        + `new_awards_only`
+            Indicates when the results should reflect new awards only. You should expect only
+            transactions that have a date within the time period bounds and are associated with a new award to be returned. `new_awards_only` is not supported when `subawards` field is set to true.
 
 ### Location (object)
 + `country`(required, string)
