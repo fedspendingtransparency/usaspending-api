@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from types import list
+from types import List
 
 
 class TimePeriod(ABC):
@@ -61,7 +61,7 @@ class TimePeriod(ABC):
         pass
 
     @abstractmethod
-    def gte_date_range(self) -> list[dict]:
+    def gte_date_range(self) -> List[dict]:
         """
         Returns:
             A nested dictionary indicating a column (the key) which should
@@ -71,7 +71,7 @@ class TimePeriod(ABC):
         pass
 
     @abstractmethod
-    def lte_date_range(self) -> list[dict]:
+    def lte_date_range(self) -> List[dict]:
         """
         Returns:
             A nested dictionary indicating a column (the key) which should
