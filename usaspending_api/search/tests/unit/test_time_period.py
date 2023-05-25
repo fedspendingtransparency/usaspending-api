@@ -1,5 +1,5 @@
-from usaspending_api.common.filters.time_period import TransactionSearchTimePeriod
-from usaspending_api.common.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.query_type.transactions import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 
