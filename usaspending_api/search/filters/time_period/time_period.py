@@ -1,20 +1,26 @@
 from abc import ABC, abstractmethod
+from typing import List, Dict
 
 
-class ITimePeriod(ABC):
-    """Time period interface for storing data related to a time period filter."""
+class AbstractTimePeriod(ABC):
+    """A composable class that can be used according to the Decorator software design pattern, to generate
+    and provide time period filtering logic from a API request's time period filter value.
+
+    Interface represents and encapsulates a
+    [TimePeriodFilterObject] (https://vscode.dev/github/fedspendingtransparency/usaspending-api/blob/mod/DEV-9834-new-awards-only/usaspending_api/api_contracts/search_filters.md#L142)
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @property
     @abstractmethod
-    def filter_value(self):
+    def filter_value(self) -> Dict[str, str]:
         pass
 
     @filter_value.setter
     @abstractmethod
-    def filter_value(self, filter_value):
+    def filter_value(self, filter_value: Dict[str, str]):
         """
         Arguments:
             filter_value -- A single time period filter provided by the user.
@@ -22,7 +28,7 @@ class ITimePeriod(ABC):
         pass
 
     @abstractmethod
-    def start_date(self):
+    def start_date(self) -> str:
         """
         Returns:
             The start date from this instance's filter value.
@@ -31,7 +37,7 @@ class ITimePeriod(ABC):
         pass
 
     @abstractmethod
-    def end_date(self):
+    def end_date(self) -> str:
         """
         Returns:
             The end date from this instance's filter value.
@@ -40,7 +46,7 @@ class ITimePeriod(ABC):
         pass
 
     @abstractmethod
-    def gte_date_type(self):
+    def gte_date_type(self) -> str:
         """
         Returns:
             A date type that indicates the name of a column in which
@@ -50,7 +56,7 @@ class ITimePeriod(ABC):
         pass
 
     @abstractmethod
-    def lte_date_type(self):
+    def lte_date_type(self) -> str:
         """
         Returns:
             A date type that indicates the name of a column in which
@@ -60,7 +66,7 @@ class ITimePeriod(ABC):
         pass
 
     @abstractmethod
-    def gte_date_range(self):
+    def gte_date_range(self) -> List[Dict[str, str]]:
         """
         Returns:
             A nested dictionary indicating a column (the key) which should
@@ -70,7 +76,7 @@ class ITimePeriod(ABC):
         pass
 
     @abstractmethod
-    def lte_date_range(self):
+    def lte_date_range(self) -> List[Dict[str, str]]:
         """
         Returns:
             A nested dictionary indicating a column (the key) which should

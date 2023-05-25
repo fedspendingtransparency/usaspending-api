@@ -1,21 +1,24 @@
-from usaspending_api.common.filters.time_period.time_period import ITimePeriod
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from typing import List, Dict
+
+from usaspending_api.search.filters.time_period import AbstractTimePeriod
+
 
 NEW_AWARDS_ONLY_KEYWORD = "new_awards_only"
 
 
-class NewAwardsOnlyTimePeriod(ITimePeriod):
-    """A decorator class that can be used to apply a new awards only filter
-    ON TOP of an existing time period filter.
+class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
+    """A composable class that can be used according to the Decorator software design pattern, to apply
+    new awards only filter logic on top of a concrete AbstractTimePeriod subclass.
     """
 
-    def __init__(self, transaction_search_time_period_obj, query_type, *args, **kwargs):
+    def __init__(self, transaction_search_time_period_obj: AbstractTimePeriod, query_type: _QueryType, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._query_type = query_type
         self._transaction_search_time_period_obj = transaction_search_time_period_obj
 
     @property
-    def _additional_lte_filters_for_new_awards_only(self):
+    def _additional_lte_filters_for_new_awards_only(self) -> Dict[_QueryType : List[Dict[str, str]]]:
         # Making this variable a property to ensure it grabs
         # end date on the fly in case it wasn't set beofre
         # instantiating this class.
@@ -23,11 +26,14 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
             _QueryType.TRANSACTIONS: [
                 {"action_date": {"lte": self.end_date()}},
                 {"award_date_signed": {"lte": self.end_date()}},
-            ]
+            ],
+            _QueryType.AWARDS: [
+                {"date_signed": {"lte": self.end_date()}},
+            ],
         }
 
     @property
-    def _additional_gte_filters_for_new_awards_only(self):
+    def _additional_gte_filters_for_new_awards_only(self) -> Dict[_QueryType : List[Dict[str, str]]]:
         # Making this variable a property to ensure it grabs
         # end date on the fly in case it wasn't set beofre
         # instantiating this class.
@@ -35,7 +41,10 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
             _QueryType.TRANSACTIONS: [
                 {"action_date": {"gte": self.start_date()}},
                 {"award_date_signed": {"gte": self.start_date()}},
-            ]
+            ],
+            _QueryType.AWARDS: [
+                {"date_signed": {"lte": self.start_date()}},
+            ],
         }
 
     @property
@@ -43,7 +52,7 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
         return self._transaction_search_time_period_obj.filter_value
 
     @filter_value.setter
-    def filter_value(self, filter_value: dict):
+    def filter_value(self, filter_value):
         self._transaction_search_time_period_obj.filter_value = filter_value
 
     def start_date(self):
@@ -78,10 +87,6 @@ class NewAwardsOnlyTimePeriod(ITimePeriod):
                 wrapped_range.append(additional_filter)
         return wrapped_range
 
-    def _new_awards_only(self):
-        """Indicates if the time period filter requires only new awards.
-
-        Returns:
-            bool
-        """
+    def _new_awards_only(self) -> bool:
+        """Indicates if the time period filter requires only new awards."""
         return self._transaction_search_time_period_obj.filter_value.get("date_type") == NEW_AWARDS_ONLY_KEYWORD

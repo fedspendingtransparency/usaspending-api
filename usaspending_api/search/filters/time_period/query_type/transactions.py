@@ -1,12 +1,12 @@
-from .time_period import ITimePeriod
+from usaspending_api.search.filters.time_period import AbstractTimePeriod
 
 
-class TransactionSearchTimePeriod(ITimePeriod):
-    """A base time period implementation that's designed to suit the time period filters
+class TransactionSearchTimePeriod(AbstractTimePeriod):
+    """A time period implementation that's designed to suit the time period filters
     on transaction search.
     """
 
-    def __init__(self, default_start_date, default_end_date, *args, **kwargs):
+    def __init__(self, default_start_date: str, default_end_date: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._default_start_date = default_start_date
         self._default_end_date = default_end_date
@@ -21,7 +21,7 @@ class TransactionSearchTimePeriod(ITimePeriod):
         return self._filter_value
 
     @filter_value.setter
-    def filter_value(self, filter_value: dict):
+    def filter_value(self, filter_value):
         self._filter_value = filter_value
 
     def start_date(self):
@@ -42,7 +42,7 @@ class TransactionSearchTimePeriod(ITimePeriod):
     def lte_date_range(self):
         return [{f"{self.lte_date_type()}": {"lte": self.end_date()}}]
 
-    def _return_date_type(self):
+    def _return_date_type(self) -> str:
         ret_date_type = self._filter_value.get("date_type", "action_date")
         if ret_date_type in self._date_type_transaction_search_map:
             ret_date_type = self._date_type_transaction_search_map[ret_date_type]
