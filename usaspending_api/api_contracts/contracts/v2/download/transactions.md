@@ -166,18 +166,7 @@ This route sends a request to the backend to begin generating a zipfile of trans
 
 
 ### TimePeriod (object)
-+ `start_date` (required, string)
-+ `end_date` (required, string)
-+ `date_type` (optional, enum[string])
-    + Members
-        + `date_signed`
-            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed` to generate the transaction based files. Otherwise, for subawards, `date_signed` is not supported.
-        + `action_date`
-            This date type value is the default.
-        + `last_modified_date`
-        + `new_awards_only`
-            Indicates when the results should reflect new awards only. You should expect only
-            transactions that have a date within the time period bounds and are associated with a new award to be returned. `new_awards_only` is not supported when `subawards` field is set to true.
+This TimePeriodObject falls into the Transaction Search category and are defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 ### Location (object)
 + `country`(required, string)
