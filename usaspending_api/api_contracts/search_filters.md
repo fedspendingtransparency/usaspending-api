@@ -214,7 +214,7 @@ Request parameter description:
     See [Time Period](#time-period)
 + `end_date`: (required)
     See [Time Period](#time-period)
-+ `date_type`: (optional, enum[string])
++ `date_type`: (optional)
     + Members
         + `action_date`
             This date type value is the default.
