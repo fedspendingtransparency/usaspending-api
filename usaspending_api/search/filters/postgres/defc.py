@@ -1,4 +1,5 @@
-from django.db.models import OuterRef, Q
+from django.db import connection
+from django.db.models import Q
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 
@@ -20,16 +21,42 @@ class DefCodes:
             provided DEF code filter(s).
         """
 
-        # Return the Award IDs where one of these two things is True:
-        #   1) The DEF code associated with that Award is in the API request and
-        #       has no `earliest_public_law_enactment_date`.
-        #   2) The DEF code associated with that Award is in the API request and
-        #       the Subaward's action date is on/after the `earliest_public_law_enactment_date`
-        subquery = FinancialAccountsByAwards.objects.filter(
-            Q(disaster_emergency_fund__earliest_public_law_enactment_date__isnull=True)
-            | Q(disaster_emergency_fund__earliest_public_law_enactment_date__lte=OuterRef("sub_action_date")),
-            disaster_emergency_fund__in=filter_values,
-        ).values("award__award_id")
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                with unnested_sub as (
+                    select
+                        ss.broker_subaward_id,
+                        ss.award_id,
+                        unnest(aws.disaster_emergency_fund_codes) as "singular_defc",
+                        ss.sub_action_date
+                    from
+                        rpt.subaward_search as ss
+                    join rpt.award_search as aws
+                            on
+                        ss.award_id = aws.award_id
+                    where
+                            array[{def_codes}] && aws.disaster_emergency_fund_codes
+                    )
+                    select
+                        us.broker_subaward_id
+                    from
+                        unnested_sub as us
+                    join disaster_emergency_fund_code as defc
+                        on
+                        defc.code = us.singular_defc
+                    where
+                        us.singular_defc in ({def_codes})
+                        and (
+                            defc.earliest_public_law_enactment_date is null
+                            or defc.earliest_public_law_enactment_date <= sub_action_date
+                        );
+                """.format(
+                    def_codes=",".join([f"'{code}'" for code in filter_values])
+                )
+            )
+            results = cursor.fetchall()
+            results = [result[0] for result in results]
 
-        q = Q(award_id__in=subquery)
+        q = Q(broker_subaward_id__in=results)
         return q
