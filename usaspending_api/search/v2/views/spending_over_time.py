@@ -180,15 +180,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch_for_prime_awards(self, time_periods: list) -> list:
-        options = {}
+        filter_options = {}
         time_period_obj = TransactionSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
             transaction_search_time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
         )
-        options["time_period_obj"] = new_awards_only_decorator
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **options)
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
