@@ -169,8 +169,11 @@ Request parameter description:
 
 Request parameter description:
 * `time_period` (List) : Top level key name for this filter. Contains a list of date ranges to filter on.
-* `start_date` (String) : Start date value for date range filtering.
+* `start_date` (String)
+    Start date value for date range filtering. Currently limited to an earliest date of `2007-10-01` (FY2008). For data going back to `2000-10-01` (FY2001), use either the Custom Award Download feature on the website or one of our `download` or `bulk_download` API endpoints.
 * `end_date` (String) : End date value for date range filtering.
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
+    feature on the website or one of our `download` or `bulk_download` API endpoints.
 
 ## Transaction Search Time Period Object
 
@@ -182,22 +185,38 @@ See [Time Period](#time-period)
 
 Request parameter description:
 + `start_date`: `2017-10-01` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
+    See [Time Period](#time-period)
 + `end_date`: `2018-09-30` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
+    See [Time Period](#time-period)
 + `date_type` (optional, enum[string])
     + Members
         + `date_signed`
-            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed`. `date_signed` is not supported when `subawards` field is set to true.
+            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed`.
         + `action_date`
             This date type value is the default.
         + `last_modified_date`
         + `new_awards_only`
             Indicates when the results should reflect new awards only. You should expect only
             transactions that have a date within the time period bounds and are associated with a new award to be returned.
-            `new_awards_only` is not supported when `subawards` field is set to true.
+
+## Subaward Search Time Period Object
+
+**Description:**
+See [Time Period](#time-period)
+
+**Examples**
+See [Time Period](#time-period)
+
+Request parameter description:
++ `start_date`: `2017-10-01` (required, string)
+    See [Time Period](#time-period)
++ `end_date`: `2018-09-30` (required, string)
+    See [Time Period](#time-period)
++ `date_type` (optional, enum[string])
+    + Members
+        + `action_date`
+            This date type value is the default.
+        + `last_modified_date`
 
 ## Place of Performance Scope
 
