@@ -826,3 +826,135 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
+
+
+def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Empty response
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2019-12-30", "end_date": "2020-01-02"}]
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "county",
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2019-12-30", "end_date": "2020-01-15"}]
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "county",
+        "results": [
+            {
+                "aggregated_amount": 5.0,
+                "display_name": "Charleston",
+                "per_capita": 5.0,
+                "population": 1,
+                "shape_code": "45001",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def test_correct_response_new_awards_only(
+    client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Test case when action date out of bounds but date signed in bounds
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2020-01-02", "end_date": "2020-01-15"}
+                    ]
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "county",
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Test case when action date and date signed in bounds
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2019-12-30", "end_date": "2020-01-15"}
+                    ]
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "county",
+        "results": [
+            {
+                "aggregated_amount": 5.0,
+                "display_name": "Charleston",
+                "per_capita": 5.0,
+                "population": 1,
+                "shape_code": "45001",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
