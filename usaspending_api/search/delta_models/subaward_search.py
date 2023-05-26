@@ -175,6 +175,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "extent_competed": {"delta": "STRING", "postgres": "TEXT"},
     "product_or_service_code": {"delta": "STRING", "postgres": "TEXT"},
     "product_or_service_description": {"delta": "STRING", "postgres": "TEXT"},
+    "legal_entity_congressional_current": {"delta": "STRING", "postgres": "TEXT"},
     "sub_legal_entity_country_code": {"delta": "STRING", "postgres": "TEXT"},
     "sub_legal_entity_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "sub_legal_entity_county_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -182,6 +183,8 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_legal_entity_zip5": {"delta": "STRING", "postgres": "TEXT"},
     "sub_legal_entity_city_code": {"delta": "STRING", "postgres": "TEXT"},
     "sub_legal_entity_congressional": {"delta": "STRING", "postgres": "TEXT"},
+    "sub_legal_entity_congressional_current": {"delta": "STRING", "postgres": "TEXT"},
+    "place_of_performance_congressional_current": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perform_scope": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_country_co": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_country_name": {"delta": "STRING", "postgres": "TEXT"},
@@ -190,6 +193,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_place_of_perform_zip5": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_city_code": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_congressio": {"delta": "STRING", "postgres": "TEXT"},
+    "sub_place_of_performance_congressional_current": {"delta": "STRING", "postgres": "TEXT"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
