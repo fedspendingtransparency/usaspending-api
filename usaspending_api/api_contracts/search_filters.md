@@ -174,7 +174,7 @@ Request parameter description:
 * `end_date`:  `2018-09-30` (String) : End date value for date range filtering.
     Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
     feature on the website or one of our `download` or `bulk_download` API endpoints.
-* `date_type`  (enum[string])
+* `date_type`:  (enum[string])
     Check specific time period objects for date_type's members, defaults, and descriptions.
 
 ## Transaction Search Time Period Object
