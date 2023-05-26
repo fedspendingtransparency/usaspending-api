@@ -210,9 +210,9 @@ See [Time Period](#time-period)
 See [Time Period](#time-period)
 
 Request parameter description:
-+ `start_date`: `2017-10-01` (required, string)
++ `start_date`: (required)
     See [Time Period](#time-period)
-+ `end_date`: `2018-09-30` (required, string)
++ `end_date`: (required)
     See [Time Period](#time-period)
 + `date_type` (optional, enum[string])
     + Members
