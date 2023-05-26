@@ -245,10 +245,9 @@ def test_download_transactions_new_awards_only(
                 "filters": {
                     "time_period": [
                         {
-                            "date_type": "date_signed",
+                            "date_type": "new_awards_only",
                             "start_date": "2017-12-31",
                             "end_date": "2018-01-02",
-                            "new_awards_only": True,
                         }
                     ],
                 }
