@@ -541,7 +541,7 @@ subaward_search_load_sql_string = fr"""
                 AND bs.sub_ultimate_parent_uei IS NOT NULL AND parent_recipient_lookup.row = 1)
     LEFT OUTER JOIN
         int.transaction_current_cd_lookup AS LATEST_CURRENT_CD
-            ON a.latest_transaction_id = LATEST_CURRENT_CD.transaction_id\
+            ON a.latest_transaction_id = LATEST_CURRENT_CD.transaction_id
     LEFT OUTER JOIN
         location_summary AS pop
             ON (pop.feature_name = UPPER(bs.sub_place_of_perform_city_name)
