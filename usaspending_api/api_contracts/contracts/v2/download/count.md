@@ -96,19 +96,11 @@ Returns the number of transactions that would be included in a download request 
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ## TimePeriodObject (object)
-+ `start_date`: `2017-10-01` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `end_date`: `2018-09-30` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `date_type` (optional, enum[string])
-    + Members
-        + `date_signed`
-          + When `subawards=false` this date type value is equivalent to `award_date_signed`. Behind the scenes, if you provide this input we map it to `award_date_signed`.
-        + `action_date`
-          + This date type value is the default.
-        + `last_modified_date`
+This TimePeriodObject can fall into different categories based on the request.
++ if `subawards` true
+    See the Subaward Search category defined in [SubawardSearchTimePeriodObject](../../../search_filters.md#subaward-search-time-period-object)
++ otherwise
+    See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 ## LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
