@@ -1,8 +1,6 @@
 from django.db import connection
 from django.db.models import Q
 
-from usaspending_api.awards.models import FinancialAccountsByAwards
-
 
 class DefCodes:
     underscore_name = "def_codes"
@@ -58,5 +56,9 @@ class DefCodes:
             results = cursor.fetchall()
             results = [result[0] for result in results]
 
-        q = Q(broker_subaward_id__in=results)
+            # if len(results) == 0:
+            #     q = Q(False)
+            # else:
+            q = Q(broker_subaward_id__in=results)
+
         return q
