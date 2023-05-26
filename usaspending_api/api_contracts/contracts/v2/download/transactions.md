@@ -166,7 +166,11 @@ This route sends a request to the backend to begin generating a zipfile of trans
 
 
 ### TimePeriod (object)
-This TimePeriodObject falls into the Transaction Search category and are defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
+This TimePeriodObject can fall into different categories based on the request.
++ subaward files in download
+    See the Subaward Search category defined in [SubawardSearchTimePeriodObject](../../../search_filters.md#subaward-search-time-period-object)
++ transaction files in download
+    See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 ### Location (object)
 + `country`(required, string)
