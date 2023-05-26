@@ -67,13 +67,11 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             yield results
 
     @classmethod
-    def _populate_download_lookups(
-        cls, filters: dict, download_job: DownloadJob, size: int = 10000, **filter_options
-    ) -> None:
+    def _populate_download_lookups(cls, filters: dict, download_job: DownloadJob, size: int = 10000) -> None:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
-        filter_query = cls._filter_query_func(filters, **filter_options)
+        filter_query = cls._filter_query_func(filters)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
         lookup_id_type = cls._search_type.type_as_string()
@@ -171,7 +169,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBTransactionSearch.objects.all()
-        cls._populate_download_lookups(filters, download_job, **filter_options)
+        cls._populate_download_lookups(filters, download_job)
         queryset = base_queryset.extra(
             tables=["download_job_lookup"],
             where=[

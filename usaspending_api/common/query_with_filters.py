@@ -115,7 +115,6 @@ class _TimePeriods(_Filter):
             time_period_obj = options["time_period_obj"]
             time_period_obj.filter_value = filter_value
 
-            # Keywords must be strings, hence f-strings here
             gte_range = time_period_obj.gte_date_range()
             lte_range = time_period_obj.lte_date_range()
 
