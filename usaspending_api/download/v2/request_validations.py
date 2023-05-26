@@ -630,6 +630,7 @@ class AccountDownloadValidator(DownloadValidatorBase):
         self._json_request["download_types"] = self._json_request["filters"]["submission_types"]
 
 
+
 class DisasterDownloadValidator(DownloadValidatorBase):
     name = "disaster"
 
