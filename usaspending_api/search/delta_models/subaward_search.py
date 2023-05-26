@@ -541,7 +541,7 @@ subaward_search_load_sql_string = fr"""
                 AND bs.sub_ultimate_parent_uei IS NOT NULL AND parent_recipient_lookup.row = 1)
     LEFT OUTER JOIN
         int.transaction_current_cd_lookup AS LATEST_CURRENT_CD
-            ON awards.latest_transaction_id = LATEST_CURRENT_CD.transaction_id
+            ON a.latest_transaction_id = LATEST_CURRENT_CD.transaction_id
     LEFT OUTER JOIN
         global_temp.cd_state_grouped pop_cd_state_grouped ON (
             pop_cd_state_grouped.state_abbreviation=UPPER(bs.sub_place_of_perform_state_code)
