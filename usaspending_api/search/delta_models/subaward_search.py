@@ -541,7 +541,25 @@ subaward_search_load_sql_string = fr"""
                 AND bs.sub_ultimate_parent_uei IS NOT NULL AND parent_recipient_lookup.row = 1)
     LEFT OUTER JOIN
         int.transaction_current_cd_lookup AS LATEST_CURRENT_CD
-            ON a.latest_transaction_id = LATEST_CURRENT_CD.transaction_id
+            ON a.latest_transaction_id = LATEST_CURRENT_CD.transaction_id\
+    LEFT OUTER JOIN
+        location_summary AS pop
+            ON (pop.feature_name = UPPER(bs.sub_place_of_perform_city_name)
+                AND pop.state_alpha = UPPER(bs.sub_place_of_perform_state_code)
+                AND pop.row_num = 1)
+    LEFT OUTER JOIN
+        location_summary AS rec
+            ON (rec.feature_name = UPPER(bs.sub_legal_entity_city_name)
+                AND rec.state_alpha = UPPER(bs.sub_legal_entity_state_code)
+                AND rec.row_num = 1)
+    LEFT OUTER JOIN
+        global_temp.ref_country_code AS pcc
+            ON (pcc.country_code = UPPER(bs.sub_place_of_perform_country_co)
+                AND bs.sub_place_of_perform_country_co IS NOT NULL)
+    LEFT OUTER JOIN
+        global_temp.ref_country_code AS rcc
+            ON (rcc.country_code = UPPER(bs.sub_legal_entity_country_code)
+                AND bs.sub_legal_entity_country_code IS NOT NULL)
     LEFT OUTER JOIN
         global_temp.cd_state_grouped pop_cd_state_grouped ON (
             pop_cd_state_grouped.state_abbreviation=UPPER(bs.sub_place_of_perform_state_code)
@@ -592,24 +610,7 @@ subaward_search_load_sql_string = fr"""
             rl_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(rec.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AND rl_cd_county_grouped.state_abbreviation=UPPER(bs.sub_legal_entity_state_code)
         )
-    LEFT OUTER JOIN
-        location_summary AS pop
-            ON (pop.feature_name = UPPER(bs.sub_place_of_perform_city_name)
-                AND pop.state_alpha = UPPER(bs.sub_place_of_perform_state_code)
-                AND pop.row_num = 1)
-    LEFT OUTER JOIN
-        location_summary AS rec
-            ON (rec.feature_name = UPPER(bs.sub_legal_entity_city_name)
-                AND rec.state_alpha = UPPER(bs.sub_legal_entity_state_code)
-                AND rec.row_num = 1)
-    LEFT OUTER JOIN
-        global_temp.ref_country_code AS pcc
-            ON (pcc.country_code = UPPER(bs.sub_place_of_perform_country_co)
-                AND bs.sub_place_of_perform_country_co IS NOT NULL)
-    LEFT OUTER JOIN
-        global_temp.ref_country_code AS rcc
-            ON (rcc.country_code = UPPER(bs.sub_legal_entity_country_code)
-                AND bs.sub_legal_entity_country_code IS NOT NULL)
+
     LEFT OUTER JOIN
         global_temp.psc
             ON fpds.product_or_service_code = psc.code
