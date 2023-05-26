@@ -96,11 +96,7 @@ Returns the number of transactions that would be included in a download request 
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
 ## TimePeriodObject (object)
-This TimePeriodObject can fall into different categories based on the request.
-+ if `subawards` true
-    See the Subaward Search category defined in [SubawardSearchTimePeriodObject](../../../search_filters.md#subaward-search-time-period-object)
-+ otherwise
-    See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
+See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 ## LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
