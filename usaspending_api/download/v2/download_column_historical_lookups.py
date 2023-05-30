@@ -241,6 +241,10 @@ query_paths = {
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_city_name']}",
                 ),
                 (
+                    "prime_award_summary_place_of_performance_county_fips_code",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_county_fips']}",
+                ),
+                (
                     "primary_place_of_performance_county_name",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_county_na']}",
                 ),
@@ -1386,7 +1390,15 @@ query_paths = {
                 ("recipient_address_line_1", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_address_line1"]),
                 ("recipient_address_line_2", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_address_line2"]),
                 ("recipient_city_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_city_name"]),
+                (
+                    "prime_award_transaction_recipient_county_code",
+                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_county_fips"],
+                ),
                 ("recipient_county_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_county_name"]),
+                (
+                    "prime_award_transaction_recipient_state_fips_code",
+                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_fips"]
+                ),
                 ("recipient_state_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_code"]),
                 ("recipient_state_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_descrip"]),
                 ("recipient_zip_4_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_zip4"]),
@@ -1406,8 +1418,16 @@ query_paths = {
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_perform_city_name"],
                 ),
                 (
+                    "prime_award_transaction_place_of_performance_county_fips_code",
+                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_perform_county_fips"],
+                ),
+                (
                     "primary_place_of_performance_county_name",
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_perform_county_na"],
+                ),
+                (
+                    "prime_award_transaction_place_of_performance_state_fips_code",
+                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_perform_state_fips"],
                 ),
                 (
                     "primary_place_of_performance_state_code",

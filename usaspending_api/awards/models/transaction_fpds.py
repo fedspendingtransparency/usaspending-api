@@ -45,6 +45,7 @@ class TransactionFPDS(models.Model):
     legal_entity_city_name = models.TextField(blank=True, null=True)
     legal_entity_state_code = models.TextField(blank=True, null=True)
     legal_entity_state_descrip = models.TextField(blank=True, null=True)
+    legal_entity_state_fips = models.TextField(blank=True, null=True)
     legal_entity_county_code = models.TextField(blank=True, null=True)
     legal_entity_county_name = models.TextField(blank=True, null=True)
     legal_entity_zip4 = models.TextField(blank=True, null=True)
@@ -82,6 +83,7 @@ class TransactionFPDS(models.Model):
     funding_agency_name = models.TextField(blank=True, null=True)
     place_of_performance_state = models.TextField(blank=True, null=True)
     place_of_perfor_state_desc = models.TextField(blank=True, null=True)
+    place_of_perform_state_fips = models.TextField(blank=True, null=True)
     place_of_perform_country_c = models.TextField(blank=True, null=True)
     place_of_perf_country_desc = models.TextField(blank=True, null=True)
     idv_type = models.TextField(blank=True, null=True)
@@ -325,6 +327,7 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "legal_entity_country_name": "recipient_location_country_name",
     "legal_entity_state_code": "recipient_location_state_code",
     "legal_entity_state_descrip": "recipient_location_state_name",
+    "legal_entity_state_fips": "recipient_location_state_fips",
     "legal_entity_county_code": "recipient_location_county_code",
     "legal_entity_county_name": "recipient_location_county_name",
     "legal_entity_congressional": "recipient_location_congressional_code",
@@ -335,6 +338,7 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "place_of_perf_country_desc": "pop_country_name",
     "place_of_performance_state": "pop_state_code",
     "place_of_perfor_state_desc": "pop_state_name",
+    "place_of_perform_state_fips": "pop_state_fips",
     "place_of_perform_county_co": "pop_county_code",
     "place_of_perform_county_na": "pop_county_name",
     "place_of_performance_congr": "pop_congressional_code",
