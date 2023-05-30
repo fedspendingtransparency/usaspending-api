@@ -150,7 +150,6 @@ award_search_create_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-# TODO: include derivations for recipient_location_congressional_code_current and pop_congressional_code_current
 award_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
@@ -292,12 +291,7 @@ award_search_load_sql_string = rf"""
   COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
-  (CASE
-      WHEN (
-          COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) <> 'USA'
-      ) THEN NULL
-      ELSE COALESCE(rl_cd_state_grouped.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no)
-  END) AS recipient_location_congressional_code_current,
+  LATEST_CURRENT_CD.recipient_location_congressional_code_current AS recipient_location_congressional_code_current,
   COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)) AS recipient_location_city_name,
   COALESCE(transaction_fpds.legal_entity_state_descrip, transaction_fabs.legal_entity_state_name) AS recipient_location_state_name,
@@ -316,36 +310,7 @@ award_search_load_sql_string = rf"""
   COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5) AS pop_zip5,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
-  (CASE
-      WHEN (
-          transaction_fabs.place_of_performance_scope = 'Foreign'
-          OR transaction_fpds.place_of_perform_country_c <> 'USA'
-      ) THEN NULL
-      WHEN (
-          transaction_fabs.place_of_performance_scope = 'Multi-State'
-      ) THEN '90'
-      WHEN (
-          (transaction_fabs.place_of_performance_scope = 'State-wide'
-          OR transaction_fpds.place_of_perform_country_c = 'USA')
-          AND pop_cd_state_grouped.congressional_district_no IS NOT NULL
-      ) THEN pop_cd_state_grouped.congressional_district_no
-      WHEN (
-          (transaction_fabs.place_of_performance_scope = 'Single ZIP Code'
-          OR transaction_fpds.place_of_perform_country_c = 'USA')
-          AND COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no) IS NOT NULL
-      ) THEN COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no)
-      WHEN (
-          (transaction_fabs.place_of_performance_scope = 'City-wide'
-          OR transaction_fpds.place_of_perform_country_c = 'USA')
-          AND pop_cd_city_grouped.congressional_district_no IS NOT NULL
-      ) THEN pop_cd_city_grouped.congressional_district_no
-      WHEN (
-          (transaction_fabs.place_of_performance_scope = 'County-wide'
-          OR transaction_fpds.place_of_perform_country_c = 'USA')
-          AND pop_cd_county_grouped.congressional_district_no IS NOT NULL
-      ) THEN pop_cd_county_grouped.congressional_district_no
-      ELSE NULL
-  END) AS pop_congressional_code_current,
+  LATEST_CURRENT_CD.pop_congressional_code_current AS pop_congressional_code_current,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)) AS pop_city_name,
   COALESCE(transaction_fpds.place_of_perfor_state_desc, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
   POP_STATE_LOOKUP.fips AS pop_state_fips,
@@ -473,54 +438,8 @@ LEFT OUTER JOIN
         AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
 )
 LEFT OUTER JOIN
-    global_temp.cd_state_grouped pop_cd_state_grouped ON (
-        pop_cd_state_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
-        AND pop_cd_state_grouped.congressional_district_no <> '90'
-    )
-LEFT OUTER JOIN
-    global_temp.cd_state_grouped rl_cd_state_grouped ON (
-        rl_cd_state_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
-        AND rl_cd_state_grouped.congressional_district_no <> '90'
-    )
-LEFT OUTER JOIN
-    raw.zips pop_zips ON (
-        pop_zips.zip5=COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
-        AND pop_zips.zip_last4=COALESCE(transaction_fpds.place_of_perform_zip_last4, transaction_fabs.place_of_perform_zip_last4)
-    )
-LEFT OUTER JOIN
-    raw.zips rl_zips ON (
-        rl_zips.zip5=COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
-        AND rl_zips.zip_last4=COALESCE(transaction_fpds.legal_entity_zip_last4, transaction_fabs.legal_entity_zip_last4)
-    )
-LEFT OUTER JOIN
-    global_temp.cd_zips_grouped pop_cd_zips_grouped ON (
-        pop_cd_zips_grouped.zip5=COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
-        AND pop_cd_zips_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
-    )
-LEFT OUTER JOIN
-    global_temp.cd_zips_grouped rl_cd_zips_grouped ON (
-        rl_cd_zips_grouped.zip5=COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
-        AND rl_cd_zips_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
-    )
-LEFT OUTER JOIN
-    global_temp.cd_city_grouped pop_cd_city_grouped ON (
-        pop_cd_city_grouped.city_name=UPPER(TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)))
-        AND pop_cd_city_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
-    )
-LEFT OUTER JOIN
-    global_temp.cd_city_grouped rl_cd_city_grouped ON (
-        rl_cd_city_grouped.city_name=UPPER(TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)))
-        AND rl_cd_city_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
-    )
-LEFT OUTER JOIN
-    global_temp.cd_county_grouped pop_cd_county_grouped ON (
-        pop_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
-        AND pop_cd_county_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
-    )
-LEFT OUTER JOIN
-    global_temp.cd_county_grouped rl_cd_county_grouped ON (
-        rl_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
-        AND rl_cd_county_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
+    int.transaction_current_cd_lookup AS LATEST_CURRENT_CD ON (
+        awards.latest_transaction_id = LATEST_CURRENT_CD.transaction_id
     )
 LEFT OUTER JOIN (
         SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
