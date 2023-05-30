@@ -20,7 +20,7 @@ from ddtrace.ext import SpanTypes
 from django.conf import settings
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
-from usaspending_api.search.filters.time_period.decorators.new_awards_only import NEW_AWARDS_ONLY_KEYWORD
+from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
 from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
