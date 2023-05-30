@@ -11,11 +11,14 @@ from django.db.models import QuerySet
 from elasticsearch_dsl import A
 
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.models import AwardSearch as DBAwardSearch, TransactionSearch as DBTransactionSearch
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +160,14 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+        filter_options = {}
+        time_period_obj = TransactionSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBTransactionSearch.objects.all()
         cls._populate_download_lookups(filters, download_job)
         queryset = base_queryset.extra(
