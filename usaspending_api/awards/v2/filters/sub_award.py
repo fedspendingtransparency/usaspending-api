@@ -340,7 +340,7 @@ def subaward_filter(filters, for_downloads=False):
             ).values_list("code", "earliest_public_law_enactment_date")
             def_codes_with_enactment_dates = dict(def_codes_with_enactment_dates)
 
-            queryset = queryset.filter(DefCodes.build_def_codes_filter(queryset, value))
+            queryset = queryset.filter(DefCodes.build_def_codes_filter(value))
 
             if any(code in def_codes_with_enactment_dates.keys() for code in value):
                 # Get the earliest enactment date of all public laws that apply to the
