@@ -25,6 +25,12 @@ from usaspending_api.transactions.delta_models.transaction_search import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
 )
+from usaspending_api.transactions.delta_models.transaction_current_cd_lookup import (
+    TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
+    TRANSACTION_CURRENT_CD_LOOKUP_DELTA_COLUMNS,
+    transaction_current_cd_lookup_create_sql_string,
+    transaction_current_cd_lookup_load_sql_string,
+)
 
 from usaspending_api.transactions.delta_models.summary_state_view import (
     SUMMARY_STATE_VIEW_COLUMNS,
@@ -42,6 +48,10 @@ from usaspending_api.transactions.delta_models.published_fabs import (
 )
 
 __all__ = [
+    "TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS",
+    "TRANSACTION_CURRENT_CD_LOOKUP_DELTA_COLUMNS",
+    "transaction_current_cd_lookup_create_sql_string",
+    "transaction_current_cd_lookup_load_sql_string",
     "TRANSACTION_FABS_COLUMNS",
     "TRANSACTION_FABS_VIEW_COLUMNS",
     "transaction_fabs_sql_string",

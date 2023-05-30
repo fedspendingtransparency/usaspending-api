@@ -18,6 +18,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     bolster_missing_time_periods,
     generate_fiscal_date_range,
@@ -33,6 +34,8 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +180,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch_for_prime_awards(self, time_periods: list) -> list:
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
+        filter_options = {}
+        time_period_obj = TransactionSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()

@@ -74,7 +74,7 @@ def download_test_data():
         TransactionSearch,
         transaction_id=1,
         award=award1,
-        action_date="2018-01-01",
+        action_date="2018-01-02",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency_id=aa1.id,
@@ -87,7 +87,7 @@ def download_test_data():
         TransactionSearch,
         transaction_id=2,
         award=award2,
-        action_date="2018-01-01",
+        action_date="2018-01-02",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency_id=aa2.id,
@@ -100,7 +100,8 @@ def download_test_data():
         TransactionSearch,
         transaction_id=3,
         award=award3,
-        action_date="2018-01-01",
+        action_date="2018-01-02",
+        award_date_signed="2020-01-02",
         type=random.choice(list(award_type_mapping)),
         modification_number=1,
         awarding_agency_id=aa2.id,
@@ -124,6 +125,76 @@ def test_download_count(client, download_test_data, monkeypatch, elasticsearch_t
         content_type="application/json",
         data=json.dumps(
             {"filters": {"agencies": [{"type": "awarding", "tier": "toptier", "name": "Bureau of Things"}]}}
+        ),
+    )
+    resp_json = resp.json()
+
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp_json["calculated_transaction_count"] == 1
+    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["transaction_rows_gt_limit"] is False
+
+
+@pytest.mark.django_db(transaction=True)
+def test_download_count_with_date_type_filter_default(
+    client, download_test_data, monkeypatch, elasticsearch_transaction_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    resp = client.post(
+        "/api/v2/download/count/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"start_date": "2018-01-01", "end_date": "2018-01-03"}],
+                }
+            }
+        ),
+    )
+    resp_json = resp.json()
+
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp_json["calculated_transaction_count"] == 3
+    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["transaction_rows_gt_limit"] is False
+
+
+@pytest.mark.django_db(transaction=True)
+def test_download_count_with_date_type_filter_date_signed(
+    client, download_test_data, monkeypatch, elasticsearch_transaction_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    resp = client.post(
+        "/api/v2/download/count/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2018-01-01", "end_date": "2018-01-03"}],
+                }
+            }
+        ),
+    )
+    resp_json = resp.json()
+
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp_json["calculated_transaction_count"] == 0
+    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["transaction_rows_gt_limit"] is False
+
+    resp = client.post(
+        "/api/v2/download/count/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2020-01-01", "end_date": "2020-01-03"}],
+                }
+            }
         ),
     )
     resp_json = resp.json()

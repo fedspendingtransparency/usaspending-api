@@ -74,3 +74,129 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
+
+
+def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_transaction_index, subagency_award):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    baker.make("submissions.SubmissionAttributes", toptier_code="001")
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_agency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2020-01-01", "end_date": "2020-01-01"}]
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_agency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_agency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2020-01-01", "end_date": "2020-01-16"}]
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_agency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+
+def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearch_transaction_index, subagency_award):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    baker.make("submissions.SubmissionAttributes", toptier_code="001")
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_agency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2020-01-01", "end_date": "2020-01-01"}
+                    ]
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_agency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_agency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2020-01-01", "end_date": "2020-01-16"}
+                    ]
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_agency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+    # Tests the requirement that action date must be in bounds too
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_agency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2020-01-03", "end_date": "2020-01-16"}
+                    ]
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_agency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
