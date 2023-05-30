@@ -18,66 +18,58 @@ class AbstractTimePeriod(ABC):
     @filter_value.setter
     @abstractmethod
     def filter_value(self, filter_value: Dict[str, str]):
-        """
-        Arguments:
-            filter_value -- A single time period filter provided by the user.
+        """Sets the instance's filter value.
+
+        Parameters
+        ----------
+        filter_value
+            A single time period filter provided by the user. The dictionary should adhere
+            to the format described in [TimePeriodFilterObject] (https://vscode.dev/github/fedspendingtransparency/usaspending-api/blob/mod/DEV-9834-new-awards-only/usaspending_api/api_contracts/search_filters.md#L142)
         """
         pass
 
     @abstractmethod
     def start_date(self) -> str:
-        """
-        Returns:
-            The start date from this instance's filter value.
-            Can return None when start_date doesn't exist.
+        """Returns a start date from the instance's filter value.
+        Various implementations may manipulate the start date before returning it.
         """
         pass
 
     @abstractmethod
     def end_date(self) -> str:
-        """
-        Returns:
-            The end date from this instance's filter value.
-            Can return None when end_date doesn't exist.
+        """Returns a end date from the instance's filter value.
+        Various implementations may manipulate the end date before returning it.
         """
         pass
 
     @abstractmethod
     def gte_date_type(self) -> str:
-        """
-        Returns:
-            A date type that indicates the name of a column in which
-            stores the date values that start date must be greater than.
-            Can return None when gte_date_type doesn't exist.
+        """Returns a date type from the instance's filter value.
+        Various implementations may manipulate the date type before returning it.
+        The date type returned should be used in greater than or equal to range queries
         """
         pass
 
     @abstractmethod
     def lte_date_type(self) -> str:
-        """
-        Returns:
-            A date type that indicates the name of a column in which
-            stores the date values that end date must be less than or equal to.
-            Can return None when lte_date_type doesn't exist.
+        """Returns a date type from the instance's filter value.
+        Various implementations may manipulate the date type before returning it.
+        The date type returned should be used in less than or equal to range queries
         """
         pass
 
     @abstractmethod
     def gte_date_range(self) -> List[Dict[str, str]]:
-        """
-        Returns:
-            A nested dictionary indicating a column (the key) which should
-            store a value greater than or equal to (as specified in a key in the nested dictionary) a
-            date (the value in the nested dictionary).
+        """Returns a nested dictionary indicating a column (the key) which should
+        store a value greater than or equal to (as specified in a key in the nested dictionary) a
+        date (the value in the nested dictionary).
         """
         pass
 
     @abstractmethod
     def lte_date_range(self) -> List[Dict[str, str]]:
-        """
-        Returns:
-            A nested dictionary indicating a column (the key) which should
-            store a value less than or equal to (as specified in a key in the nested dictionary) a
-            date (the value in the nested dictionary).
+        """Returns a nested dictionary indicating a column (the key) which should
+        store a value less than or equal to (as specified in a key in the nested dictionary) a
+        date (the value in the nested dictionary).
         """
         pass
