@@ -172,6 +172,7 @@ def awards_and_transactions(db):
         generated_pragmatic_obligation=5,
         action_date="2020-01-01",
         fiscal_action_date="2020-04-01",
+        award_date_signed="2020-01-14",
         is_fpds=False,
         cfda_number="10.100",
         pop_country_code="USA",
