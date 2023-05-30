@@ -72,6 +72,7 @@ def subagency_award(db, agencies_with_subagencies):
         generated_pragmatic_obligation=10,
         action_date="2020-01-02",
         fiscal_action_date="2020-04-02",
+        award_date_signed="2020-01-14",
         is_fpds=False,
         awarding_agency_id=1003,
         funding_agency_id=1002,
