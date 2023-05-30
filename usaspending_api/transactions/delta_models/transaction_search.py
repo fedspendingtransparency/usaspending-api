@@ -89,6 +89,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "recipient_location_state_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_county_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_county_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
@@ -116,6 +117,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_county_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
@@ -389,7 +391,7 @@ TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_S
 TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 
-transaction_search_create_sql_string = fr"""
+transaction_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS.items()])}
     )
@@ -398,7 +400,7 @@ transaction_search_create_sql_string = fr"""
 """
 
 # TODO: include derivations for recipient_location_congressional_code_current and pop_congressional_code_current
-transaction_search_load_sql_string = fr"""
+transaction_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS])}
@@ -555,6 +557,10 @@ transaction_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
+        CONCAT(
+            RL_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+        ) AS recipient_location_county_fips,
         (CASE
             WHEN (
                 COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) <> 'USA'
@@ -601,6 +607,10 @@ transaction_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
+        CONCAT(
+            POP_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
+        ) AS pop_county_fips,
         (CASE
             WHEN (
                 transaction_fabs.place_of_performance_scope = 'Foreign'

@@ -307,7 +307,7 @@ award_search_load_sql_string = rf"""
   RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
   RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
-  CONCAT (
+  CONCAT(
     RL_STATE_LOOKUP.fips,
     COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
   ) AS recipient_location_county_fips,
@@ -358,7 +358,7 @@ award_search_load_sql_string = rf"""
   POP_STATE_POPULATION.latest_population AS pop_state_population,
   POP_COUNTY_POPULATION.latest_population AS pop_county_population,
   POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
-  CONCAT (
+  CONCAT(
     POP_STATE_LOOKUP.fips,
     COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
   ) AS pop_county_fips,
