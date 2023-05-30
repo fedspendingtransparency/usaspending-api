@@ -546,11 +546,13 @@ transaction_search_load_sql_string = fr"""
             AS recipient_location_state_name,
         RL_STATE_LOOKUP.fips AS recipient_location_state_fips,
         RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
+        -- For county codes, we need to make sure we extract the right digits out and ensure it's zero-padded to 3.
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AS recipient_location_county_code,
         COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name)
             AS recipient_location_county_name,
         RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
+        -- For congressional districts, we need to make sure we extract the right digits out and ensure it's zero-padded to 2.
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
@@ -587,11 +589,13 @@ transaction_search_load_sql_string = fr"""
             AS pop_state_name,
         POP_STATE_LOOKUP.fips AS pop_state_fips,
         POP_STATE_POPULATION.latest_population AS pop_state_population,
+        -- For county codes, we need to make sure we extract the right digits out and ensure it's zero-padded to 3.
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AS pop_county_code,
         COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na)
             AS pop_county_name,
         POP_COUNTY_POPULATION.latest_population AS pop_county_population,
+        -- For congressional districts, we need to make sure we extract the right digits out and ensure it's zero-padded to 2.
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,

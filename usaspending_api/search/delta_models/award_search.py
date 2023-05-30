@@ -286,9 +286,11 @@ award_search_load_sql_string = rf"""
   COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code, 'USA') AS recipient_location_country_code,
   COALESCE(transaction_fpds.legal_entity_country_name, transaction_fabs.legal_entity_country_name) AS recipient_location_country_name,
   COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) AS recipient_location_state_code,
+  -- For county codes, we need to make sure we extract the right digits out and ensure it's zero-padded to 3.
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AS recipient_location_county_code,
   COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,
+  -- For congressional districts, we need to make sure we extract the right digits out and ensure it's zero-padded to 2.
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
   LATEST_CURRENT_CD.recipient_location_congressional_code_current AS recipient_location_congressional_code_current,
@@ -303,11 +305,13 @@ award_search_load_sql_string = rf"""
   COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
   COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) AS pop_state_code,
+  -- For county codes, we need to make sure we extract the right digits out and ensure it's zero-padded to 3.
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AS pop_county_code,
   COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na) AS pop_county_name,
   transaction_fabs.place_of_performance_code AS pop_city_code,
   COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5) AS pop_zip5,
+  -- For congressional districts, we need to make sure we extract the right digits out and ensure it's zero-padded to 2.
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
   LATEST_CURRENT_CD.pop_congressional_code_current AS pop_congressional_code_current,
