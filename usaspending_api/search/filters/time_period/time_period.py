@@ -20,11 +20,9 @@ class AbstractTimePeriod(ABC):
     def filter_value(self, filter_value: Dict[str, str]):
         """Sets the instance's filter value.
 
-        Parameters
-        ----------
-        filter_value
-            A single time period filter provided by the user. The dictionary should adhere
-            to the format described in [TimePeriodFilterObject] (https://vscode.dev/github/fedspendingtransparency/usaspending-api/blob/mod/DEV-9834-new-awards-only/usaspending_api/api_contracts/search_filters.md#L142)
+        Args:
+            filter_value: A single time period filter provided by the user. The dictionary should adhere
+                to the format described in [TimePeriodFilterObject] (https://vscode.dev/github/fedspendingtransparency/usaspending-api/blob/mod/DEV-9834-new-awards-only/usaspending_api/api_contracts/search_filters.md#L142)
         """
         pass
 

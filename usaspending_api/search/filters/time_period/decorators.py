@@ -13,12 +13,9 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
     def __init__(self, time_period_obj: AbstractTimePeriod, query_type: _QueryType):
         """A constructor for NewAwardsOnlyTimePeriod.
 
-        Parameters
-        ----------
-        time_period_obj : AbstractTimePeriod
-            A concrete class that implements the AbstractTimePeriod time period interface
-        query_type : _QueryType
-            QueryType to help dictate flow in the internal workings of this class.
+        Args:
+            time_period_obj: A concrete class that implements the AbstractTimePeriod time period interface
+            query_type: QueryType to help dictate flow in the internal workings of this class.
         """
         self._query_type = query_type
         self._time_period_obj = time_period_obj
