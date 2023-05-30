@@ -169,11 +169,13 @@ Request parameter description:
 
 Request parameter description:
 * `time_period` (List) : Top level key name for this filter. Contains a list of date ranges to filter on.
-* `start_date` (String)
+* `start_date`: `2017-10-01` (String) : Start date value for date range filtering.
     Start date value for date range filtering. Currently limited to an earliest date of `2007-10-01` (FY2008). For data going back to `2000-10-01` (FY2001), use either the Custom Award Download feature on the website or one of our `download` or `bulk_download` API endpoints.
-* `end_date` (String) : End date value for date range filtering.
+* `end_date`:  `2018-09-30` (String) : End date value for date range filtering.
     Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
     feature on the website or one of our `download` or `bulk_download` API endpoints.
+* `date_type`:  (enum[string])
+    Check specific time period objects for date_type's members, defaults, and descriptions.
 
 ## Transaction Search Time Period Object
 
@@ -184,16 +186,16 @@ See [Time Period](#time-period)
 See [Time Period](#time-period)
 
 Request parameter description:
-+ `start_date`: `2017-10-01` (required, string)
++ `start_date`: (required)
     See [Time Period](#time-period)
-+ `end_date`: `2018-09-30` (required, string)
++ `end_date`: (required)
     See [Time Period](#time-period)
-+ `date_type` (optional, enum[string])
++ `date_type`: (optional)
     + Members
-        + `date_signed`
-            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed`.
         + `action_date`
             This date type value is the default.
+        + `date_signed`
+            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed`.
         + `last_modified_date`
         + `new_awards_only`
             Indicates when the results should reflect new awards only. You should expect only
@@ -208,11 +210,11 @@ See [Time Period](#time-period)
 See [Time Period](#time-period)
 
 Request parameter description:
-+ `start_date`: `2017-10-01` (required, string)
++ `start_date`: (required)
     See [Time Period](#time-period)
-+ `end_date`: `2018-09-30` (required, string)
++ `end_date`: (required)
     See [Time Period](#time-period)
-+ `date_type` (optional, enum[string])
++ `date_type`: (optional)
     + Members
         + `action_date`
             This date type value is the default.
