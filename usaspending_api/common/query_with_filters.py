@@ -1,9 +1,11 @@
 import copy
 import logging
+from datetime import datetime
+from typing import List, Tuple
 
 from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
-from typing import List, Tuple
+
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
@@ -35,10 +37,10 @@ class _Keywords(_Filter):
             "recipient_uei",
             "parent_uei",
         ]
-        for v in filter_values:
-            query = es_sanitize(v) + "*"
-            if "\\" in es_sanitize(v):
-                query = es_sanitize(v) + r"\*"
+        for filter_value in filter_values:
+            query = es_sanitize(filter_value) + "*"
+            if "\\" in es_sanitize(filter_value):
+                query = es_sanitize(filter_value) + r"\*"
             keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
@@ -92,8 +94,8 @@ class _KeywordSearch(_Filter):
             "recipient_uei",
             "parent_uei",
         ]
-        for v in filter_values:
-            keyword_queries.append(ES_Q("query_string", query=v, default_operator="OR", fields=fields))
+        for filter_value in filter_values:
+            keyword_queries.append(ES_Q("query_string", query=filter_value, default_operator="OR", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -103,22 +105,42 @@ class _TimePeriods(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
+
+        # Temporary until rest of dependencies are updated
+        if "time_period_obj" not in options or options.get("time_period_obj") is None:
+            return cls._default_elasticsearch_query(filter_values, query_type, **options)
+
         time_period_query = []
-        if options:
-            gte_field = options.get("gte_field", "action_date")
-            lte_field = options.get("lte_field", "date_signed" if query_type == _QueryType.AWARDS else "action_date")
+        for filter_value in filter_values:
+            time_period_obj = options["time_period_obj"]
+            time_period_obj.filter_value = filter_value
 
-        for v in filter_values:
-            start_date = v.get("start_date") or settings.API_SEARCH_MIN_DATE
-            end_date = v.get("end_date") or settings.API_MAX_DATE
+            gte_range = time_period_obj.gte_date_range()
+            lte_range = time_period_obj.lte_date_range()
 
-            gte_range = {gte_field if options else v.get("gte_date_type", "action_date"): {"gte": start_date}}
+            all_ranges = []
+            for range in gte_range:
+                all_ranges.append(ES_Q("bool", should=[ES_Q("range", **range)]))
+
+            for range in lte_range:
+                all_ranges.append(ES_Q("bool", should=[ES_Q("range", **range)]))
+
+            time_period_query.append(ES_Q("bool", should=all_ranges, minimum_should_match="100%"))
+
+        return ES_Q("bool", should=time_period_query, minimum_should_match=1)
+
+    @classmethod
+    def _default_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options):
+        time_period_query = []
+        for filter_value in filter_values:
+            start_date = filter_value.get("start_date") or settings.API_SEARCH_MIN_DATE
+            end_date = filter_value.get("end_date") or settings.API_MAX_DATE
+
+            gte_range = {filter_value.get("gte_date_type", "action_date"): {"gte": start_date}}
             lte_range = {
-                lte_field
-                if options
-                else v.get("lte_date_type", "date_signed" if query_type == _QueryType.AWARDS else "action_date"): {
-                    "lte": end_date
-                }
+                filter_value.get(
+                    "lte_date_type", "date_signed" if query_type == _QueryType.AWARDS else "action_date"
+                ): {"lte": end_date}
             }
 
             time_period_query.append(
@@ -135,8 +157,8 @@ class _AwardTypeCodes(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         award_type_codes_query = []
 
-        for v in filter_values:
-            award_type_codes_query.append(ES_Q("match", type=v))
+        for filter_value in filter_values:
+            award_type_codes_query.append(ES_Q("match", type=filter_value))
 
         return ES_Q("bool", should=award_type_codes_query, minimum_should_match=1)
 
@@ -181,8 +203,8 @@ class _Agencies(_Filter):
         awarding_agency_query = []
         funding_agency_query = []
 
-        for v in filter_values:
-            agency_type, agency_query = cls._build_query_object(v, query_type)
+        for filter_value in filter_values:
+            agency_type, agency_query = cls._build_query_object(filter_value, query_type)
 
             if agency_type == "awarding":
                 awarding_agency_query.append(agency_query)
@@ -203,8 +225,8 @@ class _RecipientSearchText(_Filter):
         recipient_search_query = []
         fields = ["recipient_name"]
 
-        for v in filter_values:
-            upper_recipient_string = es_sanitize(v.upper())
+        for filter_value in filter_values:
+            upper_recipient_string = es_sanitize(filter_value.upper())
             query = es_sanitize(upper_recipient_string) + "*"
             if "\\" in es_sanitize(upper_recipient_string):
                 query = es_sanitize(upper_recipient_string) + r"\*"
@@ -258,15 +280,15 @@ class _RecipientLocations(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         recipient_locations_query = []
 
-        for v in filter_values:
+        for filter_value in filter_values:
             location_query = []
             location_lookup = {
-                "country_code": v.get("country"),
-                "state_code": v.get("state"),
-                "county_code": v.get("county"),
-                "congressional_code": v.get("district"),
-                "city_name__keyword": v.get("city"),
-                "zip5": v.get("zip"),
+                "country_code": filter_value.get("country"),
+                "state_code": filter_value.get("state"),
+                "county_code": filter_value.get("county"),
+                "congressional_code": filter_value.get("district"),
+                "city_name__keyword": filter_value.get("city"),
+                "zip5": filter_value.get("zip"),
             }
 
             for location_key, location_value in location_lookup.items():
@@ -286,8 +308,8 @@ class _RecipientTypeNames(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         recipient_type_query = []
 
-        for v in filter_values:
-            recipient_type_query.append(ES_Q("match", business_categories=v))
+        for filter_value in filter_values:
+            recipient_type_query.append(ES_Q("match", business_categories=filter_value))
 
         return ES_Q("bool", should=recipient_type_query, minimum_should_match=1)
 
@@ -312,15 +334,15 @@ class _PlaceOfPerformanceLocations(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         pop_locations_query = []
 
-        for v in filter_values:
+        for filter_value in filter_values:
             location_query = []
             location_lookup = {
-                "country_code": v.get("country"),
-                "state_code": v.get("state"),
-                "county_code": v.get("county"),
-                "congressional_code": v.get("district"),
-                "city_name__keyword": v.get("city"),
-                "zip5": v.get("zip"),
+                "country_code": filter_value.get("country"),
+                "state_code": filter_value.get("state"),
+                "county_code": filter_value.get("county"),
+                "congressional_code": filter_value.get("district"),
+                "city_name__keyword": filter_value.get("city"),
+                "zip5": filter_value.get("zip"),
             }
 
             for location_key, location_value in location_lookup.items():
@@ -339,9 +361,9 @@ class _AwardAmounts(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         award_amounts_query = []
-        for v in filter_values:
-            lower_bound = v.get("lower_bound")
-            upper_bound = v.get("upper_bound")
+        for filter_value in filter_values:
+            lower_bound = filter_value.get("lower_bound")
+            upper_bound = filter_value.get("upper_bound")
             award_amounts_query.append(ES_Q("range", award_amount={"gte": lower_bound, "lte": upper_bound}))
         return ES_Q("bool", should=award_amounts_query, minimum_should_match=1)
 
@@ -353,14 +375,14 @@ class _AwardIds(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         award_ids_query = []
 
-        for v in filter_values:
-            if v and v.startswith('"') and v.endswith('"'):
-                v = v[1:-1]
-                award_ids_query.append(ES_Q("term", display_award_id={"value": es_sanitize(v)}))
+        for filter_value in filter_values:
+            if filter_value and filter_value.startswith('"') and filter_value.endswith('"'):
+                filter_value = filter_value[1:-1]
+                award_ids_query.append(ES_Q("term", display_award_id={"value": es_sanitize(filter_value)}))
             else:
-                v = es_sanitize(v)
-                v = " +".join(v.split())
-                award_ids_query.append(ES_Q("regexp", display_award_id={"value": v}))
+                filter_value = es_sanitize(filter_value)
+                filter_value = " +".join(filter_value.split())
+                award_ids_query.append(ES_Q("regexp", display_award_id={"value": filter_value}))
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
 
@@ -372,13 +394,13 @@ class _ProgramNumbers(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         programs_numbers_query = []
 
-        for v in filter_values:
+        for filter_value in filter_values:
             if query_type == _QueryType.AWARDS:
-                escaped_program_number = v.replace(".", "\\.")
+                escaped_program_number = filter_value.replace(".", "\\.")
                 r = f""".*\\"cfda_number\\" *: *\\"{escaped_program_number}\\".*"""
                 programs_numbers_query.append(ES_Q("regexp", cfdas=r))
             else:
-                programs_numbers_query.append(ES_Q("match", cfda_number=v))
+                programs_numbers_query.append(ES_Q("match", cfda_number=filter_value))
 
         return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
 
@@ -390,8 +412,8 @@ class _ContractPricingTypeCodes(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         contract_pricing_query = []
 
-        for v in filter_values:
-            contract_pricing_query.append(ES_Q("match", type_of_contract_pricing__keyword=v))
+        for filter_value in filter_values:
+            contract_pricing_query.append(ES_Q("match", type_of_contract_pricing__keyword=filter_value))
 
         return ES_Q("bool", should=contract_pricing_query, minimum_should_match=1)
 
@@ -403,8 +425,8 @@ class _SetAsideTypeCodes(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         set_aside_query = []
 
-        for v in filter_values:
-            set_aside_query.append(ES_Q("match", type_set_aside__keyword=v))
+        for filter_value in filter_values:
+            set_aside_query.append(ES_Q("match", type_set_aside__keyword=filter_value))
 
         return ES_Q("bool", should=set_aside_query, minimum_should_match=1)
 
@@ -416,8 +438,8 @@ class _ExtentCompetedTypeCodes(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         extent_competed_query = []
 
-        for v in filter_values:
-            extent_competed_query.append(ES_Q("match", extent_competed__keyword=v))
+        for filter_value in filter_values:
+            extent_competed_query.append(ES_Q("match", extent_competed__keyword=filter_value))
 
         return ES_Q("bool", should=extent_competed_query, minimum_should_match=1)
 
@@ -433,30 +455,46 @@ class _DisasterEmergencyFundCodes(_Filter):
         def_codes_query = []
         def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{'s' if query_type != _QueryType.ACCOUNTS else ''}"
 
-        all_covid_defc = set(
-            DisasterEmergencyFundCode.objects.filter(group_name="covid_19").values_list("code", flat=True)
+        all_covid_iija_defc = set(
+            DisasterEmergencyFundCode.objects.filter(group_name__in=["covid_19", "infrastructure"]).values_list(
+                "code", "earliest_public_law_enactment_date"
+            )
         )
-        covid_filters = list(set(filter_values) & all_covid_defc)
-        other_filters = list(set(filter_values) - all_covid_defc)
+        all_covid_iija_defc = dict(all_covid_iija_defc)
 
-        covid_queries = [ES_Q("match", **{def_code_field: v}) for v in covid_filters]
-        other_queries = [ES_Q("match", **{def_code_field: v}) for v in other_filters]
+        other_filters = list(set(filter_values) - set(all_covid_iija_defc.keys()))
+        other_queries = [ES_Q("match", **{def_code_field: filter_value}) for filter_value in other_filters]
 
-        if covid_queries:
+        # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
+        if query_type == _QueryType.TRANSACTIONS:
+            covid_iija_queries = [
+                ES_Q("match", **{def_code_field: def_code})
+                & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+                for def_code, enactment_date in all_covid_iija_defc.items()
+                if def_code in filter_values
+            ]
+        # Only filter on the DEFC value for other types of queries
+        else:
+            covid_iija_queries = [
+                ES_Q("match", **{def_code_field: def_code})
+                for def_code in all_covid_iija_defc.keys()
+                if def_code in filter_values
+            ]
+
+        if covid_iija_queries:
             if query_type == _QueryType.TRANSACTIONS:
                 query = ES_Q(
                     "bool",
-                    must=ES_Q("range", action_date={"gte": "2020-04-01"}),
-                    should=covid_queries,
+                    should=covid_iija_queries,
                     minimum_should_match=1,
                 )
             elif query_type == _QueryType.AWARDS:
                 nonzero_limit = _NonzeroFields.generate_elasticsearch_query(
                     ["total_covid_outlay", "total_covid_obligation"], query_type
                 )
-                query = ES_Q("bool", must=[nonzero_limit], should=covid_queries, minimum_should_match=1)
+                query = ES_Q("bool", must=[nonzero_limit], should=covid_iija_queries, minimum_should_match=1)
             else:
-                query = ES_Q("bool", should=covid_queries, minimum_should_match=1)
+                query = ES_Q("bool", should=covid_iija_queries, minimum_should_match=1)
 
             def_codes_query.append(query)
 

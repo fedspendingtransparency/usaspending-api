@@ -397,7 +397,6 @@ transaction_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-# TODO: include derivations for recipient_location_congressional_code_current and pop_congressional_code_current
 transaction_search_load_sql_string = fr"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -555,8 +554,7 @@ transaction_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
-        -- TODO: include recipient_location_congressional_code_current derivation
-        'TEST CUR REC CONGR TS' AS recipient_location_congressional_code_current,
+        CURRENT_CD.recipient_location_congressional_code_current AS recipient_location_congressional_code_current,
         COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
             AS recipient_location_zip5,
         transaction_fpds.legal_entity_zip4,
@@ -597,8 +595,7 @@ transaction_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
-        -- TODO: include pop_congressional_code_current derivation
-        'TEST CUR POP CONGR TS' AS pop_congressional_code_current,
+        CURRENT_CD.pop_congressional_code_current AS pop_congressional_code_current,
         COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
             AS pop_zip5,
         COALESCE(transaction_fpds.place_of_performance_zip4a, transaction_fabs.place_of_performance_zip4a)
@@ -981,6 +978,10 @@ transaction_search_load_sql_string = fr"""
         global_temp.ref_population_cong_district RL_DISTRICT_POPULATION ON (
             RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips
             AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
+        )
+    LEFT OUTER JOIN
+        int.transaction_current_cd_lookup AS CURRENT_CD ON (
+            transaction_normalized.id = CURRENT_CD.transaction_id
         )
     LEFT OUTER JOIN (
         SELECT
