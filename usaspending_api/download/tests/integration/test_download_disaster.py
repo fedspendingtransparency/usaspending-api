@@ -102,6 +102,7 @@ def awards_and_transactions():
         public_law="PUBLIC LAW FOR CODE L",
         title="TITLE FOR CODE L",
         group_name="covid_19",
+        earliest_public_law_enactment_date="2020-03-06",
     )
     defc2 = baker.make(
         "references.DisasterEmergencyFundCode",
@@ -109,6 +110,7 @@ def awards_and_transactions():
         public_law="PUBLIC LAW FOR CODE M",
         title="TITLE FOR CODE M",
         group_name="covid_19",
+        earliest_public_law_enactment_date="2020-03-18",
     )
     baker.make(
         "references.DisasterEmergencyFundCode",
@@ -116,6 +118,7 @@ def awards_and_transactions():
         public_law="PUBLIC LAW FOR CODE N",
         title="TITLE FOR CODE N",
         group_name="covid_19",
+        earliest_public_law_enactment_date="2020-03-27",
     )
 
     # Submission Attributes

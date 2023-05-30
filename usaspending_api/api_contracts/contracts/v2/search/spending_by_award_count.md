@@ -81,7 +81,7 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `program_activity` (optional, array[number])
 + `def_codes` (optional, array[DEFC], fixed-type)
   If the `def_codes` provided are in the COVID-19 group and the subaward flag is set to `False`, the query will only return prime awards that have at least one File C record with the supplied DEFC and also have non-zero COVID-19 related obligations or outlays.
-  If the `def_codes` provided are in the COVID-19 group and the subaward parameter is set to `True`, the query will only return results that have a sub_action_date on or after `2020-04-01`.
+  If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward parameter is set to `True`, the query will only return results that have a sub_action_date on or after the enactment date of the public law associated with that disaster code.
 
 ### TimePeriodObject (object)
 + `start_date`: `2017-10-01` (required, string)
