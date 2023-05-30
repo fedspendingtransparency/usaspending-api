@@ -65,6 +65,7 @@ class TransactionFABS(models.Model):
     legal_entity_state_name = models.TextField(blank=True, null=True)
     legal_entity_zip5 = models.TextField(blank=True, null=True)
     legal_entity_zip_last4 = models.TextField(blank=True, null=True)
+    legal_entity_county_fips = models.TextField(blank=True, null=True)
     modified_at = models.DateTimeField(blank=True, null=True)
     non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
@@ -77,6 +78,7 @@ class TransactionFABS(models.Model):
     place_of_perform_country_n = models.TextField(blank=True, null=True)
     place_of_perform_county_co = models.TextField(blank=True, null=True)
     place_of_perform_county_na = models.TextField(blank=True, null=True)
+    place_of_perform_county_fips = models.TextField(blank=True, null=True)
     place_of_performance_forei = models.TextField(blank=True, null=True)
     place_of_perform_state_nam = models.TextField(blank=True, null=True)
     place_of_perfor_state_code = models.TextField(blank=True, null=True)
@@ -146,6 +148,7 @@ FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "legal_entity_congressional": "recipient_location_congressional_code",
     "legal_entity_zip5": "recipient_location_zip5",
     "legal_entity_city_name": "recipient_location_city_name",
+    "legal_entity_county_fips": "recipient_location_county_fips",
     "place_of_perform_country_c": "pop_country_code",
     "place_of_perform_country_n": "pop_country_name",
     "place_of_perfor_state_code": "pop_state_code",
@@ -155,6 +158,7 @@ FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "place_of_performance_congr": "pop_congressional_code",
     "place_of_performance_zip5": "pop_zip5",
     "place_of_performance_city": "pop_city_name",
+    "place_of_perform_county_fips": "pop_county_fips",
 }
 
 FABS_CASTED_COL_MAP = {

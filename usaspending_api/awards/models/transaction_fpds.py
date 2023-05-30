@@ -39,6 +39,7 @@ class TransactionFPDS(models.Model):
     place_of_perform_city_name = models.TextField(blank=True, null=True)
     place_of_perform_county_na = models.TextField(blank=True, null=True)
     place_of_perform_county_co = models.TextField(blank=True, null=True)
+    place_of_perform_county_fips = models.TextField(blank=True, null=True)
     place_of_performance_congr = models.TextField(blank=True, null=True)
     awardee_or_recipient_legal = models.TextField(blank=True, null=True)
     legal_entity_city_name = models.TextField(blank=True, null=True)
@@ -55,6 +56,7 @@ class TransactionFPDS(models.Model):
     legal_entity_address_line3 = models.TextField(blank=True, null=True)
     legal_entity_country_code = models.TextField(blank=True, null=True)
     legal_entity_country_name = models.TextField(blank=True, null=True)
+    legal_entity_county_fips = models.TextField(blank=True, null=True)
     period_of_performance_star = models.TextField(blank=True, null=True)
     period_of_performance_curr = models.TextField(blank=True, null=True)
     period_of_perf_potential_e = models.TextField(blank=True, null=True)
@@ -328,6 +330,7 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "legal_entity_congressional": "recipient_location_congressional_code",
     "legal_entity_zip5": "recipient_location_zip5",
     "legal_entity_city_name": "recipient_location_city_name",
+    "legal_entity_county_fips": "recipient_location_county_fips",
     "place_of_perform_country_c": "pop_country_code",
     "place_of_perf_country_desc": "pop_country_name",
     "place_of_performance_state": "pop_state_code",
@@ -337,6 +340,7 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
     "place_of_performance_congr": "pop_congressional_code",
     "place_of_performance_zip5": "pop_zip5",
     "place_of_perform_city_name": "pop_city_name",
+    "place_of_perform_county_fips": "pop_county_fips",
     "naics": "naics_code",
     "product_or_service_co_desc": "product_or_service_description",
 }
