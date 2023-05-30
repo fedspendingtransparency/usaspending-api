@@ -35,7 +35,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.filters.time_period.query_type.transactions import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -185,7 +185,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            transaction_search_time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
