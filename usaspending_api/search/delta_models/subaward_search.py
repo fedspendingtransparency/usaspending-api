@@ -564,6 +564,7 @@ subaward_search_load_sql_string = fr"""
         global_temp.ref_country_code AS rcc
             ON (rcc.country_code = UPPER(bs.sub_legal_entity_country_code)
                 AND bs.sub_legal_entity_country_code IS NOT NULL)
+    -- Congressional District '90' represents multiple congressional districts
     LEFT OUTER JOIN
         global_temp.cd_state_grouped pop_cd_state_grouped ON (
             pop_cd_state_grouped.state_abbreviation=UPPER(bs.sub_place_of_perform_state_code)
