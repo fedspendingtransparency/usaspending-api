@@ -171,7 +171,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-                transaction_search_time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+                time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
             )
             filter_options["time_period_obj"] = new_awards_only_decorator
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
