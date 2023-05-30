@@ -8,8 +8,20 @@ class TransactionSearchTimePeriod(AbstractTimePeriod):
     This concrete implementation supports the filter [TransactionSearchTimePeriodObject](#usaspending_api/api_contracts/search_filters.md#transaction-search-time-period-object).
     """
 
-    def __init__(self, default_start_date: str, default_end_date: str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, default_start_date: str, default_end_date: str):
+        """Constructor to create TransactionSearchTimePeriod object.
+
+        Parameters
+        ----------
+        default_start_date : str
+            This is the start date value to use when start date is not present in the filter value.
+            See start date in [TransactionSearchTimePeriodObject](#usaspending_api/api_contracts/search_filters.md#transaction-search-time-period-object)
+            for definition.
+        default_end_date : str
+            This is the end date value to use when end date is not present in the filter value.
+            See end date in [TransactionSearchTimePeriodObject](#usaspending_api/api_contracts/search_filters.md#transaction-search-time-period-object)
+            for definition.
+        """
         self._default_start_date = default_start_date
         self._default_end_date = default_end_date
         self._filter_value = {}

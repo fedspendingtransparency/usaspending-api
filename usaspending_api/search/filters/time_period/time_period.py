@@ -10,9 +10,6 @@ class AbstractTimePeriod(ABC):
     [TimePeriodFilterObject] (https://vscode.dev/github/fedspendingtransparency/usaspending-api/blob/mod/DEV-9834-new-awards-only/usaspending_api/api_contracts/search_filters.md#L142)
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @property
     @abstractmethod
     def filter_value(self) -> Dict[str, str]:
