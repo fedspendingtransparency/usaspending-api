@@ -13,7 +13,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.filters.time_period.query_type.transactions import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 
 logger = logging.getLogger(__name__)
