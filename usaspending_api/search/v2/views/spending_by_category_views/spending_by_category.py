@@ -26,6 +26,9 @@ from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
 )
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +76,15 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
         else:
-            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
+            filter_options = {}
+            time_period_obj = TransactionSearchTimePeriod(
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            )
+            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+                time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+            )
+            filter_options["time_period_obj"] = new_awards_only_decorator
+            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
             results = self.query_elasticsearch_for_prime_awards(filter_query)
 
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
