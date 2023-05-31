@@ -4,29 +4,17 @@
     "index.max_result_window": null,
     "index.refresh_interval": -1,
     "index": {
-      "number_of_shards": 5,
-      "number_of_replicas": 0,
-      "sort.field": [
-        "federal_action_obligation.keyword",
-        "action_date"
-      ],
-      "sort.order": [
-        "desc",
-        "desc"
-      ],
-      "sort.missing": [
-        "_last",
-        "_last"
-      ]
+      "number_of_shards" : 5,
+      "number_of_replicas" : 0,
+      "sort.field" : ["federal_action_obligation.keyword", "action_date"],
+      "sort.order" : ["desc", "desc"],
+      "sort.missing": ["_last", "_last"]
     },
     "analysis": {
       "analyzer": {
         "stemmer_analyzer": {
-          "tokenizer": "standard",
-          "filter": [
-            "lowercase",
-            "singular_stemmer"
-          ]
+            "tokenizer": "standard",
+            "filter": ["lowercase", "singular_stemmer"]
         }
       },
       "filter": {
@@ -456,12 +444,6 @@
       "pop_county_name": {
         "type": "text"
       },
-      "pop_county_fips": {
-        "type": "keyword"
-      },
-      "pop_stat_fips": {
-        "type": "keyword"
-      },
       "pop_zip5": {
         "type": "text"
       },
@@ -524,6 +506,12 @@
           }
         }
       },
+	  "pop_county_fips": {
+		"type": "keyword"
+	  },
+	  "pop_state_fips": {
+		"type": "keyword"
+	  },
       "recipient_location_country_code": {
         "type": "keyword"
       },
@@ -531,9 +519,6 @@
         "type": "text"
       },
       "recipient_location_state_code": {
-        "type": "keyword"
-      },
-      "recipient_location_state_fips": {
         "type": "keyword"
       },
       "recipient_location_county_code": {
@@ -595,9 +580,12 @@
           }
         }
       },
-      "recipient_location_county_fips": {
-        "type": "keyword"
-      },
+	  "recipient_location_state_fips": {
+		"type": "keyword"
+	  },
+	  "recipient_location_county_fips": {
+		"type": "keyword"
+	  },
       "tas_paths": {
         "type": "keyword"
       },
@@ -617,7 +605,7 @@
         "type": "keyword"
       },
       "disaster_emergency_fund_codes": {
-        "type": "keyword"
+          "type": "keyword"
       },
       "recipient_uei": {
         "type": "text",
