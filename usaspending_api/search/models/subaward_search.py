@@ -204,6 +204,7 @@ class SubawardSearch(models.Model):
     product_or_service_code = models.TextField(null=True, blank=True)
     product_or_service_description = models.TextField(null=True, blank=True)
 
+    legal_entity_congressional_current = models.TextField(null=True, blank=True)
     sub_legal_entity_country_code = models.TextField(null=True, blank=True)
     sub_legal_entity_country_name = models.TextField(null=True, blank=True)
     sub_legal_entity_county_code = models.TextField(null=True, blank=True)
@@ -211,7 +212,9 @@ class SubawardSearch(models.Model):
     sub_legal_entity_zip5 = models.TextField(null=True, blank=True)
     sub_legal_entity_city_code = models.TextField(null=True, blank=True)
     sub_legal_entity_congressional = models.TextField(null=True, blank=True)
+    sub_legal_entity_congressional_current = models.TextField(null=True, blank=True)
 
+    place_of_performance_congressional_current = models.TextField(null=True, blank=True)
     place_of_perform_scope = models.TextField(null=True, blank=True)
     sub_place_of_perform_country_co = models.TextField(null=True, blank=True)
     sub_place_of_perform_country_name = models.TextField(null=True, blank=True)
@@ -220,6 +223,7 @@ class SubawardSearch(models.Model):
     sub_place_of_perform_zip5 = models.TextField(null=True, blank=True)
     sub_place_of_perform_city_code = models.TextField(null=True, blank=True)
     sub_place_of_perform_congressio = models.TextField(null=True, blank=True)
+    sub_place_of_performance_congressional_current = models.TextField(null=True, blank=True)
 
     # USAS Vectors
     keyword_ts_vector = SearchVectorField(null=True)
