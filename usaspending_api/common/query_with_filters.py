@@ -115,16 +115,17 @@ class _TimePeriods(_Filter):
             time_period_obj = options["time_period_obj"]
             time_period_obj.filter_value = filter_value
 
-            start_date = time_period_obj.start_date()
-            end_date = time_period_obj.end_date()
+            gte_range = time_period_obj.gte_date_range()
+            lte_range = time_period_obj.lte_date_range()
 
-            # Keywords must be strings, hence f-strings here
-            gte_range = {f"{time_period_obj.gte_date_type()}": {"gte": start_date}}
-            lte_range = {f"{time_period_obj.lte_date_type()}": {"lte": end_date}}
+            all_ranges = []
+            for range in gte_range:
+                all_ranges.append(ES_Q("bool", should=[ES_Q("range", **range)]))
 
-            time_period_query.append(
-                ES_Q("bool", should=[ES_Q("range", **gte_range), ES_Q("range", **lte_range)], minimum_should_match=2)
-            )
+            for range in lte_range:
+                all_ranges.append(ES_Q("bool", should=[ES_Q("range", **range)]))
+
+            time_period_query.append(ES_Q("bool", should=all_ranges, minimum_should_match="100%"))
 
         return ES_Q("bool", should=time_period_query, minimum_should_match=1)
 

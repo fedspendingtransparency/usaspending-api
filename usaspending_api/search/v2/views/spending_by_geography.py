@@ -29,6 +29,9 @@ from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_transactions,
 )
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 API_VERSION = settings.API_VERSION
@@ -163,7 +166,15 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 self.filters[scope_filter_name] = "domestic"
 
             self.obligation_column = "generated_pragmatic_obligation"
-            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters)
+            filter_options = {}
+            time_period_obj = TransactionSearchTimePeriod(
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            )
+            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+                time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+            )
+            filter_options["time_period_obj"] = new_awards_only_decorator
+            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
             result = self.query_elasticsearch(filter_query)
 
         return Response(
