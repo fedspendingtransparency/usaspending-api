@@ -7,7 +7,6 @@ from usaspending_api.search.models import AwardSearch
 
 @pytest.fixture
 def spending_by_award_test_data():
-
     baker.make(
         "recipient.RecipientLookup",
         id=1001,
@@ -203,8 +202,15 @@ def spending_by_award_test_data():
     )
 
     # DEFC
-    defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19")
-    defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None)
+    defc_l = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        group_name="covid_19",
+        earliest_public_law_enactment_date="2020-03-06",
+    )
+    defc_q = baker.make(
+        "references.DisasterEmergencyFundCode", code="Q", group_name=None, earliest_public_law_enactment_date=None
+    )
 
     # Submissions
     baker.make(

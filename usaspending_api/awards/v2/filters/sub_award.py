@@ -1,13 +1,13 @@
 import itertools
 import logging
 
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES, create_nested_object
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.references.models import PSC
+from usaspending_api.references.models import PSC, DisasterEmergencyFundCode
 from usaspending_api.search.filters.postgres.defc import DefCodes
 from usaspending_api.search.filters.postgres.psc import PSCCodes
 from usaspending_api.search.filters.postgres.tas import TasCodes, TreasuryAccounts
@@ -15,7 +15,6 @@ from usaspending_api.search.helpers.matview_filter_helpers import build_award_id
 from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
-
 
 logger = logging.getLogger(__name__)
 
@@ -336,6 +335,24 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
 
         elif key == "def_codes":
-            queryset = queryset.filter(DefCodes.build_def_codes_filter(queryset, value))
-            queryset = queryset.filter(sub_action_date__gte="2020-04-01")
+            def_codes_with_enactment_dates = DisasterEmergencyFundCode.objects.exclude(
+                earliest_public_law_enactment_date__isnull=True
+            ).values_list("code", "earliest_public_law_enactment_date")
+            def_codes_with_enactment_dates = dict(def_codes_with_enactment_dates)
+
+            queryset = queryset.filter(DefCodes.build_def_codes_filter(value))
+
+            if any(code in def_codes_with_enactment_dates.keys() for code in value):
+                # Get the earliest enactment date of all public laws that apply to the
+                #   provided def codes
+                earliest_applicable_enactment_date = min(
+                    [
+                        def_codes_with_enactment_dates[defc]
+                        for defc in value
+                        if defc in def_codes_with_enactment_dates.keys()
+                    ]
+                )
+
+                queryset = queryset.filter(sub_action_date__gte=earliest_applicable_enactment_date)
+
     return queryset

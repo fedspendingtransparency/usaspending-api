@@ -79,6 +79,7 @@ def download_test_data():
         modification_number=1,
         awarding_agency_id=aa1.id,
         piid="tc1piid",
+        award_date_signed="2018-01-15",
     )
     baker.make(
         TransactionSearch,
@@ -206,3 +207,53 @@ def test_download_transactions_bad_filter_type_raises(
     resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_download_transactions_with_date_type(client, monkeypatch, download_test_data, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    resp = client.post(
+        "/api/v2/download/transactions/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2017-12-31", "end_date": "2018-01-02"}],
+                }
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert ".zip" in resp.json()["file_url"]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_download_transactions_new_awards_only(
+    client, monkeypatch, download_test_data, elasticsearch_transaction_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    resp = client.post(
+        "/api/v2/download/transactions/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [
+                        {
+                            "date_type": "new_awards_only",
+                            "start_date": "2017-12-31",
+                            "end_date": "2018-01-02",
+                        }
+                    ],
+                }
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert ".zip" in resp.json()["file_url"]
