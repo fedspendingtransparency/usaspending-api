@@ -129,19 +129,14 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `def_codes` (optional, array[DEFC], fixed-type)
-  If the `def_codes` provided are in the COVID-19 group, the query will only return results of transactions where the `action_date` is on or after `2020-04-01`.
+  If the `def_codes` provided are in the COVID-19 or IIJA group, the query will only return results of transactions where the `action_date` is on or after the enactment date of the public law associated with that disaster code.
 
 ### TimePeriodObject (object)
-+ `start_date`: `2017-10-01` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `end_date`: `2018-09-30` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `date_type` (optional, enum[string])
-    + Members
-        + `action_date`
-        + `last_modified_date`
+This TimePeriodObject can fall into different categories based on the request.
++ if `subawards` true
+    See the Subaward Search category defined in [SubawardSearchTimePeriodObject](../../../search_filters.md#subaward-search-time-period-object)
++ otherwise
+    See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 ### LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
