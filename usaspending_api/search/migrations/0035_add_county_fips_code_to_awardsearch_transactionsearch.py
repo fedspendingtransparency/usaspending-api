@@ -4,30 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('search', '0033_add_total_outlays_column'),
+        ("search", "0034_subaward_search_current_cds"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='awardsearch',
-            name='pop_county_fips',
+            model_name="awardsearch",
+            name="pop_county_fips",
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name='awardsearch',
-            name='recipient_location_county_fips',
+            model_name="awardsearch",
+            name="recipient_location_county_fips",
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name='transactionsearch',
-            name='pop_county_fips',
+            model_name="transactionsearch",
+            name="pop_county_fips",
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_location_county_fips',
+            model_name="transactionsearch",
+            name="recipient_location_county_fips",
             field=models.TextField(null=True),
         ),
     ]

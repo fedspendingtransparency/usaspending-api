@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("awards", "0096_removing_subaward_models"),
         ("search", "0019_additional_transaction_search_fields"),
-        ("search", "0034_add_county_fips_code_to_awardsearch_transactionsearch"),
+        ("search", "0035_add_county_fips_code_to_awardsearch_transactionsearch"),
     ]
 
     operations = [
