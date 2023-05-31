@@ -202,7 +202,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_recipient_county_fips_code",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_county_fips']}",
+                    "latest_transaction_search__recipient_location_county_fips",
                 ),
                 (
                     "recipient_county_name",
@@ -210,7 +210,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_recipient_state_fips_code",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_state_fips']}",
+                    "latest_transaction_search__recipient_location_state_fips",
                 ),
                 (
                     "recipient_state_code",
@@ -250,7 +250,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_place_of_performance_county_fips_code",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_county_fips']}",
+                    "latest_transaction_search__pop_county_fips",
                 ),
                 (
                     "primary_place_of_performance_county_name",
@@ -258,7 +258,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_place_of_performance_state_fips_code",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_state_fips']}",
+                    "latest_transaction_search__pop_state_fips",
                 ),
                 (
                     "primary_place_of_performance_state_code",
@@ -1179,7 +1179,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_recipient_county_fips_code",
-                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_county_fips']}",
+                    "latest_transaction_search__recipient_location_county_fips",
                 ),
                 (
                     "recipient_county_name",
@@ -1187,7 +1187,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_recipient_state_fips_code",
-                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_state_fips']}",
+                    "latest_transaction_search__recipient_location_state_fips",
                 ),
                 (
                     "recipient_state_code",
@@ -1243,7 +1243,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_place_of_performance_county_fips_code",
-                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_county_fips']}",
+                    "latest_transaction_search__pop_county_fips",
                 ),
                 (
                     "primary_place_of_performance_county_name",
@@ -1251,7 +1251,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_place_of_performance_state_fips_code",
-                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_perform_state_fips']}",
+                    "latest_transaction_search__pop_state_fips",
                 ),
                 (
                     "primary_place_of_performance_state_name",
@@ -1412,12 +1412,12 @@ query_paths = {
                 ("recipient_city_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_city_name"]),
                 (
                     "prime_award_transaction_recipient_county_fips_code",
-                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_county_fips"],
+                    "recipient_location_county_fips",
                 ),
                 ("recipient_county_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_county_name"]),
                 (
                     "prime_award_transaction_recipient_state_fips_code",
-                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_fips"],
+                    "recipient_location_state_fips",
                 ),
                 ("recipient_state_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_code"]),
                 ("recipient_state_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_descrip"]),
@@ -1439,7 +1439,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_transaction_place_of_performance_county_fips_code",
-                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_perform_county_fips"],
+                    "pop_county_fips",
                 ),
                 (
                     "primary_place_of_performance_county_name",
@@ -1447,7 +1447,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_transaction_place_of_performance_state_fips_code",
-                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_perform_state_fips"],
+                    "pop_state_fips",
                 ),
                 (
                     "primary_place_of_performance_state_code",
@@ -1916,14 +1916,11 @@ query_paths = {
                 ("recipient_address_line_2", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_address_line2"]),
                 ("recipient_city_code", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_city_code"]),
                 ("recipient_city_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_city_name"]),
-                (
-                    "prime_award_transaction_recipient_county_fips_code",
-                    FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_county_fips"],
-                ),
+                ("prime_award_transaction_recipient_county_fips_code", "recipient_location_county_fips"),
                 ("recipient_county_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_county_name"]),
                 (
                     "prime_award_transaction_recipient_state_fips_code",
-                    FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_fips"],
+                    "recipient_location_state_fips",
                 ),
                 ("recipient_state_code", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_code"]),
                 ("recipient_state_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_name"]),
@@ -1952,7 +1949,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_transaction_place_of_performance_county_fips_code",
-                    FABS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_perform_county_fips"],
+                    "pop_county_fips",
                 ),
                 (
                     "primary_place_of_performance_county_name",
@@ -1960,7 +1957,7 @@ query_paths = {
                 ),
                 (
                     "prime_award_transaction_place_of_performance_state_fips_code",
-                    FABS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_perform_state_fips"],
+                    "pop_state_fips",
                 ),
                 (
                     "primary_place_of_performance_state_name",
