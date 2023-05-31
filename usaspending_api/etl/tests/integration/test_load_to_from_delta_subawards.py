@@ -29,6 +29,8 @@ def test_load_table_to_from_delta_for_subawards(
         "transaction_fpds",
         "recipient_lookup",
         "financial_accounts_by_awards",
+        "zips",
+        "transaction_current_cd_lookup",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(spark, "subaward", s3_unittest_data_bucket)
@@ -219,6 +221,10 @@ def test_load_table_to_from_delta_for_subawards(
             "sub_place_of_perform_zip5": "",
             "sub_place_of_perform_city_code": None,
             "sub_place_of_perform_congressio": None,
+            "legal_entity_congressional_current": None,
+            "sub_legal_entity_congressional_current": None,
+            "place_of_performance_congressional_current": None,
+            "sub_place_of_performance_congressional_current": None,
         },
         {
             "broker_created_at": datetime(2019, 6, 11, 18, 27, 37, 76916),
@@ -405,6 +411,10 @@ def test_load_table_to_from_delta_for_subawards(
             "sub_place_of_perform_zip5": "50011",
             "sub_place_of_perform_city_code": None,
             "sub_place_of_perform_congressio": "04",
+            "legal_entity_congressional_current": None,
+            "sub_legal_entity_congressional_current": None,
+            "place_of_performance_congressional_current": None,
+            "sub_place_of_performance_congressional_current": None,
         },
         {
             "broker_created_at": datetime(2019, 6, 12, 12, 45, 58, 789296),
@@ -591,6 +601,10 @@ def test_load_table_to_from_delta_for_subawards(
             "sub_place_of_perform_zip5": "93517",
             "sub_place_of_perform_city_code": None,
             "sub_place_of_perform_congressio": "25",
+            "legal_entity_congressional_current": None,
+            "sub_legal_entity_congressional_current": None,
+            "place_of_performance_congressional_current": None,
+            "sub_place_of_performance_congressional_current": None,
         },
         {
             "broker_created_at": datetime(2019, 6, 12, 12, 45, 58, 789296),
@@ -777,6 +791,10 @@ def test_load_table_to_from_delta_for_subawards(
             "sub_place_of_perform_zip5": "90501",
             "sub_place_of_perform_city_code": None,
             "sub_place_of_perform_congressio": "36",
+            "legal_entity_congressional_current": None,
+            "sub_legal_entity_congressional_current": None,
+            "place_of_performance_congressional_current": None,
+            "sub_place_of_performance_congressional_current": None,
         },
     ]
 
