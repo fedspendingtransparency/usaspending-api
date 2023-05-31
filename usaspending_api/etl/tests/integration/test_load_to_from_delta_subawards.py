@@ -29,6 +29,7 @@ def test_load_table_to_from_delta_for_subawards(
         "transaction_fpds",
         "recipient_lookup",
         "financial_accounts_by_awards",
+        "zips",
         "transaction_current_cd_lookup",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
