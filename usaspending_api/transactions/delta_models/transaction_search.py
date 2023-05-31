@@ -89,12 +89,12 @@ TRANSACTION_SEARCH_COLUMNS = {
     "recipient_location_state_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_county_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_county_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "legal_entity_zip4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_city_code": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -117,12 +117,12 @@ TRANSACTION_SEARCH_COLUMNS = {
     "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_county_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_congressional_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "pop_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "place_of_performance_zip4a": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "place_of_perform_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "pop_city_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -399,7 +399,6 @@ transaction_search_create_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-# TODO: include derivations for recipient_location_congressional_code_current and pop_congressional_code_current
 transaction_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -557,16 +556,6 @@ transaction_search_load_sql_string = rf"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
-        CONCAT(
-            RL_STATE_LOOKUP.fips,
-            COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
-        ) AS recipient_location_county_fips,
-        (CASE
-            WHEN (
-                COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) <> 'USA'
-            ) THEN NULL
-            ELSE COALESCE(rl_cd_state_grouped.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no)
-        END) AS recipient_location_congressional_code_current,
         CURRENT_CD.recipient_location_congressional_code_current AS recipient_location_congressional_code_current,
         COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
             AS recipient_location_zip5,
@@ -586,6 +575,10 @@ transaction_search_load_sql_string = rf"""
         transaction_fabs.legal_entity_foreign_descr,
         transaction_fabs.legal_entity_foreign_posta,
         transaction_fabs.legal_entity_foreign_provi,
+        CONCAT(
+            RL_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+        ) AS recipient_location_county_fips,
 
         -- Place of Performance
         transaction_fabs.place_of_performance_code,
@@ -608,40 +601,6 @@ transaction_search_load_sql_string = rf"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
-        CONCAT(
-            POP_STATE_LOOKUP.fips,
-            COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
-        ) AS pop_county_fips,
-        (CASE
-            WHEN (
-                transaction_fabs.place_of_performance_scope = 'Foreign'
-                OR transaction_fpds.place_of_perform_country_c <> 'USA'
-            ) THEN NULL
-            WHEN (
-                transaction_fabs.place_of_performance_scope = 'Multi-State'
-            ) THEN '90'
-            WHEN (
-                (transaction_fabs.place_of_performance_scope = 'State-wide'
-                OR transaction_fpds.place_of_perform_country_c = 'USA')
-                AND pop_cd_state_grouped.congressional_district_no IS NOT NULL
-            ) THEN pop_cd_state_grouped.congressional_district_no
-            WHEN (
-                (transaction_fabs.place_of_performance_scope = 'Single ZIP Code'
-                OR transaction_fpds.place_of_perform_country_c = 'USA')
-                AND COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no) IS NOT NULL
-            ) THEN COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no)
-            WHEN (
-                (transaction_fabs.place_of_performance_scope = 'City-wide'
-                OR transaction_fpds.place_of_perform_country_c = 'USA')
-                AND pop_cd_city_grouped.congressional_district_no IS NOT NULL
-            ) THEN pop_cd_city_grouped.congressional_district_no
-            WHEN (
-                (transaction_fabs.place_of_performance_scope = 'County-wide'
-                OR transaction_fpds.place_of_perform_country_c = 'USA')
-                AND pop_cd_county_grouped.congressional_district_no IS NOT NULL
-            ) THEN pop_cd_county_grouped.congressional_district_no
-            ELSE NULL
-        END) AS pop_congressional_code_current,
         CURRENT_CD.pop_congressional_code_current AS pop_congressional_code_current,
         COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
             AS pop_zip5,
@@ -652,6 +611,10 @@ transaction_search_load_sql_string = rf"""
         TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city))
             AS pop_city_name,
         transaction_fabs.place_of_performance_forei AS place_of_performance_forei,
+        CONCAT(
+            POP_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
+        ) AS pop_county_fips,
 
         -- Accounts
         FED_AND_TRES_ACCT.treasury_account_identifiers,
