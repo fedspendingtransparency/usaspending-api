@@ -94,7 +94,6 @@ TRANSACTION_SEARCH_COLUMNS = {
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "recipient_location_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "legal_entity_zip4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_city_code": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -106,6 +105,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "legal_entity_foreign_descr": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_foreign_posta": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_foreign_provi": {"delta": "STRING", "postgres": "TEXT", "gold": True},
+    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     # Place of Performance
     "place_of_performance_code": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "place_of_performance_scope": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -122,11 +122,11 @@ TRANSACTION_SEARCH_COLUMNS = {
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_congressional_code_current": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "pop_zip5": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "place_of_performance_zip4a": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "place_of_perform_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "pop_city_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "place_of_performance_forei": {"delta": "STRING", "postgres": "TEXT", "gold": True},
+    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     # Accounts
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "TEXT[]", "gold": False},
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
