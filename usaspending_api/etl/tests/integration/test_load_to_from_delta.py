@@ -738,8 +738,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["Q"],
-        recipient_location_county_fips="51",
-        pop_county_fips="51",
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
     baker.make(
         "search.TransactionSearch",
@@ -831,8 +831,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["Q"],
-        recipient_location_county_fips="51",
-        pop_county_fips="51",
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
     baker.make(
         "search.TransactionSearch",
