@@ -291,6 +291,10 @@ award_search_load_sql_string = rf"""
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AS recipient_location_county_code,
   COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,
+  CONCAT(
+    RL_STATE_LOOKUP.fips,
+    COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+  ) AS recipient_location_county_fips,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
   LATEST_CURRENT_CD.recipient_location_congressional_code_current AS recipient_location_congressional_code_current,
@@ -301,10 +305,6 @@ award_search_load_sql_string = rf"""
   RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
   RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
-  CONCAT(
-    RL_STATE_LOOKUP.fips,
-    COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
-  ) AS recipient_location_county_fips,
 
   COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
