@@ -297,6 +297,8 @@ def populate_usas_data(populate_broker_data):
         business_categories=None,
         original_loan_subsidy_cost=0.00,
         face_value_loan_guarantee=0.00,
+        recipient_location_county_fips="51001",
+        pop_county_fips="51001",
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -377,6 +379,8 @@ def populate_usas_data(populate_broker_data):
         naics_code="123456",
         product_or_service_code="12",
         product_or_service_description=psc.description,
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -441,6 +445,8 @@ def populate_usas_data(populate_broker_data):
         tas_components=None,
         disaster_emergency_fund_codes=None,
         covid_spending_by_defc=None,
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
 
     baker.make(
@@ -1380,7 +1386,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-
     baker.make(
         "transactions.SourceAssistanceTransaction",
         published_fabs_id=7,
