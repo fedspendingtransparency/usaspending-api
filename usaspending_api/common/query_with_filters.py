@@ -430,6 +430,28 @@ class _DisasterEmergencyFundCodes(_Filter):
     underscore_name = "def_codes"
 
     @classmethod
+    def _generate_covid_iija_es_queries_transactions(cls, def_code_field, covid_filters, iija_filters):
+        covid_es_queries = [
+            ES_Q("match", **{def_code_field: def_code})
+            & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+            for def_code, enactment_date in covid_filters.items()
+        ]
+        iija_es_queries = [
+            ES_Q("match", **{def_code_field: def_code})
+            & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+            for def_code, enactment_date in iija_filters.items()
+        ]
+
+        return covid_es_queries, iija_es_queries
+
+    @classmethod
+    def _generate_covid_iija_es_queries_other(cls, def_code_field, covid_filters, iija_filters):
+        covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
+        iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
+
+        return covid_es_queries, iija_es_queries
+
+    @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         nested_path = options.get("nested_path", "")
         def_codes_query = []
@@ -468,16 +490,9 @@ class _DisasterEmergencyFundCodes(_Filter):
 
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
         if query_type == _QueryType.TRANSACTIONS:
-            covid_es_queries = [
-                ES_Q("match", **{def_code_field: def_code})
-                & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
-                for def_code, enactment_date in covid_filters.items()
-            ]
-            iija_es_queries = [
-                ES_Q("match", **{def_code_field: def_code})
-                & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
-                for def_code, enactment_date in iija_filters.items()
-            ]
+            covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_transactions(
+                def_code_field, covid_filters, iija_filters
+            )
 
             if covid_es_queries or iija_es_queries:
                 covid_iija_queries = covid_es_queries + iija_es_queries
@@ -492,8 +507,9 @@ class _DisasterEmergencyFundCodes(_Filter):
         # Only filter on the DEFC value, but also filter out results where
         #   `covid/iija_outlay` and `covid/iija_obligation` are 0
         elif query_type == _QueryType.AWARDS:
-            covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
-            iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
+            covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_other(
+                def_code_field, covid_filters, iija_filters
+            )
 
             if covid_es_queries:
                 covid_nonzero_limit = _NonzeroFields.generate_elasticsearch_query(
@@ -517,8 +533,9 @@ class _DisasterEmergencyFundCodes(_Filter):
 
         # Only filter on the DEFC value for other types of queries
         else:
-            covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
-            iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
+            covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_other(
+                def_code_field, covid_filters, iija_filters
+            )
 
             if covid_es_queries or iija_es_queries:
                 covid_iija_queries = covid_es_queries + iija_es_queries
