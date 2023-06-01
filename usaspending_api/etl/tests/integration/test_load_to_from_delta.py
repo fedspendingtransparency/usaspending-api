@@ -542,6 +542,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["L", "M"],
+        recipient_location_county_fips="51001",
+        pop_county_fips="51001",
     )
     baker.make(
         "search.TransactionSearch",
@@ -643,6 +645,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["L", "M"],
+        recipient_location_county_fips="51001",
+        pop_county_fips="51001",
     )
     baker.make(
         "search.TransactionSearch",
@@ -734,6 +738,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["Q"],
+        recipient_location_county_fips="51",
+        pop_county_fips="51",
     )
     baker.make(
         "search.TransactionSearch",
@@ -825,6 +831,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["Q"],
+        recipient_location_county_fips="51",
+        pop_county_fips="51",
     )
     baker.make(
         "search.TransactionSearch",
@@ -882,6 +890,8 @@ def populate_usas_data(populate_broker_data):
         parent_recipient_name="PARENT RECIPIENT 12345",
         parent_recipient_name_raw="PARENT RECIPIENT 12345",
         ordering_period_end_date="2020-07-01",
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
