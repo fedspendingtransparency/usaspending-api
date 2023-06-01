@@ -575,10 +575,6 @@ transaction_search_load_sql_string = rf"""
         transaction_fabs.legal_entity_foreign_descr,
         transaction_fabs.legal_entity_foreign_posta,
         transaction_fabs.legal_entity_foreign_provi,
-        CONCAT(
-            RL_STATE_LOOKUP.fips,
-            COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
-        ) AS recipient_location_county_fips,
 
         -- Place of Performance
         transaction_fabs.place_of_performance_code,
@@ -876,8 +872,11 @@ transaction_search_load_sql_string = rf"""
         transaction_fpds.veterinary_college,
         transaction_fpds.veterinary_hospital,
         transaction_fpds.woman_owned_business,
-        transaction_fpds.women_owned_small_business
-
+        transaction_fpds.women_owned_small_business,
+        CONCAT(
+            RL_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+        ) AS recipient_location_county_fips
     FROM
         int.transaction_normalized
     LEFT OUTER JOIN

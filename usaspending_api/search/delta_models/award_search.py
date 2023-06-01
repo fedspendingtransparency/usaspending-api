@@ -301,10 +301,6 @@ award_search_load_sql_string = rf"""
   RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
   RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
-  CONCAT(
-    RL_STATE_LOOKUP.fips,
-    COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
-  ) AS recipient_location_county_fips,
 
   COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
@@ -363,7 +359,11 @@ award_search_load_sql_string = rf"""
   IIJA_DEFC.iija_spending_by_defc,
   IIJA_DEFC.total_iija_outlay,
   IIJA_DEFC.total_iija_obligation,
-  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays
+  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays,
+  CONCAT(
+    RL_STATE_LOOKUP.fips,
+    COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+  ) AS recipient_location_county_fips
 FROM
   int.awards
 INNER JOIN
