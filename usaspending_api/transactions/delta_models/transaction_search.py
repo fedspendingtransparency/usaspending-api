@@ -402,7 +402,7 @@ transaction_search_create_sql_string = rf"""
 transaction_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
-        {",".join([col for col in TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS])}
+        {",".join([col for col in TRANSACTION_SEARCH_POSTGRES_COLUMNS])}
     )
     SELECT
         -- Keys
