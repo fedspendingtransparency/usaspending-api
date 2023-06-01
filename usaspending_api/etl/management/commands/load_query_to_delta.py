@@ -52,6 +52,7 @@ from usaspending_api.transactions.delta_models import (
     summary_state_view_create_sql_string,
     summary_state_view_load_sql_string,
     SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
+    TRANSACTION_SEARCH_COLUMNS,
 )
 
 TABLE_SPEC = {
@@ -192,7 +193,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": transaction_search_create_sql_string,
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
-        "column_names": list(TRANSACTION_SEARCH_POSTGRES_COLUMNS),
+        "column_names": list(TRANSACTION_SEARCH_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
