@@ -105,7 +105,6 @@ TRANSACTION_SEARCH_COLUMNS = {
     "legal_entity_foreign_descr": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_foreign_posta": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_foreign_provi": {"delta": "STRING", "postgres": "TEXT", "gold": True},
-    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     # Place of Performance
     "place_of_performance_code": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "place_of_performance_scope": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -126,7 +125,6 @@ TRANSACTION_SEARCH_COLUMNS = {
     "place_of_perform_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "pop_city_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "place_of_performance_forei": {"delta": "STRING", "postgres": "TEXT", "gold": True},
-    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     # Accounts
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "TEXT[]", "gold": False},
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
@@ -385,6 +383,8 @@ TRANSACTION_SEARCH_COLUMNS = {
     "veterinary_hospital": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
+    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
 }
 TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
@@ -575,10 +575,6 @@ transaction_search_load_sql_string = rf"""
         transaction_fabs.legal_entity_foreign_descr,
         transaction_fabs.legal_entity_foreign_posta,
         transaction_fabs.legal_entity_foreign_provi,
-        CONCAT(
-            RL_STATE_LOOKUP.fips,
-            COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
-        ) AS recipient_location_county_fips,
 
         -- Place of Performance
         transaction_fabs.place_of_performance_code,
@@ -611,10 +607,6 @@ transaction_search_load_sql_string = rf"""
         TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city))
             AS pop_city_name,
         transaction_fabs.place_of_performance_forei AS place_of_performance_forei,
-        CONCAT(
-            POP_STATE_LOOKUP.fips,
-            COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
-        ) AS pop_county_fips,
 
         -- Accounts
         FED_AND_TRES_ACCT.treasury_account_identifiers,
@@ -876,7 +868,15 @@ transaction_search_load_sql_string = rf"""
         transaction_fpds.veterinary_college,
         transaction_fpds.veterinary_hospital,
         transaction_fpds.woman_owned_business,
-        transaction_fpds.women_owned_small_business
+        transaction_fpds.women_owned_small_business,
+        CONCAT(
+            RL_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+        ) AS recipient_location_county_fips,
+        CONCAT(
+            POP_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
+        ) AS pop_county_fips
 
     FROM
         int.transaction_normalized
