@@ -45,7 +45,6 @@ This endpoint returns a list of the top results of specific categories sorted by
             The page of results to return based on the limit
     + Body
 
-
             {
                 "category": "awarding_agency",
                 "filters": {
