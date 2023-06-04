@@ -67,6 +67,7 @@ SELECT
   "recipient_location_congressional_population",
   "recipient_location_zip5",
   "recipient_location_city_name",
+  "recipient_location_county_fips",
 
   "pop_country_code",
   "pop_country_name",
@@ -83,6 +84,7 @@ SELECT
   "pop_congressional_population",
   "pop_city_name",
   "pop_city_code",
+  "pop_county_fips",
 
   "cfda_number",
   "cfda_program_title" as cfda_title,
