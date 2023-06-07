@@ -169,8 +169,56 @@ Request parameter description:
 
 Request parameter description:
 * `time_period` (List) : Top level key name for this filter. Contains a list of date ranges to filter on.
-* `start_date` (String) : Start date value for date range filtering.
-* `end_date` (String) : End date value for date range filtering.
+* `start_date`: `2017-10-01` (String) : Start date value for date range filtering.
+    Start date value for date range filtering. Currently limited to an earliest date of `2007-10-01` (FY2008). For data going back to `2000-10-01` (FY2001), use either the Custom Award Download feature on the website or one of our `download` or `bulk_download` API endpoints.
+* `end_date`:  `2018-09-30` (String) : End date value for date range filtering.
+    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
+    feature on the website or one of our `download` or `bulk_download` API endpoints.
+* `date_type`:  (enum[string])
+    Check specific time period objects for date_type's members, defaults, and descriptions.
+
+## Transaction Search Time Period Object
+
+**Description:**
+See [Time Period](#time-period)
+
+**Examples**
+See [Time Period](#time-period)
+
+Request parameter description:
++ `start_date`: (required)
+    See [Time Period](#time-period)
++ `end_date`: (required)
+    See [Time Period](#time-period)
++ `date_type`: (optional)
+    + Members
+        + `action_date`
+            This date type value is the default.
+        + `date_signed`
+            This date type value is equivalent to `award_date_signed` for transactions. Behind the scenes, if you provide this input we map it to `award_date_signed`.
+        + `last_modified_date`
+        + `new_awards_only`
+            Indicates when the results should reflect new awards only. You should expect only
+            transactions that have a date within the time period bounds and are associated with a new award to be returned.
+
+## Subaward Search Time Period Object
+
+**Description:**
+See [Time Period](#time-period)
+
+**Examples**
+See [Time Period](#time-period)
+
+Request parameter description:
++ `start_date`: (required)
+    See [Time Period](#time-period)
++ `end_date`: (required)
+    See [Time Period](#time-period)
++ `date_type`: (optional)
+    + Members
+        + `action_date`
+            This date type value is the default.
+        + `last_modified_date`
 
 ## Place of Performance Scope
 
@@ -403,9 +451,9 @@ Request parameter description:
 }
 ```
 
-`naics_codes` (NAICSFilterObject) : Two nullable lists of strings: `require` and `exclude`. 
-* When `require` is provided, search will only return results that have a NAICS code that starts with one element from the require list. 
-* When `exclude` is provided,  search will only return results that do NOT have a NAICS code that starts with any element from the exclude list. 
+`naics_codes` (NAICSFilterObject) : Two nullable lists of strings: `require` and `exclude`.
+* When `require` is provided, search will only return results that have a NAICS code that starts with one element from the require list.
+* When `exclude` is provided,  search will only return results that do NOT have a NAICS code that starts with any element from the exclude list.
 * If an element matches both lists, the more specific rule (longer prefix) supercedes.
 
 ## TAS
@@ -418,14 +466,14 @@ Request parameter description:
     "tas_codes": {
         "require": [["091"]],
         "exclude": [["091","091-0800"]]
-    }, 
+    },
     "treasury_account_components": [{"aid":"005","bpoa":"2015","epoa":"2015","main":"0107","sub":"000"}]
 }
 ```
 
-`tas_codes` (TASFilterObject) : Two nullable arrays of arrays of strings: `require` and `exclude`. 
-* When `require` is provided, search will only return results that have a TAS code that is a descendant of one of the paths from the require list. 
-* When `exclude` is provided,  search will only return results that do NOT have a TAS code that is a descendant of one of the paths from the exclude list. 
+`tas_codes` (TASFilterObject) : Two nullable arrays of arrays of strings: `require` and `exclude`.
+* When `require` is provided, search will only return results that have a TAS code that is a descendant of one of the paths from the require list.
+* When `exclude` is provided,  search will only return results that do NOT have a TAS code that is a descendant of one of the paths from the exclude list.
 * If an element matches both lists, the more specific rule (longer array) supercedes.
 
 `treasury_account_components` (TreasuryAccountComponentsObject): List of objects. Each object can have any of the following keys, and will filter results down to those that match the value for each key provided:
@@ -459,8 +507,8 @@ Request parameter description:
 
 Request parameter description:
 * `psc_codes` (List or Object) : Top level key name for filter.  Contains list of Strings corresponding to PSC Codes or an object that exposes `require` and `exclude` filters where:
-    * When `require` is provided, search will only return results that have a PSC code that is a descendant of one of the paths from the require list. 
-    * When `exclude` is provided, search will only return results that do NOT have a PSC code that is a descendant of one of the paths from the exclude list. 
+    * When `require` is provided, search will only return results that have a PSC code that is a descendant of one of the paths from the require list.
+    * When `exclude` is provided, search will only return results that do NOT have a PSC code that is a descendant of one of the paths from the exclude list.
     * If an element matches both lists, the more specific rule (longer array) supercedes.
 
 ## Type of Contract Pricing

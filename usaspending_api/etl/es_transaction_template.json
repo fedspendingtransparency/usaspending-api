@@ -506,6 +506,12 @@
           }
         }
       },
+	  "pop_county_fips": {
+		"type": "keyword"
+	  },
+	  "pop_state_fips": {
+		"type": "keyword"
+	  },
       "recipient_location_country_code": {
         "type": "keyword"
       },
@@ -574,6 +580,12 @@
           }
         }
       },
+	  "recipient_location_state_fips": {
+		"type": "keyword"
+	  },
+	  "recipient_location_county_fips": {
+		"type": "keyword"
+	  },
       "tas_paths": {
         "type": "keyword"
       },
