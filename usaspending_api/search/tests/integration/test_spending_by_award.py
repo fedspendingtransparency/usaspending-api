@@ -1604,8 +1604,8 @@ def test_date_range_with_new_awards_only(
 
     request_for_2015 = {
         "subawards": True,
-        "fields": ["Award ID"],
-        "sort": "Award ID",
+        "fields": ["Sub-Award ID"],
+        "sort": "Sub-Award ID",
         "limit": 50,
         "page": 1,
         "filters": {
