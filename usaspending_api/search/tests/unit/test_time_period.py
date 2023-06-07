@@ -170,7 +170,6 @@ def test_new_awards_only_award_search_time_period():
     assert search_obj_decorator.gte_date_type() == expected_gte_date_type
     assert search_obj_decorator.lte_date_type() == expected_lte_date_type
 
-    # Repeating all tests with new_awards_only true
     time_period_filter = {"date_type": "new_awards_only", "start_date": "2020-10-01", "end_date": "2021-09-30"}
     search_obj_decorator.filter_value = time_period_filter
     expected_start_date = "2020-10-01"
