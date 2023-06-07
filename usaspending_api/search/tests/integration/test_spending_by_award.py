@@ -1572,3 +1572,52 @@ def test_uei_recipient_filter_subaward(client, monkeypatch, spending_by_award_te
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "UEI Recipient subaward filter does not match expected result"
+
+
+@pytest.mark.django_db
+def test_date_range_with_new_awards_only(
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    contract_type_list = all_award_types_mappings["contracts"]
+
+    request_for_2015 = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "time_period": [
+                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "new_awards_only"},
+            ],
+            "award_type_codes": contract_type_list,
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 5
+
+    request_for_2015 = {
+        "subawards": True,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "time_period": [
+                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "new_awards_only"},
+            ],
+            "award_type_codes": contract_type_list,
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+    )
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.json().get("detail") == "Invalid date_type: new_awards_only"
