@@ -158,6 +158,33 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
             "previous": None,
             "total": 0,
         },
+        "results": [
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "Other",
+                "obligated_amount": 10.0,
+                "children": [],
+            }
+        ],
+    }
+
+    # Tests tas with slashes
+    helpers.mock_current_fiscal_year(monkeypatch)
+    tas = "002-2008/2009-0000-000"
+    resp = client.get(url.format(tas=tas, query_params=""))
+    expected_result = {
+        "fiscal_year": helpers.get_mocked_current_fiscal_year(),
+        "treasury_account_symbol": tas,
+        "messages": [],
+        "page_metadata": {
+            "hasNext": False,
+            "hasPrevious": False,
+            "limit": 10,
+            "next": None,
+            "page": 1,
+            "previous": None,
+            "total": 1,
+        },
         "results": [],
     }
 

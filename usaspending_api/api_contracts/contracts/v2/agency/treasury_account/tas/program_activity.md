@@ -9,7 +9,7 @@ Returns a list of Program Activities for the specified Treasury Account Symbol (
 
 + Parameters
     + `tas`: `001-X-0000-000` (required, string)
-        The treasury account symbol (tas) of a treasury account.
+        The treasury account symbol (tas) of a treasury account. This endpoint supports TAS codes with 0 or 1 slashes in it.
     + `fiscal_year` (optional, number)
         The desired appropriations fiscal year. Defaults to the current FY.
     + `filter` (optional, string)
