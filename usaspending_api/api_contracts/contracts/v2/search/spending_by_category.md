@@ -114,7 +114,7 @@ This endpoint returns a list of the top results of specific categories sorted by
   If the `def_codes` provided are in the COVID-19 or IIJA group, the query will only return results of transactions where the `action_date` is on or after the enactment date of the public law associated with that disaster code.
 
 ### TimePeriodObject (object)
-See [TimePeriodObject](./spending_by_category/) definition for the TimePeriodObject defintion by individual category.
+See [TimePeriodObject](./spending_by_category/) for the TimePeriodObject definition by individual category.
 
 ### LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
