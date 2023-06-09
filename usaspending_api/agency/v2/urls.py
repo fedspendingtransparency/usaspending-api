@@ -20,7 +20,7 @@ from usaspending_api.agency.v2.views.tas_object_class_list import TASObjectClass
 from usaspending_api.agency.v2.views.tas_program_activity_list import TASProgramActivityList
 
 # Regex pattern that allows for TAS codes to have slashes or not
-tas_with_slashes_pattern = r"(\w*[-]*\w*)*(/)?(\w*[-]*\w*)*"
+tas_with_slashes_pattern = r"(?:\w|-)*/?(?:\w|-)*"
 
 urlpatterns = [
     re_path(
