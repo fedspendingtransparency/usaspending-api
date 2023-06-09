@@ -158,15 +158,11 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
             "previous": None,
             "total": 0,
         },
-        "results": [
-            {
-                "gross_outlay_amount": 1000000.0,
-                "name": "Other",
-                "obligated_amount": 10.0,
-                "children": [],
-            }
-        ],
+        "results": [],
     }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
 
     # Tests tas with slashes
     helpers.mock_current_fiscal_year(monkeypatch)
@@ -185,8 +181,20 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
             "previous": None,
             "total": 1,
         },
-        "results": [],
+        "results": [
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "Other",
+                "obligated_amount": 10.0,
+                "children": [
+                    {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
+                ],
+            }
+        ],
     }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_result
 
 
 @pytest.mark.django_db

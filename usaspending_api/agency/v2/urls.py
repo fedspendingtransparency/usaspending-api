@@ -19,7 +19,7 @@ from usaspending_api.agency.v2.views.subcomponents import SubcomponentList
 from usaspending_api.agency.v2.views.tas_object_class_list import TASObjectClassList
 from usaspending_api.agency.v2.views.tas_program_activity_list import TASProgramActivityList
 
-tas_with_slashes_pattern = "(\w*[-]*\w*)*(\/)?(\w*[-]*\w*)*"
+tas_with_slashes_pattern = r"(\w*[-]*\w*)*(/)?(\w*[-]*\w*)*"
 
 urlpatterns = [
     re_path(
