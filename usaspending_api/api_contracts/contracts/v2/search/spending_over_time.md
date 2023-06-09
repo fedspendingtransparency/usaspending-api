@@ -103,8 +103,11 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 ### TimePeriodObject (object)
 This TimePeriodObject can fall into different categories based on the request.
 + if `subawards` true
+
     See the Subaward Search category defined in [SubawardSearchTimePeriodObject](../../../search_filters.md#subaward-search-time-period-object)
+
 + otherwise
+
     See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 ### LocationObject (object)
