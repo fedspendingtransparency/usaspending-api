@@ -191,11 +191,12 @@ Request parameter description:
 + `end_date`: (required)
     See [Time Period](#time-period)
 + `date_type`: (optional)
+    If `date_type` is set to one of the following members then that member is used to compare to both the `start_date` and `end_date` input.
     + Members
         + `action_date`
-            This date type value is the default type compared to the `start_date`.
+            This date type value is the default type compared to the `start_date` when a value isn't set for `date_type` in the request. Typically, `action_date` represents the date of the latest transaction associated with the award.
         + `date_signed`
-            This date type value is the default type compared to the `end_date`.
+            This date type value is the default type compared to the `end_date` when a value isn't set for `date_type` in the request. Typically, `date_signed` represents the date of the base transaction associated with the award.
         + `last_modified_date`
         + `new_awards_only`
             Indicates when the results should reflect new awards only. You should expect only
