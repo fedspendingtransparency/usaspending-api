@@ -134,8 +134,11 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 ### TimePeriodObject (object)
 This TimePeriodObject can fall into different categories based on the request.
 + if `subawards` true
+
     See the Subaward Search category defined in [SubawardSearchTimePeriodObject](../../../search_filters.md#subaward-search-time-period-object)
+
 + otherwise
+
     See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 ### LocationObject (object)
