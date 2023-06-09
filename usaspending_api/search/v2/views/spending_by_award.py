@@ -46,6 +46,9 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from usaspending_api.submissions.models import SubmissionAttributes
 
 logger = logging.getLogger(__name__)
@@ -91,10 +94,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
         filters = json_request.get("filters", {})
-        if not self.is_subaward and filters.get("time_period") is not None:
-            for time_period in filters["time_period"]:
-                time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
         self.filters = filters
         self.fields = json_request["fields"]
         self.pagination = {
@@ -268,7 +267,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
     def query_elasticsearch(self) -> list:
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+        filter_options = {}
+        time_period_obj = AwardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **filter_options)
         sort_field = self.get_elastic_sort_by_fields()
         covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
         iija_sort_fields = {"Infrastructure Obligations": "obligation", "Infrastructure Outlays": "outlay"}
