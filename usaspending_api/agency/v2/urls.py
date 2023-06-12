@@ -24,10 +24,10 @@ tas_with_slashes_pattern = r"(?:\w|-)*/?(?:\w|-)*"
 
 urlpatterns = [
     re_path(
-        r"treasury_account/(?P<tas>{})/object_class/".format(tas_with_slashes_pattern), TASObjectClassList.as_view()
+        r"^treasury_account/(?P<tas>{})/object_class/$".format(tas_with_slashes_pattern), TASObjectClassList.as_view()
     ),
     re_path(
-        r"treasury_account/(?P<tas>{})/program_activity/".format(tas_with_slashes_pattern),
+        r"^treasury_account/(?P<tas>{})/program_activity/$".format(tas_with_slashes_pattern),
         TASProgramActivityList.as_view(),
     ),
     re_path(
