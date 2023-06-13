@@ -232,13 +232,13 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
         "subawards": False,
         "filters": {
             "time_period": [
-                {"date_type": "new_awards_only", "start_date": "2012-09-09", "end_date": "2012-09-13"},
+                {"date_type": "new_awards_only", "start_date": "2012-09-09", "end_date": "2012-09-11"},
             ]
         },
     }
 
     expected_response = {
-        "results": {"contracts": 0, "idvs": 0, "loans": 1, "direct_payments": 0, "grants": 0, "other": 0},
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
         "messages": [get_time_period_message()],
     }
 
@@ -254,13 +254,13 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
         "subawards": False,
         "filters": {
             "time_period": [
-                {"date_type": "new_awards_only", "start_date": "2012-09-09", "end_date": "2012-09-10"},
+                {"date_type": "new_awards_only", "start_date": "2012-09-09", "end_date": "2012-09-09"},
             ]
         },
     }
 
     expected_response = {
-        "results": {"contracts": 0, "idvs": 0, "loans": 0, "direct_payments": 0, "grants": 0, "other": 0},
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
         "messages": [get_time_period_message()],
     }
 
