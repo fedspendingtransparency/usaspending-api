@@ -22,7 +22,7 @@ def award_data_fixture(db):
         "search.AwardSearch",
         category="loans",
         date_signed="2012-09-10",
-        action_date="2012-09-10",
+        action_date="2012-09-12",
         fain="DECF0000058",
         generated_unique_award_id="ASST_NON_DECF0000058_8900",
         award_id=200,
@@ -213,6 +213,54 @@ def test_spending_by_award_count_idvs(client, monkeypatch, elasticsearch_award_i
 
     expected_response = {
         "results": {"contracts": 0, "idvs": 3, "loans": 0, "direct_payments": 0, "grants": 0, "other": 0},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+
+def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # Tests new awards only where some awards are within the time period bounds
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {"date_type": "new_awards_only", "start_date": "2012-09-09", "end_date": "2012-09-13"},
+            ]
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "idvs": 0, "loans": 1, "direct_payments": 0, "grants": 0, "other": 0},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # Tests new awards only where no awards are within the time period bounds
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {"date_type": "new_awards_only", "start_date": "2012-09-09", "end_date": "2012-09-10"},
+            ]
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "idvs": 0, "loans": 0, "direct_payments": 0, "grants": 0, "other": 0},
         "messages": [get_time_period_message()],
     }
 
