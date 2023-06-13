@@ -19,6 +19,7 @@ from usaspending_api.common.matview_manager import (
     DEFAULT_MATIVEW_DIR,
 )
 from usaspending_api.references.models import Agency
+from typing import List
 
 
 logger = logging.getLogger(__name__)
@@ -214,6 +215,28 @@ def get_time_period_message():
 
 def unused_filters_message(filters):
     return f"The following filters from the request were not used: {filters}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"
+
+
+def deprecated_district_field_in_location_object(messages: List[str], filters: dict):
+    """Adds a deprecation message (when needed) indicating that the filters
+    object contains a `district` key which is deprecated. This message will
+    be added to the list of existing messages.
+
+    Args:
+        filter: This filter object should represent the request filters in the request
+        message: The existing message list to add additional messages to
+    """
+    deprecation_message = f"The field `district` is retained for backwards compatibility but is DEPRECATED. We've renamed the field to `district_original`; use that field instead."
+
+    all_recipient_location_fields = []
+    for recipient_location in filters.get("recipient_locations", [{}]):
+        all_recipient_location_fields.extend(recipient_location.keys())
+    all_pop_location_fields = []
+    for pop_location in filters.get("place_of_performance_locations", [{}]):
+        all_pop_location_fields.extend(pop_location.keys())
+    print(messages)
+    if "district" in all_recipient_location_fields or "district" in all_pop_location_fields:
+        messages.append(deprecation_message)
 
 
 def get_account_data_time_period_message():
