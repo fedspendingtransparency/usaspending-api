@@ -14,7 +14,10 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import (
+    deprecated_district_field_in_location_object,
+    get_generic_filters_message,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -76,14 +79,19 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         else:
             results = self.query_elasticsearch_for_prime_awards(filters)
 
-        return Response(
-            {
-                "results": results,
-                "messages": get_generic_filters_message(
-                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-                ),
-            }
-        )
+        raw_response = {
+            "results": results,
+            "messages": get_generic_filters_message(
+                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+            ),
+        }
+
+        # Add filter field deprecation notices
+        messages = raw_response.get("messages", [])
+        deprecated_district_field_in_location_object(messages, self.original_filters)
+        raw_response["messages"] = messages
+
+        return Response(raw_response)
 
     @staticmethod
     def handle_subawards(filters: dict) -> dict:
