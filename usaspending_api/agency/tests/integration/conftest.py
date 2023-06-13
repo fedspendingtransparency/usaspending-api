@@ -431,6 +431,8 @@ def agency_account_data():
     baker.make(
         fabpaoc,
         treasury_account=tas5,
+        program_activity=pa5,
+        object_class=oc5,
         submission=sub1,
         obligations_incurred_by_program_object_class_cpe=10,
         gross_outlay_amount_by_program_object_class_cpe=1000000,

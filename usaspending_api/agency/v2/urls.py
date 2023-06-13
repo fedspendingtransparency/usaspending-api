@@ -19,9 +19,17 @@ from usaspending_api.agency.v2.views.subcomponents import SubcomponentList
 from usaspending_api.agency.v2.views.tas_object_class_list import TASObjectClassList
 from usaspending_api.agency.v2.views.tas_program_activity_list import TASProgramActivityList
 
+# Regex pattern that allows for TAS codes to have slashes or not
+tas_with_slashes_pattern = r"(?:\w|-)*/?(?:\w|-)*"
+
 urlpatterns = [
-    path("treasury_account/<slug:tas>/object_class/", TASObjectClassList.as_view()),
-    path("treasury_account/<slug:tas>/program_activity/", TASProgramActivityList.as_view()),
+    re_path(
+        r"^treasury_account/(?P<tas>{})/object_class/$".format(tas_with_slashes_pattern), TASObjectClassList.as_view()
+    ),
+    re_path(
+        r"^treasury_account/(?P<tas>{})/program_activity/$".format(tas_with_slashes_pattern),
+        TASProgramActivityList.as_view(),
+    ),
     re_path(
         "(?P<toptier_code>[0-9]{3,4})/",
         include(
