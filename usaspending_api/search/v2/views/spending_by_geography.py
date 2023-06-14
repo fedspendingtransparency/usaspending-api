@@ -18,7 +18,10 @@ from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import (
+    deprecated_district_field_in_location_object,
+    get_generic_filters_message,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -177,16 +180,19 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
             result = self.query_elasticsearch(filter_query)
 
-        return Response(
-            {
-                "scope": json_request["scope"],
-                "geo_layer": self.geo_layer.value,
-                "results": result,
-                "messages": get_generic_filters_message(
-                    original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
-                ),
-            }
-        )
+        raw_response = {
+            "scope": json_request["scope"],
+            "geo_layer": self.geo_layer.value,
+            "results": result,
+            "messages": get_generic_filters_message(original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]),
+        }
+
+        # Add filter field deprecation notices
+        messages = raw_response.get("messages", [])
+        deprecated_district_field_in_location_object(messages, original_filters)
+        raw_response["messages"] = messages
+
+        return Response(raw_response)
 
     def query_django(self) -> dict:
         fields_list = []  # fields to include in the aggregate query
