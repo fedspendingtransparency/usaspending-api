@@ -68,6 +68,8 @@ class DownloadTransactionCountViewSet(APIView):
         }
 
         # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
         messages = result.get("messages", [])
         deprecated_district_field_in_location_object(messages, self.original_filters)
         result["messages"] = messages

@@ -286,7 +286,12 @@ class _RecipientLocations(_Filter):
                 "country_code": filter_value.get("country"),
                 "state_code": filter_value.get("state"),
                 "county_code": filter_value.get("county"),
-                "congressional_code": filter_value.get("district"),
+                # TODO: To be removed in DEV-9966
+                # remove if condition, mention of `district`,
+                # and just use filter_value.get("district_original")
+                "congressional_code": filter_value.get("district")
+                if "district" in filter_value
+                else filter_value.get("district_original"),
                 "city_name__keyword": filter_value.get("city"),
                 "zip5": filter_value.get("zip"),
             }
@@ -333,14 +338,19 @@ class _PlaceOfPerformanceLocations(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         pop_locations_query = []
-
+        print(filter_values)
         for filter_value in filter_values:
             location_query = []
             location_lookup = {
                 "country_code": filter_value.get("country"),
                 "state_code": filter_value.get("state"),
                 "county_code": filter_value.get("county"),
-                "congressional_code": filter_value.get("district"),
+                # TODO: To be removed in DEV-9966
+                # remove if condition, mention of `district`,
+                # and just use filter_value.get("district_original")
+                "congressional_code": filter_value.get("district")
+                if "district" in filter_value
+                else filter_value.get("district_original"),
                 "city_name__keyword": filter_value.get("city"),
                 "zip5": filter_value.get("zip"),
             }
@@ -349,7 +359,7 @@ class _PlaceOfPerformanceLocations(_Filter):
                 if location_value is not None:
                     location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
-
+            print(location_query)
             pop_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)

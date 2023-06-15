@@ -167,6 +167,7 @@ class DisasterBase(APIView):
         }
         model = [object_keys_lookup[key] for key in self.required_filters]
         json_request = TinyShield(model).block(self.request.data)
+        print(json_request)
         return json_request["filter"]
 
     @property

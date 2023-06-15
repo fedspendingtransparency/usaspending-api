@@ -138,6 +138,8 @@ AWARD_FILTER = [
             "country": {"type": "text", "text_type": "search", "optional": False},
             "state": {"type": "text", "text_type": "search", "optional": True},
             "zip": {"type": "text", "text_type": "search", "optional": True},
+            "district_original": {"type": "text", "text_type": "search", "optional": True},
+            # TODO: To be removed in DEV-9966
             "district": {"type": "text", "text_type": "search", "optional": True},
             "county": {"type": "text", "text_type": "search", "optional": True},
             "city": {"type": "text", "text_type": "search", "optional": True},
@@ -151,6 +153,8 @@ AWARD_FILTER = [
             "country": {"type": "text", "text_type": "search", "optional": False},
             "state": {"type": "text", "text_type": "search", "optional": True},
             "zip": {"type": "text", "text_type": "search", "optional": True},
+            "district_original": {"type": "text", "text_type": "search", "optional": True},
+            # TODO: To be removed in DEV-9966
             "district": {"type": "text", "text_type": "search", "optional": True},
             "county": {"type": "text", "text_type": "search", "optional": True},
             "city": {"type": "text", "text_type": "search", "optional": True},

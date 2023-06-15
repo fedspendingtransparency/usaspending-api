@@ -71,6 +71,8 @@ def create_nested_object(values):
         city = v.get("city")
         country = v.get("country")
         county = v.get("county")
+        district_original = v.get("district_original")
+        # TODO: To be removed in DEV-9966
         district = v.get("district")
         state = v.get("state")
         zip = v.get("zip")
@@ -94,14 +96,19 @@ def create_nested_object(values):
 
         # If we have a state, add it to the list
         if state and nested_locations[country].get(state) is None:
-            nested_locations[country][state] = {"county": [], "district": [], "city": []}
+            # TODO: To be removed in DEV-9966 (remove mention of "district")
+            nested_locations[country][state] = {"county": [], "district": [], "district_original": [], "city": []}
 
         # Based on previous checks, there will always be a state if either of these exist
         if county:
             nested_locations[country][state]["county"].extend(get_fields_list("county", county))
 
+        # TODO: To be removed in DEV-9966
         if district:
             nested_locations[country][state]["district"].extend(get_fields_list("district", district))
+
+        if district_original:
+            nested_locations[country][state]["district_original"].extend(get_fields_list("district_original", district))
 
         if city and state:
             nested_locations[country][state]["city"].append(city)
