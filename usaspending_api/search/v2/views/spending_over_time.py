@@ -239,6 +239,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         )
 
         # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
         messages = raw_response.get("messages", [])
         deprecated_district_field_in_location_object(messages, self.original_filters)
         raw_response["messages"] = messages

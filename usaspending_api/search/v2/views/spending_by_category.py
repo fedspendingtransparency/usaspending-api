@@ -105,6 +105,8 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         raw_response = business_logic_func(validated_payload, original_filters)
 
         # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
         messages = raw_response.get("messages", [])
         deprecated_district_field_in_location_object(messages, original_filters)
         raw_response["messages"] = messages

@@ -234,7 +234,6 @@ def deprecated_district_field_in_location_object(messages: List[str], filters: d
     all_pop_location_fields = []
     for pop_location in filters.get("place_of_performance_locations", [{}]):
         all_pop_location_fields.extend(pop_location.keys())
-    print(messages)
     if "district" in all_recipient_location_fields or "district" in all_pop_location_fields:
         messages.append(deprecation_message)
 

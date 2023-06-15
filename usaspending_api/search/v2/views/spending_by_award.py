@@ -109,7 +109,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
-            return Response(self.populate_response(results=[], has_next=False))
+            raw_response = self.populate_response(results=[], has_next=False)
+
+            # Add filter field deprecation notices
+
+            # TODO: To be removed in DEV-9966
+            messages = raw_response.get("messages", [])
+            deprecated_district_field_in_location_object(messages, self.original_filters)
+            raw_response["messages"] = messages
+
+            return Response(raw_response)
 
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
@@ -122,6 +131,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             raw_response = self.construct_es_response_for_prime_awards(self.query_elasticsearch())
 
         # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
         messages = raw_response.get("messages", [])
         deprecated_district_field_in_location_object(messages, self.original_filters)
         raw_response["messages"] = messages

@@ -338,7 +338,6 @@ class _PlaceOfPerformanceLocations(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         pop_locations_query = []
-        print(filter_values)
         for filter_value in filter_values:
             location_query = []
             location_lookup = {
@@ -359,7 +358,6 @@ class _PlaceOfPerformanceLocations(_Filter):
                 if location_value is not None:
                     location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
-            print(location_query)
             pop_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)
