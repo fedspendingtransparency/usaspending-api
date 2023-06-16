@@ -138,7 +138,20 @@ AWARD_FILTER = [
             "country": {"type": "text", "text_type": "search", "optional": False},
             "state": {"type": "text", "text_type": "search", "optional": True},
             "zip": {"type": "text", "text_type": "search", "optional": True},
-            "district_original": {"type": "text", "text_type": "search", "optional": True},
+            "district_original": {
+                "type": "text",
+                "text_type": "search",
+                "optional": True,
+                "text_min": 2,
+                "text_max": 2,
+            },
+            "district_current": {
+                "type": "text",
+                "text_type": "search",
+                "optional": True,
+                "text_min": 2,
+                "text_max": 2,
+            },
             # TODO: To be removed in DEV-9966
             "district": {"type": "text", "text_type": "search", "optional": True},
             "county": {"type": "text", "text_type": "search", "optional": True},
@@ -153,7 +166,20 @@ AWARD_FILTER = [
             "country": {"type": "text", "text_type": "search", "optional": False},
             "state": {"type": "text", "text_type": "search", "optional": True},
             "zip": {"type": "text", "text_type": "search", "optional": True},
-            "district_original": {"type": "text", "text_type": "search", "optional": True},
+            "district_original": {
+                "type": "text",
+                "text_type": "search",
+                "optional": True,
+                "text_min": 2,
+                "text_max": 2,
+            },
+            "district_current": {
+                "type": "text",
+                "text_type": "search",
+                "optional": True,
+                "text_min": 2,
+                "text_max": 2,
+            },
             # TODO: To be removed in DEV-9966
             "district": {"type": "text", "text_type": "search", "optional": True},
             "county": {"type": "text", "text_type": "search", "optional": True},

@@ -286,6 +286,7 @@ class _RecipientLocations(_Filter):
                 "country_code": filter_value.get("country"),
                 "state_code": filter_value.get("state"),
                 "county_code": filter_value.get("county"),
+                "congressional_code_current": filter_value.get("district_current"),
                 # TODO: To be removed in DEV-9966
                 # remove if condition, mention of `district`,
                 # and just use filter_value.get("district_original")
@@ -344,6 +345,7 @@ class _PlaceOfPerformanceLocations(_Filter):
                 "country_code": filter_value.get("country"),
                 "state_code": filter_value.get("state"),
                 "county_code": filter_value.get("county"),
+                "congressional_code_current": filter_value.get("district_current"),
                 # TODO: To be removed in DEV-9966
                 # remove if condition, mention of `district`,
                 # and just use filter_value.get("district_original")
