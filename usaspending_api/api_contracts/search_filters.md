@@ -177,6 +177,31 @@ Request parameter description:
 * `date_type`:  (enum[string])
     Check specific time period objects for date_type's members, defaults, and descriptions.
 
+## Award Search Time Period Object
+
+**Description:**
+See [Time Period](#time-period)
+
+**Examples**
+See [Time Period](#time-period)
+
+Request parameter description:
++ `start_date`: (required)
+    See [Time Period](#time-period)
++ `end_date`: (required)
+    See [Time Period](#time-period)
++ `date_type`: (optional)
+    If `date_type` is set to one of the following members then that member is used to compare to both the `start_date` and `end_date` input.
+    + Members
+        + `action_date`
+            This date type value is the default type compared to the `start_date` when a value isn't set for `date_type` in the request. Typically, `action_date` represents the date of the latest transaction associated with the award.
+        + `date_signed`
+            This date type value is the default type compared to the `end_date` when a value isn't set for `date_type` in the request. Typically, `date_signed` represents the date of the base transaction associated with the award.
+        + `last_modified_date`
+        + `new_awards_only`
+            Indicates when the results should reflect new awards only. You should expect only
+            awards whose base transaction date falls within the time period bounds specified to be returned.
+
 ## Transaction Search Time Period Object
 
 **Description:**
