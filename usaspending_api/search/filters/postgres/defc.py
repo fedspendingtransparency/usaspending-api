@@ -10,6 +10,18 @@ class DefCodes:
         """Build a SQL filter to only include Subawards that are associated with any
         DEF codes included in the API request.
 
+        Which subawards should be returned currently is currently
+        decided by:
+
+            1. JOINing the award_search table to the subaward_search table on the
+                `award_id` fields WHERE there is any overlap between the disaster
+                code(s) provided in the request and the award_search row's
+                `disaster_emergency_fund_codes` array.
+            2. We then SELECT the `broker_subaward_id` WHERE the UNNESTed disaster
+                code equals one of the disaster codes provided in the API request
+                and WHERE the subaward's `sub_action_date` is on or after the
+                disaster code's `earliest_public_law_enactment_date`
+
         Args:
             filter_values (List[str]): List of DEF codes to use in filtering. These come
                 from the API request.
