@@ -20,6 +20,8 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     non_loan_assist_mapping,
 )
 
+INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS = 'Incompatible parameters: `state` must be provided, country must be "USA", and county cannot be provided when using `district_current` or `district_original`.'
+
 
 def alias_response(field_to_alias_dict, results):
     results_copy = results.copy()

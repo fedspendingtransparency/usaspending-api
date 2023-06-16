@@ -1,6 +1,7 @@
 from django.db.models import Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.api_helper import INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 
 ALL_FOREIGN_COUNTRIES = "FOREIGN"
@@ -56,7 +57,17 @@ def geocode_filter_locations(scope: str, values: list) -> Q:
 
 def validate_location_keys(values):
     """ Validate that the keys provided are sufficient and match properly. """
+    print(values)
     for v in values:
+        state = v.get("state")
+        country = v.get("country")
+        county = v.get("county")
+        district_current = v.get("district_current")
+        district_original = v.get("district_original")
+        if (state is None or country != "USA" or county is not None) and (
+            district_current is not None or district_original is not None
+        ):
+            raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
         if ("country" not in v) or (("district" in v or "county" in v) and "state" not in v):
             location_error_handling(v.keys())
 

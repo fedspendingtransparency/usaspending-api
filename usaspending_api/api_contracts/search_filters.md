@@ -117,7 +117,11 @@ Keys in a location object include:
 * **district_original** - a 2 character code indicating the congressional district
     * When provided, a `state` must always be provided as well.
     * When provided, a `county` *must never* be provided.
+    * When provided, `country` must always be "USA".
 * **district_current** - a 2 character code indicating the current congressional district
+    * When provided, a `state` must always be provided as well.
+    * When provided, a `county` *must never* be provided.
+    * When provided, `country` must always be "USA".
 * **zip** - a 5 digit string indicating the postal area to search within.
 
 
