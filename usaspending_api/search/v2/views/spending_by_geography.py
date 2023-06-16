@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from typing import Optional, List, Dict
 
 from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.awards.v2.filters.sub_award import geocode_filter_subaward_locations, subaward_filter
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
@@ -98,7 +98,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         agg_key_dict = {
             "county": "county_agg_key",
-            "district": "congressional_agg_key",
+            "district": "congressional_cur_agg_key",
             "state": "state_agg_key",
         }
         model_dict = {
@@ -117,8 +117,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "sub": {"sub_place_of_perform": "county_code", "sub_legal_entity": "county_code"},
                 },
                 "district": {
-                    "prime": {"pop": "congressional", "recipient_location": "congressional"},
-                    "sub": {"sub_place_of_perform": "congressio", "sub_legal_entity": "congressional"},
+                    "prime": {"pop": "congressional_code_current", "recipient_location": "congressional_code_current"},
+                    "sub": {
+                        "sub_place_of_perform": "sub_place_of_performance_congressional_current",
+                        "sub_legal_entity": "congressional_current",
+                    },
                 },
                 "state": {
                     "prime": {"pop": "state_code", "recipient_location": "state_code"},
@@ -153,6 +156,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
 
         if self.subawards:
+            if self.geo_layer == GeoLayer.DISTRICT:
+                self.loc_lookup = f"{self.loc_field_name}"
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             self.model_name = SubawardSearch
             self.queryset = subaward_filter(self.filters)
@@ -295,7 +300,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 {"state": fips_to_code.get(x[:2]), self.geo_layer.value: x[2:], "country": "USA"}
                 for x in self.geo_layer_filters
             ]
-            self.queryset = self.queryset.filter(geocode_filter_locations(scope_field_name, geo_layers_list))
+            self.queryset = self.queryset.filter(geocode_filter_subaward_locations(scope_field_name, geo_layers_list))
         else:
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
             kwargs[f"{loc_lookup}__isnull"] = False
