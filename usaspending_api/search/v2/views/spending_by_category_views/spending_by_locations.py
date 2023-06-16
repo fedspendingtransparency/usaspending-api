@@ -178,7 +178,7 @@ class DistrictViewSet(AbstractLocationViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/district.md"
 
     location_type = LocationType.CONGRESSIONAL_DISTRICT
-    category = Category(name="district", agg_key="pop_congressional_agg_key")
+    category = Category(name="district", agg_key="pop_congressional_cur_agg_key")
 
 
 class StateTerritoryViewSet(AbstractLocationViewSet):
