@@ -108,7 +108,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
         subaward_mappings = {
             LocationType.COUNTY: "sub_place_of_perform_county_code",
-            LocationType.CONGRESSIONAL_DISTRICT: "sub_place_of_perform_congressio",
+            LocationType.CONGRESSIONAL_DISTRICT: "sub_place_of_performance_congressional_current",
             LocationType.STATE_TERRITORY: "sub_place_of_perform_state_code",
             LocationType.COUNTRY: "sub_place_of_perform_country_co",
         }
@@ -126,9 +126,9 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             django_values = [
                 "sub_place_of_perform_country_co",
                 "sub_place_of_perform_state_code",
-                "sub_place_of_perform_congressio",
+                "sub_place_of_performance_congressional_current",
             ]
-            annotations = {"code": F("sub_place_of_perform_congressio")}
+            annotations = {"code": F("sub_place_of_performance_congressional_current")}
         elif self.location_type == LocationType.STATE_TERRITORY:
             django_values = ["sub_place_of_perform_country_co", "sub_place_of_perform_state_code"]
             annotations = {"code": F("sub_place_of_perform_state_code")}
