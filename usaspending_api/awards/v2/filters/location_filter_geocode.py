@@ -57,7 +57,6 @@ def geocode_filter_locations(scope: str, values: list) -> Q:
 
 def validate_location_keys(values):
     """ Validate that the keys provided are sufficient and match properly. """
-    print(values)
     for v in values:
         state = v.get("state")
         country = v.get("country")
