@@ -646,7 +646,12 @@ def fetch_total_outlays(award_id: int) -> dict:
             as last_period_total_outlay
         FROM
             financial_accounts_by_awards faba
-        WHERE {award_id_sql}
+        INNER JOIN submission_attributes sa
+            ON faba.submission_id = sa.submission_id
+        WHERE
+            {award_id_sql}
+            AND
+            sa.is_final_balances_for_fy = TRUE
         GROUP BY faba.award_id
     )
     SELECT sum(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN (
