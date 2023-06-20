@@ -161,7 +161,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.model_name = SubawardSearch
             self.queryset = subaward_filter(self.filters)
             self.obligation_column = "subaward_amount"
-            result = self.query_django()
+            result = self.query_django_subawards()
         else:
             if self.scope_field_name == "pop":
                 scope_filter_name = "place_of_performance_scope"
@@ -200,7 +200,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return Response(raw_response)
 
-    def query_django(self) -> dict:
+    def query_django_subawards(self) -> dict:
         fields_list = []  # fields to include in the aggregate query
 
         if self.geo_layer == GeoLayer.STATE:
@@ -232,14 +232,14 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 county_col = self.location_dict["name"]["county"][self.award_or_sub_str][self.scope_field_name]
                 county_name_lookup = f"{self.scope_field_name}_{county_col}"
                 fields_list.append(county_name_lookup)
-                geo_queryset = self.county_district_queryset(
+                geo_queryset = self.county_district_queryset_subawards(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
                 )
 
                 return self.county_results(state_lookup, county_name_lookup, geo_queryset)
 
             else:
-                geo_queryset = self.county_district_queryset(
+                geo_queryset = self.county_district_queryset_subawards(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
                 )
 
@@ -288,7 +288,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return results
 
-    def county_district_queryset(
+    def county_district_queryset_subawards(
         self, kwargs: Dict[str, str], fields_list: List[str], loc_lookup: str, state_lookup: str, scope_field_name: str
     ) -> QuerySet:
         # Filtering queryset to specific county/districts if requested
@@ -299,7 +299,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 {"state": fips_to_code.get(x[:2]), self.geo_layer.value: x[2:], "country": "USA"}
                 for x in self.geo_layer_filters
             ]
+            # It's ok to use subaward geocode filter here because this method is for subawards only
             self.queryset = self.queryset.filter(geocode_filter_subaward_locations(scope_field_name, geo_layers_list))
+
         else:
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
             kwargs[f"{loc_lookup}__isnull"] = False
