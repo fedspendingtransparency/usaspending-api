@@ -291,12 +291,17 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     def county_district_queryset_subawards(
         self, kwargs: Dict[str, str], fields_list: List[str], loc_lookup: str, state_lookup: str, scope_field_name: str
     ) -> QuerySet:
+        # Originaly it was ok for geo layers list to use the geo layer value
+        # Now that geo layer value doesn't map directly to intent, e.g. district_current functionality
+        # we can't use the instance's geo layer value without changing it in some cases
+        geo_layer_value = "district_current" if self.geo_layer.value == "district" else self.geo_layer.value
+
         # Filtering queryset to specific county/districts if requested
         # Since geo_layer_filters comes as concat of state fips and county/district codes
         # need to split for the geocode_filter
         if self.geo_layer_filters:
             geo_layers_list = [
-                {"state": fips_to_code.get(x[:2]), self.geo_layer.value: x[2:], "country": "USA"}
+                {"state": fips_to_code.get(x[:2]), geo_layer_value: x[2:], "country": "USA"}
                 for x in self.geo_layer_filters
             ]
             # It's ok to use subaward geocode filter here because this method is for subawards only
