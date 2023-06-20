@@ -1,7 +1,10 @@
 from django.db.models import Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.api_helper import DUPLICATE_DISTRICT_LOCATION_PARAMETERS, INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS
+from usaspending_api.common.helpers.api_helper import (
+    DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
+    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
+)
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 
 ALL_FOREIGN_COUNTRIES = "FOREIGN"

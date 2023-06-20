@@ -240,21 +240,27 @@ def test_create_nested_object():
                 "zip": "12346",
                 "city": "Springfield",
                 "state": "IL",
-                "district_current": "02",
                 "district_original": "02",
+            },
+            {
+                "country": "USA",
+                "zip": "12346",
+                "city": "Springfield",
+                "state": "IL",
+                "district_current": "02",
             },
             {"country": "USA", "zip": "12345", "city": "Chicago"},
         ]
     ) == {
         "USA": {
             "city": ["CHICAGO"],
-            "zip": ["12345", "12346", "12345"],
+            "zip": ["12345", "12346", "12346", "12345"],
             "IL": {
                 "county": ["YES"],
                 "district": ["ALSO YES"],
                 "district_current": ["02"],
                 "district_original": ["02"],
-                "city": ["CHICAGO", "SPRINGFIELD"],
+                "city": ["CHICAGO", "SPRINGFIELD", "SPRINGFIELD"],
             },
         }
     }
