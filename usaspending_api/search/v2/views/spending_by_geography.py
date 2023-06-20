@@ -144,7 +144,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         self.subawards = json_request["subawards"]
         self.award_or_sub_str = "sub" if self.subawards else "prime"
-        self.scope_field_name = model_dict[json_request["scope"]][self.award_or_sub_str]
+        self.scope = json_request["scope"]
+        self.scope_field_name = model_dict[self.scope][self.award_or_sub_str]
         self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
         self.filters = json_request.get("filters")
         self.geo_layer = GeoLayer(json_request["geo_layer"])
@@ -155,7 +156,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
 
         if self.subawards:
-            if self.geo_layer == GeoLayer.DISTRICT:
+            # When district current was added to the database's subawards table
+            # the name chosen did not follow pattern this module expects. That essentially
+            # broke this code's ability to combine scope field name with loc
+            # field name to get the correct column. As a result, we are handling
+            # this inconsistency here just for the column that doesn't follow
+            # the pattern.
+            if self.geo_layer == GeoLayer.DISTRICT and self.scope == "place_of_performance":
                 self.loc_lookup = f"{self.loc_field_name}"
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             self.model_name = SubawardSearch
