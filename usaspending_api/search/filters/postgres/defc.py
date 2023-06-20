@@ -66,6 +66,10 @@ class DefCodes:
 
             results = cursor.fetchall()
 
+        # The above SQL will return 1 result (row) for each DEF code it's associated with IF that DEF code
+        #   is also in the API request ({def_codes}). This means the same `broker_subaward_id` can be returned
+        #   multiple times because each row matches a different DEF code from the API request, using a set
+        #   removes these duplicate `broker_subaward_id` values.
         results = {result[0] for result in results}
         q = Q(broker_subaward_id__in=results)
 
