@@ -1,7 +1,7 @@
 from django.db.models import Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.api_helper import INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS
+from usaspending_api.common.helpers.api_helper import DUPLICATE_DISTRICT_LOCATION_PARAMETERS, INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 
 ALL_FOREIGN_COUNTRIES = "FOREIGN"
@@ -67,6 +67,8 @@ def validate_location_keys(values):
             district_current is not None or district_original is not None
         ):
             raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
+        if district_current is not None and district_original is not None:
+            raise InvalidParameterException(DUPLICATE_DISTRICT_LOCATION_PARAMETERS)
         if ("country" not in v) or (("district" in v or "county" in v) and "state" not in v):
             location_error_handling(v.keys())
 

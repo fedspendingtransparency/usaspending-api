@@ -1,7 +1,10 @@
 import pytest
 
 from model_bakery import baker
-from usaspending_api.common.helpers.api_helper import INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS
+from usaspending_api.common.helpers.api_helper import (
+    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
+    DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
+)
 from usaspending_api.search.models import AwardSearch
 from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_nested_object,
@@ -193,6 +196,8 @@ def test_validate_location_keys():
         validate_location_keys([{"country": "USA", "district_original": "01"}])
     with pytest.raises(InvalidParameterException, match=INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS):
         validate_location_keys([{"country": "USA", "district_original": "01", "state": "WA", "county": "WHATCOM"}])
+    with pytest.raises(InvalidParameterException, match=DUPLICATE_DISTRICT_LOCATION_PARAMETERS):
+        validate_location_keys([{"country": "USA", "district_original": "01", "state": "WA", "district_current": "99"}])
     assert validate_location_keys([{"country": "", "state": ""}]) is None
     assert validate_location_keys([{"country": "", "state": "", "feet": ""}]) is None
     assert (
