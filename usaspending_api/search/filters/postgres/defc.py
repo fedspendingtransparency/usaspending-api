@@ -66,7 +66,7 @@ class DefCodes:
 
             results = cursor.fetchall()
 
-        results = [result[0] for result in results]
+        results = {result[0] for result in results}
         q = Q(broker_subaward_id__in=results)
 
         return q
