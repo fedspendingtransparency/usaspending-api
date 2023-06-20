@@ -7,7 +7,10 @@ from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.api_helper import INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS, DUPLICATE_DISTRICT_LOCATION_PARAMETERS
+from usaspending_api.common.helpers.api_helper import (
+    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
+    DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
+)
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
@@ -376,18 +379,25 @@ class _PlaceOfPerformanceLocations(_Filter):
             }
 
             for location_key, location_value in location_lookup.items():
-                if (state is None or country != "USA" or county is not None) and (
-                    district_current is not None or district_original is not None
-                ):
-                    raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
-                if district_current is not None and district_original is not None:
-                    raise InvalidParameterException(DUPLICATE_DISTRICT_LOCATION_PARAMETERS)
+                _PlaceOfPerformanceLocations._validate_district(
+                    state, country, county, district_current, district_original
+                )
+
                 if location_value is not None:
                     location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
             pop_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)
+
+    @staticmethod
+    def _validate_district(state, country, county, district_current, district_original):
+        if (state is None or country != "USA" or county is not None) and (
+            district_current is not None or district_original is not None
+        ):
+            raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
+        if district_current is not None and district_original is not None:
+            raise InvalidParameterException(DUPLICATE_DISTRICT_LOCATION_PARAMETERS)
 
 
 class _AwardAmounts(_Filter):
