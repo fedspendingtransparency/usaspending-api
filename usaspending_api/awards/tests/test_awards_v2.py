@@ -1,9 +1,9 @@
 import datetime
-import pytest
 import json
 
-from rest_framework import status
+import pytest
 from model_bakery import baker
+from rest_framework import status
 
 
 @pytest.fixture
