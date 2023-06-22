@@ -1,14 +1,13 @@
 import datetime
-import pytest
 import json
 
-from rest_framework import status
+import pytest
 from model_bakery import baker
+from rest_framework import status
 
 
 @pytest.fixture
 def awards_and_transactions(db):
-
     # DUNS
     duns = {"awardee_or_recipient_uniqu": "123", "legal_business_name": "Sams Club"}
 
@@ -978,7 +977,6 @@ def test_award_last_updated_endpoint(client, update_awards):
 
 
 def test_award_endpoint_generated_id(client, awards_and_transactions):
-
     resp = client.get("/api/v2/awards/ASST_AGG_1830212.0481163_3620/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_asst
@@ -997,7 +995,6 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
 
 
 def test_award_endpoint_parent_award(client, awards_and_transactions):
-
     dsws1 = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
     baker.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
     baker.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws1)
@@ -1024,7 +1021,6 @@ def test_award_endpoint_parent_award(client, awards_and_transactions):
 
 
 def test_award_endpoint_parent_award_no_submissions(client, awards_and_transactions):
-
     # Test contract award with parent
     resp = client.get("/api/v2/awards/7/")
     assert resp.status_code == status.HTTP_200_OK
@@ -1049,7 +1045,6 @@ def test_award_endpoint_parent_award_no_submissions(client, awards_and_transacti
 
 
 def test_award_multiple_cfdas(client, awards_and_transactions):
-
     resp = client.get("/api/v2/awards/3/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["cfda_info"] == [
@@ -1328,12 +1323,49 @@ def test_outlay_calculations(client, awards_and_transactions):
         disaster_emergency_fund=defc,
         submission_id=4,
     )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=2,
+        gross_outlay_amount_by_award_cpe=None,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=None,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=None,
+        submission_id=4,
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=3,
+        gross_outlay_amount_by_award_cpe=20,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=20,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=20,
+        disaster_emergency_fund=defc,
+        submission_id=4,
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        award_id=3,
+        gross_outlay_amount_by_award_cpe=30,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=30,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=30,
+        submission_id=4,
+    )
+
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 10.0}]
     assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 7.0}]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 10.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 7.0
+    assert json.loads(resp.content.decode("utf-8"))["total_outlay"] == 7.0
+
+    # Test Award 2 returns NULL (None) and not 0
+    resp = client.get("/api/v2/awards/2/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["total_outlay"] is None
+
+    # Test that Award 3's amounts are all summed together
+    resp = client.get("/api/v2/awards/3/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["total_outlay"] == 150
 
 
 expected_response_asst = {
