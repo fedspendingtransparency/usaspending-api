@@ -23,11 +23,12 @@ def test_program_activity_list_success(client, monkeypatch, agency_account_data,
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
             {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
             {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
         ],
     }
@@ -189,12 +190,13 @@ def test_program_activity_list_sort_by_name(client, agency_account_data, helpers
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
             {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
             {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
         ],
     }
 
@@ -214,9 +216,10 @@ def test_program_activity_list_sort_by_name(client, agency_account_data, helpers
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
+            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
             {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
             {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
             {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
@@ -242,11 +245,12 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
             {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
             {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
         ],
     }
@@ -267,11 +271,12 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
             {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
             {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
         ],
     }
@@ -295,11 +300,12 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
             {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
             {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
         ],
     }
@@ -320,11 +326,12 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
             {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
             {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
         ],
     }
@@ -393,7 +400,7 @@ def test_program_activity_list_pagination(client, agency_account_data, helpers):
             "next": 2,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
@@ -417,9 +424,12 @@ def test_program_activity_list_pagination(client, agency_account_data, helpers):
             "next": None,
             "page": 2,
             "previous": 1,
-            "total": 3,
+            "total": 4,
         },
-        "results": [{"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0}],
+        "results": [
+            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
