@@ -46,7 +46,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
                 {"award_date_signed": {"gte": self.start_date()}},
             ],
             _QueryType.AWARDS: [
-                {"date_signed": {"lte": self.start_date()}},
+                {"date_signed": {"gte": self.start_date()}},
             ],
         }
 

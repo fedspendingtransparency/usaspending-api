@@ -12,7 +12,7 @@ def test_object_class_count_success(client, monkeypatch, agency_account_data, he
     helpers.mock_current_fiscal_year(monkeypatch)
     resp = client.get(url.format(code="007", filter=""))
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["object_class_count"] == 3
+    assert resp.data["object_class_count"] == 4
 
     resp = client.get(url.format(code="007", filter="?fiscal_year=2017"))
     assert resp.status_code == status.HTTP_200_OK

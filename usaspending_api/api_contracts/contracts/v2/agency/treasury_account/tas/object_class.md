@@ -9,7 +9,7 @@ Returns a list of Object Classes for the specified Treasury Account Symbol (tas)
 
 + Parameters
     + `tas`: `001-X-0000-000` (required, string)
-        The treasury account symbol (tas) of a treasury account.
+        The treasury account symbol (tas) of a treasury account. This endpoint supports TAS codes with 0 or 1 slashes in the code.
     + `fiscal_year` (optional, number)
         The desired appropriations fiscal year. Defaults to the current FY.
     + `filter` (optional, string)

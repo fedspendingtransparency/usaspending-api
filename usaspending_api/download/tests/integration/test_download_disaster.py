@@ -45,6 +45,7 @@ def awards_and_transactions():
         total_loan_value=3,
         generated_unique_award_id="ASST_NEW_1",
         action_date="2020-01-01",
+        disaster_emergency_fund_codes=["L"],
     )
     award2 = baker.make(
         "search.AwardSearch",
@@ -53,6 +54,7 @@ def awards_and_transactions():
         total_loan_value=30,
         generated_unique_award_id="ASST_NEW_2",
         action_date="2020-01-01",
+        disaster_emergency_fund_codes=["M"],
     )
     award3 = baker.make(
         "search.AwardSearch",
@@ -61,6 +63,7 @@ def awards_and_transactions():
         total_loan_value=300,
         generated_unique_award_id="ASST_NEW_3",
         action_date="2020-01-01",
+        disaster_emergency_fund_codes=["N"],
     )
     award4 = baker.make(
         "search.AwardSearch",
@@ -69,6 +72,7 @@ def awards_and_transactions():
         total_loan_value=0,
         generated_unique_award_id="CONT_NEW_1",
         action_date="2020-01-01",
+        disaster_emergency_fund_codes=["L", "M"],
     )
     award5 = baker.make(
         "search.AwardSearch",
@@ -77,6 +81,7 @@ def awards_and_transactions():
         total_loan_value=0,
         generated_unique_award_id="CONT_NEW_2",
         action_date="2020-01-01",
+        disaster_emergency_fund_codes=["M", "N"],
     )
     award6 = baker.make(
         "search.AwardSearch",
@@ -85,6 +90,7 @@ def awards_and_transactions():
         total_loan_value=0,
         generated_unique_award_id="CONT_NEW_3",
         action_date="2020-01-01",
+        disaster_emergency_fund_codes=["L", "N"],
     )
     award7 = baker.make(
         "search.AwardSearch",
@@ -93,7 +99,17 @@ def awards_and_transactions():
         total_loan_value=0,
         generated_unique_award_id="CONT_NEW_4",
         action_date="2020-01-01",
+        disaster_emergency_fund_codes=["L", "M", "N"],
     )
+
+    # Subawards
+    baker.make("search.SubawardSearch", broker_subaward_id=1, award=award1, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=2, award=award2, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=3, award=award3, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=4, award=award4, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=5, award=award5, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=6, award=award6, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=7, award=award7, sub_action_date="2023-01-01")
 
     # Disaster Emergency Fund Code
     defc1 = baker.make(
