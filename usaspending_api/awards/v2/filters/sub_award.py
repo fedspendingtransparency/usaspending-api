@@ -42,6 +42,15 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
         "state_code": {"sub_legal_entity": "state_code", "sub_place_of_perform": "state_code"},
         "county_code": {"sub_legal_entity": "county_code", "sub_place_of_perform": "county_code"},
         "congressional_code": {"sub_legal_entity": "congressional", "sub_place_of_perform": "congressio"},
+        "current_congressional_code": {
+            "sub_legal_entity": "sub_legal_entity_congressional_current",
+            # Due to the rigidness of how we map values to columns
+            # it's required that the column start with sub_place_of_perform
+            # however, when current congressional codes were implemented
+            # the column name chosen did not match this pattern.
+            # That's why we have the full column name in the value
+            "sub_place_of_perform": "sub_place_of_performance_congressional_current",
+        },
     }
     location_mappings = {location_type: field_dict[scope] for location_type, field_dict in location_mappings.items()}
 
@@ -69,6 +78,23 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
 
                 if location_values["county"]:
                     county_qs = Q(**{f"{scope}_{location_mappings['county_code']}__in": location_values["county"]})
+                if location_values["district_current"]:
+                    district_qs = Q(
+                        **{
+                            f"{location_mappings['current_congressional_code']}__in": location_values[
+                                "district_current"
+                            ]
+                        }
+                    )
+                if location_values["district_original"]:
+                    district_qs = Q(
+                        **{
+                            f"{scope}_{location_mappings['congressional_code']}__in": location_values[
+                                "district_original"
+                            ]
+                        }
+                    )
+                # TODO: To be removed in DEV-9966
                 if location_values["district"]:
                     district_qs = Q(
                         **{f"{scope}_{location_mappings['congressional_code']}__in": location_values["district"]}

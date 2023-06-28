@@ -108,7 +108,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
         subaward_mappings = {
             LocationType.COUNTY: "sub_place_of_perform_county_code",
-            LocationType.CONGRESSIONAL_DISTRICT: "sub_place_of_perform_congressio",
+            LocationType.CONGRESSIONAL_DISTRICT: "sub_place_of_performance_congressional_current",
             LocationType.STATE_TERRITORY: "sub_place_of_perform_state_code",
             LocationType.COUNTRY: "sub_place_of_perform_country_co",
         }
@@ -126,9 +126,9 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             django_values = [
                 "sub_place_of_perform_country_co",
                 "sub_place_of_perform_state_code",
-                "sub_place_of_perform_congressio",
+                "sub_place_of_performance_congressional_current",
             ]
-            annotations = {"code": F("sub_place_of_perform_congressio")}
+            annotations = {"code": F("sub_place_of_performance_congressional_current")}
         elif self.location_type == LocationType.STATE_TERRITORY:
             django_values = ["sub_place_of_perform_country_co", "sub_place_of_perform_state_code"]
             annotations = {"code": F("sub_place_of_perform_state_code")}
@@ -178,7 +178,7 @@ class DistrictViewSet(AbstractLocationViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/district.md"
 
     location_type = LocationType.CONGRESSIONAL_DISTRICT
-    category = Category(name="district", agg_key="pop_congressional_agg_key")
+    category = Category(name="district", agg_key="pop_congressional_cur_agg_key")
 
 
 class StateTerritoryViewSet(AbstractLocationViewSet):
