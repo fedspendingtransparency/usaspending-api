@@ -11,6 +11,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('awards', '0096_removing_subaward_models'),
         ('search', '0019_additional_transaction_search_fields'),
+        ('search', '0032_as_ts_cur_congressional_codes')
     ]
 
     operations = [
