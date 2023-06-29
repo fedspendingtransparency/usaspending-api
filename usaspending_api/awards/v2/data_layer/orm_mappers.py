@@ -221,6 +221,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("legal_entity_address_line2", "_rl_address_line2"),
         ("legal_entity_address_line3", "_rl_address_line3"),
         ("legal_entity_congressional", "_rl_congressional_code"),
+        ("recipient_location_congressional_code_current", "_rl_congressional_code_current")
         ("legal_entity_zip_last4", "_rl_zip_last_4"),
         ("legal_entity_zip4", "_rl_zip4"),
         ("legal_entity_zip5", "_rl_zip5"),
@@ -234,6 +235,7 @@ FPDS_CONTRACT_FIELDS = OrderedDict(
         ("place_of_perform_county_na", "_pop_county_name"),
         ("place_of_perform_zip_last4", "_pop_zip4"),
         ("place_of_performance_congr", "_pop_congressional_code"),
+        ("pop_congressional_code_current", "_pop_congressional_code_current"),
         ("place_of_performance_zip5", "_pop_zip5"),
         ("awarding_office_name", "_awarding_office_name"),
         ("funding_office_name", "_funding_office_name"),
