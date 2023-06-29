@@ -258,7 +258,7 @@ def create_place_of_performance_object(db_row_dict: dict) -> OrderedDict:
                 if db_row_dict["_pop_state_name"]
                 else state_name_from_code(db_row_dict["_pop_state_code"]),
             ),
-            ("congressional_code", db_row_dict["_pop_congressional_code"]),
+            ("congressional_code", db_row_dict["_pop_congressional_code_current"]),
             ("zip4", db_row_dict["_pop_zip4"]),
             ("zip5", db_row_dict["_pop_zip5"]),
             ("address_line1", None),
