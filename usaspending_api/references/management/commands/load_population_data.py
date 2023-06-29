@@ -9,6 +9,8 @@ from usaspending_api.references.models import PopCongressionalDistrict, PopCount
 
 TEMP_TABLE_NAME = "temp_population_load"
 TEMP_TABLE_SQL = "CREATE TABLE {table} ({columns});"
+
+# {CSV column header: DB column name}
 COUNTY_COLUMNS_MAPPER = {
     "state_code": "state_code",
     "county_code": "county_number",
@@ -16,6 +18,8 @@ COUNTY_COLUMNS_MAPPER = {
     "county_name": "county_name",
     "population": "latest_population",
 }
+
+# {CSV column header: DB column name}
 DISTRICT_COLUMNS_MAPPER = {
     "state_code": "state_code",
     "state_name": "state_name",
