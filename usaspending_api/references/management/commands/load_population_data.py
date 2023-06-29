@@ -1,13 +1,11 @@
 import logging
-
 from typing import List
-from django.core.management.base import BaseCommand
 
+from django.core.management.base import BaseCommand
 from django.db import connection
 
-from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-
+from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
 
 TEMP_TABLE_NAME = "temp_population_load"
 TEMP_TABLE_SQL = "CREATE TABLE {table} ({columns});"
