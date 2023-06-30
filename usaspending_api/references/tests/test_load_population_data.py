@@ -10,17 +10,24 @@ TEST_CSV_FILE = str(settings.APP_DIR / "references" / "tests" / "data" / "census
 
 
 def test_no_file_provided():
-    """Command should throw an error if no `file` is provided"""
+    """Command should throw an error if the `file` argument is not provided"""
 
     with pytest.raises(CommandError):
         call_command("load_population_data", type="county")
 
 
 def test_no_type_provided():
-    """Command should throw an error if no `type` is provided"""
+    """Command should throw an error if the `type` argument is not provided"""
 
     with pytest.raises(CommandError):
         call_command("load_population_data", file=TEST_CSV_FILE)
+
+
+def test_no_file_or_type_provided():
+    """Command should throw an error if both `type` and `file` arguments are not provided"""
+
+    with pytest.raises(CommandError):
+        call_command("load_population_data")
 
 
 @pytest.mark.django_db()
