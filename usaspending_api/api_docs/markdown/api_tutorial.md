@@ -20,7 +20,6 @@
 
 [//]: # (Begin Content)
 
-
 # Introductory Tutorial <a name="introduction"></a>
 
 Welcome to the introductory USAspending API tutorial. This tutorial is designed for people who aren't familiar with APIs and how to use them. If you already know what an _endpoint_ is and the difference between `GET` and `POST`, you'll want to visit [Endpoints](/docs/endpoints). The [Documentation INdex](https://api.usaspending.gov/docs/) provides links to introductory resources and tutorials to help you get started.
