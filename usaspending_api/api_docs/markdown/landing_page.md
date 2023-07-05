@@ -16,7 +16,7 @@ The data include spending on _awards_ (_e.g._, who received federal contracts or
 
 ## Getting Started <a name="getting-started"></a>
 
-**New to the USAspending API?** The [Documentation Index](https://www.usaspending.gov/data/Basic-API-Training.pdf) provides links to introductory resources and tutorials to help you get started.
+**New to the USAspending API?** The [Documentation Index](https://api.usaspending.gov/docs/) provides links to introductory resources and tutorials to help you get started.
 
 **Familiar with APIs?** Jump right into the data with our [list of available Endpoints](/docs/endpoints).
 
