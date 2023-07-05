@@ -1,23 +1,25 @@
 import logging
-
 from typing import List
-from django.core.management.base import BaseCommand
 
+from django.core.management.base import BaseCommand
 from django.db import connection
 
-from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-
+from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
 
 TEMP_TABLE_NAME = "temp_population_load"
 TEMP_TABLE_SQL = "CREATE TABLE {table} ({columns});"
+
+# {CSV column header: DB column name}
 COUNTY_COLUMNS_MAPPER = {
-    "state": "state_code",
-    "county": "county_number",
-    "stname": "state_name",
-    "ctyname": "county_name",
-    "popestimate2019": "latest_population",
+    "state_code": "state_code",
+    "county_code": "county_number",
+    "state_name": "state_name",
+    "county_name": "county_name",
+    "population": "latest_population",
 }
+
+# {CSV column header: DB column name}
 DISTRICT_COLUMNS_MAPPER = {
     "state_code": "state_code",
     "state_name": "state_name",
@@ -31,11 +33,9 @@ logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-
     help = "Load CSV files containing population data. "
 
     def add_arguments(self, parser):
-
         parser.add_argument("--file", required=True, help="Path or URI of the raw object class CSV file to be loaded.")
         parser.add_argument(
             "--type",
