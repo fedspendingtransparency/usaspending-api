@@ -59,7 +59,7 @@ class Command(BaseCommand):
         )
         call_command(
             "load_population_data",
-            file="https://files.usaspending.gov/reference_data/census_2019_population_congressional_district.csv",
+            file="https://files.usaspending.gov/reference_data/census_2021_population_congressional_district.csv",
             type="district",
         )
 
