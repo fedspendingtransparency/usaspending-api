@@ -21,9 +21,9 @@ COUNTY_COLUMNS_MAPPER = {
 DISTRICT_COLUMNS_MAPPER = {
     "state_code": "state_code",
     "state_name": "state_name",
-    "usps_code": "state_abbreviation",
+    "state_abbreviation": "state_abbreviation",
     "congressional_district": "congressional_district",
-    "popestimate2019": "latest_population",
+    "population": "latest_population",
 }
 
 
@@ -31,11 +31,9 @@ logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-
     help = "Load CSV files containing population data. "
 
     def add_arguments(self, parser):
-
         parser.add_argument("--file", required=True, help="Path or URI of the raw object class CSV file to be loaded.")
         parser.add_argument(
             "--type",
