@@ -7,6 +7,12 @@ from usaspending_api.references.models import Cfda
 
 
 class TransactionFABS(models.Model):
+    """
+    NOTE: Before adding new fields to this model, consider whether adding them to the TransactionSearch
+    model would meet your needs. In the future, we'd like to completely refactor out the views built on
+    top of TransactionSearch and AwardSearch. In the meantime, new fields should be added to these base
+    models when possible to prevent more future rework."""
+
     transaction = models.OneToOneField(
         "awards.TransactionNormalized", on_delete=models.CASCADE, primary_key=True, related_name="assistance_data"
     )
