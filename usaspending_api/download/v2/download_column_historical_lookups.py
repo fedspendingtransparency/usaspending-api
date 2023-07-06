@@ -2256,8 +2256,11 @@ query_paths = {
                 ("prime_awardee_state_code", "legal_entity_state_code"),
                 ("prime_awardee_state_name", "legal_entity_state_name"),
                 ("prime_awardee_zip_code", "legal_entity_zip"),
-                ("prime_awardee_congressional_district", "legal_entity_congressional"),
-                ("prime_awardee_foreign_postal_code", "legal_entity_foreign_posta"),
+                ("prime_award_summary_recipient_cd_original", "legal_entity_congressional"),
+                (
+                    "prime_award_summary_recipient_cd_current",
+                    "legal_entity_congressional_current",
+                )("prime_awardee_foreign_postal_code", "legal_entity_foreign_posta"),
                 ("prime_awardee_business_types", "business_types"),
                 ("prime_award_primary_place_of_performance_scope", "place_of_perform_scope"),
                 ("prime_award_primary_place_of_performance_city_name", "place_of_perform_city_name"),
@@ -2268,10 +2271,13 @@ query_paths = {
                     "place_of_performance_zip",
                 ),
                 (
-                    "prime_award_primary_place_of_performance_congressional_district",
+                    "prime_award_summary_place_of_performance_cd_original",
                     "place_of_perform_congressio",
                 ),
                 (
+                    "prime_award_summary_place_of_performance_cd_current",
+                    "place_of_performance_congressional_current",
+                )(
                     "prime_award_primary_place_of_performance_country_code",
                     "place_of_perform_country_co",
                 ),
@@ -2303,7 +2309,8 @@ query_paths = {
                 ("subawardee_state_code", "sub_legal_entity_state_code"),
                 ("subawardee_state_name", "sub_legal_entity_state_name"),
                 ("subawardee_zip_code", "sub_legal_entity_zip"),
-                ("subawardee_congressional_district", "sub_legal_entity_congressional_raw"),
+                ("subaward_recipient_cd_original", "sub_legal_entity_congressional_raw"),
+                ("subaward_recipient_cd_current", "sub_legal_entity_congressional_current"),
                 ("subawardee_foreign_postal_code", "sub_legal_entity_foreign_posta"),
                 ("subawardee_business_types", "sub_business_types"),
                 ("subaward_primary_place_of_performance_address_line_1", "place_of_perform_street"),
@@ -2321,8 +2328,12 @@ query_paths = {
                     "sub_place_of_performance_zip",
                 ),
                 (
-                    "subaward_primary_place_of_performance_congressional_district",
+                    "subaward_place_of_performance_cd_original",
                     "sub_place_of_perform_congressio_raw",
+                ),
+                (
+                    "subaward_place_of_performance_cd_current",
+                    "sub_place_of_performance_congressional_current",
                 ),
                 (
                     "subaward_primary_place_of_performance_country_code",
