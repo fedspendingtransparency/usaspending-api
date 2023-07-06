@@ -1438,7 +1438,11 @@ query_paths = {
                 ("recipient_state_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_code"]),
                 ("recipient_state_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_descrip"]),
                 ("recipient_zip_4_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_zip4"]),
-                ("recipient_congressional_district", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_congressional"]),
+                (
+                    "prime_award_transaction_recipient_cd_original",
+                    FPDS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_congressional"],
+                ),
+                ("prime_award_transaction_recipient_cd_current", "recipient_location_congressional_code_current"),
                 ("recipient_phone_number", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["vendor_phone_number"]),
                 ("recipient_fax_number", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["vendor_fax_number"]),
                 (
@@ -1478,8 +1482,12 @@ query_paths = {
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_performance_zip4a"],
                 ),
                 (
-                    "primary_place_of_performance_congressional_district",
+                    "prime_award_transaction_place_of_performance_cd_original",
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_performance_congr"],
+                ),
+                (
+                    "prime_award_transaction_place_of_performance_cd_current",
+                    "pop_congressional_code_current",
                 ),
                 ("award_or_idv_flag", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["pulled_from"]),
                 (
