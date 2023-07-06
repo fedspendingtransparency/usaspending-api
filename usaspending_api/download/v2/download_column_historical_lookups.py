@@ -1934,7 +1934,11 @@ query_paths = {
                 ("recipient_state_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_state_name"]),
                 ("recipient_zip_code", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_zip5"]),
                 ("recipient_zip_last_4_code", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_zip_last4"]),
-                ("recipient_congressional_district", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_congressional"]),
+                (
+                    "prime_award_transaction_recipient_cd_original",
+                    FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_congressional"],
+                ),
+                ("prime_award_transaction_recipient_cd_current", "recipient_location_congressional_code_current"),
                 ("recipient_foreign_city_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_foreign_city"]),
                 ("recipient_foreign_province_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_foreign_provi"]),
                 ("recipient_foreign_postal_code", FABS_TO_TRANSACTION_SEARCH_COL_MAP["legal_entity_foreign_posta"]),
@@ -1976,9 +1980,10 @@ query_paths = {
                     FABS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_performance_zip4a"],
                 ),
                 (
-                    "primary_place_of_performance_congressional_district",
+                    "prime_award_transaction_place_of_performance_cd_original",
                     FABS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_performance_congr"],
                 ),
+                ("prime_award_transaction_place_of_performance_cd_current", "pop_congressional_code_current"),
                 (
                     "primary_place_of_performance_foreign_location",
                     FABS_TO_TRANSACTION_SEARCH_COL_MAP["place_of_performance_forei"],
