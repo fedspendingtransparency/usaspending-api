@@ -23,9 +23,9 @@ COUNTY_COLUMNS_MAPPER = {
 DISTRICT_COLUMNS_MAPPER = {
     "state_code": "state_code",
     "state_name": "state_name",
-    "usps_code": "state_abbreviation",
+    "state_abbreviation": "state_abbreviation",
     "congressional_district": "congressional_district",
-    "popestimate2019": "latest_population",
+    "population": "latest_population",
 }
 
 
