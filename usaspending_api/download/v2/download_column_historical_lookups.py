@@ -225,8 +225,12 @@ query_paths = {
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_zip4']}",
                 ),
                 (
-                    "recipient_congressional_district",
+                    "prime_award_summary_recipient_cd_original",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_congressional']}",
+                ),
+                (
+                    "prime_award_summary_recipient_cd_current",
+                    "latest_transaction_search__recipient_location_congressional_code_current",
                 ),
                 (
                     "recipient_phone_number",
@@ -273,8 +277,12 @@ query_paths = {
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_zip4a']}",
                 ),
                 (
-                    "primary_place_of_performance_congressional_district",
+                    "prime_award_summary_place_of_performance_cd_original",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_congr']}",
+                ),
+                (
+                    "prime_award_summary_place_of_performance_cd_current",
+                    "latest_transaction_search__pop_congressional_code_current",
                 ),
                 (
                     "award_or_idv_flag",
@@ -2274,10 +2282,7 @@ query_paths = {
                     "prime_award_summary_place_of_performance_cd_original",
                     "place_of_perform_congressio",
                 ),
-                (
-                    "prime_award_summary_place_of_performance_cd_current",
-                    "place_of_performance_congressional_current",
-                )(
+                ("prime_award_summary_place_of_performance_cd_current", "place_of_performance_congressional_current",)(
                     "prime_award_primary_place_of_performance_country_code",
                     "place_of_perform_country_co",
                 ),
