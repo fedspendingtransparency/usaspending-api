@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            sql=vw_transaction_fabs_sql,
+            sql=f"DROP VIEW IF EXISTS vw_transaction_fabs; {vw_transaction_fabs_sql}",
             reverse_sql="DROP VIEW IF EXISTS vw_transaction_fabs",
             # Without this, Django will try to actually change the old table names in another migration
             # This says we've already done it.
