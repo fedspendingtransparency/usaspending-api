@@ -2283,10 +2283,8 @@ query_paths = {
                 ("prime_awardee_state_name", "legal_entity_state_name"),
                 ("prime_awardee_zip_code", "legal_entity_zip"),
                 ("prime_award_summary_recipient_cd_original", "legal_entity_congressional"),
-                (
-                    "prime_award_summary_recipient_cd_current",
-                    "legal_entity_congressional_current",
-                )("prime_awardee_foreign_postal_code", "legal_entity_foreign_posta"),
+                ("prime_award_summary_recipient_cd_current", "legal_entity_congressional_current"),
+                ("prime_awardee_foreign_postal_code", "legal_entity_foreign_posta"),
                 ("prime_awardee_business_types", "business_types"),
                 ("prime_award_primary_place_of_performance_scope", "place_of_perform_scope"),
                 ("prime_award_primary_place_of_performance_city_name", "place_of_perform_city_name"),
@@ -2300,7 +2298,8 @@ query_paths = {
                     "prime_award_summary_place_of_performance_cd_original",
                     "place_of_perform_congressio",
                 ),
-                ("prime_award_summary_place_of_performance_cd_current", "place_of_performance_congressional_current",)(
+                ("prime_award_summary_place_of_performance_cd_current", "place_of_performance_congressional_current"),
+                (
                     "prime_award_primary_place_of_performance_country_code",
                     "place_of_perform_country_co",
                 ),
