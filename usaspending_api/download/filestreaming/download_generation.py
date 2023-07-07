@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
+from http.client import RemoteDisconnected
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
@@ -736,7 +737,22 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
-    RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
+
+    # We are currently receiving timeouts when trying to retrieve the data dictionary during
+    # the nightly pipeline. Adding retry logic here until those timeouts are resolved
+    max_attempts = 3
+    delay_between_attempts = 5
+    for attempt in range(max_attempts):
+        try:
+            RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
+            break
+        except RemoteDisconnected:
+            if attempt < max_attempts - 1:
+                time.sleep(delay_between_attempts)
+                continue
+            else:
+                raise
+
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
 
 
