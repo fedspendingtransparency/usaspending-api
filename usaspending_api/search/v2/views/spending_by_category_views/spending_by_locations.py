@@ -159,8 +159,9 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                 }
             )
 
-        # Combine all dicts in the `results` list that have the same values for
-        #   `code` and `name`. Sum their `amount` values together.
+        # Combine all dicts in the `results` list that have the same values for `code` and `name`and sum their `amount`
+        # values together. These fields can be `None` if they don't match an entry in the ref_population_cong_district
+        # table.
         if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
             results = _combine_dicts_by_keys(results, ["code", "name"], "amount")
 
@@ -194,8 +195,8 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             django_values = ["sub_place_of_perform_country_co", "sub_place_of_perform_state_code"]
             annotations = {"code": F("sub_place_of_perform_state_code")}
         else:
-            django_values = [f"sub_place_of_perform_country_co"]
-            annotations = {"code": F(f"sub_place_of_perform_country_co")}
+            django_values = ["sub_place_of_perform_country_co"]
+            annotations = {"code": F("sub_place_of_perform_country_co")}
 
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(**annotations)
         lower_limit = self.pagination.lower_limit
