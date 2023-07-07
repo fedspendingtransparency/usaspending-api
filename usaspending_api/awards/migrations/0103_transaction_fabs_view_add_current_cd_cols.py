@@ -7,20 +7,20 @@ class Migration(migrations.Migration):
     dependencies = [("awards", "0102_transaction_fpds_view_add_current_cd_cols")]
 
     operations = [
-        # migrations.RunSQL(
-        #     sql=vw_transaction_fabs_sql,
-        #     reverse_sql="DROP VIEW IF EXISTS vw_transaction_fabs",
-        #     # Without this, Django will try to actually change the old table names in another migration
-        #     # This says we've already done it.
-        #     state_operations=[
-        #         migrations.AlterModelTable(
-        #             name="transactionfabs",
-        #             table="vw_transaction_fabs",
-        #         )
-        #     ],
-        # ),
-        # migrations.AlterModelOptions(
-        #     name="transactionfabs",
-        #     options={"managed": False},
-        # ),
+        migrations.RunSQL(
+            sql=vw_transaction_fabs_sql,
+            reverse_sql="DROP VIEW IF EXISTS vw_transaction_fabs",
+            # Without this, Django will try to actually change the old table names in another migration
+            # This says we've already done it.
+            state_operations=[
+                migrations.AlterModelTable(
+                    name="transactionfabs",
+                    table="vw_transaction_fabs",
+                )
+            ],
+        ),
+        migrations.AlterModelOptions(
+            name="transactionfabs",
+            options={"managed": False},
+        ),
     ]
