@@ -14,6 +14,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # These two view operations were commented out because this migration and its already established
+        # dependencies are not compatible with recent changes to the views. The dependencies in this
+        # migration also couldn't be altered to reflect the new dependencies because this migration has already
+        # ran before the new dependencies in prod. For those reasons we have commented these operations out
+        # and moved them to a new migration that implements the new dependency order.
         # migrations.RunSQL(
         #     sql=vw_transaction_fabs_sql,
         #     reverse_sql="DROP VIEW IF EXISTS vw_transaction_fabs",
