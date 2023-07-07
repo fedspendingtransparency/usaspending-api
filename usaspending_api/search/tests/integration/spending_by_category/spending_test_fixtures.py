@@ -511,15 +511,6 @@ def awards_and_transactions(db):
     # References Population Congressional District
     baker.make(
         "references.PopCongressionalDistrict",
-        id=1,
-        state_code="45",
-        state_name="South Carolina",
-        state_abbreviation="SC",
-        congressional_district="90",
-        latest_population=1,
-    )
-    baker.make(
-        "references.PopCongressionalDistrict",
         id=2,
         state_code="45",
         state_name="South Carolina",
