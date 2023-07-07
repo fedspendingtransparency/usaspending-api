@@ -19,6 +19,7 @@ from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
 from http.client import RemoteDisconnected
+from urllib.error import HTTPError
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
@@ -746,7 +747,7 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
         try:
             RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
             break
-        except RemoteDisconnected:
+        except (HTTPError, RemoteDisconnected):
             if attempt < max_attempts - 1:
                 time.sleep(delay_between_attempts)
                 continue
