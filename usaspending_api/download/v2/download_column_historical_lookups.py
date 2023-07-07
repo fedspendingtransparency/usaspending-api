@@ -3028,16 +3028,24 @@ query_paths = {
                 ("recipient_county", "award__latest_transaction_search__recipient_location_county_name"),
                 ("recipient_city", "award__latest_transaction_search__recipient_location_city_name"),
                 (
-                    "recipient_congressional_district",
+                    "prime_award_summary_recipient_cd_original",
                     "award__latest_transaction_search__recipient_location_congressional_code",
+                ),
+                (
+                    "prime_award_summary_recipient_cd_current",
+                    "award__latest_transaction_search__recipient_location_congressional_code_current",
                 ),
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
                 ("primary_place_of_performance_country", "award__latest_transaction_search__pop_country_name"),
                 ("primary_place_of_performance_state", "award__latest_transaction_search__pop_state_name"),
                 ("primary_place_of_performance_county", "award__latest_transaction_search__pop_county_name"),
                 (
-                    "primary_place_of_performance_congressional_district",
+                    "prime_award_summary_place_of_performance_cd_original",
                     "award__latest_transaction_search__pop_congressional_code",
+                ),
+                (
+                    "prime_award_summary_place_of_performance_cd_current",
+                    "award__latest_transaction_search__pop_congressional_code_current",
                 ),
                 (
                     "primary_place_of_performance_zip_code",
