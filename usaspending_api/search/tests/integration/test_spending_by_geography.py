@@ -483,7 +483,7 @@ def _test_correct_response_for_place_of_performance_district_without_geo_filters
                 "display_name": None,
                 "per_capita": None,
                 "population": None,
-                "shape_code": ""
+                "shape_code": "",
             },
             {
                 "aggregated_amount": 50005.0,
