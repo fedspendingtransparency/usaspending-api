@@ -54,8 +54,20 @@ SELECT
     "latest_transaction"."recipient_location_state_name" AS "recipient_state_name",
     "latest_transaction"."recipient_location_zip5" AS "recipient_zip_code",
     "latest_transaction"."legal_entity_zip_last4" AS "recipient_zip_last_4_code",
-    "latest_transaction"."recipient_location_congressional_code" AS "prime_award_summary_recipient_cd_original",
-    "latest_transaction"."recipient_location_congressional_code_current" AS "prime_award_summary_recipient_cd_original",
+    CASE
+        WHEN "latest_transaction"."recipient_location_state_code" IS NOT NULL
+            AND "latest_transaction"."recipient_location_congressional_code" IS NOT NULL
+            AND "latest_transaction"."recipient_location_state_code" != ""
+        THEN CONCAT("latest_transaction"."recipient_location_state_code", "-", "latest_transaction"."recipient_location_congressional_code")
+        ELSE "latest_transaction"."recipient_location_congressional_code"
+    END AS "prime_award_summary_recipient_cd_original",
+    CASE
+        WHEN "latest_transaction"."recipient_location_state_code" IS NOT NULL
+            AND "latest_transaction"."recipient_location_congressional_code_current" IS NOT NULL
+            AND "latest_transaction"."recipient_location_state_code" != ""
+        THEN CONCAT("latest_transaction"."recipient_location_state_code", "-", "latest_transaction"."recipient_location_congressional_code_current")
+        ELSE "latest_transaction"."recipient_location_congressional_code_current"
+    END AS "prime_award_summary_recipient_cd_current",
     "latest_transaction"."legal_entity_foreign_city" AS "recipient_foreign_city_name",
     "latest_transaction"."legal_entity_foreign_provi" AS "recipient_foreign_province_name",
     "latest_transaction"."legal_entity_foreign_posta" AS "recipient_foreign_postal_code",
@@ -68,8 +80,20 @@ SELECT
     "latest_transaction"."pop_county_name" AS "primary_place_of_performance_county_name",
     "latest_transaction"."pop_state_name" AS "primary_place_of_performance_state_name",
     "latest_transaction"."place_of_performance_zip4a" AS "primary_place_of_performance_zip_4",
-    "latest_transaction"."pop_congressional_code" AS "prime_award_summary_place_of_performance_cd_original",
-    "latest_transaction"."pop_congressional_code_current" AS "prime_award_summary_place_of_performance_cd_current",
+    CASE
+        WHEN "latest_transaction"."pop_state_code" IS NOT NULL
+            AND "latest_transaction"."pop_congressional_code" IS NOT NULL
+            AND "latest_transaction"."pop_state_code" != ""
+        THEN CONCAT("latest_transaction"."pop_state_code", "-", "latest_transaction"."pop_congressional_code")
+        ELSE "latest_transaction"."pop_congressional_code"
+    END AS "prime_award_summary_place_of_performance_cd_original",
+    CASE
+        WHEN "latest_transaction"."pop_state_code" IS NOT NULL
+            AND "latest_transaction"."pop_congressional_code_current" IS NOT NULL
+            AND "latest_transaction"."pop_state_code" != ""
+        THEN CONCAT("latest_transaction"."pop_state_code", "-", "latest_transaction"."pop_congressional_code_current")
+        ELSE "latest_transaction"."pop_congressional_code_current"
+    END AS "prime_award_summary_place_of_performance_cd_current",
     "latest_transaction"."place_of_performance_forei" AS "primary_place_of_performance_foreign_location",
     array_to_string(ARRAY(
         SELECT CONCAT(unnest_cfdas::json ->> 'cfda_number', ': ', unnest_cfdas::json ->> 'cfda_program_title')
