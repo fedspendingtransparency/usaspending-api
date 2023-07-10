@@ -54,12 +54,12 @@ class Command(BaseCommand):
         self.logger.info("Loading Census Population Data")
         call_command(
             "load_population_data",
-            file="https://files.usaspending.gov/reference_data/census_2019_population_county.csv",
+            file="https://files.usaspending.gov/reference_data/census_2020_population_county.csv",
             type="county",
         )
         call_command(
             "load_population_data",
-            file="https://files.usaspending.gov/reference_data/census_2019_population_congressional_district.csv",
+            file="https://files.usaspending.gov/reference_data/census_2021_population_congressional_district.csv",
             type="district",
         )
 

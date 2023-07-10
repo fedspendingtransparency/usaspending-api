@@ -1,0 +1,442 @@
+state_code,state_name,state_abbreviation,congressional_district,population
+02,Alaska,AK,00,732673
+01,Alabama,AL,01,727212
+01,Alabama,AL,02,716212
+01,Alabama,AL,03,721289
+01,Alabama,AL,04,723070
+01,Alabama,AL,05,729384
+01,Alabama,AL,06,706497
+01,Alabama,AL,07,716213
+05,Arkansas,AR,01,753369
+05,Arkansas,AR,02,758976
+05,Arkansas,AR,03,766477
+05,Arkansas,AR,04,747069
+04,Arizona,AZ,01,796924
+04,Arizona,AZ,02,809339
+04,Arizona,AZ,03,799570
+04,Arizona,AZ,04,804813
+04,Arizona,AZ,05,813308
+04,Arizona,AZ,06,803556
+04,Arizona,AZ,07,793370
+04,Arizona,AZ,08,813094
+04,Arizona,AZ,09,842342
+06,California,CA,01,766941
+06,California,CA,02,764439
+06,California,CA,03,768419
+06,California,CA,04,758825
+06,California,CA,05,773398
+06,California,CA,06,756779
+06,California,CA,07,760350
+06,California,CA,08,746240
+06,California,CA,09,770460
+06,California,CA,10,762072
+06,California,CA,11,702058
+06,California,CA,12,737766
+06,California,CA,13,783282
+06,California,CA,14,752226
+06,California,CA,15,738342
+06,California,CA,16,742459
+06,California,CA,17,733185
+06,California,CA,18,734119
+06,California,CA,19,767441
+06,California,CA,20,766063
+06,California,CA,21,755683
+06,California,CA,22,795088
+06,California,CA,23,761286
+06,California,CA,24,763077
+06,California,CA,25,767946
+06,California,CA,26,751524
+06,California,CA,27,748536
+06,California,CA,28,739036
+06,California,CA,29,738555
+06,California,CA,30,731165
+06,California,CA,31,738315
+06,California,CA,32,763531
+06,California,CA,33,760127
+06,California,CA,34,750705
+06,California,CA,35,774713
+06,California,CA,36,722961
+06,California,CA,37,752632
+06,California,CA,38,743870
+06,California,CA,39,767831
+06,California,CA,40,753484
+06,California,CA,41,789845
+06,California,CA,42,742949
+06,California,CA,43,736160
+06,California,CA,44,754013
+06,California,CA,45,748285
+06,California,CA,46,757761
+06,California,CA,47,755464
+06,California,CA,48,752792
+06,California,CA,49,765147
+06,California,CA,50,748297
+06,California,CA,51,762785
+06,California,CA,52,759409
+08,Colorado,CO,01,716790
+08,Colorado,CO,02,717177
+08,Colorado,CO,03,734246
+08,Colorado,CO,04,746626
+08,Colorado,CO,05,731281
+08,Colorado,CO,06,725034
+08,Colorado,CO,07,716843
+08,Colorado,CO,08,724072
+09,Connecticut,CT,01,717721
+09,Connecticut,CT,02,729071
+09,Connecticut,CT,03,719381
+09,Connecticut,CT,04,718640
+09,Connecticut,CT,05,720784
+11,District Of Columbia,DC,98,670050
+10,Delaware,DE,00,1003384
+12,Florida,FL,01,775137
+12,Florida,FL,02,785319
+12,Florida,FL,03,779758
+12,Florida,FL,04,786011
+12,Florida,FL,05,784246
+12,Florida,FL,06,786354
+12,Florida,FL,07,768702
+12,Florida,FL,08,781963
+12,Florida,FL,09,762639
+12,Florida,FL,10,777189
+12,Florida,FL,11,807589
+12,Florida,FL,12,778826
+12,Florida,FL,13,768563
+12,Florida,FL,14,775035
+12,Florida,FL,15,800482
+12,Florida,FL,16,789177
+12,Florida,FL,17,801807
+12,Florida,FL,18,785291
+12,Florida,FL,19,788513
+12,Florida,FL,20,750268
+12,Florida,FL,21,785345
+12,Florida,FL,22,774317
+12,Florida,FL,23,773856
+12,Florida,FL,24,756692
+12,Florida,FL,25,768532
+12,Florida,FL,26,775668
+12,Florida,FL,27,747914
+12,Florida,FL,28,765935
+13,Georgia,GA,01,776100
+13,Georgia,GA,02,769411
+13,Georgia,GA,03,773245
+13,Georgia,GA,04,756440
+13,Georgia,GA,05,765685
+13,Georgia,GA,06,780668
+13,Georgia,GA,07,749673
+13,Georgia,GA,08,760317
+13,Georgia,GA,09,797012
+13,Georgia,GA,10,790768
+13,Georgia,GA,11,772858
+13,Georgia,GA,12,766372
+13,Georgia,GA,13,763561
+13,Georgia,GA,14,777456
+15,Hawaii,HI,01,712947
+15,Hawaii,HI,02,728606
+19,Iowa,IA,01,794325
+19,Iowa,IA,02,794283
+19,Iowa,IA,03,809127
+19,Iowa,IA,04,795344
+16,Idaho,ID,01,967737
+16,Idaho,ID,02,933186
+17,Illinois,IL,01,731895
+17,Illinois,IL,02,758903
+17,Illinois,IL,03,723029
+17,Illinois,IL,04,721991
+17,Illinois,IL,05,779160
+17,Illinois,IL,06,754571
+17,Illinois,IL,07,712378
+17,Illinois,IL,08,752922
+17,Illinois,IL,09,746898
+17,Illinois,IL,10,751134
+17,Illinois,IL,11,746018
+17,Illinois,IL,12,756783
+17,Illinois,IL,13,729837
+17,Illinois,IL,14,757967
+17,Illinois,IL,15,754165
+17,Illinois,IL,16,744298
+17,Illinois,IL,17,749520
+18,Indiana,IN,01,754129
+18,Indiana,IN,02,752280
+18,Indiana,IN,03,755001
+18,Indiana,IN,04,762956
+18,Indiana,IN,05,766044
+18,Indiana,IN,06,753496
+18,Indiana,IN,07,749635
+18,Indiana,IN,08,754451
+18,Indiana,IN,09,757993
+20,Kansas,KS,01,733038
+20,Kansas,KS,02,731232
+20,Kansas,KS,03,737384
+20,Kansas,KS,04,732928
+21,Kentucky,KY,01,748599
+21,Kentucky,KY,02,755942
+21,Kentucky,KY,03,745141
+21,Kentucky,KY,04,759552
+21,Kentucky,KY,05,749196
+21,Kentucky,KY,06,750964
+22,Louisiana,LA,01,775969
+22,Louisiana,LA,02,762623
+22,Louisiana,LA,03,762255
+22,Louisiana,LA,04,768157
+22,Louisiana,LA,05,770753
+22,Louisiana,LA,06,784290
+25,Massachusetts,MA,01,776085
+25,Massachusetts,MA,02,781228
+25,Massachusetts,MA,03,775520
+25,Massachusetts,MA,04,777691
+25,Massachusetts,MA,05,766453
+25,Massachusetts,MA,06,780128
+25,Massachusetts,MA,07,761699
+25,Massachusetts,MA,08,772956
+25,Massachusetts,MA,09,792963
+24,Maryland,MD,01,780224
+24,Maryland,MD,02,774740
+24,Maryland,MD,03,771084
+24,Maryland,MD,04,746989
+24,Maryland,MD,05,789756
+24,Maryland,MD,06,779649
+24,Maryland,MD,07,745963
+24,Maryland,MD,08,776724
+23,Maine,ME,01,686648
+23,Maine,ME,02,685599
+26,Michigan,MI,01,778886
+26,Michigan,MI,02,775529
+26,Michigan,MI,03,781872
+26,Michigan,MI,04,770400
+26,Michigan,MI,05,776969
+26,Michigan,MI,06,774940
+26,Michigan,MI,07,777572
+26,Michigan,MI,08,771412
+26,Michigan,MI,09,774843
+26,Michigan,MI,10,775839
+26,Michigan,MI,11,764859
+26,Michigan,MI,12,775033
+26,Michigan,MI,13,752657
+27,Minnesota,MN,01,714441
+27,Minnesota,MN,02,722101
+27,Minnesota,MN,03,706411
+27,Minnesota,MN,04,705033
+27,Minnesota,MN,05,708012
+27,Minnesota,MN,06,725893
+27,Minnesota,MN,07,707323
+27,Minnesota,MN,08,718176
+29,Missouri,MO,01,761805
+29,Missouri,MO,02,769003
+29,Missouri,MO,03,775035
+29,Missouri,MO,04,772047
+29,Missouri,MO,05,771274
+29,Missouri,MO,06,771992
+29,Missouri,MO,07,775102
+29,Missouri,MO,08,771929
+28,Mississippi,MS,01,745526
+28,Mississippi,MS,02,723186
+28,Mississippi,MS,03,738621
+28,Mississippi,MS,04,742632
+30,Montana,MT,01,556300
+30,Montana,MT,02,547971
+37,North Carolina,NC,01,747139
+37,North Carolina,NC,02,752758
+37,North Carolina,NC,03,749741
+37,North Carolina,NC,04,750874
+37,North Carolina,NC,05,743662
+37,North Carolina,NC,06,754077
+37,North Carolina,NC,07,757948
+37,North Carolina,NC,08,756029
+37,North Carolina,NC,09,755891
+37,North Carolina,NC,10,754893
+37,North Carolina,NC,11,750100
+37,North Carolina,NC,12,743616
+37,North Carolina,NC,13,770237
+37,North Carolina,NC,14,764197
+38,North Dakota,ND,00,774948
+31,Nebraska,NE,01,658196
+31,Nebraska,NE,02,656171
+31,Nebraska,NE,03,649325
+33,New Hampshire,NH,01,697387
+33,New Hampshire,NH,02,691605
+34,New Jersey,NJ,01,772510
+34,New Jersey,NJ,02,782031
+34,New Jersey,NJ,03,779042
+34,New Jersey,NJ,04,782528
+34,New Jersey,NJ,05,781335
+34,New Jersey,NJ,06,770928
+34,New Jersey,NJ,07,777024
+34,New Jersey,NJ,08,743665
+34,New Jersey,NJ,09,760340
+34,New Jersey,NJ,10,768400
+34,New Jersey,NJ,11,769512
+34,New Jersey,NJ,12,779815
+35,New Mexico,NM,01,710196
+35,New Mexico,NM,02,702024
+35,New Mexico,NM,03,703657
+32,Nevada,NV,01,757119
+32,Nevada,NV,02,785611
+32,Nevada,NV,03,806554
+32,Nevada,NV,04,794707
+36,New York,NY,01,780204
+36,New York,NY,02,775593
+36,New York,NY,03,781920
+36,New York,NY,04,774038
+36,New York,NY,05,822717
+36,New York,NY,06,736965
+36,New York,NY,07,717913
+36,New York,NY,08,758070
+36,New York,NY,09,777866
+36,New York,NY,10,705068
+36,New York,NY,11,766546
+36,New York,NY,12,689590
+36,New York,NY,13,780825
+36,New York,NY,14,696136
+36,New York,NY,15,757465
+36,New York,NY,16,765635
+36,New York,NY,17,776481
+36,New York,NY,18,776747
+36,New York,NY,19,779018
+36,New York,NY,20,774705
+36,New York,NY,21,776503
+36,New York,NY,22,771373
+36,New York,NY,23,778483
+36,New York,NY,24,772455
+36,New York,NY,25,776267
+36,New York,NY,26,767330
+39,Ohio,OH,01,786192
+39,Ohio,OH,02,785898
+39,Ohio,OH,03,794704
+39,Ohio,OH,04,793670
+39,Ohio,OH,05,786607
+39,Ohio,OH,06,778845
+39,Ohio,OH,07,792610
+39,Ohio,OH,08,784419
+39,Ohio,OH,09,783751
+39,Ohio,OH,10,784794
+39,Ohio,OH,11,767086
+39,Ohio,OH,12,793802
+39,Ohio,OH,13,783099
+39,Ohio,OH,14,785721
+39,Ohio,OH,15,778819
+40,Oklahoma,OK,01,798974
+40,Oklahoma,OK,02,795387
+40,Oklahoma,OK,03,786296
+40,Oklahoma,OK,04,797575
+40,Oklahoma,OK,05,808407
+41,Oregon,OR,01,701594
+41,Oregon,OR,02,710992
+41,Oregon,OR,03,699003
+41,Oregon,OR,04,708207
+41,Oregon,OR,05,713162
+41,Oregon,OR,06,713197
+42,Pennsylvania,PA,01,763834
+42,Pennsylvania,PA,02,767191
+42,Pennsylvania,PA,03,741180
+42,Pennsylvania,PA,04,771749
+42,Pennsylvania,PA,05,754121
+42,Pennsylvania,PA,06,768151
+42,Pennsylvania,PA,07,771318
+42,Pennsylvania,PA,08,763499
+42,Pennsylvania,PA,09,766968
+42,Pennsylvania,PA,10,764361
+42,Pennsylvania,PA,11,772986
+42,Pennsylvania,PA,12,756600
+42,Pennsylvania,PA,13,762589
+42,Pennsylvania,PA,14,761114
+42,Pennsylvania,PA,15,758343
+42,Pennsylvania,PA,16,763417
+42,Pennsylvania,PA,17,756635
+44,Rhode Island,RI,01,545085
+44,Rhode Island,RI,02,550525
+45,South Carolina,SC,01,744714
+45,South Carolina,SC,02,744260
+45,South Carolina,SC,03,740035
+45,South Carolina,SC,04,747967
+45,South Carolina,SC,05,737349
+45,South Carolina,SC,06,730296
+45,South Carolina,SC,07,746084
+46,South Dakota,SD,00,895376
+47,Tennessee,TN,01,772206
+47,Tennessee,TN,02,783395
+47,Tennessee,TN,03,776693
+47,Tennessee,TN,04,781570
+47,Tennessee,TN,05,775588
+47,Tennessee,TN,06,768525
+47,Tennessee,TN,07,784694
+47,Tennessee,TN,08,764865
+47,Tennessee,TN,09,767682
+48,Texas,TX,01,775770
+48,Texas,TX,02,756374
+48,Texas,TX,03,804464
+48,Texas,TX,04,788283
+48,Texas,TX,05,774952
+48,Texas,TX,06,766924
+48,Texas,TX,07,793128
+48,Texas,TX,08,821153
+48,Texas,TX,09,738398
+48,Texas,TX,10,775543
+48,Texas,TX,11,766787
+48,Texas,TX,12,783568
+48,Texas,TX,13,770850
+48,Texas,TX,14,767371
+48,Texas,TX,15,778024
+48,Texas,TX,16,772269
+48,Texas,TX,17,787536
+48,Texas,TX,18,758643
+48,Texas,TX,19,772398
+48,Texas,TX,20,776074
+48,Texas,TX,21,799871
+48,Texas,TX,22,811754
+48,Texas,TX,23,778183
+48,Texas,TX,24,746916
+48,Texas,TX,25,784447
+48,Texas,TX,26,800175
+48,Texas,TX,27,775401
+48,Texas,TX,28,771913
+48,Texas,TX,29,740023
+48,Texas,TX,30,780295
+48,Texas,TX,31,801721
+48,Texas,TX,32,755403
+48,Texas,TX,33,785806
+48,Texas,TX,34,768385
+48,Texas,TX,35,760005
+48,Texas,TX,36,782741
+48,Texas,TX,37,772674
+48,Texas,TX,38,783719
+49,Utah,UT,01,836389
+49,Utah,UT,02,833949
+49,Utah,UT,03,827399
+49,Utah,UT,04,840238
+51,Virginia,VA,01,805071
+51,Virginia,VA,02,784186
+51,Virginia,VA,03,782300
+51,Virginia,VA,04,777131
+51,Virginia,VA,05,790423
+51,Virginia,VA,06,785188
+51,Virginia,VA,07,798670
+51,Virginia,VA,08,770372
+51,Virginia,VA,09,783312
+51,Virginia,VA,10,791467
+51,Virginia,VA,11,774154
+50,Vermont,VT,00,645570
+53,Washington,WA,01,770301
+53,Washington,WA,02,775616
+53,Washington,WA,03,782709
+53,Washington,WA,04,778838
+53,Washington,WA,05,781418
+53,Washington,WA,06,776259
+53,Washington,WA,07,770448
+53,Washington,WA,08,782989
+53,Washington,WA,09,750581
+53,Washington,WA,10,769533
+55,Wisconsin,WI,01,732414
+55,Wisconsin,WI,02,739669
+55,Wisconsin,WI,03,734834
+55,Wisconsin,WI,04,732094
+55,Wisconsin,WI,05,737380
+55,Wisconsin,WI,06,738026
+55,Wisconsin,WI,07,744643
+55,Wisconsin,WI,08,736848
+54,West Virginia,WV,01,881980
+54,West Virginia,WV,02,900979
+56,Wyoming,WY,00,578803
+60,American Samoa,AS,98,45035
+66,Guam,GU,98,170534
+69,Northern Mariana Islands,MP,98,49481
+72,Puerto Rico,PR,98,3263584
+78,U.S. Virgin Islands,VI,98,105870
