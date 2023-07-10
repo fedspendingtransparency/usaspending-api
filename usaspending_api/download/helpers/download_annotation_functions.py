@@ -17,9 +17,8 @@ from django.db.models import (
     Value,
     When,
 )
-from django.db.models.lookups import IsNull
-from usaspending_api.awards.models.transaction_fpds import FPDS_TO_TRANSACTION_SEARCH_COL_MAP
 
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.models.transaction_normalized import NORM_TO_TRANSACTION_SEARCH_COL_MAP
 from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault, CFDAs
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
@@ -221,7 +220,12 @@ def _outlay_amount_agg_subquery_no_coalesce(
     )
 
 
-def transaction_search_annotations(filters: dict):
+def transaction_search_annotations(filters: dict, file_type: str = None):
+    """
+    Args:
+        file_type: Either "d1" or "d2". Required because "d1" and "d2"
+        sometimes populate the same field with different values
+    """
     def_codes = filters.get("def_codes", [])
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
@@ -304,11 +308,32 @@ def transaction_search_annotations(filters: dict):
             .values("total"),
             output_field=TextField(),
         ),
+        "prime_award_transaction_recipient_cd_original": congressional_district_display_name(
+            "recipient_location_state_code",
+            "recipient_location_congressional_code",
+        ),
+        "prime_award_transaction_recipient_cd_current": congressional_district_display_name(
+            "recipient_location_state_code",
+            "recipient_location_congressional_code_current",
+        ),
+        "prime_award_transaction_place_of_performance_cd_original": congressional_district_display_name(
+            "pop_state_code",
+            "pop_congressional_code",
+        ),
+        "prime_award_transaction_place_of_performance_cd_current": congressional_district_display_name(
+            "pop_state_code",
+            "pop_congressional_code_current",
+        ),
     }
     return annotation_fields
 
 
-def award_annotations(filters: dict):
+def award_annotations(filters: dict, file_type: str = None):
+    """
+    Args:
+        file_type: Either "d1" or "d2". Required because "d1" and "d2"
+        sometimes populate the same field with different values
+    """
     def_codes = filters.get("def_codes", [])
     annotation_fields = {
         "award_base_action_date_fiscal_year": FiscalYear("date_signed"),
@@ -413,7 +438,12 @@ def award_annotations(filters: dict):
     return annotation_fields
 
 
-def idv_order_annotations(filters: dict):
+def idv_order_annotations(filters: dict, file_type: str = None):
+    """
+    Args:
+        file_type: Either "d1" or "d2". Required because "d1" and "d2"
+        sometimes populate the same field with different values
+    """
     annotation_fields = {
         "award_base_action_date_fiscal_year": FiscalYear("date_signed"),
         "treasury_accounts_funding_this_award": Subquery(
@@ -494,7 +524,12 @@ def idv_order_annotations(filters: dict):
     return annotation_fields
 
 
-def idv_transaction_annotations(filters: dict):
+def idv_transaction_annotations(filters: dict, file_type: str = None):
+    """
+    Args:
+        file_type: Either "d1" or "d2". Required because "d1" and "d2"
+        sometimes populate the same field with different values
+    """
     annotation_fields = {
         "action_date_fiscal_year": FiscalYear("action_date"),
         "treasury_accounts_funding_this_award": Subquery(
@@ -596,7 +631,12 @@ def idv_transaction_annotations(filters: dict):
     return annotation_fields
 
 
-def subaward_annotations(filters: dict):
+def subaward_annotations(filters: dict, file_type: str = None):
+    """
+    Args:
+        file_type: Either "d1" or "d2". Required because "d1" and "d2"
+        sometimes populate the same field with different values
+    """
     def_codes = filters.get("def_codes", [])
     annotation_fields = {
         "subaward_action_date_fiscal_year": FiscalYear("sub_action_date"),
@@ -724,13 +764,57 @@ def subaward_annotations(filters: dict):
             "place_of_performance_congressional_current",
         ),
     }
+
+    # Subawards populate the same field with different values depending
+    # on whether the file type is d1 or d2
+    if file_type == "d1":
+        annotation_fields["subaward_recipient_cd_original"] = congressional_district_display_name(
+            "sub_legal_entity_state_code",
+            "sub_legal_entity_congressional",
+        )
+        annotation_fields["subaward_recipient_cd_current"] = congressional_district_display_name(
+            "sub_legal_entity_state_code",
+            "sub_legal_entity_congressional_current",
+        )
+        annotation_fields["subaward_place_of_performance_cd_original"] = congressional_district_display_name(
+            "sub_place_of_perform_state_code",
+            "sub_place_of_perform_congressio",
+        ),
+        annotation_fields["subaward_place_of_performance_cd_current"] = congressional_district_display_name(
+            "sub_place_of_perform_state_code",
+            "sub_place_of_performance_congressional_current",
+        )
+    elif file_type == "d2":
+        annotation_fields["subaward_recipient_cd_original"] = congressional_district_display_name(
+            "sub_legal_entity_state_code",
+            "sub_legal_entity_congressional_raw",
+        )
+        annotation_fields["subaward_recipient_cd_current"] = congressional_district_display_name(
+            "sub_legal_entity_state_code",
+            "sub_legal_entity_congressional_current",
+        )
+        annotation_fields["subaward_place_of_performance_cd_original"] = congressional_district_display_name(
+            "sub_place_of_perform_state_code",
+            "sub_place_of_perform_congressio_raw",
+        ),
+        annotation_fields["subaward_place_of_performance_cd_current"] = congressional_district_display_name(
+            "sub_place_of_perform_state_code",
+            "sub_place_of_performance_congressional_current",
+        )
+    else:
+        if file_type is not None:
+            raise InvalidParameterException(
+                'Invalid Parameter: file_type must be either "d1" or "d2" or None'
+            )
     return annotation_fields
 
-
-def object_class_program_activity_annotations(filters: dict):
+def object_class_program_activity_annotations(filters: dict, file_type: str = None):
     """
     These fields are annotated here to avoid them being added to the GROUP BY clause generated by Django, which would
         prevent the TAS from collapsing down to FA correctly
+    Args:
+        file_type: Either "d1" or "d2". Required because "d1" and "d2"
+        sometimes populate the same field with different values.
     """
 
     annotation_fields = {
