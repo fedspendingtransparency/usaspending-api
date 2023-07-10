@@ -55,7 +55,7 @@ SELECT
     "latest_transaction"."recipient_location_zip5" AS "recipient_zip_code",
     "latest_transaction"."legal_entity_zip_last4" AS "recipient_zip_last_4_code",
     "latest_transaction"."recipient_location_congressional_code" AS "prime_award_summary_recipient_cd_original",
-    "latest_transaction"."recipient_location_congressional_code_current" AS "prime_award_summary_recipient_cd_original",
+    "latest_transaction"."recipient_location_congressional_code_current" AS "prime_award_summary_recipient_cd_current",
     "latest_transaction"."legal_entity_foreign_city" AS "recipient_foreign_city_name",
     "latest_transaction"."legal_entity_foreign_provi" AS "recipient_foreign_province_name",
     "latest_transaction"."legal_entity_foreign_posta" AS "recipient_foreign_postal_code",
