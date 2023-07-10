@@ -45,8 +45,8 @@ def congressional_district_display_name(state_column_name, cd_column_name):
     expression = ExpressionWrapper(
         Case(
             When(
+                ~Q(**{f"{state_column_name}": ""}),
                 **should_concat,
-                ~Q(**{f"{state_column_name}":""}),
                 then=ConcatAll(
                     F(f"{state_column_name}"), Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP), F(f"{cd_column_name}")
                 ),
@@ -776,10 +776,12 @@ def subaward_annotations(filters: dict, file_type: str = None):
             "sub_legal_entity_state_code",
             "sub_legal_entity_congressional_current",
         )
-        annotation_fields["subaward_place_of_performance_cd_original"] = congressional_district_display_name(
-            "sub_place_of_perform_state_code",
-            "sub_place_of_perform_congressio",
-        ),
+        annotation_fields["subaward_place_of_performance_cd_original"] = (
+            congressional_district_display_name(
+                "sub_place_of_perform_state_code",
+                "sub_place_of_perform_congressio",
+            ),
+        )
         annotation_fields["subaward_place_of_performance_cd_current"] = congressional_district_display_name(
             "sub_place_of_perform_state_code",
             "sub_place_of_performance_congressional_current",
@@ -793,20 +795,21 @@ def subaward_annotations(filters: dict, file_type: str = None):
             "sub_legal_entity_state_code",
             "sub_legal_entity_congressional_current",
         )
-        annotation_fields["subaward_place_of_performance_cd_original"] = congressional_district_display_name(
-            "sub_place_of_perform_state_code",
-            "sub_place_of_perform_congressio_raw",
-        ),
+        annotation_fields["subaward_place_of_performance_cd_original"] = (
+            congressional_district_display_name(
+                "sub_place_of_perform_state_code",
+                "sub_place_of_perform_congressio_raw",
+            ),
+        )
         annotation_fields["subaward_place_of_performance_cd_current"] = congressional_district_display_name(
             "sub_place_of_perform_state_code",
             "sub_place_of_performance_congressional_current",
         )
     else:
         if file_type is not None:
-            raise InvalidParameterException(
-                'Invalid Parameter: file_type must be either "d1" or "d2" or None'
-            )
+            raise InvalidParameterException('Invalid Parameter: file_type must be either "d1" or "d2" or None')
     return annotation_fields
+
 
 def object_class_program_activity_annotations(filters: dict, file_type: str = None):
     """
