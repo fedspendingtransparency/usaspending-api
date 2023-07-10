@@ -284,6 +284,14 @@ def generate_treasury_account_query(queryset, account_type):
             "award__latest_transaction_search__recipient_location_state_code",
             "award__latest_transaction_search__recipient_location_congressional_code_current",
         ),
+        "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
+            "award__latest_transaction_search__pop_state_code",
+            "award__latest_transaction_search__pop_congressional_code",
+        ),
+        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+            "award__latest_transaction_search__pop_state_code",
+            "award__latest_transaction_search__pop_congressional_code_current",
+        ),
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
@@ -341,6 +349,14 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "prime_award_summary_recipient_cd_current": congressional_district_display_name(
             "award__latest_transaction_search__recipient_location_state_code",
             "award__latest_transaction_search__recipient_location_congressional_code_current",
+        ),
+        "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
+            "award__latest_transaction_search__pop_state_code",
+            "award__latest_transaction_search__pop_congressional_code",
+        ),
+        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+            "award__latest_transaction_search__pop_state_code",
+            "award__latest_transaction_search__pop_congressional_code_current",
         ),
     }
 

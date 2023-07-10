@@ -42,17 +42,17 @@ def congressional_district_display_name(state_column_name, cd_column_name):
     should_concat = {
         f"{state_column_name}__isnull": False,
         f"{cd_column_name}__isnull": False,
-        f"{state_column_name}": "",
     }
     expression = ExpressionWrapper(
         Case(
             When(
                 **should_concat,
+                ~Q(**{f"{state_column_name}":""}),
                 then=ConcatAll(
                     F(f"{state_column_name}"), Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP), F(f"{cd_column_name}")
                 ),
             ),
-            defualt=cd_column_name,
+            defualt=F(f"{cd_column_name}"),
         ),
         output_field=TextField(),
     )
@@ -401,6 +401,14 @@ def award_annotations(filters: dict):
             "latest_transaction_search__recipient_location_state_code",
             "latest_transaction_search__recipient_location_congressional_code_current",
         ),
+        "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
+            "latest_transaction_search__pop_state_code",
+            "latest_transaction_search__pop_congressional_code",
+        ),
+        "prime_award_summary_place_of_performance_cd_current": congressional_district_display_name(
+            "latest_transaction_search__pop_state_code",
+            "latest_transaction_search__pop_congressional_code_current",
+        ),
     }
     return annotation_fields
 
@@ -706,6 +714,14 @@ def subaward_annotations(filters: dict):
         "prime_award_summary_recipient_cd_current": congressional_district_display_name(
             "legal_entity_state_code",
             "legal_entity_congressional_current",
+        ),
+        "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
+            "place_of_perform_state_code",
+            "place_of_perform_congressio",
+        ),
+        "prime_award_summary_place_of_performance_cd_current": congressional_district_display_name(
+            "place_of_perform_state_code",
+            "place_of_performance_congressional_current",
         ),
     }
     return annotation_fields

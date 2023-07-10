@@ -272,12 +272,12 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_congr']}",
-                ),
+                    None,
+                ),  # Annotation is used to create this column
                 (
                     "prime_award_summary_place_of_performance_cd_current",
-                    "latest_transaction_search__pop_congressional_code_current",
-                ),
+                    None,
+                ),  # Annotation is used to create this column
                 (
                     "award_or_idv_flag",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['pulled_from']}",
@@ -1263,12 +1263,12 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
-                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_congr']}",
-                ),
+                    None,
+                ),  # Annotation is used to create this column
                 (
                     "prime_award_summary_place_of_performance_cd_current",
-                    "latest_transaction_search__pop_congressional_code_current",
-                ),
+                    None,
+                ),  # Annotation is used to create this column
                 (
                     "primary_place_of_performance_foreign_location",
                     f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['place_of_performance_forei']}",
@@ -2110,12 +2110,12 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
-                    "place_of_perform_congressio",
-                ),
+                    None,
+                ),  # Annotation is used to create this column
                 (
                     "prime_award_summary_place_of_performance_cd_current",
-                    "place_of_performance_congressional_current",
-                ),
+                    None,
+                ),  # Annotation is used to create this column
                 (
                     "prime_award_primary_place_of_performance_country_code",
                     "place_of_perform_country_co",
@@ -2284,9 +2284,12 @@ query_paths = {
                 ),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
-                    "place_of_perform_congressio",
-                ),
-                ("prime_award_summary_place_of_performance_cd_current", "place_of_performance_congressional_current"),
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_summary_place_of_performance_cd_current",
+                    None,
+                ),  # Annotation is used to create this column
                 (
                     "prime_award_primary_place_of_performance_country_code",
                     "place_of_perform_country_co",
@@ -2909,12 +2912,12 @@ query_paths = {
                 ("primary_place_of_performance_county", "award__latest_transaction_search__pop_county_name"),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
-                    "award__latest_transaction_search__pop_congressional_code",
-                ),
+                    None,
+                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_place_of_performance_cd_current",
-                    "award__latest_transaction_search__pop_congressional_code_current",
-                ),
+                    None,
+                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "primary_place_of_performance_zip_code",
                     "award__latest_transaction_search__place_of_performance_zip4a",
@@ -3028,12 +3031,12 @@ query_paths = {
                 ("primary_place_of_performance_county", "award__latest_transaction_search__pop_county_name"),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
-                    "award__latest_transaction_search__pop_congressional_code",
-                ),
+                    None,
+                ),  # Column is annotated in account_download.py, function generate_federal_account_query
                 (
                     "prime_award_summary_place_of_performance_cd_current",
-                    "award__latest_transaction_search__pop_congressional_code_current",
-                ),
+                    None,
+                ),  # Column is annotated in account_download.py, function generate_federal_account_query
                 (
                     "primary_place_of_performance_zip_code",
                     "award__latest_transaction_search__place_of_performance_zip4a",
