@@ -47,6 +47,10 @@ EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
 JOB_TYPE = "USAspendingDownloader"
 
+# Data Dictionary retry settings
+DATA_DICTIONARY_DOWNLOAD_RETRY_COUNT = 3
+DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN = 5
+
 logger = logging.getLogger(__name__)
 
 
@@ -739,17 +743,17 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
 
+    max_attempts = DATA_DICTIONARY_DOWNLOAD_RETRY_COUNT
+
     # We are currently receiving timeouts when trying to retrieve the data dictionary during
     # the nightly pipeline. Adding retry logic here until those timeouts are resolved
-    max_attempts = 3
-    delay_between_attempts = 5
     for attempt in range(max_attempts):
         try:
             RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
             break
         except (HTTPError, RemoteDisconnected):
             if attempt < max_attempts - 1:
-                time.sleep(delay_between_attempts)
+                time.sleep(DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN)
                 continue
             else:
                 raise
