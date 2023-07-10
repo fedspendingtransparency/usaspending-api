@@ -739,16 +739,16 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
 
-    max_attempts = settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COUNT
+    retry_count = settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COUNT
 
     # We are currently receiving timeouts when trying to retrieve the data dictionary during
     # the nightly pipeline. Adding retry logic here until those timeouts are resolved
-    for attempt in range(max_attempts):
+    for attempt in range(retry_count + 1):
         try:
             RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
             break
         except (HTTPError, RemoteDisconnected):
-            if attempt < max_attempts - 1:
+            if attempt < retry_count:
                 time.sleep(settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN)
                 continue
             else:
