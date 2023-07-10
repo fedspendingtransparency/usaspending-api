@@ -55,6 +55,7 @@ from usaspending_api.common.helpers.orm_helpers import (
     StringAggWithDefault,
 )
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
+from usaspending_api.download.helpers.download_annotation_functions import congressional_district_display_name
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency, CGAC
 from usaspending_api.settings import HOST
@@ -275,6 +276,14 @@ def generate_treasury_account_query(queryset, account_type):
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(account_type),
         "gross_outlay_amount_FYB_to_period_end": generate_gross_outlay_amount_derived_field(account_type),
+        "prime_award_summary_recipient_cd_original": congressional_district_display_name(
+            "award__latest_transaction_search__recipient_location_state_code",
+            "award__latest_transaction_search__recipient_location_congressional_code",
+        ),
+        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+            "award__latest_transaction_search__recipient_location_state_code",
+            "award__latest_transaction_search__recipient_location_congressional_code_current",
+        ),
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
@@ -324,6 +333,14 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         ),
         "gross_outlay_amount_FYB_to_period_end": Sum(
             generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
+        ),
+        "prime_award_summary_recipient_cd_original": congressional_district_display_name(
+            "award__latest_transaction_search__recipient_location_state_code",
+            "award__latest_transaction_search__recipient_location_congressional_code",
+        ),
+        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+            "award__latest_transaction_search__recipient_location_state_code",
+            "award__latest_transaction_search__recipient_location_congressional_code_current",
         ),
     }
 

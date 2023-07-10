@@ -17,6 +17,8 @@ from django.db.models import (
     Value,
     When,
 )
+from django.db.models.lookups import IsNull
+from usaspending_api.awards.models.transaction_fpds import FPDS_TO_TRANSACTION_SEARCH_COL_MAP
 
 from usaspending_api.awards.models.transaction_normalized import NORM_TO_TRANSACTION_SEARCH_COL_MAP
 from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault, CFDAs
@@ -32,6 +34,29 @@ COVID_19_PERIOD_START = datetime.date(2020, 4, 1)
 IIJA_PERIOD_START = datetime.date(2021, 11, 15)
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
+
+CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP = "-"
+
+
+def congressional_district_display_name(state_column_name, cd_column_name):
+    should_concat = {
+        f"{state_column_name}__isnull": False,
+        f"{cd_column_name}__isnull": False,
+        f"{state_column_name}": "",
+    }
+    expression = ExpressionWrapper(
+        Case(
+            When(
+                **should_concat,
+                then=ConcatAll(
+                    F(f"{state_column_name}"), Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP), F(f"{cd_column_name}")
+                ),
+            ),
+            defualt=cd_column_name,
+        ),
+        output_field=TextField(),
+    )
+    return expression
 
 
 def filter_limit_to_closed_periods(submission_query_path: str = "") -> Q:
@@ -368,6 +393,14 @@ def award_annotations(filters: dict):
             F(f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}")
         ),
         "cfda_numbers_and_titles": CFDAs("cfdas"),
+        "prime_award_summary_recipient_cd_original": congressional_district_display_name(
+            "latest_transaction_search__recipient_location_state_code",
+            "latest_transaction_search__recipient_location_congressional_code",
+        ),
+        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+            "latest_transaction_search__recipient_location_state_code",
+            "latest_transaction_search__recipient_location_congressional_code_current",
+        ),
     }
     return annotation_fields
 
@@ -666,6 +699,14 @@ def subaward_annotations(filters: dict):
         "prime_award_total_outlayed_amount": _outlay_amount_agg_subquery_no_coalesce(award_id_col="award_id"),
         "prime_award_latest_action_date_fiscal_year": FiscalYear("latest_transaction__action_date"),
         "prime_award_cfda_numbers_and_titles": CFDAs("award__cfdas"),
+        "prime_award_summary_recipient_cd_original": congressional_district_display_name(
+            "legal_entity_state_code",
+            "legal_entity_congressional",
+        ),
+        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+            "legal_entity_state_code",
+            "legal_entity_congressional_current",
+        ),
     }
     return annotation_fields
 

@@ -224,14 +224,8 @@ query_paths = {
                     "recipient_zip_4_code",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_zip4']}",
                 ),
-                (
-                    "prime_award_summary_recipient_cd_original",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_congressional']}",
-                ),
-                (
-                    "prime_award_summary_recipient_cd_current",
-                    "latest_transaction_search__recipient_location_congressional_code_current",
-                ),
+                ("prime_award_summary_recipient_cd_original", None),  # Annotation is used to create this column
+                ("prime_award_summary_recipient_cd_current", None),  # Annotation is used to create this column
                 (
                     "recipient_phone_number",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['vendor_phone_number']}",
@@ -1213,14 +1207,8 @@ query_paths = {
                     "recipient_zip_last_4_code",
                     f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_zip_last4']}",
                 ),
-                (
-                    "prime_award_summary_recipient_cd_original",
-                    f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_congressional']}",
-                ),
-                (
-                    "prime_award_summary_recipient_cd_current",
-                    "latest_transaction_search__recipient_location_congressional_code_current",
-                ),
+                ("prime_award_summary_recipient_cd_original", None),  # Annotation is used to create this column
+                ("prime_award_summary_recipient_cd_current", None),  # Annotation is used to create this column
                 (
                     "recipient_foreign_city_name",
                     f"latest_transaction_search__{FABS_TO_TRANSACTION_SEARCH_COL_MAP['legal_entity_foreign_city']}",
@@ -2109,8 +2097,8 @@ query_paths = {
                 ("prime_awardee_state_code", "legal_entity_state_code"),
                 ("prime_awardee_state_name", "legal_entity_state_name"),
                 ("prime_awardee_zip_code", "legal_entity_zip"),
-                ("prime_award_summary_recipient_cd_original", "legal_entity_congressional"),
-                ("prime_award_summary_recipient_cd_current", "legal_entity_congressional_current"),
+                ("prime_award_summary_recipient_cd_original", None),  # Annotation is used to create this column
+                ("prime_award_summary_recipient_cd_current", None),  # Annotation is used to create this column
                 ("prime_awardee_foreign_postal_code", "legal_entity_foreign_posta"),
                 ("prime_awardee_business_types", "business_types"),
                 ("prime_award_primary_place_of_performance_city_name", "place_of_perform_city_name"),
@@ -2282,8 +2270,8 @@ query_paths = {
                 ("prime_awardee_state_code", "legal_entity_state_code"),
                 ("prime_awardee_state_name", "legal_entity_state_name"),
                 ("prime_awardee_zip_code", "legal_entity_zip"),
-                ("prime_award_summary_recipient_cd_original", "legal_entity_congressional"),
-                ("prime_award_summary_recipient_cd_current", "legal_entity_congressional_current"),
+                ("prime_award_summary_recipient_cd_original", None),  # Annotation is used to create this column
+                ("prime_award_summary_recipient_cd_current", None),  # Annotation is used to create this column
                 ("prime_awardee_foreign_postal_code", "legal_entity_foreign_posta"),
                 ("prime_awardee_business_types", "business_types"),
                 ("prime_award_primary_place_of_performance_scope", "place_of_perform_scope"),
@@ -2909,12 +2897,12 @@ query_paths = {
                 ("recipient_city", "award__latest_transaction_search__recipient_location_city_name"),
                 (
                     "prime_award_summary_recipient_cd_original",
-                    "award__latest_transaction_search__recipient_location_congressional_code",
-                ),
+                    None,
+                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_recipient_cd_current",
-                    "award__latest_transaction_search__recipient_location_congressional_code_current",
-                ),
+                    None,
+                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
                 ("primary_place_of_performance_country", "award__latest_transaction_search__pop_country_name"),
                 ("primary_place_of_performance_state", "award__latest_transaction_search__pop_state_name"),
@@ -3028,12 +3016,12 @@ query_paths = {
                 ("recipient_city", "award__latest_transaction_search__recipient_location_city_name"),
                 (
                     "prime_award_summary_recipient_cd_original",
-                    "award__latest_transaction_search__recipient_location_congressional_code",
-                ),
+                    None,
+                ),  # Column is annotated in account_download.py, function generate_federal_account_query
                 (
                     "prime_award_summary_recipient_cd_current",
-                    "award__latest_transaction_search__recipient_location_congressional_code_current",
-                ),
+                    None,
+                ),  # Column is annotated in account_download.py, function generate_federal_account_query
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
                 ("primary_place_of_performance_country", "award__latest_transaction_search__pop_country_name"),
                 ("primary_place_of_performance_state", "award__latest_transaction_search__pop_state_name"),
