@@ -58,7 +58,7 @@ SELECT
         WHEN "subaward_search"."legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."legal_entity_congressional_current" IS NOT NULL
             AND "subaward_search"."legal_entity_state_code" != ""
-        THEN CONCAT("subaward_search"."legal_entity_state_code", "-", "subaward_search"."legal_entity_congressional_current")
+        THEN CONCAT("subaward_search"."legal_entity_state_code", "-", "subaward_search"."[yyyy]")
         ELSE "subaward_search"."legal_entity_congressional_current"
     END AS "prime_award_summary_recipient_cd_current",
     "subaward_search"."legal_entity_foreign_posta" AS "prime_awardee_foreign_postal_code",
@@ -127,7 +127,7 @@ SELECT
     "subaward_search"."sub_business_types" AS "subawardee_business_types",
     "subaward_search"."place_of_perform_street" AS "subaward_primary_place_of_performance_address_line_1",
     "subaward_search"."sub_place_of_perform_city_name" AS "subaward_primary_place_of_performance_city_name",
-     AS "subaward_primary_place_of_performance_state_code",
+    "subaward_search"."sub_place_of_perform_state_code" AS "subaward_primary_place_of_performance_state_code",
     "subaward_search"."sub_place_of_perform_state_name" AS "subaward_primary_place_of_performance_state_name",
     "subaward_search"."sub_place_of_performance_zip" AS "subaward_primary_place_of_performance_address_zip_code",
     CASE
