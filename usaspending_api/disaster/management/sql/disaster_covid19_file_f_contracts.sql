@@ -50,14 +50,14 @@ SELECT
     CASE
         WHEN "subaward_search"."legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."legal_entity_congressional" IS NOT NULL
-            AND "subaward_search"."legal_entity_state_code" != ""
+            AND "subaward_search"."legal_entity_state_code" != ''
         THEN CONCAT("subaward_search"."legal_entity_state_code", "-", "subaward_search"."legal_entity_congressional")
         ELSE "subaward_search"."legal_entity_congressional"
     END AS "prime_award_summary_recipient_cd_original",
     CASE
         WHEN "subaward_search"."legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."legal_entity_congressional_current" IS NOT NULL
-            AND "subaward_search"."legal_entity_state_code" != ""
+            AND "subaward_search"."legal_entity_state_code" != ''
         THEN CONCAT("subaward_search"."legal_entity_state_code", "-", "subaward_search"."[yyyy]")
         ELSE "subaward_search"."legal_entity_congressional_current"
     END AS "prime_award_summary_recipient_cd_current",
@@ -70,14 +70,14 @@ SELECT
     CASE
         WHEN "latest_transaction"."pop_state_code" IS NOT NULL
             AND "subaward_search"."place_of_perform_congressio" IS NOT NULL
-            AND "latest_transaction"."pop_state_code" != ""
+            AND "latest_transaction"."pop_state_code" != ''
         THEN CONCAT("latest_transaction"."pop_state_code", "-", "subaward_search"."place_of_perform_congressio")
         ELSE "subaward_search"."place_of_perform_congressio"
     END AS "prime_award_summary_place_of_performance_cd_original",
     CASE
         WHEN "latest_transaction"."pop_state_code" IS NOT NULL
             AND "subaward_search"."place_of_performance_congressional_current" IS NOT NULL
-            AND "latest_transaction"."pop_state_code" != ""
+            AND "latest_transaction"."pop_state_code" != ''
         THEN CONCAT("latest_transaction"."pop_state_code", "-", "subaward_search"."place_of_performance_congressional_current")
         ELSE "subaward_search"."place_of_performance_congressional_current"
     END AS "prime_award_summary_place_of_performance_cd_current",
@@ -112,14 +112,14 @@ SELECT
     CASE
         WHEN "subaward_search"."sub_legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."sub_legal_entity_congressional" IS NOT NULL
-            AND "subaward_search"."sub_legal_entity_state_code" != ""
+            AND "subaward_search"."sub_legal_entity_state_code" != ''
         THEN CONCAT("subaward_search"."sub_legal_entity_state_code", "-", "subaward_search"."sub_legal_entity_congressional")
         ELSE "subaward_search"."sub_legal_entity_congressional"
     END AS "subaward_recipient_cd_original",
     CASE
         WHEN "subaward_search"."sub_legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."sub_legal_entity_congressional_current" IS NOT NULL
-            AND "subaward_search"."sub_legal_entity_state_code" != ""
+            AND "subaward_search"."sub_legal_entity_state_code" != ''
         THEN CONCAT("subaward_search"."sub_legal_entity_state_code", "-", "subaward_search"."sub_legal_entity_congressional_current")
         ELSE "subaward_search"."sub_legal_entity_congressional_current"
     END AS "subaward_recipient_cd_current",
@@ -133,14 +133,14 @@ SELECT
     CASE
         WHEN "subaward_search"."sub_place_of_perform_state_code" IS NOT NULL
             AND "subaward_search"."sub_place_of_perform_congressio" IS NOT NULL
-            AND "subaward_search"."sub_place_of_perform_state_code" != ""
+            AND "subaward_search"."sub_place_of_perform_state_code" != ''
         THEN CONCAT("subaward_search"."sub_place_of_perform_state_code", "-", "subaward_search"."sub_place_of_perform_congressio")
         ELSE "subaward_search"."sub_place_of_perform_congressio"
     END AS "subaward_place_of_performance_cd_original",
     CASE
         WHEN "subaward_search"."sub_place_of_perform_state_code" IS NOT NULL
             AND "subaward_search"."sub_place_of_performance_congressional_current" IS NOT NULL
-            AND "subaward_search"."sub_place_of_perform_state_code" != ""
+            AND "subaward_search"."sub_place_of_perform_state_code" != ''
         THEN CONCAT("subaward_search"."sub_place_of_perform_state_code", "-", "subaward_search"."sub_place_of_performance_congressional_current")
         ELSE "subaward_search"."sub_place_of_performance_congressional_current"
     END AS "subaward_place_of_performance_cd_current",
