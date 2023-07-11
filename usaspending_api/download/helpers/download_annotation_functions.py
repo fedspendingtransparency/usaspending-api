@@ -47,6 +47,7 @@ def congressional_district_display_name(state_column_name, cd_column_name):
             ),
             then=ConcatAll(F(state_column_name), Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP), F(cd_column_name)),
         ),
+        default=F(cd_column_name),
     )
     return expression
 
