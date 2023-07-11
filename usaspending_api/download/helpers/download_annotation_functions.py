@@ -646,7 +646,7 @@ def idv_transaction_annotations(filters: dict, file_type: str = None):
             "award__latest_transaction_search__pop_state_code",
             "award__latest_transaction_search__pop_congressional_code",
         ),
-        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+        "prime_award_summary_place_of_performance_cd_current": congressional_district_display_name(
             "award__latest_transaction_search__pop_state_code",
             "award__latest_transaction_search__pop_congressional_code_current",
         ),
