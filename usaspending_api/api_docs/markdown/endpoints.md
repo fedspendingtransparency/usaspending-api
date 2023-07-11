@@ -8,7 +8,7 @@
 
 # API Endpoints
 
-This page is intended as a reference for available USAspending API endpoints. The [Documentation INdex](https://api.usaspending.gov/docs/) provides links to introductory resources and tutorials to help you get started.
+This page is intended as a reference for available USAspending API endpoints. The [Documentation Index](https://api.usaspending.gov/docs/) provides links to introductory resources and tutorials to help you get started.
 
 Endpoints do not currently require any authorization.
 
