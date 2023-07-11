@@ -53,6 +53,45 @@ def congressional_district_display_name(state_column_name, cd_column_name):
     return expression
 
 
+AWARD_SEARCH_CD_DISPLAY_ANNOTATIONS = {
+    "prime_award_summary_recipient_cd_original": congressional_district_display_name(
+        "latest_transaction_search__recipient_location_state_code",
+        "latest_transaction_search__recipient_location_congressional_code",
+    ),
+    "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+        "latest_transaction_search__recipient_location_state_code",
+        "latest_transaction_search__recipient_location_congressional_code_current",
+    ),
+    "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
+        "latest_transaction_search__pop_state_code",
+        "latest_transaction_search__pop_congressional_code",
+    ),
+    "prime_award_summary_place_of_performance_cd_current": congressional_district_display_name(
+        "latest_transaction_search__pop_state_code",
+        "latest_transaction_search__pop_congressional_code_current",
+    ),
+}
+
+TXN_SEARCH_CD_DISPLAY_ANNOTATIONS = {
+    "prime_award_transaction_recipient_cd_original": congressional_district_display_name(
+        "recipient_location_state_code",
+        "recipient_location_congressional_code",
+    ),
+    "prime_award_transaction_recipient_cd_current": congressional_district_display_name(
+        "recipient_location_state_code",
+        "recipient_location_congressional_code_current",
+    ),
+    "prime_award_transaction_place_of_performance_cd_original": congressional_district_display_name(
+        "pop_state_code",
+        "pop_congressional_code",
+    ),
+    "prime_award_transaction_place_of_performance_cd_current": congressional_district_display_name(
+        "pop_state_code",
+        "pop_congressional_code_current",
+    ),
+}
+
+
 def filter_limit_to_closed_periods(submission_query_path: str = "") -> Q:
     """Return Django Q for all closed submissions (quarterly and monthly)"""
     q = Q()
@@ -303,23 +342,8 @@ def transaction_search_annotations(filters: dict, file_type: str = None):
             .values("total"),
             output_field=TextField(),
         ),
-        "prime_award_transaction_recipient_cd_original": congressional_district_display_name(
-            "recipient_location_state_code",
-            "recipient_location_congressional_code",
-        ),
-        "prime_award_transaction_recipient_cd_current": congressional_district_display_name(
-            "recipient_location_state_code",
-            "recipient_location_congressional_code_current",
-        ),
-        "prime_award_transaction_place_of_performance_cd_original": congressional_district_display_name(
-            "pop_state_code",
-            "pop_congressional_code",
-        ),
-        "prime_award_transaction_place_of_performance_cd_current": congressional_district_display_name(
-            "pop_state_code",
-            "pop_congressional_code_current",
-        ),
     }
+    annotation_fields.update(TXN_SEARCH_CD_DISPLAY_ANNOTATIONS)
     return annotation_fields
 
 
@@ -413,23 +437,8 @@ def award_annotations(filters: dict, file_type: str = None):
             F(f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}")
         ),
         "cfda_numbers_and_titles": CFDAs("cfdas"),
-        "prime_award_summary_recipient_cd_original": congressional_district_display_name(
-            "latest_transaction_search__recipient_location_state_code",
-            "latest_transaction_search__recipient_location_congressional_code",
-        ),
-        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
-            "latest_transaction_search__recipient_location_state_code",
-            "latest_transaction_search__recipient_location_congressional_code_current",
-        ),
-        "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
-            "latest_transaction_search__pop_state_code",
-            "latest_transaction_search__pop_congressional_code",
-        ),
-        "prime_award_summary_place_of_performance_cd_current": congressional_district_display_name(
-            "latest_transaction_search__pop_state_code",
-            "latest_transaction_search__pop_congressional_code_current",
-        ),
     }
+    annotation_fields.update(AWARD_SEARCH_CD_DISPLAY_ANNOTATIONS)
     return annotation_fields
 
 
@@ -516,6 +525,7 @@ def idv_order_annotations(filters: dict, file_type: str = None):
             output_field=TextField(),
         ),
     }
+    annotation_fields.update(AWARD_SEARCH_CD_DISPLAY_ANNOTATIONS)
     return annotation_fields
 
 
@@ -638,23 +648,9 @@ def idv_transaction_annotations(filters: dict, file_type: str = None):
             "award__latest_transaction_search__pop_state_code",
             "award__latest_transaction_search__pop_congressional_code_current",
         ),
-        "prime_award_transaction_recipient_cd_original": congressional_district_display_name(
-            "recipient_location_state_code",
-            "recipient_location_congressional_code",
-        ),
-        "prime_award_transaction_recipient_cd_current": congressional_district_display_name(
-            "recipient_location_state_code",
-            "recipient_location_congressional_code_current",
-        ),
-        "prime_award_transaction_place_of_performance_cd_original": congressional_district_display_name(
-            "pop_state_code",
-            "pop_congressional_code",
-        ),
-        "prime_award_transaction_place_of_performance_cd_current": congressional_district_display_name(
-            "pop_state_code",
-            "pop_congressional_code_current",
-        ),
     }
+    annotation_fields.update(TXN_SEARCH_CD_DISPLAY_ANNOTATIONS)
+
     return annotation_fields
 
 
