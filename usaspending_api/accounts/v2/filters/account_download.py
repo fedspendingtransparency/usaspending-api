@@ -450,7 +450,7 @@ def award_financial_derivations(derived_fields):
         "award__latest_transaction_search__pop_state_code",
         "award__latest_transaction_search__pop_congressional_code",
     )
-    derived_fields["prime_award_summary_recipient_cd_current"] = congressional_district_display_name(
+    derived_fields["prime_award_summary_place_of_performance_cd_current"] = congressional_district_display_name(
         "award__latest_transaction_search__pop_state_code",
         "award__latest_transaction_search__pop_congressional_code_current",
     )
