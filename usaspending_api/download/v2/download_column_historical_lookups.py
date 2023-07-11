@@ -2885,11 +2885,11 @@ query_paths = {
                 ("recipient_city", "award__latest_transaction_search__recipient_location_city_name"),
                 (
                     "prime_award_summary_recipient_cd_original",
-                    None,
+                    "award__latest_transaction_search__recipient_location_congressional_code",
                 ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_recipient_cd_current",
-                    None,
+                    "award__latest_transaction_search__recipient_location_congressional_code_current",
                 ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
                 ("primary_place_of_performance_country", "award__latest_transaction_search__pop_country_name"),
@@ -2897,11 +2897,11 @@ query_paths = {
                 ("primary_place_of_performance_county", "award__latest_transaction_search__pop_county_name"),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
-                    None,
+                    "award__latest_transaction_search__pop_congressional_code",
                 ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_place_of_performance_cd_current",
-                    None,
+                    "award__latest_transaction_search__pop_congressional_code_current",
                 ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "primary_place_of_performance_zip_code",
@@ -3004,24 +3004,24 @@ query_paths = {
                 ("recipient_city", "award__latest_transaction_search__recipient_location_city_name"),
                 (
                     "prime_award_summary_recipient_cd_original",
-                    None,
-                ),  # Column is annotated in account_download.py, function generate_federal_account_query
+                    "award__latest_transaction_search__recipient_location_congressional_code",
+                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_recipient_cd_current",
-                    None,
-                ),  # Column is annotated in account_download.py, function generate_federal_account_query
+                    "award__latest_transaction_search__recipient_location_congressional_code_current",
+                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
                 ("primary_place_of_performance_country", "award__latest_transaction_search__pop_country_name"),
                 ("primary_place_of_performance_state", "award__latest_transaction_search__pop_state_name"),
                 ("primary_place_of_performance_county", "award__latest_transaction_search__pop_county_name"),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
-                    None,
-                ),  # Column is annotated in account_download.py, function generate_federal_account_query
+                    "award__latest_transaction_search__pop_congressional_code",
+                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_place_of_performance_cd_current",
-                    None,
-                ),  # Column is annotated in account_download.py, function generate_federal_account_query
+                    "award__latest_transaction_search__pop_congressional_code_current",
+                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
                 (
                     "primary_place_of_performance_zip_code",
                     "award__latest_transaction_search__place_of_performance_zip4a",

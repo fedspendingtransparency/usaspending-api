@@ -276,22 +276,6 @@ def generate_treasury_account_query(queryset, account_type):
         "submission_period": get_fyp_or_q_notation("submission"),
         "gross_outlay_amount": generate_gross_outlay_amount_derived_field(account_type),
         "gross_outlay_amount_FYB_to_period_end": generate_gross_outlay_amount_derived_field(account_type),
-        "prime_award_summary_recipient_cd_original": congressional_district_display_name(
-            "award__latest_transaction_search__recipient_location_state_code",
-            "award__latest_transaction_search__recipient_location_congressional_code",
-        ),
-        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
-            "award__latest_transaction_search__recipient_location_state_code",
-            "award__latest_transaction_search__recipient_location_congressional_code_current",
-        ),
-        "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
-            "award__latest_transaction_search__pop_state_code",
-            "award__latest_transaction_search__pop_congressional_code",
-        ),
-        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
-            "award__latest_transaction_search__pop_state_code",
-            "award__latest_transaction_search__pop_congressional_code_current",
-        ),
     }
 
     lmd = "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR
@@ -341,22 +325,6 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         ),
         "gross_outlay_amount_FYB_to_period_end": Sum(
             generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
-        ),
-        "prime_award_summary_recipient_cd_original": congressional_district_display_name(
-            "award__latest_transaction_search__recipient_location_state_code",
-            "award__latest_transaction_search__recipient_location_congressional_code",
-        ),
-        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
-            "award__latest_transaction_search__recipient_location_state_code",
-            "award__latest_transaction_search__recipient_location_congressional_code_current",
-        ),
-        "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
-            "award__latest_transaction_search__pop_state_code",
-            "award__latest_transaction_search__pop_congressional_code",
-        ),
-        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
-            "award__latest_transaction_search__pop_state_code",
-            "award__latest_transaction_search__pop_congressional_code_current",
         ),
     }
 
@@ -468,6 +436,23 @@ def award_financial_derivations(derived_fields):
         ),
         default=Value(""),
         output_field=TextField(),
+    )
+
+    derived_fields["prime_award_summary_recipient_cd_original"] = congressional_district_display_name(
+        "award__latest_transaction_search__recipient_location_state_code",
+        "award__latest_transaction_search__recipient_location_congressional_code",
+    )
+    derived_fields["prime_award_summary_recipient_cd_current"] = congressional_district_display_name(
+        "award__latest_transaction_search__recipient_location_state_code",
+        "award__latest_transaction_search__recipient_location_congressional_code_current",
+    )
+    derived_fields["prime_award_summary_place_of_performance_cd_original"] = congressional_district_display_name(
+        "award__latest_transaction_search__pop_state_code",
+        "award__latest_transaction_search__pop_congressional_code",
+    )
+    derived_fields["prime_award_summary_recipient_cd_current"] = congressional_district_display_name(
+        "award__latest_transaction_search__pop_state_code",
+        "award__latest_transaction_search__pop_congressional_code_current",
     )
 
     return derived_fields

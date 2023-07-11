@@ -38,22 +38,15 @@ CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP = "-"
 
 
 def congressional_district_display_name(state_column_name, cd_column_name):
-    should_concat = {
-        f"{state_column_name}__isnull": False,
-        f"{cd_column_name}__isnull": False,
-    }
-    expression = ExpressionWrapper(
-        Case(
-            When(
-                ~Q(**{f"{state_column_name}": ""}),
-                **should_concat,
-                then=ConcatAll(
-                    F(f"{state_column_name}"), Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP), F(f"{cd_column_name}")
-                ),
+    expression = Case(
+        When(
+            Q(
+                Q(**{f"{state_column_name}__isnull": False})
+                & Q(**{f"{cd_column_name}__isnull": False})
+                & ~Q(**{f"{state_column_name}__exact": ""})
             ),
-            defualt=F(f"{cd_column_name}"),
+            then=ConcatAll(F(state_column_name), Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP), F(cd_column_name)),
         ),
-        output_field=TextField(),
     )
     return expression
 
@@ -626,6 +619,22 @@ def idv_transaction_annotations(filters: dict, file_type: str = None):
             .annotate(total=StringAggWithDefault("value", ";", distinct=True))
             .values("total"),
             output_field=TextField(),
+        ),
+        "prime_award_summary_recipient_cd_original": congressional_district_display_name(
+            "award__latest_transaction_search__recipient_location_state_code",
+            "award__latest_transaction_search__recipient_location_congressional_code",
+        ),
+        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+            "award__latest_transaction_search__recipient_location_state_code",
+            "award__latest_transaction_search__recipient_location_congressional_code_current",
+        ),
+        "prime_award_summary_place_of_performance_cd_original": congressional_district_display_name(
+            "award__latest_transaction_search__pop_state_code",
+            "award__latest_transaction_search__pop_congressional_code",
+        ),
+        "prime_award_summary_recipient_cd_current": congressional_district_display_name(
+            "award__latest_transaction_search__pop_state_code",
+            "award__latest_transaction_search__pop_congressional_code_current",
         ),
     }
     return annotation_fields
