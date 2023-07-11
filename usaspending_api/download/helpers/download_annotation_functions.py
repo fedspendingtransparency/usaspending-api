@@ -638,6 +638,22 @@ def idv_transaction_annotations(filters: dict, file_type: str = None):
             "award__latest_transaction_search__pop_state_code",
             "award__latest_transaction_search__pop_congressional_code_current",
         ),
+        "prime_award_transaction_recipient_cd_original": congressional_district_display_name(
+            "recipient_location_state_code",
+            "recipient_location_congressional_code",
+        ),
+        "prime_award_transaction_recipient_cd_current": congressional_district_display_name(
+            "recipient_location_state_code",
+            "recipient_location_congressional_code_current",
+        ),
+        "prime_award_transaction_place_of_performance_cd_original": congressional_district_display_name(
+            "pop_state_code",
+            "pop_congressional_code",
+        ),
+        "prime_award_transaction_place_of_performance_cd_current": congressional_district_display_name(
+            "pop_state_code",
+            "pop_congressional_code_current",
+        ),
     }
     return annotation_fields
 
