@@ -58,14 +58,14 @@ SELECT
         WHEN "latest_transaction"."recipient_location_state_code" IS NOT NULL
             AND "latest_transaction"."recipient_location_congressional_code" IS NOT NULL
             AND "latest_transaction"."recipient_location_state_code" != ''
-        THEN CONCAT("latest_transaction"."recipient_location_state_code", "-", "latest_transaction"."recipient_location_congressional_code")
+        THEN CONCAT("latest_transaction"."recipient_location_state_code", '-', "latest_transaction"."recipient_location_congressional_code")
         ELSE "latest_transaction"."recipient_location_congressional_code"
     END AS "prime_award_summary_recipient_cd_original",
     CASE
         WHEN "latest_transaction"."recipient_location_state_code" IS NOT NULL
             AND "latest_transaction"."recipient_location_congressional_code_current" IS NOT NULL
             AND "latest_transaction"."recipient_location_state_code" != ''
-        THEN CONCAT("latest_transaction"."recipient_location_state_code", "-", "latest_transaction"."recipient_location_congressional_code_current")
+        THEN CONCAT("latest_transaction"."recipient_location_state_code", '-', "latest_transaction"."recipient_location_congressional_code_current")
         ELSE "latest_transaction"."recipient_location_congressional_code_current"
     END AS "prime_award_summary_recipient_cd_current",
     "latest_transaction"."legal_entity_foreign_city" AS "recipient_foreign_city_name",
@@ -84,14 +84,14 @@ SELECT
         WHEN "latest_transaction"."pop_state_code" IS NOT NULL
             AND "latest_transaction"."pop_congressional_code" IS NOT NULL
             AND "latest_transaction"."pop_state_code" != ''
-        THEN CONCAT("latest_transaction"."pop_state_code", "-", "latest_transaction"."pop_congressional_code")
+        THEN CONCAT("latest_transaction"."pop_state_code", '-', "latest_transaction"."pop_congressional_code")
         ELSE "latest_transaction"."pop_congressional_code"
     END AS "prime_award_summary_place_of_performance_cd_original",
     CASE
         WHEN "latest_transaction"."pop_state_code" IS NOT NULL
             AND "latest_transaction"."pop_congressional_code_current" IS NOT NULL
             AND "latest_transaction"."pop_state_code" != ''
-        THEN CONCAT("latest_transaction"."pop_state_code", "-", "latest_transaction"."pop_congressional_code_current")
+        THEN CONCAT("latest_transaction"."pop_state_code", '-', "latest_transaction"."pop_congressional_code_current")
         ELSE "latest_transaction"."pop_congressional_code_current"
     END AS "prime_award_summary_place_of_performance_cd_current",
     "latest_transaction"."place_of_performance_forei" AS "primary_place_of_performance_foreign_location",

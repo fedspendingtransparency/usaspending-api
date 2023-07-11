@@ -51,14 +51,14 @@ SELECT
         WHEN "subaward_search"."legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."legal_entity_congressional" IS NOT NULL
             AND "subaward_search"."legal_entity_state_code" != ''
-        THEN CONCAT("subaward_search"."legal_entity_state_code", "-", "subaward_search"."legal_entity_congressional")
+        THEN CONCAT("subaward_search"."legal_entity_state_code", '-', "subaward_search"."legal_entity_congressional")
         ELSE "subaward_search"."legal_entity_congressional"
     END AS "prime_award_summary_recipient_cd_original",
     CASE
         WHEN "subaward_search"."legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."legal_entity_congressional_current" IS NOT NULL
             AND "subaward_search"."legal_entity_state_code" != ''
-        THEN CONCAT("subaward_search"."legal_entity_state_code", "-", "subaward_search"."[yyyy]")
+        THEN CONCAT("subaward_search"."legal_entity_state_code", '-', "subaward_search"."legal_entity_congressional_current")
         ELSE "subaward_search"."legal_entity_congressional_current"
     END AS "prime_award_summary_recipient_cd_current",
     "subaward_search"."legal_entity_foreign_posta" AS "prime_awardee_foreign_postal_code",
@@ -68,17 +68,17 @@ SELECT
     "subaward_search"."place_of_perform_state_name" AS "prime_award_primary_place_of_performance_state_name",
     "subaward_search"."place_of_performance_zip" AS "prime_award_primary_place_of_performance_address_zip_code",
     CASE
-        WHEN "latest_transaction"."pop_state_code" IS NOT NULL
+        WHEN "subaward_search"."place_of_perform_state_code" IS NOT NULL
             AND "subaward_search"."place_of_perform_congressio" IS NOT NULL
-            AND "latest_transaction"."pop_state_code" != ''
-        THEN CONCAT("latest_transaction"."pop_state_code", "-", "subaward_search"."place_of_perform_congressio")
+            AND "subaward_search"."place_of_perform_state_code" != ''
+        THEN CONCAT("subaward_search"."place_of_perform_state_code", '-', "subaward_search"."place_of_perform_congressio")
         ELSE "subaward_search"."place_of_perform_congressio"
     END AS "prime_award_summary_place_of_performance_cd_original",
     CASE
-        WHEN "latest_transaction"."pop_state_code" IS NOT NULL
+        WHEN "subaward_search"."place_of_perform_state_code" IS NOT NULL
             AND "subaward_search"."place_of_performance_congressional_current" IS NOT NULL
-            AND "latest_transaction"."pop_state_code" != ''
-        THEN CONCAT("latest_transaction"."pop_state_code", "-", "subaward_search"."place_of_performance_congressional_current")
+            AND "subaward_search"."place_of_perform_state_code" != ''
+        THEN CONCAT("subaward_search"."place_of_perform_state_code", '-', "subaward_search"."place_of_performance_congressional_current")
         ELSE "subaward_search"."place_of_performance_congressional_current"
     END AS "prime_award_summary_place_of_performance_cd_current",
     "subaward_search"."place_of_perform_country_co" AS "prime_award_primary_place_of_performance_country_code",
@@ -113,14 +113,14 @@ SELECT
         WHEN "subaward_search"."sub_legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."sub_legal_entity_congressional" IS NOT NULL
             AND "subaward_search"."sub_legal_entity_state_code" != ''
-        THEN CONCAT("subaward_search"."sub_legal_entity_state_code", "-", "subaward_search"."sub_legal_entity_congressional")
+        THEN CONCAT("subaward_search"."sub_legal_entity_state_code", '-', "subaward_search"."sub_legal_entity_congressional")
         ELSE "subaward_search"."sub_legal_entity_congressional"
     END AS "subaward_recipient_cd_original",
     CASE
         WHEN "subaward_search"."sub_legal_entity_state_code" IS NOT NULL
             AND "subaward_search"."sub_legal_entity_congressional_current" IS NOT NULL
             AND "subaward_search"."sub_legal_entity_state_code" != ''
-        THEN CONCAT("subaward_search"."sub_legal_entity_state_code", "-", "subaward_search"."sub_legal_entity_congressional_current")
+        THEN CONCAT("subaward_search"."sub_legal_entity_state_code", '-', "subaward_search"."sub_legal_entity_congressional_current")
         ELSE "subaward_search"."sub_legal_entity_congressional_current"
     END AS "subaward_recipient_cd_current",
     "subaward_search"."sub_legal_entity_foreign_posta" AS "subawardee_foreign_postal_code",
@@ -134,14 +134,14 @@ SELECT
         WHEN "subaward_search"."sub_place_of_perform_state_code" IS NOT NULL
             AND "subaward_search"."sub_place_of_perform_congressio" IS NOT NULL
             AND "subaward_search"."sub_place_of_perform_state_code" != ''
-        THEN CONCAT("subaward_search"."sub_place_of_perform_state_code", "-", "subaward_search"."sub_place_of_perform_congressio")
+        THEN CONCAT("subaward_search"."sub_place_of_perform_state_code", '-', "subaward_search"."sub_place_of_perform_congressio")
         ELSE "subaward_search"."sub_place_of_perform_congressio"
     END AS "subaward_place_of_performance_cd_original",
     CASE
         WHEN "subaward_search"."sub_place_of_perform_state_code" IS NOT NULL
             AND "subaward_search"."sub_place_of_performance_congressional_current" IS NOT NULL
             AND "subaward_search"."sub_place_of_perform_state_code" != ''
-        THEN CONCAT("subaward_search"."sub_place_of_perform_state_code", "-", "subaward_search"."sub_place_of_performance_congressional_current")
+        THEN CONCAT("subaward_search"."sub_place_of_perform_state_code", '-', "subaward_search"."sub_place_of_performance_congressional_current")
         ELSE "subaward_search"."sub_place_of_performance_congressional_current"
     END AS "subaward_place_of_performance_cd_current",
     "subaward_search"."sub_place_of_perform_country_co" AS "subaward_primary_place_of_performance_country_code",
