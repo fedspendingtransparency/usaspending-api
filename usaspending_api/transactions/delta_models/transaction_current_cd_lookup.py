@@ -31,29 +31,29 @@ transaction_current_cd_lookup_load_sql_string = fr"""
         -- Congressional District '90' represents multiple congressional districts
         (CASE
             WHEN (
-                transaction_fabs.place_of_performance_scope = 'Foreign'
+                UPPER(transaction_fabs.place_of_performance_scope) = 'FOREIGN'
                 OR transaction_fpds.place_of_perform_country_c <> 'USA'
             ) THEN NULL
             WHEN (
-                transaction_fabs.place_of_performance_scope = 'Multi-State'
+                UPPER(transaction_fabs.place_of_performance_scope) = 'MULTI-STATE'
             ) THEN '90'
             WHEN (
-                (transaction_fabs.place_of_performance_scope = 'State-wide'
+                (UPPER(transaction_fabs.place_of_performance_scope) = 'STATE-WIDE'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
                 AND pop_cd_state_grouped.congressional_district_no IS NOT NULL
             ) THEN pop_cd_state_grouped.congressional_district_no
             WHEN (
-                (transaction_fabs.place_of_performance_scope = 'Single ZIP Code'
+                (UPPER(transaction_fabs.place_of_performance_scope) = 'SINGLE ZIP CODE'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
                 AND COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no) IS NOT NULL
             ) THEN COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no)
             WHEN (
-                (transaction_fabs.place_of_performance_scope = 'City-wide'
+                (UPPER(transaction_fabs.place_of_performance_scope) = 'CITY-WIDE'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
                 AND pop_cd_city_grouped.congressional_district_no IS NOT NULL
             ) THEN pop_cd_city_grouped.congressional_district_no
             WHEN (
-                (transaction_fabs.place_of_performance_scope = 'County-wide'
+                (UPPER(transaction_fabs.place_of_performance_scope) = 'COUNTY-WIDE'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
                 AND pop_cd_county_grouped.congressional_district_no IS NOT NULL
             ) THEN pop_cd_county_grouped.congressional_district_no
