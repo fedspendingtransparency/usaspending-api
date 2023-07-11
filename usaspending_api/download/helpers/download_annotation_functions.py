@@ -54,6 +54,8 @@ def congressional_district_display_name(state_column_name, cd_column_name):
 
 
 AWARD_SEARCH_CD_DISPLAY_ANNOTATIONS = {
+    # For state and congressional code we are not using the FPDS or FABS map since
+    # both FPDS and FABS map to the same value.
     "prime_award_summary_recipient_cd_original": congressional_district_display_name(
         "latest_transaction_search__recipient_location_state_code",
         "latest_transaction_search__recipient_location_congressional_code",
