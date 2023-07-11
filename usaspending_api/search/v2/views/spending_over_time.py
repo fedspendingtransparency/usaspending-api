@@ -26,6 +26,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
     generate_fiscal_year,
 )
 from usaspending_api.common.helpers.generic_helper import (
+    deprecated_district_field_in_location_object,
     get_generic_filters_message,
     min_and_max_from_date_ranges,
 )
@@ -226,17 +227,22 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         else:
             results = self.query_elasticsearch_for_prime_awards(time_periods)
 
-        return Response(
-            OrderedDict(
-                [
-                    ("group", self.group),
-                    ("results", results),
-                    (
-                        "messages",
-                        get_generic_filters_message(
-                            self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
-                        ),
-                    ),
-                ]
-            )
+        raw_response = OrderedDict(
+            [
+                ("group", self.group),
+                ("results", results),
+                (
+                    "messages",
+                    get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]),
+                ),
+            ]
         )
+
+        # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
+        messages = raw_response.get("messages", [])
+        deprecated_district_field_in_location_object(messages, self.original_filters)
+        raw_response["messages"] = messages
+
+        return Response(raw_response)
