@@ -48,6 +48,7 @@ def congressional_district_display_name(state_column_name, cd_column_name):
             then=ConcatAll(F(state_column_name), Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP), F(cd_column_name)),
         ),
         default=F(cd_column_name),
+        output_field=TextField(),
     )
     return expression
 
@@ -786,11 +787,9 @@ def subaward_annotations(filters: dict, file_type: str = None):
             "sub_legal_entity_state_code",
             "sub_legal_entity_congressional_current",
         )
-        annotation_fields["subaward_place_of_performance_cd_original"] = (
-            congressional_district_display_name(
-                "sub_place_of_perform_state_code",
-                "sub_place_of_perform_congressio",
-            ),
+        annotation_fields["subaward_place_of_performance_cd_original"] = congressional_district_display_name(
+            "sub_place_of_perform_state_code",
+            "sub_place_of_perform_congressio",
         )
         annotation_fields["subaward_place_of_performance_cd_current"] = congressional_district_display_name(
             "sub_place_of_perform_state_code",
@@ -805,11 +804,9 @@ def subaward_annotations(filters: dict, file_type: str = None):
             "sub_legal_entity_state_code",
             "sub_legal_entity_congressional_current",
         )
-        annotation_fields["subaward_place_of_performance_cd_original"] = (
-            congressional_district_display_name(
-                "sub_place_of_perform_state_code",
-                "sub_place_of_perform_congressio_raw",
-            ),
+        annotation_fields["subaward_place_of_performance_cd_original"] = congressional_district_display_name(
+            "sub_place_of_perform_state_code",
+            "sub_place_of_perform_congressio_raw",
         )
         annotation_fields["subaward_place_of_performance_cd_current"] = congressional_district_display_name(
             "sub_place_of_perform_state_code",
