@@ -1,6 +1,6 @@
 import json
-import pytest
 
+import pytest
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
@@ -479,6 +479,13 @@ def _test_correct_response_for_place_of_performance_district_without_geo_filters
         "geo_layer": "district",
         "results": [
             {
+                "aggregated_amount": 500000.0,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": "",
+            },
+            {
                 "aggregated_amount": 50005.0,
                 "display_name": "SC-10",
                 "per_capita": 5000.5,
@@ -491,13 +498,6 @@ def _test_correct_response_for_place_of_performance_district_without_geo_filters
                 "per_capita": 0.5,
                 "population": 100,
                 "shape_code": "4551",
-            },
-            {
-                "aggregated_amount": 500000.0,
-                "display_name": "SC-90",
-                "per_capita": 500000.0,
-                "population": 1,
-                "shape_code": "4590",
             },
             {
                 "aggregated_amount": 5500.0,
@@ -620,6 +620,13 @@ def _test_correct_response_for_recipient_location_district_without_geo_filters(c
         "geo_layer": "district",
         "results": [
             {
+                "aggregated_amount": 50.0,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": "",
+            },
+            {
                 "aggregated_amount": 5000000.0,
                 "display_name": "SC-11",
                 "per_capita": 500000.0,
@@ -632,13 +639,6 @@ def _test_correct_response_for_recipient_location_district_without_geo_filters(c
                 "per_capita": 5005.0,
                 "population": 100,
                 "shape_code": "4551",
-            },
-            {
-                "aggregated_amount": 50.0,
-                "display_name": "SC-90",
-                "per_capita": 50.0,
-                "population": 1,
-                "shape_code": "4590",
             },
             {
                 "aggregated_amount": 55000.0,
