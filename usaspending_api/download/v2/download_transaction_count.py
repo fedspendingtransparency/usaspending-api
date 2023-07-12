@@ -8,7 +8,10 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import (
+    deprecated_district_field_in_location_object,
+    get_generic_filters_message,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -63,5 +66,12 @@ class DownloadTransactionCountViewSet(APIView):
                 get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER])
             ],
         }
+
+        # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
+        messages = result.get("messages", [])
+        deprecated_district_field_in_location_object(messages, self.original_filters)
+        result["messages"] = messages
 
         return Response(result)

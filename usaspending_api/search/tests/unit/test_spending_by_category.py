@@ -509,6 +509,7 @@ def geo_test_data(db):
         sub_place_of_performance_zip="12345",
         sub_place_of_perform_congressio_raw="06",
         sub_place_of_perform_congressio="06",
+        sub_place_of_performance_congressional_current="90",
     )
     baker.make(
         "search.SubawardSearch",
@@ -524,6 +525,7 @@ def geo_test_data(db):
         sub_place_of_performance_zip="12345",
         sub_place_of_perform_congressio_raw="06",
         sub_place_of_perform_congressio="06",
+        sub_place_of_performance_congressional_current="90",
     )
     baker.make(
         "search.SubawardSearch",
@@ -539,6 +541,7 @@ def geo_test_data(db):
         sub_place_of_performance_zip="98765",
         sub_place_of_perform_congressio_raw="90",
         sub_place_of_perform_congressio="90",
+        sub_place_of_performance_congressional_current="05",
     )
     baker.make(
         "search.SubawardSearch",
@@ -554,6 +557,7 @@ def geo_test_data(db):
         sub_place_of_performance_zip="98765",
         sub_place_of_perform_congressio_raw="90",
         sub_place_of_perform_congressio="90",
+        sub_place_of_performance_congressional_current="05",
     )
 
     baker.make(
@@ -570,6 +574,7 @@ def geo_test_data(db):
         pop_county_code="004",
         pop_zip5="12345",
         pop_congressional_code="06",
+        pop_congressional_code_current="90",
     )
     baker.make(
         "search.TransactionSearch",
@@ -585,6 +590,7 @@ def geo_test_data(db):
         pop_county_code="004",
         pop_zip5="12345",
         pop_congressional_code="06",
+        pop_congressional_code_current="90",
     )
     baker.make(
         "search.TransactionSearch",
@@ -600,6 +606,7 @@ def geo_test_data(db):
         pop_county_code="001",
         pop_zip5="98765",
         pop_congressional_code="90",
+        pop_congressional_code_current="05",
     )
     baker.make(
         "search.TransactionSearch",
@@ -615,6 +622,7 @@ def geo_test_data(db):
         pop_county_code="001",
         pop_zip5="98765",
         pop_congressional_code="90",
+        pop_congressional_code_current="05",
     )
 
     baker.make("recipient.StateData", name="Test State", code="XY", fips="99")
@@ -622,6 +630,7 @@ def geo_test_data(db):
     baker.make("references.PopCounty", state_code="99", county_name="SOMEWHEREVILLE", county_number="001")
     baker.make("references.PopCounty", state_code="99", county_name="COUNTYSVILLE", county_number="004")
     baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="06")
+    baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="05")
     baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="90")
 
     code_to_state["XY"] = {"name": "Test State", "fips": "99"}
@@ -1052,8 +1061,8 @@ def test_category_district_awards(geo_test_data, monkeypatch, elasticsearch_tran
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 7, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None},
-            {"amount": 3, "code": "06", "name": "XY-06", "id": None},
+            {"amount": 7, "code": "05", "name": "XY-05", "id": None},
+            {"amount": 3, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None},
         ],
         "messages": [get_time_period_message()],
     }
@@ -1071,8 +1080,8 @@ def test_category_district_subawards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 1100, "code": "90", "id": None, "name": "XY-MULTIPLE DISTRICTS"},
-            {"amount": 11, "code": "06", "id": None, "name": "XY-06"},
+            {"amount": 1100, "code": "05", "id": None, "name": "XY-05"},
+            {"amount": 11, "code": "90", "id": None, "name": "XY-MULTIPLE DISTRICTS"},
         ],
         "messages": [get_time_period_message()],
     }

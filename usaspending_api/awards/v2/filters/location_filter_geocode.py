@@ -1,6 +1,10 @@
 from django.db.models import Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.api_helper import (
+    DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
+    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
+)
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 
 ALL_FOREIGN_COUNTRIES = "FOREIGN"
@@ -40,6 +44,11 @@ def geocode_filter_locations(scope: str, values: list) -> Q:
 
                 if location_values["county"]:
                     county_qs = Q(**{f"{scope}_county_code__in": location_values["county"]})
+                if location_values["district_current"]:
+                    district_qs = Q(**{f"{scope}_congressional_code_current__in": location_values["district_current"]})
+                if location_values["district_original"]:
+                    district_qs = Q(**{f"{scope}_congressional_code__in": location_values["district_original"]})
+                # TODO: To be removed in DEV-9966
                 if location_values["district"]:
                     district_qs = Q(**{f"{scope}_congressional_code__in": location_values["district"]})
                 if location_values["city"]:
@@ -57,6 +66,17 @@ def geocode_filter_locations(scope: str, values: list) -> Q:
 def validate_location_keys(values):
     """ Validate that the keys provided are sufficient and match properly. """
     for v in values:
+        state = v.get("state")
+        country = v.get("country")
+        county = v.get("county")
+        district_current = v.get("district_current")
+        district_original = v.get("district_original")
+        if (state is None or country != "USA" or county is not None) and (
+            district_current is not None or district_original is not None
+        ):
+            raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
+        if district_current is not None and district_original is not None:
+            raise InvalidParameterException(DUPLICATE_DISTRICT_LOCATION_PARAMETERS)
         if ("country" not in v) or (("district" in v or "county" in v) and "state" not in v):
             location_error_handling(v.keys())
 
@@ -71,6 +91,9 @@ def create_nested_object(values):
         city = v.get("city")
         country = v.get("country")
         county = v.get("county")
+        district_original = v.get("district_original")
+        district_current = v.get("district_current")
+        # TODO: To be removed in DEV-9966
         district = v.get("district")
         state = v.get("state")
         zip = v.get("zip")
@@ -94,12 +117,30 @@ def create_nested_object(values):
 
         # If we have a state, add it to the list
         if state and nested_locations[country].get(state) is None:
-            nested_locations[country][state] = {"county": [], "district": [], "city": []}
+            # TODO: To be removed in DEV-9966 (remove mention of "district")
+            nested_locations[country][state] = {
+                "county": [],
+                "district": [],
+                "district_original": [],
+                "district_current": [],
+                "city": [],
+            }
 
         # Based on previous checks, there will always be a state if either of these exist
         if county:
             nested_locations[country][state]["county"].extend(get_fields_list("county", county))
 
+        if district_current:
+            nested_locations[country][state]["district_current"].extend(
+                get_fields_list("district_current", district_current)
+            )
+
+        if district_original:
+            nested_locations[country][state]["district_original"].extend(
+                get_fields_list("district_original", district_original)
+            )
+
+        # TODO: To be removed in DEV-9966
         if district:
             nested_locations[country][state]["district"].extend(get_fields_list("district", district))
 

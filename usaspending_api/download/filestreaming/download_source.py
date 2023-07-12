@@ -39,7 +39,7 @@ class DownloadSource:
     @property
     def annotations(self):
         annotations_function = VALUE_MAPPINGS[self.source_type].get("annotations_function")
-        annotations = annotations_function(self.filters) if annotations_function is not None else {}
+        annotations = annotations_function(self.filters, self.file_type) if annotations_function is not None else {}
         return annotations
 
     @property
