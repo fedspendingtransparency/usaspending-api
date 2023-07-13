@@ -9,80 +9,83 @@ from usaspending_api.awards.models.transaction_normalized import vw_transaction_
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0096_removing_subaward_models'),
-        ('search', '0019_additional_transaction_search_fields'),
+        ("awards", "0096_removing_subaward_models"),
+        ("search", "0019_additional_transaction_search_fields"),
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql=vw_transaction_fabs_sql,
-            reverse_sql="DROP VIEW IF EXISTS vw_transaction_fabs",
-            # Without this, Django will try to actually change the old table names in another migration
-            # This says we've already done it.
-            state_operations=[
-                migrations.AlterModelTable(
-                    name='transactionfabs',
-                    table='vw_transaction_fabs',
-                )
-            ]
-        ),
-        migrations.AlterModelOptions(
-            name='transactionfabs',
-            options={'managed': False},
-        ),
-
-        migrations.RunSQL(
-            sql=vw_transaction_fpds_sql,
-            reverse_sql="DROP VIEW IF EXISTS vw_transaction_fpds",
-            # Without this, Django will try to actually change the old table names in another migration
-            # This says we've already done it.
-            state_operations=[
-                migrations.AlterModelTable(
-                    name='transactionfpds',
-                    table='vw_transaction_fpds',
-                )
-            ]
-        ),
-        migrations.AlterModelOptions(
-            name='transactionfpds',
-            options={'managed': False},
-        ),
-
+        # These two view operations were commented out because this migration and its already established
+        # dependencies are not compatible with recent changes to the views. The dependencies in this
+        # migration also couldn't be altered to reflect the new dependencies because this migration has already
+        # ran before the new dependencies in prod. For those reasons we have commented these operations out
+        # and moved them to a new migration that implements the new dependency order.
+        # migrations.RunSQL(
+        #     sql=vw_transaction_fabs_sql,
+        #     reverse_sql="DROP VIEW IF EXISTS vw_transaction_fabs",
+        #     # Without this, Django will try to actually change the old table names in another migration
+        #     # This says we've already done it.
+        #     state_operations=[
+        #         migrations.AlterModelTable(
+        #             name='transactionfabs',
+        #             table='vw_transaction_fabs',
+        #         )
+        #     ]
+        # ),
+        # migrations.AlterModelOptions(
+        #     name='transactionfabs',
+        #     options={'managed': False},
+        # ),
+        # migrations.RunSQL(
+        #     sql=vw_transaction_fpds_sql,
+        #     reverse_sql="DROP VIEW IF EXISTS vw_transaction_fpds",
+        #     # Without this, Django will try to actually change the old table names in another migration
+        #     # This says we've already done it.
+        #     state_operations=[
+        #         migrations.AlterModelTable(
+        #             name='transactionfpds',
+        #             table='vw_transaction_fpds',
+        #         )
+        #     ]
+        # ),
+        # migrations.AlterModelOptions(
+        #     name='transactionfpds',
+        #     options={'managed': False},
+        # ),
         migrations.AlterField(
-            model_name='award',
-            name='earliest_transaction',
+            model_name="award",
+            name="earliest_transaction",
             field=models.ForeignKey(
-                'awards.TransactionNormalized',
+                "awards.TransactionNormalized",
                 on_delete=models.DO_NOTHING,
                 related_name="earliest_for_award",
                 null=True,
                 help_text="The earliest transaction by action_date and mod associated with this award",
                 db_index=True,
                 db_constraint=False,
-            )
+            ),
         ),
         migrations.AlterField(
-            model_name='award',
-            name='latest_transaction',
+            model_name="award",
+            name="latest_transaction",
             field=models.ForeignKey(
-                'awards.TransactionNormalized',
+                "awards.TransactionNormalized",
                 on_delete=models.DO_NOTHING,
                 related_name="latest_for_award",
                 null=True,
                 help_text="The latest transaction by action_date and mod associated with this award",
                 db_index=True,
                 db_constraint=False,
-            )
+            ),
         ),
         migrations.AlterField(
-            model_name='transactiondelta',
-            name='transaction',
+            model_name="transactiondelta",
+            name="transaction",
             field=models.OneToOneField(
                 "awards.TransactionNormalized",
                 on_delete=models.CASCADE,
                 primary_key=True,
                 db_constraint=False,
-            )
+            ),
         ),
         migrations.RunSQL(
             sql=vw_transaction_normalized_sql,
@@ -91,13 +94,13 @@ class Migration(migrations.Migration):
             # This says we've already done it.
             state_operations=[
                 migrations.AlterModelTable(
-                    name='transactionnormalized',
-                    table='vw_transaction_normalized',
+                    name="transactionnormalized",
+                    table="vw_transaction_normalized",
                 )
-            ]
+            ],
         ),
         migrations.AlterModelOptions(
-            name='transactionnormalized',
-            options={'managed': False},
+            name="transactionnormalized",
+            options={"managed": False},
         ),
     ]

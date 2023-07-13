@@ -7,6 +7,12 @@ from usaspending_api.references.models import Cfda
 
 
 class TransactionFABS(models.Model):
+    """
+    NOTE: Before adding new fields to this model, consider whether adding them to the TransactionSearch
+    model would meet your needs. In the future, we'd like to completely refactor out the views built on
+    top of TransactionSearch and AwardSearch. In the meantime, new fields should be added to these base
+    models when possible to prevent more future rework."""
+
     transaction = models.OneToOneField(
         "awards.TransactionNormalized", on_delete=models.CASCADE, primary_key=True, related_name="assistance_data"
     )
@@ -54,6 +60,7 @@ class TransactionFABS(models.Model):
     legal_entity_city_code = models.TextField(blank=True, null=True)
     legal_entity_foreign_descr = models.TextField(blank=True, null=True)
     legal_entity_congressional = models.TextField(blank=True, null=True)
+    recipient_location_congressional_code_current = models.TextField(null=True)
     legal_entity_country_code = models.TextField(blank=True, null=True)
     legal_entity_country_name = models.TextField(blank=True, null=True)
     legal_entity_county_code = models.TextField(blank=True, null=True)
@@ -73,6 +80,7 @@ class TransactionFABS(models.Model):
     place_of_performance_city = models.TextField(blank=True, null=True)
     place_of_performance_code = models.TextField(blank=True, null=True)
     place_of_performance_congr = models.TextField(blank=True, null=True)
+    pop_congressional_code_current = models.TextField(null=True)
     place_of_perform_country_c = models.TextField(blank=True, null=True)
     place_of_perform_country_n = models.TextField(blank=True, null=True)
     place_of_perform_county_co = models.TextField(blank=True, null=True)

@@ -55,6 +55,7 @@ from usaspending_api.common.helpers.orm_helpers import (
     StringAggWithDefault,
 )
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
+from usaspending_api.download.helpers.download_annotation_functions import congressional_district_display_name
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency, CGAC
 from usaspending_api.settings import HOST
@@ -435,6 +436,23 @@ def award_financial_derivations(derived_fields):
         ),
         default=Value(""),
         output_field=TextField(),
+    )
+
+    derived_fields["prime_award_summary_recipient_cd_original"] = congressional_district_display_name(
+        "award__latest_transaction_search__recipient_location_state_code",
+        "award__latest_transaction_search__recipient_location_congressional_code",
+    )
+    derived_fields["prime_award_summary_recipient_cd_current"] = congressional_district_display_name(
+        "award__latest_transaction_search__recipient_location_state_code",
+        "award__latest_transaction_search__recipient_location_congressional_code_current",
+    )
+    derived_fields["prime_award_summary_place_of_performance_cd_original"] = congressional_district_display_name(
+        "award__latest_transaction_search__pop_state_code",
+        "award__latest_transaction_search__pop_congressional_code",
+    )
+    derived_fields["prime_award_summary_place_of_performance_cd_current"] = congressional_district_display_name(
+        "award__latest_transaction_search__pop_state_code",
+        "award__latest_transaction_search__pop_congressional_code_current",
     )
 
     return derived_fields
