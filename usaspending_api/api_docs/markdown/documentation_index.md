@@ -3,7 +3,6 @@
   <li><a href="#tutorials">Tutorials</a></li>
   <li><a href="#technical">Technical</a></li>
 </ul>
-[//]: <> (Begin Content)
 
 # Documentation Index <a name="documentation-index"></a>
 
