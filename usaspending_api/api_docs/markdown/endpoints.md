@@ -8,7 +8,7 @@
 
 # API Endpoints
 
-This page is intended for users who are already familiar with APIs. If you're not sure what _endpoint_ means, and what `GET` and `POST` requests are, you may find the [introductory tutorial](/docs/intro-tutorial) more useful to start.
+This page is intended as a reference for available USAspending API endpoints. The [Documentation Index](https://api.usaspending.gov/docs/) provides links to introductory resources and tutorials to help you get started.
 
 Endpoints do not currently require any authorization.
 
