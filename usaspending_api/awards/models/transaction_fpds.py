@@ -4,6 +4,12 @@ from django.db import models
 
 
 class TransactionFPDS(models.Model):
+    """
+    NOTE: Before adding new fields to this model, consider whether adding them to the TransactionSearch
+    model would meet your needs. In the future, we'd like to completely refactor out the views built on
+    top of TransactionSearch and AwardSearch. In the meantime, new fields should be added to these base
+    models when possible to prevent more future rework."""
+
     transaction = models.OneToOneField(
         "awards.TransactionNormalized",
         on_delete=models.CASCADE,
@@ -40,6 +46,7 @@ class TransactionFPDS(models.Model):
     place_of_perform_county_na = models.TextField(blank=True, null=True)
     place_of_perform_county_co = models.TextField(blank=True, null=True)
     place_of_performance_congr = models.TextField(blank=True, null=True)
+    pop_congressional_code_current = models.TextField(null=True)
     awardee_or_recipient_legal = models.TextField(blank=True, null=True)
     legal_entity_city_name = models.TextField(blank=True, null=True)
     legal_entity_state_code = models.TextField(blank=True, null=True)
@@ -50,6 +57,7 @@ class TransactionFPDS(models.Model):
     legal_entity_zip5 = models.TextField(blank=True, null=True)
     legal_entity_zip_last4 = models.TextField(blank=True, null=True)
     legal_entity_congressional = models.TextField(blank=True, null=True)
+    recipient_location_congressional_code_current = models.TextField(null=True)
     legal_entity_address_line1 = models.TextField(blank=True, null=True)
     legal_entity_address_line2 = models.TextField(blank=True, null=True)
     legal_entity_address_line3 = models.TextField(blank=True, null=True)

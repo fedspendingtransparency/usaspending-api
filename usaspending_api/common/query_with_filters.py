@@ -7,6 +7,10 @@ from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.api_helper import (
+    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
+    DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
+)
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
@@ -282,16 +286,33 @@ class _RecipientLocations(_Filter):
 
         for filter_value in filter_values:
             location_query = []
+            county = filter_value.get("county")
+            state = filter_value.get("state")
+            country = filter_value.get("country")
+            district_current = filter_value.get("district_current")
+            # TODO: To be removed in DEV-9966
+            # remove if condition, mention of `district`,
+            # and just use filter_value.get("district_original")
+            district_original = (
+                filter_value.get("district_original")
+                if "district_original" in filter_value
+                else filter_value.get("district")
+            )
             location_lookup = {
-                "country_code": filter_value.get("country"),
-                "state_code": filter_value.get("state"),
-                "county_code": filter_value.get("county"),
-                "congressional_code": filter_value.get("district"),
+                "country_code": country,
+                "state_code": state,
+                "county_code": county,
+                "congressional_code_current": district_current,
+                "congressional_code": district_original,
                 "city_name__keyword": filter_value.get("city"),
                 "zip5": filter_value.get("zip"),
             }
 
             for location_key, location_value in location_lookup.items():
+                if (state is None or country != "USA" or county is not None) and (
+                    district_current is not None or district_original is not None
+                ):
+                    raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
                 if location_value is not None:
                     location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"recipient_location_{location_key}": location_value}))
@@ -333,26 +354,50 @@ class _PlaceOfPerformanceLocations(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         pop_locations_query = []
-
         for filter_value in filter_values:
             location_query = []
+            county = filter_value.get("county")
+            state = filter_value.get("state")
+            country = filter_value.get("country")
+            district_current = filter_value.get("district_current")
+            # TODO: To be removed in DEV-9966
+            # remove if condition, mention of `district`,
+            # and just use filter_value.get("district_original")
+            district_original = (
+                filter_value.get("district_original")
+                if "district_original" in filter_value
+                else filter_value.get("district")
+            )
             location_lookup = {
-                "country_code": filter_value.get("country"),
-                "state_code": filter_value.get("state"),
-                "county_code": filter_value.get("county"),
-                "congressional_code": filter_value.get("district"),
+                "country_code": country,
+                "state_code": state,
+                "county_code": county,
+                "congressional_code_current": district_current,
+                "congressional_code": district_original,
                 "city_name__keyword": filter_value.get("city"),
                 "zip5": filter_value.get("zip"),
             }
 
             for location_key, location_value in location_lookup.items():
+                _PlaceOfPerformanceLocations._validate_district(
+                    state, country, county, district_current, district_original
+                )
+
                 if location_value is not None:
                     location_value = location_value.upper()
                     location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
-
             pop_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)
+
+    @staticmethod
+    def _validate_district(state, country, county, district_current, district_original):
+        if (state is None or country != "USA" or county is not None) and (
+            district_current is not None or district_original is not None
+        ):
+            raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
+        if district_current is not None and district_original is not None:
+            raise InvalidParameterException(DUPLICATE_DISTRICT_LOCATION_PARAMETERS)
 
 
 class _AwardAmounts(_Filter):

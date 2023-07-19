@@ -3,6 +3,7 @@
   <li><a href="/docs/endpoints">Endpoints</a></li>
 
 </ul>
+
 [//]: # (Begin Content)
 
 ###### Announcement
@@ -16,7 +17,7 @@ The data include spending on _awards_ (_e.g._, who received federal contracts or
 
 ## Getting Started <a name="getting-started"></a>
 
-**New to APIs?** Check out our [introductory tutorial](/docs/intro-tutorial) on the API to learn the ropes.
+**New to the USAspending API?** The [Documentation Index](https://api.usaspending.gov/docs/) provides links to introductory resources and tutorials to help you get started.
 
 **Familiar with APIs?** Jump right into the data with our [list of available Endpoints](/docs/endpoints).
 
