@@ -382,6 +382,7 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
         "gross_outlay_amount",
         "adjustments_to_unobligated_balance_brought_forward_cpe",
+        "gross_outlay_amount_FYB_to_period_end",
     ]
 
     # Group by all columns within the file that can't be summed
@@ -403,7 +404,7 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
     summed_cols["gross_outlay_amount_FYB_to_period_end"] = Sum(
         generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
     )
-    summed_cols["adjustments_to_unobligated_balance_brought_forward_cpe"] = Sum(
+    summed_cols["adjustments_to_unobligated_balance_brought_forward_cpe"] = F(
         "adjustments_to_unobligated_balance_brought_forward_cpe"
     )
     queryset = queryset.annotate(**summed_cols)
@@ -433,10 +434,6 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
     queryset = queryset.values(*grouped_cols)
 
     # Sum all summable fields again at new grain
-    # These columns are dynamic so Django cannot "SUM" them again
-    summed_cols["adjustments_to_unobligated_balance_brought_forward_cpe"] = F(
-        "adjustments_to_unobligated_balance_brought_forward_cpe"
-    )
     queryset = queryset.annotate(**summed_cols)
 
     # Concatenate the remaining columns to transform the data
