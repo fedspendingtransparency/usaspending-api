@@ -381,9 +381,14 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "USSGL493100_delivered_orders_obligations_transferred_unpaid",
         "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
         "gross_outlay_amount",
-        "adjustments_to_unobligated_balance_brought_forward_cpe",
         "gross_outlay_amount_FYB_to_period_end",
     ]
+
+    if account_type == "account_balances":
+        # Other account types originally had this in their group by.
+        # For account balances we do not want it in the group by
+        # so that we can eventually get to the grain of federal_account_symbol and submission_period
+        all_summed_cols.append("adjustments_to_unobligated_balance_brought_forward_cpe")
 
     # Group by all columns within the file that can't be summed
     fed_acct_values_dict = query_paths[account_type]["federal_account"]
@@ -404,9 +409,7 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
     summed_cols["gross_outlay_amount_FYB_to_period_end"] = Sum(
         generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
     )
-    summed_cols["adjustments_to_unobligated_balance_brought_forward_cpe"] = F(
-        "adjustments_to_unobligated_balance_brought_forward_cpe"
-    )
+
     queryset = queryset.annotate(**summed_cols)
 
     if account_type != "account_balances":
@@ -434,6 +437,9 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
     queryset = queryset.values(*grouped_cols)
 
     # Sum all summable fields again at new grain
+    summed_cols["adjustments_to_unobligated_balance_brought_forward_cpe"] = F(
+        "adjustments_to_unobligated_balance_brought_forward_cpe"
+    )
     queryset = queryset.annotate(**summed_cols)
 
     # Concatenate the remaining columns to transform the data
