@@ -1079,7 +1079,7 @@ def test_unreported_file_c(client):
         "agencies": ["random_recipient_name_2", "random_recipient_name_1"],
         "amounts": [-3, -9],
     }
-
+    print(response2)
     actual_results = {
         "total": response["total"],
         "agencies": [entry["name"] for entry in response["results"]],
@@ -1089,4 +1089,8 @@ def test_unreported_file_c(client):
     # "Non-Award Spending" was removed as requested by DEV-7066
     # This assertion is to ensure its not unintentionally added back
     assert "Non-Award Spending" not in actual_results
-    assert response["total"] == response2["total"]
+    # After removing "Non-Award Spending" from recipient aggregation
+    # we don't expect object_class and recipient to total to the same number
+    assert response["total"] != response2["total"]
+    assert response["total"] == -12
+    assert response2["total"] == -15
