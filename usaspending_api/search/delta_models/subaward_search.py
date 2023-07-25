@@ -264,7 +264,7 @@ subaward_search_load_sql_string = fr"""
             fips,
             code as state_code
         from
-            state_data
+            global_temp.state_data
         group by
             fips,
             state_code
@@ -276,7 +276,7 @@ subaward_search_load_sql_string = fr"""
             county_name,
             state_alpha
         from
-            ref_city_county_state_code
+            global_temp.ref_city_county_state_code
         group by
             state_numeric,
             county_numeric,
