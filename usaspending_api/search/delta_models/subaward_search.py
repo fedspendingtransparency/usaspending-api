@@ -194,6 +194,11 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_place_of_perform_city_code": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_congressio": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_performance_congressional_current": {"delta": "STRING", "postgres": "TEXT"},
+    "legal_entity_state_fips": {"delta": "STRING", "postgres": "TEXT"},
+    "place_of_perform_state_fips": {"delta": "STRING", "postgres": "TEXT"},
+    "legal_entity_county_fips": {"delta": "STRING", "postgres": "TEXT"},
+    "place_of_perform_county_fips": {"delta": "STRING", "postgres": "TEXT"},
+    "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -253,6 +258,30 @@ subaward_search_load_sql_string = fr"""
             faba.award_id IS NOT NULL
         GROUP BY
             faba.award_id
+    ),
+    state_fips (
+        select
+            fips,
+            code as state_code
+        from
+            state_data
+        group by
+            fips,
+            state_code
+    ),
+    county_fips (
+        select
+            state_numeric,
+            county_numeric,
+            county_name,
+            state_alpha
+        from
+            ref_city_county_state_code
+        group by
+            state_numeric,
+            county_numeric,
+            county_name,
+            state_alpha
     )
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -494,8 +523,20 @@ subaward_search_load_sql_string = fr"""
                 UPPER(bs.sub_place_of_perform_country_co) <> 'USA'
             ) THEN NULL
             ELSE COALESCE(pop_cd_state_grouped.congressional_district_no, pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no, pop_cd_city_grouped.congressional_district_no, pop_cd_county_grouped.congressional_district_no)
-        END) AS sub_place_of_performance_congressional_current
-
+        END) AS sub_place_of_performance_congressional_current,
+        rl_state_fips.fips as legal_entity_state_fips,
+        pop_state_fips.fips as place_of_perform_state_fips,
+        case
+            when rl_state_fips.fips is null or rl_county_fips.county_numeric is null
+                then NULL
+            else concat(rl_state_fips.fips, rl_county_fips.county_numeric)
+        end as legal_entity_county_fips,
+        case
+            when pop_state_fips.fips is null or pop_county_fips.county_numeric is null
+                then NULL
+            else concat(pop_state_fips.fips, pop_county_fips.county_numeric)
+        end as place_of_perform_county_fips,
+        COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na) as pop_county_name
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -618,6 +659,20 @@ subaward_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         global_temp.references_cfda AS cfda
             ON cfda.program_number = split(bs.cfda_numbers, ',')[0]
+    LEFT OUTER JOIN
+        state_fips AS pop_state_fips
+        ON pop_state_fips.state_code = bs.place_of_perform_state_code
+    LEFT OUTER JOIN
+        state_fips AS rl_state_fips
+        ON rl_state_fips.state_code = bs.legal_entity_state_code
+    LEFT OUTER JOIN
+        county_fips as pop_county_fips
+        ON pop_county_fips.county_name = COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na)
+            AND pop_county_fips.state_alpha = bs.place_of_perform_state_code
+    LEFT OUTER JOIN
+        county_fips as rl_county_fips
+        ON rl_county_fips.county_name = COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name)
+            AND rl_county_fips.state_alpha = bs.legal_entity_state_code
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
     WHERE bs.subaward_number IS NOT NULL
 """
