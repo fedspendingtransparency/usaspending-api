@@ -536,7 +536,7 @@ subaward_search_load_sql_string = fr"""
                 then NULL
             else concat(pop_state_fips.fips, pop_county_fips.county_numeric)
         end as place_of_perform_county_fips,
-        COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na) as pop_county_name
+        UPPER(COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na)) as pop_county_name
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
