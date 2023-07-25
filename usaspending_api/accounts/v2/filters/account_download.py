@@ -320,12 +320,6 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "submission_period": get_fyp_or_q_notation("submission"),
         "last_modified_date"
         + NAMING_CONFLICT_DISCRIMINATOR: Cast(Max("submission__published_date"), output_field=DateField()),
-        "gross_outlay_amount": Sum(
-            generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
-        ),
-        "gross_outlay_amount_FYB_to_period_end": Sum(
-            generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
-        ),
     }
 
     if account_type != "account_balances":
@@ -386,7 +380,15 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
         "USSGL493100_delivered_orders_obligations_transferred_unpaid",
         "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
+        "gross_outlay_amount",
+        "gross_outlay_amount_FYB_to_period_end",
     ]
+
+    if account_type == "account_balances":
+        # Other account types originally had this in their group by.
+        # For account balances we do not want it in the group by
+        # so that we can eventually get to the grain of federal_account_symbol and submission_period
+        all_summed_cols.append("adjustments_to_unobligated_balance_brought_forward_cpe")
 
     # Group by all columns within the file that can't be summed
     fed_acct_values_dict = query_paths[account_type]["federal_account"]
@@ -400,8 +402,56 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
         for val in values_dict["federal_account"]
         if val in all_summed_cols
     }
+    # These columns require a more complex aggregation than others
+    summed_cols["gross_outlay_amount"] = Sum(
+        generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
+    )
+    summed_cols["gross_outlay_amount_FYB_to_period_end"] = Sum(
+        generate_gross_outlay_amount_derived_field(account_type, closed_submission_queryset)
+    )
 
-    return queryset.annotate(**summed_cols)
+    queryset = queryset.annotate(**summed_cols)
+
+    if account_type != "account_balances":
+        # If the file is not File A we are done
+        return queryset
+
+    # For File A, we expect one row per unique pair of federal_account_symbol and submission_period
+
+    # List of the columns that may be concatenated in File A
+    all_concat_cols = [
+        "owning_agency_name",
+        "reporting_agency_name",
+        "federal_account_name",
+        "agency_identifier_name",
+        "budget_function",
+        "budget_subfunction",
+    ]
+
+    # Perform a "GROUP BY" again to transform the data into the grain we expect
+    grouped_cols = [
+        fed_acct_values_dict[val]
+        for val in fed_acct_values_dict
+        if val not in all_summed_cols and val not in all_concat_cols
+    ]
+    queryset = queryset.values(*grouped_cols)
+
+    # Sum all summable fields again at new grain
+    summed_cols["adjustments_to_unobligated_balance_brought_forward_cpe"] = F(
+        "adjustments_to_unobligated_balance_brought_forward_cpe"
+    )
+    queryset = queryset.annotate(**summed_cols)
+
+    # Concatenate the remaining columns to transform the data
+    # into the grain we expect
+    concatenated_cols = {
+        val: StringAggWithDefault(values_dict["treasury_account"].get(val, None), ";", distinct=True)
+        for val in values_dict["federal_account"]
+        if val in all_concat_cols
+    }
+    queryset = queryset.annotate(**concatenated_cols)
+
+    return queryset
 
 
 def award_financial_derivations(derived_fields):
