@@ -1087,12 +1087,12 @@ def test_unreported_file_c(client):
     }
     assert expected_results == actual_results
     # "Non-Award Spending" was removed as requested by DEV-7066
-    # This assertion is to ensure it's not unintentionally added back
+    #   This assertion is to ensure it's not unintentionally added back
     assert "Non-Award Spending" not in actual_results
     # After removing "Non-Award Spending" from recipient aggregation
-    # we don't expect object_class and recipient to total to the same number
+    #   we don't expect object_class and recipient to total to the same number.
     # The sum of amounts on the breakdown by recipient will still equal
-    # the sum of the awards for that recipient
+    #   the sum of the awards for that recipient
     assert response["total"] != response2["total"]
     assert response["total"] == -12
     assert response2["total"] == -15
