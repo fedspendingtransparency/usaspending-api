@@ -1075,9 +1075,9 @@ def test_unreported_file_c(client):
     response = resp.json()
     response2 = resp2.json()
     expected_results = {
-        "total": -15,
-        "agencies": ["random_recipient_name_2", "Non-Award Spending", "random_recipient_name_1"],
-        "amounts": [-3, -3, -9],
+        "total": -12,
+        "agencies": ["random_recipient_name_2", "random_recipient_name_1"],
+        "amounts": [-3, -9],
     }
 
     actual_results = {
@@ -1086,4 +1086,7 @@ def test_unreported_file_c(client):
         "amounts": [entry["amount"] for entry in response["results"]],
     }
     assert expected_results == actual_results
+    # "Non-Award Spending" was removed as requested by DEV-7066
+    # This assertion is to ensure its not unintentionally added back
+    assert "Non-Award Spending" not in actual_results
     assert response["total"] == response2["total"]
