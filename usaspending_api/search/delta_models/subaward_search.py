@@ -536,7 +536,7 @@ subaward_search_load_sql_string = fr"""
                 then NULL
             else concat(pop_state_fips.fips, pop_county_fips.county_numeric)
         end as place_of_perform_county_fips,
-        UPPER(COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na)) as pop_county_name
+        UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) as pop_county_name
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -667,11 +667,11 @@ subaward_search_load_sql_string = fr"""
         ON rl_state_fips.state_code = bs.legal_entity_state_code
     LEFT OUTER JOIN
         county_fips as pop_county_fips
-        ON pop_county_fips.county_name = COALESCE(transaction_fpds.place_of_perform_county_na, transaction_fabs.place_of_perform_county_na)
+        ON pop_county_fips.county_name = COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)
             AND pop_county_fips.state_alpha = bs.place_of_perform_state_code
     LEFT OUTER JOIN
         county_fips as rl_county_fips
-        ON rl_county_fips.county_name = COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name)
+        ON rl_county_fips.county_name = COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name)
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
     WHERE bs.subaward_number IS NOT NULL
