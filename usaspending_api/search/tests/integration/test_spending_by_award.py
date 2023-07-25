@@ -1521,9 +1521,12 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
         {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
         {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
         {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
+        {"internal_id": 997, "Award ID": "award997", "generated_internal_id": "ASST_NON_TESTING_997"},
+        {"internal_id": 998, "Award ID": "award998", "generated_internal_id": "ASST_NON_TESTING_998"},
+        {"internal_id": 999, "Award ID": "award999", "generated_internal_id": "ASST_NON_TESTING_999"},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 3
+    assert len(resp.json().get("results")) == len(expected_result)
     assert resp.json().get("results") == expected_result, "Award Type Code filter does not match expected result"
 
 
