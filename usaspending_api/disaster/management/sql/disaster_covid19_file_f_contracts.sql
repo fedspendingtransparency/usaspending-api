@@ -45,7 +45,7 @@ SELECT
     "subaward_search"."legal_entity_city_name" AS "prime_awardee_city_name",
     "subaward_search"."legal_entity_county_fips" AS "prime_awardee_county_fips_code",
     "transaction_fpds"."recipient_location_county_name" AS "prime_awardee_county_name",
-    "subaward_search"."legal_entity_state_fips" AS "prime_awardee_state_fips_code"
+    "subaward_search"."legal_entity_state_fips" AS "prime_awardee_state_fips_code",
     "subaward_search"."legal_entity_state_code" AS "prime_awardee_state_code",
     "subaward_search"."legal_entity_state_name" AS "prime_awardee_state_name",
     "subaward_search"."legal_entity_zip" AS "prime_awardee_zip_code",
