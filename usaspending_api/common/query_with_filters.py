@@ -8,8 +8,8 @@ from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
-    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
+    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
 )
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
@@ -243,6 +243,14 @@ class _RecipientSearchText(_Filter):
             if len(upper_recipient_string) == 12:
                 recipient_uei_query = ES_Q("match", recipient_uei=upper_recipient_string)
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_uei_query]))
+            # If the recipient name ends with a period, then add a regex query to find results ending with a
+            #   period and results with a period in the same location but with characters following it.
+            # Example: A query for COMPANY INC. will return both COMPANY INC. and COMPANY INC.XYZ
+            if upper_recipient_string.endswith("."):
+                recipient_search_query.append(recipient_name_query)
+                recipient_search_query.append(
+                    ES_Q({"regexp": {"recipient_name.keyword": f"{upper_recipient_string.rstrip('.')}\\..*"}})
+                )
 
             else:
                 recipient_search_query.append(recipient_name_query)
