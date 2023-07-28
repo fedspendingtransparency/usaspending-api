@@ -6,6 +6,7 @@ from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.search.tests.data.search_filters_test_data import legacy_filters, non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
@@ -420,6 +421,38 @@ def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_in
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
+
+
+def test_messages_not_nested(client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    contract_type_list = all_award_types_mappings["contracts"]
+
+    request_for_2015 = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "time_period": [
+                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "date_signed"},
+            ],
+            "award_type_codes": contract_type_list,
+            "not_a_real_filter": "abc",
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+    )
+    resp_json = resp.json()
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 5
+    assert resp_json["messages"] == get_generic_filters_message(
+        request_for_2015["filters"].keys(), {"time_period", "award_type_codes"}
+    )
 
 
 @pytest.mark.django_db

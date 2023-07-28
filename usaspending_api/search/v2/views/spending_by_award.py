@@ -503,11 +503,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "last_record_unique_id": last_record_unique_id,
                 "last_record_sort_value": str(last_record_sort_value),
             },
-            "messages": [
-                get_generic_filters_message(
-                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-                )
-            ],
+            "messages": get_generic_filters_message(
+                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+            ),
         }
 
     def get_recipient_hash_with_level(self, award_doc):
