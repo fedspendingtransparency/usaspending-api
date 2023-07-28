@@ -1075,9 +1075,9 @@ def test_unreported_file_c(client):
     response = resp.json()
     response2 = resp2.json()
     expected_results = {
-        "total": -15,
-        "agencies": ["random_recipient_name_2", "Non-Award Spending", "random_recipient_name_1"],
-        "amounts": [-3, -3, -9],
+        "total": -12,
+        "agencies": ["random_recipient_name_2", "random_recipient_name_1"],
+        "amounts": [-3, -9],
     }
 
     actual_results = {
@@ -1086,4 +1086,13 @@ def test_unreported_file_c(client):
         "amounts": [entry["amount"] for entry in response["results"]],
     }
     assert expected_results == actual_results
-    assert response["total"] == response2["total"]
+    # "Non-Award Spending" was removed as requested by DEV-7066
+    #   This assertion is to ensure it's not unintentionally added back
+    assert "Non-Award Spending" not in actual_results
+    # After removing "Non-Award Spending" from recipient aggregation
+    #   we don't expect object_class and recipient to total to the same number.
+    # The sum of amounts on the breakdown by recipient will still equal
+    #   the sum of the awards for that recipient
+    assert response["total"] != response2["total"]
+    assert response["total"] == -12
+    assert response2["total"] == -15
