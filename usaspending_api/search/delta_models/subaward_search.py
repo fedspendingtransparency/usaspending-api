@@ -651,18 +651,14 @@ subaward_search_load_sql_string = fr"""
     LEFT OUTER JOIN
         global_temp.references_cfda AS cfda
             ON cfda.program_number = split(bs.cfda_numbers, ',')[0]
-    LEFT OUTER JOIN
-        state_fips AS pop_state_fips
+    LEFT OUTER JOIN state_fips AS pop_state_fips
         ON pop_state_fips.state_code = bs.place_of_perform_state_code
-    LEFT OUTER JOIN
-        state_fips AS rl_state_fips
+    LEFT OUTER JOIN state_fips AS rl_state_fips
         ON rl_state_fips.state_code = bs.legal_entity_state_code
-    LEFT OUTER JOIN
-        county_fips AS pop_county_fips
+    LEFT OUTER JOIN county_fips AS pop_county_fips
         ON UPPER(pop_county_fips.county_name) = UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na))
             AND pop_county_fips.state_alpha = bs.place_of_perform_state_code
-    LEFT OUTER JOIN
-        county_fips AS rl_county_fips
+    LEFT OUTER JOIN county_fips AS rl_county_fips
         ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
