@@ -52,6 +52,9 @@ class Command(BaseCommand):
                 bureau_title = row[23].strip()
                 federal_account_code = f"{aid}-{main_acct}"
 
+                if row[44].strip() == "DUMMY":
+                    continue
+
                 bureau_title_lookup = BureauTitleLookup(
                     **{
                         "federal_account_code": federal_account_code,
