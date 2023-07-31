@@ -259,25 +259,25 @@ subaward_search_load_sql_string = fr"""
         GROUP BY
             faba.award_id
     ),
-    state_fips (
-        select
+    state_fips AS (
+        SELECT
             fips,
             code as state_code
-        from
+        FROM
             global_temp.state_data
-        group by
+        GROUP BY
             fips,
             state_code
     ),
-    county_fips (
-        select
+    county_fips AS (
+        SELECT
             state_numeric,
             county_numeric,
             county_name,
             state_alpha
-        from
+        FROM
             global_temp.ref_city_county_state_code
-        group by
+        GROUP BY
             state_numeric,
             county_numeric,
             county_name,
