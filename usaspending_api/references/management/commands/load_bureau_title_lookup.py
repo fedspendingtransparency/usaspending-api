@@ -52,6 +52,7 @@ class Command(BaseCommand):
                 bureau_title = row[23].strip()
                 federal_account_code = f"{aid}-{main_acct}"
 
+                # Some rows may be labeled as `DUMMY` and should be skipped
                 if row[44].strip() == "DUMMY":
                     continue
 
