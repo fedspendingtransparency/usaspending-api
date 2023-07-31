@@ -18,7 +18,7 @@ from usaspending_api.download.models.download_job_lookup import DownloadJobLooku
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.models import AwardSearch as DBAwardSearch, TransactionSearch as DBTransactionSearch
-from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -141,8 +141,16 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+        filter_options = {}
+        time_period_obj = AwardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBAwardSearch.objects.all()
-        cls._populate_download_lookups(filters, download_job)
+        cls._populate_download_lookups(filters, download_job, **filter_options)
         queryset = base_queryset.extra(
             tables=["download_job_lookup"],
             where=[
