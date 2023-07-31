@@ -524,19 +524,11 @@ subaward_search_load_sql_string = fr"""
             ) THEN NULL
             ELSE COALESCE(pop_cd_state_grouped.congressional_district_no, pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no, pop_cd_city_grouped.congressional_district_no, pop_cd_county_grouped.congressional_district_no)
         END) AS sub_place_of_performance_congressional_current,
-        rl_state_fips.fips as legal_entity_state_fips,
-        pop_state_fips.fips as place_of_perform_state_fips,
-        case
-            when rl_state_fips.fips is null or rl_county_fips.county_numeric is null
-                then NULL
-            else concat(rl_state_fips.fips, rl_county_fips.county_numeric)
-        end as legal_entity_county_fips,
-        case
-            when pop_state_fips.fips is null or pop_county_fips.county_numeric is null
-                then NULL
-            else concat(pop_state_fips.fips, pop_county_fips.county_numeric)
-        end as place_of_perform_county_fips,
-        UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) as pop_county_name
+        rl_state_fips.fips AS legal_entity_state_fips,
+        pop_state_fips.fips AS place_of_perform_state_fips,
+        CONCAT(rl_state_fips.fips, rl_county_fips.county_numeric) AS legal_entity_county_fips,
+        CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
+        UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -666,11 +658,11 @@ subaward_search_load_sql_string = fr"""
         state_fips AS rl_state_fips
         ON rl_state_fips.state_code = bs.legal_entity_state_code
     LEFT OUTER JOIN
-        county_fips as pop_county_fips
+        county_fips AS pop_county_fips
         ON UPPER(pop_county_fips.county_name) = UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na))
             AND pop_county_fips.state_alpha = bs.place_of_perform_state_code
     LEFT OUTER JOIN
-        county_fips as rl_county_fips
+        county_fips AS rl_county_fips
         ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
