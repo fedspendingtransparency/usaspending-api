@@ -83,11 +83,11 @@ class SpendingByGeographyViewSet(DisasterBase):
 
         agg_key_dict = {
             "county": "county_agg_key",
-            "district": "congressional_agg_key",
+            "district": "congressional_cur_agg_key",
             "state": "state_agg_key",
         }
         scope_dict = {"place_of_performance": "pop", "recipient_location": "recipient_location"}
-        location_dict = {"county": "county_code", "district": "congressional_code", "state": "state_code"}
+        location_dict = {"county": "county_code", "district": "congressional_code_current", "state": "state_code"}
 
         self.geo_layer = GeoLayer(json_request["geo_layer"])
 
