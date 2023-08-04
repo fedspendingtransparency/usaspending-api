@@ -224,6 +224,11 @@ class SubawardSearch(models.Model):
     sub_place_of_perform_city_code = models.TextField(null=True, blank=True)
     sub_place_of_perform_congressio = models.TextField(null=True, blank=True)
     sub_place_of_performance_congressional_current = models.TextField(null=True, blank=True)
+    legal_entity_state_fips = models.TextField(null=True, blank=True)
+    place_of_perform_state_fips = models.TextField(null=True, blank=True)
+    legal_entity_county_fips = models.TextField(null=True, blank=True)
+    place_of_perform_county_fips = models.TextField(null=True, blank=True)
+    pop_county_name = models.TextField(null=True, blank=True)
 
     # USAS Vectors
     keyword_ts_vector = SearchVectorField(null=True)

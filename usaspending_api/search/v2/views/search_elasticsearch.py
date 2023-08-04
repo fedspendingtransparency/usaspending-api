@@ -116,11 +116,9 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             "limit": request["limit"],
             "results": results[: request["limit"]],
             "page_metadata": metadata,
-            "messages": [
-                get_generic_filters_message(
-                    request["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-                )
-            ],
+            "messages": get_generic_filters_message(
+                request["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+            ),
         }
 
 
