@@ -41,19 +41,50 @@ SELECT
     "subaward_search"."legal_entity_country_name" AS "prime_awardee_country_name",
     "subaward_search"."legal_entity_address_line1" AS "prime_awardee_address_line_1",
     "subaward_search"."legal_entity_city_name" AS "prime_awardee_city_name",
+    "subaward_search"."legal_entity_county_fips" AS "prime_awardee_county_fips_code",
     "transaction_fabs"."recipient_location_county_name" AS "prime_awardee_county_name",
+    "subaward_search"."legal_entity_state_fips" AS "prime_awardee_state_fips_code",
     "subaward_search"."legal_entity_state_code" AS "prime_awardee_state_code",
     "subaward_search"."legal_entity_state_name" AS "prime_awardee_state_name",
     "subaward_search"."legal_entity_zip" AS "prime_awardee_zip_code",
-    "subaward_search"."legal_entity_congressional" AS "prime_awardee_congressional_district",
+    CASE
+        WHEN "subaward_search"."legal_entity_state_code" IS NOT NULL
+            AND "subaward_search"."legal_entity_congressional" IS NOT NULL
+            AND "subaward_search"."legal_entity_state_code" != ''
+        THEN CONCAT("subaward_search"."legal_entity_state_code", '-', "subaward_search"."legal_entity_congressional")
+        ELSE "subaward_search"."legal_entity_congressional"
+    END AS "prime_award_summary_recipient_cd_original",
+    CASE
+        WHEN "subaward_search"."legal_entity_state_code" IS NOT NULL
+            AND "subaward_search"."legal_entity_congressional_current" IS NOT NULL
+            AND "subaward_search"."legal_entity_state_code" != ''
+        THEN CONCAT("subaward_search"."legal_entity_state_code", '-', "subaward_search"."legal_entity_congressional_current")
+        ELSE "subaward_search"."legal_entity_congressional_current"
+    END AS "prime_award_summary_recipient_cd_current",
     "subaward_search"."legal_entity_foreign_posta" AS "prime_awardee_foreign_postal_code",
     "subaward_search"."business_types" AS "prime_awardee_business_types",
     "subaward_search"."place_of_perform_scope" AS "prime_award_primary_place_of_performance_scope",
     "subaward_search"."place_of_perform_city_name" AS "prime_award_primary_place_of_performance_city_name",
+    "subaward_search"."place_of_perform_county_fips" AS "prime_award_primary_place_of_performance_county_fips_code",
+    "subaward_search"."pop_county_name" AS "prime_award_primary_place_of_performance_county_name",
+    "subaward_search"."place_of_perform_state_fips" AS "prime_award_primary_place_of_performance_state_fips_code",
     "subaward_search"."place_of_perform_state_code" AS "prime_award_primary_place_of_performance_state_code",
     "subaward_search"."place_of_perform_state_name" AS "prime_award_primary_place_of_performance_state_name",
     "subaward_search"."place_of_performance_zip" AS "prime_award_primary_place_of_performance_address_zip_code",
-    "subaward_search"."place_of_perform_congressio" AS "prime_award_primary_place_of_performance_congressional_district",
+    CASE
+        WHEN "subaward_search"."place_of_perform_state_code" IS NOT NULL
+            AND "subaward_search"."place_of_perform_congressio" IS NOT NULL
+            AND "subaward_search"."place_of_perform_state_code" != ''
+        THEN CONCAT("subaward_search"."place_of_perform_state_code", '-', "subaward_search"."place_of_perform_congressio")
+        ELSE "subaward_search"."place_of_perform_congressio"
+    END AS "prime_award_summary_place_of_performance_cd_original",
+    CASE
+        WHEN "subaward_search"."place_of_perform_state_code" IS NOT NULL
+            AND "subaward_search"."place_of_performance_congressional_current" IS NOT NULL
+            AND "subaward_search"."place_of_perform_state_code" != ''
+        THEN CONCAT("subaward_search"."place_of_perform_state_code", '-', "subaward_search"."place_of_performance_congressional_current")
+        ELSE "subaward_search"."place_of_performance_congressional_current"
+    END AS "prime_award_summary_place_of_performance_cd_current",
     "subaward_search"."place_of_perform_country_co" AS "prime_award_primary_place_of_performance_country_code",
     "subaward_search"."place_of_perform_country_na" AS "prime_award_primary_place_of_performance_country_name",
     "subaward_search"."award_description" AS "prime_award_base_transaction_description",
@@ -82,7 +113,20 @@ SELECT
     "subaward_search"."sub_legal_entity_state_code" AS "subawardee_state_code",
     "subaward_search"."sub_legal_entity_state_name" AS "subawardee_state_name",
     "subaward_search"."sub_legal_entity_zip" AS "subawardee_zip_code",
-    "subaward_search"."sub_legal_entity_congressional" AS "subawardee_congressional_district",
+    CASE
+        WHEN "subaward_search"."sub_legal_entity_state_code" IS NOT NULL
+            AND "subaward_search"."sub_legal_entity_congressional" IS NOT NULL
+            AND "subaward_search"."sub_legal_entity_state_code" != ''
+        THEN CONCAT("subaward_search"."sub_legal_entity_state_code", '-', "subaward_search"."sub_legal_entity_congressional")
+        ELSE "subaward_search"."sub_legal_entity_congressional"
+    END AS "subaward_recipient_cd_original",
+    CASE
+        WHEN "subaward_search"."sub_legal_entity_state_code" IS NOT NULL
+            AND "subaward_search"."sub_legal_entity_congressional_current" IS NOT NULL
+            AND "subaward_search"."sub_legal_entity_state_code" != ''
+        THEN CONCAT("subaward_search"."sub_legal_entity_state_code", '-', "subaward_search"."sub_legal_entity_congressional_current")
+        ELSE "subaward_search"."sub_legal_entity_congressional_current"
+    END AS "subaward_recipient_cd_current",
     "subaward_search"."sub_legal_entity_foreign_posta" AS "subawardee_foreign_postal_code",
     "subaward_search"."sub_business_types" AS "subawardee_business_types",
     "subaward_search"."place_of_perform_street" AS "subaward_primary_place_of_performance_address_line_1",
@@ -90,7 +134,20 @@ SELECT
     "subaward_search"."sub_place_of_perform_state_code" AS "subaward_primary_place_of_performance_state_code",
     "subaward_search"."sub_place_of_perform_state_name" AS "subaward_primary_place_of_performance_state_name",
     "subaward_search"."sub_place_of_performance_zip" AS "subaward_primary_place_of_performance_address_zip_code",
-    "subaward_search"."sub_place_of_perform_congressio" AS "subaward_primary_place_of_performance_congressional_district",
+    CASE
+        WHEN "subaward_search"."sub_place_of_perform_state_code" IS NOT NULL
+            AND "subaward_search"."sub_place_of_perform_congressio" IS NOT NULL
+            AND "subaward_search"."sub_place_of_perform_state_code" != ''
+        THEN CONCAT("subaward_search"."sub_place_of_perform_state_code", '-', "subaward_search"."sub_place_of_perform_congressio")
+        ELSE "subaward_search"."sub_place_of_perform_congressio"
+    END AS "subaward_place_of_performance_cd_original",
+    CASE
+        WHEN "subaward_search"."sub_place_of_perform_state_code" IS NOT NULL
+            AND "subaward_search"."sub_place_of_performance_congressional_current" IS NOT NULL
+            AND "subaward_search"."sub_place_of_perform_state_code" != ''
+        THEN CONCAT("subaward_search"."sub_place_of_perform_state_code", '-', "subaward_search"."sub_place_of_performance_congressional_current")
+        ELSE "subaward_search"."sub_place_of_performance_congressional_current"
+    END AS "subaward_place_of_performance_cd_current",
     "subaward_search"."sub_place_of_perform_country_co" AS "subaward_primary_place_of_performance_country_code",
     "subaward_search"."sub_place_of_perform_country_na" AS "subaward_primary_place_of_performance_country_name",
     "subaward_search"."subaward_description" AS "subaward_description",

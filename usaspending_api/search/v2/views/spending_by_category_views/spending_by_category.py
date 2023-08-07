@@ -17,7 +17,11 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import (
+    deprecated_district_field_in_location_object,
+    get_simple_pagination_metadata,
+    get_generic_filters_message,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -63,7 +67,16 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
 
-        return Response(self.perform_search(validated_payload, original_filters))
+        raw_response = self.perform_search(validated_payload, original_filters)
+
+        # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
+        messages = raw_response.get("messages", [])
+        deprecated_district_field_in_location_object(messages, original_filters)
+        raw_response["messages"] = messages
+
+        return Response(raw_response)
 
     def perform_search(self, validated_payload: dict, original_filters: dict) -> dict:
 

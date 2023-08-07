@@ -202,21 +202,20 @@ List of table columns
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `def_codes` (optional, array[DEFC], fixed-type)
-  If the `def_codes` provided are in the COVID-19 group and the subaward flag is set to `False`, the query will only return prime awards that have at least one File C record with the supplied DEFC and also have non-zero COVID-19 related obligations or outlays.
-  If the `def_codes` provided are in the COVID-19 group and the subaward parameter is set to `True`, the query will only return results that have a sub_action_date on or after `2020-04-01`.
+  If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward flag is set to `False`, the query will only return prime awards that have at least one File C record with the supplied DEFC and also have non-zero COVID-19 or IIJA related obligations or outlays.
+  If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward parameter is set to `True`, the query will only return results that have a sub_action_date on or after the enactment date of the public law associated with that disaster code.
+    + Example: Providing the `Z` DEF code and setting the subaward parameter to `True` will only return results where the `sub_action_date` is on or after `11/15/2021` since this is the enactment date of the public law associated with disaster code `Z`.
 
 ### TimePeriodObject (object)
-+ `start_date`: `2017-10-01` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `end_date`: `2018-09-30` (required, string)
-    Currently limited to an earliest date of `2007-10-01` (FY2008).  For data going back to `2000-10-01` (FY2001), use either the Custom Award Download
-    feature on the website or one of our `download` or `bulk_download` API endpoints.
-+ `date_type` (optional, enum[string])
-    + Members
-        + `action_date`
-        + `last_modified_date`
-        + `date_signed`
+This TimePeriodObject can fall into different categories based on the request.
++ if `subawards` true
+
+    See the Subaward Search category defined in [SubawardSearchTimePeriodObject](../../../search_filters.md#subaward-search-time-period-object)
+
++ otherwise
+
+    See the Award Search category defined in [AwardSearchTimePeriodObject](../../../search_filters.md#award-search-time-period-object)
+
 
 ### LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)

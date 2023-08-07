@@ -87,6 +87,7 @@ AWARD_SEARCH_COLUMNS = {
     "recipient_location_state_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
+    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_country_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_country_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_state_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -102,6 +103,7 @@ AWARD_SEARCH_COLUMNS = {
     "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
+    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "cfda_program_title": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "cfda_number": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "cfdas": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
@@ -299,6 +301,10 @@ award_search_load_sql_string = rf"""
   RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
   RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
+  CONCAT(
+    RL_STATE_LOOKUP.fips,
+    COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+  ) AS recipient_location_county_fips,
 
   COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
@@ -317,6 +323,10 @@ award_search_load_sql_string = rf"""
   POP_STATE_POPULATION.latest_population AS pop_state_population,
   POP_COUNTY_POPULATION.latest_population AS pop_county_population,
   POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
+  CONCAT(
+    POP_STATE_LOOKUP.fips,
+    COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
+  ) AS pop_county_fips,
 
   transaction_fabs.cfda_title AS cfda_program_title,
   transaction_fabs.cfda_number AS cfda_number,

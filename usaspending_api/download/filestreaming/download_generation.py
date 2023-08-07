@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
+from http.client import RemoteDisconnected
+from urllib.error import HTTPError
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
@@ -183,15 +185,15 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
             # Use correct date range columns for advanced search
             # (Will not change anything for keyword search since "time_period" is not provided))
             filters = deepcopy(json_request["filters"])
-            if (download_type == "elasticsearch_awards" or download_type == "awards") and json_request["filters"].get(
-                "time_period"
-            ) is not None:
-                for time_period in filters["time_period"]:
-                    time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                    time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
+
             if json_request["filters"].get("time_period") is not None and download_type == "sub_awards":
                 for time_period in filters["time_period"]:
                     # sub awards do not support `new_awards_only` date type
+                    #   the reason we need this check is because downloads are
+                    #   sometimes a mix between prime awards and subawards
+                    #   and share the same filters. In the cases where the
+                    #   download requests `new_awards_only` we only want to apply this
+                    #   date type to the prime award summaries
                     if time_period.get("date_type") == NEW_AWARDS_ONLY_KEYWORD:
                         del time_period["date_type"]
                     if time_period.get("date_type") == "date_signed":
@@ -736,7 +738,22 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
-    RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
+
+    retry_count = settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COUNT
+
+    # We are currently receiving timeouts when trying to retrieve the data dictionary during
+    # the nightly pipeline. Adding retry logic here until those timeouts are resolved
+    for attempt in range(retry_count + 1):
+        try:
+            RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
+            break
+        except (HTTPError, RemoteDisconnected):
+            if attempt < retry_count:
+                time.sleep(settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN)
+                continue
+            else:
+                raise
+
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
 
 

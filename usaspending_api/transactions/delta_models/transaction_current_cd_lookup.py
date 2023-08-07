@@ -28,31 +28,32 @@ transaction_current_cd_lookup_load_sql_string = fr"""
             ) THEN NULL
             ELSE COALESCE(rl_cd_state_grouped.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no)
         END) AS recipient_location_congressional_code_current,
+        -- Congressional District '90' represents multiple congressional districts
         (CASE
             WHEN (
-                transaction_fabs.place_of_performance_scope = 'Foreign'
+                UPPER(transaction_fabs.place_of_performance_scope) = 'FOREIGN'
                 OR transaction_fpds.place_of_perform_country_c <> 'USA'
             ) THEN NULL
             WHEN (
-                transaction_fabs.place_of_performance_scope = 'Multi-State'
+                UPPER(transaction_fabs.place_of_performance_scope) = 'MULTI-STATE'
             ) THEN '90'
             WHEN (
-                (transaction_fabs.place_of_performance_scope = 'State-wide'
+                (UPPER(transaction_fabs.place_of_performance_scope) = 'STATE-WIDE'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
                 AND pop_cd_state_grouped.congressional_district_no IS NOT NULL
             ) THEN pop_cd_state_grouped.congressional_district_no
             WHEN (
-                (transaction_fabs.place_of_performance_scope = 'Single ZIP Code'
+                (UPPER(transaction_fabs.place_of_performance_scope) = 'SINGLE ZIP CODE'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
                 AND COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no) IS NOT NULL
             ) THEN COALESCE(pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no)
             WHEN (
-                (transaction_fabs.place_of_performance_scope = 'City-wide'
+                (UPPER(transaction_fabs.place_of_performance_scope) = 'CITY-WIDE'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
                 AND pop_cd_city_grouped.congressional_district_no IS NOT NULL
             ) THEN pop_cd_city_grouped.congressional_district_no
             WHEN (
-                (transaction_fabs.place_of_performance_scope = 'County-wide'
+                (UPPER(transaction_fabs.place_of_performance_scope) = 'COUNTY-WIDE'
                 OR transaction_fpds.place_of_perform_country_c = 'USA')
                 AND pop_cd_county_grouped.congressional_district_no IS NOT NULL
             ) THEN pop_cd_county_grouped.congressional_district_no
@@ -64,6 +65,7 @@ transaction_current_cd_lookup_load_sql_string = fr"""
         int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id AND transaction_normalized.is_fpds = false)
     LEFT OUTER JOIN
         int.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id AND transaction_normalized.is_fpds = true)
+    -- Congressional District '90' represents multiple congressional districts
     LEFT OUTER JOIN
         global_temp.cd_state_grouped pop_cd_state_grouped ON (
             pop_cd_state_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)

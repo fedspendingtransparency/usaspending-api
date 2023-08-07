@@ -13,12 +13,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from typing import Optional, List, Dict
 
-from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.awards.v2.filters.sub_award import geocode_filter_subaward_locations, subaward_filter
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import (
+    deprecated_district_field_in_location_object,
+    get_generic_filters_message,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -95,7 +97,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         agg_key_dict = {
             "county": "county_agg_key",
-            "district": "congressional_agg_key",
+            "district": "congressional_cur_agg_key",
             "state": "state_agg_key",
         }
         model_dict = {
@@ -114,8 +116,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "sub": {"sub_place_of_perform": "county_code", "sub_legal_entity": "county_code"},
                 },
                 "district": {
-                    "prime": {"pop": "congressional", "recipient_location": "congressional"},
-                    "sub": {"sub_place_of_perform": "congressio", "sub_legal_entity": "congressional"},
+                    "prime": {"pop": "congressional_code_current", "recipient_location": "congressional_code_current"},
+                    "sub": {
+                        "sub_place_of_perform": "sub_place_of_performance_congressional_current",
+                        "sub_legal_entity": "congressional_current",
+                    },
                 },
                 "state": {
                     "prime": {"pop": "state_code", "recipient_location": "state_code"},
@@ -139,7 +144,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         self.subawards = json_request["subawards"]
         self.award_or_sub_str = "sub" if self.subawards else "prime"
-        self.scope_field_name = model_dict[json_request["scope"]][self.award_or_sub_str]
+        self.scope = json_request["scope"]
+        self.scope_field_name = model_dict[self.scope][self.award_or_sub_str]
         self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
         self.filters = json_request.get("filters")
         self.geo_layer = GeoLayer(json_request["geo_layer"])
@@ -150,11 +156,19 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
 
         if self.subawards:
+            # When district current was added to the database's subawards table
+            # the name chosen did not follow pattern this module expects. That essentially
+            # broke this code's ability to combine scope field name with loc
+            # field name to get the correct column. As a result, we are handling
+            # this inconsistency here just for the column that doesn't follow
+            # the pattern.
+            if self.geo_layer == GeoLayer.DISTRICT and self.scope == "place_of_performance":
+                self.loc_lookup = f"{self.loc_field_name}"
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             self.model_name = SubawardSearch
             self.queryset = subaward_filter(self.filters)
             self.obligation_column = "subaward_amount"
-            result = self.query_django()
+            result = self.query_django_subawards()
         else:
             if self.scope_field_name == "pop":
                 scope_filter_name = "place_of_performance_scope"
@@ -177,18 +191,23 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
             result = self.query_elasticsearch(filter_query)
 
-        return Response(
-            {
-                "scope": json_request["scope"],
-                "geo_layer": self.geo_layer.value,
-                "results": result,
-                "messages": get_generic_filters_message(
-                    original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
-                ),
-            }
-        )
+        raw_response = {
+            "scope": json_request["scope"],
+            "geo_layer": self.geo_layer.value,
+            "results": result,
+            "messages": get_generic_filters_message(original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]),
+        }
 
-    def query_django(self) -> dict:
+        # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
+        messages = raw_response.get("messages", [])
+        deprecated_district_field_in_location_object(messages, original_filters)
+        raw_response["messages"] = messages
+
+        return Response(raw_response)
+
+    def query_django_subawards(self) -> dict:
         fields_list = []  # fields to include in the aggregate query
 
         if self.geo_layer == GeoLayer.STATE:
@@ -220,14 +239,14 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 county_col = self.location_dict["name"]["county"][self.award_or_sub_str][self.scope_field_name]
                 county_name_lookup = f"{self.scope_field_name}_{county_col}"
                 fields_list.append(county_name_lookup)
-                geo_queryset = self.county_district_queryset(
+                geo_queryset = self.county_district_queryset_subawards(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
                 )
 
                 return self.county_results(state_lookup, county_name_lookup, geo_queryset)
 
             else:
-                geo_queryset = self.county_district_queryset(
+                geo_queryset = self.county_district_queryset_subawards(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
                 )
 
@@ -276,18 +295,25 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return results
 
-    def county_district_queryset(
+    def county_district_queryset_subawards(
         self, kwargs: Dict[str, str], fields_list: List[str], loc_lookup: str, state_lookup: str, scope_field_name: str
     ) -> QuerySet:
+        # Originaly it was ok for geo layers list to use the geo layer value
+        # Now that geo layer value doesn't map directly to intent, e.g. district_current functionality
+        # we can't use the instance's geo layer value without changing it in some cases
+        geo_layer_value = "district_current" if self.geo_layer.value == "district" else self.geo_layer.value
+
         # Filtering queryset to specific county/districts if requested
         # Since geo_layer_filters comes as concat of state fips and county/district codes
         # need to split for the geocode_filter
         if self.geo_layer_filters:
             geo_layers_list = [
-                {"state": fips_to_code.get(x[:2]), self.geo_layer.value: x[2:], "country": "USA"}
+                {"state": fips_to_code.get(x[:2]), geo_layer_value: x[2:], "country": "USA"}
                 for x in self.geo_layer_filters
             ]
-            self.queryset = self.queryset.filter(geocode_filter_locations(scope_field_name, geo_layers_list))
+            # It's ok to use subaward geocode filter here because this method is for subawards only
+            self.queryset = self.queryset.filter(geocode_filter_subaward_locations(scope_field_name, geo_layers_list))
+
         else:
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
             kwargs[f"{loc_lookup}__isnull"] = False
