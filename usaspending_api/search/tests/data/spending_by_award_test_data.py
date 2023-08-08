@@ -1,6 +1,6 @@
 import pytest
-
 from model_bakery import baker
+
 from usaspending_api.references.models.ref_program_activity import RefProgramActivity
 from usaspending_api.search.models import AwardSearch
 
@@ -182,6 +182,44 @@ def spending_by_award_test_data():
         total_covid_outlay=0,
         total_covid_obligation=0,
         covid_spending_by_defc=[{"defc": "Q", "outlay": 0, "obligation": 0}],
+    )
+
+    # Awards only used for testing their `recipient_name` values
+    baker.make(
+        "search.AwardSearch",
+        award_id=997,
+        type="A",
+        category="contract",
+        date_signed="2019-01-01",
+        action_date="2019-01-01",
+        fain="fain997",
+        display_award_id="award997",
+        generated_unique_award_id="ASST_NON_TESTING_997",
+        recipient_name="ACME INC",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=998,
+        type="A",
+        category="contract",
+        date_signed="2019-01-01",
+        action_date="2019-01-01",
+        fain="fain998",
+        display_award_id="award998",
+        generated_unique_award_id="ASST_NON_TESTING_998",
+        recipient_name="ACME INC.",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=999,
+        type="A",
+        category="contract",
+        date_signed="2019-01-01",
+        action_date="2019-01-01",
+        fain="fain999",
+        display_award_id="award999",
+        generated_unique_award_id="ASST_NON_TESTING_999",
+        recipient_name="ACME INC.XYZ",
     )
 
     # Toptier Agency

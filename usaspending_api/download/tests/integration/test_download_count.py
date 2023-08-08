@@ -9,6 +9,7 @@ from unittest.mock import Mock
 from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.lookups import JOB_STATUS
@@ -159,6 +160,27 @@ def test_download_count_with_date_type_filter_default(
     assert resp_json["calculated_transaction_count"] == 3
     assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
     assert resp_json["transaction_rows_gt_limit"] is False
+
+
+@pytest.mark.django_db(transaction=True)
+def test_messages_not_nested(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    request_data = {
+        "filters": {"time_period": [{"start_date": "2018-01-01", "end_date": "2018-01-03"}], "not_a_real_filter": "abc"}
+    }
+    resp = client.post(
+        "/api/v2/download/count/",
+        content_type="application/json",
+        data=json.dumps(request_data),
+    )
+    resp_json = resp.json()
+
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp_json["messages"] == get_generic_filters_message(
+        request_data["filters"].keys(), {"time_period", "award_type_codes"}
+    )
 
 
 @pytest.mark.django_db(transaction=True)
