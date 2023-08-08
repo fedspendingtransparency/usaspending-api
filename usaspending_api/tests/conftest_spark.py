@@ -15,9 +15,7 @@ from pytest import fixture
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session
-from usaspending_api.common.helpers.spark_helpers import (
-    is_spark_context_stopped
-)
+from usaspending_api.common.helpers.spark_helpers import is_spark_context_stopped
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
@@ -245,6 +243,15 @@ def populate_broker_data(broker_server_dblink_setup):
     broker_data = {
         "sam_recipient": json.loads(Path("usaspending_api/recipient/tests/data/broker_sam_recipient.json").read_text()),
         "subaward": json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text()),
+        "cd_state_grouped": json.loads(
+            Path("usaspending_api/transactions/tests/data/cd_state_grouped.json").read_text()
+        ),
+        "zips": json.loads(Path("usaspending_api/transactions/tests/data/zips.json").read_text()),
+        "cd_zips_grouped": json.loads(Path("usaspending_api/transactions/tests/data/cd_zips_grouped.json").read_text()),
+        "cd_city_grouped": json.loads(Path("usaspending_api/transactions/tests/data/cd_city_grouped.json").read_text()),
+        "cd_county_grouped": json.loads(
+            Path("usaspending_api/transactions/tests/data/cd_county_grouped.json").read_text()
+        ),
     }
     insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
     with connections["data_broker"].cursor() as cursor:
@@ -465,7 +472,7 @@ def populate_usas_data(populate_broker_data):
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
+        recipient_location_congressional_code_current=None,
         pop_state_code="VA",
         pop_state_name="Virginia",
         pop_state_fips=51,
@@ -474,7 +481,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         recipient_location_county_population=1,
@@ -497,6 +504,8 @@ def populate_usas_data(populate_broker_data):
         business_categories=None,
         original_loan_subsidy_cost=0.00,
         face_value_loan_guarantee=0.00,
+        recipient_location_county_fips="51001",
+        pop_county_fips="51001",
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -553,14 +562,14 @@ def populate_usas_data(populate_broker_data):
         recipient_location_state_fips=51,
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
+        recipient_location_congressional_code_current=None,
         cfdas=None,
         pop_state_code="VA",
         pop_state_name="Virginia",
         pop_state_fips=51,
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
-        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         tas_paths=[
@@ -577,6 +586,8 @@ def populate_usas_data(populate_broker_data):
         naics_code="123456",
         product_or_service_code="12",
         product_or_service_description=psc.description,
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -629,8 +640,8 @@ def populate_usas_data(populate_broker_data):
         parent_recipient_unique_id="PARENTDUNS12345",
         ordering_period_end_date="2020-07-01",
         recipient_location_country_code="USA",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR AS",
-        pop_congressional_code_current="TEST CUR POP CONGR AS",
+        recipient_location_congressional_code_current=None,
+        pop_congressional_code_current=None,
         pop_country_code="USA",
         business_categories=None,
         original_loan_subsidy_cost=0.00,
@@ -641,6 +652,8 @@ def populate_usas_data(populate_broker_data):
         tas_components=None,
         disaster_emergency_fund_codes=None,
         covid_spending_by_defc=None,
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
 
     baker.make(
@@ -706,7 +719,7 @@ def populate_usas_data(populate_broker_data):
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_state_code="VA",
         pop_state_fips=51,
         pop_state_name="Virginia",
@@ -715,7 +728,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         recipient_location_county_population=1,
@@ -742,6 +755,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["L", "M"],
+        recipient_location_county_fips="51001",
+        pop_county_fips="51001",
     )
     baker.make(
         "search.TransactionSearch",
@@ -807,7 +822,7 @@ def populate_usas_data(populate_broker_data):
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_state_code="VA",
         pop_state_fips=51,
         pop_state_name="Virginia",
@@ -816,7 +831,7 @@ def populate_usas_data(populate_broker_data):
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         recipient_location_county_population=1,
@@ -843,6 +858,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["L", "M"],
+        recipient_location_county_fips="51001",
+        pop_county_fips="51001",
     )
     baker.make(
         "search.TransactionSearch",
@@ -902,13 +919,13 @@ def populate_usas_data(populate_broker_data):
         recipient_location_state_code="VA",
         recipient_location_state_fips=51,
         recipient_location_state_name="Virginia",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_fips=51,
         pop_state_name="Virginia",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         award_update_date=cont_award.update_date,
@@ -934,6 +951,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["Q"],
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
     baker.make(
         "search.TransactionSearch",
@@ -993,13 +1012,13 @@ def populate_usas_data(populate_broker_data):
         recipient_location_state_code="VA",
         recipient_location_state_fips=51,
         recipient_location_state_name="Virginia",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_state_code="VA",
         pop_state_fips=51,
         pop_state_name="Virginia",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
         recipient_location_state_population=1,
         pop_state_population=1,
         award_update_date=cont_award.update_date,
@@ -1025,6 +1044,8 @@ def populate_usas_data(populate_broker_data):
             }
         ],
         disaster_emergency_fund_codes=["Q"],
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
     baker.make(
         "search.TransactionSearch",
@@ -1074,14 +1095,16 @@ def populate_usas_data(populate_broker_data):
         recipient_name_raw="FPDS RECIPIENT 12345",
         recipient_hash="f4d589f1-7921-723a-07c0-c78632748999",
         recipient_levels=["C"],
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        recipient_location_congressional_code_current=None,
+        pop_congressional_code_current=None,
         parent_uei="PARENTUEI12345",
         parent_recipient_unique_id="PARENTDUNS12345",
         parent_recipient_hash="475752fc-dfb9-dac8-072e-3e36f630be93",
         parent_recipient_name="PARENT RECIPIENT 12345",
         parent_recipient_name_raw="PARENT RECIPIENT 12345",
         ordering_period_end_date="2020-07-01",
+        recipient_location_county_fips=None,
+        pop_county_fips=None,
     )
     baker.make(
         "transactions.SourceProcurementTransaction",

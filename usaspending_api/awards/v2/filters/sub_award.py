@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
@@ -16,12 +16,11 @@ from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.v2 import elasticsearch_helper
 from usaspending_api.settings import API_MAX_DATE, API_MIN_DATE, API_SEARCH_MIN_DATE
 
-
 logger = logging.getLogger(__name__)
 
 
 def subaward_download(filters):
-    """ Used by the Custom download"""
+    """Used by the Custom download"""
     return subaward_filter(filters, for_downloads=True)
 
 
@@ -43,6 +42,15 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
         "state_code": {"sub_legal_entity": "state_code", "sub_place_of_perform": "state_code"},
         "county_code": {"sub_legal_entity": "county_code", "sub_place_of_perform": "county_code"},
         "congressional_code": {"sub_legal_entity": "congressional", "sub_place_of_perform": "congressio"},
+        "current_congressional_code": {
+            "sub_legal_entity": "sub_legal_entity_congressional_current",
+            # Due to the rigidness of how we map values to columns
+            # it's required that the column start with sub_place_of_perform
+            # however, when current congressional codes were implemented
+            # the column name chosen did not match this pattern.
+            # That's why we have the full column name in the value
+            "sub_place_of_perform": "sub_place_of_performance_congressional_current",
+        },
     }
     location_mappings = {location_type: field_dict[scope] for location_type, field_dict in location_mappings.items()}
 
@@ -58,7 +66,6 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
         state_qs = Q()
 
         for state_zip_key, location_values in state_zip.items():
-
             if state_zip_key == "city":
                 state_inner_qs = Q(**{f"{scope}_{location_mappings['city_name']}__in": location_values})
             elif state_zip_key == "zip":
@@ -71,6 +78,23 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
 
                 if location_values["county"]:
                     county_qs = Q(**{f"{scope}_{location_mappings['county_code']}__in": location_values["county"]})
+                if location_values["district_current"]:
+                    district_qs = Q(
+                        **{
+                            f"{location_mappings['current_congressional_code']}__in": location_values[
+                                "district_current"
+                            ]
+                        }
+                    )
+                if location_values["district_original"]:
+                    district_qs = Q(
+                        **{
+                            f"{scope}_{location_mappings['congressional_code']}__in": location_values[
+                                "district_original"
+                            ]
+                        }
+                    )
+                # TODO: To be removed in DEV-9966
                 if location_values["district"]:
                     district_qs = Q(
                         **{f"{scope}_{location_mappings['congressional_code']}__in": location_values["district"]}
@@ -95,7 +119,6 @@ def subaward_filter(filters, for_downloads=False):
     pop_scope_q = Q(sub_place_of_perform_country_co="USA") | Q(sub_place_of_perform_country_name="UNITED STATES")
 
     for key, value in filters.items():
-
         if value is None:
             raise InvalidParameterException("Invalid filter: " + key + " has null as its value.")
 
@@ -338,6 +361,6 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(TreasuryAccounts.build_tas_codes_filter(queryset, value))
 
         elif key == "def_codes":
-            queryset = queryset.filter(DefCodes.build_def_codes_filter(queryset, value))
-            queryset = queryset.filter(sub_action_date__gte="2020-04-01")
+            queryset = queryset.filter(DefCodes.build_def_codes_filter(value))
+
     return queryset

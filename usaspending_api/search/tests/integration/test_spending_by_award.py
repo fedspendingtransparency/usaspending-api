@@ -1,11 +1,13 @@
 import json
-import pytest
-
 from datetime import datetime
+
+import pytest
 from model_bakery import baker
 from rest_framework import status
+
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters, legacy_filters
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.search.tests.data.search_filters_test_data import legacy_filters, non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -421,6 +423,38 @@ def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_in
     assert len(resp.data["results"]) == 2
 
 
+def test_messages_not_nested(client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    contract_type_list = all_award_types_mappings["contracts"]
+
+    request_for_2015 = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "time_period": [
+                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "date_signed"},
+            ],
+            "award_type_codes": contract_type_list,
+            "not_a_real_filter": "abc",
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+    )
+    resp_json = resp.json()
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 5
+    assert resp_json["messages"] == get_generic_filters_message(
+        request_for_2015["filters"].keys(), {"time_period", "award_type_codes"}
+    )
+
+
 @pytest.mark.django_db
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index):
     """
@@ -443,7 +477,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
             }
         ),
     )
-    assert resp.status_code == status.HTTP_200_OK, f"Failed to return 200 Response"
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
 
 @pytest.mark.django_db
@@ -668,13 +702,16 @@ def _test_correct_response_for_award_type_codes(client):
         ),
     )
     expected_result = [
+        {"internal_id": 999, "Award ID": "award999", "generated_internal_id": "ASST_NON_TESTING_999"},
+        {"internal_id": 998, "Award ID": "award998", "generated_internal_id": "ASST_NON_TESTING_998"},
+        {"internal_id": 997, "Award ID": "award997", "generated_internal_id": "ASST_NON_TESTING_997"},
         {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
         {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
         {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
         {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 4
+    assert len(resp.json().get("results")) == 7
     assert resp.json().get("results") == expected_result, "Award Type Codes filter does not match expected result"
 
 
@@ -817,6 +854,91 @@ def _test_correct_response_for_recipient_search_text(client):
     expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
+
+    # Test the results when searching for a recipient name that ends with a period
+    # A search for `ACME INC` should include ACME INC, ACME INC. and ACME INC.XYZ
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "recipient_search_text": ["ACME INC"],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID", "Recipient Name"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "internal_id": 999,
+            "Award ID": "award999",
+            "Recipient Name": "ACME INC.XYZ",
+            "generated_internal_id": "ASST_NON_TESTING_999",
+        },
+        {
+            "internal_id": 998,
+            "Award ID": "award998",
+            "Recipient Name": "ACME INC.",
+            "generated_internal_id": "ASST_NON_TESTING_998",
+        },
+        {
+            "internal_id": 997,
+            "Award ID": "award997",
+            "Recipient Name": "ACME INC",
+            "generated_internal_id": "ASST_NON_TESTING_997",
+        },
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == len(expected_result)
+    assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
+
+    # A search for `ACME INC.` should include ACME INC. and ACME INC.XYZ but not ACME INC
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "recipient_search_text": ["ACME INC."],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Award ID", "Recipient Name"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "subawards": False,
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "internal_id": 999,
+            "Award ID": "award999",
+            "Recipient Name": "ACME INC.XYZ",
+            "generated_internal_id": "ASST_NON_TESTING_999",
+        },
+        {
+            "internal_id": 998,
+            "Award ID": "award998",
+            "Recipient Name": "ACME INC.",
+            "generated_internal_id": "ASST_NON_TESTING_998",
+        },
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == len(expected_result)
     assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
 
 
@@ -1432,9 +1554,12 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
         {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
         {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
         {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
+        {"internal_id": 997, "Award ID": "award997", "generated_internal_id": "ASST_NON_TESTING_997"},
+        {"internal_id": 998, "Award ID": "award998", "generated_internal_id": "ASST_NON_TESTING_998"},
+        {"internal_id": 999, "Award ID": "award999", "generated_internal_id": "ASST_NON_TESTING_999"},
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 3
+    assert len(resp.json().get("results")) == len(expected_result)
     assert resp.json().get("results") == expected_result, "Award Type Code filter does not match expected result"
 
 
@@ -1572,3 +1697,52 @@ def test_uei_recipient_filter_subaward(client, monkeypatch, spending_by_award_te
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "UEI Recipient subaward filter does not match expected result"
+
+
+@pytest.mark.django_db
+def test_date_range_with_new_awards_only(
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    contract_type_list = all_award_types_mappings["contracts"]
+
+    request_for_2015 = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "time_period": [
+                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "new_awards_only"},
+            ],
+            "award_type_codes": contract_type_list,
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]) == 5
+
+    request_for_2015 = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "sort": "Sub-Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "time_period": [
+                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "new_awards_only"},
+            ],
+            "award_type_codes": contract_type_list,
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+    )
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.json().get("detail") == "Invalid date_type: new_awards_only"

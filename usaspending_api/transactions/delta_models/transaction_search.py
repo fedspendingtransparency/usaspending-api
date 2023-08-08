@@ -64,10 +64,10 @@ TRANSACTION_SEARCH_COLUMNS = {
     "federal_action_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
+    "indirect_federal_sharing": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     "funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     "total_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     "non_federal_funding_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
-    "indirect_federal_sharing": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": True},
     # Recipient
     "recipient_hash": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_levels": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
@@ -105,6 +105,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "legal_entity_foreign_descr": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_foreign_posta": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "legal_entity_foreign_provi": {"delta": "STRING", "postgres": "TEXT", "gold": True},
+    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     # Place of Performance
     "place_of_performance_code": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "place_of_performance_scope": {"delta": "STRING", "postgres": "TEXT", "gold": True},
@@ -125,6 +126,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "place_of_perform_zip_last4": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "pop_city_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "place_of_performance_forei": {"delta": "STRING", "postgres": "TEXT", "gold": True},
+    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     # Accounts
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "TEXT[]", "gold": False},
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
@@ -389,7 +391,7 @@ TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_S
 TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 
-transaction_search_create_sql_string = fr"""
+transaction_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS.items()])}
     )
@@ -397,8 +399,7 @@ transaction_search_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-# TODO: include derivations for recipient_location_congressional_code_current and pop_congressional_code_current
-transaction_search_load_sql_string = fr"""
+transaction_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS])}
@@ -435,7 +436,7 @@ transaction_search_load_sql_string = fr"""
         TFA.name AS funding_toptier_agency_name,
         COALESCE(transaction_fabs.funding_agency_name, transaction_fpds.funding_agency_name) AS funding_toptier_agency_name_raw,
         COALESCE(transaction_fabs.awarding_sub_tier_agency_c, transaction_fpds.awarding_sub_tier_agency_c) AS awarding_sub_tier_agency_c,
-        SAA.name AS awarding_subtier_agenfunding_subtier_agency_abbreviationcy_name,
+        SAA.name AS awarding_subtier_agency_name,
         COALESCE(transaction_fabs.awarding_sub_tier_agency_n, transaction_fpds.awarding_sub_tier_agency_n) AS awarding_subtier_agency_name_raw,
         COALESCE(transaction_fabs.funding_sub_tier_agency_co, transaction_fpds.funding_sub_tier_agency_co) AS funding_sub_tier_agency_co,
         SFA.name AS funding_subtier_agency_name,
@@ -555,8 +556,7 @@ transaction_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
         RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
-        -- TODO: include recipient_location_congressional_code_current derivation
-        'TEST CUR REC CONGR TS' AS recipient_location_congressional_code_current,
+        CURRENT_CD.recipient_location_congressional_code_current AS recipient_location_congressional_code_current,
         COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5)
             AS recipient_location_zip5,
         transaction_fpds.legal_entity_zip4,
@@ -575,6 +575,10 @@ transaction_search_load_sql_string = fr"""
         transaction_fabs.legal_entity_foreign_descr,
         transaction_fabs.legal_entity_foreign_posta,
         transaction_fabs.legal_entity_foreign_provi,
+        CONCAT(
+            RL_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+        ) AS recipient_location_county_fips,
 
         -- Place of Performance
         transaction_fabs.place_of_performance_code,
@@ -597,8 +601,7 @@ transaction_search_load_sql_string = fr"""
         LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
         POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
-        -- TODO: include pop_congressional_code_current derivation
-        'TEST CUR POP CONGR TS' AS pop_congressional_code_current,
+        CURRENT_CD.pop_congressional_code_current AS pop_congressional_code_current,
         COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5)
             AS pop_zip5,
         COALESCE(transaction_fpds.place_of_performance_zip4a, transaction_fabs.place_of_performance_zip4a)
@@ -608,6 +611,10 @@ transaction_search_load_sql_string = fr"""
         TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city))
             AS pop_city_name,
         transaction_fabs.place_of_performance_forei AS place_of_performance_forei,
+        CONCAT(
+            POP_STATE_LOOKUP.fips,
+            COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
+        ) AS pop_county_fips,
 
         -- Accounts
         FED_AND_TRES_ACCT.treasury_account_identifiers,
@@ -981,6 +988,10 @@ transaction_search_load_sql_string = fr"""
         global_temp.ref_population_cong_district RL_DISTRICT_POPULATION ON (
             RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips
             AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
+        )
+    LEFT OUTER JOIN
+        int.transaction_current_cd_lookup AS CURRENT_CD ON (
+            transaction_normalized.id = CURRENT_CD.transaction_id
         )
     LEFT OUTER JOIN (
         SELECT

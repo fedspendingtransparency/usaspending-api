@@ -14,11 +14,17 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import (
+    deprecated_district_field_in_location_object,
+    get_generic_filters_message,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +66,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
 
-        if not subawards and filters.get("time_period") is not None:
-            for time_period in filters["time_period"]:
-                time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
-
         if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
             empty_results = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
@@ -76,14 +77,21 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         else:
             results = self.query_elasticsearch_for_prime_awards(filters)
 
-        return Response(
-            {
-                "results": results,
-                "messages": get_generic_filters_message(
-                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-                ),
-            }
-        )
+        raw_response = {
+            "results": results,
+            "messages": get_generic_filters_message(
+                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+            ),
+        }
+
+        # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
+        messages = raw_response.get("messages", [])
+        deprecated_district_field_in_location_object(messages, self.original_filters)
+        raw_response["messages"] = messages
+
+        return Response(raw_response)
 
     @staticmethod
     def handle_subawards(filters: dict) -> dict:
@@ -109,7 +117,15 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch_for_prime_awards(self, filters) -> list:
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+        filter_options = {}
+        time_period_obj = AwardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **filter_options)
         s = AwardSearch().filter(filter_query)
 
         s.aggs.bucket(

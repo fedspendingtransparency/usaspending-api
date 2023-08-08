@@ -19,16 +19,11 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
     ensure_business_categories_functions_exist,
 )
-from usaspending_api.common.helpers.generic_helper import (
-    generate_matviews,
-    DEFAULT_MATIVEW_DIR,
-)
+from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.helpers.spark_helpers import stop_spark_context
 from usaspending_api.common.helpers.sql_helpers import (
-    get_database_dsn_string,
-    get_broker_dsn_string,
-    execute_sql_simple,
     build_dsn_string,
+    execute_sql_simple,
 )
 from usaspending_api.common.sqs.sqs_handler import (
     FAKE_QUEUE_DATA_PATH,

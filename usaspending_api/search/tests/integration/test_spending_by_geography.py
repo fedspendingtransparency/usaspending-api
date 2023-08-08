@@ -1,6 +1,6 @@
 import json
-import pytest
 
+import pytest
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
@@ -206,7 +206,7 @@ def _test_correct_response_for_place_of_performance_district_with_geo_filters(cl
             {
                 "scope": "place_of_performance",
                 "geo_layer": "district",
-                "geo_layer_filters": ["5350", "4550"],
+                "geo_layer_filters": ["5351", "4551"],
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
@@ -217,17 +217,17 @@ def _test_correct_response_for_place_of_performance_district_with_geo_filters(cl
         "results": [
             {
                 "aggregated_amount": 50.0,
-                "display_name": "SC-50",
+                "display_name": "SC-51",
                 "per_capita": 0.5,
                 "population": 100,
-                "shape_code": "4550",
+                "shape_code": "4551",
             },
             {
                 "aggregated_amount": 5500.0,
-                "display_name": "WA-50",
-                "per_capita": 5.5,
-                "population": 1000,
-                "shape_code": "5350",
+                "display_name": "WA-51",
+                "per_capita": 2.75,
+                "population": 2000,
+                "shape_code": "5351",
             },
         ],
         "messages": [get_time_period_message()],
@@ -322,7 +322,7 @@ def _test_correct_response_for_recipient_location_district_with_geo_filters(clie
             {
                 "scope": "recipient_location",
                 "geo_layer": "district",
-                "geo_layer_filters": ["4510", "4550", "5350"],
+                "geo_layer_filters": ["4511", "4551", "5351"],
                 "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
             }
         ),
@@ -333,24 +333,24 @@ def _test_correct_response_for_recipient_location_district_with_geo_filters(clie
         "results": [
             {
                 "aggregated_amount": 5000000.0,
-                "display_name": "SC-10",
+                "display_name": "SC-11",
                 "per_capita": 500000.0,
                 "population": 10,
-                "shape_code": "4510",
+                "shape_code": "4511",
             },
             {
                 "aggregated_amount": 500500.0,
-                "display_name": "SC-50",
+                "display_name": "SC-51",
                 "per_capita": 5005.0,
                 "population": 100,
-                "shape_code": "4550",
+                "shape_code": "4551",
             },
             {
                 "aggregated_amount": 55000.0,
-                "display_name": "WA-50",
-                "per_capita": 55.0,
-                "population": 1000,
-                "shape_code": "5350",
+                "display_name": "WA-51",
+                "per_capita": 27.5,
+                "population": 2000,
+                "shape_code": "5351",
             },
         ],
         "messages": [get_time_period_message()],
@@ -479,6 +479,13 @@ def _test_correct_response_for_place_of_performance_district_without_geo_filters
         "geo_layer": "district",
         "results": [
             {
+                "aggregated_amount": 500000.0,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": "",
+            },
+            {
                 "aggregated_amount": 50005.0,
                 "display_name": "SC-10",
                 "per_capita": 5000.5,
@@ -487,24 +494,17 @@ def _test_correct_response_for_place_of_performance_district_without_geo_filters
             },
             {
                 "aggregated_amount": 50.0,
-                "display_name": "SC-50",
+                "display_name": "SC-51",
                 "per_capita": 0.5,
                 "population": 100,
-                "shape_code": "4550",
-            },
-            {
-                "aggregated_amount": 500000.0,
-                "display_name": "SC-90",
-                "per_capita": 500000.0,
-                "population": 1,
-                "shape_code": "4590",
+                "shape_code": "4551",
             },
             {
                 "aggregated_amount": 5500.0,
-                "display_name": "WA-50",
-                "per_capita": 5.5,
-                "population": 1000,
-                "shape_code": "5350",
+                "display_name": "WA-51",
+                "per_capita": 2.75,
+                "population": 2000,
+                "shape_code": "5351",
             },
         ],
         "messages": [get_time_period_message()],
@@ -620,32 +620,32 @@ def _test_correct_response_for_recipient_location_district_without_geo_filters(c
         "geo_layer": "district",
         "results": [
             {
+                "aggregated_amount": 50.0,
+                "display_name": None,
+                "per_capita": None,
+                "population": None,
+                "shape_code": "",
+            },
+            {
                 "aggregated_amount": 5000000.0,
-                "display_name": "SC-10",
+                "display_name": "SC-11",
                 "per_capita": 500000.0,
                 "population": 10,
-                "shape_code": "4510",
+                "shape_code": "4511",
             },
             {
                 "aggregated_amount": 500500.0,
-                "display_name": "SC-50",
+                "display_name": "SC-51",
                 "per_capita": 5005.0,
                 "population": 100,
-                "shape_code": "4550",
-            },
-            {
-                "aggregated_amount": 50.0,
-                "display_name": "SC-90",
-                "per_capita": 50.0,
-                "population": 1,
-                "shape_code": "4590",
+                "shape_code": "4551",
             },
             {
                 "aggregated_amount": 55000.0,
-                "display_name": "WA-50",
-                "per_capita": 55.0,
-                "population": 1000,
-                "shape_code": "5350",
+                "display_name": "WA-51",
+                "per_capita": 27.5,
+                "population": 2000,
+                "shape_code": "5351",
             },
         ],
         "messages": [get_time_period_message()],
@@ -826,3 +826,135 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
+
+
+def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Empty response
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2019-12-30", "end_date": "2020-01-02"}]
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "county",
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2019-12-30", "end_date": "2020-01-15"}]
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "county",
+        "results": [
+            {
+                "aggregated_amount": 5.0,
+                "display_name": "Charleston",
+                "per_capita": 5.0,
+                "population": 1,
+                "shape_code": "45001",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def test_correct_response_new_awards_only(
+    client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Test case when action date out of bounds but date signed in bounds
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2020-01-02", "end_date": "2020-01-15"}
+                    ]
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "county",
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Test case when action date and date signed in bounds
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2019-12-30", "end_date": "2020-01-15"}
+                    ]
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "county",
+        "results": [
+            {
+                "aggregated_amount": 5.0,
+                "display_name": "Charleston",
+                "per_capita": 5.0,
+                "population": 1,
+                "shape_code": "45001",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response

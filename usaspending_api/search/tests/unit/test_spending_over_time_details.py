@@ -28,6 +28,7 @@ def populate_models(db):
         fiscal_action_date=datetime(2010, 6, 1),
         federal_action_obligation=100.00,
         generated_pragmatic_obligation=100.00,
+        award_date_signed=datetime(2010, 2, 15),
     )
     baker.make(
         "search.TransactionSearch",
@@ -37,6 +38,7 @@ def populate_models(db):
         fiscal_action_date=datetime(2011, 6, 1),
         federal_action_obligation=110.00,
         generated_pragmatic_obligation=110.00,
+        award_date_signed=datetime(2012, 2, 15),
     )
     baker.make(
         "search.TransactionSearch",
@@ -200,6 +202,47 @@ def test_spending_over_time_fy_ordering(client, monkeypatch, elasticsearch_trans
     confirm_proper_ordering(group, resp.data["results"])
 
 
+@pytest.mark.django_db(transaction=True)
+def test_spending_over_time_default_date_type(client, monkeypatch, elasticsearch_transaction_index, populate_models):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    group = "fiscal_year"
+    test_payload = {
+        "group": group,
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {"start_date": "2009-10-01", "end_date": "2017-09-30"},
+                {"start_date": "2017-10-01", "end_date": "2018-09-30"},
+            ]
+        },
+    }
+
+    expected_response = {
+        "group": group,
+        "results": [
+            {"aggregated_amount": 100.00, "time_period": {"fiscal_year": "2010"}},
+            {"aggregated_amount": 110.00, "time_period": {"fiscal_year": "2011"}},
+            {"aggregated_amount": 120.00, "time_period": {"fiscal_year": "2012"}},
+            {"aggregated_amount": 130.00, "time_period": {"fiscal_year": "2013"}},
+            {"aggregated_amount": 140.00, "time_period": {"fiscal_year": "2014"}},
+            {"aggregated_amount": 150.00, "time_period": {"fiscal_year": "2015"}},
+            {"aggregated_amount": 160.00, "time_period": {"fiscal_year": "2016"}},
+            {"aggregated_amount": 170.00, "time_period": {"fiscal_year": "2017"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2018"}},
+        ],
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+
 def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_transaction_index, populate_models):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
@@ -298,6 +341,181 @@ def test_spending_over_time_funny_dates_ordering(client, monkeypatch, elasticsea
             {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "4"}},
             {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "5"}},
             {"aggregated_amount": 110.00, "time_period": {"fiscal_year": "2011", "month": "6"}},
+        ],
+        "group": "month",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+
+def test_spending_over_time_new_awards_only_filter(
+    client, monkeypatch, elasticsearch_transaction_index, populate_models
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Test where awards have a base transaction date within the specified time period filter bounds
+    group = "month"
+    test_payload = {
+        "group": group,
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {"date_type": "date_signed", "start_date": "2010-02-01", "end_date": "2010-03-31"},
+            ]
+        },
+        "messages": [get_time_period_message()],
+    }
+
+    expected_response = {
+        "results": [
+            {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010", "month": "5"}},
+            {"aggregated_amount": 100.00, "time_period": {"fiscal_year": "2010", "month": "6"}},
+        ],
+        "group": "month",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+    # Test where awards do not have a base transaction date within the specified time period filter bounds
+    group = "month"
+    test_payload = {
+        "group": group,
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {"date_type": "date_signed", "start_date": "2010-02-01", "end_date": "2010-02-02"},
+            ]
+        },
+        "messages": [get_time_period_message()],
+    }
+
+    expected_response = {
+        "results": [
+            {"aggregated_amount": 0, "time_period": {"fiscal_year": "2010", "month": "5"}},
+        ],
+        "group": "month",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+    # Test where awards multiple time period filter bounds provided
+    group = "month"
+    test_payload = {
+        "group": group,
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {"date_type": "date_signed", "start_date": "2010-02-01", "end_date": "2010-03-31"},
+                {"start_date": "2011-02-01", "end_date": "2011-03-31"},
+            ]
+        },
+        "messages": [get_time_period_message()],
+    }
+
+    expected_response = {
+        "results": [
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "5"}},
+            {"aggregated_amount": 100.00, "time_period": {"fiscal_year": "2010", "month": "6"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "7"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "8"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "9"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "10"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "11"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "12"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "1"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "2"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "3"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "4"}},
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2011", "month": "5"}},
+            {"aggregated_amount": 110.00, "time_period": {"fiscal_year": "2011", "month": "6"}},
+        ],
+        "group": "month",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+    # Test that new awards only set to true requires action date to be in bounds
+    group = "month"
+    test_payload = {
+        "group": group,
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {
+                    "date_type": "new_awards_only",
+                    "start_date": "2010-02-14",
+                    "end_date": "2010-02-16",
+                },
+            ]
+        },
+        "messages": [get_time_period_message()],
+    }
+
+    expected_response = {
+        "results": [
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "5"}},
+        ],
+        "group": "month",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(get_spending_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+    # Test that new awards only set to false doesn't require action date to be in bounds
+    group = "month"
+    test_payload = {
+        "group": group,
+        "subawards": False,
+        "filters": {
+            "time_period": [
+                {
+                    "date_type": "new_awards_only",
+                    "start_date": "2010-02-13",
+                    "end_date": "2010-03-02",
+                },
+            ]
+        },
+        "messages": [get_time_period_message()],
+    }
+
+    expected_response = {
+        "results": [
+            {"aggregated_amount": 0.00, "time_period": {"fiscal_year": "2010", "month": "5"}},
+            {"aggregated_amount": 100.00, "time_period": {"fiscal_year": "2010", "month": "6"}},
         ],
         "group": "month",
         "messages": [get_time_period_message()],

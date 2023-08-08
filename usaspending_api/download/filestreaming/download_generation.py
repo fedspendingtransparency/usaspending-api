@@ -18,8 +18,11 @@ from datetime import datetime, timezone
 from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
+from http.client import RemoteDisconnected
+from urllib.error import HTTPError
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
+from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
 from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
 from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
@@ -182,14 +185,17 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
             # Use correct date range columns for advanced search
             # (Will not change anything for keyword search since "time_period" is not provided))
             filters = deepcopy(json_request["filters"])
-            if (download_type == "elasticsearch_awards" or download_type == "awards") and json_request["filters"].get(
-                "time_period"
-            ) is not None:
-                for time_period in filters["time_period"]:
-                    time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                    time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
+
             if json_request["filters"].get("time_period") is not None and download_type == "sub_awards":
                 for time_period in filters["time_period"]:
+                    # sub awards do not support `new_awards_only` date type
+                    #   the reason we need this check is because downloads are
+                    #   sometimes a mix between prime awards and subawards
+                    #   and share the same filters. In the cases where the
+                    #   download requests `new_awards_only` we only want to apply this
+                    #   date type to the prime award summaries
+                    if time_period.get("date_type") == NEW_AWARDS_ONLY_KEYWORD:
+                        del time_period["date_type"]
                     if time_period.get("date_type") == "date_signed":
                         time_period["date_type"] = "action_date"
             if download_type == "elasticsearch_awards" or download_type == "elasticsearch_transactions":
@@ -225,17 +231,71 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
 
         elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
             # Account downloads
-            account_source = DownloadSource(
-                VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
-            )
             filters = {**json_request["filters"], **json_request.get("account_filters", {})}
-            account_source.queryset = filter_function(
-                download_type,
-                VALUE_MAPPINGS[download_type]["table"],
-                filters,
-                json_request["account_level"],
-            )
-            download_sources.append(account_source)
+
+            if "is_fpds_join" in VALUE_MAPPINGS[download_type]:
+                # Contracts
+                d1_account_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"],
+                    json_request["account_level"],
+                    download_type,
+                    agency_id,
+                    extra_file_type="Contracts_",
+                )
+                d1_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True}
+                d1_account_source.queryset = filter_function(
+                    download_type,
+                    VALUE_MAPPINGS[download_type]["table"],
+                    d1_filters,
+                    json_request["account_level"],
+                )
+                download_sources.append(d1_account_source)
+
+                # Assistance
+                d2_account_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"],
+                    json_request["account_level"],
+                    download_type,
+                    agency_id,
+                    extra_file_type="Assistance_",
+                )
+                d2_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": False}
+                d2_account_source.queryset = filter_function(
+                    download_type,
+                    VALUE_MAPPINGS[download_type]["table"],
+                    d2_filters,
+                    json_request["account_level"],
+                )
+                download_sources.append(d2_account_source)
+
+                # Unlinked
+                unlinked_account_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"],
+                    json_request["account_level"],
+                    download_type,
+                    agency_id,
+                    extra_file_type="Unlinked_",
+                )
+                unlinked_filters = {**filters, "unlinked": True}
+                unlinked_account_source.queryset = filter_function(
+                    download_type,
+                    VALUE_MAPPINGS[download_type]["table"],
+                    unlinked_filters,
+                    json_request["account_level"],
+                )
+                download_sources.append(unlinked_account_source)
+
+            else:
+                account_source = DownloadSource(
+                    VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
+                )
+                account_source.queryset = filter_function(
+                    download_type,
+                    VALUE_MAPPINGS[download_type]["table"],
+                    filters,
+                    json_request["account_level"],
+                )
+                download_sources.append(account_source)
 
         elif VALUE_MAPPINGS[download_type]["source_type"] == "disaster":
             # Disaster Page downloads
@@ -304,6 +364,7 @@ def build_data_file_name(source, download_job, piid, assistance_id):
             "level": d_map[source.file_type],
             "timestamp": timestamp,
             "type": d_map[source.file_type],
+            "extra_file_type": source.extra_file_type,
         }
 
     return file_name_pattern.format(**file_name_values)
@@ -663,6 +724,7 @@ def strip_file_extension(file_name):
 
 
 def fail_download(download_job, exception, message):
+    write_to_log(message=message, is_error=True, download_job=download_job)
     stack_trace = "".join(
         traceback.format_exception(etype=type(exception), value=exception, tb=exception.__traceback__)
     )
@@ -676,7 +738,22 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
-    RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
+
+    retry_count = settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COUNT
+
+    # We are currently receiving timeouts when trying to retrieve the data dictionary during
+    # the nightly pipeline. Adding retry logic here until those timeouts are resolved
+    for attempt in range(retry_count + 1):
+        try:
+            RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
+            break
+        except (HTTPError, RemoteDisconnected):
+            if attempt < retry_count:
+                time.sleep(settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN)
+                continue
+            else:
+                raise
+
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
 
 

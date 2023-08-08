@@ -6,7 +6,10 @@ import os
 from django.core.management import call_command
 from csv import reader
 from model_bakery import baker
+from unittest.mock import Mock
 
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
@@ -82,6 +85,7 @@ def generate_contract_data(fiscal_year, i):
         "",  # "recipient_state_code", "recipient_state_name", "recipient_zip_4_code", "recipient_congressional_district",
         "",
         "",
+        "",
         "",  # "recipient_phone_number", "recipient_fax_number", "primary_place_of_performance_country_code",
         "",
         "",  # "primary_place_of_performance_country_name", "primary_place_of_performance_city_name",
@@ -93,6 +97,7 @@ def generate_contract_data(fiscal_year, i):
         "",
         "",
         "",  # "primary_place_of_performance_congressional_district", "award_or_idv_flag", "award_type_code", "award_type",
+        "",
         "",
         "",
         "",
@@ -365,6 +370,7 @@ def generate_assistance_data(fiscal_year, i):
         "",
         "",
         "",
+        "",
         "",  # "recipient_foreign_province_name", "recipient_foreign_postal_code", "primary_place_of_performance_scope",
         "",
         "",  # "primary_place_of_performance_country_code", "primary_place_of_performance_country_name",
@@ -374,6 +380,7 @@ def generate_assistance_data(fiscal_year, i):
         "",  # "primary_place_of_performance_county_code", "primary_place_of_performance_county_name",
         "",
         "",  # "primary_place_of_performance_state_name", "primary_place_of_performance_zip_4",
+        "",
         "",
         "",  # "primary_place_of_performance_congressional_district","primary_place_of_performance_foreign_location",
         "",
@@ -518,6 +525,7 @@ def monthly_download_data(db, monkeypatch):
 
 
 def test_all_agencies(client, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     call_command("populate_monthly_files", "--fiscal_year=2020", "--local", "--clobber")
     file_list = os.listdir(CSV_DIR)
 
@@ -528,6 +536,7 @@ def test_all_agencies(client, monthly_download_data, monkeypatch):
 
 
 def test_specific_agency(client, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     contract_data = generate_contract_data(2020, 1)
     assistance_data = generate_assistance_data
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
@@ -573,11 +582,16 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
             row_count += 1
         assert row_count >= 1
 
+    # Cleanup
     for f in (contracts_zip_1, assistance_zip_1, contracts_csv_1, assistance_csv_1, assistance_zip_2, contracts_zip_2):
-        os.remove(os.path.normpath(f"{CSV_DIR}/{f}"))
+        try:
+            os.remove(os.path.normpath(f"{CSV_DIR}/{f}"))
+        except FileNotFoundError:
+            pass  # it's ok if the file to be deleted is not there
 
 
 def test_agency_no_data(client, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2022", "--local", "--clobber")
     contracts_zip = f"FY2022_002_Contracts_Full_{TODAY}.zip"
     contracts_csv_1 = f"FY2022_002_Contracts_Full_{TODAY}_1.csv"
@@ -598,10 +612,14 @@ def test_agency_no_data(client, monthly_download_data, monkeypatch):
             assert row_count == 1, f"{csv_file} was not empty"
 
     for f in (contracts_zip, assistance_zip, contracts_csv_1, assistance_csv_1):
-        os.remove(os.path.normpath(f"{CSV_DIR}/{f}"))
+        try:
+            os.remove(os.path.normpath(f"{CSV_DIR}/{f}"))
+        except FileNotFoundError:
+            pass  # it's ok if the file to be deleted is not there
 
 
 def test_fiscal_years(client, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2004", "--local", "--clobber")
     file_list = os.listdir(CSV_DIR)
@@ -618,6 +636,7 @@ def test_fiscal_years(client, monthly_download_data, monkeypatch):
 
 
 def test_award_type(client, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     call_command(
         "populate_monthly_files",
         "--agencies=1",

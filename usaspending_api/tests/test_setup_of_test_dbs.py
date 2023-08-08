@@ -29,5 +29,3 @@ def test_trigger_test_db_setup(request, _skip_if_xdist, django_db_setup):
     add --create-db to ensure that the test DBs are (re)created from scratch
     """
     assert request.node.originalname == TEST_DB_SETUP_TEST_NAME
-
-
