@@ -70,7 +70,8 @@ def pytest_sessionfinish(session, exitstatus):
                 file=sys.__stderr__,
             )
         # Add cleanup below
-        stop_spark_context()  # see usaspending_api.tests.conftest_spark.spark fixture
+        # TODO: Troubleshooting - commenting out to see if it fixes test failures
+        #stop_spark_context()  # see usaspending_api.tests.conftest_spark.spark fixture
     else:
         print(
             f"\nRunning pytest_sessionfinish while exiting the xdist worker process with id = {worker_id}",
