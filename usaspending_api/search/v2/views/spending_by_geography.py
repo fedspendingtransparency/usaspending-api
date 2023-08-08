@@ -315,7 +315,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.queryset = self.queryset.filter(geocode_filter_subaward_locations(scope_field_name, geo_layers_list))
 
         else:
-            country_code_field = self.location_dict['code']['country'][self.award_or_sub_str][self.scope_field_name]
+            country_code_field = self.location_dict["code"]["country"][self.award_or_sub_str][self.scope_field_name]
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
             kwargs[f"{loc_lookup}__isnull"] = False
             kwargs[f"{state_lookup}__isnull"] = False
