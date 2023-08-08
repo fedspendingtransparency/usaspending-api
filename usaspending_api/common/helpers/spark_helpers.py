@@ -72,7 +72,11 @@ def stop_spark_context() -> bool:
         # Check the Singleton instance populated if there's an active SparkContext
         if SparkContext._active_spark_context is not None:
             sc = SparkContext._active_spark_context
-            if sc._jvm and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped():
+            if (
+                sc._jvm
+                and sc._jvm.SparkSession
+                and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
+            ):
                 try:
                     sc.stop()
                 except Exception:

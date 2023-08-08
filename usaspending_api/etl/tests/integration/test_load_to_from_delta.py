@@ -16,11 +16,14 @@ from pytest import mark
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
 
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.commands.create_delta_table import (
     TABLE_SPEC,
+    LOAD_QUERY_TABLE_SPEC,
+    LOAD_TABLE_TABLE_SPEC,
 )
 from usaspending_api.etl.tests.integration.test_model import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
 from usaspending_api.recipient.models import RecipientLookup

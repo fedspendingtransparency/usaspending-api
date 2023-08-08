@@ -11,7 +11,7 @@ url = "/api/v2/agency/{toptier_code}/obligations_by_award_category/{filter}"
 
 
 @pytest.fixture
-def transaction_search_1():
+def transaction_search_1(db):
 
     # Submission
     dsws = baker.make(

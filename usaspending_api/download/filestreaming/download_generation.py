@@ -612,7 +612,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         source_path=source_path,
     ), tracer.trace(
         name="postgres.query",
-        service=f"{settings.DOWNLOAD_DATABASE_ALIAS}db",
+        service=f"{settings.DOWNLOAD_DB_ALIAS}db",
         resource=download_sql,
         span_type=SpanTypes.SQL,
     ), tracer.trace(

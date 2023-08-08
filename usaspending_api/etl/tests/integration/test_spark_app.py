@@ -12,6 +12,7 @@ from unittest.mock import MagicMock
 
 import boto3
 from model_bakery import baker
+from pyspark.context import SparkContext
 from pyspark.sql import SparkSession, Row
 from pytest import fixture, mark
 from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
@@ -25,6 +26,15 @@ from usaspending_api.common.etl.spark import _USAS_RDS_REF_TABLES, _BROKER_REF_T
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 
+
+def test_jvm_sparksession(spark: SparkSession):
+    with SparkContext._lock:
+        # Check the Singleton instance populated if there's an active SparkContext
+        assert SparkContext._active_spark_context is not None
+        sc = SparkContext._active_spark_context
+        assert sc._jvm
+        assert sc._jvm.SparkSession
+        assert not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
 
 def test_hive_metastore_db(spark: SparkSession, s3_unittest_data_bucket, hive_unittest_metastore_db):
     """Ensure that schemas and tables created are tracked in the hive metastore_db"""

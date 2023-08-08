@@ -35,7 +35,10 @@ def disable_vacuuming(monkeypatch):
 def remove_csv_file():
     """ Ensure the CSV file goes away at the end of the tests. """
     yield
-    OBJECT_CLASS_FILE.unlink()
+    try:
+        OBJECT_CLASS_FILE.unlink()
+    except FileNotFoundError:
+        pass  # it's ok if the file to be deleted is not there
 
 
 def mock_data(object_classes):

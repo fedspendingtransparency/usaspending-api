@@ -1,5 +1,8 @@
+import os
+
 from builtins import Exception
 from datetime import datetime, timezone
+
 from django.conf import settings
 from django.core.management import call_command
 from django.core.serializers.json import json, DjangoJSONEncoder
@@ -7,6 +10,7 @@ from django.db import connection, DEFAULT_DB_ALIAS
 from elasticsearch import Elasticsearch
 from pathlib import Path
 from string import Template
+from pytest import Session
 
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
 from usaspending_api.common.sqs.sqs_handler import (
@@ -25,6 +29,60 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_covid19_faba_data,
     transform_transaction_data,
 )
+
+
+def is_pytest_xdist_parallel_sessions() -> bool:
+    """Return True if the current tests executing are running in a pytest-xdist parallel test session,
+    even if only 1 worker (1 master, and 1 worker) are configured"""
+    worker_count = int(os.environ.get("PYTEST_XDIST_WORKER_COUNT", 0))
+    return worker_count > 0
+
+
+def is_pytest_xdist_master_process(session: Session):
+    """Return True if running in pytest-xdist parallel test sessions and the session given is from the 'master'
+    process, and not a session of one of the spawned workers.
+
+    This is useful if needing to orchestration cross-session (cross-worker) setup and teardown of fixtures that
+    should only run once, which can be done from the master process.
+    See: https://pytest-xdist.readthedocs.io/en/stable/how-to.html#making-session-scoped-fixtures-execute-only-once
+    And: https://github.com/pytest-dev/pytest-xdist/issues/271#issuecomment-826396320
+    """
+    workerinput = getattr(session.config, "workerinput", None)
+    return is_pytest_xdist_parallel_sessions() and workerinput is None
+
+
+def transform_xdist_worker_id_to_django_test_db_id(worker_id: str):
+    """Align pytest-xdist global worker IDs instead to suffixes Django unittest uses for their test DBs
+    e.g. 'gw0' -> '1', 'gw1' -> '2', ...
+    If it's the master process, return empty string"""
+    if not worker_id or worker_id == "master":
+        return ""
+    return str(int(worker_id.replace("gw", "")) + 1)
+
+
+def is_safe_for_xdist_setup_or_teardown(session: Session, worker_id: str):
+    """Use this in any session fixture whose setup must run EXACTLY ONCE for ALL workers
+    if there are multiple parallel workers (e.g. via a pytest-xdist run with -n X or --numprocesses=X),
+    and then only perform that exactly-once setup logic when this evalutes to True.
+    For teardown, to ensure this cleanup runs after all workers complete their session, add cleanup logic to the pytest
+    ``pytest_sessionfinish(session, exitstatus)`` fixture defined in this module, and guard it with this
+
+    Example:
+        Setup
+        >>> @pytest.fixture(scope="session")
+        >>> def do_some_setup_for_all_tests(session, worker_id):
+        >>>     if not is_safe_for_xdist_setup_or_teardown(session, worker_id):
+        >>>         yield
+        >>>     else:
+        >>>         # ... do setup here exactly once
+
+        TearDown:
+        >>> def pytest_sessionfinish(session, exitstatus):
+        >>>     worker_id = get_xdist_worker_id(session)
+        >>>     if is_safe_for_xdist_setup_or_teardown(session, worker_id):
+        >>>         # ... do teardown here
+    """
+    return is_pytest_xdist_master_process(session) or worker_id == "master" or not worker_id
 
 
 class TestElasticSearchIndex:

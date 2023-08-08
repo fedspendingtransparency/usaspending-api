@@ -81,11 +81,11 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 	)
 
 .PHONY: requirements-dev.txt
-requirements-dev.txt: .venv ## Install or update pip packages in dev virtual env if requirements-dev.txt file changed
+requirements-dev.txt: .venv ## Install or upgrade (to newer version) pip packages in dev virtual env if requirements-dev.txt file changed
 	@( \
 		src_roots=(${src_root_paths}); \
 		for src_root in "$${src_roots[@]}"; do \
-			pip install --editable "$${src_root}[dev]"; \
+			pip install --upgrade --upgrade-strategy eager --editable "$${src_root}[dev]"; \
 		done; \
 	)
 
@@ -116,9 +116,17 @@ print('Hadoop ' + spark.sparkContext._gateway.jvm.org.apache.hadoop.util.Version
 env-code:  ## Print the value of ENV_CODE environment variable
 	@echo ${ENV_CODE}
 
+.PHONY: test-dbs
+test-dbs:  ## Trigger the setup of multiple test DBs that can be reused with pytest --numprocesses.
+	@pytest --reuse-db --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
+
 .PHONY: tests
-tests:  ## Run automated unit/integration tests
-	@pytest -rP -vv
+tests: test-dbs  ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
+	@pytest --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null ${args}
+
+.PHONY: tests-failed
+tests-failed:  test-dbs ## Re-run only automated unit/integration tests that failed on the previous run. Configured for verbose logging to get more detail on failures. logging. add args="..." to append additional pytest args
+	@pytest --last-failed --reuse-db --numprocesses=auto --dist=worksteal -rP -vvv ${args}
 
 .PHONY: confirm-clean-all
 no-prompt := 'false'

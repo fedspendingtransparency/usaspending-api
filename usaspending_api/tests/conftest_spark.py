@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 import boto3
+import pytest
 from django.core.management import call_command
 from django.db import connections
 from model_bakery import baker
@@ -15,8 +16,7 @@ from pytest import fixture
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from usaspending_api.common.helpers.spark_helpers import (
-    is_spark_context_stopped,
-    stop_spark_context,
+    is_spark_context_stopped
 )
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.config import CONFIG
@@ -130,7 +130,7 @@ def s3_unittest_data_bucket(s3_unittest_data_bucket_setup_and_teardown):
 
 
 @fixture(scope="session")
-def spark(tmp_path_factory) -> SparkSession:
+def spark(request: pytest.FixtureRequest, worker_id, tmp_path_factory) -> SparkSession:
     """Throw an error if coming into a test using this fixture which needs to create a
     NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
     AND, proactively cleanup any SparkContext created by this test after it completes
@@ -181,7 +181,11 @@ def spark(tmp_path_factory) -> SparkSession:
 
     yield spark
 
-    stop_spark_context()
+    # Need to guard SparkContext stopping this if running parallel test sessions with pytest-xdist.
+    # All parallel test workers will end up using the same SparkSession in the JVM, so one test session finishing
+    # before the others will kill Spark for all sesssions prematurely
+    # To cleanly stop it at the end of all worker(s) session(s), moved this teardown to:
+    # usaspending_api.conftest.pytest_sessionfinish
 
 
 @fixture

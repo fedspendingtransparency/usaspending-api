@@ -6,6 +6,8 @@ import time
 
 from calendar import monthrange, isleap
 from datetime import datetime as dt
+from pathlib import Path
+
 from dateutil import parser
 
 from django.conf import settings
@@ -22,14 +24,6 @@ from usaspending_api.references.models import Agency
 
 
 logger = logging.getLogger(__name__)
-TEMP_SQL_FILES = [
-    {"name": key, "sql_file": DEFAULT_MATIVEW_DIR / val["sql_filename"]} for key, val in MATERIALIZED_VIEWS.items()
-]
-TEMP_SQL_FILES += [
-    {"name": key, "sql_file": DEFAULT_MATIVEW_DIR / val["sql_filename"]}
-    for key, val in CHUNKED_MATERIALIZED_VIEWS.items()
-]
-
 
 def read_text_file(filepath):
     with open(filepath, "r") as plaintext_file:
@@ -112,12 +106,28 @@ def convert_matview_to_view(matview_sql):
     return sql
 
 
-def generate_matviews(materialized_views_as_traditional_views=False):
+def get_temp_matview_sql_files_dict(matview_dir: Path):
+    temp_sql_files = [
+        {"name": key, "sql_file": matview_dir / val["sql_filename"]} for key, val in MATERIALIZED_VIEWS.items()
+    ]
+    temp_sql_files += [
+        {"name": key, "sql_file": matview_dir / val["sql_filename"]}
+        for key, val in CHUNKED_MATERIALIZED_VIEWS.items()
+    ]
+    return temp_sql_files
+
+
+def generate_matviews(materialized_views_as_traditional_views=False, parallel_worker_id: str = None):
     with connection.cursor() as cursor:
         cursor.execute(CREATE_READONLY_SQL)
         cursor.execute(DEPENDENCY_FILEPATH.read_text())
-        subprocess.call(f"python3 {MATVIEW_GENERATOR_FILE} --dest {DEFAULT_MATIVEW_DIR} --quiet", shell=True)
-        for matview_sql_lookup in TEMP_SQL_FILES:
+
+        matview_dir = DEFAULT_MATIVEW_DIR
+        if parallel_worker_id:
+            matview_dir = DEFAULT_MATIVEW_DIR / f"worker_{parallel_worker_id}"
+        subprocess.call(f"python3 {MATVIEW_GENERATOR_FILE} --dest {matview_dir} --quiet", shell=True)
+
+        for matview_sql_lookup in get_temp_matview_sql_files_dict(matview_dir):
             name = matview_sql_lookup["name"]
             sql = matview_sql_lookup["sql_file"].read_text()
             if materialized_views_as_traditional_views:
@@ -129,8 +139,7 @@ def generate_matviews(materialized_views_as_traditional_views=False):
                     f" CREATE RULE {name}_delete_rule AS ON DELETE TO {name} DO INSTEAD NOTHING;"
                 )
             cursor.execute(sql)
-
-    shutil.rmtree(DEFAULT_MATIVEW_DIR)
+        shutil.rmtree(matview_dir)
 
 
 def get_pagination(results, limit, page, benchmarks=False):

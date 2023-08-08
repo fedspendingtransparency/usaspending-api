@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import tempfile
 from pathlib import Path
 
@@ -9,17 +10,25 @@ from django.conf import settings
 from django.core.management import call_command
 from django.db import connections
 from django.test import override_settings
+from pytest_django.fixtures import _set_suffix_to_test_databases
+from pytest_django.lazy_django import skip_if_no_django
+from xdist.plugin import pytest_xdist_auto_num_workers, get_xdist_worker_id
 from model_bakery import baker
 
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
     ensure_business_categories_functions_exist,
 )
-from usaspending_api.common.helpers.generic_helper import generate_matviews
+from usaspending_api.common.helpers.generic_helper import (
+    generate_matviews,
+    DEFAULT_MATIVEW_DIR,
+)
+from usaspending_api.common.helpers.spark_helpers import stop_spark_context
 from usaspending_api.common.helpers.sql_helpers import (
     get_database_dsn_string,
     get_broker_dsn_string,
     execute_sql_simple,
+    build_dsn_string,
 )
 from usaspending_api.common.sqs.sqs_handler import (
     FAKE_QUEUE_DATA_PATH,
@@ -33,10 +42,13 @@ from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
     remove_unittest_queue_data_files,
+    transform_xdist_worker_id_to_django_test_db_id,
+    is_safe_for_xdist_setup_or_teardown,
 )
 
 # Compose ALL fixtures from conftest_spark
 from usaspending_api.tests.conftest_spark import *  # noqa
+from usaspending_api.tests.test_setup_of_test_dbs import TEST_DB_SETUP_TEST_NAME
 
 logger = logging.getLogger("console")
 
@@ -45,6 +57,32 @@ logger = logging.getLogger("console")
 baker.generators.add("django.contrib.postgres.search.SearchVectorField", lambda: "VECTORFIELD")
 baker.generators.add("usaspending_api.common.custom_django_fields.NumericField", lambda: 0.00)
 baker.generators.add("usaspending_api.common.custom_django_fields.BooleanFieldWithDefault", lambda: False)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """A global built-in fixture to pytest that is called when all tests in a session complete.
+    For parallel execution with xdist, this function is called once in each worker,
+    strictly before it is called on the master process.
+    NOTE: If you need to log/print, do so to sys.__stderr__ (sys.stderr is captured at this point)
+    """
+    worker_id = get_xdist_worker_id(session)
+    if is_safe_for_xdist_setup_or_teardown(session, worker_id):
+        if worker_id == "master":
+            print(f"\nRunning pytest_sessionfinish while exiting the xdist 'master' process", file=sys.__stderr__)
+        else:
+            print(
+                f"\nRunning pytest_sessionfinish in single process execution (no xdist parallel test sessions)",
+                file=sys.__stderr__,
+            )
+        # Add cleanup below
+        stop_spark_context()  # see usaspending_api.tests.conftest_spark.spark fixture
+    else:
+        print(
+            f"\nRunning pytest_sessionfinish while exiting the xdist worker process with id = {worker_id}",
+            file=sys.__stderr__,
+        )
+        # Possible per-worker or worker-specific cleanup below. Rare and not recommended to do this.
+        pass
 
 
 def pytest_configure():
@@ -98,6 +136,8 @@ def django_db_setup(
     django_db_use_migrations,
     django_db_keepdb,
     django_db_createdb,
+    # django_db_modify_db_settings leads to to calling the overridden django_db_modify_db_settings_xdist_suffix
+    # below
     django_db_modify_db_settings,
 ):
     """This is an override of the original implementation in the https://github.com/pytest-dev/pytest-django plugin
@@ -111,7 +151,7 @@ def django_db_setup(
     More work could be put into trying to patch, replace, or wrap implementation of
     ``django.test.utils.setup_databases``, which is the actual method that needs to be wrapped and extended.
     """
-    from django.test.utils import setup_databases, teardown_databases
+    from django.test.utils import setup_databases, teardown_databases, TimeKeeper
     from pytest_django.fixtures import _disable_native_migrations
 
     setup_databases_args = {}
@@ -122,11 +162,28 @@ def django_db_setup(
     if django_db_keepdb and not django_db_createdb:
         setup_databases_args["keepdb"] = True
 
+    # NEW (OVERRIDES) of default Django behavior
+    setup_databases_args["time_keeper"] = TimeKeeper()
+    if (
+        len(request.node.items) == 1
+        and request.node.items[0].originalname == TEST_DB_SETUP_TEST_NAME
+        and request.config.option.numprocesses is None  # NOT running with xdist parallel test workers
+        and request.config.option.reuse_db
+    ):
+        # This should only be triggered when calling the TEST_DB_SETUP_TEST_NAME unit test all by itself, which is an
+        # indicator to execute this fixture in a way where it sets up and leaves around multiple test databases.
+        # By handing a parallel arg > 0 value to setup_databases() we use the Django unittest approach to creating
+        # parallel copies of the test database rather than the pytest-django approach. The Django approach is faster
+        # because it clones the first test db (CREATE DATABASE ... WITH TEMPLATE [for Postgres]) rather than running
+        # migrations scripts for each copy to build it up.
+        parallel_workers = pytest_xdist_auto_num_workers(request.config) or 0
+        setup_databases_args["parallel"] = parallel_workers
+
     with django_db_blocker.unblock():
         db_cfg = setup_databases(verbosity=request.config.option.verbose, interactive=False, **setup_databases_args)
         # If migrations are skipped, assume matviews and views are not to be (re)created either
-        # Other scenarios (such as reuse or keep DB) may still lead to creation of a non-existent DB, so they must be
-        # (re)created under those conditions
+        # Only inspecting whether the migration option was turned off, since --reuse-db might still cause a DB to be
+        # created if there's nothing there to reuse.
         if not django_db_use_migrations:
             logger.warning(
                 "Skipping generation of materialized views or other views in this test run because migrations are also "
@@ -134,7 +191,12 @@ def django_db_setup(
             )
         else:
             delete_tables_for_tests()
-            generate_matviews(materialized_views_as_traditional_views=True)
+            # If using parallel test runners through pytest-xdist, pass the unique worker ID to handle matview SQL
+            # files distinctly for each one
+            generate_matviews(
+                materialized_views_as_traditional_views=True,
+                parallel_worker_id=getattr(request.config, "workerinput", {}).get("workerid"),
+            )
             ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
             add_view_protection()
@@ -147,16 +209,20 @@ def django_db_setup(
             old_usas_db_url = CONFIG.DATABASE_URL
             old_usas_ps_db = CONFIG.USASPENDING_DB_NAME
 
-            test_usas_db_name = f"test_{CONFIG.USASPENDING_DB_NAME}"
-            CONFIG.DATABASE_URL = get_database_dsn_string()
+            test_usas_db_name = settings.DATABASES[settings.DEFAULT_DB_ALIAS].get("TEST", {}).get("NAME")
             CONFIG.USASPENDING_DB_NAME = test_usas_db_name
+            CONFIG.DATABASE_URL = build_dsn_string(
+                {**settings.DATABASES[settings.DEFAULT_DB_ALIAS], **{"NAME": test_usas_db_name}}
+            )
 
             old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
-            test_broker_db = f"test_{CONFIG.BROKER_DB_NAME}"
-            CONFIG.DATA_BROKER_DATABASE_URL = get_broker_dsn_string()
+            test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("TEST", {}).get("NAME")
             CONFIG.BROKER_DB_NAME = test_broker_db
+            CONFIG.DATA_BROKER_DATABASE_URL = build_dsn_string(
+                {**settings.DATABASES[settings.DATA_BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
+            )
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down
     def reset_postgres_dsn():
@@ -177,6 +243,20 @@ def django_db_setup(
 
     if not django_db_keepdb:
         request.addfinalizer(teardown_database)
+
+
+@pytest.fixture(scope="session")
+def django_db_modify_db_settings_xdist_suffix(request):
+    """Overriding definition from pytest-django to fuse pytest-xdist with Django test DB setup
+    See original code:
+    https://github.com/pytest-dev/pytest-django/blob/bd2ae62968aaf97c6efc7e02ff77ba6160865435/pytest_django/fixtures.py#L46
+    """
+    skip_if_no_django()
+
+    worker_id = get_xdist_worker_id(request)
+    if worker_id and worker_id != "master":  # running in pytest-xdist, and on a worker process
+        suffix = transform_xdist_worker_id_to_django_test_db_id(worker_id)
+        _set_suffix_to_test_databases(suffix=suffix)
 
 
 @pytest.fixture
@@ -234,7 +314,7 @@ def elasticsearch_account_index(db):
 
 
 @pytest.fixture(scope="session")
-def broker_db_setup(django_db_setup, django_db_use_migrations):
+def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     """Fixture to use during a pytest session if you will run integration tests that requires an actual broker
     database on the other end.
 
@@ -367,11 +447,17 @@ def broker_db_setup(django_db_setup, django_db_use_migrations):
     logger.info("Configured Mounts: ")
     [logger.info(f"\tMOUNT: {str(m)}") for m in docker_run_mounts]
 
+    container_name_suffix = (
+        ""
+        if not transform_xdist_worker_id_to_django_test_db_id(worker_id)
+        else f"_{transform_xdist_worker_id_to_django_test_db_id(worker_id)}"
+    )
+
     # NOTE: use of network_mode="host" applies ONLY when on Linux (i.e. ignored elsewhere)
     # It allows docker to resolve network addresses (like "localhost") as if running from the docker host
     log_gen = docker_client.containers.run(
         broker_docker_image,
-        name="data-act-broker-init-test-db",
+        name="data-act-broker-init-test-db" + container_name_suffix,
         command=broker_container_command,
         remove=True,
         network_mode="host",

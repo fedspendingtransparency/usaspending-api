@@ -307,17 +307,18 @@ else:
 
 # Initializing download DB as connection string (DOWNLOAD_DATABASE_URL) for PSQL command and
 # Django connection (DATABASES["db_download"]) to allow for Queryset directly against DB used for downloads
-DOWNLOAD_DATABASE_ALIAS = "db_download"
+DOWNLOAD_DB_ALIAS = "db_download"
 if os.environ.get("DOWNLOAD_DATABASE_URL"):
     DOWNLOAD_DATABASE_URL = os.environ.get("DOWNLOAD_DATABASE_URL")
-    DATABASES[DOWNLOAD_DATABASE_ALIAS] = _configure_database_connection(
+    DATABASES[DOWNLOAD_DB_ALIAS] = _configure_database_connection(
         "DOWNLOAD_DATABASE_URL", test_options={"MIRROR": DEFAULT_DB_ALIAS}
     )
 
 # import a second database connection for ETL, connecting to the data broker
 # using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
+DATA_BROKER_DB_ALIAS = "data_broker"
 if os.environ.get("DATA_BROKER_DATABASE_URL"):
-    DATABASES["data_broker"] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
+    DATABASES[DATA_BROKER_DB_ALIAS] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
 
 DATA_BROKER_DBLINK_NAME = "broker_server"
 

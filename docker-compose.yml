@@ -10,6 +10,7 @@ volumes:
 services:
 
   usaspending-db:
+    command: postgres -c 'max_connections=500'
     profiles:
       - usaspending  # must pass --profile usaspending to docker-compose for this to come up, or run a service with one of these other profiles
       - manage
@@ -43,7 +44,7 @@ services:
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
-      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
+      ES_HOSTNAME: ${ES_HOSTNAME}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
 
   usaspending-test:
@@ -63,7 +64,7 @@ services:
     command: pytest
     environment:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
-      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
+      ES_HOSTNAME: ${ES_HOSTNAME}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
       # Location in host machine where broker src code root can be found
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
@@ -98,7 +99,7 @@ services:
         pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
     environment:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
-      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
+      ES_HOSTNAME: ${ES_HOSTNAME}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
       # Location in host machine where broker src code root can be found
       DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
@@ -125,7 +126,7 @@ services:
       DB_SOURCE: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DB_R1: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
-      ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
+      ES_HOSTNAME: ${ES_HOSTNAME}
 
   usaspending-bulk-download:
     profiles:
