@@ -1,20 +1,20 @@
 import copy
 import logging
-
 from decimal import Decimal
 from enum import Enum
+from typing import Dict, List, Optional
 
 from django.conf import settings
-from django.db.models import Sum, FloatField, QuerySet, F, Value, TextField
+from django.db.models import F, FloatField, QuerySet, Sum, TextField, Value
 from django.db.models.functions import Cast, Concat
-from elasticsearch_dsl import A, Q as ES_Q
+from elasticsearch_dsl import A
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from typing import Optional, List, Dict
 
 from usaspending_api.awards.v2.filters.sub_award import geocode_filter_subaward_locations, subaward_filter
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import (
@@ -25,15 +25,15 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
-from usaspending_api.references.models import PopCounty, PopCongressionalDistrict
+from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_transactions,
+    get_scaled_sum_aggregations,
 )
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 API_VERSION = settings.API_VERSION
@@ -315,10 +315,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.queryset = self.queryset.filter(geocode_filter_subaward_locations(scope_field_name, geo_layers_list))
 
         else:
+            # Lookup the correct country code field name from `location_dict`
+            country_code_field = self.location_dict["code"]["country"][self.award_or_sub_str][self.scope_field_name]
+
             # Adding null, USA, not number filters for specific partial index when not using geocode_filter
             kwargs[f"{loc_lookup}__isnull"] = False
             kwargs[f"{state_lookup}__isnull"] = False
-            kwargs[f"{scope_field_name}_country_code"] = "USA"
+            kwargs[f"{scope_field_name}_{country_code_field}"] = "USA"
             kwargs[f"{loc_lookup}__iregex"] = r"^[0-9]*(\.\d+)?$"
 
         # Turn county/district codes into float since inconsistent in database
