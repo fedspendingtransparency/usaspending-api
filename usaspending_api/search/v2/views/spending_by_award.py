@@ -40,12 +40,18 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import (
+    deprecated_district_field_in_location_object,
+    get_generic_filters_message,
+)
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from usaspending_api.submissions.models import SubmissionAttributes
 
 logger = logging.getLogger(__name__)
@@ -91,10 +97,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
         filters = json_request.get("filters", {})
-        if not self.is_subaward and filters.get("time_period") is not None:
-            for time_period in filters["time_period"]:
-                time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
         self.filters = filters
         self.fields = json_request["fields"]
         self.pagination = {
@@ -107,18 +109,35 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
-            return Response(self.populate_response(results=[], has_next=False))
+            raw_response = self.populate_response(results=[], has_next=False)
+
+            # Add filter field deprecation notices
+
+            # TODO: To be removed in DEV-9966
+            messages = raw_response.get("messages", [])
+            deprecated_district_field_in_location_object(messages, self.original_filters)
+            raw_response["messages"] = messages
+
+            return Response(raw_response)
 
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
         raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
 
         if self.is_subaward:
-            response = Response(self.create_response_for_subawards(self.construct_queryset()))
+            raw_response = self.create_response_for_subawards(self.construct_queryset())
         else:
             self.last_record_unique_id = json_request.get("last_record_unique_id")
             self.last_record_sort_value = json_request.get("last_record_sort_value")
-            response = Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch()))
-        return response
+            raw_response = self.construct_es_response_for_prime_awards(self.query_elasticsearch())
+
+        # Add filter field deprecation notices
+
+        # TODO: To be removed in DEV-9966
+        messages = raw_response.get("messages", [])
+        deprecated_district_field_in_location_object(messages, self.original_filters)
+        raw_response["messages"] = messages
+
+        return Response(raw_response)
 
     @staticmethod
     def validate_request_data(request_data):
@@ -268,7 +287,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
     def query_elasticsearch(self) -> list:
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+        filter_options = {}
+        time_period_obj = AwardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **filter_options)
         sort_field = self.get_elastic_sort_by_fields()
         covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
         iija_sort_fields = {"Infrastructure Obligations": "obligation", "Infrastructure Outlays": "outlay"}
@@ -391,6 +418,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 row["Subsidy Cost"] = float(row["Subsidy Cost"])
             if row.get("Award Amount"):
                 row["Award Amount"] = float(row["Award Amount"])
+            if row.get("Total Outlays"):
+                row["Total Outlays"] = float(row["Total Outlays"])
             if row.get("Awarding Agency"):
                 code = row.pop("agency_code")
                 row["awarding_agency_id"] = self.get_agency_database_id(code)
@@ -474,11 +503,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "last_record_unique_id": last_record_unique_id,
                 "last_record_sort_value": str(last_record_sort_value),
             },
-            "messages": [
-                get_generic_filters_message(
-                    self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-                )
-            ],
+            "messages": get_generic_filters_message(
+                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+            ),
         }
 
     def get_recipient_hash_with_level(self, award_doc):

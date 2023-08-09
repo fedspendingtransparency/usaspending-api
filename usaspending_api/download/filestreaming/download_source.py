@@ -5,7 +5,7 @@ from usaspending_api.references.models import ToptierAgency
 
 
 class DownloadSource:
-    def __init__(self, model_type, file_type, source_type, agency_id, filters=None):
+    def __init__(self, model_type, file_type, source_type, agency_id, filters=None, extra_file_type=None):
         self.model_type = model_type
         self.file_type = file_type
         self.source_type = source_type
@@ -26,6 +26,7 @@ class DownloadSource:
         self.is_for_assistance = VALUE_MAPPINGS[source_type].get("is_for_assistance", False)
         self.award_category = None
         self.filters = filters or {}
+        self.extra_file_type = extra_file_type
 
     def __repr__(self):
         return "DownloadSource('{}', '{}', '{}', '{}')".format(
@@ -38,7 +39,7 @@ class DownloadSource:
     @property
     def annotations(self):
         annotations_function = VALUE_MAPPINGS[self.source_type].get("annotations_function")
-        annotations = annotations_function(self.filters) if annotations_function is not None else {}
+        annotations = annotations_function(self.filters, self.file_type) if annotations_function is not None else {}
         return annotations
 
     @property

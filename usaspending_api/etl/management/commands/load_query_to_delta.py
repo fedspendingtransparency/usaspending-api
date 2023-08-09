@@ -43,8 +43,11 @@ from usaspending_api.search.models import AwardSearch, SubawardSearch, SummarySt
 from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
     transaction_search_load_sql_string,
+    transaction_current_cd_lookup_create_sql_string,
+    transaction_current_cd_lookup_load_sql_string,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS,
+    TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
     SUMMARY_STATE_VIEW_COLUMNS,
     summary_state_view_create_sql_string,
     summary_state_view_load_sql_string,
@@ -221,6 +224,26 @@ TABLE_SPEC = {
             ],
         },
     },
+    "transaction_current_cd_lookup": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": transaction_current_cd_lookup_load_sql_string,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "int",
+        "swap_table": "transaction_current_cd_lookup",
+        "swap_schema": "int",
+        "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": True,
+        "delta_table_create_sql": transaction_current_cd_lookup_create_sql_string,
+        "source_schema": TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
+        "custom_schema": "",
+        "column_names": list(TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
     "subaward_search": {
         "model": SubawardSearch,
         "is_from_broker": False,
@@ -314,7 +337,7 @@ class Command(BaseCommand):
             for udf_args in table_spec["user_defined_functions"]:
                 self.spark.udf.register(**udf_args)
 
-        create_ref_temp_views(self.spark)
+        create_ref_temp_views(self.spark, create_broker_views=True)
 
         load_query = table_spec["source_query"]
         if isinstance(load_query, list):

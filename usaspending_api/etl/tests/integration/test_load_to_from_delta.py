@@ -373,13 +373,13 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
         recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current="TEST CUR REC CONGR TS",
+        recipient_location_congressional_code_current=None,
         pop_state_code="VA",
         pop_county_code="001",
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_congressional_code="01",
-        pop_congressional_code_current="TEST CUR POP CONGR TS",
+        pop_congressional_code_current=None,
     )
 
     update_awards()
@@ -410,7 +410,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-
     baker.make(
         "transactions.SourceAssistanceTransaction",
         published_fabs_id=7,
@@ -638,9 +637,11 @@ def test_load_table_to_from_delta_for_transaction_search(
         "recipient_lookup",
         "recipient_profile",
         "sam_recipient",
+        "transaction_current_cd_lookup",
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
@@ -696,9 +697,11 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
         "recipient_lookup",
         "recipient_profile",
         "sam_recipient",
+        "transaction_current_cd_lookup",
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
@@ -730,9 +733,11 @@ def test_load_table_to_from_delta_for_award_search(
         "recipient_lookup",
         "recipient_profile",
         "sam_recipient",
+        "transaction_current_cd_lookup",
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "zips",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(

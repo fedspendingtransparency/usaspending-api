@@ -13,7 +13,7 @@ Django==3.2.*
 django_cte==1.2.*
 djangorestframework==3.13.*
 docutils==0.15.2
-drf-api-tracking==1.8.*
+drf-api-tracking==1.8.0
 drf-extensions==0.7.*
 elasticsearch-dsl==7.1.0
 elasticsearch==7.1.0

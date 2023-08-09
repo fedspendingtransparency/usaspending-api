@@ -4,10 +4,13 @@ SELECT
     "latest_transaction"."referenced_idv_agency_iden" AS "parent_award_agency_id",
     "latest_transaction"."referenced_idv_agency_desc" AS "parent_award_agency_name",
     "award_search"."parent_award_piid" AS "parent_award_id_piid",
-    DEFC."disaster_emergency_funds" AS "disaster_emergency_fund_codes",
-    DEFC."gross_outlay_amount_by_award_cpe" + DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_COVID-19_supplementals",
-    DEFC."transaction_obligated_amount" AS "obligated_amount_from_COVID-19_supplementals",
+    COVID_DEFC."disaster_emergency_funds" AS "disaster_emergency_fund_codes",
+    COVID_DEFC."gross_outlay_amount_by_award_cpe" + COVID_DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + COVID_DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_COVID-19_supplementals",
+    COVID_DEFC."transaction_obligated_amount" AS "obligated_amount_from_COVID-19_supplementals",
+    IIJA_DEFC."gross_outlay_amount_by_award_cpe" + IIJA_DEFC."ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe" + IIJA_DEFC."ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe" AS "outlayed_amount_from_IIJA_supplemental",
+    IIJA_DEFC."transaction_obligated_amount" AS "obligated_amount_from_IIJA_supplemental",
     "award_search"."total_obligation" AS "total_obligated_amount",
+    "award_search"."total_outlays" AS "total_outlayed_amount",
     "latest_transaction"."current_total_value_award" AS "current_total_value_of_award",
     "latest_transaction"."potential_total_value_awar" AS "potential_total_value_of_award",
     "award_search"."date_signed" AS "award_base_action_date",
@@ -56,7 +59,20 @@ SELECT
     "latest_transaction"."recipient_location_state_code" AS "recipient_state_code",
     "latest_transaction"."recipient_location_state_name" AS "recipient_state_name",
     "latest_transaction"."legal_entity_zip4" AS "recipient_zip_4_code",
-    "latest_transaction"."recipient_location_congressional_code" AS "recipient_congressional_district",
+    CASE
+        WHEN "latest_transaction"."recipient_location_state_code" IS NOT NULL
+            AND "latest_transaction"."recipient_location_congressional_code" IS NOT NULL
+            AND "latest_transaction"."recipient_location_state_code" != ''
+        THEN CONCAT("latest_transaction"."recipient_location_state_code", '-', "latest_transaction"."recipient_location_congressional_code")
+        ELSE "latest_transaction"."recipient_location_congressional_code"
+    END AS "prime_award_summary_recipient_cd_original",
+    CASE
+        WHEN "latest_transaction"."recipient_location_state_code" IS NOT NULL
+            AND "latest_transaction"."recipient_location_congressional_code_current" IS NOT NULL
+            AND "latest_transaction"."recipient_location_state_code" != ''
+        THEN CONCAT("latest_transaction"."recipient_location_state_code", '-', "latest_transaction"."recipient_location_congressional_code_current")
+        ELSE "latest_transaction"."recipient_location_congressional_code_current"
+    END AS "prime_award_summary_recipient_cd_current",
     "latest_transaction"."vendor_phone_number" AS "recipient_phone_number",
     "latest_transaction"."vendor_fax_number" AS "recipient_fax_number",
     "latest_transaction"."pop_country_code" AS "primary_place_of_performance_country_code",
@@ -66,7 +82,20 @@ SELECT
     "latest_transaction"."pop_state_code" AS "primary_place_of_performance_state_code",
     "latest_transaction"."pop_state_name" AS "primary_place_of_performance_state_name",
     "latest_transaction"."place_of_performance_zip4a" AS "primary_place_of_performance_zip_4",
-    "latest_transaction"."pop_congressional_code" AS "primary_place_of_performance_congressional_district",
+    CASE
+        WHEN "latest_transaction"."pop_state_code" IS NOT NULL
+            AND "latest_transaction"."pop_congressional_code" IS NOT NULL
+            AND "latest_transaction"."pop_state_code" != ''
+        THEN CONCAT("latest_transaction"."pop_state_code", '-', "latest_transaction"."pop_congressional_code")
+        ELSE "latest_transaction"."pop_congressional_code"
+    END AS "prime_award_summary_place_of_performance_cd_original",
+    CASE
+        WHEN "latest_transaction"."pop_state_code" IS NOT NULL
+            AND "latest_transaction"."pop_congressional_code_current" IS NOT NULL
+            AND "latest_transaction"."pop_state_code" != ''
+        THEN CONCAT("latest_transaction"."pop_state_code", '-', "latest_transaction"."pop_congressional_code_current")
+        ELSE "latest_transaction"."pop_congressional_code_current"
+    END AS "prime_award_summary_place_of_performance_cd_current",
     "latest_transaction"."pulled_from" AS "award_or_idv_flag",
     "latest_transaction"."contract_award_type" AS "award_type_code",
     "latest_transaction"."contract_award_type_desc" AS "award_type",
@@ -315,4 +344,42 @@ INNER JOIN (
             0
         ) != 0
         OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
-) DEFC ON (DEFC.award_id = "award_search"."award_id")
+) COVID_DEFC ON (COVID_DEFC.award_id = "award_search"."award_id")
+LEFT OUTER JOIN (
+    SELECT
+        faba.award_id,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe END), 0) AS ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+        COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END), 0) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
+        COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
+    FROM
+        financial_accounts_by_awards faba
+    INNER JOIN disaster_emergency_fund_code defc
+        ON defc.code = faba.disaster_emergency_fund_code
+        AND defc.group_name = 'infrastructure'
+    INNER JOIN submission_attributes sa
+        ON faba.submission_id = sa.submission_id
+        AND sa.reporting_period_start >= '2021-11-15'
+    INNER JOIN dabs_submission_window_schedule ON (
+        sa."submission_window_id" = dabs_submission_window_schedule."id"
+        AND dabs_submission_window_schedule."submission_reveal_date" <= now()
+    )
+    WHERE faba.award_id IS NOT NULL
+    GROUP BY
+        faba.award_id
+    HAVING
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN sa.is_final_balances_for_fy = TRUE
+                    THEN
+                        COALESCE(faba.gross_outlay_amount_by_award_cpe, 0)
+                        + COALESCE(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                        + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                END
+            ),
+            0
+        ) != 0
+        OR COALESCE(SUM(faba.transaction_obligated_amount), 0) != 0
+) IIJA_DEFC
+ON IIJA_DEFC.award_id = rpt.award_search.award_id

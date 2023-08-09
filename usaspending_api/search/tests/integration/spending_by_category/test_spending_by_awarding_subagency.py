@@ -112,3 +112,165 @@ def test_filtering_subtier_with_bogus_toptier(
         "results": [],
         "messages": [get_time_period_message()],
     }
+
+
+def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_transaction_index, subagency_award):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2020-01-01", "end_date": "2020-01-01"}],
+                    "agencies": [
+                        {
+                            "type": "awarding",
+                            "tier": "subtier",
+                            "name": "Awarding Subtier Agency 5",
+                            "toptier_name": "Awarding Toptier Agency 3",
+                        }
+                    ],
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [{"date_type": "date_signed", "start_date": "2020-01-01", "end_date": "2020-01-16"}],
+                    "agencies": [
+                        {
+                            "type": "awarding",
+                            "tier": "subtier",
+                            "name": "Awarding Subtier Agency 5",
+                            "toptier_name": "Awarding Toptier Agency 3",
+                        }
+                    ],
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+
+def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearch_transaction_index, subagency_award):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    # Tests where no new awards fall into range
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2020-01-01", "end_date": "2020-01-01"}
+                    ],
+                    "agencies": [
+                        {
+                            "type": "awarding",
+                            "tier": "subtier",
+                            "name": "Awarding Subtier Agency 5",
+                            "toptier_name": "Awarding Toptier Agency 3",
+                        }
+                    ],
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+    # Tests where records do fall into range
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2020-01-01", "end_date": "2020-01-16"}
+                    ],
+                    "agencies": [
+                        {
+                            "type": "awarding",
+                            "tier": "subtier",
+                            "name": "Awarding Subtier Agency 5",
+                            "toptier_name": "Awarding Toptier Agency 3",
+                        }
+                    ],
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+    # Tests where records fall into range with date signed but not action date
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "time_period": [
+                        {"date_type": "new_awards_only", "start_date": "2020-01-03", "end_date": "2020-01-16"}
+                    ],
+                    "agencies": [
+                        {
+                            "type": "awarding",
+                            "tier": "subtier",
+                            "name": "Awarding Subtier Agency 5",
+                            "toptier_name": "Awarding Toptier Agency 3",
+                        }
+                    ],
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response

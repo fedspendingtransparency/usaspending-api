@@ -87,6 +87,7 @@ AWARD_SEARCH_COLUMNS = {
     "recipient_location_state_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "recipient_location_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
+    "recipient_location_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_country_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_country_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "pop_state_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -102,6 +103,7 @@ AWARD_SEARCH_COLUMNS = {
     "pop_state_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_county_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "pop_congressional_population": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
+    "pop_county_fips": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "cfda_program_title": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "cfda_number": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "cfdas": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
@@ -136,6 +138,7 @@ AWARD_SEARCH_COLUMNS = {
     "iija_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": True},
     "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
+    "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
@@ -149,7 +152,6 @@ award_search_create_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-# TODO: include derivations for recipient_location_congressional_code_current and pop_congressional_code_current
 award_search_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
         (
@@ -291,8 +293,7 @@ award_search_load_sql_string = rf"""
   COALESCE(transaction_fpds.legal_entity_county_name, transaction_fabs.legal_entity_county_name) AS recipient_location_county_name,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS recipient_location_congressional_code,
-  -- TODO: include recipient_location_congressional_code_current derivation
-  'TEST CUR REC CONGR AS' AS recipient_location_congressional_code_current,
+  LATEST_CURRENT_CD.recipient_location_congressional_code_current AS recipient_location_congressional_code_current,
   COALESCE(transaction_fpds.legal_entity_zip5, transaction_fabs.legal_entity_zip5) AS recipient_location_zip5,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)) AS recipient_location_city_name,
   COALESCE(transaction_fpds.legal_entity_state_descrip, transaction_fabs.legal_entity_state_name) AS recipient_location_state_name,
@@ -300,6 +301,10 @@ award_search_load_sql_string = rf"""
   RL_STATE_POPULATION.latest_population AS recipient_location_state_population,
   RL_COUNTY_POPULATION.latest_population AS recipient_location_county_population,
   RL_DISTRICT_POPULATION.latest_population AS recipient_location_congressional_population,
+  CONCAT(
+    RL_STATE_LOOKUP.fips,
+    COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code)
+  ) AS recipient_location_county_fips,
 
   COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
@@ -311,14 +316,17 @@ award_search_load_sql_string = rf"""
   COALESCE(transaction_fpds.place_of_performance_zip5, transaction_fabs.place_of_performance_zip5) AS pop_zip5,
   LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.place_of_performance_congr, transaction_fabs.place_of_performance_congr), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
             AS pop_congressional_code,
-  -- TODO: include pop_congressional_code_current derivation
-  'TEST CUR POP CONGR AS' AS pop_congressional_code_current,
+  LATEST_CURRENT_CD.pop_congressional_code_current AS pop_congressional_code_current,
   TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)) AS pop_city_name,
   COALESCE(transaction_fpds.place_of_perfor_state_desc, transaction_fabs.place_of_perform_state_nam) AS pop_state_name,
   POP_STATE_LOOKUP.fips AS pop_state_fips,
   POP_STATE_POPULATION.latest_population AS pop_state_population,
   POP_COUNTY_POPULATION.latest_population AS pop_county_population,
   POP_DISTRICT_POPULATION.latest_population AS pop_congressional_population,
+  CONCAT(
+    POP_STATE_LOOKUP.fips,
+    COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
+  ) AS pop_county_fips,
 
   transaction_fabs.cfda_title AS cfda_program_title,
   transaction_fabs.cfda_number AS cfda_number,
@@ -354,7 +362,8 @@ award_search_load_sql_string = rf"""
 
   IIJA_DEFC.iija_spending_by_defc,
   IIJA_DEFC.total_iija_outlay,
-  IIJA_DEFC.total_iija_obligation
+  IIJA_DEFC.total_iija_obligation,
+  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays
 FROM
   int.awards
 INNER JOIN
@@ -438,6 +447,10 @@ LEFT OUTER JOIN
          RL_DISTRICT_POPULATION.state_code = RL_STATE_LOOKUP.fips
         AND RL_DISTRICT_POPULATION.congressional_district = LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_congressional, transaction_fabs.legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0')
 )
+LEFT OUTER JOIN
+    int.transaction_current_cd_lookup AS LATEST_CURRENT_CD ON (
+        awards.latest_transaction_id = LATEST_CURRENT_CD.transaction_id
+    )
 LEFT OUTER JOIN (
         SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
         FROM rpt.recipient_profile
@@ -483,7 +496,7 @@ LEFT OUTER JOIN (
         INNER JOIN
             global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
         INNER JOIN
-            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id AND sa.reporting_period_start >= '2020-04-01')
+            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id)
         INNER JOIN
             global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
         GROUP BY
@@ -521,7 +534,7 @@ LEFT OUTER JOIN (
         INNER JOIN
             global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'infrastructure')
         INNER JOIN
-            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id AND sa.reporting_period_start >= '2020-04-01')
+            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id)
         INNER JOIN
             global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
         GROUP BY
@@ -532,6 +545,30 @@ LEFT OUTER JOIN (
     GROUP BY
         GROUPED_BY_DEFC.award_id
 ) IIJA_DEFC on IIJA_DEFC.award_id = awards.id
+-- Total outlays calculation
+LEFT JOIN (
+    SELECT award_id,
+            COALESCE(total_gross_outlay_amount_by_award_cpe, 0)
+            + COALESCE(total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+            + COALESCE(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0) AS total_outlays
+        FROM (
+            SELECT faba.award_id,
+                    SUM(faba.gross_outlay_amount_by_award_cpe) AS total_gross_outlay_amount_by_award_cpe,
+                    SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) AS total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+                    SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) AS total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
+                FROM int.financial_accounts_by_awards faba
+
+                INNER JOIN global_temp.submission_attributes sa
+                    ON faba.submission_id = sa.submission_id
+
+                WHERE sa.is_final_balances_for_fy = TRUE
+                GROUP BY faba.award_id
+            ) s
+        WHERE total_gross_outlay_amount_by_award_cpe IS NOT NULL
+            OR total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe IS NOT NULL
+            OR total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe IS NOT NULL
+) AWARD_TOTAL_OUTLAYS
+    ON awards.id = AWARD_TOTAL_OUTLAYS.award_id
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,

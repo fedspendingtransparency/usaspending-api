@@ -23,11 +23,12 @@ def test_object_class_list_success(client, monkeypatch, agency_account_data, hel
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
             {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "interest", "obligated_amount": 10.0},
             {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
         ],
     }
@@ -189,11 +190,12 @@ def test_object_class_list_sort_by_name(client, agency_account_data):
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
             {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "interest", "obligated_amount": 10.0},
             {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
         ],
     }
@@ -214,10 +216,11 @@ def test_object_class_list_sort_by_name(client, agency_account_data):
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
+            {"gross_outlay_amount": 1000000.0, "name": "interest", "obligated_amount": 10.0},
             {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
             {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
         ],
@@ -242,11 +245,12 @@ def test_object_class_list_sort_by_obligated_amount(client, monkeypatch, agency_
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
             {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "interest", "obligated_amount": 10.0},
             {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
         ],
     }
@@ -267,11 +271,12 @@ def test_object_class_list_sort_by_obligated_amount(client, monkeypatch, agency_
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
             {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "interest", "obligated_amount": 10.0},
             {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
         ],
     }
@@ -295,11 +300,12 @@ def test_object_class_list_sort_by_gross_outlay_amount(client, agency_account_da
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
             {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "interest", "obligated_amount": 10.0},
             {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
         ],
     }
@@ -320,11 +326,12 @@ def test_object_class_list_sort_by_gross_outlay_amount(client, agency_account_da
             "next": None,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
             {"gross_outlay_amount": 1000000.0, "name": "hvac", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 1000000.0, "name": "interest", "obligated_amount": 10.0},
             {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
         ],
     }
@@ -393,7 +400,7 @@ def test_object_class_list_pagination(client, agency_account_data, helpers):
             "next": 2,
             "page": 1,
             "previous": None,
-            "total": 3,
+            "total": 4,
         },
         "results": [
             {"gross_outlay_amount": 100000.0, "name": "supplies", "obligated_amount": 100.0},
@@ -417,9 +424,12 @@ def test_object_class_list_pagination(client, agency_account_data, helpers):
             "next": None,
             "page": 2,
             "previous": 1,
-            "total": 3,
+            "total": 4,
         },
-        "results": [{"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0}],
+        "results": [
+            {"gross_outlay_amount": 1000000.0, "name": "interest", "obligated_amount": 10.0},
+            {"gross_outlay_amount": 10000000.0, "name": "equipment", "obligated_amount": 1.0},
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
