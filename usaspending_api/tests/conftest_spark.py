@@ -60,9 +60,10 @@ DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
 
 @fixture(scope="session")
-def s3_unittest_data_bucket_setup_and_teardown():
+def s3_unittest_data_bucket_setup_and_teardown(worker_id):
     """Create a test bucket so the tests can use it"""
-    unittest_data_bucket = "unittest-data-{}".format(str(uuid.uuid4()))
+    worker_prefix = "" if (not worker_id or worker_id == "master") else worker_id + "-"
+    unittest_data_bucket = "unittest-data-{}".format(worker_prefix + str(uuid.uuid4()))
 
     logging.warning(
         f"Attempting to create unit test data bucket {unittest_data_bucket } "
@@ -103,7 +104,7 @@ def s3_unittest_data_bucket_setup_and_teardown():
     s3_client.delete_bucket(Bucket=unittest_data_bucket)
 
 
-@fixture
+@fixture(scope="function")
 def s3_unittest_data_bucket(s3_unittest_data_bucket_setup_and_teardown):
     """Use the S3 unit test data bucket created for the test session, and cleanup any contents created in it after
     each test
@@ -128,7 +129,7 @@ def s3_unittest_data_bucket(s3_unittest_data_bucket_setup_and_teardown):
 
 
 @fixture(scope="session")
-def spark(request: pytest.FixtureRequest, worker_id, tmp_path_factory) -> SparkSession:
+def spark(tmp_path_factory) -> SparkSession:
     """Throw an error if coming into a test using this fixture which needs to create a
     NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
     AND, proactively cleanup any SparkContext created by this test after it completes
@@ -150,12 +151,14 @@ def spark(request: pytest.FixtureRequest, worker_id, tmp_path_factory) -> SparkS
 
     extra_conf = {
         # This is the default, but being explicit
-        "spark.master": "local[*]",
+        "spark.master": "local[*,8]",
         # Client deploy mode is the default, but being explicit.
         # Means the driver node is the place where the SparkSession is instantiated (and/or where spark-submit
         # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
         # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
         "spark.submit.deployMode": "client",
+        # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing or refusing connections
+        "spark.driver.memory": "2g",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
         "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
         # Delta Lake config for Delta tables and SQL. Need these to keep Delta table metadata in the metastore
