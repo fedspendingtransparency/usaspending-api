@@ -87,6 +87,9 @@ class Command(BaseCommand):
         for sql_file, final_name in self.download_file_list:
             df = self.spark.sql(sql_file.read_text())
             load_csv_file_and_zip(self.spark, df, f"{self.csv_working_path}/{final_name}/", logger=logger)
+
+            # TODO: HERE (continue refactoring...)
+            intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")  # <-- TODO: Fix var assmt
             data_file, count = self.download_to_csv(sql_file, final_name, str(intermediate_data_file_path))
             if count <= 0:
                 logger.warning(f"Empty data file generated: {final_name}!")
