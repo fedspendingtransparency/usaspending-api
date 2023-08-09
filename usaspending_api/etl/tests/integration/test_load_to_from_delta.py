@@ -271,51 +271,6 @@ def verify_delta_table_loaded_from_delta(
     )
 
 
-def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
-    load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
-    load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
-    for dest_table in load_table_tables + load_query_tables:
-        if dest_table in [
-            "awards",
-            "transaction_fabs",
-            "transaction_normalized",
-            "transaction_fpds",
-            "financial_accounts_by_awards",
-        ]:
-            call_command(
-                "create_delta_table",
-                f"--destination-table={dest_table}",
-                "--alt-db=int",
-                f"--spark-s3-bucket={s3_bucket}",
-            )
-        else:
-            call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
-
-    for dest_table in load_table_tables:
-        if dest_table in [
-            "awards",
-            "transaction_fabs",
-            "transaction_normalized",
-            "transaction_fpds",
-            "financial_accounts_by_awards",
-        ]:
-            call_command(
-                "load_table_to_delta",
-                f"--destination-table={dest_table}",
-                "--alt-db=int",
-            )
-        else:
-            call_command(
-                "load_table_to_delta",
-                f"--destination-table={dest_table}",
-            )
-
-    for dest_table in load_query_tables:
-        call_command("load_query_to_delta", f"--destination-table={dest_table}")
-
-    create_ref_temp_views(spark)
-
-
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
