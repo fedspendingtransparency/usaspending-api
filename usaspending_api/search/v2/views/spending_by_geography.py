@@ -318,7 +318,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # Lookup the correct country code field name from `location_dict`
             country_code_field = self.location_dict["code"]["country"][self.award_or_sub_str][self.scope_field_name]
 
-            # Adding null, USA, not number filters for specific partial index when not using geocode_filter
+            # Adding null, USA, not number filters for specific partial index when not using a geocode_filter
             kwargs[f"{loc_lookup}__isnull"] = False
             kwargs[f"{state_lookup}__isnull"] = False
             kwargs[f"{scope_field_name}_{country_code_field}"] = "USA"
