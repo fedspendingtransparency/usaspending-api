@@ -13,7 +13,6 @@ from usaspending_api.tests.conftest_spark import create_and_load_all_delta_table
 from usaspending_api.config import CONFIG
 
 
-@pytest.mark.skip("Skipped to troubleshoot cascading test failurs")
 @mark.django_db(transaction=True)  # Need this to save/commit it to Postgres, so we can dump it to delta
 def test_load_csv_file(
     spark,
@@ -46,9 +45,3 @@ def test_load_csv_file(
     pd_df = pd.read_csv(download_path)
     assert len(pd_df) == 3  # number of transaction records created in data setup fixture
     assert len(pd_df.columns) > 1
-
-
-@pytest.mark.skip("Skipped to troubleshoot cascading test failurs")
-def test_fixtures(db, broker_server_dblink_setup):
-    restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
-    execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
