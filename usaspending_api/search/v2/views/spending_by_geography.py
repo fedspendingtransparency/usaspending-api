@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from django.conf import settings
-from django.db.models import F, FloatField, QuerySet, Sum, TextField, Value
+from django.db.models import F, FloatField, IntegerField, QuerySet, Sum, TextField, Value
 from django.db.models.functions import Cast, Concat
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
@@ -25,7 +25,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
-from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
+from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
@@ -43,6 +43,7 @@ class GeoLayer(Enum):
     COUNTY = "county"
     DISTRICT = "district"
     STATE = "state"
+    COUNTRY = "country"
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -81,7 +82,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "key": "geo_layer",
                 "type": "enum",
                 "optional": False,
-                "enum_values": ["state", "county", "district"],
+                "enum_values": ["state", "county", "district", "country"],
             },
             {
                 "name": "geo_layer_filters",
@@ -99,6 +100,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             "county": "county_agg_key",
             "district": "congressional_cur_agg_key",
             "state": "state_agg_key",
+            "country": "country_agg_key",
         }
         model_dict = {
             "place_of_performance": {"prime": "pop", "sub": "sub_place_of_perform"},
@@ -425,7 +427,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         # Get the codes
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        geo_codes = [_key_to_geo_code(bucket["key"]) for bucket in geo_info_buckets if bucket.get("key")]
+        if self.geo_layer == GeoLayer.COUNTRY:
+            geo_codes = [bucket.get("key") for bucket in geo_info_buckets if bucket.get("key")]
+        else:
+            # Lookup the state FIPS codes
+            geo_codes = [_key_to_geo_code(bucket["key"]) for bucket in geo_info_buckets if bucket.get("key")]
 
         # Get the current geo info
         current_geo_info = {}
@@ -451,6 +457,18 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 )
                 .values("geo_code", "display_name", "shape_code", "population")
             )
+        elif self.geo_layer == GeoLayer.COUNTRY:
+            geo_info_query = (
+                RefCountryCode.objects.filter(country_code__in=geo_codes)
+                .annotate(
+                    shape_code=F("country_code"),
+                    display_name=F("country_name"),
+                    geo_code=F("country_code"),
+                    # TODO: to be populated in DEV-10132
+                    population=Value(None, output_field=IntegerField()),
+                )
+                .values("geo_code", "display_name", "shape_code", "population")
+            )
         else:
             geo_info_query = (
                 PopCongressionalDistrict.objects.annotate(
@@ -472,14 +490,16 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Build out the results
         results = {}
         for bucket in geo_info_buckets:
-            bucket_shape_code = _key_to_geo_code(bucket.get("key"))
+            bucket_shape_code = (
+                bucket.get("key") if self.geo_layer == GeoLayer.COUNTRY else _key_to_geo_code(bucket.get("key"))
+            )
             geo_info = current_geo_info.get(bucket_shape_code) or {"shape_code": ""}
 
             if geo_info["shape_code"]:
                 if self.geo_layer == GeoLayer.STATE:
                     geo_info["display_name"] = geo_info["display_name"].title()
                     geo_info["shape_code"] = fips_to_code[geo_info["shape_code"]].upper()
-                elif self.geo_layer == GeoLayer.COUNTY:
+                elif self.geo_layer == GeoLayer.COUNTY or self.geo_layer == GeoLayer.COUNTRY:
                     geo_info["display_name"] = geo_info["display_name"].title()
                 else:
                     geo_info["display_name"] = geo_info["display_name"].upper()
