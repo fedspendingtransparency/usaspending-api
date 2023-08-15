@@ -40,7 +40,7 @@ env:
 before_install:
   # Postgresql-13 requires manual installation
   - sudo apt-get install -y wget
-  - sudo sh -c "wget -O - http://package.perforce.com/apt/ubuntu/dists/bionic/Release.gpg | apt-key add -"
+  - sudo wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -
   - sudo apt-get update
   - sudo apt-get install -y lsb-release gnupg2 iproute2
   - wget -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | sudo apt-key add -
