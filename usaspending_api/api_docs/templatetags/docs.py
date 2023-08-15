@@ -17,7 +17,8 @@ def display_docs(context):
 @register.simple_tag(takes_context=True)
 def display_contents(context):
     contents = get_contents_from_markdown(context.get("markdown", None))
-    return markdown.markdown(contents, extensions=[GithubFlavoredMarkdownExtension()])
+    md = markdown.markdown(contents, extensions=[GithubFlavoredMarkdownExtension()])
+    return md
 
 
 def get_contents_from_markdown(markdown_file=None, split_string="[//]: # (Begin Content)", index=0):
