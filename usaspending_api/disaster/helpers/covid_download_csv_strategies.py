@@ -3,6 +3,7 @@ import multiprocessing
 import time
 import logging
 from pathlib import Path
+from typing import Tuple
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
@@ -40,7 +41,7 @@ class AbstractCovidToCSVStrategy(ABC):
         intermediate_data_filename: str,
         working_dir_path: Path,
         zip_file_path: Path,
-    ) -> tuple(str, int):
+    ) -> Tuple[str, int]:
         """
         Args:
             sql_file_path: The path to the SQL file that'll be used to source data
