@@ -126,14 +126,12 @@ def local(request):
 @pytest.fixture(scope="session")
 def django_db_setup(
     request,
-    django_test_environment,
+    django_test_environment: None,
     django_db_blocker,
-    django_db_use_migrations,
-    django_db_keepdb,
-    django_db_createdb,
-    # django_db_modify_db_settings leads to to calling the overridden django_db_modify_db_settings_xdist_suffix
-    # below
-    django_db_modify_db_settings,
+    django_db_use_migrations: bool,
+    django_db_keepdb: bool,
+    django_db_createdb: bool,
+    django_db_modify_db_settings: None,  # will call the overridden (below) version of this fixture
 ):
     """This is an override of the original implementation in the https://github.com/pytest-dev/pytest-django plugin
     from file /pytest-django/fixtures.py.
@@ -147,12 +145,12 @@ def django_db_setup(
     ``django.test.utils.setup_databases``, which is the actual method that needs to be wrapped and extended.
     """
     from django.test.utils import setup_databases, teardown_databases, TimeKeeper
-    from pytest_django.fixtures import _disable_native_migrations
+    from pytest_django.fixtures import _disable_migrations
 
     setup_databases_args = {}
 
     if not django_db_use_migrations:
-        _disable_native_migrations()
+        _disable_migrations()
 
     if django_db_keepdb and not django_db_createdb:
         setup_databases_args["keepdb"] = True

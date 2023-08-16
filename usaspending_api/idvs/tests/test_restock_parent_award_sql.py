@@ -1,4 +1,3 @@
-import pytest
 from django.core.management import call_command
 from model_bakery import baker
 
@@ -101,8 +100,7 @@ def modify_award_dict(award, updated_param_dict):
     return local_award
 
 
-@pytest.mark.django_db(transaction=True)
-def test_basic_idv_aggregation_2_level(client):
+def test_basic_idv_aggregation_2_level(db):
     set_up_db(c1, c2, c3, p1)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="p1")
     assert parent_1.direct_base_exercised_options_val == 9000
@@ -117,8 +115,7 @@ def test_basic_idv_aggregation_2_level(client):
     assert parent_1.rollup_contract_count == 3
 
 
-@pytest.mark.django_db(transaction=True)
-def test_basic_idv_aggregation_3_level(client):
+def test_basic_idv_aggregation_3_level(db):
     set_up_db(c1, c2, c3, p1, c4, p2, tp1)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="p1")
     assert parent_1.direct_base_exercised_options_val == 9000
@@ -139,8 +136,7 @@ def test_basic_idv_aggregation_3_level(client):
     assert top_parent_1.rollup_contract_count == 4
 
 
-@pytest.mark.django_db(transaction=True)
-def test_idv_aggregation_3_level_ignore_idv_internal_values(client):
+def test_idv_aggregation_3_level_ignore_idv_internal_values(db):
     p1_with_internal_value = modify_award_dict(
         p1, {"total_obligation": 1000, "base_and_all_options_value": 1000, "base_exercised_options_val": 1000}
     )
@@ -164,8 +160,7 @@ def test_idv_aggregation_3_level_ignore_idv_internal_values(client):
     assert top_parent_1.rollup_contract_count == 4
 
 
-@pytest.mark.django_db(transaction=True)
-def test_idv_aggregation_3_level_self_parented_award(client):
+def test_idv_aggregation_3_level_self_parented_award(db):
     p1_self_parented = modify_award_dict(p1, {"piid": "ABCD_PARENT_1"})
     set_up_db(c1, c2, c3, p1_self_parented)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="p1")
@@ -181,8 +176,7 @@ def test_idv_aggregation_3_level_self_parented_award(client):
     assert parent_1.rollup_contract_count == 3
 
 
-@pytest.mark.django_db(transaction=True)
-def test_idv_aggregation_3_level_circular_referencing_idvs(client):
+def test_idv_aggregation_3_level_circular_referencing_idvs(db):
     child_referencing_parent = modify_award_dict(
         tp1, {"parent_award_piid": "ABCD_PARENT_1", "fpds_parent_agency_id": "1234"}
     )
@@ -215,8 +209,7 @@ def test_idv_aggregation_3_level_circular_referencing_idvs(client):
     assert parent_2.rollup_contract_count == 0
 
 
-@pytest.mark.django_db(transaction=True)
-def test_idv_aggregation_3_level_circular_referencing_idv_and_child(client):
+def test_idv_aggregation_3_level_circular_referencing_idv_and_child(db):
     child_referencing_parent = modify_award_dict(
         tp1, {"parent_award_piid": "ABCD_PARENT_1", "fpds_parent_agency_id": "1234"}
     )

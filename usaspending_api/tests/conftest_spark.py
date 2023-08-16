@@ -150,14 +150,14 @@ def spark(tmp_path_factory) -> SparkSession:
 
     extra_conf = {
         # This is the default, but being explicit
-        "spark.master": "local[*,8]",
+        "spark.master": "local[*]",
         # Client deploy mode is the default, but being explicit.
         # Means the driver node is the place where the SparkSession is instantiated (and/or where spark-submit
         # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
         # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
         "spark.submit.deployMode": "client",
-        # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing or refusing connections
-        "spark.driver.memory": "2g",
+        # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing with memory errors
+        "spark.driver.memory": "1g",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
         "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
         # Delta Lake config for Delta tables and SQL. Need these to keep Delta table metadata in the metastore
