@@ -8,14 +8,17 @@ from django.utils.functional import cached_property
 from pathlib import Path
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
-from usaspending_api.disaster.helpers.covid_download_csv_strategies import PostgresCovidToCSVStrategy
+from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
+    PostgresCovidToCSVStrategy,
+    SparkCovidToCSVStrategy,
+)
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
 )
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.models.download_job import DownloadJob
-from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
+from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
 
@@ -25,7 +28,6 @@ logger = logging.getLogger("script")
 
 class Command(BaseCommand):
     help = "Assemble raw COVID-19 Disaster Spending data into CSVs and Zip"
-    file_format = "csv"
     filepaths_to_delete = []
     total_download_count = 0
     total_download_columns = 0
@@ -48,16 +50,16 @@ class Command(BaseCommand):
             },
             "download_to_csv_strategy": PostgresCovidToCSVStrategy(logger=logger),
         },
-        "databricks": {
+        "spark": {
             "sql_file_strategy": {
-                "disaster_covid19_file_a": "usaspending_api/disaster/management/sql/disaster_covid19_file_a.sql",
-                "disaster_covid19_file_b": "usaspending_api/disaster/management/sql/disaster_covid19_file_b.sql",
-                "disaster_covid19_file_d1_awards": "usaspending_api/disaster/management/sql/disaster_covid19_file_d1_awards.sql",
-                "disaster_covid19_file_d2_awards": "usaspending_api/disaster/management/sql/disaster_covid19_file_d2_awards.sql",
-                "disaster_covid19_file_f_contracts": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_contracts.sql",
-                "disaster_covid19_file_f_grants": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql",
+                "disaster_covid19_file_a": "usaspending_api/disaster/management/sql/spark/disaster_covid19_file_a.sql",
+                "disaster_covid19_file_b": "usaspending_api/disaster/management/sql/spark/disaster_covid19_file_b.sql",
+                "disaster_covid19_file_d1_awards": "usaspending_api/disaster/management/sql/spark/disaster_covid19_file_d1_awards.sql",
+                "disaster_covid19_file_d2_awards": "usaspending_api/disaster/management/sql/spark/disaster_covid19_file_d2_awards.sql",
+                "disaster_covid19_file_f_contracts": "usaspending_api/disaster/management/sql/spark/disaster_covid19_file_f_contracts.sql",
+                "disaster_covid19_file_f_grants": "usaspending_api/disaster/management/sql/spark/disaster_covid19_file_f_grants.sql",
             },
-            "download_to_csv_strategy": 2,
+            "download_to_csv_strategy": SparkCovidToCSVStrategy(logger=logger),
         },
     }
 
@@ -102,11 +104,12 @@ class Command(BaseCommand):
         logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_path}")
         self.filepaths_to_delete.append(self.zip_file_path)
 
-        for sql_file, final_name in self.download_file_list:
+        for sql_file_path, final_name in self.download_file_list:
             intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
-            data_file, count = self.download_to_csv(sql_file, final_name, str(intermediate_data_file_path))
+            data_file, count = self.download_to_csv(sql_file_path, final_name, str(intermediate_data_file_path))
             if count <= 0:
                 logger.warning(f"Empty data file generated: {final_name}!")
+            self.total_download_count += count
 
             self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_name.stem}*"))
 
@@ -187,7 +190,9 @@ class Command(BaseCommand):
             self.zip_file_path.parent.mkdir()
 
     def download_to_csv(self, sql_filepath, destination_path, intermediate_data_filename):
-        return self._download_csv_strategy.download_to_csv(sql_filepath, destination_path, intermediate_data_filename)
+        return self._download_csv_strategy.download_to_csv(
+            sql_filepath, destination_path, intermediate_data_filename, self.working_dir_path, self.zip_file_path
+        )
 
     def store_record_in_database(self):
         download_record = DownloadJob.objects.create(

@@ -1,0 +1,1 @@
+select 6 as "test"

@@ -9,6 +9,10 @@ from typing import List
 from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
 from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
+import time
+from collections import namedtuple
+from math import ceil
+from py4j.protocol import Py4JError
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.config import CONFIG
@@ -18,6 +22,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_usas_jdbc_url,
     get_broker_jdbc_url,
 )
+from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     Cfda,
@@ -560,3 +565,355 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
             spark.sql(sql_statement)
 
     logger.info(f"Created the reference views in the global_temp database")
+
+
+def load_csv_file_and_zip(
+    spark: SparkSession,
+    df: DataFrame,
+    parts_dir: str,
+    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+    compress=True,
+    overwrite=True,
+    logger=None,
+) -> int:
+    """Load DataFrame data into a SINGLE CSV file, that is packaged in a .zip file and uploaded to S3.
+    Args:
+        spark: passed-in active SparkSession
+        df: the DataFrame wrapping the data source to be dumped to CSV.
+        parts_dir: Path to dir that contains the outputted parts files from partitions
+            - Should be full path ``"s3a://.../.../"`` if using S3
+            - Can be relative if using the SparkSession's fs.defaultFS FileSystem impl
+        compress: Whether the file content parts are compressed in GZIP format (*.csv.gz)
+        overwrite: Whether to replace the file CSV files if they already exist by that name
+        max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
+            this many rows in any file written. Only if the total data exceeds this value will multiple files be
+            created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
+        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
+            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+    Returns:
+        record count of the DataFrame that was used to populate the CSV file
+    """
+    if not logger:
+        logger = get_jvm_logger(spark)
+
+    df_record_count = write_csv_file(
+        spark=spark,
+        df=df,
+        parts_dir=parts_dir,
+        max_rows_per_merged_file=max_rows_per_merged_file,
+        compress=compress,
+        overwrite=overwrite,
+        logger=logger,
+    )
+
+    extension = "csv.gz" if compress else "csv"
+    # When combining these later, will prepend the extracted header to each resultant file.
+    # The parts therefore must NOT have headers or the headers will show up in the data when combined.
+    header = ",".join([_.name for _ in df.schema.fields])
+
+    logger.info("Concatenating partitioned output files and Zipping into downloadable file ...")
+    start = time.time()
+    hadoop_copy_merge(
+        spark=spark,
+        parts_dir=parts_dir,
+        merged_file=f"{parts_dir}.{extension}",
+        header=header,
+        is_compressed=compress,
+        overwrite=overwrite,
+        delete_parts_dir=False,
+        rows_per_part=max_rows_per_merged_file,
+        max_rows_per_merged_file=max_rows_per_merged_file,
+        logger=logger,
+    )
+    logger.info(f"Completed file concatenation and Zip in {(time.time() - start):3f}s")
+    return df_record_count
+
+
+def write_csv_file(
+    spark: SparkSession,
+    df: DataFrame,
+    parts_dir: str,
+    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+    compress=True,
+    overwrite=True,
+    logger=None,
+) -> int:
+    """Write DataFrame data to CSV file parts
+    Args:
+        spark: passed-in active SparkSession
+        df: the DataFrame wrapping the data source to be dumped to CSV.
+        parts_dir: Path to dir that contains the outputted parts files from partitions
+            - Should be full path ``"s3a://.../.../"`` if using S3
+            - Can be relative if using the SparkSession's fs.defaultFS FileSystem impl
+        compress: Whether the file content parts are compressed in GZIP format (*.csv.gz)
+        overwrite: Whether to replace the file CSV files if they already exist by that name
+        max_rows_per_merged_file: Suggestion to Spark of how many records to put in each written CSV file part,
+        if it will end up writing multiple files.
+        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
+            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+    Returns:
+        record count of the DataFrame that was used to populate the CSV file(s)
+    """
+    if not logger:
+        logger = get_jvm_logger(spark)
+    # Delete output data dir if it already exists
+    parts_dir_path = spark.sparkContext._jvm.org.apache.hadoop.fs.Path(parts_dir)
+    fs = parts_dir_path.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
+    if fs.exists(parts_dir_path):
+        fs.delete(parts_dir_path, True)
+    compression = "gzip" if compress else None
+    start = time.time()
+    logger.info("Writing source data DataFrame to csv part files ...")
+    num_partitions = df.rdd.getNumPartitions()
+    df_record_count = df.count()
+    target_partitions = ceil(df_record_count / max_rows_per_merged_file)
+    logger.info(
+        f"Repartitioning from {num_partitions:,} to {target_partitions:,} for {df_record_count:,} records, "
+        f"to get each file close to {max_rows_per_merged_file:,} records."
+    )
+    df.write.options(
+        # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
+        maxRecordsPerFile=max_rows_per_merged_file,
+    ).csv(
+        path=parts_dir,
+        header=False,
+        compression=compression,
+        nullValue=None,
+        escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
+        ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
+        ignoreTrailingWhiteSpace=False,  # must set for CSV write, as it defaults to true
+        timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
+        mode="overwrite" if overwrite else "errorifexists",
+    )
+    logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
+    return df_record_count
+
+
+def hadoop_copy_merge(
+    spark: SparkSession,
+    parts_dir: str,
+    merged_file: str,
+    header: str,
+    is_compressed: bool,
+    overwrite=False,
+    delete_parts_dir=False,
+    remove_zip_source_files=False,
+    rows_per_part=CONFIG.SPARK_PARTITION_ROWS,
+    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+    logger=None,
+) -> None:
+    """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
+    It uses the underlying Hadoop FileSystem API to combine all part files under a directory
+    into a single specified destination file
+    Hadoop will return the correct FileSystem implementation based on the path provided
+    e.g. if it is like: s3a://some-bucket, it will return an S3AFileSystem implementation
+    if the Path is not a full URI, and the scheme (hdfs://, s3a://, file:///) cannot be determined, it will attempt
+    to use the filesystem impl based on the "fs.defaultFS" setting
+    - Locally this is file:///
+    - in EMR this is e.g. hdfs://ip-internal:8020
+    Args:
+        spark: passed-in active SparkSession
+        parts_dir: Path to dir that contains the outputted parts files from partitions
+            - Should be full path ``"s3a://.../.../"`` if using S3
+            - Can be relative if using the SparkSession's fs.defaultFS FileSystem impl
+        merged_file: Final merged file name, or file name pattern if needing to create several files with
+            ``max_rows_per_merged_file`` rows
+        header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
+            Individual part files must NOT therefore be created with their own header.
+        is_compressed: Whether the file content parts are compressed in GZIP format (*.csv.gz)
+        overwrite: Whether to replace the file CSV files if they already exist by that name
+        delete_parts_dir: Cleanup the directory containing all the parts by deleting it after the final merged
+            file(s) is created
+        remove_zip_source_files: To remove the .csv or .csv.gz files that were bundled into the downloadable .zip
+        file after zipping
+        rows_per_part: If the interim output was written to disk per-partition,
+            how many rows were at most in each partition and therefore part file?
+            e.g. could be based on ``numPartitions`` param given to ``spark.jdbc.read(...)``. You need to calculate
+            this ahead of time as best as possible; it's used to determine how the part-files are combined or divided to
+            build up the final files that go in the .zip.
+        max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
+            this many rows in any file written. Only if the total data exceeds this value will multiple files be
+            created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
+        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
+            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+    """
+    if not logger:
+        logger = get_jvm_logger(spark)
+    hadoop = spark.sparkContext._jvm.org.apache.hadoop
+    conf = spark.sparkContext._jsc.hadoopConfiguration()
+    parts_dir_path = hadoop.fs.Path(parts_dir)
+
+    # See comment in docstring about how FileSystem is determined
+    fs = parts_dir_path.getFileSystem(conf)
+
+    if not fs.exists(parts_dir_path):
+        raise ValueError("Source directory {} does not exist".format(parts_dir))
+
+    extension = ".csv.gz" if is_compressed else ".csv"
+    ext_idx = merged_file.index(extension)
+    zip_file = merged_file[:ext_idx] + ".zip"
+    zip_file_path = hadoop.fs.Path(zip_file)
+    partial_zipped_file = f"{zip_file}.partial"
+    partial_zipped_file_path = hadoop.fs.Path(partial_zipped_file)
+
+    # Don't delete first if disallowing overwrite.
+    if not overwrite and fs.exists(zip_file_path):
+        raise Py4JError(
+            spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(zip_file_path)} " f"already exists")
+        )
+    files = []
+    merged_file_paths = []
+
+    for f in fs.listStatus(parts_dir_path):
+        if f.isFile():
+            file_path = f.getPath()
+            if file_path.getName().startswith("_"):
+                logger.debug(f"Skipping non-part file: {file_path.getName()}")
+                continue
+            logger.debug(f"Including part file: {file_path.getName()}")
+            files.append(f.getPath())
+    if not files:
+        logger.warn("Source directory is empty with no part files. Attempting creation of file with CSV header only")
+        out_stream = None
+        gzip_out_stream = None
+        try:
+            out_stream = fs.create(hadoop.fs.Path(merged_file), overwrite)
+            if is_compressed:
+                codec_factory = spark._jvm.org.apache.hadoop.io.compress.CompressionCodecFactory(conf)
+                gzip_codec = codec_factory.getCodecByName("gzip")
+                # Returns CompressionOutputStream.java object
+                gzip_out_stream = gzip_codec.createOutputStream(out_stream)
+                header_bytes = f"{header}\n".encode()
+                gzip_out_stream.write(header_bytes)
+            else:
+                out_stream.writeBytes(header + "\n")
+        finally:
+            if gzip_out_stream:
+                gzip_out_stream.close()
+            if out_stream:
+                out_stream.close()
+        # TODO: Add file to merged_file_paths and allow it to be added to final zip archive
+        return
+
+    # Helper to chunk up files into mergeable groups
+    def merge_grouper(items, group_size):
+        FileMergeGroup = namedtuple("FileMergeGroup", ["part", "file_list"])
+        if len(items) <= group_size:
+            yield FileMergeGroup(None, items)
+            return
+        group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
+        for i, group in enumerate(group_generator, start=1):
+            yield FileMergeGroup(i, group)
+
+    files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
+    parts_batch_size = max_rows_per_merged_file // rows_per_part
+
+    for merge_file_group in merge_grouper(files, parts_batch_size):
+        part_suffix = f"_{str(merge_file_group.part).zfill(2)}" if merge_file_group.part else ""
+        partial_merged_file = f"{merged_file}.partial{part_suffix}"
+        partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
+        ext_idx = merged_file.index(extension)
+        merge_group_file_name = merged_file[:ext_idx] + part_suffix + merged_file[ext_idx:]
+        merge_group_file_path = hadoop.fs.Path(merge_group_file_name)
+
+        if overwrite and fs.exists(merge_group_file_path):
+            fs.delete(merge_group_file_path, True)
+
+        out_stream = None
+        gzip_out_stream = None
+        try:
+            if fs.exists(partial_merged_file_path):
+                fs.delete(partial_merged_file_path, True)
+            out_stream = fs.create(partial_merged_file_path)
+            if is_compressed:
+                codec_factory = spark._jvm.org.apache.hadoop.io.compress.CompressionCodecFactory(conf)
+                gzip_codec = codec_factory.getCodecByName("gzip")
+                # Returns CompressionOutputStream.java object
+                gzip_out_stream = gzip_codec.createOutputStream(out_stream)
+                header_bytes = f"{header}\n".encode()
+                gzip_out_stream.write(header_bytes)
+                # Finishes writing compressed data to the output stream
+                # without closing the underlying stream.
+                gzip_out_stream.finish()
+            else:
+                out_stream.writeBytes(header + "\n")
+            # Read-in files in alphabetical order and append them one by one to the merged file
+            for file in merge_file_group.file_list:
+                in_stream = None
+                try:
+                    in_stream = fs.open(file)
+                    # Write bytes of each file read and keep out_stream open after write for next file
+                    hadoop.io.IOUtils.copyBytes(in_stream, out_stream, conf, False)
+                finally:
+                    if in_stream:
+                        in_stream.close()
+                    if fs.exists(partial_merged_file_path):
+                        fs.delete(partial_merged_file_path, True)
+        finally:
+            if gzip_out_stream:
+                gzip_out_stream.close()
+            if out_stream:
+                out_stream.close()
+
+        try:
+            fs.rename(partial_merged_file_path, merge_group_file_path)
+        except Exception:
+            if fs.exists(partial_merged_file_path):
+                fs.delete(partial_merged_file_path, True)
+            raise
+
+        merged_file_paths.append(merge_group_file_path)
+
+    # Take each merged file, and add to a Zip archive for one bundled download
+    logger.info(
+        f"Starting zip of {len(merged_file_paths)} {extension} files into compressed file {str(zip_file_path)} ..."
+    )
+    zip_start = time.time()
+    out_stream = None
+    zip_out_stream = None
+    try:
+        if fs.exists(partial_zipped_file_path):
+            fs.delete(partial_zipped_file_path, True)
+        out_stream = fs.create(partial_zipped_file_path)
+        zip_out_stream = spark._jvm.java.util.zip.ZipOutputStream(out_stream)
+        for file_path_to_zip in merged_file_paths:
+            in_stream = None
+            try:
+                zip_entry = spark._jvm.java.util.zip.ZipEntry(file_path_to_zip.getName())
+                zip_out_stream.putNextEntry(zip_entry)
+                in_stream = fs.open(file_path_to_zip)
+                # Write bytes of each file read and keep out_stream open after write for next file
+                hadoop.io.IOUtils.copyBytes(in_stream, zip_out_stream, conf, False)
+            finally:
+                if in_stream:
+                    in_stream.close()
+    finally:
+        if zip_out_stream:
+            zip_out_stream.close()
+        if out_stream:
+            out_stream.close()
+        # Cleanup source files for zip
+        if remove_zip_source_files:
+            for file_path_to_zip in merged_file_paths:
+                fs.delete(file_path_to_zip, True)
+
+    try:
+        # Get the new zipped bits to the target file.
+        # If this file is supposed to already exist, there may be a short period of time where the file does NOT
+        # exist, between when the delete completes and the rename completes.
+        # S3 does not allow renaming to an existing file, and renames are done as copies of the full object
+        if overwrite and fs.exists(zip_file_path):
+            fs.delete(zip_file_path, True)
+        fs.rename(partial_zipped_file_path, zip_file_path)
+    except Exception:
+        if fs.exists(partial_zipped_file_path):
+            fs.delete(partial_zipped_file_path, True)  # drop partial zip file if rename completes or not
+        raise
+
+    logger.info(
+        f"Completed zip of {len(merged_file_paths)} {extension} files into file "
+        f"{str(zip_file_path)} in {(time.time() - zip_start):3f}s"
+    )
+
+    if delete_parts_dir:
+        fs.delete(parts_dir_path, True)

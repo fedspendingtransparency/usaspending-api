@@ -14,6 +14,9 @@ from usaspending_api.download.filestreaming.download_generation import (
 )
 from usaspending_api.download.lookups import FILE_FORMATS
 from usaspending_api.download.filestreaming.download_generation import generate_export_query_temp_file
+from pyspark.sql import SparkSession
+from usaspending_api.common.etl.spark import load_csv_file_and_zip
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 
 
 class AbstractCovidToCSVStrategy(ABC):
@@ -25,8 +28,14 @@ class AbstractCovidToCSVStrategy(ABC):
     inherit from this base class.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.file_format = "csv"
+
     @abstractmethod
-    def download_to_csv(self, sql_filepath, destination_path, intermediate_data_filename) -> tuple(str, int):
+    def download_to_csv(
+        self, sql_file_path, destination_path, intermediate_data_filename, working_dir_path, zip_file_path
+    ) -> tuple(str, int):
         pass
 
 
@@ -35,13 +44,15 @@ class PostgresCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(self, sql_filepath, destination_path, intermediate_data_filename):
+    def download_to_csv(
+        self, sql_file_path, destination_path, intermediate_data_filename, working_dir_path, zip_file_path
+    ):
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
         options = FILE_FORMATS[self.file_format]["options"]
-        export_query = r"\COPY ({}) TO STDOUT {}".format(read_sql_file_to_text(sql_filepath), options)
+        export_query = r"\COPY ({}) TO STDOUT {}".format(read_sql_file_to_text(sql_file_path), options)
         try:
-            temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, self.working_dir_path)
+            temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, working_dir_path)
             # Create a separate process to run the PSQL command; wait
             psql_process = multiprocessing.Process(
                 target=execute_psql, args=(temp_file_path, intermediate_data_filename, None)
@@ -58,7 +69,6 @@ class PostgresCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                     filename=intermediate_data_filename, has_header=True, delimiter=delim
                 )
                 self._logger.info(f"{destination_path} contains {count:,} rows of data")
-                self.total_download_count += count
             except Exception:
                 self._logger.exception("Unable to obtain delimited text file line count")
 
@@ -66,7 +76,7 @@ class PostgresCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             zip_process = multiprocessing.Process(
                 target=split_and_zip_data_files,
                 args=(
-                    str(self.zip_file_path),
+                    str(zip_file_path),
                     intermediate_data_filename,
                     str(destination_path),
                     self.file_format,
@@ -80,3 +90,36 @@ class PostgresCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         finally:
             Path(temp_file_path).unlink()
         return destination_path, count
+
+
+class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
+    def __init__(self, logger: logging.Logger, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._logger = logger
+
+    def download_to_csv(self, sql_file_path, destination_path, intermediate_data_filename, zip_file_path):
+        try:
+            extra_conf = {
+                # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
+                "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
+                "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+                # See comment below about old date and time values cannot be parsed without these
+                "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
+                "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+                "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
+            }
+            spark = get_active_spark_session()
+            if not spark:
+                self.spark_created_by_command = True
+                self.spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
+            df = self.spark.sql(sql_file_path.read_text())
+            record_count = df.count()
+            self._logger.info(f"{destination_path} contains {record_count:,} rows of data")
+            load_csv_file_and_zip(self.spark, df, destination_path, logger=self._logger)
+        except Exception:
+            self._logger.exception("Exception encountered. See logs")
+            raise
+        finally:
+            if self.spark_created_by_command:
+                self.spark.stop()
+        return destination_path, record_count
