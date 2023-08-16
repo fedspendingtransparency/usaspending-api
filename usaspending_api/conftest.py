@@ -20,7 +20,6 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_business_categories_functions_exist,
 )
 from usaspending_api.common.helpers.generic_helper import generate_matviews
-from usaspending_api.common.helpers.spark_helpers import stop_spark_context
 from usaspending_api.common.helpers.sql_helpers import (
     build_dsn_string,
     execute_sql_simple,
@@ -71,7 +70,7 @@ def pytest_sessionfinish(session, exitstatus):
             )
         # Add cleanup below
         # TODO: Troubleshooting - commenting out to see if it fixes test failures
-        #stop_spark_context()  # see usaspending_api.tests.conftest_spark.spark fixture
+        # stop_spark_context()  # see usaspending_api.tests.conftest_spark.spark fixture
     else:
         print(
             f"\nRunning pytest_sessionfinish while exiting the xdist worker process with id = {worker_id}",

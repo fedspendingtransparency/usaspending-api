@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import Path
 
 import boto3
-import pytest
 from django.core.management import call_command
 from django.db import connections
 from model_bakery import baker
