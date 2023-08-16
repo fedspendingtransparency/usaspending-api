@@ -112,7 +112,9 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(self, sql_file_path, destination_path, intermediate_data_filename, zip_file_path):
+    def download_to_csv(
+        self, sql_file_path, destination_path, intermediate_data_filename, working_dir_path, zip_file_path
+    ):
         try:
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
@@ -128,7 +130,8 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path.read_text())
-            record_count = load_csv_file_and_zip(self.spark, df, destination_path, logger=self._logger)
+            # Making the file name a directory because spark outputs files in parts
+            record_count = load_csv_file_and_zip(self.spark, df, f"{destination_path}/", logger=self._logger)
             self._logger.info(f"{destination_path} contains {record_count:,} rows of data")
         except Exception:
             self._logger.exception("Exception encountered. See logs")

@@ -80,7 +80,7 @@ class Command(BaseCommand):
         """
         Generates a download data package specific to COVID-19 spending
         """
-        compute_flavor = options.get("compute-flavor")
+        compute_flavor = options.get("compute_flavor")
         self._download_csv_strategy = self.compute_flavors[compute_flavor]["download_to_csv_strategy"]
         self._download_file_source_sql = self.compute_flavors[compute_flavor]["sql_file_strategy"]
         self.upload = not options["skip_upload"]

@@ -1,1 +1,1 @@
-select 5 as "test"
+select 5 as test;
