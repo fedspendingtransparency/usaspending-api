@@ -70,8 +70,6 @@ class Command(BaseCommand):
             default="aurora",
             help="Specify the type of compute to use when executing this command.",
         )
-
-    def add_arguments(self, parser):
         parser.add_argument(
             "--skip-upload",
             action="store_true",
