@@ -664,13 +664,13 @@ def write_csv_file(
     compression = "gzip" if compress else None
     start = time.time()
     logger.info("Writing source data DataFrame to csv part files ...")
-    num_partitions = df.rdd.getNumPartitions()
+    # num_partitions = df.rdd.getNumPartitions()
     df_record_count = df.count()
     target_partitions = ceil(df_record_count / max_rows_per_merged_file)
-    logger.info(
-        f"Repartitioning from {num_partitions:,} to {target_partitions:,} for {df_record_count:,} records, "
-        f"to get each file close to {max_rows_per_merged_file:,} records."
-    )
+    # logger.info(
+    #     f"Repartitioning from {num_partitions:,} to {target_partitions:,} for {df_record_count:,} records, "
+    #     f"to get each file close to {max_rows_per_merged_file:,} records."
+    # )
     df.write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_rows_per_merged_file,
