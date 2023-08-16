@@ -11,7 +11,6 @@ from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
 import time
 from collections import namedtuple
-from math import ceil
 from py4j.protocol import Py4JError
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
@@ -657,20 +656,11 @@ def write_csv_file(
     if not logger:
         logger = get_jvm_logger(spark)
     # Delete output data dir if it already exists
-    parts_dir_path = spark.sparkContext._jvm.org.apache.hadoop.fs.Path(parts_dir)
-    fs = parts_dir_path.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
-    if fs.exists(parts_dir_path):
-        fs.delete(parts_dir_path, True)
+    dbutils.fs.rm(parts_dir)
     compression = "gzip" if compress else None
     start = time.time()
     logger.info("Writing source data DataFrame to csv part files ...")
-    # num_partitions = df.rdd.getNumPartitions()
     df_record_count = df.count()
-    target_partitions = ceil(df_record_count / max_rows_per_merged_file)
-    # logger.info(
-    #     f"Repartitioning from {num_partitions:,} to {target_partitions:,} for {df_record_count:,} records, "
-    #     f"to get each file close to {max_rows_per_merged_file:,} records."
-    # )
     df.write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_rows_per_merged_file,

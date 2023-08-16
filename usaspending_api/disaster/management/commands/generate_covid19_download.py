@@ -41,12 +41,20 @@ class Command(BaseCommand):
     compute_flavors = {
         "aurora": {
             "sql_file_strategy": {
-                "disaster_covid19_file_a": "usaspending_api/disaster/management/sql/disaster_covid19_file_a.sql",
-                "disaster_covid19_file_b": "usaspending_api/disaster/management/sql/disaster_covid19_file_b.sql",
-                "disaster_covid19_file_d1_awards": "usaspending_api/disaster/management/sql/disaster_covid19_file_d1_awards.sql",
-                "disaster_covid19_file_d2_awards": "usaspending_api/disaster/management/sql/disaster_covid19_file_d2_awards.sql",
-                "disaster_covid19_file_f_contracts": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_contracts.sql",
-                "disaster_covid19_file_f_grants": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql",
+                "disaster_covid19_file_a": Path("usaspending_api/disaster/management/sql/disaster_covid19_file_a.sql"),
+                "disaster_covid19_file_b": Path("usaspending_api/disaster/management/sql/disaster_covid19_file_b.sql"),
+                "disaster_covid19_file_d1_awards": Path(
+                    "usaspending_api/disaster/management/sql/disaster_covid19_file_d1_awards.sql"
+                ),
+                "disaster_covid19_file_d2_awards": Path(
+                    "usaspending_api/disaster/management/sql/disaster_covid19_file_d2_awards.sql"
+                ),
+                "disaster_covid19_file_f_contracts": Path(
+                    "usaspending_api/disaster/management/sql/disaster_covid19_file_f_contracts.sql"
+                ),
+                "disaster_covid19_file_f_grants": Path(
+                    "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql"
+                ),
             },
             "download_to_csv_strategy": PostgresCovidToCSVStrategy(logger=logger),
         },
@@ -129,29 +137,29 @@ class Command(BaseCommand):
         short_timestamp = self.full_timestamp[:-6]
         return [
             (
-                Path(f'{self._download_file_source_sql["disaster_covid19_file_a"]}'),
+                f'{self._download_file_source_sql["disaster_covid19_file_a"]}',
                 self.working_dir_path
                 / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
             ),
             (
-                Path(f'{self._download_file_source_sql["disaster_covid19_file_b"]}'),
+                f'{self._download_file_source_sql["disaster_covid19_file_b"]}',
                 self.working_dir_path
                 / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
             ),
             (
-                Path(f'{self._download_file_source_sql["disaster_covid19_file_d1_awards"]}'),
+                f'{self._download_file_source_sql["disaster_covid19_file_d1_awards"]}',
                 self.working_dir_path / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
-                Path(f'{self._download_file_source_sql["disaster_covid19_file_d2_awards"]}'),
+                f'{self._download_file_source_sql["disaster_covid19_file_d2_awards"]}',
                 self.working_dir_path / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
-                Path(f'{self._download_file_source_sql["disaster_covid19_file_f_contracts"]}'),
+                f'{self._download_file_source_sql["disaster_covid19_file_f_contracts"]}',
                 self.working_dir_path / f"Contracts_Subawards_{short_timestamp}",
             ),
             (
-                Path(f'{self._download_file_source_sql["disaster_covid19_file_f_grants"]}'),
+                f'{self._download_file_source_sql["disaster_covid19_file_f_grants"]}',
                 self.working_dir_path / f"Assistance_Subawards_{short_timestamp}",
             ),
         ]
