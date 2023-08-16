@@ -1,14 +1,11 @@
 import logging
 import signal
-from datetime import datetime, timezone
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from usaspending_api.search.models import AwardSearch
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.awards.models import FinancialAccountsByAwards
 
 logger = logging.getLogger("script")
 
