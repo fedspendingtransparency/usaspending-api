@@ -34,8 +34,22 @@ class AbstractCovidToCSVStrategy(ABC):
 
     @abstractmethod
     def download_to_csv(
-        self, sql_file_path, destination_path, intermediate_data_filename, working_dir_path, zip_file_path
+        self,
+        sql_file_path: Path,
+        destination_path: Path,
+        intermediate_data_filename: str,
+        working_dir_path: Path,
+        zip_file_path: Path,
     ) -> tuple(str, int):
+        """
+        Args:
+            sql_file_path: The path to the SQL file that'll be used to source data
+            destination_path: The absolute destination path of the generated data files
+            intermediate_data_filename: Some path to store the temporary download in
+            working_dir_path: The working directory
+            zip_file_path: The path to zip the generated data files to
+
+        """
         pass
 
 
@@ -113,9 +127,8 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path.read_text())
-            record_count = df.count()
+            record_count = load_csv_file_and_zip(self.spark, df, destination_path, logger=self._logger)
             self._logger.info(f"{destination_path} contains {record_count:,} rows of data")
-            load_csv_file_and_zip(self.spark, df, destination_path, logger=self._logger)
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise
