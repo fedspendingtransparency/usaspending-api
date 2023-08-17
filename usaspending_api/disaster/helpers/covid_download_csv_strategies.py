@@ -8,6 +8,7 @@ from typing import Tuple
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.download.filestreaming.download_generation import (
+    EXCEL_ROW_LIMIT,
     split_and_zip_data_files,
     wait_for_process,
     execute_psql,
@@ -16,7 +17,7 @@ from usaspending_api.download.filestreaming.download_generation import (
 from usaspending_api.download.lookups import FILE_FORMATS
 from usaspending_api.download.filestreaming.download_generation import generate_export_query_temp_file
 from pyspark.sql import SparkSession
-from usaspending_api.common.etl.spark import load_csv_file_and_zip
+from usaspending_api.common.etl.spark import hadoop_copy_merge, load_csv_file
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 
 
@@ -131,8 +132,31 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path)
-            record_count = load_csv_file_and_zip(self.spark, df, str(destination_path), logger=self._logger)
+            record_count = load_csv_file(self.spark, df, str(destination_path), logger=self._logger)
+            # overwrite: Whether to replace the file CSV files if they already exist by that name
+            overwrite = True
+            # max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
+            # this many rows in any file written. Only if the total data exceeds this value will multiple files be
+            # created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
+            max_rows_per_merged_file = EXCEL_ROW_LIMIT
+            # When combining these later, will prepend the extracted header to each resultant file.
+            # The parts therefore must NOT have headers or the headers will show up in the data when combined.
+            header = ",".join([_.name for _ in df.schema.fields])
+            self._logger.info("Concatenating partitioned output files and Zipping into downloadable file ...")
+            start = time.time()
+            hadoop_copy_merge(
+                spark=self.spark,
+                parts_dir=str(destination_path),
+                merged_file=str(zip_file_path),
+                header=header,
+                overwrite=overwrite,
+                delete_parts_dir=False,
+                rows_per_part=max_rows_per_merged_file,
+                max_rows_per_merged_file=max_rows_per_merged_file,
+                logger=self._logger,
+            )
             self._logger.info(f"{destination_path} contains {record_count:,} rows of data")
+            self._logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise
