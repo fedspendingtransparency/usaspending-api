@@ -424,7 +424,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         else:
             ref_countries = RefCountryCode.objects.all().values("country_code", "country_name")
             ref_countries = {country["country_code"]: country["country_name"] for country in ref_countries}
-        country_queryset = country_queryset.annotate(transaction_amount=Sum("subaward_amount")).filter(transaction_amount__gt=0)
+        # Sum the `subaward_amount` columns and exclude any subawards with $0 amounts
+        country_queryset = country_queryset.annotate(transaction_amount=Sum("subaward_amount")).exclude(transaction_amount=0)
 
         results = []
         for x in country_queryset:
