@@ -42,6 +42,8 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("outlayed_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
+                ("obligated_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
                 ("total_obligated_amount", "total_obligation"),
                 (
                     "current_total_value_of_award",
@@ -1031,6 +1033,8 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 ("outlayed_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
                 ("obligated_amount_funded_by_COVID-19_supplementals", None),  # Annotation is used to create this column
+                ("outlayed_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
+                ("obligated_amount_from_IIJA_supplemental", None),  # Annotation is used to create this column
                 (
                     "award_latest_action_date",
                     f"latest_transaction_search__{NORM_TO_TRANSACTION_SEARCH_COL_MAP['action_date']}",
@@ -1311,6 +1315,8 @@ query_paths = {
                     "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
+                ("outlayed_amount_from_IIJA_supplemental_for_overall_award", None),  # Annotation is used to create this column
+                ("obligated_amount_from_IIJA_supplemental_for_overall_award", None),  # Annotation is used to create this column
                 ("action_date", NORM_TO_TRANSACTION_SEARCH_COL_MAP["action_date"]),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 ("period_of_performance_start_date", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["period_of_performance_star"]),
@@ -1798,6 +1804,8 @@ query_paths = {
                     "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award",
                     None,
                 ),  # Annotation is used to create this column
+                ("outlayed_amount_from_IIJA_supplemental_for_overall_award", None),  # Annotation is used to create this column
+                ("obligated_amount_from_IIJA_supplemental_for_overall_award", None),  # Annotation is used to create this column
                 ("action_date", NORM_TO_TRANSACTION_SEARCH_COL_MAP["action_date"]),
                 ("action_date_fiscal_year", None),  # Annotation is used to create this column
                 (
@@ -1937,6 +1945,14 @@ query_paths = {
                 ),  # Annotation is used to create this column
                 (
                     "prime_award_obligated_amount_funded_by_COVID-19_supplementals",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_outlayed_amount_from_IIJA_supplemental",
+                    None,
+                ),  # Annotation is used to create this column
+                (
+                    "prime_award_obligated_amount_from_IIJA_supplemental",
                     None,
                 ),  # Annotation is used to create this column
                 ("prime_award_base_action_date", "action_date"),
