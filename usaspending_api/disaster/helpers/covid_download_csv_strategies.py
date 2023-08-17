@@ -153,7 +153,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             hadoop_copy_merge(
                 spark=self.spark,
                 parts_dir=str(csv_destination_path),
-                zip_file_path=str(covid_profile_zip_path),
+                zip_file_path=covid_profile_zip_path,
                 header=header,
                 overwrite=overwrite,
                 delete_parts_dir=False,

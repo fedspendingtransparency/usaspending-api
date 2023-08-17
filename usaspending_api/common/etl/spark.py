@@ -663,7 +663,7 @@ def hadoop_copy_merge(
     rows_per_part=CONFIG.SPARK_PARTITION_ROWS,
     max_rows_per_merged_file=EXCEL_ROW_LIMIT,
     logger=None,
-    file_format="csv",
+    file_format=".csv",
 ) -> None:
     """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
     It uses the underlying Hadoop FileSystem API to combine all part files under a directory
