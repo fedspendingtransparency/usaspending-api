@@ -754,7 +754,7 @@ def hadoop_copy_merge(
         part_suffix = f"_{str(merge_file_group.part).zfill(2)}" if merge_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
-        merge_group_file_name = parts_dir + part_suffix
+        merge_group_file_name = parts_dir[""] + part_suffix + ".csv"
         merge_group_file_path = hadoop.fs.Path(merge_group_file_name)
 
         if overwrite and fs.exists(merge_group_file_path):
