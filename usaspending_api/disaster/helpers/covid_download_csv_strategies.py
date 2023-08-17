@@ -133,15 +133,12 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path)
             record_count = load_csv_file(self.spark, df, str(destination_path), logger=self._logger)
-            # compress: Whether the file content parts are compressed in GZIP format (*.csv.gz)
-            compress = True
             # overwrite: Whether to replace the file CSV files if they already exist by that name
             overwrite = True
             # max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
             # this many rows in any file written. Only if the total data exceeds this value will multiple files be
             # created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
             max_rows_per_merged_file = EXCEL_ROW_LIMIT
-            extension = "csv.gz" if compress else "csv"
             # When combining these later, will prepend the extracted header to each resultant file.
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.
             header = ",".join([_.name for _ in df.schema.fields])
@@ -149,10 +146,9 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             start = time.time()
             hadoop_copy_merge(
                 spark=self.spark,
-                parts_dir=str(zip_file_path),
-                merged_file=f"{zip_file_path}.{extension}",
+                parts_dir=str(destination_path),
+                merged_file=str(zip_file_path),
                 header=header,
-                is_compressed=compress,
                 overwrite=overwrite,
                 delete_parts_dir=False,
                 rows_per_part=max_rows_per_merged_file,
