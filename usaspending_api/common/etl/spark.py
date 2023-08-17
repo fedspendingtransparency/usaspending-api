@@ -832,7 +832,7 @@ def hadoop_copy_merge(
         # If this file is supposed to already exist, there may be a short period of time where the file does NOT
         # exist, between when the delete completes and the rename completes.
         # S3 does not allow renaming to an existing file, and renames are done as copies of the full object
-        if overwrite and fs.exists(zip_file_path):
+        if overwrite and fs.exists(hadoop.fs.Path(zip_file_path)):
             fs.delete(zip_file_path, True)
         fs.rename(partial_zip_file_path, zip_file_path)
     except Exception:
