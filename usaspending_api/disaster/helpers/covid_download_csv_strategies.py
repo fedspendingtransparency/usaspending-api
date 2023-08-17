@@ -153,20 +153,13 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             hadoop_copy_merge(
                 spark=self.spark,
                 parts_dir=str(csv_destination_path),
-                covid_profile_zip_path=str(covid_profile_zip_path),
+                zip_file_path=str(covid_profile_zip_path),
                 header=header,
                 overwrite=overwrite,
                 delete_parts_dir=False,
                 rows_per_part=max_rows_per_merged_file,
                 max_rows_per_merged_file=max_rows_per_merged_file,
                 logger=self._logger,
-            )
-            split_and_zip_data_files(
-                str(covid_profile_zip_path),
-                csv_destination_path,
-                str(csv_destination_path),
-                self.file_format,
-                None,
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
