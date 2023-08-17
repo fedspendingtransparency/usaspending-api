@@ -119,7 +119,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         csv_destination_path = str(csv_destination_path).replace(str(working_dir_path), "")
         covid_profile_zip_path = str(covid_profile_zip_path).replace(str(working_dir_path), "")
         # Update paths to store the knowledge of S3 buckets in the paths
-        csv_destination_path = Path(f"s3a://dti-da-usaspending-spark-qat/data/csv/{csv_destination_path}")
+        csv_destination_path = Path(f"s3a://dti-usaspending-bulk-download-qat/temp_data/csv/{csv_destination_path}")
         covid_profile_zip_path = Path(f"s3a://dti-usaspending-bulk-download-qat/{covid_profile_zip_path}")
         self.spark = None
         try:
