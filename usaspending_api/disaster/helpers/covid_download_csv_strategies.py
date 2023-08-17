@@ -114,13 +114,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
     def download_to_csv(
         self, sql_file_path, csv_destination_path, temp_data_file_name, working_dir_path, covid_profile_zip_path
     ):
-
-        # Remove local path, so that we can introduce the knowledge of S3 buckets in the paths
-        csv_destination_path = str(csv_destination_path).replace(str(working_dir_path), "")
-        covid_profile_zip_path = str(covid_profile_zip_path).replace(str(working_dir_path), "")
-        # Update paths to store the knowledge of S3 buckets in the paths
-        csv_destination_path = Path(f"s3a://dti-usaspending-bulk-download-qat/temp_data/csv/{csv_destination_path}")
-        covid_profile_zip_path = Path(f"s3a://dti-usaspending-bulk-download-qat/{covid_profile_zip_path}")
+        csv_destination_path_str = str(csv_destination_path)
         self.spark = None
         try:
             extra_conf = {
@@ -138,7 +132,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path)
-            record_count = load_csv_file(self.spark, df, str(csv_destination_path), logger=self._logger)
+            record_count = load_csv_file(self.spark, df, csv_destination_path_str, logger=self._logger)
 
             # overwrite: Whether to replace the file CSV files if they already exist by that name
             overwrite = True
@@ -149,11 +143,11 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             # When combining these later, will prepend the extracted header to each resultant file.
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.
             header = ",".join([_.name for _ in df.schema.fields])
-            self._logger.info("Concatenating partitioned output files and Zipping into downloadable file ...")
+            self._logger.info("Concatenating partitioned output files ...")
             hadoop_copy_merge(
                 spark=self.spark,
-                parts_dir=str(csv_destination_path),
-                zip_file_path=str(covid_profile_zip_path),
+                parts_dir=csv_destination_path_str,
+                zip_file_path=covid_profile_zip_path,
                 header=header,
                 overwrite=overwrite,
                 delete_parts_dir=False,
@@ -167,4 +161,4 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         finally:
             if self.spark_created_by_command:
                 self.spark.stop()
-        return csv_destination_path, record_count
+        return f"{csv_destination_path}.{self.file_format}", record_count

@@ -40,7 +40,7 @@ class Command(BaseCommand):
     # the key's VALUE is the strategies required by the compute type
     compute_flavors = {
         "aurora": {
-            "sql_file_strategy": {
+            "source_sql_strategy": {
                 "disaster_covid19_file_a": Path("usaspending_api/disaster/management/sql/disaster_covid19_file_a.sql"),
                 "disaster_covid19_file_b": Path("usaspending_api/disaster/management/sql/disaster_covid19_file_b.sql"),
                 "disaster_covid19_file_d1_awards": Path(
@@ -56,10 +56,12 @@ class Command(BaseCommand):
                     "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql"
                 ),
             },
+            "working_dir_path": working_dir_path,
+            "covid_profile_output_dir_path": working_dir_path,
             "download_to_csv_strategy": PostgresCovidToCSVStrategy(logger=logger),
         },
         "spark": {
-            "sql_file_strategy": {
+            "source_sql_strategy": {
                 "disaster_covid19_file_a": "select 1 as test;",
                 "disaster_covid19_file_b": "select 2 as test;",
                 "disaster_covid19_file_d1_awards": "select 3 as test;",
@@ -67,6 +69,8 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_contracts": "select 5 as test;",
                 "disaster_covid19_file_f_grants": "select 6 as test;",
             },
+            "working_dir_path": "s3a://dti-usaspending-bulk-download-qat/temp_data/csv",
+            "covid_profile_output_dir_path": "s3a://dti-usaspending-bulk-download-qat",
             "download_to_csv_strategy": SparkCovidToCSVStrategy(logger=logger),
         },
     }
@@ -90,10 +94,13 @@ class Command(BaseCommand):
         """
         compute_flavor = options.get("compute_flavor")
         self._download_csv_strategy = self.compute_flavors[compute_flavor]["download_to_csv_strategy"]
-        self._download_file_source_sql = self.compute_flavors[compute_flavor]["sql_file_strategy"]
+        self._download_file_source_sql = self.compute_flavors[compute_flavor]["source_sql_strategy"]
+        self._working_dir_path = self.compute_flavors[compute_flavor]["working_dir_path"]
+        self._covid_profile_output_dir_path = self.compute_flavors[compute_flavor]["covid_profile_output_dir_path"]
         self.upload = not options["skip_upload"]
         self.covid_profile_zip_file_path = (
-            self.working_dir_path / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
+            self._covid_profile_output_dir_path
+            / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
         )
         try:
             self.prep_filesystem()
@@ -138,29 +145,29 @@ class Command(BaseCommand):
         return [
             (
                 f'{self._download_file_source_sql["disaster_covid19_file_a"]}',
-                self.working_dir_path
+                self._working_dir_path
                 / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
             ),
             (
                 f'{self._download_file_source_sql["disaster_covid19_file_b"]}',
-                self.working_dir_path
+                self._working_dir_path
                 / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
             ),
             (
                 f'{self._download_file_source_sql["disaster_covid19_file_d1_awards"]}',
-                self.working_dir_path / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
+                self._working_dir_path / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
                 f'{self._download_file_source_sql["disaster_covid19_file_d2_awards"]}',
-                self.working_dir_path / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
+                self._working_dir_path / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
                 f'{self._download_file_source_sql["disaster_covid19_file_f_contracts"]}',
-                self.working_dir_path / f"Contracts_Subawards_{short_timestamp}",
+                self._working_dir_path / f"Contracts_Subawards_{short_timestamp}",
             ),
             (
                 f'{self._download_file_source_sql["disaster_covid19_file_f_grants"]}',
-                self.working_dir_path / f"Assistance_Subawards_{short_timestamp}",
+                self._working_dir_path / f"Assistance_Subawards_{short_timestamp}",
             ),
         ]
 
@@ -175,9 +182,9 @@ class Command(BaseCommand):
             path.unlink()
 
     def finalize_zip_contents(self):
-        # self.filepaths_to_delete.append(self.working_dir_path / "Data_Dictionary_Crosswalk.xlsx")
+        self.filepaths_to_delete.append(self._working_dir_path / "Data_Dictionary_Crosswalk.xlsx")
 
-        # add_data_dictionary_to_zip(str(self.covid_profile_zip_file_path.parent), str(self.covid_profile_zip_file_path))
+        add_data_dictionary_to_zip(str(self.covid_profile_zip_file_path.parent), str(self.covid_profile_zip_file_path))
 
         file_description = build_file_description(str(self.readme_path), dict())
         file_description_path = save_file_description(

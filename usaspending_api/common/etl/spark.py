@@ -663,6 +663,7 @@ def hadoop_copy_merge(
     rows_per_part=CONFIG.SPARK_PARTITION_ROWS,
     max_rows_per_merged_file=EXCEL_ROW_LIMIT,
     logger=None,
+    file_format=".csv",
 ) -> None:
     """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
     It uses the underlying Hadoop FileSystem API to combine all part files under a directory
@@ -694,6 +695,7 @@ def hadoop_copy_merge(
             created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+        file_format: The format of the part files and the format of the final merged file
     """
     if not logger:
         logger = get_jvm_logger(spark)
@@ -750,15 +752,15 @@ def hadoop_copy_merge(
     files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
     parts_batch_size = max_rows_per_merged_file // rows_per_part
 
-    for merge_file_group in merge_grouper(files, parts_batch_size):
-        part_suffix = f"_{str(merge_file_group.part).zfill(2)}" if merge_file_group.part else ""
+    for parts_file_group in merge_grouper(files, parts_batch_size):
+        part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
-        merge_group_file_name = parts_dir + part_suffix
-        merge_group_file_path = hadoop.fs.Path(merge_group_file_name)
+        merged_file_name = parts_dir + part_suffix + file_format
+        merged_file_path = hadoop.fs.Path(merged_file_name)
 
-        if overwrite and fs.exists(merge_group_file_path):
-            fs.delete(merge_group_file_path, True)
+        if overwrite and fs.exists(merged_file_path):
+            fs.delete(merged_file_path, True)
 
         out_stream = None
         try:
@@ -767,10 +769,10 @@ def hadoop_copy_merge(
             out_stream = fs.create(partial_merged_file_path)
             out_stream.writeBytes(header + "\n")
             # Read-in files in alphabetical order and append them one by one to the merged file
-            for file in merge_file_group.file_list:
+            for part_file in parts_file_group.file_list:
                 in_stream = None
                 try:
-                    in_stream = fs.open(file)
+                    in_stream = fs.open(part_file)
                     # Write bytes of each file read and keep out_stream open after write for next file
                     hadoop.io.IOUtils.copyBytes(in_stream, out_stream, conf, False)
                 finally:
@@ -783,26 +785,23 @@ def hadoop_copy_merge(
                 out_stream.close()
 
         try:
-            fs.rename(partial_merged_file_path, merge_group_file_path)
+            fs.rename(partial_merged_file_path, merged_file_path)
         except Exception:
             if fs.exists(partial_merged_file_path):
                 fs.delete(partial_merged_file_path, True)
             raise
 
-        merged_file_paths.append(merge_group_file_path)
+        merged_file_paths.append(merged_file_path)
 
     # Take each merged file, and add to a Zip archive for one bundled download
     partial_file = f"{zip_file_path}.partial"
     partial_zip_file_path = hadoop.fs.Path(partial_file)
-    logger.info(f"Starting zip of {merged_file_paths} files into compressed file {str(zip_file_path)} ...")
+    logger.info(f"Starting zip of files into compressed file {zip_file_path} ...")
     zip_start = time.time()
     out_stream = None
     zip_out_stream = None
     try:
-        if not fs.exists(partial_zip_file_path):
-            out_stream = fs.create(partial_zip_file_path)
-        else:
-            out_stream = fs.appendFile(partial_zip_file_path)
+        out_stream = fs.create(partial_zip_file_path)
         zip_out_stream = spark._jvm.java.util.zip.ZipOutputStream(out_stream)
         for file_path_to_zip in merged_file_paths:
             in_stream = None
@@ -825,21 +824,22 @@ def hadoop_copy_merge(
             for file_path_to_zip in merged_file_paths:
                 fs.delete(file_path_to_zip, True)
 
+    hadoop_zip_file_path = hadoop.fs.Path(zip_file_path)
     try:
         # Get the new zipped bits to the target file.
         # If this file is supposed to already exist, there may be a short period of time where the file does NOT
         # exist, between when the delete completes and the rename completes.
         # S3 does not allow renaming to an existing file, and renames are done as copies of the full object
-        if overwrite and fs.exists(zip_file_path):
-            fs.delete(zip_file_path, True)
-        fs.rename(partial_zip_file_path, zip_file_path)
+        if overwrite and fs.exists(hadoop_zip_file_path):
+            fs.delete(hadoop_zip_file_path, True)
+        fs.rename(partial_zip_file_path, hadoop_zip_file_path)
     except Exception:
         if fs.exists(partial_zip_file_path):
             fs.delete(partial_zip_file_path, True)  # drop partial zip file if rename completes or not
         raise
 
     logger.info(
-        f"Completed zip of {merged_file_paths} files into file " f"{str(file_path)} in {(time.time() - zip_start):3f}s"
+        f"Completed zip of {merged_file_paths} files into file " f"{zip_file_path} in {(time.time() - zip_start):3f}s"
     )
 
     if delete_parts_dir:
