@@ -60,12 +60,12 @@ class Command(BaseCommand):
         },
         "spark": {
             "sql_file_strategy": {
-                "disaster_covid19_file_a": "select 1 as test;",
-                "disaster_covid19_file_b": "select 2 as test;",
-                "disaster_covid19_file_d1_awards": "select 3 as test;",
-                "disaster_covid19_file_d2_awards": "select 4 as test;",
-                "disaster_covid19_file_f_contracts": "select 5 as test;",
-                "disaster_covid19_file_f_grants": "select 6 as test;",
+                "disaster_covid19_file_a": "select 1 as test;"
+                # "disaster_covid19_file_b": "select 2 as test;",
+                # "disaster_covid19_file_d1_awards": "select 3 as test;",
+                # "disaster_covid19_file_d2_awards": "select 4 as test;",
+                # "disaster_covid19_file_f_contracts": "select 5 as test;",
+                # "disaster_covid19_file_f_grants": "select 6 as test;",
             },
             "download_to_csv_strategy": SparkCovidToCSVStrategy(logger=logger),
         },
