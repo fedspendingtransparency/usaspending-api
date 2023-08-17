@@ -131,8 +131,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path)
-            # Making the file name a directory because spark outputs files in parts
-            record_count = load_csv_file_and_zip(self.spark, df, f"{destination_path}/", logger=self._logger)
+            record_count = load_csv_file_and_zip(self.spark, df, destination_path, logger=self._logger)
             self._logger.info(f"{destination_path} contains {record_count:,} rows of data")
         except Exception:
             self._logger.exception("Exception encountered. See logs")
