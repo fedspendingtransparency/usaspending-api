@@ -169,6 +169,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             self.model_name = SubawardSearch
             self.queryset = subaward_filter(self.filters)
+
             self.obligation_column = "subaward_amount"
             result = self.query_django_subawards()
         else:
@@ -224,6 +225,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             fields_list.append(self.loc_lookup)
 
             return self.state_results(kwargs, fields_list, self.loc_lookup)
+
+        elif self.geo_layer == GeoLayer.COUNTRY:
+            return self.country_results(self.loc_lookup)
 
         else:
             # County and district scope will need to select multiple fields
@@ -392,6 +396,51 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "shape_code": shape_code,
                     "aggregated_amount": x["transaction_amount"],
                     "display_name": x[state_lookup] + "-" + pad_codes(self.geo_layer.value, x["code_as_float"]),
+                    "population": population,
+                    "per_capita": per_capita,
+                }
+            )
+
+        return results
+
+    def country_results(self, loc_lookup: str) -> List[dict]:
+        """Find subaward results for countries
+
+        Args:
+            loc_lookup (String): Name of the field on the SubawardSearch model to use to find subawards. 
+
+        Returns:
+            List[dict]: List of subaward results by country
+        """
+        country_queryset = self.queryset.values(loc_lookup)
+
+        # If specific countries were provided, only get the subawards for those countries
+        if self.geo_layer_filters:
+            country_queryset = country_queryset.filter(**{f"{loc_lookup}__in": self.geo_layer_filters})
+
+            ref_countries = RefCountryCode.objects.filter(country_code__in=self.geo_layer_filters).values("country_code", "country_name")
+            ref_countries = {country["country_code"]: country["country_name"] for country in ref_countries}
+        # If no specific countries were provided, then get all subawards grouped by country
+        else:
+            ref_countries = RefCountryCode.objects.all().values("country_code", "country_name")
+            ref_countries = {country["country_code"]: country["country_name"] for country in ref_countries}
+        country_queryset = country_queryset.annotate(transaction_amount=Sum("subaward_amount")).filter(transaction_amount__gt=0)
+
+        results = []
+        for x in country_queryset:
+            shape_code = x[loc_lookup]
+            per_capita = None
+            # TODO: to be populated in DEV-10132
+            population = None
+            if population:
+                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
+            display_name = ref_countries.get(shape_code, None)
+
+            results.append(
+                {
+                    "shape_code": shape_code,
+                    "aggregated_amount": x["transaction_amount"],
+                    "display_name": display_name.title() if display_name else None,
                     "population": population,
                     "per_capita": per_capita,
                 }
