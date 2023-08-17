@@ -474,7 +474,7 @@ def idv_transaction_annotations(filters: dict):
         "obligated_amount_funded_by_COVID-19_supplementals_for_overall_award": Case(
             When(
                 action_date__gte="2020-04-01",
-                then=_iija_obligation_subquery(),
+                then=_covid_obligation_subquery(),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
@@ -488,7 +488,7 @@ def idv_transaction_annotations(filters: dict):
         "obligated_amount_from_IIJA_supplemental_for_overall_award": Case(
             When(
                 action_date__gte="2020-04-01",
-                then=_covid_obligation_subquery(),
+                then=_iija_obligation_subquery(),
             ),
             output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
