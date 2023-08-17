@@ -447,6 +447,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 }
             )
 
+        # Sort the results by `shape_code` value
+        results = sorted(results, key=lambda x: x['shape_code'])
+
         return results
 
     def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q) -> Optional[TransactionSearch]:
