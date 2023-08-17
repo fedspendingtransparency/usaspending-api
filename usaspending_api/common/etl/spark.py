@@ -663,6 +663,7 @@ def hadoop_copy_merge(
     rows_per_part=CONFIG.SPARK_PARTITION_ROWS,
     max_rows_per_merged_file=EXCEL_ROW_LIMIT,
     logger=None,
+    file_format="csv",
 ) -> None:
     """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
     It uses the underlying Hadoop FileSystem API to combine all part files under a directory
@@ -694,6 +695,7 @@ def hadoop_copy_merge(
             created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+        file_format: The format of the part files and the format of the final merged file
     """
     if not logger:
         logger = get_jvm_logger(spark)
@@ -754,7 +756,7 @@ def hadoop_copy_merge(
         part_suffix = f"_{str(merge_file_group.part).zfill(2)}" if merge_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
-        merge_group_file_name = parts_dir[""] + part_suffix + ".csv"
+        merge_group_file_name = parts_dir + part_suffix + file_format
         merge_group_file_path = hadoop.fs.Path(merge_group_file_name)
 
         if overwrite and fs.exists(merge_group_file_path):
