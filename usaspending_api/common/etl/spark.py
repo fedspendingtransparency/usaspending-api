@@ -632,7 +632,7 @@ def write_csv_file(
     if fs.exists(parts_dir_path):
         fs.delete(parts_dir_path, True)
     start = time.time()
-    logger.info("Writing source data DataFrame to csv part files ...")
+    logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
     df.write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
@@ -796,9 +796,7 @@ def hadoop_copy_merge(
     # Take each merged file, and add to a Zip archive for one bundled download
     partial_file = f"{zip_file_path}.partial"
     partial_zip_file_path = hadoop.fs.Path(partial_file)
-    logger.info(
-        f"Starting zip of {len(merged_file_paths)} {extension} files into compressed file {str(zip_file_path)} ..."
-    )
+    logger.info(f"Starting zip of merged_file_paths files into compressed file {str(zip_file_path)} ...")
     zip_start = time.time()
     out_stream = None
     zip_out_stream = None
