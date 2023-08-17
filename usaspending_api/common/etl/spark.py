@@ -706,9 +706,7 @@ def hadoop_copy_merge(
     if not fs.exists(parts_dir_path):
         raise ValueError("Source directory {} does not exist".format(parts_dir))
 
-    extension = ".csv"
-    ext_idx = parts_dir.index(extension)
-    file = parts_dir[:ext_idx]
+    file = parts_dir
     file_path = hadoop.fs.Path(file)
 
     # Don't delete first if disallowing overwrite.
@@ -755,8 +753,7 @@ def hadoop_copy_merge(
         part_suffix = f"_{str(merge_file_group.part).zfill(2)}" if merge_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
-        ext_idx = parts_dir.index(extension)
-        merge_group_file_name = parts_dir[:ext_idx] + part_suffix + parts_dir[ext_idx:]
+        merge_group_file_name = parts_dir + part_suffix
         merge_group_file_path = hadoop.fs.Path(merge_group_file_name)
 
         if overwrite and fs.exists(merge_group_file_path):
@@ -841,8 +838,7 @@ def hadoop_copy_merge(
         raise
 
     logger.info(
-        f"Completed zip of {len(merged_file_paths)} {extension} files into file "
-        f"{str(file_path)} in {(time.time() - zip_start):3f}s"
+        f"Completed zip of {merged_file_paths} files into file " f"{str(file_path)} in {(time.time() - zip_start):3f}s"
     )
 
     if delete_parts_dir:
