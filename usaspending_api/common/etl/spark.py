@@ -796,7 +796,7 @@ def hadoop_copy_merge(
     # Take each merged file, and add to a Zip archive for one bundled download
     partial_file = f"{zip_file_path}.partial"
     partial_zip_file_path = hadoop.fs.Path(partial_file)
-    logger.info(f"Starting zip of merged_file_paths files into compressed file {str(zip_file_path)} ...")
+    logger.info(f"Starting zip of {merged_file_paths} files into compressed file {str(zip_file_path)} ...")
     zip_start = time.time()
     out_stream = None
     zip_out_stream = None
