@@ -98,13 +98,13 @@ class Command(BaseCommand):
         try:
             self.prep_filesystem()
             self.process_data_copy_jobs()
-            # self.complete_zip_and_upload()
+            self.complete_zip_and_upload()
         except Exception:
             logger.exception("Exception encountered. See logs")
             raise
-        # finally:
-        #     # "best-effort" attempt to cleanup temp files after a failure. Isn't 100% effective
-        #     self.cleanup()
+        finally:
+            # "best-effort" attempt to cleanup temp files after a failure. Isn't 100% effective
+            self.cleanup()
 
     def process_data_copy_jobs(self):
         logger.info(f"Creating new COVID-19 download zip file: {self.covid_profile_zip_file_path}")

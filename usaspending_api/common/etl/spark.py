@@ -801,10 +801,7 @@ def hadoop_copy_merge(
     out_stream = None
     zip_out_stream = None
     try:
-        if not fs.exists(partial_zip_file_path):
-            out_stream = fs.create(partial_zip_file_path)
-        else:
-            out_stream = fs.appendFile(partial_zip_file_path)
+        out_stream = fs.create(partial_zip_file_path)
         zip_out_stream = spark._jvm.java.util.zip.ZipOutputStream(out_stream)
         for file_path_to_zip in merged_file_paths:
             in_stream = None
@@ -833,8 +830,8 @@ def hadoop_copy_merge(
         # If this file is supposed to already exist, there may be a short period of time where the file does NOT
         # exist, between when the delete completes and the rename completes.
         # S3 does not allow renaming to an existing file, and renames are done as copies of the full object
-        # if overwrite and fs.exists(hadoop_zip_file_path):
-        #     fs.delete(hadoop_zip_file_path, True)
+        if overwrite and fs.exists(hadoop_zip_file_path):
+            fs.delete(hadoop_zip_file_path, True)
         fs.rename(partial_zip_file_path, hadoop_zip_file_path)
     except Exception:
         if fs.exists(partial_zip_file_path):
