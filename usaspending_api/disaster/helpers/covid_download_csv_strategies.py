@@ -146,7 +146,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             start = time.time()
             hadoop_copy_merge(
                 spark=self.spark,
-                parts_dir=str(destination_path),
+                parts_dir=f"{str(destination_path)}.csv",
                 zip_file_path=str(zip_file_path),
                 header=header,
                 overwrite=overwrite,
