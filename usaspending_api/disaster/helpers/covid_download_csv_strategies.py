@@ -138,7 +138,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path)
-            record_count = 0  # load_csv_file(self.spark, df, str(csv_destination_path), logger=self._logger)
+            record_count = load_csv_file(self.spark, df, str(csv_destination_path), logger=self._logger)
 
             # overwrite: Whether to replace the file CSV files if they already exist by that name
             overwrite = True
