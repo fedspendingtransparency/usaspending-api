@@ -1,14 +1,11 @@
 import logging
 import signal
-from datetime import datetime, timezone
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from usaspending_api.search.models import AwardSearch
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.awards.models import FinancialAccountsByAwards
 
 logger = logging.getLogger("script")
 
@@ -39,10 +36,6 @@ class Command(BaseCommand):
         except ObjectDoesNotExist:
             raise RuntimeError(f"Broker submission ID {submission_id} does not exist")
 
-        # Mark associated Accounts as updated, so they will be reloaded in ES nightly load
-        AwardSearch.objects.filter(
-            award_id__in=FinancialAccountsByAwards.objects.filter(submission_id=submission_id).values("award_id")
-        ).update(update_date=datetime.now(timezone.utc))
         deleted_stats = submission.delete()
 
         models = {
