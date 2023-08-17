@@ -827,14 +827,15 @@ def hadoop_copy_merge(
             for file_path_to_zip in merged_file_paths:
                 fs.delete(file_path_to_zip, True)
 
+    hadoop_zip_file_path = hadoop.fs.Path(zip_file_path)
     try:
         # Get the new zipped bits to the target file.
         # If this file is supposed to already exist, there may be a short period of time where the file does NOT
         # exist, between when the delete completes and the rename completes.
         # S3 does not allow renaming to an existing file, and renames are done as copies of the full object
-        if overwrite and fs.exists(hadoop.fs.Path(zip_file_path)):
+        if overwrite and fs.exists(hadoop_zip_file_path):
             fs.delete(zip_file_path, True)
-        fs.rename(partial_zip_file_path, zip_file_path)
+        fs.rename(partial_zip_file_path, hadoop_zip_file_path)
     except Exception:
         if fs.exists(partial_zip_file_path):
             fs.delete(partial_zip_file_path, True)  # drop partial zip file if rename completes or not
