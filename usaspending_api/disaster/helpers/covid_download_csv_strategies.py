@@ -149,7 +149,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             start = time.time()
             hadoop_copy_merge(
                 spark=self.spark,
-                parts_dir=zip_file_path,
+                parts_dir=str(zip_file_path),
                 merged_file=f"{zip_file_path}.{extension}",
                 header=header,
                 is_compressed=compress,

@@ -579,9 +579,7 @@ def load_csv_file(
     Args:
         spark: passed-in active SparkSession
         df: the DataFrame wrapping the data source to be dumped to CSV.
-        parts_dir: Path to dir that contains the outputted parts files from partitions
-            - Should be full path ``"s3a://.../.../"`` if using S3
-            - Can be relative if using the SparkSession's fs.defaultFS FileSystem impl
+        parts_dir: Path to dir that will contain the outputted parts files from partitions
         compress: Whether the file content parts are compressed in GZIP format (*.csv.gz)
         overwrite: Whether to replace the file CSV files if they already exist by that name
         max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
@@ -620,13 +618,11 @@ def write_csv_file(
     overwrite=True,
     logger=None,
 ) -> int:
-    """Write DataFrame data to CSV file parts
+    """Write DataFrame data to CSV file parts.
     Args:
         spark: passed-in active SparkSession
         df: the DataFrame wrapping the data source to be dumped to CSV.
-        parts_dir: Path to dir that contains the outputted parts files from partitions
-            - Should be full path ``"s3a://.../.../"`` if using S3
-            - Can be relative if using the SparkSession's fs.defaultFS FileSystem impl
+        parts_dir: Path to dir that will contain the outputted parts files from partitions
         compress: Whether the file content parts are compressed in GZIP format (*.csv.gz)
         overwrite: Whether to replace the file CSV files if they already exist by that name
         max_rows_per_merged_file: Suggestion to Spark of how many records to put in each written CSV file part,
