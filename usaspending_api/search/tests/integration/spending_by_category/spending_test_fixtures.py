@@ -513,7 +513,6 @@ def awards_and_transactions(db):
         sub_action_date="2020-01-07",
     )
 
-
     # References State Data
     baker.make("recipient.StateData", id="45-2020", fips="45", code="SC", name="South Carolina")
     baker.make("recipient.StateData", id="53-2020", fips="53", code="WA", name="Washington")

@@ -407,7 +407,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         """Find subaward results for countries
 
         Args:
-            loc_lookup (String): Name of the field on the SubawardSearch model to use to find subawards. 
+            loc_lookup (String): Name of the field on the SubawardSearch model to use to find subawards.
 
         Returns:
             List[dict]: List of subaward results by country
@@ -418,14 +418,18 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         if self.geo_layer_filters:
             country_queryset = country_queryset.filter(**{f"{loc_lookup}__in": self.geo_layer_filters})
 
-            ref_countries = RefCountryCode.objects.filter(country_code__in=self.geo_layer_filters).values("country_code", "country_name")
+            ref_countries = RefCountryCode.objects.filter(country_code__in=self.geo_layer_filters).values(
+                "country_code", "country_name"
+            )
             ref_countries = {country["country_code"]: country["country_name"] for country in ref_countries}
         # If no specific countries were provided, then get all subawards grouped by country
         else:
             ref_countries = RefCountryCode.objects.all().values("country_code", "country_name")
             ref_countries = {country["country_code"]: country["country_name"] for country in ref_countries}
         # Sum the `subaward_amount` columns and exclude any subawards with $0 amounts
-        country_queryset = country_queryset.annotate(transaction_amount=Sum("subaward_amount")).exclude(transaction_amount=0)
+        country_queryset = country_queryset.annotate(transaction_amount=Sum("subaward_amount")).exclude(
+            transaction_amount=0
+        )
 
         results = []
         for x in country_queryset:
@@ -448,7 +452,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             )
 
         # Sort the results by `shape_code` value
-        results = sorted(results, key=lambda x: x['shape_code'])
+        results = sorted(results, key=lambda x: x["shape_code"])
 
         return results
 

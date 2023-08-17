@@ -312,7 +312,6 @@ def _test_correct_response_for_place_of_perforance_country_with_geo_filters(clie
     resp_json["results"].sort(key=_get_shape_code_for_sort)
     assert resp_json == expected_response
 
-
     # Subawards
     resp = client.post(
         "/api/v2/search/spending_by_geography",
@@ -509,7 +508,6 @@ def _test_correct_response_for_recipient_location_country_with_geo_filters(clien
     resp_json = resp.json()
     resp_json["results"].sort(key=_get_shape_code_for_sort)
     assert resp_json == expected_response
-
 
     # Subawards
     resp = client.post(
@@ -746,7 +744,6 @@ def _test_correct_response_for_place_of_perforance_country_without_geo_filters(c
     resp_json["results"].sort(key=_get_shape_code_for_sort)
     assert resp_json == expected_response
 
-
     # Subawards
     resp = client.post(
         "/api/v2/search/spending_by_geography",
@@ -956,7 +953,7 @@ def _test_correct_response_for_recipient_location_country_without_geo_filters(cl
                 "display_name": "Canada",
                 "per_capita": None,
                 "population": None,
-                "shape_code": "CAN"
+                "shape_code": "CAN",
             },
             {
                 "aggregated_amount": 5000000.0,
@@ -964,7 +961,7 @@ def _test_correct_response_for_recipient_location_country_without_geo_filters(cl
                 "per_capita": None,
                 "population": None,
                 "shape_code": "JPN",
-            }
+            },
         ],
         "messages": [get_time_period_message()],
     }
@@ -973,7 +970,6 @@ def _test_correct_response_for_recipient_location_country_without_geo_filters(cl
     resp_json = resp.json()
     resp_json["results"].sort(key=_get_shape_code_for_sort)
     assert resp_json == expected_response
-
 
     # Subawards
     resp = client.post(
