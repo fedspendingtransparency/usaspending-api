@@ -647,6 +647,7 @@ def write_csv_file(
         timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
         mode="overwrite" if overwrite else "errorifexists",
     )
+    logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
 
@@ -790,56 +791,56 @@ def hadoop_copy_merge(
 
         merged_file_paths.append(merge_group_file_path)
 
-    # Take each merged file, and add to a Zip archive for one bundled download
-    partial_file = f"{zip_file_path}.partial"
-    partial_zip_file_path = hadoop.fs.Path(partial_file)
-    logger.info(f"Starting zip of {merged_file_paths} files into compressed file {str(zip_file_path)} ...")
-    zip_start = time.time()
-    out_stream = None
-    zip_out_stream = None
-    try:
-        if not fs.exists(partial_zip_file_path):
-            out_stream = fs.create(partial_zip_file_path)
-        else:
-            out_stream = fs.appendFile(partial_zip_file_path)
-        zip_out_stream = spark._jvm.java.util.zip.ZipOutputStream(out_stream)
-        for file_path_to_zip in merged_file_paths:
-            in_stream = None
-            try:
-                zip_entry = spark._jvm.java.util.zip.ZipEntry(file_path_to_zip.getName())
-                zip_out_stream.putNextEntry(zip_entry)
-                in_stream = fs.open(file_path_to_zip)
-                # Write bytes of each file read and keep out_stream open after write for next file
-                hadoop.io.IOUtils.copyBytes(in_stream, zip_out_stream, conf, False)
-            finally:
-                if in_stream:
-                    in_stream.close()
-    finally:
-        if zip_out_stream:
-            zip_out_stream.close()
-        if out_stream:
-            out_stream.close()
-        # Cleanup source files for zip
-        if remove_zip_source_files:
-            for file_path_to_zip in merged_file_paths:
-                fs.delete(file_path_to_zip, True)
+    # # Take each merged file, and add to a Zip archive for one bundled download
+    # partial_file = f"{zip_file_path}.partial"
+    # partial_zip_file_path = hadoop.fs.Path(partial_file)
+    # logger.info(f"Starting zip of {merged_file_paths} files into compressed file {str(zip_file_path)} ...")
+    # zip_start = time.time()
+    # out_stream = None
+    # zip_out_stream = None
+    # try:
+    #     if not fs.exists(partial_zip_file_path):
+    #         out_stream = fs.create(partial_zip_file_path)
+    #     else:
+    #         out_stream = fs.appendFile(partial_zip_file_path)
+    #     zip_out_stream = spark._jvm.java.util.zip.ZipOutputStream(out_stream)
+    #     for file_path_to_zip in merged_file_paths:
+    #         in_stream = None
+    #         try:
+    #             zip_entry = spark._jvm.java.util.zip.ZipEntry(file_path_to_zip.getName())
+    #             zip_out_stream.putNextEntry(zip_entry)
+    #             in_stream = fs.open(file_path_to_zip)
+    #             # Write bytes of each file read and keep out_stream open after write for next file
+    #             hadoop.io.IOUtils.copyBytes(in_stream, zip_out_stream, conf, False)
+    #         finally:
+    #             if in_stream:
+    #                 in_stream.close()
+    # finally:
+    #     if zip_out_stream:
+    #         zip_out_stream.close()
+    #     if out_stream:
+    #         out_stream.close()
+    #     # Cleanup source files for zip
+    #     if remove_zip_source_files:
+    #         for file_path_to_zip in merged_file_paths:
+    #             fs.delete(file_path_to_zip, True)
 
-    try:
-        # Get the new zipped bits to the target file.
-        # If this file is supposed to already exist, there may be a short period of time where the file does NOT
-        # exist, between when the delete completes and the rename completes.
-        # S3 does not allow renaming to an existing file, and renames are done as copies of the full object
-        if overwrite and fs.exists(zip_file_path):
-            fs.delete(zip_file_path, True)
-        fs.rename(partial_zip_file_path, zip_file_path)
-    except Exception:
-        if fs.exists(partial_zip_file_path):
-            fs.delete(partial_zip_file_path, True)  # drop partial zip file if rename completes or not
-        raise
+    # try:
+    #     # Get the new zipped bits to the target file.
+    #     # If this file is supposed to already exist, there may be a short period of time where the file does NOT
+    #     # exist, between when the delete completes and the rename completes.
+    #     # S3 does not allow renaming to an existing file, and renames are done as copies of the full object
+    #     if overwrite and fs.exists(zip_file_path):
+    #         fs.delete(zip_file_path, True)
+    #     fs.rename(partial_zip_file_path, zip_file_path)
+    # except Exception:
+    #     if fs.exists(partial_zip_file_path):
+    #         fs.delete(partial_zip_file_path, True)  # drop partial zip file if rename completes or not
+    #     raise
 
-    logger.info(
-        f"Completed zip of {merged_file_paths} files into file " f"{str(file_path)} in {(time.time() - zip_start):3f}s"
-    )
+    # logger.info(
+    #     f"Completed zip of {merged_file_paths} files into file " f"{str(file_path)} in {(time.time() - zip_start):3f}s"
+    # )
 
-    if delete_parts_dir:
-        fs.delete(parts_dir_path, True)
+    # if delete_parts_dir:
+    #     fs.delete(parts_dir_path, True)
