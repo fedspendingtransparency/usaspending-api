@@ -566,7 +566,7 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
     logger.info(f"Created the reference views in the global_temp database")
 
 
-def load_csv_file_and_zip(
+def load_csv_file(
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
@@ -575,7 +575,7 @@ def load_csv_file_and_zip(
     overwrite=True,
     logger=None,
 ) -> int:
-    """Load DataFrame data into a SINGLE CSV file, that is packaged in a .zip file and uploaded to S3.
+    """Load DataFrame data into a SINGLE CSV file.
     Args:
         spark: passed-in active SparkSession
         df: the DataFrame wrapping the data source to be dumped to CSV.
@@ -592,6 +592,8 @@ def load_csv_file_and_zip(
     Returns:
         record count of the DataFrame that was used to populate the CSV file
     """
+    start = time.time()
+
     if not logger:
         logger = get_jvm_logger(spark)
 
@@ -605,25 +607,6 @@ def load_csv_file_and_zip(
         logger=logger,
     )
 
-    extension = "csv.gz" if compress else "csv"
-    # When combining these later, will prepend the extracted header to each resultant file.
-    # The parts therefore must NOT have headers or the headers will show up in the data when combined.
-    header = ",".join([_.name for _ in df.schema.fields])
-
-    logger.info("Concatenating partitioned output files and Zipping into downloadable file ...")
-    start = time.time()
-    hadoop_copy_merge(
-        spark=spark,
-        parts_dir=parts_dir,
-        merged_file=f"{parts_dir}.{extension}",
-        header=header,
-        is_compressed=compress,
-        overwrite=overwrite,
-        delete_parts_dir=False,
-        rows_per_part=max_rows_per_merged_file,
-        max_rows_per_merged_file=max_rows_per_merged_file,
-        logger=logger,
-    )
     logger.info(f"Completed file concatenation and Zip in {(time.time() - start):3f}s")
     return df_record_count
 
