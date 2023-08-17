@@ -151,6 +151,7 @@ def spark(tmp_path_factory) -> SparkSession:
     extra_conf = {
         # This is the default, but being explicit
         "spark.master": "local[*]",
+        "spark.driver.host": "127.0.0.1",  # if not set fails in local envs, trying to use network IP instead
         # Client deploy mode is the default, but being explicit.
         # Means the driver node is the place where the SparkSession is instantiated (and/or where spark-submit
         # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
