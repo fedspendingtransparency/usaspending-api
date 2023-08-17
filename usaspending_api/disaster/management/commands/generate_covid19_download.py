@@ -175,9 +175,9 @@ class Command(BaseCommand):
             path.unlink()
 
     def finalize_zip_contents(self):
-        self.filepaths_to_delete.append(self.working_dir_path / "Data_Dictionary_Crosswalk.xlsx")
+        # self.filepaths_to_delete.append(self.working_dir_path / "Data_Dictionary_Crosswalk.xlsx")
 
-        add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
+        # add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
 
         file_description = build_file_description(str(self.readme_path), dict())
         file_description_path = save_file_description(
