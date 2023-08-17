@@ -223,11 +223,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # Only state scope will add its own state code
             # State codes are consistent in database i.e. AL, AK
             fields_list.append(self.loc_lookup)
-
-            return self.state_results(kwargs, fields_list, self.loc_lookup)
+            results = self.state_results(kwargs, fields_list, self.loc_lookup)
 
         elif self.geo_layer == GeoLayer.COUNTRY:
-            return self.country_results(self.loc_lookup)
+            results = self.country_results(self.loc_lookup)
 
         else:
             # County and district scope will need to select multiple fields
@@ -248,15 +247,15 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 geo_queryset = self.county_district_queryset_subawards(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
                 )
-
-                return self.county_results(state_lookup, county_name_lookup, geo_queryset)
+                results = self.county_results(state_lookup, county_name_lookup, geo_queryset)
 
             else:
                 geo_queryset = self.county_district_queryset_subawards(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
                 )
+                results = self.district_results(state_lookup, geo_queryset)
 
-                return self.district_results(state_lookup, geo_queryset)
+        return results
 
     def state_results(self, filter_args: Dict[str, str], lookup_fields: List[str], loc_lookup: str) -> List[dict]:
         # Adding additional state filters if specified
