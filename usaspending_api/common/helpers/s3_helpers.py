@@ -43,7 +43,7 @@ def access_s3_object(bucket_name: str, obj: "boto3.resources.factory.s3.ObjectSu
 
 
 def upload_download_file_to_s3(file_path):
-    bucket = "dti-usaspending-bulk-download-dev"
+    bucket = "dti-usaspending-bulk-download-qat"
     region = "us-gov-west-1"
     multipart_upload(bucket, region, str(file_path), file_path.name)
 
