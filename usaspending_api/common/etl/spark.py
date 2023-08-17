@@ -656,7 +656,10 @@ def write_csv_file(
     if not logger:
         logger = get_jvm_logger(spark)
     # Delete output data dir if it already exists
-    dbutils.fs.rm(parts_dir)
+    parts_dir_path = spark.sparkContext._jvm.org.apache.hadoop.fs.Path(parts_dir)
+    fs = parts_dir_path.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
+    if fs.exists(parts_dir_path):
+        fs.delete(parts_dir_path, True)
     compression = "gzip" if compress else None
     start = time.time()
     logger.info("Writing source data DataFrame to csv part files ...")
