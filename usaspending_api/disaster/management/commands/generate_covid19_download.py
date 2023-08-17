@@ -92,7 +92,7 @@ class Command(BaseCommand):
         self._download_csv_strategy = self.compute_flavors[compute_flavor]["download_to_csv_strategy"]
         self._download_file_source_sql = self.compute_flavors[compute_flavor]["sql_file_strategy"]
         self.upload = not options["skip_upload"]
-        self.zip_file_path = (
+        self.covid_profile_zip_file_path = (
             self.working_dir_path / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
         )
         try:
@@ -107,29 +107,29 @@ class Command(BaseCommand):
             self.cleanup()
 
     def process_data_copy_jobs(self):
-        logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_path}")
-        self.filepaths_to_delete.append(self.zip_file_path)
+        logger.info(f"Creating new COVID-19 download zip file: {self.covid_profile_zip_file_path}")
+        self.filepaths_to_delete.append(self.covid_profile_zip_file_path)
 
-        for sql_file_path, final_name in self.download_file_list:
-            intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
-            data_file, count = self.download_to_csv(sql_file_path, final_name, str(intermediate_data_file_path))
+        for sql_file_path, destination_path in self.download_file_list:
+            temp_data_file_name = destination_path.parent / (destination_path.name + "_temp")
+            data_file, count = self.download_to_csv(sql_file_path, destination_path, str(temp_data_file_name))
             if count <= 0:
-                logger.warning(f"Empty data file generated: {final_name}!")
+                logger.warning(f"Empty data file generated: {destination_path}!")
             self.total_download_count += count
 
-            self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_name.stem}*"))
+            self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{destination_path.stem}*"))
 
     def complete_zip_and_upload(self):
         self.finalize_zip_contents()
         if self.upload:
             logger.info("Upload final zip file to S3")
-            upload_download_file_to_s3(self.zip_file_path)
+            upload_download_file_to_s3(self.covid_profile_zip_file_path)
             db_id = self.store_record_in_database()
             logger.info(f"Created database record {db_id} for future retrieval")
             logger.info("Marking zip file for deletion in cleanup")
         else:
             logger.warn("Not uploading zip file to S3. Leaving file locally")
-            self.filepaths_to_delete.remove(self.zip_file_path)
+            self.filepaths_to_delete.remove(self.covid_profile_zip_file_path)
             logger.warn("Not creating database record")
 
     @property
@@ -177,32 +177,32 @@ class Command(BaseCommand):
     def finalize_zip_contents(self):
         # self.filepaths_to_delete.append(self.working_dir_path / "Data_Dictionary_Crosswalk.xlsx")
 
-        # add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
+        # add_data_dictionary_to_zip(str(self.covid_profile_zip_file_path.parent), str(self.covid_profile_zip_file_path))
 
         file_description = build_file_description(str(self.readme_path), dict())
         file_description_path = save_file_description(
-            str(self.zip_file_path.parent), self.readme_path.name, file_description
+            str(self.covid_profile_zip_file_path.parent), self.readme_path.name, file_description
         )
         self.filepaths_to_delete.append(Path(file_description_path))
-        append_files_to_zip_file([file_description_path], str(self.zip_file_path))
-        self.total_download_size = self.zip_file_path.stat().st_size
+        append_files_to_zip_file([file_description_path], str(self.covid_profile_zip_file_path))
+        self.total_download_size = self.covid_profile_zip_file_path.stat().st_size
 
     def prep_filesystem(self):
-        if self.zip_file_path.exists():
+        if self.covid_profile_zip_file_path.exists():
             # Clean up a zip file that might exist from a prior attempt at this download
-            self.zip_file_path.unlink()
+            self.covid_profile_zip_file_path.unlink()
 
-        if not self.zip_file_path.parent.exists():
-            self.zip_file_path.parent.mkdir()
+        if not self.covid_profile_zip_file_path.parent.exists():
+            self.covid_profile_zip_file_path.parent.mkdir()
 
-    def download_to_csv(self, sql_filepath, destination_path, intermediate_data_filename):
+    def download_to_csv(self, sql_filepath, destination_path, temp_data_file_name):
         return self._download_csv_strategy.download_to_csv(
-            sql_filepath, destination_path, intermediate_data_filename, self.working_dir_path, self.zip_file_path
+            sql_filepath, destination_path, temp_data_file_name, self.working_dir_path, self.covid_profile_zip_file_path
         )
 
     def store_record_in_database(self):
         download_record = DownloadJob.objects.create(
-            file_name=self.zip_file_path.name,
+            file_name=self.covid_profile_zip_file_path.name,
             file_size=self.total_download_size,
             job_status_id=JOB_STATUS_DICT["finished"],
             json_request=json.dumps(

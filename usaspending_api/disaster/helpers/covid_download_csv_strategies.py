@@ -19,6 +19,7 @@ from usaspending_api.download.filestreaming.download_generation import generate_
 from pyspark.sql import SparkSession
 from usaspending_api.common.etl.spark import hadoop_copy_merge, load_csv_file
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
+from usaspending_api.config import CONFIG
 
 
 class AbstractCovidToCSVStrategy(ABC):
@@ -38,19 +39,18 @@ class AbstractCovidToCSVStrategy(ABC):
     def download_to_csv(
         self,
         sql_file_path: Path,
-        destination_path: Path,
-        intermediate_data_filename: str,
+        csv_destination_path: Path,
+        temp_data_file_name: str,
         working_dir_path: Path,
-        zip_file_path: Path,
+        covid_profile_zip_path: Path,
     ) -> Tuple[str, int]:
         """
         Args:
             sql_file_path: The path to the SQL file that'll be used to source data
-            destination_path: The absolute destination path of the generated data files
-            intermediate_data_filename: Some path to store the temporary download in
+            csv_destination_path: The absolute destination path of the generated data files
+            temp_data_file_name: Some path to store the temporary download in
             working_dir_path: The working directory
-            zip_file_path: The path to zip the generated data files to
-
+            covid_profile_zip_path: The path to zip the generated data files to
         """
         pass
 
@@ -61,17 +61,17 @@ class PostgresCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         self._logger = logger
 
     def download_to_csv(
-        self, sql_file_path, destination_path, intermediate_data_filename, working_dir_path, zip_file_path
+        self, sql_file_path, csv_destination_path, temp_data_file_name, working_dir_path, covid_profile_zip_path
     ):
         start_time = time.perf_counter()
-        self._logger.info(f"Downloading data to {destination_path}")
+        self._logger.info(f"Downloading data to {csv_destination_path}")
         options = FILE_FORMATS[self.file_format]["options"]
         export_query = r"\COPY ({}) TO STDOUT {}".format(read_sql_file_to_text(sql_file_path), options)
         try:
             temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, working_dir_path)
             # Create a separate process to run the PSQL command; wait
             psql_process = multiprocessing.Process(
-                target=execute_psql, args=(temp_file_path, intermediate_data_filename, None)
+                target=execute_psql, args=(temp_file_path, temp_data_file_name, None)
             )
             psql_process.start()
             wait_for_process(psql_process, start_time, None)
@@ -79,12 +79,10 @@ class PostgresCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             delim = FILE_FORMATS[self.file_format]["delimiter"]
 
             # Log how many rows we have
-            self._logger.info(f"Counting rows in delimited text file {intermediate_data_filename}")
+            self._logger.info(f"Counting rows in delimited text file {temp_data_file_name}")
             try:
-                count = count_rows_in_delimited_file(
-                    filename=intermediate_data_filename, has_header=True, delimiter=delim
-                )
-                self._logger.info(f"{destination_path} contains {count:,} rows of data")
+                count = count_rows_in_delimited_file(filename=temp_data_file_name, has_header=True, delimiter=delim)
+                self._logger.info(f"{csv_destination_path} contains {count:,} rows of data")
             except Exception:
                 self._logger.exception("Unable to obtain delimited text file line count")
 
@@ -92,9 +90,9 @@ class PostgresCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             zip_process = multiprocessing.Process(
                 target=split_and_zip_data_files,
                 args=(
-                    str(zip_file_path),
-                    intermediate_data_filename,
-                    str(destination_path),
+                    str(covid_profile_zip_path),
+                    temp_data_file_name,
+                    str(csv_destination_path),
                     self.file_format,
                     None,
                 ),
@@ -105,7 +103,7 @@ class PostgresCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             raise e
         finally:
             Path(temp_file_path).unlink()
-        return destination_path, count
+        return csv_destination_path, count
 
 
 class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
@@ -114,8 +112,16 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         self._logger = logger
 
     def download_to_csv(
-        self, sql_file_path, destination_path, intermediate_data_filename, working_dir_path, zip_file_path
+        self, sql_file_path, csv_destination_path, temp_data_file_name, working_dir_path, covid_profile_zip_path
     ):
+
+        # Remove local path, so that we can introduce the knowledge of S3 buckets in the paths
+        csv_destination_path = str(csv_destination_path).replace(str(working_dir_path), "")
+        covid_profile_zip_path = str(covid_profile_zip_path).replace(str(working_dir_path), "")
+        # Update paths to store the knowledge of S3 buckets in the paths
+        csv_destination_path = Path(f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.SPARK_CSV_S3_PATH}/{csv_destination_path}")
+        covid_profile_zip_path = Path(f"s3a://{CONFIG.SPARK_BULK_DOWNLOAD_S3_BUCKET}/{covid_profile_zip_path}")
+        self.spark = None
         try:
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
@@ -132,7 +138,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path)
-            record_count = load_csv_file(self.spark, df, str(destination_path), logger=self._logger)
+            record_count = 0  # load_csv_file(self.spark, df, str(csv_destination_path), logger=self._logger)
 
             # overwrite: Whether to replace the file CSV files if they already exist by that name
             overwrite = True
@@ -146,8 +152,8 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             self._logger.info("Concatenating partitioned output files and Zipping into downloadable file ...")
             hadoop_copy_merge(
                 spark=self.spark,
-                parts_dir=str(destination_path),
-                zip_file_path=str(zip_file_path),
+                parts_dir=str(csv_destination_path),
+                covid_profile_zip_path=str(covid_profile_zip_path),
                 header=header,
                 overwrite=overwrite,
                 delete_parts_dir=False,
@@ -156,9 +162,9 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 logger=self._logger,
             )
             split_and_zip_data_files(
-                str(zip_file_path),
-                intermediate_data_filename,
-                str(destination_path),
+                str(covid_profile_zip_path),
+                csv_destination_path,
+                str(csv_destination_path),
                 self.file_format,
                 None,
             )
@@ -168,4 +174,4 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         finally:
             if self.spark_created_by_command:
                 self.spark.stop()
-        return destination_path, record_count
+        return csv_destination_path, record_count
