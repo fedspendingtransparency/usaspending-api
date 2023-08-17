@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+import re
 
 from collections import namedtuple, OrderedDict
 from django.conf import settings
@@ -29,6 +31,12 @@ def get_broker_dsn_string():
         return build_dsn_string(settings.DATABASES["data_broker"])
     else:
         raise Exception("No valid Broker database connection is configured")
+
+
+def read_sql_file_to_text(file_path: Path) -> str:
+    """Open file and return text with most whitespace removed"""
+    p = re.compile(r"\s\s+")
+    return p.sub(" ", str(file_path.read_text().replace("\n", "  ")))
 
 
 def read_sql_file(file_path):
