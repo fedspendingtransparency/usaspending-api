@@ -796,7 +796,7 @@ def hadoop_copy_merge(
     # Take each merged file, and add to a Zip archive for one bundled download
     partial_file = f"{zip_file_path}.partial"
     partial_zip_file_path = hadoop.fs.Path(partial_file)
-    logger.info(f"Starting zip of {merged_file_paths} files into compressed file {str(zip_file_path)} ...")
+    logger.info(f"Starting zip of {merged_file_paths} files into compressed file {zip_file_path} ...")
     zip_start = time.time()
     out_stream = None
     zip_out_stream = None
@@ -833,8 +833,8 @@ def hadoop_copy_merge(
         # If this file is supposed to already exist, there may be a short period of time where the file does NOT
         # exist, between when the delete completes and the rename completes.
         # S3 does not allow renaming to an existing file, and renames are done as copies of the full object
-        if overwrite and fs.exists(hadoop_zip_file_path):
-            fs.delete(hadoop_zip_file_path, True)
+        # if overwrite and fs.exists(hadoop_zip_file_path):
+        #     fs.delete(hadoop_zip_file_path, True)
         fs.rename(partial_zip_file_path, hadoop_zip_file_path)
     except Exception:
         if fs.exists(partial_zip_file_path):
@@ -842,7 +842,7 @@ def hadoop_copy_merge(
         raise
 
     logger.info(
-        f"Completed zip of {merged_file_paths} files into file " f"{str(file_path)} in {(time.time() - zip_start):3f}s"
+        f"Completed zip of {merged_file_paths} files into file " f"{zip_file_path} in {(time.time() - zip_start):3f}s"
     )
 
     if delete_parts_dir:
