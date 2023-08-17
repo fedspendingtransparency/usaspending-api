@@ -126,6 +126,7 @@ class SparkCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
             }
             self.spark = get_active_spark_session()
+            self.spark_created_by_command = False
             if not self.spark:
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
