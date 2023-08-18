@@ -42,19 +42,19 @@ class AbstractCovidFileSystemStrategy(ABC):
 
 class AuroraCovidFileSystemStrategy(AbstractCovidFileSystemStrategy):
     def prep_filesystem(self, covid_profile_zip_file_path, working_dir_path):
-        if self.covid_profile_zip_file_path.exists():
+        if covid_profile_zip_file_path.exists():
             # Clean up a zip file that might exist from a prior attempt at this download
-            self.covid_profile_zip_file_path.unlink()
+            covid_profile_zip_file_path.unlink()
 
-        if not self.covid_profile_zip_file_path.parent.exists():
-            self.covid_profile_zip_file_path.parent.mkdir()
+        if not covid_profile_zip_file_path.parent.exists():
+            covid_profile_zip_file_path.parent.mkdir()
 
 
 class DatabricksCovidFileSystemStrategy(AbstractCovidFileSystemStrategy):
     def prep_filesystem(self, covid_profile_zip_file_path, working_dir_path):
-        if self.local_working_dir.exists():
+        if working_dir_path.exists():
             # Clean up a zip file that might exist from a prior attempt at this download
-            self.local_working_dir.unlink()
+            working_dir_path.unlink()
 
-        if not self.local_working_dir.parent.exists():
-            self.local_working_dir.parent.mkdir()
+        if not working_dir_path.parent.exists():
+            working_dir_path.parent.mkdir()
