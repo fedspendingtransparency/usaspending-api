@@ -9,12 +9,12 @@ from pathlib import Path
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
-    AuroraCovidToCSVStrategy,
-    DatabricksCovidToCSVStrategy,
+    AuroraToCSVStrategy,
+    DatabricksToCSVStrategy,
 )
 from usaspending_api.disaster.helpers.covid_download_filesystem_strategies import (
-    AuroraCovidFileSystemStrategy,
-    DatabricksCovidFileSystemStrategy,
+    AuroraFileSystemStrategy,
+    DatabricksFileSystemStrategy,
 )
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
@@ -42,7 +42,7 @@ class Command(BaseCommand):
     local_working_dir_path = Path(settings.CSV_LOCAL_PATH)
 
     # KEY is the type of compute supported by this command
-    # key's VALUE is the strategies required by the compute type
+    # key's VALUE are the strategies required by the compute type
     # These strategies are used to change the behavior of this command
     #   at runtime.
     compute_flavors = {
@@ -65,8 +65,8 @@ class Command(BaseCommand):
             },
             "working_dir_path": Path(settings.CSV_LOCAL_PATH),
             "covid_profile_output_dir_path": Path(settings.CSV_LOCAL_PATH),
-            "download_to_csv_strategy": AuroraCovidToCSVStrategy(logger=logger),
-            "filesystem_strategy": AuroraCovidFileSystemStrategy(),
+            "download_to_csv_strategy": AuroraToCSVStrategy(logger=logger),
+            "filesystem_strategy": AuroraFileSystemStrategy(),
         },
         "databricks": {
             "source_sql_strategy": {
@@ -79,8 +79,8 @@ class Command(BaseCommand):
             },
             "working_dir_path": "s3a://dti-usaspending-bulk-download-qat/temp_data/csv",
             "covid_profile_output_dir_path": "s3a://dti-usaspending-bulk-download-qat",
-            "download_to_csv_strategy": DatabricksCovidToCSVStrategy(logger=logger),
-            "filesystem_strategy": DatabricksCovidFileSystemStrategy(),
+            "download_to_csv_strategy": DatabricksToCSVStrategy(logger=logger),
+            "filesystem_strategy": DatabricksFileSystemStrategy(),
         },
     }
 
@@ -185,22 +185,22 @@ class Command(BaseCommand):
     def cleanup(self):
         for path in self.filepaths_to_delete:
             logger.info(f"Removing {path}")
-            if isinstance(path, Path):
-                path.unlink()
+            path.unlink()
 
     def finalize_zip_contents(self):
-        data_dict_dest_path = self.local_working_dir_path
-        add_data_dictionary_to_zip(data_dict_dest_path, str(self.covid_profile_zip_file_path))
+        self.filepaths_to_delete.append(Path(f"{self.local_working_dir_path}/Data_Dictionary_Crosswalk.xlsx"))
+        add_data_dictionary_to_zip(self.local_working_dir_path, self.covid_profile_zip_file_path)
         file_description = build_file_description(str(self.readme_path), dict())
-        file_description_path = save_file_description(data_dict_dest_path, self.readme_path.name, file_description)
-        append_files_to_zip_file([file_description_path], str(self.covid_profile_zip_file_path))
+        file_description_path = save_file_description(
+            self.local_working_dir_path, self.readme_path.name, file_description
+        )
+        append_files_to_zip_file([file_description_path], self.covid_profile_zip_file_path)
         # TODO: Figure out stats for Databricks compute flavor
         self.total_download_size = (
             self.covid_profile_zip_file_path.stat().st_size
             if isinstance(self.covid_profile_zip_file_path, Path)
             else None
         )
-        self.filepaths_to_delete.append(f"{data_dict_dest_path}/Data_Dictionary_Crosswalk.xlsx")
         self.filepaths_to_delete.append(file_description_path)
 
     def prep_filesystem(self):

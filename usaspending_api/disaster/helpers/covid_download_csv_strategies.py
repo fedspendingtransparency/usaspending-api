@@ -19,10 +19,9 @@ from usaspending_api.download.filestreaming.download_generation import generate_
 from pyspark.sql import SparkSession
 from usaspending_api.common.etl.spark import hadoop_copy_merge, load_csv_file
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
-from usaspending_api.config import CONFIG
 
 
-class AbstractCovidToCSVStrategy(ABC):
+class AbstractToCSVStrategy(ABC):
     """A composable class that can be used according to the Strategy software design pattern.
     The Covid-19 "to csv" strategy establishes the interface for a suite of download
     algorithms; which take data from a source and outputs the result set to a csv.
@@ -53,7 +52,7 @@ class AbstractCovidToCSVStrategy(ABC):
         pass
 
 
-class AuroraCovidToCSVStrategy(AbstractCovidToCSVStrategy):
+class AuroraToCSVStrategy(AbstractToCSVStrategy):
     def __init__(self, logger: logging.Logger, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._logger = logger
@@ -103,7 +102,7 @@ class AuroraCovidToCSVStrategy(AbstractCovidToCSVStrategy):
         return destination_path, count
 
 
-class DatabricksCovidToCSVStrategy(AbstractCovidToCSVStrategy):
+class DatabricksToCSVStrategy(AbstractToCSVStrategy):
     def __init__(self, logger: logging.Logger, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._logger = logger
