@@ -838,9 +838,7 @@ def hadoop_copy_merge(
             fs.delete(partial_zip_file_path, True)  # drop partial zip file if rename completes or not
         raise
 
-    logger.info(
-        f"Completed zip of {merged_file_paths} files into file " f"{zip_file_path} in {(time.time() - zip_start):3f}s"
-    )
+    logger.info(f"Completed zip of files into file " f"{zip_file_path} in {(time.time() - zip_start):3f}s")
 
     if delete_parts_dir:
         fs.delete(parts_dir_path, True)

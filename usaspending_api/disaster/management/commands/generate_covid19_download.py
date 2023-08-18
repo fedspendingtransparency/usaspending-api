@@ -39,6 +39,7 @@ class Command(BaseCommand):
     readme_path = Path(settings.COVID19_DOWNLOAD_README_FILE_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
     covid_profile_zip_file_name = f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{full_timestamp}.zip"
+    local_working_dir_path = Path(settings.CSV_LOCAL_PATH)
 
     # KEY is the type of compute supported by this command
     # key's VALUE is the strategies required by the compute type
@@ -188,7 +189,7 @@ class Command(BaseCommand):
                 path.unlink()
 
     def finalize_zip_contents(self):
-        data_dict_dest_path = Path(settings.CSV_LOCAL_PATH)
+        data_dict_dest_path = self.local_working_dir_path
         add_data_dictionary_to_zip(data_dict_dest_path, str(self.covid_profile_zip_file_path))
         file_description = build_file_description(str(self.readme_path), dict())
         file_description_path = save_file_description(data_dict_dest_path, self.readme_path.name, file_description)
@@ -203,7 +204,7 @@ class Command(BaseCommand):
         self.filepaths_to_delete.append(file_description_path)
 
     def prep_filesystem(self):
-        self._filesystem_strategy.prep_filesystem(self.covid_profile_zip_file_path)
+        self._filesystem_strategy.prep_filesystem(self.covid_profile_zip_file_path, self.local_working_dir_path)
 
     def download_to_csv(self, sql_filepath, destination_path):
         return self._download_csv_strategy.download_to_csv(
