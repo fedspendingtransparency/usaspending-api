@@ -2,7 +2,7 @@ import os
 import zipfile
 from django.conf import settings
 from pathlib import Path
-from usaspending_api.common.helpers.s3_helpers import download_s3_object, upload_download_file_to_s3
+from usaspending_api.common.helpers.s3_helpers import download_s3_object, multipart_upload
 
 
 def append_files_to_zip_file(file_paths, zip_file_path):
@@ -35,8 +35,7 @@ def append_files_to_zip_file_s3(
     Use caution in this case by removing the zip in the finally of an exception and also checking for and removing
     the zip if it exists before you begin to create it from scratch
     """
-    # Making sure the zip file to download exists locally
-    Path(zip_file_path)
-    download_s3_object(bucket_name, zip_file_name, zip_file_path)
+    print(file_paths, zip_file_name, zip_file_path, bucket_name)
+    download_s3_object(bucket_name, zip_file_name, zip_file_path, region_name=region_name)
     append_files_to_zip_file(file_paths, zip_file_path)
-    upload_download_file_to_s3(zip_file_path)
+    multipart_upload(bucket_name, region_name, zip_file_path, zip_file_name)

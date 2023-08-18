@@ -87,6 +87,12 @@ class DatabricksSupplementalFilesStrategy(AbstractSupplementalFilesStrategy):
         output_dir_path.mkdir()
         (output_dir_path / self.data_dictionary_name).touch()
         data_dictionary_file_path = fetch_data_dictionary(str(output_dir_path))
+        print(
+            data_dictionary_file_path,
+            self.covid_profile_download_file_name,
+            covid_profile_download_zip_path,
+            self.bucket_name,
+        )
         append_files_to_zip_file_s3(
             [data_dictionary_file_path],
             self.covid_profile_download_file_name,
@@ -97,6 +103,7 @@ class DatabricksSupplementalFilesStrategy(AbstractSupplementalFilesStrategy):
 
     def append_description_file(self, readme_path, covid_profile_download_zip_path):
         output_dir_path = Path(self.output_dir_path)
+        output_dir_path.mkdir()
         readme_path = Path(readme_path)
         file_description = build_file_description(str(readme_path), dict())
         file_description_path = save_file_description(output_dir_path, readme_path.name, file_description)
