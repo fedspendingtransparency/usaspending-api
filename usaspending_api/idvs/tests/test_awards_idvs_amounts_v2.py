@@ -34,6 +34,10 @@ EXPECTED_GOOD_OUTPUT = {
 
 
 class IDVAmountsTestCase(TestCase):
+    # Need to set this so that data for TestCase (and inheritors like SimpleTestCase) flush these DBs at tear-down
+    # See: https://docs.djangoproject.com/en/3.2/topics/testing/tools/#django.test.SimpleTestCase.databases
+    databases = "__all__"
+
     @classmethod
     def setUpTestData(cls):
         baker.make("search.AwardSearch", award_id=1)
