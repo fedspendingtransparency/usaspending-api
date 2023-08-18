@@ -88,12 +88,6 @@ class DatabricksSupplementalFilesStrategy(AbstractSupplementalFilesStrategy):
         (output_dir_path / self.data_dictionary_name).touch()
         data_dictionary_file_path = fetch_data_dictionary(str(output_dir_path))
         local_covid_profile_zip_path_download = output_dir_path / self.covid_profile_download_file_name
-        print(
-            data_dictionary_file_path,
-            self.covid_profile_download_file_name,
-            local_covid_profile_zip_path_download,
-            self.bucket_name,
-        )
         append_files_to_zip_file_s3(
             [data_dictionary_file_path],
             self.covid_profile_download_file_name,

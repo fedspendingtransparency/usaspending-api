@@ -34,7 +34,6 @@ def append_files_to_zip_file_s3(
     Use caution in this case by removing the zip in the finally of an exception and also checking for and removing
     the zip if it exists before you begin to create it from scratch
     """
-    print(file_paths, zip_file_name, zip_file_path, bucket_name)
     download_s3_object(bucket_name, zip_file_name, zip_file_path, region_name=region_name)
     append_files_to_zip_file(file_paths, zip_file_path)
     multipart_upload(bucket_name, region_name, zip_file_path, zip_file_name)

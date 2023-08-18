@@ -57,7 +57,7 @@ def download_s3_object(bucket_name: str, key: str, file_path: str, region_name: 
 def upload_download_file_to_s3(file_path, file_name):
     bucket = "dti-usaspending-bulk-download-qat"
     region = settings.USASPENDING_AWS_REGION
-    multipart_upload(bucket, region, str(file_path), file_name)
+    multipart_upload(bucket, region, f"{file_path}", file_name)
 
 
 def multipart_upload(bucketname, regionname, source_path, keyname):
