@@ -106,8 +106,7 @@ class Command(BaseCommand):
         self._download_csv_strategy = self.compute_flavors[self._compute_flavor_arg]["download_to_csv_strategy"]
         self._download_source_sql = self.compute_flavors[self._compute_flavor_arg]["source_sql_strategy"]
         self._path_cls = self.compute_flavors[self._compute_flavor_arg]["pathlib_strategy"]
-        working_dir_path = self.compute_flavors[self._compute_flavor_arg]["working_dir_path"]
-        self.working_dir_path = self._path_cls(working_dir_path)
+        self.working_dir_path = self.compute_flavors[self._compute_flavor_arg]["working_dir_path"]
         covid_profile_output_dir_path = self.compute_flavors[self._compute_flavor_arg]["covid_profile_output_dir_path"]
         self.covid_profile_zip_file_path = covid_profile_output_dir_path / f"{self.covid_profile_zip_file_name}"
         # self._filesystem_strategy = self.compute_flavors[self._compute_flavor_arg]["filesystem_strategy"]
