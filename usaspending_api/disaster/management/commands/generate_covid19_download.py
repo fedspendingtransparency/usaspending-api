@@ -95,8 +95,10 @@ class Command(BaseCommand):
         compute_flavor = options.get("compute_flavor")
         self._download_csv_strategy = self.compute_flavors[compute_flavor]["download_to_csv_strategy"]
         self._download_file_source_sql = self.compute_flavors[compute_flavor]["source_sql_strategy"]
-        self._working_dir_path = self.compute_flavors[compute_flavor]["working_dir_path"]
-        self._covid_profile_output_dir_path = self.compute_flavors[compute_flavor]["covid_profile_output_dir_path"]
+        self._working_dir_path = Path(self.compute_flavors[compute_flavor]["working_dir_path"])
+        self._covid_profile_output_dir_path = Path(
+            self.compute_flavors[compute_flavor]["covid_profile_output_dir_path"]
+        )
         self.upload = not options["skip_upload"]
         self.covid_profile_zip_file_path = (
             self._covid_profile_output_dir_path
