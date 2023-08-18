@@ -37,17 +37,17 @@ class AbstractToCSVStrategy(ABC):
     @abstractmethod
     def download_to_csv(
         self,
-        sql_file_path: Path,
-        destination_path: Path,
-        working_dir_path: Path,
-        covid_profile_zip_path: Path,
+        sql_file_path: str,
+        destination_path: str,
+        working_dir_path: str,
+        covid_profile_download_zip_path: str,
     ) -> Tuple[str, int]:
         """
         Args:
-            sql_file_path: The path to the SQL file that'll be used to source data
-            destination_path: The absolute destination path of the generated data files
-            working_dir_path: The working directory
-            covid_profile_zip_path: The path to zip the generated data files to
+            sql_file_path: Some string that can be used as the source sql
+            destination_path: The absolute destination path of the generated data files as a string
+            working_dir_path: The working directory path as a string
+            covid_profile_download_zip_path: The path (as a string) to the covid profile download zip file
         """
         pass
 
@@ -57,7 +57,11 @@ class AuroraToCSVStrategy(AbstractToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(self, sql_file_path, destination_path, working_dir_path, covid_profile_zip_path):
+    def download_to_csv(self, sql_file_path, destination_path, working_dir_path, covid_profile_download_zip_path):
+        sql_file_path = Path(sql_file_path)
+        destination_path = Path(destination_path)
+        working_dir_path = Path(working_dir_path)
+        covid_profile_download_zip_path = Path(covid_profile_download_zip_path)
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
         temp_data_file_name = destination_path.parent / (destination_path.name + "_temp")
@@ -86,7 +90,7 @@ class AuroraToCSVStrategy(AbstractToCSVStrategy):
             zip_process = multiprocessing.Process(
                 target=split_and_zip_data_files,
                 args=(
-                    str(covid_profile_zip_path),
+                    str(covid_profile_download_zip_path),
                     temp_data_file_name,
                     str(destination_path),
                     self.file_format,
@@ -107,8 +111,7 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(self, sql_file_path, destination_path, working_dir_path, covid_profile_zip_path):
-        csv_destination_path_str = str(destination_path)
+    def download_to_csv(self, sql_file_path, destination_path, working_dir_path, covid_profile_download_zip_path):
         self.spark = None
         try:
             extra_conf = {
@@ -126,7 +129,7 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path)
-            record_count = load_csv_file(self.spark, df, csv_destination_path_str, logger=self._logger)
+            record_count = 0  # load_csv_file(self.spark, df, destination_path, logger=self._logger)
 
             # overwrite: Whether to replace the file CSV files if they already exist by that name
             overwrite = True
@@ -138,17 +141,17 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.
             header = ",".join([_.name for _ in df.schema.fields])
             self._logger.info("Concatenating partitioned output files ...")
-            hadoop_copy_merge(
-                spark=self.spark,
-                parts_dir=csv_destination_path_str,
-                zip_file_path=covid_profile_zip_path,
-                header=header,
-                overwrite=overwrite,
-                delete_parts_dir=False,
-                rows_per_part=max_rows_per_merged_file,
-                max_rows_per_merged_file=max_rows_per_merged_file,
-                logger=self._logger,
-            )
+            # hadoop_copy_merge(
+            #     spark=self.spark,
+            #     parts_dir=destination_path,
+            #     zip_file_path=covid_profile_download_zip_path,
+            #     header=header,
+            #     overwrite=overwrite,
+            #     delete_parts_dir=False,
+            #     rows_per_part=max_rows_per_merged_file,
+            #     max_rows_per_merged_file=max_rows_per_merged_file,
+            #     logger=self._logger,
+            # )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise

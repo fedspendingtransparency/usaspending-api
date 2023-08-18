@@ -101,7 +101,8 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 )
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
-            add_data_dictionary_to_zip(working_dir, zip_file_path)
+            data_dictionary_file_path = fetch_data_dictionary(working_dir)
+            append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
         include_file_description = json_request.get("include_file_description")
         if include_file_description:
             write_to_log(message="Adding file description to zip file")
@@ -733,8 +734,7 @@ def fail_download(download_job, exception, message):
     download_job.save()
 
 
-def add_data_dictionary_to_zip(working_dir, zip_file_path):
-    write_to_log(message="Adding data dictionary to zip file")
+def fetch_data_dictionary(working_dir) -> str:
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
     data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
@@ -753,8 +753,7 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
                 continue
             else:
                 raise
-
-    append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
+    return data_dictionary_file_path
 
 
 def _kill_spawned_processes(download_job=None):

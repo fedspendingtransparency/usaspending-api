@@ -11,30 +11,20 @@ class AbstractFileSystemStrategy(ABC):
     """
 
     @abstractmethod
-    def prep_filesystem(self, covid_profile_zip_file_path: Path, working_dir_path: Path) -> None:
+    def prep_filesystem(self, covid_profile_zip_file_path: str) -> None:
         """
         Args:
             covid_profile_zip_file_path: The path to the covid profile zip location
-            local_working_dir: The path to work with files on the local machine of the running application
         """
         pass
 
 
 class AuroraFileSystemStrategy(AbstractFileSystemStrategy):
-    def prep_filesystem(self, covid_profile_zip_file_path, working_dir_path):
+    def prep_filesystem(self, covid_profile_zip_file_path):
+        covid_profile_zip_file_path = Path(covid_profile_zip_file_path)
         if covid_profile_zip_file_path.exists():
             # Clean up a zip file that might exist from a prior attempt at this download
             covid_profile_zip_file_path.unlink()
 
         if not covid_profile_zip_file_path.parent.exists():
             covid_profile_zip_file_path.parent.mkdir()
-
-
-class DatabricksFileSystemStrategy(AbstractFileSystemStrategy):
-    def prep_filesystem(self, covid_profile_zip_file_path, working_dir_path):
-        if working_dir_path.exists():
-            # Clean up a zip file that might exist from a prior attempt at this download
-            working_dir_path.unlink()
-
-        if not working_dir_path.parent.exists():
-            working_dir_path.parent.mkdir()
