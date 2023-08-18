@@ -127,7 +127,7 @@ class DatabricksCovidToCSVStrategy(AbstractCovidToCSVStrategy):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             df = self.spark.sql(sql_file_path)
-            record_count = 0  # load_csv_file(self.spark, df, csv_destination_path_str, logger=self._logger)
+            record_count = load_csv_file(self.spark, df, csv_destination_path_str, logger=self._logger)
 
             # overwrite: Whether to replace the file CSV files if they already exist by that name
             overwrite = True
@@ -139,17 +139,17 @@ class DatabricksCovidToCSVStrategy(AbstractCovidToCSVStrategy):
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.
             header = ",".join([_.name for _ in df.schema.fields])
             self._logger.info("Concatenating partitioned output files ...")
-            # hadoop_copy_merge(
-            #     spark=self.spark,
-            #     parts_dir=csv_destination_path_str,
-            #     zip_file_path=covid_profile_zip_path,
-            #     header=header,
-            #     overwrite=overwrite,
-            #     delete_parts_dir=False,
-            #     rows_per_part=max_rows_per_merged_file,
-            #     max_rows_per_merged_file=max_rows_per_merged_file,
-            #     logger=self._logger,
-            # )
+            hadoop_copy_merge(
+                spark=self.spark,
+                parts_dir=csv_destination_path_str,
+                zip_file_path=covid_profile_zip_path,
+                header=header,
+                overwrite=overwrite,
+                delete_parts_dir=False,
+                rows_per_part=max_rows_per_merged_file,
+                max_rows_per_merged_file=max_rows_per_merged_file,
+                logger=self._logger,
+            )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise
