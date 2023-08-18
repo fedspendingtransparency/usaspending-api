@@ -81,7 +81,7 @@ class Command(BaseCommand):
             "supplemental_files_strategy": DatabricksSupplementalFilesStrategy(
                 data_dictionary_name=data_dictionary_name,
                 output_dir_path=settings.CSV_LOCAL_PATH,
-                covid_profile_download_file_name="covid_profile_download_zip_file_name",
+                covid_profile_download_file_name=covid_profile_download_zip_file_name,
                 bucket_name="dti-usaspending-bulk-download-qat",
             ),
             "filesystem_strategy": None,
