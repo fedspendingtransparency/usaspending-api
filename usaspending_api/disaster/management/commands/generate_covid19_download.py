@@ -39,7 +39,7 @@ class Command(BaseCommand):
     total_download_count = 0
     total_download_columns = 0
     total_download_size = 0
-    readme_path_str = settings.COVID19_DOWNLOAD_README_FILE_PATH
+    readme_path = settings.COVID19_DOWNLOAD_README_FILE_PATH
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
     covid_profile_download_zip_file_name = f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{full_timestamp}.zip"
     data_dictionary_name = "Data_Dictionary_Crosswalk.xlsx"
@@ -202,14 +202,14 @@ class Command(BaseCommand):
         if self.supplemental_files_strategy is None:
             return
         logger.info("Adding data dictionary to zip file")
-        # data_dictionary_path = self.supplemental_files_strategy.append_data_dictionary(
-        #     self.covid_profile_download_zip_path
-        # )
-        # self.filepaths_to_delete.append(data_dictionary_path)
-        description_file_path = self.supplemental_files_strategy.append_description_file(
-            self.readme_path_str, self.covid_profile_download_zip_path
+        data_dictionary_path = self.supplemental_files_strategy.append_data_dictionary(
+            self.covid_profile_download_zip_path
         )
-        self.filepaths_to_delete.append(description_file_path)
+        self.filepaths_to_delete.append(data_dictionary_path)
+        # description_file_path = self.supplemental_files_strategy.append_description_file(
+        #     self.readme_path, self.covid_profile_download_zip_path
+        # )
+        # self.filepaths_to_delete.append(description_file_path)
         # TODO
         self.total_download_size = 0  # self.covid_profile_download_zip_path.stat().st_size
 
