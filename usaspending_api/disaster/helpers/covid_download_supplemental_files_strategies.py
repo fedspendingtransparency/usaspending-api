@@ -97,7 +97,7 @@ class DatabricksSupplementalFilesStrategy(AbstractSupplementalFilesStrategy):
         append_files_to_zip_file_s3(
             [data_dictionary_file_path],
             self.covid_profile_download_file_name,
-            local_covid_profile_zip_path_download,
+            str(local_covid_profile_zip_path_download),
             bucket_name=self.bucket_name,
         )
         return data_dictionary_file_path
