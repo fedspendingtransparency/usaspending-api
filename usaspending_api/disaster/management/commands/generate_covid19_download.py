@@ -147,7 +147,7 @@ class Command(BaseCommand):
         self.finalize_zip_contents()
         if self.upload:
             logger.info("Upload final zip file to S3")
-            upload_download_file_to_s3(self.covid_profile_download_zip_path)
+            upload_download_file_to_s3(self.covid_profile_download_zip_path, self.covid_profile_download_zip_file_name)
             db_id = self.store_record_in_database()
             logger.info(f"Created database record {db_id} for future retrieval")
             logger.info("Marking zip file for deletion in cleanup")

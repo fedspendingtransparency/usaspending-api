@@ -1,7 +1,6 @@
 import os
 import zipfile
 from django.conf import settings
-from pathlib import Path
 from usaspending_api.common.helpers.s3_helpers import download_s3_object, multipart_upload
 
 
