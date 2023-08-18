@@ -30,6 +30,10 @@ logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
+    """DEV NOTES: It's important that we do not couple this class to a Pathlib subclass like
+    Path. Otherwise, it's very difficult to use this command on different types of compute.
+    """
+
     help = "Assemble raw COVID-19 Disaster Spending data into CSVs and Zip"
     filepaths_to_delete = []
     total_download_count = 0
@@ -198,10 +202,10 @@ class Command(BaseCommand):
         if self.supplemental_files_strategy is None:
             return
         logger.info("Adding data dictionary to zip file")
-        data_dictionary_path = self.supplemental_files_strategy.append_data_dictionary(
-            self.covid_profile_download_zip_path
-        )
-        self.filepaths_to_delete.append(data_dictionary_path)
+        # data_dictionary_path = self.supplemental_files_strategy.append_data_dictionary(
+        #     self.covid_profile_download_zip_path
+        # )
+        # self.filepaths_to_delete.append(data_dictionary_path)
         description_file_path = self.supplemental_files_strategy.append_description_file(
             self.readme_path_str, self.covid_profile_download_zip_path
         )
