@@ -188,16 +188,10 @@ class Command(BaseCommand):
                 path.unlink()
 
     def finalize_zip_contents(self):
-        covid_profile_zip_file_parent_path = (
-            self.covid_profile_zip_file_path.parent
-            if isinstance(self.covid_profile_zip_file_path, Path)
-            else self.covid_profile_zip_file_path
-        )
-        add_data_dictionary_to_zip(covid_profile_zip_file_parent_path, str(self.covid_profile_zip_file_path))
+        data_dict_dest_path = Path(settings.CSV_LOCAL_PATH)
+        add_data_dictionary_to_zip(data_dict_dest_path, str(self.covid_profile_zip_file_path))
         file_description = build_file_description(str(self.readme_path), dict())
-        file_description_path = save_file_description(
-            covid_profile_zip_file_parent_path, self.readme_path.name, file_description
-        )
+        file_description_path = save_file_description(data_dict_dest_path, self.readme_path.name, file_description)
         append_files_to_zip_file([file_description_path], str(self.covid_profile_zip_file_path))
         # TODO: Figure out stats for Databricks compute flavor
         self.total_download_size = (
@@ -205,7 +199,7 @@ class Command(BaseCommand):
             if isinstance(self.covid_profile_zip_file_path, Path)
             else None
         )
-        self.filepaths_to_delete.append(f"{self._working_dir_path}/Data_Dictionary_Crosswalk.xlsx")
+        self.filepaths_to_delete.append(f"{data_dict_dest_path}/Data_Dictionary_Crosswalk.xlsx")
         self.filepaths_to_delete.append(file_description_path)
 
     def prep_filesystem(self):
