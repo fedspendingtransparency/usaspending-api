@@ -5,8 +5,6 @@ from datetime import datetime, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
-from pathlib import Path
-from s3path import S3Path
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
@@ -20,6 +18,7 @@ from usaspending_api.disaster.helpers.covid_download_supplemental_files_strategi
 from usaspending_api.disaster.helpers.covid_download_filesystem_strategies import (
     AuroraFileSystemStrategy,
 )
+from usaspending_api.disaster.management.spark_sql import disaster_covid19_file_d2_awards
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.references.models import DisasterEmergencyFundCode
@@ -64,6 +63,7 @@ class Command(BaseCommand):
             "supplemental_files_strategy": AuroraSupplementalFilesStrategy(
                 data_dictionary_name=data_dictionary_name, output_dir_path=settings.CSV_LOCAL_PATH
             ),
+            "final_upload_to_s3_strategy": None,
             "filesystem_strategy": AuroraFileSystemStrategy(),
         },
         "databricks": {
@@ -71,7 +71,7 @@ class Command(BaseCommand):
                 "disaster_covid19_file_a": "select 1 as test;",
                 "disaster_covid19_file_b": "select 2 as test;",
                 "disaster_covid19_file_d1_awards": "select 3 as test;",
-                "disaster_covid19_file_d2_awards": "select 4 as test;",
+                "disaster_covid19_file_d2_awards": disaster_covid19_file_d2_awards,
                 "disaster_covid19_file_f_contracts": "select 5 as test;",
                 "disaster_covid19_file_f_grants": "select 6 as test;",
             },
@@ -84,6 +84,7 @@ class Command(BaseCommand):
                 covid_profile_download_file_name=covid_profile_download_zip_file_name,
                 bucket_name="dti-usaspending-bulk-download-qat",
             ),
+            "final_upload_to_s3_strategy": None,
             "filesystem_strategy": None,
         },
     }
@@ -106,25 +107,27 @@ class Command(BaseCommand):
         Generates a download data package specific to COVID-19 spending
         """
         # Setting all the strategies based on command arguments
-        compute_flavor_arg = options.get("compute_flavor")
-        self.download_csv_strategy = self.compute_flavors[compute_flavor_arg]["download_to_csv_strategy"]
-        self.supplemental_files_strategy = self.compute_flavors[compute_flavor_arg]["supplemental_files_strategy"]
-        self.download_source_sql = self.compute_flavors[compute_flavor_arg]["source_sql_strategy"]
-        self.working_dir_path: str = self.compute_flavors[compute_flavor_arg]["working_dir_path"]
-        covid_profile_download_output_dir_path: str = self.compute_flavors[compute_flavor_arg][
+        self.compute_flavor_arg = options.get("compute_flavor")
+        self.download_csv_strategy = self.compute_flavors[self.compute_flavor_arg]["download_to_csv_strategy"]
+        self.supplemental_files_strategy = self.compute_flavors[self.compute_flavor_arg]["supplemental_files_strategy"]
+        self.download_source_sql = self.compute_flavors[self.compute_flavor_arg]["source_sql_strategy"]
+        self.working_dir_path: str = self.compute_flavors[self.compute_flavor_arg]["working_dir_path"]
+        covid_profile_download_output_dir_path: str = self.compute_flavors[self.compute_flavor_arg][
             "covid_profile_download_output_dir_path"
         ]
         self.covid_profile_download_zip_path: str = (
             f"{covid_profile_download_output_dir_path}/{self.covid_profile_download_zip_file_name}"
         )
-        self._filesystem_strategy = self.compute_flavors[compute_flavor_arg]["filesystem_strategy"]
+        self._filesystem_strategy = self.compute_flavors[self.compute_flavor_arg]["filesystem_strategy"]
 
         self.upload = not options["skip_upload"]
 
         try:
             self.prep_filesystem()
             self.process_data_copy_jobs()
-            self.complete_zip_and_upload()
+            self.finalize_zip_contents()
+            if self.compute_flavor_arg == "aurara":
+                self.upload_local_zip()
         except Exception:
             logger.exception("Exception encountered. See logs")
             raise
@@ -143,8 +146,7 @@ class Command(BaseCommand):
             self.total_download_count += count
             self.filepaths_to_delete.extend(destination_path)
 
-    def complete_zip_and_upload(self):
-        self.finalize_zip_contents()
+    def upload_local_zip(self):
         if self.upload:
             logger.info("Upload final zip file to S3")
             upload_download_file_to_s3(self.covid_profile_download_zip_path, self.covid_profile_download_zip_file_name)
