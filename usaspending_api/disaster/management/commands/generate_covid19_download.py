@@ -64,7 +64,7 @@ class Command(BaseCommand):
                 ),
             },
             "pathlib_strategy": Path,
-            # "working_dir_path": local_working_dir_path,
+            "working_dir_path": settings.CSV_LOCAL_PATH,
             "covid_profile_output_dir_path": settings.CSV_LOCAL_PATH,
             "download_to_csv_strategy": AuroraToCSVStrategy(logger=logger),
             "filesystem_strategy": AuroraFileSystemStrategy(),
@@ -79,7 +79,7 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_grants": "select 6 as test;",
             },
             "pathlib_strategy": S3Path,
-            # "working_dir_path": "s3a://dti-usaspending-bulk-download-qat/temp_data/csv",
+            "working_dir_path": "s3a://dti-usaspending-bulk-download-qat/csv_downloads",
             "covid_profile_output_dir_path": "s3a://dti-usaspending-bulk-download-qat",
             "download_to_csv_strategy": DatabricksToCSVStrategy(logger=logger),
             "filesystem_strategy": DatabricksFileSystemStrategy(),
@@ -108,7 +108,8 @@ class Command(BaseCommand):
         self._download_csv_strategy = self.compute_flavors[self._compute_flavor_arg]["download_to_csv_strategy"]
         self._download_source_sql = self.compute_flavors[self._compute_flavor_arg]["source_sql_strategy"]
         self._path_cls = self.compute_flavors[self._compute_flavor_arg]["pathlib_strategy"]
-        self.working_dir_path = self._path_cls(settings.CSV_LOCAL_PATH)
+        working_dir_path = self.compute_flavors[self._compute_flavor_arg]["working_dir_path"]
+        self.working_dir_path = self._path_cls(working_dir_path)
         covid_profile_output_dir_path = self.compute_flavors[self._compute_flavor_arg]["covid_profile_output_dir_path"]
         self.covid_profile_zip_file_path = self._path_cls(
             f"{covid_profile_output_dir_path}/{self.covid_profile_zip_file_name}"
