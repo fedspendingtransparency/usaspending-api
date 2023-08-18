@@ -9,8 +9,12 @@ from pathlib import Path
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
-    PostgresCovidToCSVStrategy,
-    SparkCovidToCSVStrategy,
+    AuroraCovidToCSVStrategy,
+    DatabricksCovidToCSVStrategy,
+)
+from usaspending_api.disaster.helpers.covid_download_filesystem_strategies import (
+    AuroraCovidFileSystemStrategy,
+    DatabricksCovidFileSystemStrategy,
 )
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
@@ -32,12 +36,14 @@ class Command(BaseCommand):
     total_download_count = 0
     total_download_columns = 0
     total_download_size = 0
-    working_dir_path = Path(settings.CSV_LOCAL_PATH)
     readme_path = Path(settings.COVID19_DOWNLOAD_README_FILE_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
+    covid_profile_zip_file_name = f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{full_timestamp}.zip"
 
     # KEY is the type of compute supported by this command
-    # the key's VALUE is the strategies required by the compute type
+    # key's VALUE is the strategies required by the compute type
+    # These strategies are used to change the behavior of this command
+    #   at runtime.
     compute_flavors = {
         "aurora": {
             "source_sql_strategy": {
@@ -56,11 +62,12 @@ class Command(BaseCommand):
                     "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql"
                 ),
             },
-            "working_dir_path": working_dir_path,
-            "covid_profile_output_dir_path": working_dir_path,
-            "download_to_csv_strategy": PostgresCovidToCSVStrategy(logger=logger),
+            "working_dir_path": Path(settings.CSV_LOCAL_PATH),
+            "covid_profile_output_dir_path": Path(settings.CSV_LOCAL_PATH),
+            "download_to_csv_strategy": AuroraCovidToCSVStrategy(logger=logger),
+            "filesystem_strategy": AuroraCovidFileSystemStrategy(),
         },
-        "spark": {
+        "databricks": {
             "source_sql_strategy": {
                 "disaster_covid19_file_a": "select 1 as test;",
                 "disaster_covid19_file_b": "select 2 as test;",
@@ -71,7 +78,8 @@ class Command(BaseCommand):
             },
             "working_dir_path": "s3a://dti-usaspending-bulk-download-qat/temp_data/csv",
             "covid_profile_output_dir_path": "s3a://dti-usaspending-bulk-download-qat",
-            "download_to_csv_strategy": SparkCovidToCSVStrategy(logger=logger),
+            "download_to_csv_strategy": DatabricksCovidToCSVStrategy(logger=logger),
+            "filesystem_strategy": DatabricksCovidFileSystemStrategy(),
         },
     }
 
@@ -92,18 +100,17 @@ class Command(BaseCommand):
         """
         Generates a download data package specific to COVID-19 spending
         """
-        compute_flavor = options.get("compute_flavor")
-        self._download_csv_strategy = self.compute_flavors[compute_flavor]["download_to_csv_strategy"]
-        self._download_file_source_sql = self.compute_flavors[compute_flavor]["source_sql_strategy"]
-        self._working_dir_path = Path(self.compute_flavors[compute_flavor]["working_dir_path"])
-        self._covid_profile_output_dir_path = Path(
-            self.compute_flavors[compute_flavor]["covid_profile_output_dir_path"]
-        )
+        # Setting all the strategies based on command arguments
+        self._compute_flavor_arg = options.get("compute_flavor")
+        self._download_csv_strategy = self.compute_flavors[self._compute_flavor_arg]["download_to_csv_strategy"]
+        self._download_source_sql = self.compute_flavors[self._compute_flavor_arg]["source_sql_strategy"]
+        self._working_dir_path = self.compute_flavors[self._compute_flavor_arg]["working_dir_path"]
+        self._filesystem_strategy = self.compute_flavors[self._compute_flavor_arg]["filesystem_strategy"]
+        covid_profile_output_dir_path = self.compute_flavors[self._compute_flavor_arg]["covid_profile_output_dir_path"]
+
         self.upload = not options["skip_upload"]
-        self.covid_profile_zip_file_path = (
-            self._covid_profile_output_dir_path
-            / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
-        )
+        self.covid_profile_zip_file_path = f"{covid_profile_output_dir_path}/{self.covid_profile_zip_file_name}"
+
         try:
             self.prep_filesystem()
             self.process_data_copy_jobs()
@@ -120,13 +127,11 @@ class Command(BaseCommand):
         self.filepaths_to_delete.append(self.covid_profile_zip_file_path)
 
         for sql_file_path, destination_path in self.download_file_list:
-            temp_data_file_name = destination_path.parent / (destination_path.name + "_temp")
-            data_file, count = self.download_to_csv(sql_file_path, destination_path, str(temp_data_file_name))
+            data_file, count = self.download_to_csv(sql_file_path, destination_path)
             if count <= 0:
                 logger.warning(f"Empty data file generated: {destination_path}!")
             self.total_download_count += count
-
-            self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{destination_path.stem}*"))
+            self.filepaths_to_delete.extend(destination_path)
 
     def complete_zip_and_upload(self):
         self.finalize_zip_contents()
@@ -146,30 +151,28 @@ class Command(BaseCommand):
         short_timestamp = self.full_timestamp[:-6]
         return [
             (
-                f'{self._download_file_source_sql["disaster_covid19_file_a"]}',
-                self._working_dir_path
-                / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
+                f'{self._download_source_sql["disaster_covid19_file_a"]}',
+                f"{self._working_dir_path}/{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
             ),
             (
-                f'{self._download_file_source_sql["disaster_covid19_file_b"]}',
-                self._working_dir_path
-                / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
+                f'{self._download_source_sql["disaster_covid19_file_b"]}',
+                f"{self._working_dir_path}/{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
             ),
             (
-                f'{self._download_file_source_sql["disaster_covid19_file_d1_awards"]}',
-                self._working_dir_path / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
+                f'{self._download_source_sql["disaster_covid19_file_d1_awards"]}',
+                f"{self._working_dir_path}/Contracts_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
-                f'{self._download_file_source_sql["disaster_covid19_file_d2_awards"]}',
-                self._working_dir_path / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
+                f'{self._download_source_sql["disaster_covid19_file_d2_awards"]}',
+                f"{self._working_dir_path}/Assistance_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
-                f'{self._download_file_source_sql["disaster_covid19_file_f_contracts"]}',
-                self._working_dir_path / f"Contracts_Subawards_{short_timestamp}",
+                f'{self._download_source_sql["disaster_covid19_file_f_contracts"]}',
+                f"{self._working_dir_path}/Contracts_Subawards_{short_timestamp}",
             ),
             (
-                f'{self._download_file_source_sql["disaster_covid19_file_f_grants"]}',
-                self._working_dir_path / f"Assistance_Subawards_{short_timestamp}",
+                f'{self._download_source_sql["disaster_covid19_file_f_grants"]}',
+                f"{self._working_dir_path}/Assistance_Subawards_{short_timestamp}",
             ),
         ]
 
@@ -181,37 +184,44 @@ class Command(BaseCommand):
     def cleanup(self):
         for path in self.filepaths_to_delete:
             logger.info(f"Removing {path}")
-            path.unlink()
+            if isinstance(path, Path):
+                path.unlink()
 
     def finalize_zip_contents(self):
-        self.filepaths_to_delete.append(self._working_dir_path / "Data_Dictionary_Crosswalk.xlsx")
-
-        add_data_dictionary_to_zip(str(self.covid_profile_zip_file_path.parent), str(self.covid_profile_zip_file_path))
-
+        covid_profile_zip_file_parent_path = (
+            self.covid_profile_zip_file_path.parent
+            if isinstance(self.covid_profile_zip_file_path, Path)
+            else self.covid_profile_zip_file_path
+        )
+        add_data_dictionary_to_zip(covid_profile_zip_file_parent_path, str(self.covid_profile_zip_file_path))
         file_description = build_file_description(str(self.readme_path), dict())
         file_description_path = save_file_description(
-            str(self.covid_profile_zip_file_path.parent), self.readme_path.name, file_description
+            covid_profile_zip_file_parent_path, self.readme_path.name, file_description
         )
-        self.filepaths_to_delete.append(Path(file_description_path))
         append_files_to_zip_file([file_description_path], str(self.covid_profile_zip_file_path))
-        self.total_download_size = self.covid_profile_zip_file_path.stat().st_size
+        # TODO: Figure out stats for Databricks compute flavor
+        self.total_download_size = (
+            self.covid_profile_zip_file_path.stat().st_size
+            if isinstance(self.covid_profile_zip_file_path, Path)
+            else None
+        )
+        self.filepaths_to_delete.append(f"{self._working_dir_path}/Data_Dictionary_Crosswalk.xlsx")
+        self.filepaths_to_delete.append(file_description_path)
 
     def prep_filesystem(self):
-        if self.covid_profile_zip_file_path.exists():
-            # Clean up a zip file that might exist from a prior attempt at this download
-            self.covid_profile_zip_file_path.unlink()
+        self._filesystem_strategy.prep_filesystem(self.covid_profile_zip_file_path)
 
-        if not self.covid_profile_zip_file_path.parent.exists():
-            self.covid_profile_zip_file_path.parent.mkdir()
-
-    def download_to_csv(self, sql_filepath, destination_path, temp_data_file_name):
+    def download_to_csv(self, sql_filepath, destination_path):
         return self._download_csv_strategy.download_to_csv(
-            sql_filepath, destination_path, temp_data_file_name, self.working_dir_path, self.covid_profile_zip_file_path
+            sql_filepath,
+            destination_path,
+            self._working_dir_path,
+            self.covid_profile_zip_file_path,
         )
 
     def store_record_in_database(self):
         download_record = DownloadJob.objects.create(
-            file_name=self.covid_profile_zip_file_path.name,
+            file_name=self.covid_profile_zip_file_name,
             file_size=self.total_download_size,
             job_status_id=JOB_STATUS_DICT["finished"],
             json_request=json.dumps(
