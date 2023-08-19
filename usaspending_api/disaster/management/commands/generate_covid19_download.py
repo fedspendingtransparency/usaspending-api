@@ -96,7 +96,7 @@ class Command(BaseCommand):
                     final_path = self._create_data_csv_dest_path(file_name)
                     download_s3_object(
                         "dti-usaspending-bulk-download-qat",
-                        f"{file_name}.{self.file_format}",
+                        f"csv_downloads/{file_name}.{self.file_format}",
                         f"{final_path}.{self.file_format}",
                     )
                     local_csv_file_paths.append(final_path)
