@@ -90,7 +90,7 @@ class Command(BaseCommand):
         try:
             self.prep_filesystem()
             self.process_data_copy_jobs()
-            if self.compute_flavor_arg == "Databricks":
+            if self.compute_flavor_arg == "databricks":
                 local_csv_file_paths = []
                 for sql_file, file_name in self.download_file_list:
                     final_path = self._create_data_csv_dest_path(file_name)
