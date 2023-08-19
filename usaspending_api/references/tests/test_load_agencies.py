@@ -2,6 +2,7 @@ import pytest
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import transaction
 from model_bakery import baker
 from pathlib import Path
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
@@ -284,8 +285,9 @@ def test_exceeding_max_changes(disable_vacuuming, monkeypatch):
     """
     monkeypatch.setattr("usaspending_api.references.management.commands.load_agencies.MAX_CHANGES", 1)
 
-    with pytest.raises(RuntimeError):
-        call_command("load_agencies", AGENCY_FILE)
+    with transaction.atomic():  # make it part of this tests transaction
+        with pytest.raises(RuntimeError):
+            call_command("load_agencies", AGENCY_FILE)
 
     # Confirm everything is still empty.
     assert CGAC.objects.count() == 0
@@ -294,8 +296,9 @@ def test_exceeding_max_changes(disable_vacuuming, monkeypatch):
     assert ToptierAgency.objects.count() == 0
     assert Agency.objects.count() == 0
 
-    # Running with force flag should succeed.
-    call_command("load_agencies", "--force", AGENCY_FILE)
+    with transaction.atomic():
+        # Running with force flag should succeed.
+        call_command("load_agencies", "--force", AGENCY_FILE)
 
     # Confirm nothing is empty.
     assert CGAC.objects.count() > 0

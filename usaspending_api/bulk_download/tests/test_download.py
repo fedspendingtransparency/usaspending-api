@@ -41,8 +41,8 @@ def award_data(transactional_db):
     )
 
     # Create Awarding subs
-    asa1 = baker.make("references.SubtierAgency", name="SubBureau of Things")
-    asa2 = baker.make("references.SubtierAgency", name="SubBureau of Stuff")
+    asa1 = baker.make("references.SubTierAgency", name="SubBureau of Things", _fill_optional=True)
+    asa2 = baker.make("references.SubTierAgency", name="SubBureau of Stuff", _fill_optional=True)
 
     # Create Awarding Agencies
     aa1 = baker.make(
@@ -64,10 +64,10 @@ def award_data(transactional_db):
     )
 
     # Create Funding SUB
-    fsa1 = baker.make("references.SubtierAgency", name="Bureau of Things")
+    fsa1 = baker.make("references.SubTierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make("references.Agency", toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False)
+    baker.make("references.Agency", toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False, _fill_optional=True)
 
     # Create Federal Account
     baker.make("accounts.FederalAccount", account_title="Compensation to Accounts", agency_identifier="102", id=1)

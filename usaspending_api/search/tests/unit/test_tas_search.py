@@ -35,7 +35,7 @@ def mock_tas_data(db):
         abbreviation="DOSP",
         subtier_code="DOSP",
     )
-    baker.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2)
+    baker.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2, _fill_optional=True)
     baker.make(FederalAccount, id=1, parent_toptier_agency_id=99, agency_identifier="99", main_account_code="0001")
     baker.make(
         TreasuryAppropriationAccount,

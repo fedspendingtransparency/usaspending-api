@@ -28,11 +28,11 @@ def helpers():
 @pytest.fixture
 def bureau_data():
 
-    ta1 = baker.make("references.ToptierAgency", name="Agency 1", toptier_code="001")
-    sa1 = baker.make("references.SubtierAgency", name="Agency 1", subtier_code="0001")
+    ta1 = baker.make("references.TopTierAgency", name="Agency 1", toptier_code="001", _fill_optional=True)
+    sa1 = baker.make("references.SubTierAgency", name="Agency 1", subtier_code="0001", _fill_optional=True)
 
-    ta2 = baker.make("references.ToptierAgency", name="Agency 2", toptier_code="002")
-    sa2 = baker.make("references.SubtierAgency", name="Agency 2", subtier_code="0002")
+    ta2 = baker.make("references.TopTierAgency", name="Agency 2", toptier_code="002", _fill_optional=True)
+    sa2 = baker.make("references.SubTierAgency", name="Agency 2", subtier_code="0002", _fill_optional=True)
 
     dabs1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -79,7 +79,9 @@ def bureau_data():
         submission_window_id=dabs2.id,
     )
 
-    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
+    baker.make(
+        "references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1, _fill_optional=True
+    )
     baker.make(
         "references.BureauTitleLookup",
         federal_account_code="001-0000",
@@ -91,7 +93,9 @@ def bureau_data():
     )
     taa1 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
 
-    baker.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
+    baker.make(
+        "references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2, _fill_optional=True
+    )
     baker.make(
         "references.BureauTitleLookup",
         federal_account_code="002-0000",
@@ -159,17 +163,17 @@ def agency_account_data():
         period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
     )
 
-    ta1 = baker.make("references.ToptierAgency", toptier_code="007")
-    ta2 = baker.make("references.ToptierAgency", toptier_code="008")
-    ta3 = baker.make("references.ToptierAgency", toptier_code="009")
-    ta4 = baker.make("references.ToptierAgency", toptier_code="010")
-    ta5 = baker.make("references.ToptierAgency", toptier_code="011")
+    ta1 = baker.make("references.TopTierAgency", toptier_code="007", _fill_optional=True)
+    ta2 = baker.make("references.TopTierAgency", toptier_code="008", _fill_optional=True)
+    ta3 = baker.make("references.TopTierAgency", toptier_code="009", _fill_optional=True)
+    ta4 = baker.make("references.TopTierAgency", toptier_code="010", _fill_optional=True)
+    ta5 = baker.make("references.TopTierAgency", toptier_code="011", _fill_optional=True)
 
-    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1)
-    baker.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2)
-    baker.make("references.Agency", id=3, toptier_flag=True, toptier_agency=ta3)
-    baker.make("references.Agency", id=4, toptier_flag=True, toptier_agency=ta4)
-    baker.make("references.Agency", id=5, toptier_flag=True, toptier_agency=ta5)
+    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
+    baker.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, _fill_optional=True)
+    baker.make("references.Agency", id=3, toptier_flag=True, toptier_agency=ta3, _fill_optional=True)
+    baker.make("references.Agency", id=4, toptier_flag=True, toptier_agency=ta4, _fill_optional=True)
+    baker.make("references.Agency", id=5, toptier_flag=True, toptier_agency=ta5, _fill_optional=True)
 
     sub1 = baker.make(
         "submissions.SubmissionAttributes",
@@ -476,7 +480,7 @@ def tas_mulitple_pas_per_oc():
         period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
     )
 
-    ta1 = baker.make("references.ToptierAgency", toptier_code="007")
+    ta1 = baker.make("references.TopTierAgency", toptier_code="007", _fill_optional=True)
     fa1 = baker.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
 
     pa1 = baker.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
@@ -544,9 +548,9 @@ def tas_with_no_object_class():
         period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
     )
 
-    ta1 = baker.make("references.ToptierAgency", toptier_code="007")
+    ta1 = baker.make("references.TopTierAgency", toptier_code="007", _fill_optional=True)
 
-    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1)
+    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
 
     sub1 = baker.make(
         "submissions.SubmissionAttributes",

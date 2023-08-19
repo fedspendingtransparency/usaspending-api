@@ -13,7 +13,7 @@ from pyspark.sql import SparkSession
 from pytest import fixture
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, stop_spark_context
 from usaspending_api.common.helpers.spark_helpers import is_spark_context_stopped
 from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.config import CONFIG
@@ -182,11 +182,7 @@ def spark(tmp_path_factory) -> SparkSession:
 
     yield spark
 
-    # Need to guard SparkContext stopping this if running parallel test sessions with pytest-xdist.
-    # All parallel test workers will end up using the same SparkSession in the JVM, so one test session finishing
-    # before the others will kill Spark for all sesssions prematurely
-    # To cleanly stop it at the end of all worker(s) session(s), moved this teardown to:
-    # usaspending_api.conftest.pytest_sessionfinish
+    stop_spark_context()
 
 
 @fixture
@@ -363,9 +359,16 @@ def populate_usas_data(populate_broker_data):
         _fill_optional=True,
     )
 
-    toptier = baker.make("references.ToptierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
-    subtier = baker.make("references.SubtierAgency", name="subtier", abbreviation="st", _fill_optional=True)
-    agency = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, toptier_flag=True, id=32)
+    toptier = baker.make("references.TopTierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
+    subtier = baker.make("references.SubTierAgency", name="subtier", abbreviation="st", _fill_optional=True)
+    agency = baker.make(
+        "references.Agency",
+        toptier_agency=toptier,
+        subtier_agency=subtier,
+        toptier_flag=True,
+        id=32,
+        _fill_optional=True,
+    )
 
     awarding_toptier_agency = baker.make(
         "references.ToptierAgency", name="TEST AGENCY 2", abbreviation="TA2", _fill_optional=True

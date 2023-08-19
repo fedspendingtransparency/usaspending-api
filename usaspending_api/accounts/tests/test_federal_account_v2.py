@@ -11,11 +11,33 @@ from usaspending_api.references.models.bureau_title_lookup import BureauTitleLoo
 
 @pytest.fixture
 def fixture_data(db):
-    ta0 = baker.make("references.ToptierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts")
-    ta1 = baker.make("references.ToptierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau")
-    ta2 = baker.make("references.ToptierAgency", toptier_code="1601", abbreviation="DOL", name="Department of Labor")
-    ta3 = baker.make("references.ToptierAgency", toptier_code="097", abbreviation="DOD", name="Department of Defense")
-    ta4 = baker.make("references.ToptierAgency", toptier_code="021", abbreviation="DOD", name="Department of Navy")
+    ta0 = baker.make(
+        "references.TopTierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts", _fill_optional=True
+    )
+    ta1 = baker.make(
+        "references.TopTierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau", _fill_optional=True
+    )
+    ta2 = baker.make(
+        "references.TopTierAgency",
+        toptier_code="1601",
+        abbreviation="DOL",
+        name="Department of Labor",
+        _fill_optional=True,
+    )
+    ta3 = baker.make(
+        "references.TopTierAgency",
+        toptier_code="097",
+        abbreviation="DOD",
+        name="Department of Defense",
+        _fill_optional=True,
+    )
+    ta4 = baker.make(
+        "references.TopTierAgency",
+        toptier_code="021",
+        abbreviation="DOD",
+        name="Department of Navy",
+        _fill_optional=True,
+    )
     fa0 = baker.make(
         FederalAccount,
         agency_identifier="001",
@@ -127,7 +149,9 @@ def fixture_data(db):
         submission__reporting_period_start="2018-03-02",
     )
 
-    ta99 = baker.make("references.ToptierAgency", toptier_code="999", name="Dept. of Depts")
+    ta99 = baker.make(
+        "references.TopTierAgency", toptier_code="999", name="Dept. of Depts", abbreviation=None, _fill_optional=True
+    )
 
     fa99 = baker.make(
         FederalAccount,

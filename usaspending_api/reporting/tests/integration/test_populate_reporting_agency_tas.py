@@ -53,8 +53,16 @@ def setup_test_data(db):
     ]
 
     agencies = [
-        baker.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency"),
-        baker.make("references.ToptierAgency", toptier_code="987", abbreviation="XYZ", name="Test Agency 2"),
+        baker.make(
+            "references.TopTierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency", _fill_optional=True
+        ),
+        baker.make(
+            "references.TopTierAgency",
+            toptier_code="987",
+            abbreviation="XYZ",
+            name="Test Agency 2",
+            _fill_optional=True,
+        ),
     ]
 
     treas_accounts = [

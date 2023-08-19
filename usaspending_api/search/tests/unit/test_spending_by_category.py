@@ -324,11 +324,39 @@ def agency_test_data(db):
         subtier_code="SA4",
     )
 
-    baker.make("references.Agency", id=1001, toptier_agency_id=2001, subtier_agency_id=3001, toptier_flag=True)
-    baker.make("references.Agency", id=1002, toptier_agency_id=2002, subtier_agency_id=3002, toptier_flag=True)
+    baker.make(
+        "references.Agency",
+        id=1001,
+        toptier_agency_id=2001,
+        subtier_agency_id=3001,
+        toptier_flag=True,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.Agency",
+        id=1002,
+        toptier_agency_id=2002,
+        subtier_agency_id=3002,
+        toptier_flag=True,
+        _fill_optional=True,
+    )
 
-    baker.make("references.Agency", id=1003, toptier_agency_id=2003, subtier_agency_id=3003, toptier_flag=True)
-    baker.make("references.Agency", id=1004, toptier_agency_id=2004, subtier_agency_id=3004, toptier_flag=True)
+    baker.make(
+        "references.Agency",
+        id=1003,
+        toptier_agency_id=2003,
+        subtier_agency_id=3003,
+        toptier_flag=True,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.Agency",
+        id=1004,
+        toptier_agency_id=2004,
+        subtier_agency_id=3004,
+        toptier_flag=True,
+        _fill_optional=True,
+    )
 
 
 @pytest.fixture

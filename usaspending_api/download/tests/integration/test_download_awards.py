@@ -29,6 +29,7 @@ def download_test_data():
         website="http://test.com",
         mission="test",
         icon_filename="test",
+        _fill_optional=True,
     )
     ata2 = baker.make(
         "references.ToptierAgency",
@@ -37,14 +38,15 @@ def download_test_data():
         website="http://test.com",
         mission="test",
         icon_filename="test",
+        _fill_optional=True,
     )
 
     # Create Awarding subs
-    baker.make("references.SubtierAgency", name="Bureau of Things")
+    baker.make("references.SubTierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Awarding Agencies
-    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=True)
-    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=True)
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=True, _fill_optional=True)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=True, _fill_optional=True)
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -54,13 +56,14 @@ def download_test_data():
         website="http://test.com",
         mission="test",
         icon_filename="test",
+        _fill_optional=True,
     )
 
     # Create Funding SUB
-    baker.make("references.SubtierAgency", name="Bureau of Things")
+    baker.make("references.SubTierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=True)
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=True, _fill_optional=True)
 
     # Create Awards
     award1 = baker.make("search.AwardSearch", award_id=123, category="idv")

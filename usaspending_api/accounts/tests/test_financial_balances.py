@@ -12,8 +12,10 @@ def financial_balances_models():
         toptier_code="abc",
         is_final_balances_for_fy=True,
     )
-    agency1_toptier = baker.make("references.TopTierAgency", toptier_agency_id=123, toptier_code="abc")
-    baker.make("references.Agency", id=456, toptier_agency_id=123)
+    agency1_toptier = baker.make(
+        "references.TopTierAgency", toptier_agency_id=123, toptier_code="abc", _fill_optional=True
+    )
+    baker.make("references.Agency", id=456, toptier_agency_id=123, _fill_optional=True)
     tas1 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=agency1_toptier)
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=agency1_toptier)
     baker.make(

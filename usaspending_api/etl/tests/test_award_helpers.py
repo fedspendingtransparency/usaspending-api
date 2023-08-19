@@ -11,8 +11,8 @@ from usaspending_api.etl.award_helpers import update_awards, update_procurement_
 def test_award_update_from_latest_transaction():
     """Test awards fields that should be updated with most recent transaction info."""
 
-    agency1 = baker.make("references.Agency")
-    agency2 = baker.make("references.Agency")
+    agency1 = baker.make("references.Agency", _fill_optional=True)
+    agency2 = baker.make("references.Agency", _fill_optional=True)
 
     award = baker.make(
         "search.AwardSearch",

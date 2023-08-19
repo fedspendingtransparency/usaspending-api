@@ -266,7 +266,9 @@ def awards_and_transactions():
     )
 
     # Toptier Agency
-    ta1 = baker.make("references.ToptierAgency", toptier_agency_id=7, toptier_code="007", name="Agency 007")
+    ta1 = baker.make(
+        "references.TopTierAgency", toptier_agency_id=7, toptier_code="007", name="Agency 007", _fill_optional=True
+    )
 
     # Federal Account
     fa1 = baker.make(

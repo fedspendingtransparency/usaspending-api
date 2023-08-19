@@ -12,8 +12,8 @@ def financial_obligations_models():
     fiscal_year_2 = baker.make(
         "submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=False
     )
-    top_tier_id = baker.make("references.Agency", id=654, toptier_agency_id=987).toptier_agency_id
-    top_tier = baker.make("references.ToptierAgency", toptier_agency_id=top_tier_id)
+    top_tier_id = baker.make("references.Agency", id=654, toptier_agency_id=987, _fill_optional=True).toptier_agency_id
+    top_tier = baker.make("references.TopTierAgency", toptier_agency_id=top_tier_id, _fill_optional=True)
     federal_id_awesome = baker.make(
         "accounts.FederalAccount",
         id=6969,

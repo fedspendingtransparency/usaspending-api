@@ -125,11 +125,19 @@ def publish_dates_data(db):
         total_budgetary_resources=300.00,
     )
 
-    ta1 = baker.make("references.ToptierAgency", toptier_code="001", name="Test Agency", abbreviation="TA")
-    ta2 = baker.make("references.ToptierAgency", toptier_code="002", name="Test Agency 2", abbreviation="TA2")
+    ta1 = baker.make(
+        "references.TopTierAgency", toptier_code="001", name="Test Agency", abbreviation="TA", _fill_optional=True
+    )
+    ta2 = baker.make(
+        "references.TopTierAgency", toptier_code="002", name="Test Agency 2", abbreviation="TA2", _fill_optional=True
+    )
 
-    baker.make("references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True)
-    baker.make("references.Agency", id=2, toptier_agency_id=ta2.toptier_agency_id, toptier_flag=True)
+    baker.make(
+        "references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True, _fill_optional=True
+    )
+    baker.make(
+        "references.Agency", id=2, toptier_agency_id=ta2.toptier_agency_id, toptier_flag=True, _fill_optional=True
+    )
 
 
 def test_basic_success(client, publish_dates_data):

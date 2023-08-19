@@ -1,3 +1,5 @@
+import pytest
+
 from django.core.management import call_command
 from model_bakery import baker
 
@@ -38,7 +40,7 @@ p1 = {
     "generated_unique_award_id": "p1",
     "piid": "ABCD_PARENT_1",
     "fpds_agency_id": "1234",
-    "parent_award_piid": "ABCD_PARENT_3",
+    "parent_award_piid": "ABCD_TOP_PARENT_1",
     "fpds_parent_agency_id": "3333",
     "total_obligation": 0,
     "base_and_all_options_value": 0,
@@ -60,7 +62,19 @@ p2 = {
     "generated_unique_award_id": "p2",
     "piid": "ABCD_PARENT_2",
     "fpds_agency_id": "7890",
-    "parent_award_piid": "ABCD_PARENT_3",
+    "parent_award_piid": "ABCD_TOP_PARENT_1",
+    "fpds_parent_agency_id": "3333",
+    "total_obligation": 0,
+    "base_and_all_options_value": 0,
+    "base_exercised_options_val": 0,
+    "type": "IDV_A",
+}
+
+p3 = {
+    "generated_unique_award_id": "p2",
+    "piid": "ABCD_PARENT_3",
+    "fpds_agency_id": "7890",
+    "parent_award_piid": "ABCD_TOP_PARENT_2",
     "fpds_parent_agency_id": "3333",
     "total_obligation": 0,
     "base_and_all_options_value": 0,
@@ -70,7 +84,19 @@ p2 = {
 
 tp1 = {
     "generated_unique_award_id": "tp1",
-    "piid": "ABCD_PARENT_3",
+    "piid": "ABCD_TOP_PARENT_1",
+    "fpds_agency_id": "3333",
+    "parent_award_piid": "",
+    "fpds_parent_agency_id": "",
+    "total_obligation": 0,
+    "base_and_all_options_value": 0,
+    "base_exercised_options_val": 0,
+    "type": "IDV_A",
+}
+
+tp2 = {
+    "generated_unique_award_id": "tp2",
+    "piid": "ABCD_TOP_PARENT_2",
     "fpds_agency_id": "3333",
     "parent_award_piid": "",
     "fpds_parent_agency_id": "",
@@ -100,7 +126,8 @@ def modify_award_dict(award, updated_param_dict):
     return local_award
 
 
-def test_basic_idv_aggregation_2_level(db):
+@pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
+def test_basic_idv_aggregation_2_level():
     set_up_db(c1, c2, c3, p1)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="p1")
     assert parent_1.direct_base_exercised_options_val == 9000
@@ -115,7 +142,8 @@ def test_basic_idv_aggregation_2_level(db):
     assert parent_1.rollup_contract_count == 3
 
 
-def test_basic_idv_aggregation_3_level(db):
+@pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
+def test_basic_idv_aggregation_3_level():
     set_up_db(c1, c2, c3, p1, c4, p2, tp1)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="p1")
     assert parent_1.direct_base_exercised_options_val == 9000
@@ -136,7 +164,8 @@ def test_basic_idv_aggregation_3_level(db):
     assert top_parent_1.rollup_contract_count == 4
 
 
-def test_idv_aggregation_3_level_ignore_idv_internal_values(db):
+@pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
+def test_idv_aggregation_3_level_ignore_idv_internal_values():
     p1_with_internal_value = modify_award_dict(
         p1, {"total_obligation": 1000, "base_and_all_options_value": 1000, "base_exercised_options_val": 1000}
     )
@@ -160,7 +189,8 @@ def test_idv_aggregation_3_level_ignore_idv_internal_values(db):
     assert top_parent_1.rollup_contract_count == 4
 
 
-def test_idv_aggregation_3_level_self_parented_award(db):
+@pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
+def test_idv_aggregation_3_level_self_parented_award():
     p1_self_parented = modify_award_dict(p1, {"piid": "ABCD_PARENT_1"})
     set_up_db(c1, c2, c3, p1_self_parented)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="p1")
@@ -176,9 +206,10 @@ def test_idv_aggregation_3_level_self_parented_award(db):
     assert parent_1.rollup_contract_count == 3
 
 
-def test_idv_aggregation_3_level_circular_referencing_idvs(db):
+@pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
+def test_idv_aggregation_3_level_circular_referencing_idvs():
     child_referencing_parent = modify_award_dict(
-        tp1, {"parent_award_piid": "ABCD_PARENT_1", "fpds_parent_agency_id": "1234"}
+        tp1, {"parent_award_piid": p1["piid"], "fpds_parent_agency_id": p1["fpds_agency_id"]}
     )
     set_up_db(p1, child_referencing_parent)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="tp1")
@@ -209,16 +240,17 @@ def test_idv_aggregation_3_level_circular_referencing_idvs(db):
     assert parent_2.rollup_contract_count == 0
 
 
-def test_idv_aggregation_3_level_circular_referencing_idv_and_child(db):
+@pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
+def test_idv_aggregation_3_level_circular_referencing_idv_and_child():
     child_referencing_parent = modify_award_dict(
-        tp1, {"parent_award_piid": "ABCD_PARENT_1", "fpds_parent_agency_id": "1234"}
+        tp2, {"parent_award_piid": p3["piid"], "fpds_parent_agency_id": p3["fpds_agency_id"]}
     )
     true_child = modify_award_dict(
-        p1,
+        p3,
         {"type": "A", "total_obligation": 1000, "base_and_all_options_value": 2000, "base_exercised_options_val": 3000},
     )
     set_up_db(true_child, child_referencing_parent)
-    parent_1 = ParentAward.objects.get(generated_unique_award_id="tp1")
+    parent_1 = ParentAward.objects.get(generated_unique_award_id="tp2")
     assert parent_1.direct_base_exercised_options_val == 3000
     assert parent_1.direct_base_and_all_options_value == 2000
     assert parent_1.direct_total_obligation == 1000

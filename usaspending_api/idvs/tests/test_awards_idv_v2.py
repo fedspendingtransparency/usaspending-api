@@ -11,8 +11,8 @@ from usaspending_api.references.models import ToptierAgency, SubtierAgency
 def awards_and_transactions(db):
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    baker.make("references.SubtierAgency", subtier_code="def", **subag)
-    baker.make("references.ToptierAgency", toptier_code="abc", **subag)
+    baker.make("references.SubTierAgency", subtier_code="def", **subag, _fill_optional=True)
+    baker.make("references.TopTierAgency", toptier_code="abc", **subag, _fill_optional=True)
 
     duns = {"awardee_or_recipient_uniqu": "123", "uei": "ABC", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
@@ -27,7 +27,7 @@ def awards_and_transactions(db):
     baker.make("recipient.RecipientProfile", **recipient_profile)
 
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
-    baker.make("references.Agency", **ag)
+    baker.make("references.Agency", **ag, _fill_optional=True)
 
     baker.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
     baker.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")

@@ -128,7 +128,7 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 
 @fixture()
 def _transaction_and_award_test_data(db):
-    agency1 = baker.make("references.Agency")
+    agency1 = baker.make("references.Agency", _fill_optional=True)
     awd1 = baker.make("search.AwardSearch", award_id=1, awarding_agency_id=agency1.id)
     baker.make(
         "search.TransactionSearch",

@@ -240,7 +240,7 @@ def test_award_outlays_ignores_future_faba(
 def test_dol_defc_v_special_case(client, monkeypatch, helpers, defc_codes, basic_ref_data):
     helpers.patch_datetime_now(monkeypatch, 2022, 6, 1)
     helpers.reset_dabs_cache()
-    fta = baker.make("references.ToptierAgency", abbreviation="DOL")
+    fta = baker.make("references.TopTierAgency", abbreviation="DOL", _fill_optional=True)
     taa = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=fta)
 
     def _gtas_values(multiplier):

@@ -418,10 +418,14 @@ def monthly_download_data(db, monkeypatch):
     for js in JOB_STATUS:
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
-    baker.make("references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency")
-    baker.make("references.Agency", pk=1, toptier_agency_id=1)
-    baker.make("references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2")
-    baker.make("references.Agency", pk=2, toptier_agency_id=2)
+    baker.make(
+        "references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency", _fill_optional=True
+    )
+    baker.make("references.Agency", pk=1, toptier_agency_id=1, _fill_optional=True)
+    baker.make(
+        "references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2", _fill_optional=True
+    )
+    baker.make("references.Agency", pk=2, toptier_agency_id=2, _fill_optional=True)
     i = 1
     for fiscal_year in range(2001, 2021):
         baker.make(

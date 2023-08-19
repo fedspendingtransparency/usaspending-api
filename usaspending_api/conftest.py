@@ -69,8 +69,7 @@ def pytest_sessionfinish(session, exitstatus):
                 file=sys.__stderr__,
             )
         # Add cleanup below
-        # TODO: Troubleshooting - commenting out to see if it fixes test failures
-        # stop_spark_context()  # see usaspending_api.tests.conftest_spark.spark fixture
+        pass
     else:
         print(
             f"\nRunning pytest_sessionfinish while exiting the xdist worker process with id = {worker_id}",
@@ -145,12 +144,12 @@ def django_db_setup(
     ``django.test.utils.setup_databases``, which is the actual method that needs to be wrapped and extended.
     """
     from django.test.utils import setup_databases, teardown_databases, TimeKeeper
-    from pytest_django.fixtures import _disable_migrations
+    from pytest_django.fixtures import _disable_native_migrations
 
     setup_databases_args = {}
 
     if not django_db_use_migrations:
-        _disable_migrations()
+        _disable_native_migrations()
 
     if django_db_keepdb and not django_db_createdb:
         setup_databases_args["keepdb"] = True

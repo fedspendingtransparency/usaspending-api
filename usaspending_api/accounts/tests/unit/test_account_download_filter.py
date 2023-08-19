@@ -371,8 +371,8 @@ def test_budget_subfunction_filter(submissions):
 
 def test_cgac_agency_filter(submissions):
     """ Ensure the CGAC agency filter is working """
-    ta1 = baker.make("references.ToptierAgency", toptier_agency_id=-9999, toptier_code="CGC")
-    ta2 = baker.make("references.ToptierAgency", toptier_agency_id=-9998, toptier_code="NOT")
+    ta1 = baker.make("references.TopTierAgency", toptier_agency_id=-9999, toptier_code="CGC", _fill_optional=True)
+    ta2 = baker.make("references.TopTierAgency", toptier_agency_id=-9998, toptier_code="NOT", _fill_optional=True)
 
     tas1 = baker.make("accounts.TreasuryAppropriationAccount", agency_id="NOT", funding_toptier_agency=ta1)
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", agency_id="CGC", funding_toptier_agency=ta2)
@@ -396,8 +396,8 @@ def test_cgac_agency_filter(submissions):
 
 def test_frec_agency_filter(submissions):
     """ Ensure the FREC agency filter is working """
-    ta1 = baker.make("references.ToptierAgency", toptier_agency_id=-9998, toptier_code="FAKE")
-    ta2 = baker.make("references.ToptierAgency", toptier_agency_id=-9999, toptier_code="FREC")
+    ta1 = baker.make("references.TopTierAgency", toptier_agency_id=-9998, toptier_code="FAKE", _fill_optional=True)
+    ta2 = baker.make("references.TopTierAgency", toptier_agency_id=-9999, toptier_code="FREC", _fill_optional=True)
 
     tas1 = baker.make(
         "accounts.TreasuryAppropriationAccount", agency_id="CGC", fr_entity_code="FAKE", funding_toptier_agency=ta1
