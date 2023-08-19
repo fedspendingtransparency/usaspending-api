@@ -47,6 +47,7 @@ class AbstractToCSVStrategy(ABC):
         Args:
             source_sql: Some string that can be used as the source sql
             destination_path: The absolute destination path of the generated data files as a string
+            destination_file_name: The name of the file in destination path
             working_dir_path: The working directory path as a string
             covid_profile_download_zip_path: The path (as a string) to the covid profile download zip file
         """

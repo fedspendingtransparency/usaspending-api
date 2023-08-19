@@ -664,7 +664,7 @@ def hadoop_copy_merge(
 ) -> None:
     """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
     It uses the underlying Hadoop FileSystem API to combine all part files under a directory
-    into a single specified destination file
+    into a single specified destination file.
     Hadoop will return the correct FileSystem implementation based on the path provided
     e.g. if it is like: s3a://some-bucket, it will return an S3AFileSystem implementation
     if the Path is not a full URI, and the scheme (hdfs://, s3a://, file:///) cannot be determined, it will attempt
