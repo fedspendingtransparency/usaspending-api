@@ -140,10 +140,8 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
             hadoop_copy_merge(
                 spark=self.spark,
                 parts_dir=destination_path,
-                zip_file_path=covid_profile_download_zip_path,
                 header=header,
                 overwrite=True,
-                delete_parts_dir=False,
                 rows_per_part=EXCEL_ROW_LIMIT,
                 max_rows_per_merged_file=EXCEL_ROW_LIMIT,
                 logger=self._logger,
