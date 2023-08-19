@@ -93,11 +93,11 @@ class Command(BaseCommand):
             if self.compute_flavor_arg == "databricks":
                 local_csv_file_paths = []
                 for sql_file, file_name in self.download_file_list:
-                    final_path = self._create_data_csv_dest_path(file_name)
+                    final_path = f"{self._create_data_csv_dest_path(file_name)}.{self.file_format}"
                     download_s3_object(
                         "dti-usaspending-bulk-download-qat",
                         f"csv_downloads/{file_name}.{self.file_format}",
-                        f"{final_path}.{self.file_format}",
+                        final_path,
                     )
                     local_csv_file_paths.append(final_path)
                 append_files_to_zip_file(local_csv_file_paths, self.zip_file_path)
@@ -185,12 +185,13 @@ class Command(BaseCommand):
 
         add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
 
-        file_description = build_file_description(str(self.readme_path), dict())
-        file_description_path = save_file_description(
-            str(self.zip_file_path.parent), self.readme_path.name, file_description
-        )
-        self.filepaths_to_delete.append(Path(file_description_path))
-        append_files_to_zip_file([file_description_path], str(self.zip_file_path))
+        if self.compute_flavor_arg != "databricks":
+            file_description = build_file_description(str(self.readme_path), dict())
+            file_description_path = save_file_description(
+                str(self.zip_file_path.parent), self.readme_path.name, file_description
+            )
+            self.filepaths_to_delete.append(Path(file_description_path))
+            append_files_to_zip_file([file_description_path], str(self.zip_file_path))
         self.total_download_size = self.zip_file_path.stat().st_size
 
     def prep_filesystem(self):
