@@ -703,8 +703,7 @@ def hadoop_copy_merge(
         raise Py4JError(
             spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} " f"already exists")
         )
-    files = []
-    merged_file_paths = []
+    part_files = []
 
     for f in fs.listStatus(parts_dir_path):
         if f.isFile():
@@ -713,8 +712,8 @@ def hadoop_copy_merge(
                 logger.debug(f"Skipping non-part file: {file_path.getName()}")
                 continue
             logger.debug(f"Including part file: {file_path.getName()}")
-            files.append(f.getPath())
-    if not files:
+            part_files.append(f.getPath())
+    if not part_files:
         logger.warn("Source directory is empty with no part files. Attempting creation of file with CSV header only")
         out_stream = None
         try:
@@ -725,51 +724,27 @@ def hadoop_copy_merge(
                 out_stream.close()
         return
 
-    # Helper to chunk up files into mergeable groups
-    def merge_grouper(items, group_size):
-        FileMergeGroup = namedtuple("FileMergeGroup", ["part", "file_list"])
-        if len(items) <= group_size:
-            yield FileMergeGroup(None, items)
-            return
-        group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
-        for i, group in enumerate(group_generator, start=1):
-            yield FileMergeGroup(i, group)
-
-    files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
+    part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
     parts_batch_size = max_rows_per_merged_file // rows_per_part
 
-    for parts_file_group in merge_grouper(files, parts_batch_size):
+    for parts_file_group in _merge_grouper(part_files, parts_batch_size):
         part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
         merged_file_name = parts_dir + part_suffix + file_format
         merged_file_path = hadoop.fs.Path(merged_file_name)
-
         if overwrite and fs.exists(merged_file_path):
             fs.delete(merged_file_path, True)
-
         out_stream = None
         try:
             if fs.exists(partial_merged_file_path):
                 fs.delete(partial_merged_file_path, True)
             out_stream = fs.create(partial_merged_file_path)
             out_stream.writeBytes(header + "\n")
-            # Read-in files in alphabetical order and append them one by one to the merged file
-            for part_file in parts_file_group.file_list:
-                in_stream = None
-                try:
-                    in_stream = fs.open(part_file)
-                    # Write bytes of each file read and keep out_stream open after write for next file
-                    hadoop.io.IOUtils.copyBytes(in_stream, out_stream, conf, False)
-                finally:
-                    if in_stream:
-                        in_stream.close()
-                    if fs.exists(partial_merged_file_path):
-                        fs.delete(partial_merged_file_path, True)
+            _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, parts_file_group.file_list)
         finally:
             if out_stream is not None:
                 out_stream.close()
-
         try:
             fs.rename(partial_merged_file_path, merged_file_path)
         except Exception:
@@ -777,4 +752,28 @@ def hadoop_copy_merge(
                 fs.delete(partial_merged_file_path, True)
             raise
 
-        merged_file_paths.append(merged_file_path)
+
+def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
+    # Read-in files in alphabetical order and append them one by one to the merged file
+    for part_file in part_file_list:
+        in_stream = None
+        try:
+            in_stream = fs.open(part_file)
+            # Write bytes of each file read and keep out_stream open after write for next file
+            hadoop.io.IOUtils.copyBytes(in_stream, out_stream, conf, False)
+        finally:
+            if in_stream:
+                in_stream.close()
+            if fs.exists(partial_merged_file_path):
+                fs.delete(partial_merged_file_path, True)
+
+
+# Helper to chunk up files into mergeable groups
+def _merge_grouper(items, group_size):
+    FileMergeGroup = namedtuple("FileMergeGroup", ["part", "file_list"])
+    if len(items) <= group_size:
+        yield FileMergeGroup(None, items)
+        return
+    group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
+    for i, group in enumerate(group_generator, start=1):
+        yield FileMergeGroup(i, group)

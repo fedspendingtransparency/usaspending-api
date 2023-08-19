@@ -16,7 +16,6 @@ from usaspending_api.download.filestreaming.download_generation import (
     generate_export_query_temp_file,
 )
 from usaspending_api.download.lookups import FILE_FORMATS
-from usaspending_api.download.filestreaming.download_generation import generate_export_query_temp_file
 from pyspark.sql import SparkSession
 from usaspending_api.common.etl.spark import hadoop_copy_merge, load_csv_file
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
@@ -117,7 +116,7 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
         self, source_sql, destination_path, destination_file_name, working_dir_path, covid_profile_download_zip_path
     ):
         self.spark = None
-        destination_path = f"{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}/csv_downloads/{destination_file_name}"
+        destination_path = f"s3a://dti-usaspending-bulk-download-qat/csv_downloads/{destination_file_name}"
         try:
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
@@ -143,8 +142,6 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
                 spark=self.spark,
                 parts_dir=destination_path,
                 header=header,
-                overwrite=True,
-                rows_per_part=EXCEL_ROW_LIMIT,
                 max_rows_per_merged_file=EXCEL_ROW_LIMIT,
                 logger=self._logger,
             )
