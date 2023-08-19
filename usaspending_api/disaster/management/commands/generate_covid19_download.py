@@ -94,7 +94,9 @@ class Command(BaseCommand):
                 local_csv_file_paths = []
                 for sql_file, file_name in self.download_file_list:
                     final_path = self._create_data_csv_dest_path(file_name)
-                    download_s3_object("dti-usaspending-bulk-download-qat", file_name, final_path)
+                    download_s3_object(
+                        "dti-usaspending-bulk-download-qat", f"{file_name}.{self.file_format}", final_path
+                    )
                     local_csv_file_paths.append(final_path)
                 append_files_to_zip_file(local_csv_file_paths, self.zip_file_path)
             self.complete_zip_and_upload()
