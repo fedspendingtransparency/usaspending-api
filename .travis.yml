@@ -36,7 +36,34 @@ env:
   - GRANTS_API_KEY=${GRANTS_API_KEY}
   - MINIO_DATA_DIR=${HOME}/Development/data/usaspending/docker/usaspending-s3  # needs to be same place docker-compose will look for it (based on .env file)
   - MINIO_HOST=localhost
-  - COLUMNS=180  # for wider terminal output
+  - COLUMNS=240  # for wider terminal output
+jobs:
+  include:
+  - name: Unit Tests
+    env:
+    - PYTEST_INCLUDE_GLOB=test_*.py *_test.py
+    - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION=(not spark and not database)
+  - name: Integration Tests Improperly Categorized as Unit Tests
+    env:
+      - PYTEST_INCLUDE_GLOB=test_*.py *_test.py
+      - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
+      - PYTEST_MATCH_EXPRESSION=
+      - PYTEST_MARK_EXPRESSION=database
+  - name: Non-Spark Integration Tests
+    env:
+    - PYTEST_INCLUDE_GLOB=**/tests/integration/*
+    - PYTEST_EXCLUDE_GLOB=
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION=(not spark)
+  - name: Spark Integration Tests
+    env:
+    - PYTEST_INCLUDE_GLOB=test_*.py *_test.py
+    - PYTEST_EXCLUDE_GLOB=
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION=spark
+
 
 before_install:
   # Postgresql-13 requires manual installation
@@ -112,14 +139,15 @@ before_script:
   - until curl --silent -XGET --fail http://localhost:9200; do printf '.'; sleep 1; done
 
 script:
-  - stty cols 180  # for wider terminal output
+  - stty cols 240  # for wider terminal output
   - cd ${TRAVIS_BUILD_DIR}  # run build script out of repo dir
   - flake8
   - black --check --diff .
   - python manage.py check_for_endpoint_documentation
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   # Must manually set --numprocesses on Travis CI VMs; can't use auto (see: https://github.com/pytest-dev/pytest-xdist/pull/317)
-  - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
-  - pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
+  #- pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
+  #- pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
+  - pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m ${PYTEST_MARK_EXPRESSION} -k ${PYTEST_MATCH_EXPRESSION} --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses 4 --dist worksteal --verbosity=1 --durations 50
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

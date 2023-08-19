@@ -53,6 +53,20 @@ baker.generators.add("usaspending_api.common.custom_django_fields.NumericField",
 baker.generators.add("usaspending_api.common.custom_django_fields.BooleanFieldWithDefault", lambda: False)
 
 
+def pytest_collection_modifyitems(items):
+    """A global built-in fixture to pytest that is called at collection, providing a hook to modify collected items.
+
+    In this case, used to add specific marks on tests to allow running groups/sub-groups of tests"""
+    for item in items:
+        if any(fx in ["db", "django_db"] for fx in getattr(item, "fixturenames", ())):
+            item.add_marker("database")
+
+        # Mark all tests using the spark fixture as "spark".
+        # Can be selected with -m spark or deselected with -m (not spark)
+        if "spark" in getattr(item, "fixturenames", ()):
+            item.add_marker("spark")
+
+
 def pytest_sessionfinish(session, exitstatus):
     """A global built-in fixture to pytest that is called when all tests in a session complete.
     For parallel execution with xdist, this function is called once in each worker,
