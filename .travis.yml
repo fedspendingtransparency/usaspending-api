@@ -36,6 +36,7 @@ env:
   - GRANTS_API_KEY=${GRANTS_API_KEY}
   - MINIO_DATA_DIR=${HOME}/Development/data/usaspending/docker/usaspending-s3  # needs to be same place docker-compose will look for it (based on .env file)
   - MINIO_HOST=localhost
+  - COLUMNS=180  # for wider terminal output
 
 before_install:
   # Postgresql-13 requires manual installation

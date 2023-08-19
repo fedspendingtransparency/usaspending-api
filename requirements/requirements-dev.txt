@@ -3,7 +3,7 @@ click==8.0.4
 docker==5.0.3
 dredd-hooks==0.2.0
 flake8==3.8.4
-importlib-metadata<5 # need to pin <5 while flake8 is on 3.8.4
+importlib-metadata<5  # need to pin <5 while flake8 is on 3.8.4
 mock==5.1.*
 model-bakery==1.13.*
 pre-commit==1.20.0
