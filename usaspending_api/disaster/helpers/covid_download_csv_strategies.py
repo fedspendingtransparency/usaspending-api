@@ -4,6 +4,7 @@ import time
 import logging
 from pathlib import Path
 from typing import Tuple
+from django.conf import settings
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
@@ -116,7 +117,7 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
         self, source_sql, destination_path, destination_file_name, working_dir_path, covid_profile_download_zip_path
     ):
         self.spark = None
-        destination_path = f"s3a://dti-usaspending-bulk-download-qat/csv_downloads/{destination_file_name}"
+        destination_path = f"{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}/csv_downloads/{destination_file_name}"
         try:
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore

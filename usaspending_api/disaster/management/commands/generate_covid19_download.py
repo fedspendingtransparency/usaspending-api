@@ -95,7 +95,7 @@ class Command(BaseCommand):
                 for sql_file, file_name in self.download_file_list:
                     final_path = f"{self._create_data_csv_dest_path(file_name)}.{self.file_format}"
                     download_s3_object(
-                        "dti-usaspending-bulk-download-qat",
+                        settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
                         f"csv_downloads/{file_name}.{self.file_format}",
                         final_path,
                     )
