@@ -1,19 +1,15 @@
-import logging
 import os
 import sys
 import tempfile
-from pathlib import Path
+from typing import List
 
 import docker
 import pytest
 from django.conf import settings
-from django.core.management import call_command
-from django.db import connections
 from django.test import override_settings
 from pytest_django.fixtures import _set_suffix_to_test_databases
 from pytest_django.lazy_django import skip_if_no_django
 from xdist.plugin import pytest_xdist_auto_num_workers, get_xdist_worker_id
-from model_bakery import baker
 
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
@@ -22,14 +18,12 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.helpers.sql_helpers import (
     build_dsn_string,
-    execute_sql_simple,
 )
 from usaspending_api.common.sqs.sqs_handler import (
     FAKE_QUEUE_DATA_PATH,
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
-from usaspending_api.config import CONFIG
 
 # Compose other supporting conftest_*.py files
 from usaspending_api.conftest_helpers import (
@@ -42,7 +36,7 @@ from usaspending_api.conftest_helpers import (
 
 # Compose ALL fixtures from conftest_spark
 from usaspending_api.tests.conftest_spark import *  # noqa
-from usaspending_api.tests.test_setup_of_test_dbs import TEST_DB_SETUP_TEST_NAME
+from usaspending_api.tests.integration.test_setup_of_test_dbs import TEST_DB_SETUP_TEST_NAME
 
 logger = logging.getLogger("console")
 
@@ -53,13 +47,27 @@ baker.generators.add("usaspending_api.common.custom_django_fields.NumericField",
 baker.generators.add("usaspending_api.common.custom_django_fields.BooleanFieldWithDefault", lambda: False)
 
 
-def pytest_collection_modifyitems(items):
+def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config, items: List[pytest.Item]) -> None:
     """A global built-in fixture to pytest that is called at collection, providing a hook to modify collected items.
 
-    In this case, used to add specific marks on tests to allow running groups/sub-groups of tests"""
+    In this case, used to add specific marks on tests to allow running groups/sub-groups of tests. These marks added
+    here need to be declared for pytest in pyproject.toml"""
     for item in items:
-        if any(fx in ["db", "django_db"] for fx in getattr(item, "fixturenames", ())):
+        if (
+            # For fixtures that setup or interact with a DB
+            any(
+                fx in ["db", "broker_db_setup", "transactional_db", "django_db_reset_sequences"]
+                for fx in getattr(item, "fixturenames", ())
+            )
+            # For tests marked with this annotation
+            or "django_db" in [m.name for m in item.own_markers]  # for tests marked with this annotation
+            # For e.g. Django TransactionTestCase
+            or (item.cls and hasattr(item.cls, "databases") and len(item.cls.databases) > 0)
+        ):
             item.add_marker("database")
+
+        if any("elasticsearch" in fx and "index" in fx for fx in getattr(item, "fixturenames", ())):
+            item.add_marker("elasticsearch")
 
         # Mark all tests using the spark fixture as "spark".
         # Can be selected with -m spark or deselected with -m (not spark)
