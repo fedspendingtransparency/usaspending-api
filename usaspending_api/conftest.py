@@ -1,12 +1,17 @@
+import logging
 import os
 import sys
 import tempfile
+from pathlib import Path
 from typing import List
 
 import docker
 import pytest
 from django.conf import settings
+from django.core.management import call_command
+from django.db import connections
 from django.test import override_settings
+from model_bakery import baker
 from pytest_django.fixtures import _set_suffix_to_test_databases
 from pytest_django.lazy_django import skip_if_no_django
 from xdist.plugin import pytest_xdist_auto_num_workers, get_xdist_worker_id
@@ -18,12 +23,14 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.helpers.sql_helpers import (
     build_dsn_string,
+    execute_sql_simple,
 )
 from usaspending_api.common.sqs.sqs_handler import (
     FAKE_QUEUE_DATA_PATH,
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
+from usaspending_api.config import CONFIG
 
 # Compose other supporting conftest_*.py files
 from usaspending_api.conftest_helpers import (

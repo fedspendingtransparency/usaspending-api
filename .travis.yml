@@ -44,28 +44,28 @@ jobs:
   - name: Unit Tests
     env:
     - PYTEST_SETUP_TEST_DATABASES=false
-    - PYTEST_INCLUDE_GLOB=test_*.py *_test.py
+    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
     - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
     - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION=(not spark and not database and not elasticsearch)
+    - PYTEST_MARK_EXPRESSION='(not spark and not database and not elasticsearch)'
   - name: Integration Tests Improperly Categorized as Unit Tests
     env:
       - PYTEST_SETUP_TEST_DATABASES=true
-      - PYTEST_INCLUDE_GLOB=test_*.py *_test.py
+      - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
       - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
       - PYTEST_MATCH_EXPRESSION=
-      - PYTEST_MARK_EXPRESSION=(not spark and (database or elasticsearch))
+      - PYTEST_MARK_EXPRESSION='(not spark and (database or elasticsearch))'
   - name: Non-Spark Integration Tests
     env:
     - PYTEST_SETUP_TEST_DATABASES=true
     - PYTEST_INCLUDE_GLOB=**/tests/integration/*
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION=(not spark)
+    - PYTEST_MARK_EXPRESSION='(not spark)'
   - name: Spark Integration Tests
     env:
     - PYTEST_SETUP_TEST_DATABASES=true
-    - PYTEST_INCLUDE_GLOB=test_*.py *_test.py
+    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION=
     - PYTEST_MARK_EXPRESSION=spark
@@ -153,7 +153,7 @@ script:
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   # Must manually set --numprocesses on Travis CI VMs; can't use auto (see: https://github.com/pytest-dev/pytest-xdist/pull/317)
   # Trigger the setup of multiple test DBs that will be left for the next pytest run to reuse --numprocesses
-  - ${PYTEST_SETUP_TEST_DATABASES} && pytest --create-db --reuse-db --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
+  - if [ "${PYTEST_SETUP_TEST_DATABASES}" = true ]; then pytest --create-db --reuse-db --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'; fi;
   #- pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
   #- pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
   - pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m "${PYTEST_MARK_EXPRESSION}" -k "${PYTEST_MATCH_EXPRESSION}" --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --dist worksteal --verbosity=1 --durations 50
