@@ -1,5 +1,5 @@
-from model_bakery import baker
 import pytest
+from model_bakery import baker
 
 
 @pytest.fixture
@@ -127,6 +127,7 @@ def awards_and_transactions(db):
     baker.make("search.AwardSearch", award_id=5, latest_transaction_id=50, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=6, latest_transaction_id=60, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=7, latest_transaction_id=70, action_date="2020-01-01")
+    baker.make("search.AwardSearch", award_id=8, latest_transaction_id=80, action_date="2020-01-01")
 
     baker.make("awards.FinancialAccountsByAwards", pk=1, award_id=1, treasury_account_id=1)
     baker.make("accounts.TreasuryAppropriationAccount", pk=1, federal_account_id=1)
@@ -465,14 +466,61 @@ def awards_and_transactions(db):
         parent_uei=None,
         federal_accounts=[],
     )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=80,
+        award_id=7,
+        federal_action_obligation=5000000,
+        generated_pragmatic_obligation=5000000,
+        action_date="2020-01-07",
+        fiscal_action_date="2020-04-07",
+        is_fpds=True,
+        pop_country_code="USA",
+        pop_country_name="UNITED STATES",
+        recipient_location_country_code="JPN",
+        recipient_location_country_name="JAPAN",
+        recipient_name="MULTIPLE RECIPIENTS",
+        recipient_name_raw="MULTIPLE RECIPIENTS",
+        recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
+    )
+
+    # Subawards
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        award_id=7,
+        subaward_amount=12345,
+        sub_place_of_perform_country_co="CAN",
+        sub_legal_entity_country_code="USA",
+        sub_action_date="2020-01-07",
+    )
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=2,
+        award_id=8,
+        subaward_amount=678910,
+        sub_place_of_perform_country_co="USA",
+        sub_legal_entity_country_code="JPN",
+        sub_action_date="2020-01-07",
+    )
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=3,
+        award_id=1,
+        subaward_amount=54321,
+        sub_place_of_perform_country_co="USA",
+        sub_legal_entity_country_code="USA",
+        sub_action_date="2020-01-07",
+    )
 
     # References State Data
     baker.make("recipient.StateData", id="45-2020", fips="45", code="SC", name="South Carolina")
     baker.make("recipient.StateData", id="53-2020", fips="53", code="WA", name="Washington")
 
-    # References Country
-    baker.make("references.RefCountryCode", country_code="CAN", country_name="CANADA")
+    # Ref Country Code
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+    baker.make("references.RefCountryCode", country_code="CAN", country_name="CANADA")
+    baker.make("references.RefCountryCode", country_code="JPN", country_name="JAPAN")
 
     # References Population County
     baker.make(
@@ -680,7 +728,3 @@ def awards_and_transactions(db):
     # NAICS
     baker.make("references.NAICS", code="111110", description="NAICS 1")
     baker.make("references.NAICS", code="222220", description="NAICS 2")
-
-    # Ref Country Code
-    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
-    baker.make("references.RefCountryCode", country_code="CAN", country_name="CANADA")
