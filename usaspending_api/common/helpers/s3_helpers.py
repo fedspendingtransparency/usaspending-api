@@ -8,7 +8,6 @@ from django.conf import settings
 from pathlib import Path
 from typing import List
 
-
 logger = logging.getLogger("script")
 
 
@@ -65,5 +64,6 @@ def download_s3_object(bucket_name: str, key: str, file_path: str, region_name: 
         key: The name of the key to download from.
         file_path: The path to the file to download to.
     """
+
     s3 = boto3.client("s3", region_name=region_name)
     s3.download_file(bucket_name, key, file_path)
