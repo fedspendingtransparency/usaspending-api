@@ -73,6 +73,7 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "recipient_location_congressional_agg_key": funcs.recipient_location_congressional_agg_key,
         "recipient_location_congressional_cur_agg_key": funcs.recipient_location_congressional_cur_agg_key,
         "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
+        "recipient_location_country_agg_key": lambda x: x["recipient_location_country_code"],
     }
     drop_fields = [
         "pop_state_name",

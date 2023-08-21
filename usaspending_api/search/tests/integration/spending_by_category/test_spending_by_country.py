@@ -36,8 +36,8 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
+            {"amount": 5555555.0, "code": "USA", "id": None, "name": "UNITED STATES"},
             {"amount": 5000000.0, "code": "CAN", "id": None, "name": "CANADA"},
-            {"amount": 555555.0, "code": "USA", "id": None, "name": "UNITED STATES"},
         ],
         "messages": [get_time_period_message()],
     }
