@@ -119,7 +119,7 @@ env-code:  ## Print the value of ENV_CODE environment variable
 .PHONY: test-dbs
 createdb :=  #unset it
 test-dbs:  ## Trigger the setup of multiple test DBs that can be reused with pytest --numprocesses. Add createdb=true to force (re-)creation of Test DBs rather than reuse.
-	pytest --reuse-db ${if ${createdb},--create-db,} --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
+	pytest --reuse-db ${if ${createdb},--create-db,} --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
 
 .PHONY: tests
 tests: test-dbs  ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
