@@ -36,7 +36,7 @@ env:
   - GRANTS_API_KEY=${GRANTS_API_KEY}
   - MINIO_DATA_DIR=${HOME}/Development/data/usaspending/docker/usaspending-s3  # needs to be same place docker-compose will look for it (based on .env file)
   - MINIO_HOST=localhost
-  - PYTEST_XDIST_NUMPROCESSES=0
+  - PYTEST_XDIST_NUMPROCESSES=4
   - COLUMNS=240  # for wider terminal output
 jobs:
   # NOTE: See conftest.py pytest_collection_modifyitems for how Marks are assigned to tests
@@ -136,6 +136,10 @@ before_script:
         FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')
       ) TO grant_to_readonly.sql;"
   - sudo psql --cluster 13/main -U postgres -c "\i grant_to_readonly.sql"
+  # Trigger the setup of multiple test DBs that will be left for the next pytest run to reuse --numprocesses
+  # Must manually set --numprocesses on Travis CI VMs; can't use auto (see: https://github.com/pytest-dev/pytest-xdist/pull/317)
+  - if [ "${PYTEST_SETUP_TEST_DATABASES}" = true ]; then pytest --create-db --reuse-db --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'; fi;
+  - sudo psql --cluster 13/main -U postgres -c "\l"
   # Ensure MinIO can run as our s3 substitute
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
@@ -152,8 +156,6 @@ script:
   - python manage.py check_for_endpoint_documentation
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   # Must manually set --numprocesses on Travis CI VMs; can't use auto (see: https://github.com/pytest-dev/pytest-xdist/pull/317)
-  # Trigger the setup of multiple test DBs that will be left for the next pytest run to reuse --numprocesses
-  - if [ "${PYTEST_SETUP_TEST_DATABASES}" = true ]; then pytest --create-db --reuse-db --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'; fi;
   #- pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
   #- pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
   - pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m "${PYTEST_MARK_EXPRESSION}" -k "${PYTEST_MATCH_EXPRESSION}" --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --dist worksteal --verbosity=1 --durations 50

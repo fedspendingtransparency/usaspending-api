@@ -14,7 +14,11 @@ from django.test import override_settings
 from model_bakery import baker
 from pytest_django.fixtures import _set_suffix_to_test_databases
 from pytest_django.lazy_django import skip_if_no_django
-from xdist.plugin import pytest_xdist_auto_num_workers, get_xdist_worker_id
+from xdist.plugin import (
+    pytest_xdist_auto_num_workers,
+    is_xdist_worker,
+    get_xdist_worker_id,
+)
 
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_view_exists,
@@ -151,6 +155,18 @@ def local(request):
     return request.config.getoption("--local")
 
 
+def is_test_db_setup_trigger(request: pytest.FixtureRequest) -> bool:
+    """
+    Return True if this is a single invocation of the test with name defined in the `TEST_DB_SETUP_TEST_NAME`
+    constant, which is invoked independently to pre-establish test databases
+    """
+    return (
+        len(request.node.items) == 1
+        and request.node.items[0].originalname == TEST_DB_SETUP_TEST_NAME
+        and request.config.option.reuse_db
+    )
+
+
 @pytest.fixture(scope="session")
 def django_db_setup(
     request,
@@ -185,19 +201,22 @@ def django_db_setup(
 
     # NEW (OVERRIDES) of default Django behavior
     setup_databases_args["time_keeper"] = TimeKeeper()
-    if (
-        len(request.node.items) == 1
-        and request.node.items[0].originalname == TEST_DB_SETUP_TEST_NAME
-        and request.config.option.numprocesses is None  # NOT running with xdist parallel test workers
-        and request.config.option.reuse_db
-    ):
+    if is_test_db_setup_trigger(request):
         # This should only be triggered when calling the TEST_DB_SETUP_TEST_NAME unit test all by itself, which is an
         # indicator to execute this fixture in a way where it sets up and leaves around multiple test databases.
         # By handing a parallel arg > 0 value to setup_databases() we use the Django unittest approach to creating
         # parallel copies of the test database rather than the pytest-django approach. The Django approach is faster
         # because it clones the first test db (CREATE DATABASE ... WITH TEMPLATE [for Postgres]) rather than running
         # migrations scripts for each copy to build it up.
-        parallel_workers = pytest_xdist_auto_num_workers(request.config) or 0
+        if is_xdist_worker(request):  # running in xdist with workers
+            parallel_workers = request.config.workerinput["workercount"]
+        elif request.config.option.numprocesses is not None:
+            try:
+                parallel_workers = int(request.config.option.numprocesses)
+            except ValueError:
+                parallel_workers = pytest_xdist_auto_num_workers(request.config) or 0
+        else:
+            parallel_workers = 0
         setup_databases_args["parallel"] = parallel_workers
 
     with django_db_blocker.unblock():
@@ -274,8 +293,10 @@ def django_db_modify_db_settings_xdist_suffix(request):
     """
     skip_if_no_django()
 
-    worker_id = get_xdist_worker_id(request)
-    if worker_id and worker_id != "master":  # running in pytest-xdist, and on a worker process
+    # If running in pytest-xdist, and on a worker process,
+    # but part of a regular test session and NOT the test_db_setup prep (don't want a suffix on the first cloned DB)
+    if is_xdist_worker(request) and not is_test_db_setup_trigger(request):
+        worker_id = get_xdist_worker_id(request)
         suffix = transform_xdist_worker_id_to_django_test_db_id(worker_id)
         _set_suffix_to_test_databases(suffix=suffix)
 
