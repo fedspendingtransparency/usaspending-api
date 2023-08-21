@@ -116,7 +116,7 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
         self, source_sql, destination_path, destination_file_name, working_dir_path, covid_profile_download_zip_path
     ):
         self.spark = None
-        destination_path = f"s3a://dti-usaspending-bulk-download-qat/csv_downloads/{destination_file_name}"
+        destination_path = f"s3a://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}/csv_downloads/{destination_file_name}"
         try:
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
