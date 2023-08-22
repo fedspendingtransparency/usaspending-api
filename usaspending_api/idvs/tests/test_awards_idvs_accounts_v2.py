@@ -9,6 +9,10 @@ FEDERAL_ACCOUNT_ENDPOINT = "/api/v2/idvs/accounts/"
 
 
 class IDVAccountsTestCase(TestCase):
+    # Need to set this so that data for TestCase (and inheritors like SimpleTestCase) flush these DBs at tear-down
+    # See: https://docs.djangoproject.com/en/3.2/topics/testing/tools/#django.test.SimpleTestCase.databases
+    databases = "__all__"
+
     @classmethod
     def setUp(cls):
         create_idv_test_data()
