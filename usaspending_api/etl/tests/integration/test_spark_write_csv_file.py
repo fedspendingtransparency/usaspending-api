@@ -5,10 +5,8 @@ import inspect
 from pytest import mark
 from datetime import datetime
 
-from usaspending_api.common.etl.spark import hadoop_copy_merge, load_csv_file
-from usaspending_api.common.helpers.s3_helpers import download_s3_object
+from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import create_and_load_all_delta_tables
 
 from botocore.client import BaseClient
 
@@ -16,8 +14,6 @@ from pathlib import Path
 from typing import Union
 from contextlib import closing
 import boto3
-import logging
-from usaspending_api.config import CONFIG
 from pyspark.sql import Row
 
 logger = logging.getLogger("script")
@@ -80,7 +76,7 @@ def _download_s3_object(
 
 
 @mark.django_db(transaction=True)  # Need this to save/commit it to Postgres, so we can dump it to delta
-def test_load_csv_file(
+def test_write_csv_file(
     spark,
     s3_unittest_data_bucket,
     hive_unittest_metastore_db,
@@ -98,7 +94,7 @@ def test_load_csv_file(
     bucket_name = s3_unittest_data_bucket
     obj_prefix = f"{CONFIG.SPARK_CSV_S3_PATH}/unit_test_csv_data/{file_timestamp}"
     bucket_path = f"s3a://{bucket_name}/{obj_prefix}"
-    load_csv_file(spark, df, parts_dir=bucket_path, logger=test_logger)
+    write_csv_file(spark, df, parts_dir=bucket_path, logger=test_logger)
     hadoop_copy_merge(
         spark=spark,
         parts_dir=bucket_path,

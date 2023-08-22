@@ -42,7 +42,7 @@ def access_s3_object(bucket_name: str, obj: "boto3.resources.factory.s3.ObjectSu
 
 
 def upload_download_file_to_s3(file_path):
-    bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+    bucket = "dti-usaspending-bulk-download-qat"
     region = settings.USASPENDING_AWS_REGION
     multipart_upload(bucket, region, str(file_path), file_path.name)
 
@@ -60,10 +60,20 @@ def multipart_upload(bucketname, regionname, source_path, keyname):
 def download_s3_object(bucket_name: str, key: str, file_path: str, region_name: str = settings.USASPENDING_AWS_REGION):
     """Download an S3 object to a file.
     Args:
-        bucket_name: The name of the bucket to download from.
+        bucket_name: The name of the bucket where the key is located.
         key: The name of the key to download from.
         file_path: The path to the file to download to.
     """
 
     s3 = boto3.client("s3", region_name=region_name)
     s3.download_file(bucket_name, key, file_path)
+
+
+def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION):
+    """Delete an S3 object
+    Args:
+        bucket_name: The name of the bucket where the key is located.
+        key: The name of the key to delete
+    """
+    s3 = boto3.client("s3", region_name=region_name)
+    s3.delete_object(Bucket=bucket_name, Key=key)

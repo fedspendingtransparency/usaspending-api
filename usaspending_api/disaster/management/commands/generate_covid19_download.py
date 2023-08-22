@@ -8,7 +8,10 @@ from django.utils.functional import cached_property
 from pathlib import Path
 
 from usaspending_api.common.helpers.s3_helpers import download_s3_object, upload_download_file_to_s3
-from usaspending_api.disaster.helpers.covid_download_csv_strategies import AuroraToCSVStrategy, DatabricksToCSVStrategy
+from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
+    PostgresToCSVStrategy,
+    DatabricksToCSVStrategy,
+)
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
 )
@@ -22,9 +25,9 @@ from enum import Enum
 from typing import List
 
 
-class ComputeFlavorEnum(Enum):
+class ComputeTypeEnum(Enum):
     DATABRICKS = "databricks"
-    AURORA = "aurora"
+    POSTGRES = "postgres"
 
 
 logger = logging.getLogger("script")
@@ -45,8 +48,8 @@ class Command(BaseCommand):
     # key's VALUE are the strategies required by the compute type
     # These strategies are used to change the behavior of this command
     #   at runtime.
-    compute_flavors = {
-        ComputeFlavorEnum.AURORA.value: {
+    compute_types = {
+        ComputeTypeEnum.POSTGRES.value: {
             "source_sql_strategy": {
                 "disaster_covid19_file_a": "usaspending_api/disaster/management/sql/disaster_covid19_file_a.sql",
                 "disaster_covid19_file_b": "usaspending_api/disaster/management/sql/disaster_covid19_file_b.sql",
@@ -55,9 +58,9 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_contracts": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_contracts.sql",
                 "disaster_covid19_file_f_grants": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql",
             },
-            "download_to_csv_strategy": AuroraToCSVStrategy(logger=logger),
+            "download_to_csv_strategy": PostgresToCSVStrategy(logger=logger),
         },
-        ComputeFlavorEnum.DATABRICKS.value: {
+        ComputeTypeEnum.DATABRICKS.value: {
             "source_sql_strategy": {
                 "disaster_covid19_file_a": "select 1 as test;",
                 "disaster_covid19_file_b": "select 2 as test;",
@@ -72,9 +75,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--compute-flavor",
-            choices=list(self.compute_flavors.keys()),
-            default=ComputeFlavorEnum.AURORA.value,
+            "--compute-type",
+            choices=list(self.compute_types.keys()),
+            default=ComputeTypeEnum.POSTGRES.value,
             help="Specify the type of compute to use when executing this command.",
         )
         parser.add_argument(
@@ -88,18 +91,15 @@ class Command(BaseCommand):
         Generates a download data package specific to COVID-19 spending
         """
         self.upload = not options["skip_upload"]
-        self.compute_flavor_arg = options.get("compute_flavor")
-        self.download_csv_strategy = self.compute_flavors[self.compute_flavor_arg]["download_to_csv_strategy"]
-        self.download_source_sql = self.compute_flavors[self.compute_flavor_arg]["source_sql_strategy"]
+        self.compute_type_arg = options.get("compute_type")
+        self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
+        self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
         self.zip_file_path = (
             self.working_dir_path / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
         )
         try:
             self.prep_filesystem()
             self.process_data_copy_jobs()
-            if self.compute_flavor_arg == ComputeFlavorEnum.DATABRICKS.value:
-                local_csv_file_paths = self._move_data_csv_s3_to_local()
-                append_files_to_zip_file(local_csv_file_paths, self.zip_file_path)
             self.complete_zip_and_upload()
         except Exception:
             logger.exception("Exception encountered. See logs")
@@ -118,7 +118,7 @@ class Command(BaseCommand):
         for sql_file, final_name in self.download_file_list:
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
-            data_file_path, count = self.download_to_csv(
+            data_file_names, count = self.download_to_csv(
                 sql_file, final_path, final_name, str(intermediate_data_file_path)
             )
             if count <= 0:
@@ -184,7 +184,7 @@ class Command(BaseCommand):
 
         add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
 
-        if self.compute_flavor_arg != "databricks":
+        if self.compute_type_arg != ComputeTypeEnum.DATABRICKS.value:
             file_description = build_file_description(str(self.readme_path), dict())
             file_description_path = save_file_description(
                 str(self.zip_file_path.parent), self.readme_path.name, file_description
@@ -231,21 +231,3 @@ class Command(BaseCommand):
         )
 
         return download_record.download_job_id
-
-    def _move_data_csv_s3_to_local(self) -> List[str]:
-        """Moves files from s3 data csv location to a location on the local machine.
-
-        Returns:
-            A list of the final location on the local machine that the
-            files were moved to from s3.
-        """
-        local_csv_file_paths = []
-        for sql_file, file_name in self.download_file_list:
-            final_path = f"{self._create_data_csv_dest_path(file_name)}.{self.file_format}"
-            download_s3_object(
-                settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
-                f"csv_downloads/{file_name}.{self.file_format}",
-                final_path,
-            )
-            local_csv_file_paths.append(final_path)
-        return local_csv_file_paths

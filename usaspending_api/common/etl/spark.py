@@ -566,43 +566,6 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
     logger.info(f"Created the reference views in the global_temp database")
 
 
-def load_csv_file(
-    spark: SparkSession,
-    df: DataFrame,
-    parts_dir: str,
-    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
-    overwrite=True,
-    logger=None,
-) -> int:
-    """Load DataFrame data into a SINGLE CSV file.
-    Args:
-        spark: passed-in active SparkSession
-        df: the DataFrame wrapping the data source to be dumped to CSV.
-        parts_dir: Path to dir that will contain the outputted parts files from partitions
-        overwrite: Whether to replace the file CSV files if they already exist by that name
-        max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
-            this many rows in any file written. Only if the total data exceeds this value will multiple files be
-            created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
-        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
-            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
-    Returns:
-        record count of the DataFrame that was used to populate the CSV file
-    """
-
-    if not logger:
-        logger = get_jvm_logger(spark)
-
-    df_record_count = write_csv_file(
-        spark=spark,
-        df=df,
-        parts_dir=parts_dir,
-        max_rows_per_merged_file=max_rows_per_merged_file,
-        overwrite=overwrite,
-        logger=logger,
-    )
-    return df_record_count
-
-
 def write_csv_file(
     spark: SparkSession,
     df: DataFrame,
@@ -659,27 +622,25 @@ def hadoop_copy_merge(
     max_rows_per_merged_file=EXCEL_ROW_LIMIT,
     logger=None,
     file_format=".csv",
-) -> None:
+) -> List[str]:
     """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
-    It uses the underlying Hadoop FileSystem API to combine all part files under a directory
-    into a single specified destination file.
-    Hadoop will return the correct FileSystem implementation based on the path provided
-    e.g. if it is like: s3a://some-bucket, it will return an S3AFileSystem implementation
-    if the Path is not a full URI, and the scheme (hdfs://, s3a://, file:///) cannot be determined, it will attempt
-    to use the filesystem impl based on the "fs.defaultFS" setting
-    - Locally this is file:///
-    - in EMR this is e.g. hdfs://ip-internal:8020
+    Merges files from a provided input directory and then redivides them
+        into multiple files based on a provided maximum row count parameter.
     Args:
         spark: passed-in active SparkSession
-        parts_dir: Path to dir that contains the outputted parts files from partitions
+        parts_dir: Path to the dir that contains the input parts files. The parts dir name
+            determines the name of the merged files.
         header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
             Individual part files must NOT therefore be created with their own header.
         max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
             this many rows in any file written. Only if the total data exceeds this value will multiple files be
-            created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
+                created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
         file_format: The format of the part files and the format of the final merged file
+
+    Returns:
+        a list of file names where each element is a merged file that was generated during the copy merge.
     """
     overwrite = True
     if not logger:
@@ -724,11 +685,13 @@ def hadoop_copy_merge(
         return
 
     part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
+    merged_file_names_created = []
     for parts_file_group in _merge_grouper(part_files, max_rows_per_merged_file):
         part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
         merged_file_name = parts_dir + part_suffix + file_format
+        merged_file_names_created.append(merged_file_name)
         merged_file_path = hadoop.fs.Path(merged_file_name)
         if overwrite and fs.exists(merged_file_path):
             fs.delete(merged_file_path, True)
@@ -748,6 +711,7 @@ def hadoop_copy_merge(
             if fs.exists(partial_merged_file_path):
                 fs.delete(partial_merged_file_path, True)
             raise
+    return merged_file_names_created
 
 
 def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
