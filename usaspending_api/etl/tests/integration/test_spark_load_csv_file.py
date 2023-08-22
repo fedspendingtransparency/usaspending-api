@@ -5,7 +5,7 @@ import inspect
 from pytest import mark
 from datetime import datetime
 
-from usaspending_api.common.etl.spark import load_csv_file
+from usaspending_api.common.etl.spark import hadoop_copy_merge, load_csv_file
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import create_and_load_all_delta_tables
@@ -99,14 +99,22 @@ def test_load_csv_file(
     obj_prefix = f"{CONFIG.SPARK_CSV_S3_PATH}/unit_test_csv_data/{file_timestamp}"
     bucket_path = f"s3a://{bucket_name}/{obj_prefix}"
     load_csv_file(spark, df, parts_dir=bucket_path, logger=test_logger)
-    file_ext = "csv"
-    download_path = tmp_path / f"{file_timestamp}.{file_ext}"
+    hadoop_copy_merge(
+        spark=spark,
+        parts_dir=bucket_path,
+        header="first_col, color, numeric_val",
+        logger=logger,
+    )
+    file_prefix = "csv"
+    results_path = f"{obj_prefix}.{file_prefix}"
+    download_path = tmp_path / f"{file_timestamp}.{file_prefix}"
+    test_logger.info(f"Downloading test results from {results_path} to {download_path}")
     _download_s3_object(
         s3_bucket_name=bucket_name,
-        s3_obj_key=f"{obj_prefix}.{file_ext}",
+        s3_obj_key=results_path,
         download_path=download_path,
         configured_logger=logger,
     )
-    pd_df = pd.read_csv(download_path / f"{file_timestamp}.{file_ext}")
-    assert len(pd_df) == 3  # number of transaction records created in data setup fixture
+    pd_df = pd.read_csv(download_path)
+    assert len(pd_df) == 3
     assert len(pd_df.columns) > 1
