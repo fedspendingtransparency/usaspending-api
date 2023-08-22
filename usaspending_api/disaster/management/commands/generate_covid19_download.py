@@ -74,7 +74,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--compute-flavor",
             choices=list(self.compute_flavors.keys()),
-            default="aurora",
+            default=ComputeFlavorEnum.AURORA.value,
             help="Specify the type of compute to use when executing this command.",
         )
         parser.add_argument(
@@ -96,7 +96,7 @@ class Command(BaseCommand):
         )
         try:
             self.prep_filesystem()
-            # self.process_data_copy_jobs()
+            self.process_data_copy_jobs()
             if self.compute_flavor_arg == ComputeFlavorEnum.DATABRICKS.value:
                 local_csv_file_paths = self._move_data_csv_s3_to_local()
                 append_files_to_zip_file(local_csv_file_paths, self.zip_file_path)
