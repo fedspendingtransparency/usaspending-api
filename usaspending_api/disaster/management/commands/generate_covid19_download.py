@@ -18,6 +18,13 @@ from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
+from enum import Enum
+from typing import List
+
+
+class ComputeFlavorEnum(Enum):
+    DATABRICKS = "databricks"
+    AURORA = "aurora"
 
 
 logger = logging.getLogger("script")
@@ -39,7 +46,7 @@ class Command(BaseCommand):
     # These strategies are used to change the behavior of this command
     #   at runtime.
     compute_flavors = {
-        "aurora": {
+        ComputeFlavorEnum.AURORA.value: {
             "source_sql_strategy": {
                 "disaster_covid19_file_a": "usaspending_api/disaster/management/sql/disaster_covid19_file_a.sql",
                 "disaster_covid19_file_b": "usaspending_api/disaster/management/sql/disaster_covid19_file_b.sql",
@@ -50,7 +57,7 @@ class Command(BaseCommand):
             },
             "download_to_csv_strategy": AuroraToCSVStrategy(logger=logger),
         },
-        "databricks": {
+        ComputeFlavorEnum.DATABRICKS.value: {
             "source_sql_strategy": {
                 "disaster_covid19_file_a": "select 1 as test;",
                 "disaster_covid19_file_b": "select 2 as test;",
@@ -89,17 +96,9 @@ class Command(BaseCommand):
         )
         try:
             self.prep_filesystem()
-            self.process_data_copy_jobs()
-            if self.compute_flavor_arg == "databricks":
-                local_csv_file_paths = []
-                for sql_file, file_name in self.download_file_list:
-                    final_path = f"{self._create_data_csv_dest_path(file_name)}.{self.file_format}"
-                    download_s3_object(
-                        settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
-                        f"csv_downloads/{file_name}.{self.file_format}",
-                        final_path,
-                    )
-                    local_csv_file_paths.append(final_path)
+            # self.process_data_copy_jobs()
+            if self.compute_flavor_arg == ComputeFlavorEnum.DATABRICKS.value:
+                local_csv_file_paths = self._move_data_csv_s3_to_local()
                 append_files_to_zip_file(local_csv_file_paths, self.zip_file_path)
             self.complete_zip_and_upload()
         except Exception:
@@ -232,3 +231,21 @@ class Command(BaseCommand):
         )
 
         return download_record.download_job_id
+
+    def _move_data_csv_s3_to_local(self) -> List[str]:
+        """Moves files from s3 data csv location to a location on the local machine.
+
+        Returns:
+            A list of the final location on the local machine that the
+            files were moved to from s3.
+        """
+        local_csv_file_paths = []
+        for sql_file, file_name in self.download_file_list:
+            final_path = f"{self._create_data_csv_dest_path(file_name)}.{self.file_format}"
+            download_s3_object(
+                settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
+                f"csv_downloads/{file_name}.{self.file_format}",
+                final_path,
+            )
+            local_csv_file_paths.append(final_path)
+        return local_csv_file_paths
