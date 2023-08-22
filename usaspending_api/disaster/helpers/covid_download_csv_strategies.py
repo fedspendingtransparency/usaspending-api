@@ -123,7 +123,7 @@ class DatabricksToCSVStrategy(AbstractToCSVStrategy):
     ):
         self.spark = None
         # The place to write intermediate data files to in s3
-        s3_bucket_name = "dti-usaspending-bulk-download-qat"
+        s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
         s3_destination_path = f"{s3_bucket_path}/temp_covid_download/{destination_file_name}"
         try:
