@@ -5,6 +5,7 @@ NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helper
 functions for setup and configuration of the spark environment
 """
 from itertools import chain
+from math import ceil
 from typing import List
 from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
 from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
@@ -619,7 +620,6 @@ def hadoop_copy_merge(
     spark: SparkSession,
     parts_dir: str,
     header: str,
-    rows_per_part=CONFIG.SPARK_PARTITION_ROWS,
     max_rows_per_merged_file=EXCEL_ROW_LIMIT,
     logger=None,
     file_format="csv",
@@ -633,11 +633,6 @@ def hadoop_copy_merge(
             determines the name of the merged files. Parts_dir cannot have a trailing slash.
         header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
             Individual part files must NOT therefore be created with their own header.
-        rows_per_part: If the interim output was written to disk per-partition,
-            how many rows were at most in each partition and therefore part file?
-            e.g. could be based on ``numPartitions`` param given to ``spark.jdbc.read(...)``. You need to calculate
-            this ahead of time as best as possible; it's used to determine how the part-files are combined or divided to
-            build up the final files that go in the .zip.
         max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
             this many rows in any file written. Only if the total data exceeds this value will multiple files be
                 created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
@@ -649,6 +644,12 @@ def hadoop_copy_merge(
         A list of file paths where each element in the list denotes a path to
             a merged file that was generated during the copy merge.
     """
+    #   If the interim output was written to disk per-partition,
+    #       how many rows were at most in each partition and therefore part file?
+    #       e.g. could be based on ``numPartitions`` param given to ``spark.jdbc.read(...)``. You need to calculate
+    #       this ahead of time as best as possible; it's used to determine how the part-files are combined or divided to
+    #       build up the final files that go in the .zip.
+    rows_per_part = CONFIG.SPARK_PARTITION_ROWS
     overwrite = True
     if not logger:
         logger = get_jvm_logger(spark)
@@ -677,6 +678,9 @@ def hadoop_copy_merge(
 
     for f in fs.listStatus(parts_dir_path):
         if f.isFile():
+            # Sometimes part files can be empty, we need to ignore them
+            if f.getLen() == 0:
+                continue
             file_path = f.getPath()
             if file_path.getName().startswith("_"):
                 logger.debug(f"Skipping non-part file: {file_path.getName()}")
@@ -696,7 +700,7 @@ def hadoop_copy_merge(
         return
 
     part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
-    parts_batch_size = max_rows_per_merged_file // rows_per_part
+    parts_batch_size = ceil(max_rows_per_merged_file / rows_per_part)
     paths_to_merged_files = []
     for parts_file_group in _merge_grouper(part_files, parts_batch_size):
         part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
