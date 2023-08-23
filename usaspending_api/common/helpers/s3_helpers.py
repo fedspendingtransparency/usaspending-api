@@ -7,8 +7,42 @@ from boto3.s3.transfer import TransferConfig, S3Transfer
 from django.conf import settings
 from pathlib import Path
 from typing import List
+from botocore.client import BaseClient
+
+from pathlib import Path
+from typing import Union
+from contextlib import closing
+import boto3
+from usaspending_api.config import CONFIG
 
 logger = logging.getLogger("script")
+
+
+def _get_boto3_s3_client(region_name=CONFIG.AWS_REGION) -> BaseClient:
+    """Returns the correct boto3 client based on the
+    environment.
+
+    Returns:
+        BaseClient: Boto3 client implementatoin
+    """
+    if not CONFIG.USE_AWS:
+        boto3_session = boto3.session.Session(
+            region_name=region_name,
+            aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+            aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+        )
+        s3_client = boto3_session.client(
+            service_name="s3",
+            region_name=region_name,
+            endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
+        )
+    else:
+        s3_client = boto3.client(
+            service_name="s3",
+            region_name=region_name,
+            endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}",
+        )
+    return s3_client
 
 
 def retrieve_s3_bucket_object_list(bucket_name: str) -> List["boto3.resources.factory.s3.ObjectSummary"]:
@@ -64,8 +98,7 @@ def download_s3_object(bucket_name: str, key: str, file_path: str, region_name: 
         key: The name of the key to download from.
         file_path: The path to the file to download to.
     """
-
-    s3 = boto3.client("s3", region_name=region_name)
+    s3 = _get_boto3_s3_client(region_name)
     s3.download_file(bucket_name, key, file_path)
 
 
@@ -75,5 +108,5 @@ def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USA
         bucket_name: The name of the bucket where the key is located.
         key: The name of the key to delete
     """
-    s3 = boto3.client("s3", region_name=region_name)
+    s3 = _get_boto3_s3_client(region_name)
     s3.delete_object(Bucket=bucket_name, Key=key)
