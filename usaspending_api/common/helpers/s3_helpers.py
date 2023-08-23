@@ -9,10 +9,6 @@ from pathlib import Path
 from typing import List
 from botocore.client import BaseClient
 
-from pathlib import Path
-from typing import Union
-from contextlib import closing
-import boto3
 from usaspending_api.config import CONFIG
 
 logger = logging.getLogger("script")
