@@ -629,7 +629,7 @@ def hadoop_copy_merge(
     Args:
         spark: passed-in active SparkSession
         parts_dir: Path to the dir that contains the input parts files. The parts dir name
-            determines the name of the merged files.
+            determines the name of the merged files. Parts_dir cannot have a trailing slash.
         header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
             Individual part files must NOT therefore be created with their own header.
         max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
