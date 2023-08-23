@@ -10,7 +10,7 @@ from pathlib import Path
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
     PostgresToCSVStrategy,
-    DatabricksToCSVStrategy,
+    SparkToCSVStrategy,
 )
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
@@ -25,7 +25,7 @@ from enum import Enum
 
 
 class ComputeTypeEnum(Enum):
-    DATABRICKS = "databricks"
+    SPARK = "spark"
     POSTGRES = "postgres"
 
 
@@ -59,7 +59,7 @@ class Command(BaseCommand):
             },
             "download_to_csv_strategy": PostgresToCSVStrategy(logger=logger),
         },
-        ComputeTypeEnum.DATABRICKS.value: {
+        ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
                 "disaster_covid19_file_a": "select 1 as test;",
                 "disaster_covid19_file_b": "select 2 as test;",
@@ -68,7 +68,7 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_contracts": "select 5 as test;",
                 "disaster_covid19_file_f_grants": "select 6 as test;",
             },
-            "download_to_csv_strategy": DatabricksToCSVStrategy(logger=logger),
+            "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
         },
     }
 
@@ -183,7 +183,7 @@ class Command(BaseCommand):
 
         add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
 
-        if self.compute_type_arg != ComputeTypeEnum.DATABRICKS.value:
+        if self.compute_type_arg != ComputeTypeEnum.SPARK.value:
             file_description = build_file_description(str(self.readme_path), dict())
             file_description_path = save_file_description(
                 str(self.zip_file_path.parent), self.readme_path.name, file_description
