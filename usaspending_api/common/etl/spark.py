@@ -677,7 +677,8 @@ def hadoop_copy_merge(
         logger.warn("Source directory is empty with no part files. Attempting creation of file with CSV header only")
         out_stream = None
         try:
-            out_stream = fs.create(hadoop.fs.Path(parts_dir), overwrite)
+            merged_file_path = f"{parts_dir}.{file_format}"
+            out_stream = fs.create(hadoop.fs.Path(merged_file_path), overwrite)
             out_stream.writeBytes(header + "\n")
         finally:
             if out_stream is not None:
@@ -690,9 +691,10 @@ def hadoop_copy_merge(
         part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
-        merged_file_name = parts_dir + part_suffix + f".{file_format}"
-        paths_to_merged_files.append(merged_file_name)
-        merged_file_path = hadoop.fs.Path(merged_file_name)
+        merged_file_path = f"{parts_dir}{part_suffix}.{file_format}"
+        paths_to_merged_files.append(merged_file_path)
+        # Make path a hadoop path because we are working with a hadoop file system
+        merged_file_path = hadoop.fs.Path(merged_file_path)
         if overwrite and fs.exists(merged_file_path):
             fs.delete(merged_file_path, True)
         out_stream = None
