@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
 from pathlib import Path
 
-from usaspending_api.common.helpers.s3_helpers import download_s3_object, upload_download_file_to_s3
+from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
     PostgresToCSVStrategy,
     DatabricksToCSVStrategy,
@@ -22,7 +22,6 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from enum import Enum
-from typing import List
 
 
 class ComputeTypeEnum(Enum):
