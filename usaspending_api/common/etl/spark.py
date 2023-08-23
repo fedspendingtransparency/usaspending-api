@@ -650,7 +650,6 @@ def hadoop_copy_merge(
     conf = spark.sparkContext._jsc.hadoopConfiguration()
     parts_dir_path = hadoop.fs.Path(parts_dir)
 
-    # See comment in docstring about how FileSystem is determined
     fs = parts_dir_path.getFileSystem(conf)
 
     if not fs.exists(parts_dir_path):
