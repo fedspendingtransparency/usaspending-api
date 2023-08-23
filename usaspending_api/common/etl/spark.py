@@ -654,6 +654,10 @@ def hadoop_copy_merge(
         logger = get_jvm_logger(spark)
     hadoop = spark.sparkContext._jvm.org.apache.hadoop
     conf = spark.sparkContext._jsc.hadoopConfiguration()
+
+    # Guard against incorrectly formatted argument value
+    parts_dir = parts_dir.rstrip("/")
+
     parts_dir_path = hadoop.fs.Path(parts_dir)
 
     fs = parts_dir_path.getFileSystem(conf)
