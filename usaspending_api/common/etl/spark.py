@@ -717,7 +717,8 @@ def hadoop_copy_merge(
 
 
 def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
-    # Read-in files in alphabetical order and append them one by one to the merged file
+    """Read-in files in alphabetical order and append them one by one to the merged file"""
+
     for part_file in part_file_list:
         in_stream = None
         try:
@@ -731,8 +732,8 @@ def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, pa
                 fs.delete(partial_merged_file_path, True)
 
 
-# Helper to chunk up files into mergeable groups
 def _merge_grouper(items, group_size):
+    """Helper to chunk up files into mergeable groups"""
     FileMergeGroup = namedtuple("FileMergeGroup", ["part", "file_list"])
     if len(items) <= group_size:
         yield FileMergeGroup(None, items)
