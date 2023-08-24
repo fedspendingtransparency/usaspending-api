@@ -51,14 +51,16 @@ def date_list_to_queryset(date_list, table, is_subaward=False):
 
         date_type_dict = v.get("date_type_dict", {"gte": "action_date", "lte": "action_date"})
         for operand, date_type in date_type_dict.items():
-            if date_type not in ["action_date", "last_modified_date", "date_signed"]:
+            if date_type not in ["action_date", "last_modified_date", "date_signed", "new_awards_only"]:
                 raise InvalidParameterException("Invalid date_type: {}".format(date_type))
             # When searching subawards, use the subaward equivalent fields
             if is_subaward:
                 subaward_mappings = {
                     "action_date": "sub_action_date",
                     "last_modified_date": "last_modified_date",
-                    "date_signed": "date_signed",
+                    # Convert to 'sub_action_date' because subawards do not support 'date_signed' or 'new_awards_only'
+                    "date_signed": "sub_action_date",
+                    "new_awards_only": "sub_action_date",
                 }
                 date_type_dict[operand] = subaward_mappings[date_type]
 

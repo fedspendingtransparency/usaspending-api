@@ -178,20 +178,7 @@ def get_download_sources(json_request: dict, download_job: DownloadJob = None, o
 
         if VALUE_MAPPINGS[download_type]["source_type"] == "award":
             # Award downloads
-
-            # Use correct date range columns for advanced search
-            # (Will not change anything for keyword search since "time_period" is not provided))
             filters = deepcopy(json_request["filters"])
-            if (download_type == "elasticsearch_awards" or download_type == "awards") and json_request["filters"].get(
-                "time_period"
-            ) is not None:
-                for time_period in filters["time_period"]:
-                    time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                    time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
-            if json_request["filters"].get("time_period") is not None and download_type == "sub_awards":
-                for time_period in filters["time_period"]:
-                    if time_period.get("date_type") == "date_signed":
-                        time_period["date_type"] = "action_date"
             if download_type == "elasticsearch_awards" or download_type == "elasticsearch_transactions":
                 queryset = filter_function(filters, download_job=download_job)
             else:
