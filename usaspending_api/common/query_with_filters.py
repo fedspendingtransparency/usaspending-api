@@ -114,11 +114,11 @@ class _TimePeriods(_Filter):
             start_date = v.get("start_date") or settings.API_SEARCH_MIN_DATE
             end_date = v.get("end_date") or settings.API_MAX_DATE
 
-            # New awards only is based on the date_signed column so translate the value
+            # Convert 'new_awards_only' to 'date_signed' because 'new_awards_only' should return the same result set
             if v.get("date_type") == "new_awards_only":
                 v["date_type"] = "date_signed"
 
-            # Transactions use a different column when its 'date_signed' so translate the value
+            # Convert 'date_signed' to the corresponding column for transactions
             if query_type == _QueryType.TRANSACTIONS and v.get("date_type") == "date_signed":
                 v["date_type"] = "award_date_signed"
 

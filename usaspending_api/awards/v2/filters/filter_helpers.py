@@ -56,9 +56,10 @@ def date_list_to_queryset(date_list, table, is_subaward=False):
             # When searching subawards, use the subaward equivalent fields
             if is_subaward:
                 subaward_mappings = {
+                    # Convert 'action_date' to the corresponding column for subawards
                     "action_date": "sub_action_date",
                     "last_modified_date": "last_modified_date",
-                    # Convert to 'sub_action_date' because subawards do not support 'date_signed' or 'new_awards_only'
+                    # Subawards do not support 'date_signed' or 'new_awards_only' so convert to a default value ('sub_action_date')
                     "date_signed": "sub_action_date",
                     "new_awards_only": "sub_action_date",
                 }
