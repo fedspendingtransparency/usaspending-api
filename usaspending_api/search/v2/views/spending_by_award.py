@@ -91,10 +91,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
         filters = json_request.get("filters", {})
-        if not self.is_subaward and filters.get("time_period") is not None:
-            for time_period in filters["time_period"]:
-                time_period["gte_date_type"] = time_period.get("date_type", "action_date")
-                time_period["lte_date_type"] = time_period.get("date_type", "date_signed")
         self.filters = filters
         self.fields = json_request["fields"]
         self.pagination = {
