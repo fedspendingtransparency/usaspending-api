@@ -9,6 +9,7 @@ import os
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 from pathlib import Path
+from usaspending_api.config import CONFIG
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -72,8 +73,6 @@ if not USASPENDING_AWS_REGION:
 CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
 DOWNLOAD_ENV = ""
 BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
-
-from usaspending_api.config import CONFIG
 
 BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
