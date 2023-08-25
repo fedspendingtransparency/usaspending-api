@@ -21,7 +21,7 @@ def get_database_dsn_string(db_alias=DEFAULT_DB_ALIAS):
     if db_alias in settings.DATABASES:
         return build_dsn_string(settings.DATABASES[db_alias])
     else:
-        raise Exception(f"No valid database connection is configured with alias \"{db_alias}\"")
+        raise Exception(f'No valid database connection is configured with alias "{db_alias}"')
 
 
 def get_broker_dsn_string():
