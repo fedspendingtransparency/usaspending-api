@@ -18,9 +18,6 @@ from usaspending_api.download.filestreaming.download_generation import (
 )
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.lookups import FILE_FORMATS
-from pyspark.sql import SparkSession
-from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from typing import List
 
 
@@ -121,6 +118,15 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
     def download_to_csv(
         self, source_sql, destination_path, destination_file_name, working_dir_path, covid_profile_download_zip_path
     ):
+        # These imports are here for a reason.
+        #   some strategies do not require spark
+        #   we do not want to force all containers where
+        #   other strategies run to have pyspark installed when the strategy
+        #   doesn't require it.
+        from pyspark.sql import SparkSession
+        from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
+        from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
+
         self.spark = None
         # The place to write intermediate data files to in s3
         s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
