@@ -1,8 +1,5 @@
 import json
 import logging
-import multiprocessing
-import re
-import time
 
 from datetime import datetime, timezone
 from django.conf import settings
@@ -10,21 +7,26 @@ from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
 from pathlib import Path
 
-from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
+from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
+    PostgresToCSVStrategy,
+    SparkToCSVStrategy,
+)
 from usaspending_api.download.filestreaming.download_generation import (
-    split_and_zip_data_files,
-    wait_for_process,
     add_data_dictionary_to_zip,
-    execute_psql,
-    generate_export_query_temp_file,
 )
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.models.download_job import DownloadJob
-from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
+from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
+from enum import Enum
+
+
+class ComputeTypeEnum(Enum):
+    SPARK = "spark"
+    POSTGRES = "postgres"
 
 
 logger = logging.getLogger("script")
@@ -41,7 +43,42 @@ class Command(BaseCommand):
     readme_path = Path(settings.COVID19_DOWNLOAD_README_FILE_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
 
+    # KEY is the type of compute supported by this command
+    # key's VALUE are the strategies required by the compute type
+    # These strategies are used to change the behavior of this command
+    #   at runtime.
+    compute_types = {
+        ComputeTypeEnum.POSTGRES.value: {
+            "source_sql_strategy": {
+                "disaster_covid19_file_a": "usaspending_api/disaster/management/sql/disaster_covid19_file_a.sql",
+                "disaster_covid19_file_b": "usaspending_api/disaster/management/sql/disaster_covid19_file_b.sql",
+                "disaster_covid19_file_d1_awards": "usaspending_api/disaster/management/sql/disaster_covid19_file_d1_awards.sql",
+                "disaster_covid19_file_d2_awards": "usaspending_api/disaster/management/sql/disaster_covid19_file_d2_awards.sql",
+                "disaster_covid19_file_f_contracts": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_contracts.sql",
+                "disaster_covid19_file_f_grants": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql",
+            },
+            "download_to_csv_strategy": PostgresToCSVStrategy(logger=logger),
+        },
+        ComputeTypeEnum.SPARK.value: {
+            "source_sql_strategy": {
+                "disaster_covid19_file_a": "select 1 as test;",
+                "disaster_covid19_file_b": "select 2 as test;",
+                "disaster_covid19_file_d1_awards": "select 3 as test;",
+                "disaster_covid19_file_d2_awards": "select 4 as test;",
+                "disaster_covid19_file_f_contracts": "select 5 as test;",
+                "disaster_covid19_file_f_grants": "select 6 as test;",
+            },
+            "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
+        },
+    }
+
     def add_arguments(self, parser):
+        parser.add_argument(
+            "--compute-type",
+            choices=list(self.compute_types.keys()),
+            default=ComputeTypeEnum.POSTGRES.value,
+            help="Specify the type of compute to use when executing this command.",
+        )
         parser.add_argument(
             "--skip-upload",
             action="store_true",
@@ -53,6 +90,9 @@ class Command(BaseCommand):
         Generates a download data package specific to COVID-19 spending
         """
         self.upload = not options["skip_upload"]
+        self.compute_type_arg = options.get("compute_type")
+        self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
+        self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
         self.zip_file_path = (
             self.working_dir_path / f"{settings.COVID19_DOWNLOAD_FILENAME_PREFIX}_{self.full_timestamp}.zip"
         )
@@ -67,17 +107,23 @@ class Command(BaseCommand):
             # "best-effort" attempt to cleanup temp files after a failure. Isn't 100% effective
             self.cleanup()
 
+    def _create_data_csv_dest_path(self, file_name):
+        return self.working_dir_path / file_name
+
     def process_data_copy_jobs(self):
         logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_path}")
         self.filepaths_to_delete.append(self.zip_file_path)
 
         for sql_file, final_name in self.download_file_list:
-            intermediate_data_file_path = final_name.parent / (final_name.name + "_temp")
-            data_file, count = self.download_to_csv(sql_file, final_name, str(intermediate_data_file_path))
+            final_path = self._create_data_csv_dest_path(final_name)
+            intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
+            data_file_names, count = self.download_to_csv(
+                sql_file, final_path, final_name, str(intermediate_data_file_path)
+            )
             if count <= 0:
-                logger.warning(f"Empty data file generated: {final_name}!")
+                logger.warning(f"Empty data file generated: {final_path}!")
 
-            self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_name.stem}*"))
+            self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_path.stem}*"))
 
     def complete_zip_and_upload(self):
         self.finalize_zip_contents()
@@ -95,33 +141,30 @@ class Command(BaseCommand):
     @property
     def download_file_list(self):
         short_timestamp = self.full_timestamp[:-6]
-        sql_dir = Path("usaspending_api/disaster/management/sql")
         return [
             (
-                sql_dir / "disaster_covid19_file_a.sql",
-                self.working_dir_path
-                / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
+                f'{self.download_source_sql["disaster_covid19_file_a"]}',
+                f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBalances_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_b.sql",
-                self.working_dir_path
-                / f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
+                f'{self.download_source_sql["disaster_covid19_file_b"]}',
+                f"{self.get_current_fy_and_period}-Present_All_TAS_AccountBreakdownByPA-OC_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_d1_awards.sql",
-                self.working_dir_path / f"Contracts_PrimeAwardSummaries_{short_timestamp}",
+                f'{self.download_source_sql["disaster_covid19_file_d1_awards"]}',
+                f"Contracts_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_d2_awards.sql",
-                self.working_dir_path / f"Assistance_PrimeAwardSummaries_{short_timestamp}",
+                f'{self.download_source_sql["disaster_covid19_file_d2_awards"]}',
+                f"Assistance_PrimeAwardSummaries_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_f_contracts.sql",
-                self.working_dir_path / f"Contracts_Subawards_{short_timestamp}",
+                f'{self.download_source_sql["disaster_covid19_file_f_contracts"]}',
+                f"Contracts_Subawards_{short_timestamp}",
             ),
             (
-                sql_dir / "disaster_covid19_file_f_grants.sql",
-                self.working_dir_path / f"Assistance_Subawards_{short_timestamp}",
+                f'{self.download_source_sql["disaster_covid19_file_f_grants"]}',
+                f"Assistance_Subawards_{short_timestamp}",
             ),
         ]
 
@@ -140,12 +183,13 @@ class Command(BaseCommand):
 
         add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
 
-        file_description = build_file_description(str(self.readme_path), dict())
-        file_description_path = save_file_description(
-            str(self.zip_file_path.parent), self.readme_path.name, file_description
-        )
-        self.filepaths_to_delete.append(Path(file_description_path))
-        append_files_to_zip_file([file_description_path], str(self.zip_file_path))
+        if self.compute_type_arg != ComputeTypeEnum.SPARK.value:
+            file_description = build_file_description(str(self.readme_path), dict())
+            file_description_path = save_file_description(
+                str(self.zip_file_path.parent), self.readme_path.name, file_description
+            )
+            self.filepaths_to_delete.append(Path(file_description_path))
+            append_files_to_zip_file([file_description_path], str(self.zip_file_path))
         self.total_download_size = self.zip_file_path.stat().st_size
 
     def prep_filesystem(self):
@@ -156,51 +200,10 @@ class Command(BaseCommand):
         if not self.zip_file_path.parent.exists():
             self.zip_file_path.parent.mkdir()
 
-    def download_to_csv(self, sql_filepath, destination_path, intermediate_data_filename):
-        start_time = time.perf_counter()
-        logger.info(f"Downloading data to {destination_path}")
-        options = FILE_FORMATS[self.file_format]["options"]
-        export_query = r"\COPY ({}) TO STDOUT {}".format(read_sql_file(sql_filepath), options)
-        try:
-            temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, self.working_dir_path)
-            # Create a separate process to run the PSQL command; wait
-            psql_process = multiprocessing.Process(
-                target=execute_psql, args=(temp_file_path, intermediate_data_filename, None)
-            )
-            psql_process.start()
-            wait_for_process(psql_process, start_time, None)
-
-            delim = FILE_FORMATS[self.file_format]["delimiter"]
-
-            # Log how many rows we have
-            logger.info(f"Counting rows in delimited text file {intermediate_data_filename}")
-            try:
-                count = count_rows_in_delimited_file(
-                    filename=intermediate_data_filename, has_header=True, delimiter=delim
-                )
-                logger.info(f"{destination_path} contains {count:,} rows of data")
-                self.total_download_count += count
-            except Exception:
-                logger.exception("Unable to obtain delimited text file line count")
-
-            start_time = time.perf_counter()
-            zip_process = multiprocessing.Process(
-                target=split_and_zip_data_files,
-                args=(
-                    str(self.zip_file_path),
-                    intermediate_data_filename,
-                    str(destination_path),
-                    self.file_format,
-                    None,
-                ),
-            )
-            zip_process.start()
-            wait_for_process(zip_process, start_time, None)
-        except Exception as e:
-            raise e
-        finally:
-            Path(temp_file_path).unlink()
-        return destination_path, count
+    def download_to_csv(self, source_sql, destination_path, destination_file_name, intermediate_data_filename):
+        return self.download_csv_strategy.download_to_csv(
+            source_sql, destination_path, destination_file_name, self.working_dir_path, self.zip_file_path
+        )
 
     def store_record_in_database(self):
         download_record = DownloadJob.objects.create(
@@ -227,9 +230,3 @@ class Command(BaseCommand):
         )
 
         return download_record.download_job_id
-
-
-def read_sql_file(file_path: Path) -> str:
-    """Open file and return text with most whitespace removed"""
-    p = re.compile(r"\s\s+")
-    return p.sub(" ", str(file_path.read_text().replace("\n", "  ")))
