@@ -17,11 +17,11 @@ def build_dsn_string(db_settings):
     return "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**db_settings)
 
 
-def get_database_dsn_string():
-    if DEFAULT_DB_ALIAS in settings.DATABASES:
-        return build_dsn_string(settings.DATABASES[DEFAULT_DB_ALIAS])
+def get_database_dsn_string(db_alias=DEFAULT_DB_ALIAS):
+    if db_alias in settings.DATABASES:
+        return build_dsn_string(settings.DATABASES[db_alias])
     else:
-        raise Exception("No valid database connection is configured")
+        raise Exception(f"No valid database connection is configured with alias \"{db_alias}\"")
 
 
 def get_broker_dsn_string():

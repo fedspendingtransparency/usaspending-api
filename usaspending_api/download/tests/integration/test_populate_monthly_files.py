@@ -8,6 +8,7 @@ from csv import reader
 from model_bakery import baker
 from unittest.mock import Mock
 
+from usaspending_api import settings
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
@@ -529,7 +530,7 @@ def monthly_download_data(db, monkeypatch):
 
 
 def test_all_agencies(client, monthly_download_data, monkeypatch):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command("populate_monthly_files", "--fiscal_year=2020", "--local", "--clobber")
     file_list = os.listdir(CSV_DIR)
 
@@ -540,7 +541,7 @@ def test_all_agencies(client, monthly_download_data, monkeypatch):
 
 
 def test_specific_agency(client, monthly_download_data, monkeypatch):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     contract_data = generate_contract_data(2020, 1)
     assistance_data = generate_assistance_data
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
@@ -595,7 +596,7 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
 
 
 def test_agency_no_data(client, monthly_download_data, monkeypatch):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2022", "--local", "--clobber")
     contracts_zip = f"FY2022_002_Contracts_Full_{TODAY}.zip"
     contracts_csv_1 = f"FY2022_002_Contracts_Full_{TODAY}_1.csv"
@@ -623,7 +624,7 @@ def test_agency_no_data(client, monthly_download_data, monkeypatch):
 
 
 def test_fiscal_years(client, monthly_download_data, monkeypatch):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2004", "--local", "--clobber")
     file_list = os.listdir(CSV_DIR)
@@ -640,7 +641,7 @@ def test_fiscal_years(client, monthly_download_data, monkeypatch):
 
 
 def test_award_type(client, monthly_download_data, monkeypatch):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command(
         "populate_monthly_files",
         "--agencies=1",

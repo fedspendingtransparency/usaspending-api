@@ -2,7 +2,7 @@ import json
 import pytest
 import random
 
-from django.conf import settings
+from usaspending_api import settings
 from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
@@ -113,7 +113,7 @@ def test_download_transactions_without_columns(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -128,7 +128,7 @@ def test_download_transactions_without_columns(
 @pytest.mark.django_db(transaction=True)
 def test_download_transactions_with_columns(client, monkeypatch, download_test_data, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -154,7 +154,7 @@ def test_download_transactions_with_columns(client, monkeypatch, download_test_d
 @pytest.mark.django_db(transaction=True)
 def test_download_transactions_bad_limit(client, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -169,7 +169,7 @@ def test_download_transactions_excessive_limit(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -186,7 +186,7 @@ def test_download_transactions_bad_column_list_raises(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     payload = {"filters": {"award_type_codes": ["A"]}, "columns": ["modification_number", "bogus_column"]}
     resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
@@ -201,7 +201,7 @@ def test_download_transactions_bad_filter_type_raises(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     payload = {"filters": "01", "columns": []}
     resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
@@ -212,7 +212,7 @@ def test_download_transactions_bad_filter_type_raises(
 @pytest.mark.django_db(transaction=True)
 def test_download_transactions_with_date_type(client, monkeypatch, download_test_data, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     resp = client.post(
         "/api/v2/download/transactions/",
@@ -235,7 +235,7 @@ def test_download_transactions_new_awards_only(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     resp = client.post(
         "/api/v2/download/transactions/",
