@@ -38,37 +38,44 @@ env:
   - MINIO_HOST=localhost
   - PYTEST_XDIST_NUMPROCESSES=4
   - COLUMNS=240  # for wider terminal output
-jobs:
-  # NOTE: See conftest.py pytest_collection_modifyitems for how Marks are assigned to tests
-  include:
-  - name: Unit Tests
-    env:
-    - PYTEST_SETUP_TEST_DATABASES=false
-    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
-    - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
-    - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION='(not spark and not database and not elasticsearch)'
-  - name: Integration Tests Improperly Categorized as Unit Tests
-    env:
-      - PYTEST_SETUP_TEST_DATABASES=true
-      - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
-      - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
-      - PYTEST_MATCH_EXPRESSION=
-      - PYTEST_MARK_EXPRESSION='(not spark and (database or elasticsearch))'
-  - name: Non-Spark Integration Tests
-    env:
-    - PYTEST_SETUP_TEST_DATABASES=true
-    - PYTEST_INCLUDE_GLOB=**/tests/integration/*
-    - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION='(not spark)'
-  - name: Spark Integration Tests
-    env:
-    - PYTEST_SETUP_TEST_DATABASES=true
-    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
-    - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION=spark
+  # TRYING JUST SPARK TEST ONLY
+  - PYTEST_SETUP_TEST_DATABASES=true
+  - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+  - PYTEST_EXCLUDE_GLOB=
+  - PYTEST_MATCH_EXPRESSION=
+  - PYTEST_MARK_EXPRESSION=spark
+
+#jobs:
+#  # NOTE: See conftest.py pytest_collection_modifyitems for how Marks are assigned to tests
+#  include:
+#  - name: Unit Tests
+#    env:
+#    - PYTEST_SETUP_TEST_DATABASES=false
+#    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+#    - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
+#    - PYTEST_MATCH_EXPRESSION=
+#    - PYTEST_MARK_EXPRESSION='(not spark and not database and not elasticsearch)'
+#  - name: Integration Tests Improperly Categorized as Unit Tests
+#    env:
+#      - PYTEST_SETUP_TEST_DATABASES=true
+#      - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+#      - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
+#      - PYTEST_MATCH_EXPRESSION=
+#      - PYTEST_MARK_EXPRESSION='(not spark and (database or elasticsearch))'
+#  - name: Non-Spark Integration Tests
+#    env:
+#    - PYTEST_SETUP_TEST_DATABASES=true
+#    - PYTEST_INCLUDE_GLOB=**/tests/integration/*
+#    - PYTEST_EXCLUDE_GLOB=
+#    - PYTEST_MATCH_EXPRESSION=
+#    - PYTEST_MARK_EXPRESSION='(not spark)'
+#  - name: Spark Integration Tests
+#    env:
+#    - PYTEST_SETUP_TEST_DATABASES=true
+#    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+#    - PYTEST_EXCLUDE_GLOB=
+#    - PYTEST_MATCH_EXPRESSION=
+#    - PYTEST_MARK_EXPRESSION=spark
 
 
 before_install:
