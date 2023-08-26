@@ -30,7 +30,6 @@ from usaspending_api.common.helpers.sql_helpers import (
     execute_sql_simple,
 )
 from usaspending_api.common.sqs.sqs_handler import (
-    FAKE_QUEUE_DATA_PATH,
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
@@ -320,6 +319,19 @@ def elasticsearch_transaction_index(db):
 
 
 @pytest.fixture
+def fake_csv_local_path(tmp_path):
+    """A fixture that will mock the settings.CSV_LOCAL_PATH to a temporary directory created by the tmp_path_factory
+    fixture, and return the path to that temporary directory.
+
+    Good for use in unit test that download to the local CSV_LOCAL_PATH directory, but you don't want data in that
+    directory to create conflicts from test to test or for concurrently running tests.
+    """
+    tmp_csv_local_path = str(tmp_path) + "/"
+    with override_settings(CSV_LOCAL_PATH=tmp_csv_local_path):
+        yield tmp_csv_local_path
+
+
+@pytest.fixture
 def elasticsearch_award_index(db):
     """
     Add this fixture to your test if you intend to use the Elasticsearch
@@ -542,28 +554,15 @@ def temp_file_path():
         pass
 
 
-@pytest.fixture(scope="session")
-def unittest_fake_sqs_queue_instance():
-    fake_unittest_q = _FakeUnitTestFileBackedSQSQueue.instance()
-    yield fake_unittest_q
-
-
-@pytest.fixture(scope="session")
-def local_queue_dir(unittest_fake_sqs_queue_instance):
-    FAKE_QUEUE_DATA_PATH.mkdir(parents=True, exist_ok=True)
-    yield
-    # Clean up any files created on disk
-    remove_unittest_queue_data_files(unittest_fake_sqs_queue_instance)
-
-
 @pytest.fixture()
-def fake_sqs_queue(local_queue_dir, unittest_fake_sqs_queue_instance):
-    q = unittest_fake_sqs_queue_instance
+def fake_sqs_queue():
+    q = _FakeUnitTestFileBackedSQSQueue.instance()
 
     # Check that it's the unit test queue before purging
     assert q.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
     q.purge()
     q.reset_instance_state()
-    yield
+    yield q
     q.purge()
     q.reset_instance_state()
+    remove_unittest_queue_data_files(q)
