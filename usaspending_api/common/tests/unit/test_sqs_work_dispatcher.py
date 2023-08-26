@@ -13,6 +13,8 @@ from random import randint
 import pytest
 from botocore.config import Config
 from botocore.exceptions import EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError
+from psutil import TimeoutExpired
+
 from usaspending_api.common.sqs.sqs_handler import (
     get_sqs_queue,
     FakeSQSMessage,
@@ -734,16 +736,28 @@ def test_terminated_parent_dispatcher_exits_with_negative_signal_code(fake_sqs_q
     worker_pid = tq.get(True, 1)
     worker = ps.Process(worker_pid)
 
-    assert work_done == msg_body
-    os.kill(parent_dispatcher.pid, signal.SIGTERM)
+    parent_pid = parent_dispatcher.pid
 
-    # simulate join(2). Wait at most 2 sec for work to complete
-    ps.wait_procs([worker], timeout=2)
-    parent_dispatcher.join(1)  # ensure dispatcher completes within 3 seconds. Don't let it run away.
+    assert work_done == msg_body
+    os.kill(parent_pid, signal.SIGTERM)
+
+    # Wait at most this many seconds for the worker and dispatcher to finish, let TimeoutExpired raise and fail.
+    try:
+        worker.wait(timeout=2)
+    except TimeoutExpired as tex:
+        pytest.fail(f"TimeoutExpired waiting for worker with pid {worker.pid} to terminate (complete work).", tex)
+    try:
+        while parent_dispatcher.is_alive() and ps.pid_exists(parent_pid):
+            ps.Process(parent_pid).wait(1)
+    except TimeoutExpired as tex:
+        pytest.fail(
+            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).", tex
+        )
 
     try:
         # Parent dispatcher process should have an exit code less than zero
-        assert parent_dispatcher.exitcode < 0
+        assert not parent_dispatcher.is_alive(), "Parent dispatcher was expected to be killed, but still alive"
+        assert parent_dispatcher.exitcode is not None and parent_dispatcher.exitcode < 0
         assert -signal.SIGTERM == parent_dispatcher.exitcode
         # Message should NOT have been deleted from the queue, but available for receive again
         msgs = queue.receive_messages(WaitTimeSeconds=0)
@@ -1004,7 +1018,7 @@ def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(fa
         try:
             work_dispatcher.dispatch(**kwargs)
         except Exception as exc:
-            error_queue.put_nowait(exc)
+            error_queue.put(exc, timeout=2)
             raise exc
 
     dispatch_kwargs = {
@@ -1020,16 +1034,28 @@ def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(fa
     work_done = wq.get(True, 3)
     assert work_done == msg_body
 
+    parent_pid = parent_dispatcher.pid
+
     # block until received object indicating ready to be terminated, or fail in 1 second
     worker_pid = tq.get(True, 1)
     worker = ps.Process(worker_pid)
-    os.kill(parent_dispatcher.pid, signal.SIGTERM)
+    os.kill(parent_pid, signal.SIGTERM)
 
-    # simulate join(2). Wait at most 2 sec for work to complete
-    ps.wait_procs([worker], timeout=2)
-    parent_dispatcher.join(3)  # ensure dispatcher completes within 3 seconds. Don't let it run away.
+    # Wait at most this many seconds for the worker and dispatcher to finish, let TimeoutExpired raise and fail.
+    try:
+        while worker.is_running() and ps.pid_exists(worker_pid):
+            worker.wait(timeout=5)
+    except TimeoutExpired as tex:
+        pytest.fail(f"TimeoutExpired waiting for worker with pid {worker.pid} to terminate (complete work).", tex)
+    try:
+        while parent_dispatcher.is_alive() and ps.pid_exists(parent_pid):
+            ps.Process(parent_pid).wait(3)
+    except TimeoutExpired as tex:
+        pytest.fail(
+            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).", tex
+        )
 
-    assert not eq.empty(), "No errors detected in parent dispatcher"
+    assert not eq.empty(), "Should have been errors detected in parent dispatcher"
     exc = eq.get_nowait()
     assert isinstance(exc, QueueWorkDispatcherError), "Error was not of type QueueWorkDispatcherError"
 
@@ -1043,7 +1069,9 @@ def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(fa
     try:
         # Parent dispatcher process should have an exit code of 1, since it will have raised an exception and
         # failed, rather than a graceful exit
-        assert 1 == parent_dispatcher.exitcode
+        assert not parent_dispatcher.is_alive(), "Parent dispatcher is still alive but should have been killed"
+        assert parent_dispatcher.exitcode is not None, "Parent dispatcher is not alive but has no exitcode"
+        assert 1 == parent_dispatcher.exitcode, "Parent dispatcher exitcode was not 1"
 
         # Message SHOULD have been deleted from the queue (after going to DLQ)
         msgs = queue.receive_messages(WaitTimeSeconds=0)
@@ -1168,17 +1196,29 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queu
     work_done = wq.get(True, 3)
     assert work_done == msg_body
 
+    parent_pid = parent_dispatcher.pid
+
     # block until received object indicating ready to be terminated, or fail in 1 second
     worker_pid = tq.get(True, 1)
     # Put right back on termination queue as if not removed, so exit_handler can discover the worker process PID
     # to perform its conditional hang-or-cleanup logic
     tq.put(worker_pid)
     worker = ps.Process(worker_pid)
-    os.kill(parent_dispatcher.pid, signal.SIGTERM)
+    os.kill(parent_pid, signal.SIGTERM)
 
-    # simulate join(2). Wait at most 2 sec for work to complete
-    ps.wait_procs([worker], timeout=2)
-    parent_dispatcher.join(3)  # ensure dispatcher completes within 3 seconds. Don't let it run away.
+    # Wait at most this many seconds for the worker and dispatcher to finish, let TimeoutExpired raise and fail.
+    try:
+        while worker.is_running() and ps.pid_exists(worker_pid):
+            worker.wait(timeout=5)
+    except TimeoutExpired as tex:
+        pytest.fail(f"TimeoutExpired waiting for worker with pid {worker.pid} to terminate (complete work).", tex)
+    try:
+        while parent_dispatcher.is_alive() and ps.pid_exists(parent_pid):
+            ps.Process(parent_pid).wait(3)
+    except TimeoutExpired as tex:
+        pytest.fail(
+            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).", tex
+        )
 
     assert eq.empty(), "Errors detected in parent dispatcher"
 
@@ -1320,17 +1360,29 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_retry(fake_sqs_qu
     work_done = wq.get()
     assert work_done == msg_body
 
+    parent_pid = parent_dispatcher.pid
+
     # block until received object indicating ready to be terminated, or fail in 1 second
     worker_pid = tq.get(True, 1)
     # Put right back on termination queue as if not removed, so exit_handler can discover the worker process PID
     # to perform its conditional hang-or-cleanup logic
     tq.put(worker_pid)
     worker = ps.Process(worker_pid)
-    os.kill(parent_dispatcher.pid, signal.SIGTERM)
+    os.kill(parent_pid, signal.SIGTERM)
 
-    # simulate join(2). Wait at most 2 sec for work to complete
-    ps.wait_procs([worker], timeout=2)
-    parent_dispatcher.join(3)  # ensure dispatcher completes within 3 seconds. Don't let it run away.
+    # Wait at most this many seconds for the worker and dispatcher to finish, let TimeoutExpired raise and fail.
+    try:
+        while worker.is_running() and ps.pid_exists(worker_pid):
+            worker.wait(timeout=5)
+    except TimeoutExpired as tex:
+        pytest.fail(f"TimeoutExpired waiting for worker with pid {worker.pid} to terminate (complete work).", tex)
+    try:
+        while parent_dispatcher.is_alive() and ps.pid_exists(parent_pid):
+            ps.Process(parent_pid).wait(3)
+    except TimeoutExpired as tex:
+        pytest.fail(
+            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).", tex
+        )
 
     assert eq.empty(), "Errors detected in parent dispatcher"
 
@@ -1503,23 +1555,23 @@ def _fail_runaway_processes(
     logger, worker: mp.Process = None, terminator: mp.Process = None, dispatcher: mp.Process = None
 ):
     fail_with_runaway_proc = False
-    if worker and worker.is_alive():
-        logger.warning(
-            "Dispatched worker process with PID {} did not complete in timeout. Killing it.".format(worker.pid)
-        )
+    if worker and worker.is_alive() and ps.pid_exists(worker.pid):
         os.kill(worker.pid, signal.SIGKILL)
-        fail_with_runaway_proc = True
-    if terminator and terminator.is_alive():
         logger.warning(
-            "Terminator worker process with PID {} did not complete in timeout. " "Killing it.".format(terminator.pid)
+            "Dispatched worker process with PID {} did not complete in timeout and was killed.".format(worker.pid)
         )
+        fail_with_runaway_proc = True
+    if terminator and terminator.is_alive() and ps.pid_exists(terminator.pid):
         os.kill(terminator.pid, signal.SIGKILL)
-        fail_with_runaway_proc = True
-    if dispatcher and dispatcher.is_alive():
         logger.warning(
-            "Parent dispatcher process with PID {} did not complete in timeout. " "Killing it.".format(dispatcher.pid)
+            "Terminator process with PID {} did not complete in timeout and was killed.".format(terminator.pid)
         )
+        fail_with_runaway_proc = True
+    if dispatcher and dispatcher.is_alive() and ps.pid_exists(dispatcher.pid):
         os.kill(dispatcher.pid, signal.SIGKILL)
+        logger.warning(
+            "Parent dispatcher process with PID {} did not complete in timeout and was killed.".format(dispatcher.pid)
+        )
         fail_with_runaway_proc = True
     if fail_with_runaway_proc:
         pytest.fail("Worker or its Terminator or the Dispatcher did not complete in timeout as expected. Test fails.")
