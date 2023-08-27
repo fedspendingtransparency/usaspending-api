@@ -24,9 +24,9 @@ def agency_data(helpers):
         justification="BECAUSE",
         icon_filename="HAI.jpg",
     )
-    ta2 = baker.make("references.TopTierAgency", toptier_code="002", _fill_optional=True)
-    sa1 = baker.make("references.SubTierAgency", subtier_code="ST1", _fill_optional=True)
-    sa2 = baker.make("references.SubTierAgency", subtier_code="ST2", _fill_optional=True)
+    ta2 = baker.make("references.ToptierAgency", toptier_code="002", _fill_optional=True)
+    sa1 = baker.make("references.SubtierAgency", subtier_code="ST1", _fill_optional=True)
+    sa2 = baker.make("references.SubtierAgency", subtier_code="ST2", _fill_optional=True)
     a1 = baker.make(
         "references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1, _fill_optional=True
     )

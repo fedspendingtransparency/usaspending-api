@@ -26,7 +26,7 @@ def differences_data():
         quarter_format_flag=False,
         submission_window=dabs1,
     )
-    ta1 = baker.make("references.TopTierAgency", toptier_code="001", _fill_optional=True)
+    ta1 = baker.make("references.ToptierAgency", toptier_code="001", _fill_optional=True)
     baker.make(
         "references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True, _fill_optional=True
     )

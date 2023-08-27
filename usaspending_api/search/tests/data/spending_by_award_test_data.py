@@ -224,7 +224,7 @@ def spending_by_award_test_data():
 
     # Toptier Agency
     ta1 = baker.make(
-        "references.TopTierAgency", abbreviation="TA1", name="TOPTIER AGENCY 1", toptier_code="ABC", _fill_optional=True
+        "references.ToptierAgency", abbreviation="TA1", name="TOPTIER AGENCY 1", toptier_code="ABC", _fill_optional=True
     )
 
     # Federal Account
@@ -334,8 +334,8 @@ def spending_by_award_test_data():
     subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
     subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
 
-    baker.make("references.SubTierAgency", **subtier_agency_1, _fill_optional=True)
-    baker.make("references.SubTierAgency", **subtier_agency_2, _fill_optional=True)
+    baker.make("references.SubtierAgency", **subtier_agency_1, _fill_optional=True)
+    baker.make("references.SubtierAgency", **subtier_agency_2, _fill_optional=True)
 
     # Agency
     baker.make("references.Agency", pk=1, toptier_agency=ta1, subtier_agency_id=1, _fill_optional=True)

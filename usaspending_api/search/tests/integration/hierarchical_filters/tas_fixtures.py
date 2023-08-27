@@ -47,7 +47,7 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
         existing_ta = ToptierAgency.objects.filter(toptier_code=toptier_code).first()
         if existing_ta is None:
             ta = baker.make(
-                "references.TopTierAgency",
+                "references.ToptierAgency",
                 toptier_agency_id=count + award_id,
                 toptier_code=toptier_code,
                 _fill_optional=True,
@@ -169,7 +169,7 @@ def award(db, id):
 
 
 def agency(db, agency_id, toptier_code):
-    baker.make("references.TopTierAgency", toptier_agency_id=agency_id, toptier_code=toptier_code, _fill_optional=True)
+    baker.make("references.ToptierAgency", toptier_agency_id=agency_id, toptier_code=toptier_code, _fill_optional=True)
 
 
 def tas(db, award_id, fa_id, index):

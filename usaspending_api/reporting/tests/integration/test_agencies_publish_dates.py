@@ -126,10 +126,10 @@ def publish_dates_data(db):
     )
 
     ta1 = baker.make(
-        "references.TopTierAgency", toptier_code="001", name="Test Agency", abbreviation="TA", _fill_optional=True
+        "references.ToptierAgency", toptier_code="001", name="Test Agency", abbreviation="TA", _fill_optional=True
     )
     ta2 = baker.make(
-        "references.TopTierAgency", toptier_code="002", name="Test Agency 2", abbreviation="TA2", _fill_optional=True
+        "references.ToptierAgency", toptier_code="002", name="Test Agency 2", abbreviation="TA2", _fill_optional=True
     )
 
     baker.make(

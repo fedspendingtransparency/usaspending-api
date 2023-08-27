@@ -6,7 +6,7 @@ from datetime import datetime
 
 @pytest.fixture
 def award_spending_data(db):
-    ttagency = baker.make("references.TopTierAgency", _fill_optional=True)
+    ttagency = baker.make("references.ToptierAgency", _fill_optional=True)
     agency = baker.make("references.Agency", id=111, toptier_flag=True, toptier_agency=ttagency, _fill_optional=True)
     award = baker.make("search.AwardSearch", award_id=1, category="grants", awarding_agency_id=agency.id)
     award1 = baker.make("search.AwardSearch", award_id=2, category="contracts", awarding_agency_id=agency.id)

@@ -11,8 +11,8 @@ from usaspending_api.references.models import ToptierAgency, SubtierAgency
 def awards_and_transactions(db):
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    baker.make("references.SubTierAgency", subtier_code="def", **subag, _fill_optional=True)
-    baker.make("references.TopTierAgency", toptier_code="abc", **subag, _fill_optional=True)
+    baker.make("references.SubtierAgency", subtier_code="def", **subag, _fill_optional=True)
+    baker.make("references.ToptierAgency", toptier_code="abc", **subag, _fill_optional=True)
 
     duns = {"awardee_or_recipient_uniqu": "123", "uei": "ABC", "legal_business_name": "Sams Club"}
     parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}

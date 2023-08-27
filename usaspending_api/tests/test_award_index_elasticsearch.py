@@ -38,10 +38,10 @@ def award_data_fixture(db):
         cfda_number="84.063",
     )
     baker.make(
-        "references.TopTierAgency", toptier_agency_id=1, name="Department of Transportation", _fill_optional=True
+        "references.ToptierAgency", toptier_agency_id=1, name="Department of Transportation", _fill_optional=True
     )
     baker.make(
-        "references.SubTierAgency", subtier_agency_id=1, name="Department of Transportation", _fill_optional=True
+        "references.SubtierAgency", subtier_agency_id=1, name="Department of Transportation", _fill_optional=True
     )
     baker.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1, _fill_optional=True)
     baker.make(

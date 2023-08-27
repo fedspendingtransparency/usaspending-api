@@ -296,7 +296,7 @@ def tas_mulitple_oc_per_tas():
         period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
     )
 
-    ta1 = baker.make("references.TopTierAgency", toptier_code="008", _fill_optional=True)
+    ta1 = baker.make("references.ToptierAgency", toptier_code="008", _fill_optional=True)
 
     baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
 

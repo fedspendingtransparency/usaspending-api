@@ -39,7 +39,7 @@ def download_test_data(db):
     )
 
     # Create Awarding subs
-    baker.make("references.SubTierAgency", name="Bureau of Things", _fill_optional=True)
+    baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Awarding Agencies
     aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False, _fill_optional=True)
@@ -56,7 +56,7 @@ def download_test_data(db):
     )
 
     # Create Funding SUB
-    baker.make("references.SubTierAgency", name="Bureau of Things", _fill_optional=True)
+    baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
     baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False, _fill_optional=True)

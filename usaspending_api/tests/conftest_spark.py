@@ -359,8 +359,8 @@ def populate_usas_data(populate_broker_data):
         _fill_optional=True,
     )
 
-    toptier = baker.make("references.TopTierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
-    subtier = baker.make("references.SubTierAgency", name="subtier", abbreviation="st", _fill_optional=True)
+    toptier = baker.make("references.ToptierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
+    subtier = baker.make("references.SubtierAgency", name="subtier", abbreviation="st", _fill_optional=True)
     agency = baker.make(
         "references.Agency",
         toptier_agency=toptier,

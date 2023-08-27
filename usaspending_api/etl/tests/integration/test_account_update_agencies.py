@@ -78,9 +78,9 @@ def data_fixture(db):
     baker.make("references.FREC", frec_code="5678", associated_cgac_code="123")
     baker.make("references.FREC", frec_code="6789", associated_cgac_code="234")
 
-    baker.make("references.TopTierAgency", pk=1, toptier_code="123", _fill_optional=True)  # CGAC agency
-    baker.make("references.TopTierAgency", pk=2, toptier_code="234", _fill_optional=True)  # Another CGAC agency
-    baker.make("references.TopTierAgency", pk=3, toptier_code="4567", _fill_optional=True)  # FREC agency
+    baker.make("references.ToptierAgency", pk=1, toptier_code="123", _fill_optional=True)  # CGAC agency
+    baker.make("references.ToptierAgency", pk=2, toptier_code="234", _fill_optional=True)  # Another CGAC agency
+    baker.make("references.ToptierAgency", pk=3, toptier_code="4567", _fill_optional=True)  # FREC agency
 
 
 def test_federal_account_update_agency(data_fixture):

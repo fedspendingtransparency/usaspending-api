@@ -31,13 +31,13 @@ def test_subtier(monkeypatch):
 @pytest.mark.django_db
 def test_get_by_toptier():
     """Test Agency lookup by toptier CGAC code."""
-    toptier = baker.make("references.TopTierAgency", toptier_code="xyz", name="yo", _fill_optional=True)
-    subtier = baker.make("references.SubTierAgency", subtier_code="abc", name="yo", _fill_optional=True)
+    toptier = baker.make("references.ToptierAgency", toptier_code="xyz", name="yo", _fill_optional=True)
+    subtier = baker.make("references.SubtierAgency", subtier_code="abc", name="yo", _fill_optional=True)
 
     baker.make(
         "references.Agency",
         toptier_agency=toptier,
-        subtier_agency=baker.make("references.SubTierAgency", subtier_code="bbb", name="no", _fill_optional=True),
+        subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb", name="no", _fill_optional=True),
         update_date=datetime.date(2017, 10, 10),
     )
     agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, _fill_optional=True)
@@ -52,13 +52,13 @@ def test_get_by_toptier():
 @pytest.mark.django_db
 def test_get_by_subtier():
     """Test Agency lookup by subtier."""
-    toptier = baker.make("references.TopTierAgency", toptier_code="xyz", name="yo", _fill_optional=True)
-    subtier = baker.make("references.SubTierAgency", subtier_code="abc", name="hi", _fill_optional=True)
+    toptier = baker.make("references.ToptierAgency", toptier_code="xyz", name="yo", _fill_optional=True)
+    subtier = baker.make("references.SubtierAgency", subtier_code="abc", name="hi", _fill_optional=True)
 
     baker.make(
         "references.Agency",
         toptier_agency=toptier,
-        subtier_agency=baker.make("references.SubTierAgency", subtier_code="bbb", _fill_optional=True),
+        subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb", _fill_optional=True),
     )
     agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, _fill_optional=True)
 
@@ -75,13 +75,13 @@ def test_get_by_subtier():
 @pytest.mark.django_db
 def test_get_by_toptier_subtier():
     """Test Agency lookup by subtier."""
-    toptier = baker.make("references.TopTierAgency", toptier_code="xyz", name="yo", _fill_optional=True)
-    subtier = baker.make("references.SubTierAgency", subtier_code="abc", name="hi", _fill_optional=True)
+    toptier = baker.make("references.ToptierAgency", toptier_code="xyz", name="yo", _fill_optional=True)
+    subtier = baker.make("references.SubtierAgency", subtier_code="abc", name="hi", _fill_optional=True)
 
     baker.make(
         "references.Agency",
         toptier_agency=toptier,
-        subtier_agency=baker.make("references.SubTierAgency", subtier_code="bbb", _fill_optional=True),
+        subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb", _fill_optional=True),
     )
     agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, _fill_optional=True)
 

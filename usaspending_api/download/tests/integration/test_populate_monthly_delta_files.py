@@ -18,11 +18,11 @@ from usaspending_api.download.v2.download_column_historical_lookups import query
 @pytest.mark.django_db(transaction=True)
 def monthly_download_delta_data(db, monkeypatch):
     baker.make(
-        "references.TopTierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency", _fill_optional=True
+        "references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency", _fill_optional=True
     )
     baker.make("references.Agency", pk=1, toptier_agency_id=1, _fill_optional=True)
     baker.make(
-        "references.TopTierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2", _fill_optional=True
+        "references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2", _fill_optional=True
     )
     baker.make("references.Agency", pk=2, toptier_agency_id=2, _fill_optional=True)
     i = 1

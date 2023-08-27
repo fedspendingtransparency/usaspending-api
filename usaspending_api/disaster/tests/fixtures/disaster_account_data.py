@@ -6,41 +6,41 @@ from model_bakery import baker
 @pytest.fixture
 def disaster_account_data():
     ta1 = baker.make(
-        "references.TopTierAgency", toptier_agency_id=7, toptier_code="007", name="Agency 007", _fill_optional=True
+        "references.ToptierAgency", toptier_agency_id=7, toptier_code="007", name="Agency 007", _fill_optional=True
     )
     ta2 = baker.make(
-        "references.TopTierAgency", toptier_agency_id=8, toptier_code="008", name="Agency 008", _fill_optional=True
+        "references.ToptierAgency", toptier_agency_id=8, toptier_code="008", name="Agency 008", _fill_optional=True
     )
     ta3 = baker.make(
-        "references.TopTierAgency", toptier_agency_id=9, toptier_code="009", name="Agency 009", _fill_optional=True
+        "references.ToptierAgency", toptier_agency_id=9, toptier_code="009", name="Agency 009", _fill_optional=True
     )
     ta4 = baker.make(
-        "references.TopTierAgency", toptier_agency_id=10, toptier_code="010", name="Agency 010", _fill_optional=True
+        "references.ToptierAgency", toptier_agency_id=10, toptier_code="010", name="Agency 010", _fill_optional=True
     )
 
     sa1 = baker.make(
-        "references.SubTierAgency",
+        "references.SubtierAgency",
         subtier_agency_id=1007,
         subtier_code="1007",
         name="Subtier 1007",
         _fill_optional=True,
     )
     sa2 = baker.make(
-        "references.SubTierAgency",
+        "references.SubtierAgency",
         subtier_agency_id=1008,
         subtier_code="1008",
         name="Subtier 1008",
         _fill_optional=True,
     )
     sa3 = baker.make(
-        "references.SubTierAgency",
+        "references.SubtierAgency",
         subtier_agency_id=2008,
         subtier_code="2008",
         name="Subtier 2008",
         _fill_optional=True,
     )
     sa4 = baker.make(
-        "references.SubTierAgency",
+        "references.SubtierAgency",
         subtier_agency_id=3008,
         subtier_code="3008",
         name="Subtier 3008",
