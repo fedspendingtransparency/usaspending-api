@@ -36,7 +36,7 @@ env:
   - GRANTS_API_KEY=${GRANTS_API_KEY}
   - MINIO_DATA_DIR=${HOME}/Development/data/usaspending/docker/usaspending-s3  # needs to be same place docker-compose will look for it (based on .env file)
   - MINIO_HOST=localhost
-  - PYTEST_XDIST_NUMPROCESSES=0
+  - PYTEST_XDIST_NUMPROCESSES=4
   - COLUMNS=240  # for wider terminal output
 
 jobs:
