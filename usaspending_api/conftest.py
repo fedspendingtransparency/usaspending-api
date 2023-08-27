@@ -248,7 +248,13 @@ def django_db_setup(
             old_usas_db_url = CONFIG.DATABASE_URL
             old_usas_ps_db = CONFIG.USASPENDING_DB_NAME
 
-            test_usas_db_name = settings.DATABASES[settings.DEFAULT_DB_ALIAS].get("TEST", {}).get("NAME")
+            test_usas_db_name = settings.DATABASES[settings.DEFAULT_DB_ALIAS].get("NAME")
+            if test_usas_db_name is None:
+                raise ValueError(f"DB 'NAME' for DB alias {settings.DEFAULT_DB_ALIAS} came back as None. Check config.")
+            if "test" not in test_usas_db_name:
+                raise ValueError(
+                    f"DB 'NAME' for DB alias {settings.DEFAULT_DB_ALIAS} does not contain 'test' when expected to."
+                )
             CONFIG.USASPENDING_DB_NAME = test_usas_db_name
             CONFIG.DATABASE_URL = build_dsn_string(
                 {**settings.DATABASES[settings.DEFAULT_DB_ALIAS], **{"NAME": test_usas_db_name}}
@@ -257,7 +263,15 @@ def django_db_setup(
             old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
-            test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("TEST", {}).get("NAME")
+            test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("NAME")
+            if test_broker_db is None:
+                raise ValueError(
+                    f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} came back as None. Check config."
+                )
+            if "test" not in test_broker_db:
+                raise ValueError(
+                    f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} does not contain 'test' when expected to."
+                )
             CONFIG.BROKER_DB_NAME = test_broker_db
             CONFIG.DATA_BROKER_DATABASE_URL = build_dsn_string(
                 {**settings.DATABASES[settings.DATA_BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
