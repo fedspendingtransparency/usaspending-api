@@ -14,6 +14,9 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
+# Make sure UTC or test will fail later in the day
+TODAY = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y%m%d")
+
 @pytest.fixture
 @pytest.mark.django_db(transaction=True)
 def monthly_download_delta_data(db, monkeypatch):
@@ -90,9 +93,8 @@ def monthly_download_delta_data(db, monkeypatch):
 def test_all_agencies(monthly_download_delta_data, monkeypatch):
     call_command("populate_monthly_delta_files", "--debugging_skip_deleted", "--last_date=2020-12-31")
     file_list = listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY(All)_All_Contracts_Delta_{formatted_date}.zip" in file_list
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_All_Contracts_Delta_{formatted_date}.zip"))
+    assert f"FY(All)_All_Contracts_Delta_{TODAY}.zip" in file_list
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_All_Contracts_Delta_{TODAY}.zip"))
 
 
 @pytest.mark.django_db(transaction=True)
@@ -399,15 +401,14 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
     ]
     call_command("populate_monthly_delta_files", "--agencies=1", "--debugging_skip_deleted", "--last_date=2020-12-31")
     file_list = listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY(All)_001_Contracts_Delta_{formatted_date}.zip" in file_list
+    assert f"FY(All)_001_Contracts_Delta_{TODAY}.zip" in file_list
     with zipfile.ZipFile(
-        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{formatted_date}.zip"), "r"
+        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip"), "r"
     ) as zip_ref:
         zip_ref.extractall("csv_downloads")
-        assert f"FY(All)_001_Contracts_Delta_{formatted_date}_1.csv" in listdir("csv_downloads")
+        assert f"FY(All)_001_Contracts_Delta_{TODAY}_1.csv" in listdir("csv_downloads")
     with open(
-        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{formatted_date}_1.csv"), "r"
+        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"), "r"
     ) as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
@@ -422,8 +423,8 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
                 assert row == contract_data
             row_count += 1
     assert row_count == 2
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{formatted_date}.zip"))
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{formatted_date}_1.csv"))
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip"))
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"))
 
 
 @pytest.mark.django_db(transaction=True)
@@ -436,8 +437,7 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         "--last_date=2020-12-31",
     )
     file_list = listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY(All)_001_Assistance_Delta_{formatted_date}.zip" not in file_list
+    assert f"FY(All)_001_Assistance_Delta_{TODAY}.zip" not in file_list
 
     baker.make(
         "search.AwardSearch",
@@ -485,6 +485,5 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         "--last_date=2020-12-31",
     )
     file_list = listdir("csv_downloads")
-    formatted_date = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
-    assert f"FY(All)_001_Assistance_Delta_{formatted_date}.zip" in file_list
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Assistance_Delta_{formatted_date}.zip"))
+    assert f"FY(All)_001_Assistance_Delta_{TODAY}.zip" in file_list
+    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Assistance_Delta_{TODAY}.zip"))

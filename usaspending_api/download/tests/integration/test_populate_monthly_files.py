@@ -14,7 +14,8 @@ from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
-TODAY = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
+# Make sure UTC or test will fail later in the day
+TODAY = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y%m%d")
 
 
 def generate_contract_data(fiscal_year, i):
