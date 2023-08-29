@@ -5,10 +5,14 @@ NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helper
 functions for setup and configuration of the spark environment
 """
 from itertools import chain
+from math import ceil
 from typing import List
 from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
 from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
+import time
+from collections import namedtuple
+from py4j.protocol import Py4JError
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.config import CONFIG
@@ -36,6 +40,7 @@ from usaspending_api.references.models import (
     ObjectClass,
 )
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
+from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
@@ -560,3 +565,195 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
             spark.sql(sql_statement)
 
     logger.info(f"Created the reference views in the global_temp database")
+
+
+def write_csv_file(
+    spark: SparkSession,
+    df: DataFrame,
+    parts_dir: str,
+    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+    overwrite=True,
+    logger=None,
+) -> int:
+    """Write DataFrame data to CSV file parts.
+    Args:
+        spark: passed-in active SparkSession
+        df: the DataFrame wrapping the data source to be dumped to CSV.
+        parts_dir: Path to dir that will contain the outputted parts files from partitions
+        overwrite: Whether to replace the file CSV files if they already exist by that name
+        max_rows_per_merged_file: Suggestion to Spark of how many records to put in each written CSV file part,
+        if it will end up writing multiple files.
+        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
+            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+    Returns:
+        record count of the DataFrame that was used to populate the CSV file(s)
+    """
+    if not logger:
+        logger = get_jvm_logger(spark)
+    # Delete output data dir if it already exists
+    parts_dir_path = spark.sparkContext._jvm.org.apache.hadoop.fs.Path(parts_dir)
+    fs = parts_dir_path.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
+    if fs.exists(parts_dir_path):
+        fs.delete(parts_dir_path, True)
+    start = time.time()
+    logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
+    df_record_count = df.count()
+    df.write.options(
+        # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
+        maxRecordsPerFile=max_rows_per_merged_file,
+    ).csv(
+        path=parts_dir,
+        header=False,
+        nullValue=None,
+        escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
+        ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
+        ignoreTrailingWhiteSpace=False,  # must set for CSV write, as it defaults to true
+        timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
+        mode="overwrite" if overwrite else "errorifexists",
+    )
+    logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
+    logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
+    return df_record_count
+
+
+def hadoop_copy_merge(
+    spark: SparkSession,
+    parts_dir: str,
+    header: str,
+    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+    logger=None,
+    file_format="csv",
+) -> List[str]:
+    """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
+    Merges files from a provided input directory and then redivides them
+        into multiple files based on a provided maximum row count parameter.
+    Args:
+        spark: passed-in active SparkSession
+        parts_dir: Path to the dir that contains the input parts files. The parts dir name
+            determines the name of the merged files. Parts_dir cannot have a trailing slash.
+        header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
+            Individual part files must NOT therefore be created with their own header.
+        max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
+            this many rows in any file written. Only if the total data exceeds this value will multiple files be
+                created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
+        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
+            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+        file_format: The format of the part files and the format of the final merged file, e.g. "csv"
+
+    Returns:
+        A list of file paths where each element in the list denotes a path to
+            a merged file that was generated during the copy merge.
+    """
+    #   If the interim output was written to disk per-partition,
+    #       how many rows were at most in each partition and therefore part file?
+    #       e.g. could be based on ``numPartitions`` param given to ``spark.jdbc.read(...)``. You need to calculate
+    #       this ahead of time as best as possible; it's used to determine how the part-files are combined or divided to
+    #       build up the final files that go in the .zip.
+    rows_per_part = CONFIG.SPARK_PARTITION_ROWS
+    overwrite = True
+    if not logger:
+        logger = get_jvm_logger(spark)
+    hadoop = spark.sparkContext._jvm.org.apache.hadoop
+    conf = spark.sparkContext._jsc.hadoopConfiguration()
+
+    # Guard against incorrectly formatted argument value
+    parts_dir = parts_dir.rstrip("/")
+
+    parts_dir_path = hadoop.fs.Path(parts_dir)
+
+    fs = parts_dir_path.getFileSystem(conf)
+
+    if not fs.exists(parts_dir_path):
+        raise ValueError("Source directory {} does not exist".format(parts_dir))
+
+    file = parts_dir
+    file_path = hadoop.fs.Path(file)
+
+    # Don't delete first if disallowing overwrite.
+    if not overwrite and fs.exists(file_path):
+        raise Py4JError(
+            spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} " f"already exists")
+        )
+    part_files = []
+
+    for f in fs.listStatus(parts_dir_path):
+        if f.isFile():
+            # Sometimes part files can be empty, we need to ignore them
+            if f.getLen() == 0:
+                continue
+            file_path = f.getPath()
+            if file_path.getName().startswith("_"):
+                logger.debug(f"Skipping non-part file: {file_path.getName()}")
+                continue
+            logger.debug(f"Including part file: {file_path.getName()}")
+            part_files.append(f.getPath())
+    if not part_files:
+        logger.warn("Source directory is empty with no part files. Attempting creation of file with CSV header only")
+        out_stream = None
+        try:
+            merged_file_path = f"{parts_dir}.{file_format}"
+            out_stream = fs.create(hadoop.fs.Path(merged_file_path), overwrite)
+            out_stream.writeBytes(header + "\n")
+        finally:
+            if out_stream is not None:
+                out_stream.close()
+        return
+
+    part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
+    parts_batch_size = ceil(max_rows_per_merged_file / rows_per_part)
+    paths_to_merged_files = []
+    for parts_file_group in _merge_grouper(part_files, parts_batch_size):
+        part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
+        partial_merged_file = f"{parts_dir}.partial{part_suffix}"
+        partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
+        merged_file_path = f"{parts_dir}{part_suffix}.{file_format}"
+        paths_to_merged_files.append(merged_file_path)
+        # Make path a hadoop path because we are working with a hadoop file system
+        merged_file_path = hadoop.fs.Path(merged_file_path)
+        if overwrite and fs.exists(merged_file_path):
+            fs.delete(merged_file_path, True)
+        out_stream = None
+        try:
+            if fs.exists(partial_merged_file_path):
+                fs.delete(partial_merged_file_path, True)
+            out_stream = fs.create(partial_merged_file_path)
+            out_stream.writeBytes(header + "\n")
+            _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, parts_file_group.file_list)
+        finally:
+            if out_stream is not None:
+                out_stream.close()
+        try:
+            fs.rename(partial_merged_file_path, merged_file_path)
+        except Exception:
+            if fs.exists(partial_merged_file_path):
+                fs.delete(partial_merged_file_path, True)
+            logger.exception("Exception encountered. See logs")
+            raise
+    return paths_to_merged_files
+
+
+def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
+    """Read-in files in alphabetical order and append them one by one to the merged file"""
+
+    for part_file in part_file_list:
+        in_stream = None
+        try:
+            in_stream = fs.open(part_file)
+            # Write bytes of each file read and keep out_stream open after write for next file
+            hadoop.io.IOUtils.copyBytes(in_stream, out_stream, conf, False)
+        finally:
+            if in_stream:
+                in_stream.close()
+            if fs.exists(partial_merged_file_path):
+                fs.delete(partial_merged_file_path, True)
+
+
+def _merge_grouper(items, group_size):
+    """Helper to chunk up files into mergeable groups"""
+    FileMergeGroup = namedtuple("FileMergeGroup", ["part", "file_list"])
+    if len(items) <= group_size:
+        yield FileMergeGroup(None, items)
+        return
+    group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
+    for i, group in enumerate(group_generator, start=1):
+        yield FileMergeGroup(i, group)
