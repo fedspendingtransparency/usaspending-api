@@ -102,16 +102,20 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `keywords` : [`transport`] (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
+    + The **default** value below only applies to `geo_layer` values of `county`, `district` and `state`.
+    + Default: `domestic`
     + Members
-        + `domestic` (default for `geo_layer` members: `state`, `county`, `district`)
+        + `domestic`
         + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`, `Roads`] (optional, array[string])
     + Text searched across a recipient’s name, UEI, and DUNS
 + `recipient_scope` (optional, enum[string])
+    + The **default** value below only applies to `geo_layer` values of `county`, `district` and `state`.
+    + Default: `domestic`
     + Members
-        + `domestic` (default for `geo_layer` members: `state`, `county`, `district`)
+        + `domestic`
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
 + `recipient_type_names`: [`category_business`, `sole_proprietorship`] (optional, array[string])
