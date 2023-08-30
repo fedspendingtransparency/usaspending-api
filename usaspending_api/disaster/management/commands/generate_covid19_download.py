@@ -15,6 +15,7 @@ from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
 )
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d2_awards import sql as d2_awards_sql
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.models.download_job import DownloadJob
@@ -64,7 +65,7 @@ class Command(BaseCommand):
                 "disaster_covid19_file_a": "select 1 as test;",
                 "disaster_covid19_file_b": "select 2 as test;",
                 "disaster_covid19_file_d1_awards": "select 3 as test;",
-                "disaster_covid19_file_d2_awards": "select 4 as test;",
+                "disaster_covid19_file_d2_awards": d2_awards_sql,
                 "disaster_covid19_file_f_contracts": "select 5 as test;",
                 "disaster_covid19_file_f_grants": "select 6 as test;",
             },
