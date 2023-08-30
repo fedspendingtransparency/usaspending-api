@@ -26,3 +26,4 @@ class ProductionConfig(DefaultConfig):
     # ==== [AWS] ====
     AWS_PROFILE: str = None
     SPARK_S3_BUCKET = "dti-da-usaspending-spark-prod"
+    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-bulk-download"
