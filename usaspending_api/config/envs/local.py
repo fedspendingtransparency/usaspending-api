@@ -93,6 +93,7 @@ class LocalConfig(DefaultConfig):
     AWS_PROFILE: str = None
     AWS_REGION: str = ""
     SPARK_S3_BUCKET: str = "data"
+    BULK_DOWNLOAD_S3_BUCKET_NAME: str = ""
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
     AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory
