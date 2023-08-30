@@ -11,6 +11,7 @@
 ########################################################################################################################
 import pathlib
 from typing import ClassVar
+import os
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
@@ -249,6 +250,12 @@ class DefaultConfig(BaseSettings):
             validate_url_and_parts(url_conf_name, resource_conf_prefix, values)
 
     # ==== [Spark] ====
+    # USASpending API Branch
+    # This environment variable is created on the clusters that run spark jobs,
+    # Those clusters are the only place we currently need this variable,
+    # For that reason, we've pre-fixed it with SPARK.
+    SPARK_BRANCH: str = os.environ.get("BRANCH")
+
     # SPARK_SCHEDULER_MODE = "FAIR"  # if used with weighted pools, could allow round-robin tasking of simultaneous jobs
     # TODO: have to deal with this if really wanting balanced (FAIR) task execution
     # WARN FairSchedulableBuilder: Fair Scheduler configuration file not found so jobs will be scheduled in FIFO
@@ -303,6 +310,9 @@ class DefaultConfig(BaseSettings):
     # Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: 300*6 = 1800 doc batches
     # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: 300*20 = 6000 doc batches
     ES_BATCH_ENTRIES: int = 4000
+    # Setting SPARK_COVID19_DOWNLOAD_README_FILE_PATH to the unique location of the README
+    # for the COVID-19 download generation using spark.
+    SPARK_COVID19_DOWNLOAD_README_FILE_PATH: str = f"dbfs:/FileStore/{SPARK_BRANCH}/COVID-19_download_readme.txt)"
 
     # ==== [AWS] ====
     USE_AWS: bool = True
