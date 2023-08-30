@@ -61,6 +61,7 @@ class DefaultConfig(BaseSettings):
         ES_NAME: Defaults to None and not intended to be set. Here for compatibility with URL-based configs
         ES_USER: Username to be used if basic auth is required for ES connections
         ES_PASSWORD: Password to be used if basic auth is required for ES connections
+        BRANCH: The USASPENDING-API git branch
     """
 
     def __new__(cls, *args, **kwargs):
@@ -75,6 +76,12 @@ class DefaultConfig(BaseSettings):
     ENV_CODE: ClassVar[str] = ENV_SPECIFIC_OVERRIDE
     COMPONENT_NAME: str = "USAspending API"
     PROJECT_LOG_DIR: str = str(_SRC_ROOT_DIR / "logs")
+    # USASpending API Branch
+    # This environment variable is created on the clusters that run spark jobs,
+    # Those clusters are the only place we currently need this variable,
+    # If you write code that depends on this config, make sure you
+    # set BRANCH as an environment variable on your machine
+    BRANCH: str = os.environ.get("BRANCH")
 
     # ==== [Postgres] ====
     DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
@@ -250,12 +257,6 @@ class DefaultConfig(BaseSettings):
             validate_url_and_parts(url_conf_name, resource_conf_prefix, values)
 
     # ==== [Spark] ====
-    # USASpending API Branch
-    # This environment variable is created on the clusters that run spark jobs,
-    # Those clusters are the only place we currently need this variable,
-    # For that reason, we've pre-fixed it with SPARK.
-    SPARK_BRANCH: str = os.environ.get("BRANCH")
-
     # SPARK_SCHEDULER_MODE = "FAIR"  # if used with weighted pools, could allow round-robin tasking of simultaneous jobs
     # TODO: have to deal with this if really wanting balanced (FAIR) task execution
     # WARN FairSchedulableBuilder: Fair Scheduler configuration file not found so jobs will be scheduled in FIFO
@@ -312,7 +313,7 @@ class DefaultConfig(BaseSettings):
     ES_BATCH_ENTRIES: int = 4000
     # Setting SPARK_COVID19_DOWNLOAD_README_FILE_PATH to the unique location of the README
     # for the COVID-19 download generation using spark.
-    SPARK_COVID19_DOWNLOAD_README_FILE_PATH: str = f"/dbfs/FileStore/{SPARK_BRANCH}/COVID-19_download_readme.txt"
+    SPARK_COVID19_DOWNLOAD_README_FILE_PATH: str = f"/dbfs/FileStore/{BRANCH}/COVID-19_download_readme.txt"
 
     # ==== [AWS] ====
     USE_AWS: bool = True
