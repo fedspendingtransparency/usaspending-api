@@ -312,7 +312,7 @@ class DefaultConfig(BaseSettings):
     ES_BATCH_ENTRIES: int = 4000
     # Setting SPARK_COVID19_DOWNLOAD_README_FILE_PATH to the unique location of the README
     # for the COVID-19 download generation using spark.
-    SPARK_COVID19_DOWNLOAD_README_FILE_PATH: str = f"dbfs:/FileStore/{SPARK_BRANCH}/COVID-19_download_readme.txt)"
+    SPARK_COVID19_DOWNLOAD_README_FILE_PATH: str = f"/dbfs/FileStore/{SPARK_BRANCH}/COVID-19_download_readme.txt"
 
     # ==== [AWS] ====
     USE_AWS: bool = True
