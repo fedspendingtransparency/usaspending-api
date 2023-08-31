@@ -1,4 +1,4 @@
-sql = """
+sql_d2_awards = """
 SELECT
     award_search.generated_unique_award_id AS assistance_award_unique_key,
     award_search.fain AS award_id_fain,
