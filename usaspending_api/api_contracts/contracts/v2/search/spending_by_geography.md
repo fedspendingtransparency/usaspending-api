@@ -34,7 +34,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
                 + `district`
                 + `country`
         + `geo_layer_filters` (optional, array[string])
-            List of U.S. state codes, U.S. county codes, U.S. Congressional districts, or ISO 3166-1 alpha-3 country codes to show results for. If you are searching for a foreign country, you **must** include either the `place_of_performance_scope` or `recipient_scope` filter and set it to `foreign`
+            List of U.S. state codes, U.S. county codes, U.S. Congressional districts, or ISO 3166-1 alpha-3 country codes to show results for.
 
     + Body
 
@@ -102,6 +102,8 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `keywords` : [`transport`] (optional, array[string])
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
+    + The **default** value below only applies to `geo_layer` values of `county`, `district` and `state`.
+    + Default: `domestic`
     + Members
         + `domestic`
         + `foreign`
@@ -110,6 +112,8 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `recipient_search_text`: [`Hampton`, `Roads`] (optional, array[string])
     + Text searched across a recipient’s name, UEI, and DUNS
 + `recipient_scope` (optional, enum[string])
+    + The **default** value below only applies to `geo_layer` values of `county`, `district` and `state`.
+    + Default: `domestic`
     + Members
         + `domestic`
         + `foreign`

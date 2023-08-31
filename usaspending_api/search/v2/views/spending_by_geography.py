@@ -178,8 +178,15 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             else:
                 scope_filter_name = "recipient_scope"
 
-            # Only search for values within USA, but don't overwrite a user's search
-            if scope_filter_name not in self.filters:
+            # If searching for COUNTY, DISTRICT, or STATE then only search for values within
+            #   USA, but don't overwrite a user's search.
+            # DO add `recipient_scope` or `place_of_performance_scope` if it wasn't already included.
+
+            # If searching for COUNTRY and no scope was provided, then return results for all
+            #   countries provided in the `geo_layer_filters` list.
+            # DO NOT add `recipient_scope` or `place_of_performance_scope` to the filters, if it
+            #   wasn't already included.
+            if scope_filter_name not in self.filters and self.geo_layer != GeoLayer.COUNTRY:
                 self.filters[scope_filter_name] = "domestic"
 
             self.obligation_column = "generated_pragmatic_obligation"
