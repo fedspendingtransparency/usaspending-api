@@ -40,20 +40,16 @@ from usaspending_api.references.models import (
     ObjectClass,
 )
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
-from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.search.models import AwardSearch
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
     Agency,
-    AwardSearch,
     Cfda,
     CityCountyStateCode,
     DABSSubmissionWindowSchedule,
     DisasterEmergencyFundCode,
     FederalAccount,
-    FinancialAccountsByAwards,
     NAICS,
     ObjectClass,
     Office,
