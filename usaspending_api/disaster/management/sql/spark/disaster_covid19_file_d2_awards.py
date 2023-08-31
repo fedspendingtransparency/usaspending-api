@@ -4,7 +4,7 @@ SELECT
     award_search.fain AS award_id_fain,
     award_search.uri AS award_id_uri,
     latest_transaction.sai_number AS sai_number,
-    COVID_DEFC.disaster_emergency_funds AS global_temp.disaster_emergency_fund_codes,
+    COVID_DEFC.disaster_emergency_funds AS disaster_emergency_fund_codes,
     COVID_DEFC.gross_outlay_amount_by_award_cpe + COVID_DEFC.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe + COVID_DEFC.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe AS `outlayed_amount_from_COVID-19_supplementals`,
     COVID_DEFC.transaction_obligated_amount AS `obligated_amount_from_COVID-19_supplementals`,
     IIJA_DEFC.gross_outlay_amount_by_award_cpe + IIJA_DEFC.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe + IIJA_DEFC.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe AS outlayed_amount_from_IIJA_supplemental,
@@ -33,10 +33,10 @@ SELECT
     latest_transaction.funding_subtier_agency_name AS funding_sub_agency_name,
     latest_transaction.funding_office_code AS funding_office_code,
     latest_transaction.funding_office_name AS funding_office_name,
-    (SELECT CONCAT_WS(';', COLLECT_SET(U2.tas_rendering_label)) AS value FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) LEFT OUTER JOIN treasury_appropriation_account U2 ON (U1.treasury_account_id = U2.treasury_account_identifier) WHERE U0.award_id = (award_search.award_id) GROUP BY U0.award_id) AS treasury_accounts_funding_this_award,
-    (SELECT CONCAT_WS(';', COLLECT_SET(U3.federal_account_code)) AS value FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) LEFT OUTER JOIN treasury_appropriation_account U2 ON (U1.treasury_account_id = U2.treasury_account_identifier) LEFT OUTER JOIN federal_account U3 ON (U2.federal_account_id = U3.id) WHERE U0.award_id = (award_search.award_id) GROUP BY U0.award_id) AS federal_accounts_funding_this_award,
-    (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.object_class, ':', U2.object_class_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN object_class U2 ON (U1.object_class_id = U2.id) WHERE U0.award_id = (award_search.award_id) and U1.object_class_id IS NOT NULL GROUP BY U0.award_id)AS object_classes_funding_this_award,
-    (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.program_activity_code, ':', U2.program_activity_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN ref_program_activity U2 ON (U1.program_activity_id = U2.id) WHERE U0.award_id = (award_search.award_id) and U1.program_activity_id IS NOT NULL GROUP BY U0.award_id) AS program_activities_funding_this_award,
+    (SELECT CONCAT_WS(';', COLLECT_SET(U2.tas_rendering_label)) AS value FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) LEFT OUTER JOIN global_temp.treasury_appropriation_account U2 ON (U1.treasury_account_id = U2.treasury_account_identifier) WHERE U0.award_id = (award_search.award_id) GROUP BY U0.award_id) AS treasury_accounts_funding_this_award,
+    (SELECT CONCAT_WS(';', COLLECT_SET(U3.federal_account_code)) AS value FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) LEFT OUTER JOIN global_temp.treasury_appropriation_account U2 ON (U1.treasury_account_id = U2.treasury_account_identifier) LEFT OUTER JOIN global_temp.federal_account U3 ON (U2.federal_account_id = U3.id) WHERE U0.award_id = (award_search.award_id) GROUP BY U0.award_id) AS federal_accounts_funding_this_award,
+    (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.object_class, ':', U2.object_class_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN global_temp.object_class U2 ON (U1.object_class_id = U2.id) WHERE U0.award_id = (award_search.award_id) and U1.object_class_id IS NOT NULL GROUP BY U0.award_id) AS object_classes_funding_this_award,
+    (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.program_activity_code, ':', U2.program_activity_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN global_temp.ref_program_activity U2 ON (U1.program_activity_id = U2.id) WHERE U0.award_id = (award_search.award_id) and U1.program_activity_id IS NOT NULL GROUP BY U0.award_id) AS program_activities_funding_this_award,
     latest_transaction.recipient_unique_id AS recipient_duns,
     latest_transaction.recipient_uei AS recipient_uei,
     latest_transaction.recipient_name_raw AS recipient_name,
@@ -127,7 +127,7 @@ INNER JOIN rpt.transaction_search AS latest_transaction ON (latest_transaction.i
 INNER JOIN (
     SELECT
         faba.award_id,
-        CONCAT_WS('; ', SORT_ARRAY(COLLECT_SET(CONCAT(global_temp.disaster_emergency_fund_code, ': ', public_law)))) AS disaster_emergency_funds,
+        CONCAT_WS('; ', SORT_ARRAY(COLLECT_SET(CONCAT(disaster_emergency_fund_code, ': ', public_law)))) AS disaster_emergency_funds,
         COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.gross_outlay_amount_by_award_cpe END), 0) AS gross_outlay_amount_by_award_cpe,
         COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe END), 0) AS ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
         COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END), 0) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
@@ -135,7 +135,7 @@ INNER JOIN (
     FROM
         int.financial_accounts_by_awards faba
     INNER JOIN global_temp.disaster_emergency_fund_code defc
-        ON defc.code = faba.global_temp.disaster_emergency_fund_code
+        ON defc.code = faba.disaster_emergency_fund_code
         AND defc.group_name = 'covid_19'
     INNER JOIN global_temp.submission_attributes sa
         ON faba.submission_id = sa.submission_id
@@ -172,7 +172,7 @@ LEFT OUTER JOIN (
     FROM
         int.financial_accounts_by_awards faba
     INNER JOIN global_temp.disaster_emergency_fund_code defc
-        ON defc.code = faba.global_temp.disaster_emergency_fund_code
+        ON defc.code = faba.disaster_emergency_fund_code
         AND defc.group_name = 'infrastructure'
     INNER JOIN global_temp.submission_attributes sa
         ON faba.submission_id = sa.submission_id
