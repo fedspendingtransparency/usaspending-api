@@ -94,8 +94,8 @@ def download_s3_object(
     key: str,
     file_path: str,
     s3_client: BaseClient = None,
-    max_retries: int = 3,
-    retry_delay: int = 30,
+    retry_count: int = 3,
+    retry_cooldown: int = 30,
     region_name: str = settings.USASPENDING_AWS_REGION,
 ):
     """Download an S3 object to a file.
@@ -109,20 +109,27 @@ def download_s3_object(
     """
     if not s3_client:
         s3_client = _get_boto3_s3_client(region_name)
-    retries = 0
-    while retries <= max_retries:
+    for attempt in range(retry_count + 1):
         try:
             s3_client.download_file(bucket_name, key, file_path)
             return
         except ClientError as e:
-            retries += 1
             logger.info(
-                f"Attempt {retries} of {max_retries + 1} failed to download {key} from bucket {bucket_name}. Error: {e}"
+                f"Attempt {attempt + 1} of {retry_count + 1} failed to download {key} from bucket {bucket_name}. Error: {e}"
             )
-            if retries <= max_retries:
-                time.sleep(retry_delay)
+            if attempt <= retry_count:
+                time.sleep(retry_cooldown)
             else:
-                logger.error(f"Failed to download {key} from bucket {bucket_name} after {max_retries + 1} attempts.")
+                logger.error(f"Failed to download {key} from bucket {bucket_name} after {retry_count + 1} attempts.")
+                raise
+        except Exception as e:
+            logger.error(
+                f"Attempt {attempt + 1} of {retry_count + 1} failed to download {key} from bucket {bucket_name}."
+            )
+            logger.error(
+                f"Unexpected error caught. Failing download. Error: {e}"
+            )
+            raise
 
 
 def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION):

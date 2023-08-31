@@ -747,12 +747,24 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
         try:
             RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
             break
-        except (HTTPError, RemoteDisconnected):
+        except (HTTPError, RemoteDisconnected) as e:
+            logger.info(
+                f"Attempt {attempt + 1} of {retry_count + 2} failed to download Data Dictionary. Error: {e}"
+            )
             if attempt < retry_count:
                 time.sleep(settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN)
                 continue
             else:
+                logger.error(f"Failed to download Data Dictionary after {retry_count + 1} attempts.")
                 raise
+        except Exception as e:
+            logger.error(
+                f"Attempt {attempt + 1} of {retry_count + 1} failed to download Data Dictionary."
+            )
+            logger.error(
+                f"Unexpected error caught. Failing download. Error: {e}"
+            )
+            raise
 
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
 
