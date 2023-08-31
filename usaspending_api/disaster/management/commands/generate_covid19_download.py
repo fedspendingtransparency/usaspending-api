@@ -6,8 +6,10 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
 from pathlib import Path
+from usaspending_api.common.etl.spark import create_ref_temp_views
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
     PostgresToCSVStrategy,
     SparkToCSVStrategy,
@@ -94,7 +96,23 @@ class Command(BaseCommand):
         """
         self.upload = not options["skip_upload"]
         self.compute_type_arg = options.get("compute_type")
-        self.readme_path = self.compute_types[self.compute_type_arg]["readme_path"]
+
+        if self.compute_type_arg == ComputeTypeEnum.SPARK.value:
+            extra_conf = {
+                # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
+                "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
+                "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+                # See comment below about old date and time values cannot be parsed without these
+                "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
+                "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+                "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
+            }
+            self.spark = get_active_spark_session()
+            if not self.spark:
+                self.spark_created_by_command = True
+                self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
+            create_ref_temp_views(self.spark)
+
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
         self.zip_file_path = (
