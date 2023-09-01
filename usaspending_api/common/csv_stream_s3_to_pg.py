@@ -63,6 +63,10 @@ def _download_and_copy(
     gzipped: bool,
     partition_prefix: str = "",
 ):
+
+    """Download a CSV file from S3 then COPY it into a Postgres table using the SQL bulk COPY command. The CSV should
+    not include a header row with column names
+    """
     start = time.time()
     configured_logger.info(f"{partition_prefix}Starting write of {s3_obj_key}")
 
