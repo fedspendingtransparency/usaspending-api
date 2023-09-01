@@ -122,15 +122,6 @@ def download_s3_object(
             else:
                 logger.error(f"Failed to download {key} from bucket {bucket_name} after {retry_count + 1} attempts.")
                 raise
-        except Exception as e:
-            logger.error(
-                f"Attempt {attempt + 1} of {retry_count + 1} failed to download {key} from bucket {bucket_name}."
-            )
-            logger.error(
-                f"Unexpected error caught. Failing download. Error: {e}"
-            )
-            raise
-
 
 def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION):
     """Delete an S3 object
