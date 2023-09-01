@@ -98,7 +98,7 @@ d2_awards_sql_string = """
         latest_transaction.place_of_performance_forei AS primary_place_of_performance_foreign_location,
         ARRAY_JOIN(ARRAY(
             (SELECT CONCAT(GET_JSON_OBJECT(TO_JSON(unnest_cfdas), '$.cfda_number'), ': ', GET_JSON_OBJECT(TO_JSON(unnest_cfdas), '$.cfda_program_title'))
-            FROM (SELECT EXPLODE(cfdas) AS unnest_cfdas FROM rpt.award_search)
+            FROM (SELECT EXPLODE(cfdas) AS unnest_cfdas FROM rpt.award_search))
             ), '; '
         ) AS cfda_numbers_and_titles,
         latest_transaction.type AS assistance_type_code,
