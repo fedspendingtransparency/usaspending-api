@@ -54,48 +54,6 @@ def _get_boto3_s3_client() -> BaseClient:
     return s3_client
 
 
-def _stream_and_copy(
-    configured_logger: logging.Logger,
-    cursor: psycopg2._psycopg.cursor,
-    s3_client: BaseClient,
-    s3_bucket_name: str,
-    s3_obj_key: str,
-    target_pg_table: str,
-    ordered_col_names: List[str],
-    gzipped: bool,
-    partition_prefix: str = "",
-):
-    start = time.time()
-    configured_logger.info(f"{partition_prefix}Starting write of {s3_obj_key}")
-    try:
-        s3_obj = s3_client.get_object(Bucket=s3_bucket_name, Key=s3_obj_key)
-        # Getting Body gives a botocore.response.StreamingBody object back to allow "streaming" its contents
-        s3_obj_body = s3_obj["Body"]
-        with closing(s3_obj_body):  # make sure to close the stream when done
-            if gzipped:
-                with gzip.open(s3_obj_body, "rb") as csv_binary:
-                    cursor.copy_expert(
-                        sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
-                        file=csv_binary,
-                    )
-            else:
-                with codecs.getreader("utf-8")(s3_obj_body) as csv_stream_reader:
-                    cursor.copy_expert(
-                        sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
-                        file=csv_stream_reader,
-                    )
-        elapsed = time.time() - start
-        rows_copied = cursor.rowcount
-        configured_logger.info(
-            f"{partition_prefix}Finished writing {rows_copied} row(s) in {elapsed:.3f}s for {s3_obj_key}"
-        )
-        yield rows_copied
-    except Exception as exc:
-        configured_logger.error(f"{partition_prefix}ERROR writing {s3_obj_key}")
-        configured_logger.exception(exc)
-        raise exc
-
-
 def _download_and_copy(
     configured_logger: logging.Logger,
     cursor: psycopg2._psycopg.cursor,
@@ -121,7 +79,7 @@ def _download_and_copy(
                         file=csv_file,
                     )
             else:
-                with open(temp_file.name, 'r', encoding='utf-8') as csv_file:
+                with open(temp_file.name, "r", encoding="utf-8") as csv_file:
                     cursor.copy_expert(
                         sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
                         file=csv_file,

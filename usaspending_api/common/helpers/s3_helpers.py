@@ -123,6 +123,7 @@ def download_s3_object(
                 logger.error(f"Failed to download {key} from bucket {bucket_name} after {retry_count + 1} attempts.")
                 raise
 
+
 def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION):
     """Delete an S3 object
     Args:
