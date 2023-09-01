@@ -13,14 +13,12 @@ Adding new imports to this module may inadvertently introduce a dependency that 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
 import boto3
-import codecs
 import gzip
 import logging
 import psycopg2
 import tempfile
 import time
 
-from contextlib import closing
 from typing import Iterable, List
 
 from botocore.client import BaseClient
