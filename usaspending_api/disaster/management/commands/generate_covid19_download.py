@@ -22,6 +22,7 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from enum import Enum
+from usaspending_api.config import CONFIG
 
 
 class ComputeTypeEnum(Enum):
@@ -40,7 +41,6 @@ class Command(BaseCommand):
     total_download_columns = 0
     total_download_size = 0
     working_dir_path = Path(settings.CSV_LOCAL_PATH)
-    readme_path = Path(settings.COVID19_DOWNLOAD_README_FILE_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
 
     # KEY is the type of compute supported by this command
@@ -58,6 +58,7 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_grants": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql",
             },
             "download_to_csv_strategy": PostgresToCSVStrategy(logger=logger),
+            "readme_path": Path(settings.COVID19_DOWNLOAD_README_FILE_PATH),
         },
         ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
@@ -69,6 +70,7 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_grants": "select 6 as test;",
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
+            "readme_path": Path(CONFIG.SPARK_COVID19_DOWNLOAD_README_FILE_PATH),
         },
     }
 
@@ -91,6 +93,7 @@ class Command(BaseCommand):
         """
         self.upload = not options["skip_upload"]
         self.compute_type_arg = options.get("compute_type")
+        self.readme_path = self.compute_types[self.compute_type_arg]["readme_path"]
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
         self.zip_file_path = (
@@ -183,13 +186,12 @@ class Command(BaseCommand):
 
         add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
 
-        if self.compute_type_arg != ComputeTypeEnum.SPARK.value:
-            file_description = build_file_description(str(self.readme_path), dict())
-            file_description_path = save_file_description(
-                str(self.zip_file_path.parent), self.readme_path.name, file_description
-            )
-            self.filepaths_to_delete.append(Path(file_description_path))
-            append_files_to_zip_file([file_description_path], str(self.zip_file_path))
+        file_description = build_file_description(str(self.readme_path), dict())
+        file_description_path = save_file_description(
+            str(self.zip_file_path.parent), self.readme_path.name, file_description
+        )
+        self.filepaths_to_delete.append(Path(file_description_path))
+        append_files_to_zip_file([file_description_path], str(self.zip_file_path))
         self.total_download_size = self.zip_file_path.stat().st_size
 
     def prep_filesystem(self):
