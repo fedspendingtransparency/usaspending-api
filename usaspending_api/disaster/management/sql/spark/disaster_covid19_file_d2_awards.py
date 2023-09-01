@@ -96,12 +96,7 @@ d2_awards_sql_string = """
             ELSE latest_transaction.pop_congressional_code_current
         END AS prime_award_summary_place_of_performance_cd_current,
         latest_transaction.place_of_performance_forei AS primary_place_of_performance_foreign_location,
-        ARRAY_JOIN(ARRAY(
-            (SELECT CONCAT(GET_JSON_OBJECT(unnest_cfdas, '$.cfda_number'), ': ', GET_JSON_OBJECT(unnest_cfdas, '$.cfda_program_title'))
-            FROM (SELECT EXPLODE(cfdas) AS unnest_cfdas FROM rpt.award_search))
-            ), '; '
-        ) AS cfda_numbers_and_titles,
-        latest_transaction.type AS assistance_type_code,
+        ARRAY_JOIN(TRANSFORM(award_search.cfdas, row -> CONCAT(GET_JSON_OBJECT(row, '$.cfda_number'), ': ', GET_JSON_OBJECT(row, '$.cfda_program_title'))), '; ') AS cfda_numbers_and_titles,
         latest_transaction.type_description AS assistance_type_description,
         award_search.description AS prime_award_base_transaction_description,
         latest_transaction.business_funds_indicator AS business_funds_indicator_code,
