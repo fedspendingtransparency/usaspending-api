@@ -18,7 +18,7 @@ def test_trigger_test_db_setup(request, django_db_setup):
 
     Run this test alone, like:
 
-        pytest --reuse-db --no-cov --disable-warnings -rP -vv 'usaspending_api/tests/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
+        pytest --reuse-db --no-cov --disable-warnings -rP -vv 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
 
     If running in a Continuous Integration pipeline (or if you want to nuke and pave your own local test DBs,
     add --create-db to ensure that the test DBs are (re)created from scratch
