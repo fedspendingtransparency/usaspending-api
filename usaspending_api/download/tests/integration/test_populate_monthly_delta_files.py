@@ -17,6 +17,7 @@ from usaspending_api.download.v2.download_column_historical_lookups import query
 # Make sure UTC or test will fail later in the day
 TODAY = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y%m%d")
 
+
 @pytest.fixture
 @pytest.mark.django_db(transaction=True)
 def monthly_download_delta_data(db, monkeypatch):
@@ -402,14 +403,10 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
     call_command("populate_monthly_delta_files", "--agencies=1", "--debugging_skip_deleted", "--last_date=2020-12-31")
     file_list = listdir("csv_downloads")
     assert f"FY(All)_001_Contracts_Delta_{TODAY}.zip" in file_list
-    with zipfile.ZipFile(
-        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip"), "r"
-    ) as zip_ref:
+    with zipfile.ZipFile(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip"), "r") as zip_ref:
         zip_ref.extractall("csv_downloads")
         assert f"FY(All)_001_Contracts_Delta_{TODAY}_1.csv" in listdir("csv_downloads")
-    with open(
-        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"), "r"
-    ) as contract_file:
+    with open(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"), "r") as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
         for row in csv_reader:

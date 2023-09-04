@@ -10,12 +10,12 @@ from django.db import connections
 from model_bakery import baker
 from psycopg2.extensions import AsIs
 from pyspark.sql import SparkSession
-from pytest import fixture
+from pytest import fixture, mark
 
+from usaspending_api import settings
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, stop_spark_context
 from usaspending_api.common.helpers.spark_helpers import is_spark_context_stopped
-from usaspending_api.common.helpers.sql_helpers import execute_sql_simple
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.management.commands.create_delta_table import (
@@ -253,7 +253,7 @@ def populate_broker_data(broker_server_dblink_setup):
         ),
     }
     insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
-    with connections["data_broker"].cursor() as cursor:
+    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
         for table_name, rows in broker_data.items():
             # An assumption is made that each set of rows have the same columns in the same order
             columns = list(rows[0])
@@ -265,13 +265,12 @@ def populate_broker_data(broker_server_dblink_setup):
             cursor.execute(sql_string)
     yield
     # Cleanup test data for each Broker test table
-    with connections["data_broker"].cursor() as cursor:
+    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
         for table in broker_data:
             cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE")
 
 
-@fixture
-def populate_usas_data(populate_broker_data):
+def _build_usas_data_for_spark():
     # Create recipient data for two transactions; the other two will generate ad hoc
     baker.make(
         "recipient.RecipientLookup",
@@ -1208,12 +1207,29 @@ def populate_usas_data(populate_broker_data):
         _fill_optional=True,
     )
 
-    # Run current Postgres ETLs to make sure data is populated_correctly
+
+@fixture
+@mark.django_db
+def populate_usas_data():
+    _build_usas_data_for_spark()
     update_awards()
-    restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
-    execute_sql_simple(restock_duns_sql.replace("VACUUM ANALYZE int.duns;", ""))
+    yield
+
+
+@fixture
+@mark.django_db
+def populate_usas_data_and_recipients_from_broker(populate_usas_data, populate_broker_data):
+    with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
+        restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
+        restock_duns_sql = restock_duns_sql.replace("VACUUM ANALYZE int.duns;", "")
+        cursor.execute(restock_duns_sql)
     call_command("update_recipient_lookup")
-    execute_sql_simple(open("usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r").read())
+    with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
+        restock_recipient_profile_sql = open(
+            "usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r"
+        ).read()
+        cursor.execute(restock_recipient_profile_sql)
+    yield
 
 
 def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):

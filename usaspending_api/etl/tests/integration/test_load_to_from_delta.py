@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
-from pytest import mark
+from pytest import mark, skip
 
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
@@ -273,7 +273,7 @@ def verify_delta_table_loaded_from_delta(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
     ignore_fields = ["id", "update_date"]
     tables_to_load = ["sam_recipient", "transaction_fabs", "transaction_fpds", "transaction_normalized"]
@@ -385,7 +385,7 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "awards",
@@ -567,7 +567,7 @@ def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_d
 @mark.django_db(transaction=True)
 @mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
 def test_load_table_to_from_delta_for_recipient_profile_testing(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "recipient_lookup",
@@ -584,7 +584,7 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "awards",
@@ -612,9 +612,13 @@ def test_load_table_to_from_delta_for_transaction_search(
     # verify_delta_table_loaded_from_delta(spark, "transaction_search", jdbc_inserts=True)  # test alt write strategy
 
 
+@mark.skip(
+    reason="Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC "
+    "as by design the data in delta will be different from the data in postgres"
+)
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_transaction_search_testing(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
     # TODO: Commenting these out while we have `transaction_search_gold` vs `transaction_search` in the TABLE_SPEC
     #       as by design the data in delta will be different from the data in postgres
@@ -644,7 +648,7 @@ def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(
 @mark.django_db(transaction=True)
 @mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
 def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "awards",
@@ -680,7 +684,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
     tables_to_load = [
         "awards",
