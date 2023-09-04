@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from model_bakery import baker
 from pyspark.sql import SparkSession
-from pytest import mark, skip
+from pytest import mark
 
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
