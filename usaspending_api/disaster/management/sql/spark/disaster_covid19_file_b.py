@@ -103,6 +103,7 @@ GROUP BY
     federal_account.federal_account_code,
     federal_account.account_title,
     disaster_emergency_fund_code.code,
+    disaster_emergency_fund_code.public_law,
     disaster_emergency_fund_code.title,
     ref_program_activity.program_activity_code,
     ref_program_activity.program_activity_name,

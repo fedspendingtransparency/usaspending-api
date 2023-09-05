@@ -194,7 +194,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             A list of the final location on the local machine that the
             files were moved to from s3.
         """
-        start_time = time.perf_counter()
+        start_time = time.time()
         self._logger.info("Moving data files from S3 to local ...")
         local_csv_file_paths = []
         for file_name in s3_file_paths:
