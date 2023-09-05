@@ -22,6 +22,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_usas_jdbc_url,
     get_broker_jdbc_url,
 )
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     Cfda,
@@ -53,6 +54,7 @@ _USAS_RDS_REF_TABLES = [
     DABSSubmissionWindowSchedule,
     DisasterEmergencyFundCode,
     FederalAccount,
+    FinancialAccountsByProgramActivityObjectClass,
     GTASSF133Balances,
     NAICS,
     ObjectClass,
