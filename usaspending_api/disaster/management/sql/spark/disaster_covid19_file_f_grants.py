@@ -1,8 +1,7 @@
-f_contracts_sql_string = """
+f_grants_sql_string = """
 SELECT
     subaward_search.unique_award_key AS prime_award_unique_key,
-    subaward_search.award_id AS prime_award_piid,
-    subaward_search.parent_award_id AS prime_award_parent_piid,
+    subaward_search.award_id AS prime_award_fain,
     subaward_search.award_amount AS prime_award_amount,
     COVID_DEFC.disaster_emergency_funds AS prime_award_disaster_emergency_fund_codes,
     COVID_DEFC.gross_outlay_amount_by_award_cpe + COVID_DEFC.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe + COVID_DEFC.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe AS `prime_award_outlayed_amount_from_COVID-19_supplementals`,
@@ -13,10 +12,9 @@ SELECT
     subaward_search.action_date AS prime_award_base_action_date,
     EXTRACT (YEAR FROM (awards.date_signed) + INTERVAL 3 months) AS prime_award_base_action_date_fiscal_year,
     awards.certified_date AS prime_award_latest_action_date,
-    EXTRACT (YEAR FROM TO_DATE((awards.certified_date)) + INTERVAL 3 months) AS prime_award_latest_action_date_fiscal_year,
+    EXTRACT (YEAR FROM (TO_DATE(awards.certified_date)) + INTERVAL 3 months) AS prime_award_latest_action_date_fiscal_year,
     awards.period_of_performance_start_date AS prime_award_period_of_performance_start_date,
     awards.period_of_performance_current_end_date AS prime_award_period_of_performance_current_end_date,
-    TO_DATE(transaction_fpds.period_of_perf_potential_e) AS prime_award_period_of_performance_potential_end_date,
     subaward_search.awarding_agency_code AS prime_award_awarding_agency_code,
     subaward_search.awarding_agency_name AS prime_award_awarding_agency_name,
     subaward_search.awarding_sub_tier_agency_c AS prime_award_awarding_sub_agency_code,
@@ -34,18 +32,18 @@ SELECT
     (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.object_class, ':', U2.object_class_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN global_temp.object_class U2 ON (U1.object_class_id = U2.id) WHERE U0.award_id = (subaward_search.award_id) and U1.object_class_id IS NOT NULL GROUP BY U0.award_id) AS prime_award_object_classes_funding_this_award,
     (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.program_activity_code, ':', U2.program_activity_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN global_temp.ref_program_activity U2 ON (U1.program_activity_id = U2.id) WHERE U0.award_id = (subaward_search.award_id) and U1.program_activity_id IS NOT NULL GROUP BY U0.award_id) AS prime_award_program_activities_funding_this_award,
     subaward_search.awardee_or_recipient_uniqu AS prime_awardee_duns,
-    transaction_fpds.recipient_uei AS prime_awardee_uei,
+    transaction_fabs.recipient_uei AS prime_awardee_uei,
     subaward_search.awardee_or_recipient_legal AS prime_awardee_name,
     subaward_search.dba_name AS prime_awardee_dba_name,
     subaward_search.ultimate_parent_unique_ide AS prime_awardee_parent_duns,
-    transaction_fpds.parent_uei AS prime_awardee_parent_uei,
+    transaction_fabs.parent_uei AS prime_awardee_parent_uei,
     subaward_search.ultimate_parent_legal_enti AS prime_awardee_parent_name,
     subaward_search.legal_entity_country_code AS prime_awardee_country_code,
     subaward_search.legal_entity_country_name AS prime_awardee_country_name,
     subaward_search.legal_entity_address_line1 AS prime_awardee_address_line_1,
     subaward_search.legal_entity_city_name AS prime_awardee_city_name,
     subaward_search.legal_entity_county_fips AS prime_awardee_county_fips_code,
-    transaction_fpds.recipient_location_county_name AS prime_awardee_county_name,
+    transaction_fabs.recipient_location_county_name AS prime_awardee_county_name,
     subaward_search.legal_entity_state_fips AS prime_awardee_state_fips_code,
     subaward_search.legal_entity_state_code AS prime_awardee_state_code,
     subaward_search.legal_entity_state_name AS prime_awardee_state_name,
@@ -66,6 +64,7 @@ SELECT
     END AS prime_award_summary_recipient_cd_current,
     subaward_search.legal_entity_foreign_posta AS prime_awardee_foreign_postal_code,
     subaward_search.business_types AS prime_awardee_business_types,
+    subaward_search.place_of_perform_scope AS prime_award_primary_place_of_performance_scope,
     subaward_search.place_of_perform_city_name AS prime_award_primary_place_of_performance_city_name,
     subaward_search.place_of_perform_county_fips AS prime_award_primary_place_of_performance_county_fips_code,
     subaward_search.pop_county_name AS prime_award_primary_place_of_performance_county_name,
@@ -90,11 +89,7 @@ SELECT
     subaward_search.place_of_perform_country_co AS prime_award_primary_place_of_performance_country_code,
     subaward_search.place_of_perform_country_na AS prime_award_primary_place_of_performance_country_name,
     subaward_search.award_description AS prime_award_base_transaction_description,
-    subaward_search.program_title AS prime_award_project_title,
-    subaward_search.naics AS prime_award_naics_code,
-    subaward_search.naics_description AS prime_award_naics_description,
-    transaction_fpds.national_interest_action AS prime_award_national_interest_action_code,
-    transaction_fpds.national_interest_desc AS prime_award_national_interest_action,
+    ARRAY_JOIN(TRANSFORM(awards.cfdas, row -> concat(get_json_object(row, '$.cfda_number'), ': ', get_json_object(row, '$.cfda_program_title'))), '; ') AS prime_award_cfda_numbers_and_titles,
     subaward_search.subaward_type AS subaward_type,
     subaward_search.internal_id AS subaward_fsrs_report_id,
     subaward_search.subaward_report_year AS subaward_fsrs_report_year,
@@ -102,7 +97,7 @@ SELECT
     subaward_search.subaward_number AS subaward_number,
     subaward_search.subaward_amount AS subaward_amount,
     subaward_search.sub_action_date AS subaward_action_date,
-    EXTRACT (YEAR FROM (subaward_search.sub_action_date) + INTERVAL 3 months) AS subaward_action_date_fiscal_year,
+    EXTRACT(YEAR FROM (subaward_search.sub_action_date) + INTERVAL 3 months) AS subaward_action_date_fiscal_year,
     subaward_search.sub_awardee_or_recipient_uniqu AS subawardee_duns,
     subaward_search.sub_awardee_or_recipient_legal AS subawardee_name,
     subaward_search.sub_dba_name AS subawardee_dba_name,
@@ -163,11 +158,11 @@ SELECT
     subaward_search.sub_high_comp_officer4_amount AS subawardee_highly_compensated_officer_4_amount,
     subaward_search.sub_high_comp_officer5_full_na AS subawardee_highly_compensated_officer_5_name,
     subaward_search.sub_high_comp_officer5_amount AS subawardee_highly_compensated_officer_5_amount,
-    CONCAT ('https://www.usaspending.gov/award/' , REFLECT('java.net.URLEncoder','encode', awards.generated_unique_award_id, 'UTF-8'), '/') AS usaspending_permalink,
+    CONCAT('https://www.usaspending.gov/award/', REFLECT('java.net.URLEncoder','encode', awards.generated_unique_award_id, 'UTF-8'), '/') AS usaspending_permalink,
     subaward_search.date_submitted AS subaward_fsrs_report_last_modified_date
 FROM subaward_search
 INNER JOIN rpt.award_search AS awards ON (subaward_search.award_id = awards.award_id)
-INNER JOIN rpt.transaction_search AS transaction_fpds ON (transaction_fpds.is_fpds = TRUE AND awards.latest_transaction_id = transaction_fpds.transaction_id)
+INNER JOIN rpt.transaction_search AS transaction_fabs ON (transaction_fabs.is_fpds = FALSE AND awards.latest_transaction_id = transaction_fabs.transaction_id)
 INNER JOIN (
     SELECT
         faba.award_id,
@@ -177,12 +172,14 @@ INNER JOIN (
         COALESCE(SUM(CASE WHEN sa.is_final_balances_for_fy = TRUE THEN faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe END), 0) AS ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
         COALESCE(SUM(faba.transaction_obligated_amount), 0) AS transaction_obligated_amount
     FROM int.financial_accounts_by_awards faba
-    INNER JOIN global_temp.disaster_emergency_fund_code defc
-        ON defc.code = faba.disaster_emergency_fund_code
+    INNER JOIN global_temp.disaster_emergency_fund_code defc ON (
+        defc.code = faba.disaster_emergency_fund_code
         AND defc.group_name = 'covid_19'
-    INNER JOIN global_temp.submission_attributes sa
-        ON faba.submission_id = sa.submission_id
+    )
+    INNER JOIN global_temp.submission_attributes sa ON (
+        faba.submission_id = sa.submission_id
         AND sa.reporting_period_start >= '2020-04-01'
+    )
     INNER JOIN global_temp.dabs_submission_window_schedule ON (
         sa.submission_window_id = global_temp.dabs_submission_window_scheduleid
         AND global_temp.dabs_submission_window_schedulesubmission_reveal_date <= now()
@@ -263,7 +260,7 @@ LEFT OUTER JOIN (
 ) TOTAL_OUTLAYS
 ON TOTAL_OUTLAYS.award_id = rpt.subaward_search.award_id
 WHERE (
-    subaward_search.prime_award_group IN ('procurement')
+    subaward_search.prime_award_group IN ('grant')
     AND subaward_search.sub_action_date >= '2020-04-01'
 )
 """
