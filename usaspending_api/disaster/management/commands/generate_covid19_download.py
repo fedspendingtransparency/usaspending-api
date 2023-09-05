@@ -17,8 +17,9 @@ from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
 )
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d2_awards import d2_awards_sql_string
 from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d1_awards import d1_awards_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d2_awards import d2_awards_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_contracts import f_contracts_sql_string
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.models.download_job import DownloadJob
@@ -70,7 +71,7 @@ class Command(BaseCommand):
                 "disaster_covid19_file_b": "select 2 as test;",
                 "disaster_covid19_file_d1_awards": d1_awards_sql_string,
                 "disaster_covid19_file_d2_awards": d2_awards_sql_string,
-                "disaster_covid19_file_f_contracts": "select 5 as test;",
+                "disaster_covid19_file_f_contracts": f_contracts_sql_string,
                 "disaster_covid19_file_f_grants": "select 6 as test;",
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
