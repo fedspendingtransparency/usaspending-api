@@ -135,7 +135,6 @@ before_script:
   - travis_retry curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
-  - ps aux | grep postgresql
   # Our Postgres DB provided by Travis needs to have the (super) users specified by our env var DB URLs used
   - sudo psql --cluster 13/main -U postgres -c "CREATE USER ${USASPENDING_DB_USER} PASSWORD '${USASPENDING_DB_PASSWORD}' SUPERUSER"
   - sudo psql --cluster 13/main -U postgres -c "ALTER USER ${USASPENDING_DB_USER} SET search_path TO public,raw,int,temp,rpt"
