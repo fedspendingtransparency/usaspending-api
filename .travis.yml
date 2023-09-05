@@ -66,14 +66,23 @@ jobs:
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION=
     - PYTEST_MARK_EXPRESSION='(not spark)'
-  - name: Spark Integration Tests
+  - name: Spark Integration Test - test_load_to_from_delta.py
     env:
-    - PYTEST_XDIST_NUMPROCESSES=2
+    - PYTEST_XDIST_NUMPROCESSES=4
     - PYTEST_SETUP_TEST_DATABASES=true
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
     - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MATCH_EXPRESSION=test_load_to_from_delta.py
+    - PYTEST_MARK_EXPRESSION=spark
+  - name: Other Spark Integration Tests
+    env:
+    - PYTEST_XDIST_NUMPROCESSES=4
+    - PYTEST_SETUP_TEST_DATABASES=true
+    - PYTEST_PRELOAD_SPARK_JARS=true
+    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+    - PYTEST_EXCLUDE_GLOB=
+    - PYTEST_MATCH_EXPRESSION=(not test_load_to_from_delta.py)
     - PYTEST_MARK_EXPRESSION=spark
 
 
