@@ -130,11 +130,12 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self.spark = None
         print(destination_path)
         print(destination_file_name)
-        destination_path_dir = str(destination_path).replace(f"{destination_file_name}", "")
+        destination_path_dir = str(destination_path).replace(f"/{destination_file_name}", "")
         # The place to write intermediate data files to in s3
         s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
-        s3_destination_path = f"{s3_bucket_path}/temp_covid_download/{destination_file_name}"
+        s3_bucket_sub_path = "temp_covid_download"
+        s3_destination_path = f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
         try:
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
@@ -164,7 +165,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 logger=self._logger,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
-                s3_bucket_name, merged_file_paths, s3_bucket_path, destination_path_dir
+                s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
@@ -177,7 +178,9 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return final_csv_data_file_locations, record_count
 
-    def _move_data_csv_s3_to_local(self, bucket_name, s3_file_paths, s3_bucket_path, destination_path_dir) -> List[str]:
+    def _move_data_csv_s3_to_local(
+        self, bucket_name, s3_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+    ) -> List[str]:
         """Moves files from s3 data csv location to a location on the local machine.
 
         Args:
@@ -185,6 +188,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_file_paths: A list of file paths to move from s3, name should
                 include s3a:// and bucket name
             s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
+            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_covid_directory/files
             destination_path_dir: The location to move those files from s3 to, must not include the
                 file name in the path. This path should be a diretory.
 
@@ -196,13 +200,14 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger.info("Moving data files from S3 to local ...")
         local_csv_file_paths = []
         for file_name in s3_file_paths:
-            file_name_only = file_name.replace(f"{s3_bucket_path}/", "")
+            s3_key = file_name.replace(f"{s3_bucket_path}/", "")
+            file_name_only = s3_key.replace(f"{s3_bucket_sub_path}", "")
             print(file_name_only)
             final_path = f"{destination_path_dir}/{file_name_only}"
             print(final_path)
             download_s3_object(
                 bucket_name,
-                file_name_only,
+                s3_key,
                 final_path,
             )
             local_csv_file_paths.append(final_path)
