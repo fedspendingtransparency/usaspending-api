@@ -36,8 +36,8 @@ SELECT
     latest_transaction.funding_office_code AS funding_office_code,
     latest_transaction.funding_office_name AS funding_office_name,
     (SELECT CONCAT_WS(';', COLLECT_SET(U2.tas_rendering_label)) AS value FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) LEFT OUTER JOIN global_temp.treasury_appropriation_account U2 ON (U1.treasury_account_id = U2.treasury_account_identifier) WHERE U0.award_id = (award_search.award_id) GROUP BY U0.award_id) AS treasury_accounts_funding_this_award,
-    (SELECT CONCAT_WS(';', COLLECT_SET(U3.federal_account_code)) AS value FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) LEFT OUTER JOIN global_temp.treasury_appropriation_account U2 ON (U1.treasury_account_id = U2.treasury_account_identifier) LEFT OUTER JOIN global_temp.federal_account U3 ON (U2.global_temp.federal_account_id = U3.id) WHERE U0.award_id = (award_search.award_id) GROUP BY U0.award_id) AS global_temp.federal_accounts_funding_this_award,
-    (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.object_class, ':', U2.object_class_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN global_temp.object_class U2 ON (U1.object_class_id = U2.id) WHERE U0.award_id = (award_search.award_id) and U1.object_class_id IS NOT NULL GROUP BY U0.award_id)AS global_temp.object_classes_funding_this_award,
+    (SELECT CONCAT_WS(';', COLLECT_SET(U3.federal_account_code)) AS value FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) LEFT OUTER JOIN global_temp.treasury_appropriation_account U2 ON (U1.treasury_account_id = U2.treasury_account_identifier) LEFT OUTER JOIN global_temp.federal_account U3 ON (U2.federal_account_id = U3.id) WHERE U0.award_id = (award_search.award_id) GROUP BY U0.award_id) AS federal_accounts_funding_this_award,
+    (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.object_class, ':', U2.object_class_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN global_temp.object_class U2 ON (U1.object_class_id = U2.id) WHERE U0.award_id = (award_search.award_id) and U1.object_class_id IS NOT NULL GROUP BY U0.award_id) AS object_classes_funding_this_award,
     (SELECT CONCAT_WS(';', COLLECT_SET(CONCAT(U2.program_activity_code, ':', U2.program_activity_name))) FROM rpt.award_search U0 LEFT OUTER JOIN int.financial_accounts_by_awards U1 ON (U0.award_id = U1.award_id) INNER JOIN global_temp.ref_program_activity U2 ON (U1.program_activity_id = U2.id) WHERE U0.award_id = (award_search.award_id) and U1.program_activity_id IS NOT NULL GROUP BY U0.award_id) AS program_activities_funding_this_award,
     latest_transaction.foreign_funding AS foreign_funding,
     latest_transaction.foreign_funding_desc AS foreign_funding_description,
@@ -119,8 +119,8 @@ SELECT
     latest_transaction.contract_bundling_descrip AS contract_bundling,
     latest_transaction.dod_claimant_program_code AS dod_claimant_program_code,
     latest_transaction.dod_claimant_prog_cod_desc AS dod_claimant_program_description,
-    latest_transaction.naics_code AS global_temp.naics_code,
-    latest_transaction.naics_description AS global_temp.naics_description,
+    latest_transaction.naics_code AS naics_code,
+    latest_transaction.naics_description AS naics_description,
     latest_transaction.recovered_materials_sustai AS recovered_materials_sustainability_code,
     latest_transaction.recovered_materials_s_desc AS recovered_materials_sustainability,
     latest_transaction.domestic_or_foreign_entity AS domestic_or_foreign_entity_code,
@@ -303,7 +303,7 @@ SELECT
     award_search.officer_5_name AS highly_compensated_officer_5_name,
     award_search.officer_5_amount AS highly_compensated_officer_5_amount,
     CONCAT('https://www.usaspending.gov/award/', REFLECT('java.net.URLEncoder','encode', award_search.generated_unique_award_id, 'UTF-8'), '/') AS usaspending_permalink,
-    latest_transaction.last_modified_date AS last_modified_date
+    STRING(latest_transaction.last_modified_date) AS last_modified_date
 FROM rpt.award_search
 INNER JOIN rpt.transaction_search AS latest_transaction ON (latest_transaction.is_fpds = TRUE AND award_search.latest_transaction_id = latest_transaction.transaction_id)
 INNER JOIN rpt.transaction_search AS earliest_transaction ON (earliest_transaction.is_fpds = TRUE AND award_search.earliest_transaction_id = earliest_transaction.transaction_id)

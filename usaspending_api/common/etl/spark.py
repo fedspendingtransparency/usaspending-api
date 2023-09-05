@@ -38,6 +38,8 @@ from usaspending_api.references.models import (
     DisasterEmergencyFundCode,
     RefProgramActivity,
     ObjectClass,
+    GTASSF133Balances,
+    CGAC,
 )
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
@@ -46,10 +48,12 @@ MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
     Agency,
     Cfda,
+    CGAC,
     CityCountyStateCode,
     DABSSubmissionWindowSchedule,
     DisasterEmergencyFundCode,
     FederalAccount,
+    GTASSF133Balances,
     NAICS,
     ObjectClass,
     Office,

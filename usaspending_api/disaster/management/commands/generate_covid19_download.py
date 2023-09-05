@@ -17,6 +17,7 @@ from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
 )
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_a import file_a_sql_string
 from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d1_awards import d1_awards_sql_string
 from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d2_awards import d2_awards_sql_string
 from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_contracts import f_contracts_sql_string
@@ -68,7 +69,7 @@ class Command(BaseCommand):
         },
         ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
-                "disaster_covid19_file_a": "select 1 as test;",
+                "disaster_covid19_file_a": file_a_sql_string,
                 "disaster_covid19_file_b": "select 2 as test;",
                 "disaster_covid19_file_d1_awards": d1_awards_sql_string,
                 "disaster_covid19_file_d2_awards": d2_awards_sql_string,
