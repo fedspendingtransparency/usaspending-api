@@ -52,12 +52,12 @@ jobs:
     - PYTEST_MARK_EXPRESSION='(not spark and not database and not elasticsearch)'
   - name: Integration Tests Improperly Categorized as Unit Tests
     env:
-      - PYTEST_SETUP_TEST_DATABASES=true
-      - PYTEST_PRELOAD_SPARK_JARS=false
-      - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
-      - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
-      - PYTEST_MATCH_EXPRESSION=
-      - PYTEST_MARK_EXPRESSION='(not spark and (database or elasticsearch))'
+    - PYTEST_SETUP_TEST_DATABASES=true
+    - PYTEST_PRELOAD_SPARK_JARS=false
+    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+    - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION='(not spark and (database or elasticsearch))'
   - name: Non-Spark Integration Tests
     env:
     - PYTEST_SETUP_TEST_DATABASES=true
@@ -68,6 +68,7 @@ jobs:
     - PYTEST_MARK_EXPRESSION='(not spark)'
   - name: Spark Integration Tests
     env:
+    - PYTEST_XDIST_NUMPROCESSES=2
     - PYTEST_SETUP_TEST_DATABASES=true
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
