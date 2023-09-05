@@ -128,7 +128,9 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 
         self.spark = None
-        destination_path_dir = str(destination_path).replace(f"{destination_file_name}.{self.file_format}", "")
+        print(destination_path)
+        print(destination_file_name)
+        destination_path_dir = str(destination_path).replace(f"{destination_file_name}", "")
         # The place to write intermediate data files to in s3
         s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
@@ -195,7 +197,9 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         local_csv_file_paths = []
         for file_name in s3_file_paths:
             file_name_only = file_name.replace(f"{s3_bucket_path}/", "")
+            print(file_name_only)
             final_path = f"{destination_path_dir}/{file_name_only}"
+            print(final_path)
             download_s3_object(
                 bucket_name,
                 file_name_only,
