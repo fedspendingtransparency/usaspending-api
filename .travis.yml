@@ -77,7 +77,7 @@ jobs:
     - PYTEST_MARK_EXPRESSION=spark
   - name: Other Spark Integration Tests
     env:
-    - PYTEST_XDIST_NUMPROCESSES=4
+    - PYTEST_XDIST_NUMPROCESSES=2
     - PYTEST_SETUP_TEST_DATABASES=true
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
