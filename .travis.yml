@@ -82,7 +82,7 @@ jobs:
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
     - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=(not test_load_to_from_delta.py)
+    - PYTEST_MATCH_EXPRESSION='(not test_load_to_from_delta.py)'
     - PYTEST_MARK_EXPRESSION=spark
 
 
