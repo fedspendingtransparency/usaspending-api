@@ -128,6 +128,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 
         self.spark = None
+        destination_path_dir = destination_path.replace(destination_file_name, "")
         # The place to write intermediate data files to in s3
         s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
@@ -161,7 +162,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 logger=self._logger,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
-                s3_bucket_name, merged_file_paths, s3_bucket_path, destination_path
+                s3_bucket_name, merged_file_paths, s3_bucket_path, destination_path_dir
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
@@ -174,7 +175,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return final_csv_data_file_locations, record_count
 
-    def _move_data_csv_s3_to_local(self, bucket_name, s3_file_paths, s3_bucket_path, destination_path) -> List[str]:
+    def _move_data_csv_s3_to_local(self, bucket_name, s3_file_paths, s3_bucket_path, destination_path_dir) -> List[str]:
         """Moves files from s3 data csv location to a location on the local machine.
 
         Args:
@@ -182,22 +183,24 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_file_paths: A list of file paths to move from s3, name should
                 include s3a:// and bucket name
             s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
-            destination_path: The location to move those files from s3 to, must include the
-                file name in the path with no extension
+            destination_path_dir: The location to move those files from s3 to, must not include the
+                file name in the path. This path should be a diretory.
 
         Returns:
             A list of the final location on the local machine that the
             files were moved to from s3.
         """
+        start_time = time.perf_counter()
+        self._logger.info("Moving data files from S3 to local ...")
         local_csv_file_paths = []
         for file_name in s3_file_paths:
             file_name_only = file_name.replace(f"{s3_bucket_path}/", "")
-            print(file_name_only)
-            final_path = f"{destination_path}.{self.file_format}"
+            final_path = f"{destination_path_dir}/{file_name_only}"
             download_s3_object(
                 bucket_name,
                 file_name_only,
                 final_path,
             )
             local_csv_file_paths.append(final_path)
+        self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
         return local_csv_file_paths
