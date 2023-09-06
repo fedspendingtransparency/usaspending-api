@@ -748,7 +748,7 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
             RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
             break
         except (HTTPError, RemoteDisconnected) as e:
-            logger.info(f"Attempt {attempt + 1} of {retry_count + 2} failed to download Data Dictionary. Error: {e}")
+            logger.info(f"Attempt {attempt + 1} of {retry_count + 1} failed to download Data Dictionary. Error: {e}")
             if attempt < retry_count:
                 time.sleep(settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN)
                 continue
