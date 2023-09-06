@@ -160,7 +160,7 @@ SELECT
     subaward_search.sub_high_comp_officer5_amount AS subawardee_highly_compensated_officer_5_amount,
     CONCAT('https://www.usaspending.gov/award/', REFLECT('java.net.URLEncoder','encode', awards.generated_unique_award_id, 'UTF-8'), '/') AS usaspending_permalink,
     subaward_search.date_submitted AS subaward_fsrs_report_last_modified_date
-FROM subaward_search
+FROM rpt.subaward_search
 INNER JOIN rpt.award_search AS awards ON (subaward_search.award_id = awards.award_id)
 INNER JOIN rpt.transaction_search AS transaction_fabs ON (transaction_fabs.is_fpds = FALSE AND awards.latest_transaction_id = transaction_fabs.transaction_id)
 INNER JOIN (
