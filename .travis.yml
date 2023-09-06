@@ -183,6 +183,6 @@ script:
   # Must manually set --numprocesses on Travis CI VMs; can't use auto (see: https://github.com/pytest-dev/pytest-xdist/pull/317)
   #- pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
   #- pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
-  - travis_wait pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m "${PYTEST_MARK_EXPRESSION}" -k "${PYTEST_MATCH_EXPRESSION}" --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --dist worksteal --verbosity=1 --durations 50
+  - travis_wait 30 pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m "${PYTEST_MARK_EXPRESSION}" -k "${PYTEST_MATCH_EXPRESSION}" --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --dist worksteal --verbosity=1 --durations 50
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
