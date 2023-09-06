@@ -118,6 +118,7 @@ class Command(BaseCommand):
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
             create_ref_temp_views(self.spark)
 
+        self.readme_path = self.compute_types[self.compute_type_arg]["readme_path"]
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
         self.zip_file_path = (
