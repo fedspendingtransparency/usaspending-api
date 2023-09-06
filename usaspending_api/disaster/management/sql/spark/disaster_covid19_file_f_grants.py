@@ -181,8 +181,8 @@ INNER JOIN (
         AND sa.reporting_period_start >= '2020-04-01'
     )
     INNER JOIN global_temp.dabs_submission_window_schedule ON (
-        sa.submission_window_id = global_temp.dabs_submission_window_scheduleid
-        AND global_temp.dabs_submission_window_schedulesubmission_reveal_date <= now()
+        sa.submission_window_id = global_temp.dabs_submission_window_schedule.id
+        AND global_temp.dabs_submission_window_schedule.submission_reveal_date <= now()
     )
     WHERE faba.award_id IS NOT NULL
     GROUP BY
@@ -217,8 +217,8 @@ LEFT OUTER JOIN (
         ON faba.submission_id = sa.submission_id
         AND sa.reporting_period_start >= '2021-11-15'
     INNER JOIN global_temp.dabs_submission_window_schedule ON (
-        sa.submission_window_id = global_temp.dabs_submission_window_scheduleid
-        AND global_temp.dabs_submission_window_schedulesubmission_reveal_date <= now()
+        sa.submission_window_id = global_temp.dabs_submission_window_schedule.id
+        AND global_temp.dabs_submission_window_schedule.submission_reveal_date <= now()
     )
     WHERE faba.award_id IS NOT NULL
     GROUP BY
