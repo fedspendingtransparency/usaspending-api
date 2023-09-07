@@ -115,7 +115,7 @@ class Command(BaseCommand):
             self.spark = get_active_spark_session()
             if not self.spark:
                 self.spark_created_by_command = True
-                self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
+                self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
             create_ref_temp_views(self.spark)
 
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]

@@ -195,7 +195,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             files were moved to from s3.
         """
         start_time = time.time()
-        self._logger.info("Moving data files from S3 to local ...")
+        self._logger.info("Moving data files from S3 to local machine...")
         local_csv_file_paths = []
         for file_name in s3_file_paths:
             s3_key = file_name.replace(f"{s3_bucket_path}/", "")
