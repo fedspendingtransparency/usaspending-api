@@ -102,7 +102,7 @@ class Command(BaseCommand):
         """
         # If this command is running for the first time in an environment or in our test
         #   suites, int.financial_accounts_by_awards isn't guarenteed to exist.
-        int_faba_exists = self.spark.catalog.tableExists("int.financial_accounts_by_awards")
+        int_faba_exists = self.spark._jsparkSession.catalog().tableExists("int.financial_accounts_by_awards")
         if int_faba_exists:
             self.spark.sql(identify_faba_deletions_query)
             # Update Awards whose file C submissions are now deleted
