@@ -100,19 +100,20 @@ class Command(BaseCommand):
                     WHERE rfaba.financial_accounts_by_awards_id IS NULL
             );
         """
-        self.spark.sql(identify_faba_deletions_query)
-
-        # TODO: Combine with other int.awards merge query
-        # TODO: Add logging
-        # Update Awards whose file C submissions are now deleted
-        delete_sql = """
-            MERGE INTO int.awards AS aw
-            USING identify_faba_deletions_query AS deletes
-            ON aw.id = deletes.award_id
-            WHEN MATCHED
-                THEN UPDATE SET aw.update_date = NOW();
-        """
-        self.spark.sql(delete_sql)
+        # If this command is running for the first time in an environment or in our test
+        #   suites, int.financial_accounts_by_awards isn't guarenteed to exist.
+        int_faba_exists = self.spark.catalog.tableExists("int.financial_accounts_by_awards")
+        if int_faba_exists:
+            self.spark.sql(identify_faba_deletions_query)
+            # Update Awards whose file C submissions are now deleted
+            delete_sql = """
+                MERGE INTO int.awards AS aw
+                USING identify_faba_deletions_query AS deletes
+                ON aw.id = deletes.award_id
+                WHEN MATCHED
+                    THEN UPDATE SET aw.update_date = NOW();
+            """
+            self.spark.sql(delete_sql)
 
         # Setup int table. Creates a shallow clone of the `raw` FABA table in the `int` schema.
         # If the --no-clone option is provided a full table is created instead.
