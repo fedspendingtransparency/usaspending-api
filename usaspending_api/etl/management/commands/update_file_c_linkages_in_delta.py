@@ -105,16 +105,14 @@ class Command(BaseCommand):
         int_faba_exists = self.spark._jsparkSession.catalog().tableExists("int.financial_accounts_by_awards")
         if int_faba_exists:
             self.spark.sql(identify_faba_deletions_query)
-            # Update Awards whose file C submissions are now deleted
-            delete_sql = """
-                MERGE INTO int.awards AS aw
-                USING identify_faba_deletions_query AS deletes
-                ON aw.id = deletes.award_id
-                WHEN MATCHED
-                    THEN UPDATE SET aw.update_date = NOW();
+        else:
+            self.spark.sql(
+                """
+                CREATE OR REPLACE TEMPORARY VIEW identify_faba_deletions_query AS (
+                    SELECT 1 WHERE 1=0
+                )
             """
-            self.spark.sql(delete_sql)
-
+            )
         # Setup int table. Creates a shallow clone of the `raw` FABA table in the `int` schema.
         # If the --no-clone option is provided a full table is created instead.
         if no_clone:
@@ -150,10 +148,21 @@ class Command(BaseCommand):
             logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
             self.spark.sql(query)
 
+        # Combine the awards that were identified to have deletions with the other
+        #   updates.
+        self.spark.sql(
+            """
+            CREATE OR REPLACE TEMPORARY VIEW all_updated_awards AS (
+                SELECT * FROM updated_awards
+                UNION
+                SELECT * FROM identify_faba_deletions_query
+            );
+        """
+        )
         # Update to be linked to Award record's `update_date`
         update_sql = """
             MERGE INTO int.awards AS aw
-            USING updated_awards AS updates
+            USING all_updated_awards AS updates
             ON aw.id = updates.award_id
             WHEN MATCHED
                 THEN UPDATE SET aw.update_date = NOW();
