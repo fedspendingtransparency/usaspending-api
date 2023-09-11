@@ -153,8 +153,6 @@ faba_records = [
     # Test data for testing submission deletions
     {
         "financial_accounts_by_awards_id": 24,
-        "piid": "piid_1",
-        "parent_award_id": "parent_piid_1",
         "award_id": 12,
         "expected_award_id": 1,
     },
