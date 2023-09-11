@@ -17,7 +17,7 @@ common_award_info = {
 common_faba_info = {"submission_id": "0", "distinct_award_key": "fake_key"}
 
 award_records = [
-    {"id": 1, "expected_update": True},
+    {"id": 1, "expected_update": False},
     {"id": 2, "piid": "piid_1", "parent_award_piid": "parent_piid_1", "expected_update": True},
     {"id": 3, "piid": "piid_2", "parent_award_piid": "parent_piid_2", "expected_update": False},
     {"id": 4, "piid": "piid_2", "parent_award_piid": "parent_piid_2", "expected_update": False},
@@ -28,6 +28,7 @@ award_records = [
     {"id": 9, "fain": "fain_1", "uri": "uri_1", "expected_update": True},
     {"id": 10, "fain": "fain_2", "uri": "uri_2", "expected_update": False},
     {"id": 11, "fain": "fain_2", "uri": "uri_2", "expected_update": False},
+    {"id": 12, "expected_update": True},
 ]
 
 faba_records = [
@@ -149,6 +150,13 @@ faba_records = [
     {"financial_accounts_by_awards_id": 22, "fain": "fain_200", "uri": "uri_1", "award_id": 1, "expected_award_id": 1},
     # Matches two Awards based on URI when both FAIN/URI are populated - No Update
     {"financial_accounts_by_awards_id": 23, "fain": "fain_200", "uri": "uri_2", "expected_award_id": None},
+    {
+        "financial_accounts_by_awards_id": 24,
+        "piid": "piid_1",
+        "parent_award_id": "parent_piid_1",
+        "award_id": 12,
+        "expected_award_id": 1,
+    },
 ]
 
 
@@ -202,7 +210,7 @@ def test_update_file_c_linkages_in_delta(spark, s3_unittest_data_bucket, hive_un
     for record in faba_records:
         # award_id 1 is the award belonging to the submission we are "deleting"
         #   so don't let the faba record be present in the faba records list
-        if "award_id" in record and record["award_id"] == 1 and record["financial_accounts_by_awards_id"] == 5:
+        if "award_id" in record and record["award_id"] == 12 and record["financial_accounts_by_awards_id"] == 24:
             continue
         full_raw_faba_records.append(dict(record, **common_faba_info))
         expected_faba_to_award_id[record["financial_accounts_by_awards_id"]] = record.pop("expected_award_id")
