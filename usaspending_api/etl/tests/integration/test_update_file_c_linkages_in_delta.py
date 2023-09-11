@@ -150,6 +150,7 @@ faba_records = [
     {"financial_accounts_by_awards_id": 22, "fain": "fain_200", "uri": "uri_1", "award_id": 1, "expected_award_id": 1},
     # Matches two Awards based on URI when both FAIN/URI are populated - No Update
     {"financial_accounts_by_awards_id": 23, "fain": "fain_200", "uri": "uri_2", "expected_award_id": None},
+    # Test data for testing submission deletions
     {
         "financial_accounts_by_awards_id": 24,
         "piid": "piid_1",
