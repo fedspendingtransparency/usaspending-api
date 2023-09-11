@@ -205,6 +205,8 @@ def hive_unittest_metastore_db(spark: SparkSession):
     spark.sql("USE DEFAULT")
     tables_in_default_schema = [t for t in spark.sql("SHOW TABLES").collect()]
     for t in tables_in_default_schema:
+        if t["isTemporary"]:
+            continue
         spark.sql(f"DROP TABLE IF EXISTS {t['tableName']} CASCADE")
 
 
