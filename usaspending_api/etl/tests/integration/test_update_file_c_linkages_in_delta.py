@@ -17,7 +17,7 @@ common_award_info = {
 common_faba_info = {"submission_id": "0", "distinct_award_key": "fake_key"}
 
 award_records = [
-    {"id": 1, "expected_update": False},
+    {"id": 1, "expected_update": True},
     {"id": 2, "piid": "piid_1", "parent_award_piid": "parent_piid_1", "expected_update": True},
     {"id": 3, "piid": "piid_2", "parent_award_piid": "parent_piid_2", "expected_update": False},
     {"id": 4, "piid": "piid_2", "parent_award_piid": "parent_piid_2", "expected_update": False},
@@ -187,58 +187,6 @@ def read_updated_award_ids(spark):
 
 @mark.django_db(transaction=True)
 def test_update_file_c_linkages_in_delta(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-
-    # Build list of award ids expected to be updated, and add common (required)
-    # fields to Awards before loading them to delta
-    full_award_records = [dict(item, **common_award_info) for item in award_records]
-    expected_updated_award_ids = []
-    for item in award_records:
-        if item.pop("expected_update"):
-            expected_updated_award_ids.append(item["id"])
-
-    # Build expected FABA to Award ID mapping and add common fields to FABA
-    expected_faba_to_award_id = {}
-    for item in faba_records:
-        expected_faba_to_award_id[item["financial_accounts_by_awards_id"]] = item.pop("expected_award_id")
-    full_faba_records = [dict(item, **common_faba_info) for item in faba_records]
-
-    # Make sure the table has been created first
-    load_dict_to_delta_table(spark, s3_unittest_data_bucket, "int", "awards", full_award_records, True)
-    load_dict_to_delta_table(
-        spark, s3_unittest_data_bucket, "raw", "financial_accounts_by_awards", full_faba_records, True
-    )
-
-    call_command("update_file_c_linkages_in_delta", "--no-clone", "--spark-s3-bucket", s3_unittest_data_bucket)
-
-    # Verify mapping of FABA->Awards matches the expected results
-    output_faba_to_award_id = read_output_faba_to_award_id(spark)
-    for faba_id, expected_award_id in expected_faba_to_award_id.items():
-        if expected_award_id is None:
-            assert output_faba_to_award_id[faba_id] is None, f"Failed FABA ID: {faba_id}"
-        else:
-            assert output_faba_to_award_id[faba_id] == expected_award_id, f"Failed FABA ID: {faba_id}"
-
-    # Verify that newly linked Awards have an updated update_date
-    updated_award_ids = read_updated_award_ids(spark)
-    assert sorted(updated_award_ids) == sorted(expected_updated_award_ids)
-
-
-@mark.django_db(transaction=True)
-def test_update_file_c_linkages_in_delta_deletions(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-
-    award_records = [
-        {"id": 1, "expected_update": True},
-        {"id": 2, "piid": "piid_1", "parent_award_piid": "parent_piid_1", "expected_update": True},
-        {"id": 3, "piid": "piid_2", "parent_award_piid": "parent_piid_2", "expected_update": False},
-        {"id": 4, "piid": "piid_2", "parent_award_piid": "parent_piid_2", "expected_update": False},
-        {"id": 5, "piid": "piid_3", "expected_update": True},
-        {"id": 6, "piid": "piid_4", "expected_update": False},
-        {"id": 7, "piid": "piid_4", "expected_update": False},
-        {"id": 8, "piid": "piid_5", "parent_award_piid": "parent_piid_5", "expected_update": False},
-        {"id": 9, "fain": "fain_1", "uri": "uri_1", "expected_update": True},
-        {"id": 10, "fain": "fain_2", "uri": "uri_2", "expected_update": False},
-        {"id": 11, "fain": "fain_2", "uri": "uri_2", "expected_update": False},
-    ]
 
     # Build list of award ids expected to be updated, and add common (required)
     # fields to Awards before loading them to delta
