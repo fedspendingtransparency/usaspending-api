@@ -252,7 +252,7 @@ def test_update_file_c_linkages_in_delta_deletions(spark, s3_unittest_data_bucke
     expected_faba_to_award_id = {}
     full_raw_faba_records = []
     for record in faba_records:
-        # award_id 1 is the award belonging to the submission we are "deleting" it
+        # award_id 1 is the award belonging to the submission we are "deleting"
         #   so don't let the faba record be present in the faba records list
         if "award_id" in record and record["award_id"] == 1 and record["financial_accounts_by_awards_id"] == 5:
             continue
