@@ -302,7 +302,13 @@ SELECT
     award_search.officer_4_amount AS highly_compensated_officer_4_amount,
     award_search.officer_5_name AS highly_compensated_officer_5_name,
     award_search.officer_5_amount AS highly_compensated_officer_5_amount,
-    CONCAT('https://www.usaspending.gov/award/', REFLECT('java.net.URLEncoder','encode', award_search.generated_unique_award_id, 'UTF-8'), '/') AS usaspending_permalink,
+    /*
+        Use REPLACE for the asterisk (*) because it is considered a reserved character in
+        the Java URLEncoder and therefore won't be replaced by the encode() function.
+        This is to match the behavior of our custom urlencode() function that was written
+        in PostgresSQL which did not consider the asterisk (*) to be a reserved character.
+    */
+    CONCAT('https://www.usaspending.gov/award/', REPLACE(REFLECT('java.net.URLEncoder','encode', award_search.generated_unique_award_id, 'UTF-8'), '*', '%2A'), '/') AS usaspending_permalink,
     STRING(latest_transaction.last_modified_date) AS last_modified_date
 FROM rpt.award_search
 INNER JOIN rpt.transaction_search AS latest_transaction ON (latest_transaction.is_fpds = TRUE AND award_search.latest_transaction_id = latest_transaction.transaction_id)

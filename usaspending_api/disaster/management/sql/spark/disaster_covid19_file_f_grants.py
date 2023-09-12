@@ -158,7 +158,13 @@ SELECT
     subaward_search.sub_high_comp_officer4_amount AS subawardee_highly_compensated_officer_4_amount,
     subaward_search.sub_high_comp_officer5_full_na AS subawardee_highly_compensated_officer_5_name,
     subaward_search.sub_high_comp_officer5_amount AS subawardee_highly_compensated_officer_5_amount,
-    CONCAT('https://www.usaspending.gov/award/', REFLECT('java.net.URLEncoder','encode', awards.generated_unique_award_id, 'UTF-8'), '/') AS usaspending_permalink,
+    /*
+        Use REPLACE for the asterisk (*) because it is considered a reserved character in
+        the Java URLEncoder and therefore won't be replaced by the encode() function.
+        This is to match the behavior of our custom urlencode() function that was written
+        in PostgresSQL which did not consider the asterisk (*) to be a reserved character.
+    */
+    CONCAT('https://www.usaspending.gov/award/', REPLACE(REFLECT('java.net.URLEncoder','encode', awards.generated_unique_award_id, 'UTF-8'), '*', '%2A'), '/') AS usaspending_permalink,
     subaward_search.date_submitted AS subaward_fsrs_report_last_modified_date
 FROM rpt.subaward_search
 INNER JOIN rpt.award_search AS awards ON (subaward_search.award_id = awards.award_id)
