@@ -22,6 +22,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_usas_jdbc_url,
     get_broker_jdbc_url,
 )
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     Cfda,
@@ -38,6 +39,8 @@ from usaspending_api.references.models import (
     DisasterEmergencyFundCode,
     RefProgramActivity,
     ObjectClass,
+    GTASSF133Balances,
+    CGAC,
 )
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
@@ -46,10 +49,13 @@ MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
     Agency,
     Cfda,
+    CGAC,
     CityCountyStateCode,
     DABSSubmissionWindowSchedule,
     DisasterEmergencyFundCode,
     FederalAccount,
+    FinancialAccountsByProgramActivityObjectClass,
+    GTASSF133Balances,
     NAICS,
     ObjectClass,
     Office,
@@ -604,7 +610,7 @@ def write_csv_file(
     ).csv(
         path=parts_dir,
         header=False,
-        nullValue=None,
+        nullValue="",  # "" creates the output of ,,, for null values. Using None defaults to an output of ,"","",""
         escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
         ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
         ignoreTrailingWhiteSpace=False,  # must set for CSV write, as it defaults to true
