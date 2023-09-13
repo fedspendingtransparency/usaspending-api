@@ -114,6 +114,10 @@ class Command(BaseCommand):
                     THEN UPDATE SET aw.update_date = NOW();
             """
             self.spark.sql(delete_sql)
+
+        # Clean up deletion view(s)
+        self.spark.sql("DROP VIEW identify_faba_deletions_query;")
+
         # Setup int table. Creates a shallow clone of the `raw` FABA table in the `int` schema.
         # If the --no-clone option is provided a full table is created instead.
         if no_clone:
