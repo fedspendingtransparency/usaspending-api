@@ -610,7 +610,7 @@ def write_csv_file(
     ).csv(
         path=parts_dir,
         header=False,
-        nullValue=None,
+        nullValue="",  # "" creates the output of ,,, for null values. Using None defaults to an output of ,"","",""
         escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
         ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
         ignoreTrailingWhiteSpace=False,  # must set for CSV write, as it defaults to true
