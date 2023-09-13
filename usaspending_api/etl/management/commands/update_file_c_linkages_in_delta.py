@@ -85,6 +85,39 @@ class Command(BaseCommand):
         # Setup Logger
         logger = get_jvm_logger(self.spark, __name__)
 
+        # Before we lose history after a clone or drop table of our int.financial_accounts_by_awards table
+        #   we need to identify FABA records (file C submissions) that were deleted.
+        #   This step is important because we need to identify which awards need to be unlinked
+        #   from file C submissions that are now deleted.
+        identify_faba_deletions_query = """
+            CREATE OR REPLACE TEMPORARY VIEW identify_faba_deletions_query AS (
+                SELECT DISTINCT faba.award_id
+                    FROM int.financial_accounts_by_awards faba
+
+                    LEFT JOIN raw.financial_accounts_by_awards rfaba
+                    ON faba.financial_accounts_by_awards_id = rfaba.financial_accounts_by_awards_id
+
+                    WHERE rfaba.financial_accounts_by_awards_id IS NULL
+            );
+        """
+        # If this command is running for the first time in an environment or in our test
+        #   suites, int.financial_accounts_by_awards isn't guarenteed to exist.
+        int_faba_exists = self.spark._jsparkSession.catalog().tableExists("int.financial_accounts_by_awards")
+        if int_faba_exists:
+            self.spark.sql(identify_faba_deletions_query)
+            # Update Awards whose file C submissions are now deleted
+            delete_sql = """
+                MERGE INTO int.awards AS aw
+                USING identify_faba_deletions_query AS deletes
+                ON aw.id = deletes.award_id
+                WHEN MATCHED
+                    THEN UPDATE SET aw.update_date = NOW();
+            """
+            self.spark.sql(delete_sql)
+
+        # Clean up deletion view(s)
+        self.spark.sql("DROP VIEW identify_faba_deletions_query;")
+
         # Setup int table. Creates a shallow clone of the `raw` FABA table in the `int` schema.
         # If the --no-clone option is provided a full table is created instead.
         if no_clone:
