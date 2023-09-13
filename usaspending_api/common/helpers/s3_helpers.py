@@ -2,8 +2,10 @@ import boto3
 import io
 import logging
 import math
+import time
 
 from boto3.s3.transfer import TransferConfig, S3Transfer
+from botocore.exceptions import ClientError
 from django.conf import settings
 from pathlib import Path
 from typing import List
@@ -87,15 +89,39 @@ def multipart_upload(bucketname, regionname, source_path, keyname):
     transfer.upload_file(source_path, bucketname, Path(keyname).name, extra_args={"ACL": "bucket-owner-full-control"})
 
 
-def download_s3_object(bucket_name: str, key: str, file_path: str, region_name: str = settings.USASPENDING_AWS_REGION):
+def download_s3_object(
+    bucket_name: str,
+    key: str,
+    file_path: str,
+    s3_client: BaseClient = None,
+    retry_count: int = 3,
+    retry_cooldown: int = 30,
+    region_name: str = settings.USASPENDING_AWS_REGION,
+):
     """Download an S3 object to a file.
     Args:
         bucket_name: The name of the bucket where the key is located.
         key: The name of the key to download from.
         file_path: The path to the file to download to.
+        max_retries: The number of times to retry the download.
+        retry_delay: The amount of time in seconds to wait after a failure before retrying.
+        region_name: AWS region
     """
-    s3 = _get_boto3_s3_client(region_name)
-    s3.download_file(bucket_name, key, file_path)
+    if not s3_client:
+        s3_client = _get_boto3_s3_client(region_name)
+    for attempt in range(retry_count + 1):
+        try:
+            s3_client.download_file(bucket_name, key, file_path)
+            return
+        except ClientError as e:
+            logger.info(
+                f"Attempt {attempt + 1} of {retry_count + 1} failed to download {key} from bucket {bucket_name}. Error: {e}"
+            )
+            if attempt <= retry_count:
+                time.sleep(retry_cooldown)
+            else:
+                logger.error(f"Failed to download {key} from bucket {bucket_name} after {retry_count + 1} attempts.")
+                raise
 
 
 def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION):
