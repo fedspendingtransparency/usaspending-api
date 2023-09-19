@@ -6,8 +6,10 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
 from pathlib import Path
+from usaspending_api.common.etl.spark import create_ref_temp_views
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
     PostgresToCSVStrategy,
     SparkToCSVStrategy,
@@ -15,6 +17,12 @@ from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
 )
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_a import file_a_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_b import file_b_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d1_awards import d1_awards_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d2_awards import d2_awards_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_contracts import f_contracts_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_grants import f_grants_sql_string
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.models.download_job import DownloadJob
@@ -22,6 +30,7 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
 from enum import Enum
+from usaspending_api.config import CONFIG
 
 
 class ComputeTypeEnum(Enum):
@@ -40,7 +49,6 @@ class Command(BaseCommand):
     total_download_columns = 0
     total_download_size = 0
     working_dir_path = Path(settings.CSV_LOCAL_PATH)
-    readme_path = Path(settings.COVID19_DOWNLOAD_README_FILE_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
 
     # KEY is the type of compute supported by this command
@@ -58,17 +66,19 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_grants": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql",
             },
             "download_to_csv_strategy": PostgresToCSVStrategy(logger=logger),
+            "readme_path": Path(settings.COVID19_DOWNLOAD_README_FILE_PATH),
         },
         ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
-                "disaster_covid19_file_a": "select 1 as test;",
-                "disaster_covid19_file_b": "select 2 as test;",
-                "disaster_covid19_file_d1_awards": "select 3 as test;",
-                "disaster_covid19_file_d2_awards": "select 4 as test;",
-                "disaster_covid19_file_f_contracts": "select 5 as test;",
-                "disaster_covid19_file_f_grants": "select 6 as test;",
+                "disaster_covid19_file_a": file_a_sql_string,
+                "disaster_covid19_file_b": file_b_sql_string,
+                "disaster_covid19_file_d1_awards": d1_awards_sql_string,
+                "disaster_covid19_file_d2_awards": d2_awards_sql_string,
+                "disaster_covid19_file_f_contracts": f_contracts_sql_string,
+                "disaster_covid19_file_f_grants": f_grants_sql_string,
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
+            "readme_path": Path(CONFIG.SPARK_COVID19_DOWNLOAD_README_FILE_PATH),
         },
     }
 
@@ -91,6 +101,24 @@ class Command(BaseCommand):
         """
         self.upload = not options["skip_upload"]
         self.compute_type_arg = options.get("compute_type")
+
+        if self.compute_type_arg == ComputeTypeEnum.SPARK.value:
+            extra_conf = {
+                # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
+                "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
+                "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+                # See comment below about old date and time values cannot be parsed without these
+                "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
+                "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
+                "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
+            }
+            self.spark = get_active_spark_session()
+            if not self.spark:
+                self.spark_created_by_command = True
+                self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
+            create_ref_temp_views(self.spark)
+
+        self.readme_path = self.compute_types[self.compute_type_arg]["readme_path"]
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
         self.zip_file_path = (
@@ -183,13 +211,12 @@ class Command(BaseCommand):
 
         add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
 
-        if self.compute_type_arg != ComputeTypeEnum.SPARK.value:
-            file_description = build_file_description(str(self.readme_path), dict())
-            file_description_path = save_file_description(
-                str(self.zip_file_path.parent), self.readme_path.name, file_description
-            )
-            self.filepaths_to_delete.append(Path(file_description_path))
-            append_files_to_zip_file([file_description_path], str(self.zip_file_path))
+        file_description = build_file_description(str(self.readme_path), dict())
+        file_description_path = save_file_description(
+            str(self.zip_file_path.parent), self.readme_path.name, file_description
+        )
+        self.filepaths_to_delete.append(Path(file_description_path))
+        append_files_to_zip_file([file_description_path], str(self.zip_file_path))
         self.total_download_size = self.zip_file_path.stat().st_size
 
     def prep_filesystem(self):

@@ -277,6 +277,9 @@ def _test_correct_response_for_place_of_performance_state_with_geo_filters(clien
 
 def _test_correct_response_for_place_of_perforance_country_with_geo_filters(client):
     # Prime awards
+
+    # Get only foreign country results
+    # (USA results should be excluded since `place_of_performance_scope` is set to "foreign")
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -284,7 +287,7 @@ def _test_correct_response_for_place_of_perforance_country_with_geo_filters(clie
             {
                 "scope": "place_of_performance",
                 "geo_layer": "country",
-                "geo_layer_filters": ["CAN"],
+                "geo_layer_filters": ["CAN", "USA"],
                 "filters": {
                     "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
                     "place_of_performance_scope": "foreign",
@@ -312,7 +315,90 @@ def _test_correct_response_for_place_of_perforance_country_with_geo_filters(clie
     resp_json["results"].sort(key=_get_shape_code_for_sort)
     assert resp_json == expected_response
 
+    # Get only domestic results
+    # (CAN results should be excluded since `place_of_performance_scope` is set to "domestic")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "geo_layer_filters": ["CAN", "USA"],
+                "filters": {
+                    "place_of_performance_scope": "domestic",
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 5555555.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            }
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get both domestic and foreign results
+    # (USA and CAN should both be in the results since `place_of_performance_scope` is excluded)
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "geo_layer_filters": ["CAN", "USA"],
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 5000000.0,
+                "display_name": "Canada",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "CAN",
+            },
+            {
+                "aggregated_amount": 5555555.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
     # Subawards
+
+    # Get only foreign country results
+    # (USA results should be excluded since `place_of_performance_scope` is set to "foreign")
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -321,7 +407,83 @@ def _test_correct_response_for_place_of_perforance_country_with_geo_filters(clie
                 "scope": "place_of_performance",
                 "geo_layer": "country",
                 "subawards": True,
-                "geo_layer_filters": ["CAN"],
+                "geo_layer_filters": ["CAN", "USA"],
+                "filters": {
+                    "place_of_performance_scope": "foreign",
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2022-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 12345.0,
+                "display_name": "Canada",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "CAN",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get only domestic results
+    # (CAN results should be excluded since `place_of_performance_scope` is set to "domestic")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "subawards": True,
+                "geo_layer_filters": ["CAN", "USA"],
+                "filters": {
+                    "place_of_performance_scope": "domestic",
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2022-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 733231.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get both domestic and foreign results
+    # (USA and CAN should both be in the results since `place_of_performance_scope` is excluded)
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "subawards": True,
+                "geo_layer_filters": ["CAN", "USA"],
                 "filters": {
                     "time_period": [{"start_date": "2018-10-01", "end_date": "2022-09-30"}],
                 },
@@ -338,6 +500,13 @@ def _test_correct_response_for_place_of_perforance_country_with_geo_filters(clie
                 "per_capita": None,
                 "population": None,
                 "shape_code": "CAN",
+            },
+            {
+                "aggregated_amount": 733231.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
             },
         ],
         "messages": [get_time_period_message()],
@@ -474,6 +643,9 @@ def _test_correct_response_for_recipient_location_state_with_geo_filters(client)
 
 def _test_correct_response_for_recipient_location_country_with_geo_filters(client):
     # Prime awards
+
+    # Get only foreign country results
+    # (USA results should be excluded since `recipient_scope` is set to "foreign")
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -481,7 +653,7 @@ def _test_correct_response_for_recipient_location_country_with_geo_filters(clien
             {
                 "scope": "recipient_location",
                 "geo_layer": "country",
-                "geo_layer_filters": ["JPN"],
+                "geo_layer_filters": ["JPN", "USA"],
                 "filters": {
                     "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
                     "recipient_scope": "foreign",
@@ -509,7 +681,90 @@ def _test_correct_response_for_recipient_location_country_with_geo_filters(clien
     resp_json["results"].sort(key=_get_shape_code_for_sort)
     assert resp_json == expected_response
 
+    # Get only domestic results
+    # (JPN results should be excluded since `recipient_scope` is set to "domestic")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "country",
+                "geo_layer_filters": ["JPN", "USA"],
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                    "recipient_scope": "domestic",
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 5555550.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get both domestic and foreign country results
+    # (USA and JPN should both be in the results since `recipient_scope` is excluded)
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "country",
+                "geo_layer_filters": ["JPN", "USA"],
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 5000000.0,
+                "display_name": "Japan",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "JPN",
+            },
+            {
+                "aggregated_amount": 5555550.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
     # Subawards
+
+    # Get only foreign country results
+    # (USA results should be excluded since `recipient_scope` is set to "foreign")
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -518,9 +773,10 @@ def _test_correct_response_for_recipient_location_country_with_geo_filters(clien
                 "scope": "recipient_location",
                 "geo_layer": "country",
                 "subawards": True,
-                "geo_layer_filters": ["JPN"],
+                "geo_layer_filters": ["JPN", "USA"],
                 "filters": {
                     "time_period": [{"start_date": "2018-10-01", "end_date": "2022-09-30"}],
+                    "recipient_scope": "foreign",
                 },
             }
         ),
@@ -535,6 +791,88 @@ def _test_correct_response_for_recipient_location_country_with_geo_filters(clien
                 "per_capita": None,
                 "population": None,
                 "shape_code": "JPN",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get only domestic results
+    # (JPN results should be excluded since `recipient_scope` is set to "domestic")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "country",
+                "geo_layer_filters": ["JPN", "USA"],
+                "subawards": True,
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                    "recipient_scope": "domestic",
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 66666.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get both domestic and foreign country results
+    # (USA and JPN should both be in the results since `recipient_scope` is excluded)
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "country",
+                "geo_layer_filters": ["JPN", "USA"],
+                "subawards": True,
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 678910.0,
+                "display_name": "Japan",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "JPN",
+            },
+            {
+                "aggregated_amount": 66666.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
             },
         ],
         "messages": [get_time_period_message()],
@@ -709,7 +1047,8 @@ def _test_correct_response_for_place_of_performance_state_without_geo_filters(cl
 
 
 def _test_correct_response_for_place_of_perforance_country_without_geo_filters(client):
-    # Prime awards
+    # Get only foreign country results
+    # (USA results should be excluded since `place_of_performance_scope` is set to "foreign")
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -718,7 +1057,78 @@ def _test_correct_response_for_place_of_perforance_country_without_geo_filters(c
                 "scope": "place_of_performance",
                 "geo_layer": "country",
                 "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
                     "place_of_performance_scope": "foreign",
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 5000000.0,
+                "display_name": "Canada",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "CAN",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get only domestic results
+    # (CAN results should be excluded since `place_of_performance_scope` is set to "domestic")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "filters": {
+                    "place_of_performance_scope": "domestic",
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 5555555.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            }
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get both domestic and foreign results
+    # (USA and CAN should both be in the results since `place_of_performance_scope` is excluded)
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "filters": {
                     "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
                 },
             }
@@ -734,7 +1144,14 @@ def _test_correct_response_for_place_of_perforance_country_without_geo_filters(c
                 "per_capita": None,
                 "population": None,
                 "shape_code": "CAN",
-            }
+            },
+            {
+                "aggregated_amount": 5555555.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
         ],
         "messages": [get_time_period_message()],
     }
@@ -745,6 +1162,83 @@ def _test_correct_response_for_place_of_perforance_country_without_geo_filters(c
     assert resp_json == expected_response
 
     # Subawards
+
+    # Get only foreign country results
+    # (USA results should be excluded since `place_of_performance_scope` is set to "foreign")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "subawards": True,
+                "filters": {
+                    "place_of_performance_scope": "foreign",
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2022-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 12345.0,
+                "display_name": "Canada",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "CAN",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get only domestic results
+    # (CAN results should be excluded since `place_of_performance_scope` is set to "domestic")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "subawards": True,
+                "filters": {
+                    "place_of_performance_scope": "domestic",
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2022-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 733231.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get both domestic and foreign results
+    # (USA and CAN should both be in the results since `place_of_performance_scope` is excluded)
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -930,6 +1424,9 @@ def _test_correct_response_for_recipient_location_state_without_geo_filters(clie
 
 def _test_correct_response_for_recipient_location_country_without_geo_filters(client):
     # Prime awards
+
+    # Get only foreign country results
+    # (USA results should be excluded since `recipient_scope` is set to "foreign")
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -938,8 +1435,8 @@ def _test_correct_response_for_recipient_location_country_without_geo_filters(cl
                 "scope": "recipient_location",
                 "geo_layer": "country",
                 "filters": {
-                    "recipient_scope": "foreign",
                     "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                    "recipient_scope": "foreign",
                 },
             }
         ),
@@ -971,7 +1468,95 @@ def _test_correct_response_for_recipient_location_country_without_geo_filters(cl
     resp_json["results"].sort(key=_get_shape_code_for_sort)
     assert resp_json == expected_response
 
+    # Get only domestic results
+    # (CAN and JPN results should be excluded since `recipient_scope` is set to "domestic")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "country",
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                    "recipient_scope": "domestic",
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 5555550.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get both domestic and foreign country results
+    # (USA, CAN and JPN should all be in the results since `recipient_scope` is excluded)
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "country",
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 5.0,
+                "display_name": "Canada",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "CAN",
+            },
+            {
+                "aggregated_amount": 5000000.0,
+                "display_name": "Japan",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "JPN",
+            },
+            {
+                "aggregated_amount": 5555550.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
     # Subawards
+
+    # Get only foreign country results
+    # (USA results should be excluded since `recipient_scope` is set to "foreign")
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -982,6 +1567,80 @@ def _test_correct_response_for_recipient_location_country_without_geo_filters(cl
                 "subawards": True,
                 "filters": {
                     "time_period": [{"start_date": "2018-10-01", "end_date": "2022-09-30"}],
+                    "recipient_scope": "foreign",
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 678910.0,
+                "display_name": "Japan",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "JPN",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get only domestic results
+    # (JPN results should be excluded since `recipient_scope` is set to "domestic")
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "country",
+                "subawards": True,
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                    "recipient_scope": "domestic",
+                },
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "results": [
+            {
+                "aggregated_amount": 66666.0,
+                "display_name": "United States",
+                "per_capita": None,
+                "population": None,
+                "shape_code": "USA",
+            },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+    # Get both domestic and foreign country results
+    # (USA and JPN should both be in the results since `recipient_scope` is excluded)
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "country",
+                "subawards": True,
+                "filters": {
+                    "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
                 },
             }
         ),
