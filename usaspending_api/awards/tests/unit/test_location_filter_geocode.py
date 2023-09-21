@@ -187,7 +187,7 @@ def test_validate_location_keys():
     with pytest.raises(InvalidParameterException):
         assert validate_location_keys([{}]) is None
     with pytest.raises(InvalidParameterException):
-        assert validate_location_keys([{"district": ""}]) is None
+        assert validate_location_keys([{"district_original": ""}]) is None
     with pytest.raises(InvalidParameterException):
         assert validate_location_keys([{"county": ""}]) is None
     with pytest.raises(InvalidParameterException, match=INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS):
@@ -208,8 +208,7 @@ def test_validate_location_keys():
                     "zip": "12345",
                     "city": "Chicago",
                     "state": "IL",
-                    "county": "Yes",
-                    "district": "Also Yes",
+                    "district_original": "Also Yes",
                 },
                 {"country": "USA", "zip": "12345", "city": "Chicago"},
             ]
@@ -229,14 +228,6 @@ def test_create_nested_object():
         [
             {
                 "country": "USA",
-                "zip": "12345",
-                "city": "Chicago",
-                "state": "IL",
-                "county": "Yes",
-                "district": "Also Yes",
-            },
-            {
-                "country": "USA",
                 "zip": "12346",
                 "city": "Springfield",
                 "state": "IL",
@@ -254,13 +245,12 @@ def test_create_nested_object():
     ) == {
         "USA": {
             "city": ["CHICAGO"],
-            "zip": ["12345", "12346", "12346", "12345"],
+            "zip": ["12346", "12346", "12345"],
             "IL": {
-                "county": ["YES"],
-                "district": ["ALSO YES"],
+                "county": [],
                 "district_current": ["02"],
                 "district_original": ["02"],
-                "city": ["CHICAGO", "SPRINGFIELD", "SPRINGFIELD"],
+                "city": ["SPRINGFIELD", "SPRINGFIELD"],
             },
         }
     }
@@ -271,12 +261,7 @@ def test_location_error_handling():
         location_error_handling({})
     with pytest.raises(InvalidParameterException):
         location_error_handling({"country": "", "county": ""})
-    with pytest.raises(InvalidParameterException):
-        location_error_handling({"country": "", "district": ""})
     assert location_error_handling({"country": "", "state": "", "county": ""}) is None
-    assert location_error_handling({"country": "", "state": "", "district": ""}) is None
-    assert location_error_handling({"country": "", "state": "", "county": "", "district": ""}) is None
-    assert location_error_handling({"country": "", "state": "", "county": "", "district": "", "feet": ""}) is None
 
 
 def test_get_fields_list():

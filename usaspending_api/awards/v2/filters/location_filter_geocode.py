@@ -74,7 +74,7 @@ def validate_location_keys(values):
             raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
         if district_current is not None and district_original is not None:
             raise InvalidParameterException(DUPLICATE_DISTRICT_LOCATION_PARAMETERS)
-        if ("country" not in v) or (("district" in v or "county" in v) and "state" not in v):
+        if ("country" not in v) or ("county" in v and "state" not in v):
             location_error_handling(v.keys())
 
 
@@ -143,11 +143,11 @@ def create_nested_object(values):
 
 def location_error_handling(fields):
     """ Raise the relevant error for location keys. """
-    # Request must have country, and can only have 3 fields, and must have state if there is county or district
+    # Request must have country, and can only have 3 fields, and must have state if there is county
     if "country" not in fields:
         raise InvalidParameterException("Invalid filter:  Missing necessary location field: country.")
 
-    if "state" not in fields and ("county" in fields or "district" in fields):
+    if "state" not in fields and ("county" in fields):
         raise InvalidParameterException("Invalid filter:  Missing necessary location field: state.")
 
 
