@@ -123,7 +123,7 @@ test-dbs:  ## Trigger the setup of multiple test DBs that can be reused with pyt
 
 .PHONY: tests
 tests: test-dbs  ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
-	pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null ${args}
+	pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args}
 
 .PHONY: tests-failed
 tests-failed:  test-dbs ## Re-run only automated unit/integration tests that failed on the previous run. Configured for verbose logging to get more detail on failures. logging. add args="..." to append additional pytest args
