@@ -6,6 +6,8 @@ from django.db import connection, connections, router, DEFAULT_DB_ALIAS
 from psycopg2.sql import Composable, Identifier, SQL
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
+from pathlib import Path
+import re
 
 
 def build_dsn_string(db_settings):
@@ -29,6 +31,12 @@ def get_broker_dsn_string():
         return build_dsn_string(settings.DATABASES["data_broker"])
     else:
         raise Exception("No valid Broker database connection is configured")
+
+
+def read_sql_file_to_text(file_path: Path) -> str:
+    """Open file and return text with most whitespace removed"""
+    p = re.compile(r"\s\s+")
+    return p.sub(" ", str(file_path.read_text().replace("\n", "  ")))
 
 
 def read_sql_file(file_path):

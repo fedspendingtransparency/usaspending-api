@@ -2,82 +2,45 @@ import boto3
 import io
 import logging
 import math
+import time
 
 from boto3.s3.transfer import TransferConfig, S3Transfer
-from botocore.client import BaseClient
-
+from botocore.exceptions import ClientError
 from django.conf import settings
 from pathlib import Path
-from typing import List, Union
-from contextlib import closing
+from typing import List
+from botocore.client import BaseClient
 
 from usaspending_api.config import CONFIG
-
 
 logger = logging.getLogger("script")
 
 
-def get_boto3_s3_client() -> BaseClient:
+def _get_boto3_s3_client(region_name=CONFIG.AWS_REGION) -> BaseClient:
+    """Returns the correct boto3 client based on the
+    environment.
+
+    Returns:
+        BaseClient: Boto3 client implementatoin
+    """
     if not CONFIG.USE_AWS:
         boto3_session = boto3.session.Session(
-            region_name=CONFIG.AWS_REGION,
+            region_name=region_name,
             aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
             aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
         )
         s3_client = boto3_session.client(
             service_name="s3",
-            region_name=CONFIG.AWS_REGION,
+            region_name=region_name,
             endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
         )
     else:
         s3_client = boto3.client(
             service_name="s3",
-            region_name=CONFIG.AWS_REGION,
+            region_name=region_name,
             endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}",
         )
     return s3_client
-
-
-def get_s3_object_bytes(s3_bucket_name: str, s3_obj_key: str, configured_logger=None) -> bytes:
-    if not configured_logger:
-        configured_logger = logger
-    s3_client = get_boto3_s3_client()
-    try:
-        s3_obj = s3_client.get_object(Bucket=s3_bucket_name, Key=s3_obj_key)
-        # Getting Body gives a botocore.response.StreamingBody object back to allow "streaming" its contents
-        s3_obj_body = s3_obj["Body"]
-        with closing(s3_obj_body):  # make sure to close the stream when done
-            obj_bytes = s3_obj_body.read()
-            configured_logger.info(
-                f"Finished reading s3 object bytes for '{s3_obj_key}' from bucket '{s3_bucket_name}'"
-            )
-            return obj_bytes
-    except Exception as exc:
-        configured_logger.error(f"ERROR reading object '{s3_obj_key}' from bucket '{s3_bucket_name}'")
-        configured_logger.exception(exc)
-        raise exc
-
-
-def download_s3_object(
-    s3_bucket_name: str, s3_obj_key: str, download_path: Union[str, Path], configured_logger=None
-) -> None:
-    try:
-        with open(download_path, "wb") as csv_file:
-            csv_file.write(
-                get_s3_object_bytes(
-                    s3_bucket_name=s3_bucket_name,
-                    s3_obj_key=s3_obj_key,
-                    configured_logger=configured_logger,
-                )
-            )
-
-        configured_logger.info(
-            f"Finished writing s3 object '{s3_obj_key}' from bucket '{s3_bucket_name}' to path '{str(download_path)}'"
-        )
-    except Exception as exc:
-        configured_logger.error(f"ERROR downloading object '{s3_obj_key}' from bucket '{s3_bucket_name}'")
-        configured_logger.exception(exc)
-        raise exc
 
 
 def retrieve_s3_bucket_object_list(bucket_name: str) -> List["boto3.resources.factory.s3.ObjectSummary"]:
@@ -124,3 +87,48 @@ def multipart_upload(bucketname, regionname, source_path, keyname):
     config = TransferConfig(multipart_chunksize=bytes_per_chunk)
     transfer = S3Transfer(s3client, config)
     transfer.upload_file(source_path, bucketname, Path(keyname).name, extra_args={"ACL": "bucket-owner-full-control"})
+
+
+def download_s3_object(
+    bucket_name: str,
+    key: str,
+    file_path: str,
+    s3_client: BaseClient = None,
+    retry_count: int = 3,
+    retry_cooldown: int = 30,
+    region_name: str = settings.USASPENDING_AWS_REGION,
+):
+    """Download an S3 object to a file.
+    Args:
+        bucket_name: The name of the bucket where the key is located.
+        key: The name of the key to download from.
+        file_path: The path to the file to download to.
+        max_retries: The number of times to retry the download.
+        retry_delay: The amount of time in seconds to wait after a failure before retrying.
+        region_name: AWS region
+    """
+    if not s3_client:
+        s3_client = _get_boto3_s3_client(region_name)
+    for attempt in range(retry_count + 1):
+        try:
+            s3_client.download_file(bucket_name, key, file_path)
+            return
+        except ClientError as e:
+            logger.info(
+                f"Attempt {attempt + 1} of {retry_count + 1} failed to download {key} from bucket {bucket_name}. Error: {e}"
+            )
+            if attempt <= retry_count:
+                time.sleep(retry_cooldown)
+            else:
+                logger.error(f"Failed to download {key} from bucket {bucket_name} after {retry_count + 1} attempts.")
+                raise
+
+
+def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION):
+    """Delete an S3 object
+    Args:
+        bucket_name: The name of the bucket where the key is located.
+        key: The name of the key to delete
+    """
+    s3 = _get_boto3_s3_client(region_name)
+    s3.delete_object(Bucket=bucket_name, Key=key)

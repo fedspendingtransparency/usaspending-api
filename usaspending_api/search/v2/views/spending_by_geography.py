@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from django.conf import settings
-from django.db.models import F, FloatField, QuerySet, Sum, TextField, Value
+from django.db.models import F, FloatField, IntegerField, QuerySet, Sum, TextField, Value
 from django.db.models.functions import Cast, Concat
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
@@ -25,7 +25,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
-from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
+from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
@@ -43,6 +43,7 @@ class GeoLayer(Enum):
     COUNTY = "county"
     DISTRICT = "district"
     STATE = "state"
+    COUNTRY = "country"
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -81,7 +82,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "key": "geo_layer",
                 "type": "enum",
                 "optional": False,
-                "enum_values": ["state", "county", "district"],
+                "enum_values": ["state", "county", "district", "country"],
             },
             {
                 "name": "geo_layer_filters",
@@ -99,6 +100,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             "county": "county_agg_key",
             "district": "congressional_cur_agg_key",
             "state": "state_agg_key",
+            "country": "country_agg_key",
         }
         model_dict = {
             "place_of_performance": {"prime": "pop", "sub": "sub_place_of_perform"},
@@ -167,6 +169,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # We do not use matviews for Subaward filtering, just the Subaward download filters
             self.model_name = SubawardSearch
             self.queryset = subaward_filter(self.filters)
+
             self.obligation_column = "subaward_amount"
             result = self.query_django_subawards()
         else:
@@ -175,8 +178,15 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             else:
                 scope_filter_name = "recipient_scope"
 
-            # Only search for values within USA, but don't overwrite a user's search
-            if scope_filter_name not in self.filters:
+            # If searching for COUNTY, DISTRICT, or STATE then only search for values within
+            #   USA, but don't overwrite a user's search.
+            # DO add `recipient_scope` or `place_of_performance_scope` if it wasn't already included.
+
+            # If searching for COUNTRY and no scope was provided, then return results for all
+            #   countries provided in the `geo_layer_filters` list.
+            # DO NOT add `recipient_scope` or `place_of_performance_scope` to the filters, if it
+            #   wasn't already included.
+            if scope_filter_name not in self.filters and self.geo_layer != GeoLayer.COUNTRY:
                 self.filters[scope_filter_name] = "domestic"
 
             self.obligation_column = "generated_pragmatic_obligation"
@@ -220,8 +230,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             # Only state scope will add its own state code
             # State codes are consistent in database i.e. AL, AK
             fields_list.append(self.loc_lookup)
+            results = self.state_results(kwargs, fields_list, self.loc_lookup)
 
-            return self.state_results(kwargs, fields_list, self.loc_lookup)
+        elif self.geo_layer == GeoLayer.COUNTRY:
+            results = self.country_results(self.loc_lookup)
 
         else:
             # County and district scope will need to select multiple fields
@@ -242,15 +254,15 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 geo_queryset = self.county_district_queryset_subawards(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
                 )
-
-                return self.county_results(state_lookup, county_name_lookup, geo_queryset)
+                results = self.county_results(state_lookup, county_name_lookup, geo_queryset)
 
             else:
                 geo_queryset = self.county_district_queryset_subawards(
                     kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
                 )
+                results = self.district_results(state_lookup, geo_queryset)
 
-                return self.district_results(state_lookup, geo_queryset)
+        return results
 
     def state_results(self, filter_args: Dict[str, str], lookup_fields: List[str], loc_lookup: str) -> List[dict]:
         # Adding additional state filters if specified
@@ -397,6 +409,59 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return results
 
+    def country_results(self, loc_lookup: str) -> List[dict]:
+        """Find subaward results for countries
+
+        Args:
+            loc_lookup (String): Name of the field on the SubawardSearch model to use to find subawards.
+
+        Returns:
+            List[dict]: List of subaward results by country
+        """
+        country_queryset = self.queryset.values(loc_lookup)
+
+        # If specific countries were provided, only get the subawards for those countries
+        if self.geo_layer_filters:
+            country_queryset = country_queryset.filter(**{f"{loc_lookup}__in": self.geo_layer_filters})
+
+            ref_countries = RefCountryCode.objects.filter(country_code__in=self.geo_layer_filters).values(
+                "country_code", "country_name"
+            )
+        # If no specific countries were provided, then get all subawards grouped by country
+        else:
+            ref_countries = RefCountryCode.objects.all().values("country_code", "country_name")
+
+        ref_countries = {country["country_code"]: country["country_name"] for country in ref_countries}
+        # Sum the `subaward_amount` columns and exclude any subawards with $0 amounts
+        country_queryset = country_queryset.annotate(transaction_amount=Sum("subaward_amount")).exclude(
+            transaction_amount=0
+        )
+
+        results = []
+        for x in country_queryset:
+            shape_code = x[loc_lookup]
+            per_capita = None
+            # TODO: to be populated in DEV-10132
+            population = None
+            if population:
+                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
+            display_name = ref_countries.get(shape_code, None)
+
+            results.append(
+                {
+                    "shape_code": shape_code,
+                    "aggregated_amount": x["transaction_amount"],
+                    "display_name": display_name.title() if display_name else None,
+                    "population": population,
+                    "per_capita": per_capita,
+                }
+            )
+
+        # Sort the results by `shape_code` value
+        results = sorted(results, key=lambda x: x["shape_code"])
+
+        return results
+
     def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q) -> Optional[TransactionSearch]:
         # Create the initial search using filters
         search = TransactionSearch().filter(filter_query)
@@ -425,7 +490,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         # Get the codes
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        geo_codes = [_key_to_geo_code(bucket["key"]) for bucket in geo_info_buckets if bucket.get("key")]
+        if self.geo_layer == GeoLayer.COUNTRY:
+            geo_codes = [bucket.get("key") for bucket in geo_info_buckets if bucket.get("key")]
+        else:
+            # Lookup the state FIPS codes
+            geo_codes = [_key_to_geo_code(bucket["key"]) for bucket in geo_info_buckets if bucket.get("key")]
 
         # Get the current geo info
         current_geo_info = {}
@@ -451,6 +520,18 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 )
                 .values("geo_code", "display_name", "shape_code", "population")
             )
+        elif self.geo_layer == GeoLayer.COUNTRY:
+            geo_info_query = (
+                RefCountryCode.objects.filter(country_code__in=geo_codes)
+                .annotate(
+                    shape_code=F("country_code"),
+                    display_name=F("country_name"),
+                    geo_code=F("country_code"),
+                    # TODO: to be populated in DEV-10132
+                    population=Value(None, output_field=IntegerField()),
+                )
+                .values("geo_code", "display_name", "shape_code", "population")
+            )
         else:
             geo_info_query = (
                 PopCongressionalDistrict.objects.annotate(
@@ -472,14 +553,16 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # Build out the results
         results = {}
         for bucket in geo_info_buckets:
-            bucket_shape_code = _key_to_geo_code(bucket.get("key"))
+            bucket_shape_code = (
+                bucket.get("key") if self.geo_layer == GeoLayer.COUNTRY else _key_to_geo_code(bucket.get("key"))
+            )
             geo_info = current_geo_info.get(bucket_shape_code) or {"shape_code": ""}
 
             if geo_info["shape_code"]:
                 if self.geo_layer == GeoLayer.STATE:
                     geo_info["display_name"] = geo_info["display_name"].title()
                     geo_info["shape_code"] = fips_to_code[geo_info["shape_code"]].upper()
-                elif self.geo_layer == GeoLayer.COUNTY:
+                elif self.geo_layer == GeoLayer.COUNTY or self.geo_layer == GeoLayer.COUNTRY:
                     geo_info["display_name"] = geo_info["display_name"].title()
                 else:
                     geo_info["display_name"] = geo_info["display_name"].upper()

@@ -26,3 +26,4 @@ class StagingConfig(DefaultConfig):
     # ==== [AWS] ====
     AWS_PROFILE: str = None
     SPARK_S3_BUCKET = "dti-da-usaspending-spark-staging"
+    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-bulk-download-staging"
