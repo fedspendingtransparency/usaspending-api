@@ -188,8 +188,6 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `state` (optional, string)
 + `county` (optional, string)
 + `city` (optional, string)
-+ `district` (optional, string)
-    Deprecated. Use `district_original`.
 + `district_original` (optional, string)
     A 2 character code indicating the congressional district
     * When provided, a `state` must always be provided as well.

@@ -113,7 +113,6 @@ Keys in a location object include:
     * If `county` is provided, a `district` value *must never* be provided.
 * **city** - string city name
     * If no `state` is provided, this will return results for all cities in any state with the provided name
-* **district** - Deprecated. Use `district_original`.
 * **district_original** - a 2 character code indicating the congressional district
     * When provided, a `state` must always be provided as well.
     * When provided, a `county` *must never* be provided.
