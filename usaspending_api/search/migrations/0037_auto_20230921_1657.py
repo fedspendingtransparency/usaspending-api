@@ -22,12 +22,12 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='subawardsearch',
-            name='place_of_performance_county_code',
+            name='place_of_perform_county_code',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name='subawardsearch',
-            name='place_of_performance_county_name',
+            name='place_of_perform_county_name',
             field=models.TextField(blank=True, null=True),
         ),
     ]
