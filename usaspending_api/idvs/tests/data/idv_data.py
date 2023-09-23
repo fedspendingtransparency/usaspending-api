@@ -1,9 +1,11 @@
+import pytest
 from model_bakery import baker
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 
-def set_up_related_award_objects():
+@pytest.fixture
+def set_up_related_award_objects(db):
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
 
