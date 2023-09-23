@@ -91,24 +91,28 @@ def subaward_data(db):
     )
 
 
+@pytest.mark.django_db
 def test_keyword_filter_duns(subaward_data):
     filters = {"keywords": ["111111111", "222222222", "333"]}
     results = subaward_filter(filters).all()
     assert len(results) == 2
 
 
+@pytest.mark.django_db
 def test_keyword_filter_uei(subaward_data):
     filters = {"keywords": ["AAAAAAAAAAAA", "BBBBBBBBBBB0", "CCC"]}
     results = subaward_filter(filters).all()
     assert len(results) == 2
 
 
+@pytest.mark.django_db
 def test_keyword_filter_uei_lowercase(subaward_data):
     filters = {"keywords": ["aaaaaaaaaaaa", "bbbbbbbbbbb0", "ccc"]}
     results = subaward_filter(filters).all()
     assert len(results) == 2
 
 
+@pytest.mark.django_db
 def test_defc_filter(subaward_data):
     """Test that only the correct subawards are returned when a disaster code
     is provided.
@@ -135,6 +139,7 @@ def test_defc_filter(subaward_data):
     assert len(results) == 2
 
 
+@pytest.mark.django_db
 def test_defc_and_date_filters(subaward_data):
     """Test the combination of the `def_codes` and `time_period` filters"""
 

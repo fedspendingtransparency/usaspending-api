@@ -14,7 +14,7 @@ def create_subaward_test_data(*subawards_data_list):
         baker.make("search.SubawardSearch", **subaward)
 
 
-def strip_award_id(api_dict):
+def _strip_award_id(api_dict):
     field_mapping = {
         "broker_subaward_id": "id",
         "subaward_number": "subaward_number",
@@ -35,7 +35,7 @@ def test_all_subawards():
     test_params = svs._parse_and_validate_request(test_payload)
     subawards_logic = svs._business_logic(test_params)
 
-    expected_response = [strip_award_id(subaward_1), strip_award_id(subaward_2), strip_award_id(subaward_3)]
+    expected_response = [_strip_award_id(subaward_1), _strip_award_id(subaward_2), _strip_award_id(subaward_3)]
 
     assert expected_response == subawards_logic
 
@@ -44,9 +44,9 @@ def test_all_subawards():
     subawards_logic = svs._business_logic(test_params)
     assert [] == subawards_logic
 
-    sub_1 = strip_award_id(subaward_1)
-    sub_2 = strip_award_id(subaward_2)
-    sub_3 = strip_award_id(subaward_3)
+    sub_1 = _strip_award_id(subaward_1)
+    sub_2 = _strip_award_id(subaward_2)
+    sub_3 = _strip_award_id(subaward_3)
 
     assert request_with_sort("id") == [sub_3, sub_1, sub_2]
     assert request_with_sort("amount") == [sub_3, sub_2, sub_1]
@@ -72,7 +72,7 @@ def test_specific_award():
     test_params = svs._parse_and_validate_request(test_payload)
     subawards_logic = svs._business_logic(test_params)
 
-    expected_response = [strip_award_id(subaward_11), strip_award_id(subaward_10)]
+    expected_response = [_strip_award_id(subaward_11), _strip_award_id(subaward_10)]
 
     assert expected_response == subawards_logic
 

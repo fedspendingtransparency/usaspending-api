@@ -27,6 +27,7 @@ def award_subaward_count_data(db):
     )
 
 
+@pytest.mark.django_db
 def test_subaward_success(client, award_subaward_count_data):
     """Test subaward count endpoint"""
 
@@ -47,6 +48,7 @@ def test_subaward_success(client, award_subaward_count_data):
     assert resp.data["subawards"] == 0
 
 
+@pytest.mark.django_db
 def test_missing_award(client, award_subaward_count_data):
     """Test subaward count endpoint for award that does not exist"""
 

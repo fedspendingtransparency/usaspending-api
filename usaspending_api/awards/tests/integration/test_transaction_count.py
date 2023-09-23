@@ -40,6 +40,7 @@ def awards_transaction_data(db):
     )
 
 
+@pytest.mark.django_db
 def test_award_success(client, awards_transaction_data):
     """Test transaction count endpoint"""
 
@@ -60,6 +61,7 @@ def test_award_success(client, awards_transaction_data):
     assert resp.data["transactions"] == 3
 
 
+@pytest.mark.django_db
 def test_award_no_transactions(client, awards_transaction_data):
     """Test transaction count endpoint for award with no transactions"""
 
@@ -72,6 +74,7 @@ def test_award_no_transactions(client, awards_transaction_data):
     assert resp.data["transactions"] == 0
 
 
+@pytest.mark.django_db
 def test_missing_award(client, awards_transaction_data):
     """Test transaction count endpoint for award that does not exist"""
 

@@ -42,6 +42,7 @@ from usaspending_api.conftest_helpers import (
     remove_unittest_queue_data_files,
     transform_xdist_worker_id_to_django_test_db_id,
     is_safe_for_xdist_setup_or_teardown,
+    is_pytest_xdist_master_process,
 )
 
 # Compose ALL fixtures from conftest_spark
@@ -93,7 +94,7 @@ def pytest_sessionfinish(session, exitstatus):
     """
     worker_id = get_xdist_worker_id(session)
     if is_safe_for_xdist_setup_or_teardown(session, worker_id):
-        if worker_id == "master":
+        if is_pytest_xdist_master_process(session):
             print(f"\nRunning pytest_sessionfinish while exiting the xdist 'master' process", file=sys.__stderr__)
         else:
             print(

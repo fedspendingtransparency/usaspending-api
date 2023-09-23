@@ -41,6 +41,7 @@ def awards_federal_account_data(db):
     )
 
 
+@pytest.mark.django_db
 def test_award_success(client, awards_federal_account_data):
     """Test federal_account count endpoint"""
 
@@ -61,6 +62,7 @@ def test_award_success(client, awards_federal_account_data):
     assert resp.data["federal_accounts"] == 1
 
 
+@pytest.mark.django_db
 def test_award_no_federal_accounts(client, awards_federal_account_data):
     """Test federal_account count endpoint for award with no federal_accounts"""
 
@@ -73,6 +75,7 @@ def test_award_no_federal_accounts(client, awards_federal_account_data):
     assert resp.data["federal_accounts"] == 0
 
 
+@pytest.mark.django_db
 def test_missing_award(client, awards_federal_account_data):
     """Test federal_account count endpoint for award that does not exist"""
 

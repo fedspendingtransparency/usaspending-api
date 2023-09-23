@@ -4,11 +4,9 @@ import time
 from datetime import datetime
 
 import pytest
-from model_bakery import baker
 
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_month, generate_fiscal_year
-from usaspending_api.common.helpers.generic_helper import check_valid_toptier_agency
 from usaspending_api.common.helpers.generic_helper import get_pagination
 from usaspending_api.common.helpers.timing_helpers import timer
 
@@ -20,18 +18,6 @@ legal_dates = {
 }
 
 not_dates = (0, 2017.2, "forthwith")
-
-
-@pytest.mark.django_db
-def test_check_valid_toptier_agency_valid():
-    baker.make("references.Agency", id=12345, toptier_flag=True, _fill_optional=True)
-    assert check_valid_toptier_agency(12345)
-
-
-@pytest.mark.django_db
-def test_check_valid_toptier_agency_invalid():
-    baker.make("references.Agency", id=54321, toptier_flag=False, _fill_optional=True)
-    assert not check_valid_toptier_agency(54321)
 
 
 def test_generate_fiscal_period_beginning_of_fiscal_year():
