@@ -4,7 +4,7 @@ import pytest
 from django.utils.text import slugify
 from model_bakery import baker
 from rest_framework import status
-from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, IDVS, PARENTS
+from usaspending_api.idvs.tests.data.idv_test_data import IDVS, PARENTS
 from usaspending_api.idvs.v2.views.awards import SORTABLE_COLUMNS
 from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
 

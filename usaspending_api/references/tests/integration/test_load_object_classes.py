@@ -2,7 +2,6 @@ import csv
 import pytest
 
 from django.core.management import call_command
-from pathlib import Path
 from usaspending_api.references.models import ObjectClass
 from usaspending_api import settings
 

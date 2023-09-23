@@ -4,7 +4,6 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import transaction
 from model_bakery import baker
-from pathlib import Path
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.awards.models import Award, TransactionFPDS, TransactionNormalized
 from usaspending_api.references.management.commands.load_agencies import Command, Agency as AgencyTuple

@@ -6,7 +6,6 @@ from datetime import date
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from model_bakery import baker
-from pathlib import Path
 from usaspending_api.references.models import CityCountyStateCode
 from usaspending_api.search.models import SubawardSearch
 from usaspending_api import settings

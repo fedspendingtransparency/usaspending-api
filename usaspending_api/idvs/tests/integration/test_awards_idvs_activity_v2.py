@@ -3,7 +3,7 @@ import pytest
 
 from django.utils.text import slugify
 from rest_framework import status
-from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, PARENTS, RECIPIENT_HASH_PREFIX
+from usaspending_api.idvs.tests.data.idv_test_data import PARENTS, RECIPIENT_HASH_PREFIX
 from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
 
 

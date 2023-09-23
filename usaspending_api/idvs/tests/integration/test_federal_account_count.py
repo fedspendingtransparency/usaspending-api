@@ -1,6 +1,5 @@
 from rest_framework import status
 from model_bakery import baker
-from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data
 
 
 def test_defaults(client, create_idv_test_data):

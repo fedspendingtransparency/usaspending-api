@@ -1,7 +1,7 @@
 import pytest
 from rest_framework import status
 
-from usaspending_api.idvs.tests.data.idv_test_data import create_idv_test_data, AWARD_COUNT
+from usaspending_api.idvs.tests.data.idv_test_data import AWARD_COUNT
 from usaspending_api.idvs.v2.views.accounts import SORTABLE_COLUMNS
 
 

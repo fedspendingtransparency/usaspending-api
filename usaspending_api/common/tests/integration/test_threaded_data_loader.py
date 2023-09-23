@@ -2,7 +2,7 @@ import pytest
 
 from django.conf import settings
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.common.threaded_data_loader import ThreadedDataLoader, cleanse_values
+from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
 
 
 @pytest.mark.django_db(transaction=True)
