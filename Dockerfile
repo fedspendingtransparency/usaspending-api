@@ -8,6 +8,9 @@
 
 FROM centos:7
 
+# Build ARGs
+ARG PYTHON_VERSION=3.8.16
+
 WORKDIR /dockermount
 
 RUN yum -y update && yum clean all
@@ -21,12 +24,12 @@ RUN yum -y install postgresql13
 
 ##### Building python 3.8
 WORKDIR /usr/src
-RUN wget --quiet https://www.python.org/ftp/python/3.8.16/Python-3.8.16.tgz
-RUN tar xzf Python-3.8.16.tgz
-WORKDIR /usr/src/Python-3.8.16
+RUN wget --quiet https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz
+RUN tar xzf Python-${PYTHON_VERSION}.tgz
+WORKDIR /usr/src/Python-${PYTHON_VERSION}
 RUN ./configure --enable-optimizations
 RUN make altinstall
-RUN ln -sf /usr/local/bin/python3.8 /usr/bin/python3
+RUN ln -sf /usr/local/bin/python`echo ${PYTHON_VERSION} | awk -F. '{short_version=$1 FS $2; print short_version}'` /usr/bin/python3
 RUN echo "$(python3 --version)"
 
 ##### Copy python packaged
