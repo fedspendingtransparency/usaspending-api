@@ -1152,7 +1152,7 @@ def _error_handling_dispatcher(work_dispatcher: SQSWorkDispatcher, error_queue: 
 def _hanging_cleanup_if_worker_alive(
     task_id, termination_queue: mp.Queue, work_tracking_queue: mp.Queue, queue_message, cleanup_timeout: float
 ):
-    """An implementation of an exit handler, that will purposefully hang during the exit handling funciton (aka
+    """An implementation of an exit handler, that will purposefully hang during the exit handling function (aka
     'cleanup') for longer than the exit handling timeout, in order to short-circuit cleanup, and try again with a
     killed worker"""
     cleanup_logger = logging.getLogger(__name__ + "." + inspect.stack()[0][3])
@@ -1186,14 +1186,27 @@ def _hanging_cleanup_if_worker_alive(
     cleanup_logger.debug(
         "worker_during_cleanup.status() = {} [PID={}]".format(worker_during_cleanup.status(), worker_pid_during_cleanup)
     )
-    if worker_during_cleanup.status() != ps.STATUS_ZOMBIE:  # hang cleanup if worker is running
-        sleep(cleanup_timeout + 0.5)  # sleep for longer than the allowed time for exit handling
-        # Should not get to this point, since the timeout wrapper should interrupt during the above sleep
-        payload = "cleanup_end_with_live_worker_{}".format(queue_message.body)
-        work_tracking_queue.put(payload, block=True, timeout=cleanup_timeout / 2)
-    else:
-        # Should only get to this point if the worker was dead/killed when this cleanup ran
+    if worker_during_cleanup.status() == ps.STATUS_ZOMBIE:
+        # This case should only happen when the worker was dead/killed when this cleanup ran
+        cleanup_logger.debug(
+            "Found ZOMBIE worker during cleanup. "
+            "Putting tracer about dead worker in the tracking queue...[PID={}]".format(worker_pid_during_cleanup)
+        )
         payload = "cleanup_end_with_dead_worker_{}".format(queue_message.body)
+        work_tracking_queue.put(payload, block=True, timeout=cleanup_timeout / 2)
+        cleanup_logger.debug(
+            "... Tracer about dead worker the tracking queue [PID={}]".format(worker_pid_during_cleanup)
+        )
+    else:  # hang cleanup if worker is running
+        sleep(cleanup_timeout + 0.5)  # sleep for longer than the allowed time for exit handling
+
+        # Should NEVER get to this point, since the timeout wrapper should interrupt during the above sleep
+        cleanup_logger.error(
+            "Timeout wrapper DID NOT interrupt sleeping cleanup (should have) [PID={}]".format(
+                worker_pid_during_cleanup
+            )
+        )
+        payload = "cleanup_end_with_live_worker_{}".format(queue_message.body)
         work_tracking_queue.put(payload, block=True, timeout=cleanup_timeout / 2)
 
 
