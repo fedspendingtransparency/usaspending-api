@@ -1,11 +1,13 @@
-language: python
+os: linux
 
 dist: bionic
 
-cache: pip
+language: python
 
 python:
   - '3.7'
+
+cache: pip
 
 env:
   global:
@@ -38,11 +40,13 @@ env:
   - MINIO_HOST=localhost
   - PYTEST_XDIST_NUMPROCESSES=4
   - COLUMNS=240  # for wider terminal output
+  - TRAVIS_JOB_INDEX="$(echo $TRAVIS_JOB_NUMBER | cut -d'.' -f2)"
 
 jobs:
-  # NOTE: See conftest.py pytest_collection_modifyitems for how Marks are assigned to tests
   include:
-  - name: Unit Tests
+  - stage: Setup and Test
+    # NOTE: See conftest.py pytest_collection_modifyitems for how Marks are assigned to tests
+    name: Unit Tests
     env:
     - PYTEST_SETUP_TEST_DATABASES=false
     - PYTEST_PRELOAD_SPARK_JARS=false
@@ -50,6 +54,11 @@ jobs:
     - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
     - PYTEST_MATCH_EXPRESSION=
     - PYTEST_MARK_EXPRESSION='(not spark and not database and not elasticsearch)'
+    workspaces:
+      create:
+        name: ws1
+        paths:
+          - coverage.*.xml
   - name: Non-Spark Integration Tests
     env:
     - PYTEST_SETUP_TEST_DATABASES=true
@@ -58,6 +67,11 @@ jobs:
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION=
     - PYTEST_MARK_EXPRESSION='(not spark)'
+    workspaces:
+      create:
+        name: ws2
+        paths:
+          - coverage.*.xml
   - name: Spark Integration Tests - test_load_to_from_delta.py
     env:
     - PYTEST_XDIST_NUMPROCESSES=4
@@ -67,6 +81,11 @@ jobs:
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION=test_load_to_from_delta.py
     - PYTEST_MARK_EXPRESSION=spark
+    workspaces:
+      create:
+        name: ws3
+        paths:
+          - coverage.*.xml
   - name: Spark Integration Tests - test_load_transactions_in_delta.py
     env:
     # Concurrent sessions does not seem to be efficient for this test. Keeping at 1 session
@@ -77,6 +96,11 @@ jobs:
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION=test_load_transactions_in_delta.py
     - PYTEST_MARK_EXPRESSION=spark
+    workspaces:
+      create:
+        name: ws4
+        paths:
+          - coverage.*.xml
   - name: Spark Integration Tests - Other
     env:
     - PYTEST_XDIST_NUMPROCESSES=4
@@ -86,7 +110,32 @@ jobs:
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION='(not test_load_to_from_delta.py and not test_load_transactions_in_delta.py)'
     - PYTEST_MARK_EXPRESSION=spark
+    workspaces:
+      create:
+        name: ws5
+        paths:
+          - coverage.*.xml
+  - stage: Code Coverage
+    # NOTE: This stage will only run if ALL test stage jobs passed (there's no point to collect and report coverage if they did not)
+    env:
+    - IS_CODE_COVERAGE_REPORT=true
+    workspaces:
+      use: [ws1,ws2,ws3,ws4,ws5]
+    before_install: ""  # override default to no-op
+    install: ""  # override default to no-op
+    before_script:
+      # Get dependencies to report code coverage to code climate
+      - travis_retry curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+      - chmod +x ./cc-test-reporter
+    script:
+    - ls -lh coverage*
+    - for cf in coverage.*.xml; do ./cc-test-reporter format-coverage --prefix $TRAVIS_BUILD_DIR --input-type coverage.py --output coverage/codeclimate.$(echo "$cf" | cut -d'.' -f2).xml coverage.$(echo "$cf" | cut -d'.' -f2).xml; done
+    - ls coverage/
+    - ./cc-test-reporter sum-coverage --output - --parts $(find . -maxdepth 1 -name 'coverage.*.xml' | wc -l) ./coverage/codeclimate.*.xml | ./cc-test-reporter upload-coverage --input -
 
+####
+#### Below are the default job lifecycle actions if they are not overridden above on a per-job basis
+####
 
 before_install:
   # Postgresql-13 requires manual installation
@@ -179,8 +228,4 @@ script:
   - return $(pytest --collect-only --quiet --ignore-glob='**/tests/integration/*' -m '(spark or database or elasticsearch)' --no-cov --disable-warnings | grep '^usaspending_api.*$' | wc -l)
   - test $? -gt 0 && echo 'Failing because integration tests would be improperly captured as unit tests. Run the previous pytest command locally to figure out which to move to a **/tests/integration/ folder'
   # Must manually set --numprocesses on Travis CI VMs; can't use auto (see: https://github.com/pytest-dev/pytest-xdist/pull/317)
-  #- pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
-  #- pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses 6 --dist worksteal --verbosity=1
-  - pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m "${PYTEST_MARK_EXPRESSION}" -k "${PYTEST_MATCH_EXPRESSION}" --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -r=fEs --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --dist worksteal --verbosity=1 --durations 50
-after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m "${PYTEST_MARK_EXPRESSION}" -k "${PYTEST_MATCH_EXPRESSION}" --cov=usaspending_api --cov-report term --cov-report xml:coverage.$TRAVIS_JOB_INDEX.xml --reuse-db -r=fEs --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --dist worksteal --verbosity=1 --durations 50
