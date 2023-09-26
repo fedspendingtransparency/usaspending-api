@@ -193,13 +193,13 @@ This route sends a request to the backend to begin generating a zipfile of award
     * When provided, a `state` must always be provided as well.
     * When provided, a `county` *must never* be provided.
     * When provided, `country` must always be "USA".
-    * When provided, `district` and `district_current` *must never* be provided.
+    * When provided, `district_current` *must never* be provided.
 + `district_current` (optional, string)
     A 2 character code indicating the current congressional district
     * When provided, a `state` must always be provided as well.
     * When provided, a `county` *must never* be provided.
     * When provided, `country` must always be "USA".
-    * When provided, `district` and `district_original` *must never* be provided.
+    * When provided, `district_original` *must never* be provided.
 + `zip` (optional, string)
 
 ### NAICSCodeObject (object)
