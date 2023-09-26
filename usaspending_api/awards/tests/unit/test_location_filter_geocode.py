@@ -211,6 +211,7 @@ def test_validate_location_keys():
                     "district_original": "Also Yes",
                 },
                 {"country": "USA", "zip": "12345", "city": "Chicago"},
+                {"country": "USA", "state": "MO", "zip": "12345", "city": "Chicago", "county": "Clay"},
             ]
         )
         is None
