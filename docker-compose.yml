@@ -195,6 +195,7 @@ services:
     image: minio/minio:RELEASE.2022-04-12T06-55-35Z
     container_name: minio
     volumes:
+      - .:/dockermount
       - type: bind
         source: ${MINIO_DATA_DIR:-../data/s3}
         target: /data
@@ -204,7 +205,19 @@ services:
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
-    command: server --address ":10001" --console-address ":10002" /data
+    entrypoint: >
+      /bin/sh -c "
+        if [ ! -d data/dti-da-public-files-nonprod ]; then
+          # Create the bucket for the data dict within MinIO
+          mkdir data/dti-da-public-files-nonprod
+        fi
+        if [ ! -d data/dti-da-public-files-nonprod/user_reference_docs ]; then
+          # Create the full path for the data dict file
+          mkdir data/dti-da-public-files-nonprod/user_reference_docs
+        fi
+        cp dockermount/usaspending_api/data/Data_Dictionary_Crosswalk.xlsx data/dti-da-public-files-nonprod/user_reference_docs/Data_Dictionary_Crosswalk.xlsx
+        minio server --address ":10001" --console-address ":10002" /data
+      "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-10001}/minio/health/live"]
       interval: 30s
