@@ -207,14 +207,8 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
     entrypoint: >
       /bin/sh -c "
-        if [ ! -d data/dti-da-public-files-nonprod ]; then
-          # Create the bucket for the data dict within MinIO
-          mkdir data/dti-da-public-files-nonprod
-        fi
-        if [ ! -d data/dti-da-public-files-nonprod/user_reference_docs ]; then
-          # Create the full path for the data dict file
-          mkdir data/dti-da-public-files-nonprod/user_reference_docs
-        fi
+        # Create the bucket within MinIO and file path for the data dict
+        mkdir -p data/dti-da-public-files-nonprod/user_reference_docs
         cp dockermount/usaspending_api/data/Data_Dictionary_Crosswalk.xlsx data/dti-da-public-files-nonprod/user_reference_docs/Data_Dictionary_Crosswalk.xlsx
         minio server --address ":10001" --console-address ":10002" /data
       "
