@@ -150,7 +150,15 @@ TRANSACTION_FPDS_COLUMN_INFO = [
             ELSE {input} \
             END",
     ),
-    TransactionColumn("legal_entity_country_name", "legal_entity_country_name", "STRING"),
+    TransactionColumn(
+        "legal_entity_country_name",
+        "legal_entity_country_name",
+        "STRING",
+        scalar_transformation="CASE {input} \
+            WHEN 'USA' THEN 'UNITED STATES' \
+            ELSE {input} \
+            END",
+    ),
     TransactionColumn("legal_entity_county_code", "legal_entity_county_code", "STRING"),
     TransactionColumn("legal_entity_county_name", "legal_entity_county_name", "STRING"),
     TransactionColumn("legal_entity_state_code", "legal_entity_state_code", "STRING"),
@@ -225,7 +233,15 @@ TRANSACTION_FPDS_COLUMN_INFO = [
             ELSE {input} \
             END",
     ),
-    TransactionColumn("place_of_perform_country_n", "place_of_perform_country_n", "STRING"),
+    TransactionColumn(
+        "place_of_perform_country_n",
+        "place_of_perform_country_n",
+        "STRING",
+        scalar_transformation="CASE {input} \
+            WHEN 'USA' THEN 'UNITED STATES' \
+            ELSE {input} \
+            END",
+    ),
     TransactionColumn("place_of_perform_county_co", "place_of_perform_county_co", "STRING"),
     TransactionColumn("place_of_perform_county_na", "place_of_perform_county_na", "STRING"),
     TransactionColumn("place_of_perform_state_nam", "place_of_perform_state_nam", "STRING"),

@@ -1621,6 +1621,22 @@ class TransactionFabsFpdsCore:
             """
         )
 
+        self.spark.sql(
+            f"""
+                UPDATE raw.{self.usas_source_table_name}
+                SET place_of_perform_country_n = 'USA'
+                WHERE {self.pk_field} = 4 OR {self.pk_field} = 5
+            """
+        )
+
+        self.spark.sql(
+            f"""
+                UPDATE raw.{self.usas_source_table_name}
+                SET legal_entity_country_name = 'USA'
+                WHERE {self.pk_field} = 4 OR {self.pk_field} = 5
+            """
+        )
+
         # Need to load changes into the transaction_id_lookup table.
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
@@ -1646,6 +1662,13 @@ class TransactionFabsFpdsCore:
         assert len(delta_data) == 1
         assert delta_data[0]["legal_entity_country_code"] == "USA"
         assert delta_data[0]["place_of_perform_country_c"] == "USA"
+
+        # Verify country name scalar transformation
+        query = f"SELECT DISTINCT legal_entity_country_name, place_of_perform_country_n FROM int.{self.etl_level} WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
+        delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
+        assert len(delta_data) == 1
+        assert delta_data[0]["legal_entity_country_name"] == "UNITED STATES"
+        assert delta_data[0]["place_of_perform_country_n"] == "UNITED STATES"
 
         # Verify key fields in transaction_f[ab|pd]s table
         delta_data = [row.asDict() for row in self.spark.sql(transaction_fabs_fpds_query).collect()]
