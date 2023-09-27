@@ -117,11 +117,11 @@ def download_s3_object(
             logger.info(
                 f"Attempt {attempt + 1} of {retry_count + 1} failed to download {key} from bucket {bucket_name}. Error: {e}"
             )
-            if attempt <= retry_count:
+            if attempt < retry_count:
                 time.sleep(retry_cooldown)
             else:
                 logger.error(f"Failed to download {key} from bucket {bucket_name} after {retry_count + 1} attempts.")
-                raise
+                raise e
 
 
 def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION):

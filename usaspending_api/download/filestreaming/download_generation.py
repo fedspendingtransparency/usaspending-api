@@ -18,8 +18,6 @@ from datetime import datetime, timezone
 from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
-from http.client import RemoteDisconnected
-from urllib.error import HTTPError
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
@@ -30,7 +28,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
-from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.tracing import SubprocessTrace
 from usaspending_api.download.download_utils import construct_data_date_range
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
@@ -40,6 +37,7 @@ from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_
 from usaspending_api.download.helpers import verify_requested_columns_available, write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
 from usaspending_api.download.models.download_job import DownloadJob
+from usaspending_api.common.helpers.s3_helpers import download_s3_object
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
@@ -737,28 +735,17 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     write_to_log(message="Adding data dictionary to zip file")
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
-    data_dictionary_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
 
-    retry_count = settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COUNT
-
-    # We are currently receiving timeouts when trying to retrieve the data dictionary during
-    # the nightly pipeline. Adding retry logic here until those timeouts are resolved
-    for attempt in range(retry_count + 1):
-        try:
-            RetrieveFileFromUri(data_dictionary_url).copy(data_dictionary_file_path)
-            break
-        except (HTTPError, RemoteDisconnected) as e:
-            logger.info(f"Attempt {attempt + 1} of {retry_count + 1} failed to download Data Dictionary. Error: {e}")
-            if attempt < retry_count:
-                time.sleep(settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN)
-                continue
-            else:
-                logger.error(f"Failed to download Data Dictionary after {retry_count + 1} attempts.")
-                raise
-        except Exception as e:
-            logger.error(f"Attempt {attempt + 1} of {retry_count + 1} failed to download Data Dictionary.")
-            logger.error(f"Unexpected error caught. Failing download. Error: {e}")
-            raise
+    logger.info(
+        f"Retrieving the data dictionary from S3. Bucket: {settings.DATA_DICTIONARY_S3_BUCKET_NAME} Key: {settings.DATA_DICTIONARY_S3_KEY}"
+    )
+    logger.info(f"Saving the data dictionary to: {data_dictionary_file_path}")
+    download_s3_object(
+        bucket_name=settings.DATA_DICTIONARY_S3_BUCKET_NAME,
+        key=settings.DATA_DICTIONARY_S3_KEY,
+        file_path=data_dictionary_file_path,
+        retry_count=settings.DATA_DICTIONARY_DOWNLOAD_RETRY_COUNT,
+    )
 
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
 
