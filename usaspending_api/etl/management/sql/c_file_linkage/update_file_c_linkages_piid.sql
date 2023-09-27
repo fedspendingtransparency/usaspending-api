@@ -32,7 +32,7 @@ WHERE
             AND faba_sub.award_id IS NULL
             AND faba_sub.parent_award_id IS NOT NULL
             {submission_id_clause}
-    )
+    );
 
 
 -- When PIID is populated and Parent PIID is NULL, update File C contract
@@ -53,7 +53,7 @@ WHERE
         SELECT
             faba_sub.financial_accounts_by_awards_id
         FROM (
-            SELECT piid, award_id, submission_id, financial_accounts_by_awards_id
+            SELECT piid, award_id, parent_award_id, submission_id, financial_accounts_by_awards_id
             FROM financial_accounts_by_awards AS faba_sub
         ) as faba_sub
         JOIN (
