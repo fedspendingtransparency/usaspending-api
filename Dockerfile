@@ -22,7 +22,7 @@ RUN yum -y groupinstall "Development Tools"
 RUN yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 RUN yum -y install postgresql13
 
-##### Building python 3.8
+##### Building python 3.x
 WORKDIR /usr/src
 RUN wget --quiet https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz
 RUN tar xzf Python-${PYTHON_VERSION}.tgz
