@@ -60,8 +60,9 @@ TRANSACTION_FABS_COLUMN_INFO = [
         "legal_entity_country_name",
         "legal_entity_country_name",
         "STRING",
-        scalar_transformation="CASE {input} \
-            WHEN 'USA' THEN 'UNITED STATES' \
+        scalar_transformation="CASE \
+            WHEN {input} = 'USA' THEN 'UNITED STATES' \
+            WHEN COALESCE({input}, '') = '' AND legal_entity_country_code in ('UNITED STATES', 'USA') THEN 'UNITED STATES' \
             ELSE {input} \
             END",
     ),
@@ -104,8 +105,9 @@ TRANSACTION_FABS_COLUMN_INFO = [
         "place_of_perform_country_n",
         "place_of_perform_country_n",
         "STRING",
-        scalar_transformation="CASE {input} \
-            WHEN 'USA' THEN 'UNITED STATES' \
+        scalar_transformation="CASE \
+            WHEN {input} = 'USA' THEN 'UNITED STATES' \
+            WHEN COALESCE({input}, '') = '' AND place_of_perform_country_c in ('UNITED STATES', 'USA') THEN 'UNITED STATES' \
             ELSE {input} \
             END",
     ),
