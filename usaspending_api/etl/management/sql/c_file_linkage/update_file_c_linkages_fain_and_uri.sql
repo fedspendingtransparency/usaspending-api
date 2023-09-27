@@ -15,18 +15,21 @@ WHERE
     faba.financial_accounts_by_awards_id = ANY(
         SELECT
             faba_sub.financial_accounts_by_awards_id
-        FROM
-            financial_accounts_by_awards AS faba_sub
+        FROM (
+            SELECT fain, uri, award_id, submission_id, financial_accounts_by_awards_id
+            FROM financial_accounts_by_awards AS faba_sub
+        ) AS faba_sub
+        JOIN (
+            SELECT fain
+            FROM vw_awards as aw_sub
+            GROUP BY fain
+            HAVING count(*) = 1
+        ) AS aw_sub
+        ON aw_sub.fain = faba_sub.fain
         WHERE
             faba_sub.fain IS NOT NULL
             AND faba_sub.uri IS NOT NULL
             AND faba_sub.award_id IS NULL
-            AND (
-                SELECT COUNT(*)
-                FROM vw_awards AS aw_sub
-                WHERE
-                    UPPER(aw_sub.fain) = UPPER(faba_sub.fain)
-            ) = 1
             {submission_id_clause}
     );
 
@@ -48,17 +51,20 @@ WHERE
     faba.financial_accounts_by_awards_id = ANY(
         SELECT
             faba_sub.financial_accounts_by_awards_id
-        FROM
-            financial_accounts_by_awards AS faba_sub
+        FROM (
+            SELECT fain, uri, award_id, submission_id, financial_accounts_by_awards_id
+            FROM financial_accounts_by_awards AS faba_sub
+        ) AS faba_sub
+        JOIN (
+            SELECT uri
+            FROM {file_d_table} AS aw_sub
+            GROUP BY uri
+            HAVING count(*) = 1
+        ) AS aw_sub
+        ON aw_sub.uri = faba_sub.uri
         WHERE
             faba_sub.fain IS NOT NULL
             AND faba_sub.uri IS NOT NULL
             AND faba_sub.award_id IS NULL
-            AND (
-                SELECT COUNT(*)
-                FROM {file_d_table} AS aw_sub
-                WHERE
-                    UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
-            ) = 1
             {submission_id_clause}
         );
