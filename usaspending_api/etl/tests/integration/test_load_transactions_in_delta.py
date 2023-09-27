@@ -1641,7 +1641,7 @@ class TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
 
         # Verify country code scalar transformation
-        query = f"SELECT DISTINCT legal_entity_country_code, place_of_perform_country_c  FROM int.transaction_fabs WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
+        query = f"SELECT DISTINCT legal_entity_country_code, place_of_perform_country_c FROM int.{self.etl_level} WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
         assert len(delta_data) == 1
         assert delta_data[0]["legal_entity_country_code"] == "USA"
