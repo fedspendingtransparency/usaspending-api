@@ -49,8 +49,10 @@ services:
   usaspending-test:
     profiles:
       - test  # must pass --profile test to docker-compose for this to come up, or use docker-compose run
-    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    build: .
+    image: usaspending-testing  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
+    build:
+      context: .
+      dockerfile: Dockerfile.testing
     container_name: usaspending-test
     volumes:
      - .:/dockermount
