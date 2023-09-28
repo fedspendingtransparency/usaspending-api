@@ -9,7 +9,6 @@ from rest_framework.views import APIView
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NotImplementedException
-from usaspending_api.common.helpers.generic_helper import deprecated_district_field_in_location_object
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -103,13 +102,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             self.raise_not_implemented(validated_payload)
 
         raw_response = business_logic_func(validated_payload, original_filters)
-
-        # Add filter field deprecation notices
-
-        # TODO: To be removed in DEV-9966
-        messages = raw_response.get("messages", [])
-        deprecated_district_field_in_location_object(messages, original_filters)
-        raw_response["messages"] = messages
 
         return Response(raw_response)
 
