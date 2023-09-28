@@ -298,14 +298,7 @@ class _RecipientLocations(_Filter):
             state = filter_value.get("state")
             country = filter_value.get("country")
             district_current = filter_value.get("district_current")
-            # TODO: To be removed in DEV-9966
-            # remove if condition, mention of `district`,
-            # and just use filter_value.get("district_original")
-            district_original = (
-                filter_value.get("district_original")
-                if "district_original" in filter_value
-                else filter_value.get("district")
-            )
+            district_original = filter_value.get("district_original")
             location_lookup = {
                 "country_code": country,
                 "state_code": state,
@@ -368,14 +361,7 @@ class _PlaceOfPerformanceLocations(_Filter):
             state = filter_value.get("state")
             country = filter_value.get("country")
             district_current = filter_value.get("district_current")
-            # TODO: To be removed in DEV-9966
-            # remove if condition, mention of `district`,
-            # and just use filter_value.get("district_original")
-            district_original = (
-                filter_value.get("district_original")
-                if "district_original" in filter_value
-                else filter_value.get("district")
-            )
+            district_original = filter_value.get("district_original")
             location_lookup = {
                 "country_code": country,
                 "state_code": state,
