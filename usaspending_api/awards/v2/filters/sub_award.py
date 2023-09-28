@@ -94,11 +94,6 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
                             ]
                         }
                     )
-                # TODO: To be removed in DEV-9966
-                if location_values["district"]:
-                    district_qs = Q(
-                        **{f"{scope}_{location_mappings['congressional_code']}__in": location_values["district"]}
-                    )
                 if location_values["city"]:
                     city_qs = Q(**{f"{scope}_{location_mappings['city_name']}__in": location_values["city"]})
                 state_inner_qs &= county_qs | district_qs | city_qs
