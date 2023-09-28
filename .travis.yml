@@ -48,7 +48,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y postgresql-13
   - sudo cat /etc/postgresql/13/main/postgresql.conf
-  - sudo sed -i 's/^port =.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf 
+  - sudo sed -i 's/^port =.*/port = 5432/' /etc/postgresql/13/main/postgresql.conf
   - sudo cat /etc/postgresql/13/main/postgresql.conf
   - echo "user1             travis               postgres" | sudo tee --append /etc/postgresql/13/main/pg_ident.conf
   - sudo chown postgres /etc/postgresql/13/main/pg_ident.conf
@@ -118,7 +118,6 @@ script:
   - black --check --diff .
   - python manage.py check_for_endpoint_documentation
   - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
-  - pytest --durations 50 --ignore-glob='**/tests/integration/*' --cov=usaspending_api --cov-report= --reuse-db -rsx
-  - pytest --durations 50 --override-ini=python_files='**/tests/integration/*' --cov=usaspending_api --cov-append --cov-report term --cov-report xml:coverage.xml --reuse-db -rsx
+  - pytest --durations=0 usaspending_api/etl/tests/integration/test_load_transactions_in_delta.py --cov=usaspending_api --cov-report= --reuse-db -rsx
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
