@@ -9,8 +9,8 @@ SET
         FROM
             {file_d_table} AS aw
         WHERE
-            UPPER(aw.piid) = UPPER(faba.piid)
-            AND UPPER(aw.parent_award_piid) = UPPER(faba.parent_award_id)
+            aw.piid = faba.piid
+            AND aw.parent_award_piid = faba.parent_award_id
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(
@@ -46,7 +46,7 @@ SET
         FROM
             {file_d_table} AS aw
         WHERE
-            UPPER(aw.piid) = UPPER(faba.piid)
+            aw.piid = faba.piid
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(

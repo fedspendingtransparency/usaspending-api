@@ -9,7 +9,7 @@ SET
         FROM
             vw_awards AS aw
         WHERE
-            UPPER(aw.fain) = UPPER(faba.fain)
+            aw.fain = faba.fain
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(
@@ -45,7 +45,7 @@ SET
         FROM
             {file_d_table} AS aw
         WHERE
-            UPPER(aw.uri) = UPPER(faba.uri)
+            aw.uri = faba.uri
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(
