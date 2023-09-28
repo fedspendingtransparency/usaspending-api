@@ -35,7 +35,7 @@ RUN echo "$(python3 --version)"
 ##### Copy python packaged
 WORKDIR /dockermount
 COPY requirements/ /dockermount/requirements/
-RUN python3 -m pip install -r requirements/requirements.txt -r requirements/requirements-testing.txt
+RUN python3 -m pip install -r requirements/requirements.txt
 
 ##### Copy the rest of the project files into the container
 COPY . /dockermount
