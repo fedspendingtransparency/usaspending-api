@@ -566,7 +566,7 @@ def _test_correct_response_for_pop_location(client):
                     "place_of_performance_locations": [
                         {"country": "USA", "state": "pop_state_code_2", "city": "pop_city_name_2"},
                         {"country": "USA", "state": "pop_state_code_12", "county": "012"},
-                        {"country": "USA", "state": "pop_state_code_18", "district": "18"},
+                        {"country": "USA", "state": "pop_state_code_18", "district_original": "18"},
                         {"country": "USA", "zip": "pop_zip5_19"},
                     ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
@@ -604,7 +604,7 @@ def _test_correct_response_for_recipient_location(client):
                     "recipient_locations": [
                         {"country": "USA", "state": "le_state_code_4", "city": "le_city_name_4"},
                         {"country": "USA", "state": "le_state_code_7", "county": "007"},
-                        {"country": "USA", "state": "le_state_code_17", "district": "17"},
+                        {"country": "USA", "state": "le_state_code_17", "district_original": "17"},
                         {"country": "USA", "zip": "le_zip5_20"},
                     ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
