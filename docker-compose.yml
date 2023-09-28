@@ -192,6 +192,7 @@ services:
     profiles:  # must pass one of these with --profile to docker-compose
       - s3
       - spark
+      - test
     image: minio/minio:RELEASE.2022-04-12T06-55-35Z
     container_name: minio
     volumes:
@@ -221,6 +222,7 @@ services:
   spark-master:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
+      - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -250,6 +252,7 @@ services:
   spark-worker:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
+      - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -276,6 +279,7 @@ services:
   spark-history-server:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
+      - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -320,6 +324,7 @@ services:
   spark-submit:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
+      - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
