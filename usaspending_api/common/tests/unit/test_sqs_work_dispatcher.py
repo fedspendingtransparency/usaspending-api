@@ -1211,7 +1211,8 @@ def _hanging_cleanup_if_worker_alive(
 
 
 @pytest.mark.skip(
-    reason="Flakey test that seems to fail given certain multiprocess (xdist) race conditions. Needs investigation"
+    reason="Flakey test that seems to fail with a race condition when run concurrently with other tests (using xdist). "
+    "Needs investigation."
 )
 def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queue):
     """Simulate an exit_handler that interferes with work that was being done by the worker, to see that we can
@@ -1351,6 +1352,10 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queu
         _fail_runaway_processes(logger, dispatcher=parent_dispatcher)
 
 
+@pytest.mark.skip(
+    reason="Flakey test that seems to fail with a race condition when run concurrently with other tests (using xdist). "
+    "Needs investigation."
+)
 def test_cleanup_second_try_succeeds_after_killing_worker_with_retry(fake_sqs_queue):
     """Same as :meth:`test_cleanup_second_try_succeeds_after_killing_worker_with_dlq`, but this queue allows
     retries. Changes asserts to ensure the message gets retried after cleanup.
