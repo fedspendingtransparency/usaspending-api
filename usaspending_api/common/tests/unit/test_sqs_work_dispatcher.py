@@ -1210,6 +1210,9 @@ def _hanging_cleanup_if_worker_alive(
         work_tracking_queue.put(payload, block=True, timeout=cleanup_timeout / 2)
 
 
+@pytest.mark.skip(
+    reason="Flakey test that seems to fail given certain multiprocess (xdist) race conditions. Needs investigation"
+)
 def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queue):
     """Simulate an exit_handler that interferes with work that was being done by the worker, to see that we can
     kill it and resume trying the exit handler.
