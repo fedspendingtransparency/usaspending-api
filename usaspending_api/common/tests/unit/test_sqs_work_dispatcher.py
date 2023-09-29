@@ -27,7 +27,7 @@ from usaspending_api.common.sqs.sqs_work_dispatcher import (
 )
 from time import sleep
 
-from usaspending_api.conftest_helpers import get_unittest_fake_sqs_queue
+from usaspending_api.conftest_helpers import get_unittest_fake_sqs_queue, is_pytest_xdist_parallel_sessions
 
 
 @pytest.fixture()
@@ -1210,9 +1210,10 @@ def _hanging_cleanup_if_worker_alive(
         work_tracking_queue.put(payload, block=True, timeout=cleanup_timeout / 2)
 
 
-@pytest.mark.skip(
+@pytest.mark.skipif(
+    condition=is_pytest_xdist_parallel_sessions(),
     reason="Flakey test that seems to fail with a race condition when run concurrently with other tests (using xdist). "
-    "Needs investigation."
+    "Needs investigation.",
 )
 def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queue):
     """Simulate an exit_handler that interferes with work that was being done by the worker, to see that we can
@@ -1352,9 +1353,10 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queu
         _fail_runaway_processes(logger, dispatcher=parent_dispatcher)
 
 
-@pytest.mark.skip(
+@pytest.mark.skipif(
+    condition=is_pytest_xdist_parallel_sessions(),
     reason="Flakey test that seems to fail with a race condition when run concurrently with other tests (using xdist). "
-    "Needs investigation."
+    "Needs investigation.",
 )
 def test_cleanup_second_try_succeeds_after_killing_worker_with_retry(fake_sqs_queue):
     """Same as :meth:`test_cleanup_second_try_succeeds_after_killing_worker_with_dlq`, but this queue allows
