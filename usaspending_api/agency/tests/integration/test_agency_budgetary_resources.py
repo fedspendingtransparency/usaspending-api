@@ -6,12 +6,24 @@ from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_ye
 
 
 URL = "/api/v2/agency/{code}/budgetary_resources/{filter}"
-FY = current_fiscal_year() - 2
-PRIOR_FY = FY - 1
+FY2023 = 2023
+FY2022 = 2022
+FY2021 = 2021
+FY2020 = 2020
 
 
 @pytest.fixture
-def data_fixture():
+def before_2022_data_fixture():
+    _build_dabs_reporting_data(FY2021)
+
+
+@pytest.fixture
+def after_2022_data_fixture():
+    _build_dabs_reporting_data(FY2022)
+
+
+def _build_dabs_reporting_data(fy_reported):
+    fy_before_fy_reported = fy_reported - 1
     dabs = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=1995,
@@ -27,7 +39,7 @@ def data_fixture():
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta2)
     sa1_3 = baker.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=FY,
+        reporting_fiscal_year=fy_reported,
         reporting_fiscal_period=3,
         submission_window=dabs,
         toptier_code=ta1.toptier_code,
@@ -35,7 +47,7 @@ def data_fixture():
     )
     sa1_6 = baker.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=FY,
+        reporting_fiscal_year=fy_reported,
         reporting_fiscal_period=6,
         submission_window=dabs,
         toptier_code=ta1.toptier_code,
@@ -43,7 +55,7 @@ def data_fixture():
     )
     sa1_7 = baker.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=FY,
+        reporting_fiscal_year=fy_reported,
         reporting_fiscal_period=7,
         submission_window=dabs,
         toptier_code=ta1.toptier_code,
@@ -51,7 +63,7 @@ def data_fixture():
     )
     sa1_9 = baker.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=FY,
+        reporting_fiscal_year=fy_reported,
         reporting_fiscal_period=9,
         submission_window=dabs,
         toptier_code=ta1.toptier_code,
@@ -59,7 +71,7 @@ def data_fixture():
     )
     sa1_12 = baker.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=FY,
+        reporting_fiscal_year=fy_reported,
         reporting_fiscal_period=12,
         submission_window=dabs,
         toptier_code=ta1.toptier_code,
@@ -67,13 +79,12 @@ def data_fixture():
     )
     sa2_12 = baker.make(
         "submissions.SubmissionAttributes",
-        reporting_fiscal_year=PRIOR_FY,
+        reporting_fiscal_year=fy_before_fy_reported,
         reporting_fiscal_period=12,
         submission_window_id=dabs.id,
         toptier_code=ta2.toptier_code,
         is_final_balances_for_fy=True,
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=9993,
@@ -81,7 +92,6 @@ def data_fixture():
         treasury_account_identifier=tas1,
         submission=sa1_3,
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=9996,
@@ -89,7 +99,6 @@ def data_fixture():
         treasury_account_identifier=tas1,
         submission=sa1_6,
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=9997,
@@ -97,7 +106,6 @@ def data_fixture():
         treasury_account_identifier=tas1,
         submission=sa1_7,
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=9999,
@@ -105,7 +113,6 @@ def data_fixture():
         treasury_account_identifier=tas1,
         submission=sa1_9,
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=1,
@@ -113,7 +120,6 @@ def data_fixture():
         treasury_account_identifier=tas1,
         submission=sa1_12,
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=3,
@@ -121,7 +127,6 @@ def data_fixture():
         treasury_account_identifier=tas1,
         submission=sa1_12,
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=15,
@@ -129,7 +134,6 @@ def data_fixture():
         treasury_account_identifier=tas1,
         submission=sa2_12,
     )
-
     baker.make(
         "accounts.AppropriationAccountBalances",
         total_budgetary_resources_amount_cpe=31,
@@ -144,7 +148,6 @@ def data_fixture():
         treasury_account_identifier=tas2,
         submission=sa2_12,
     )
-
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         obligations_incurred_by_program_object_class_cpe=8883,
@@ -199,7 +202,6 @@ def data_fixture():
         treasury_account=tas2,
         submission=sa2_12,
     )
-
     for fy in range(2017, current_fiscal_year() + 1):
         baker.make("references.GTASSF133Balances", fiscal_year=fy, fiscal_period=12, total_budgetary_resources_cpe=fy)
         baker.make(
@@ -213,13 +215,15 @@ def data_fixture():
 
 
 @pytest.mark.django_db
-def test_budgetary_resources(client, data_fixture):
+def test_budgetary_resources_before_2022(client, before_2022_data_fixture):
+    """Test accumulation of agency DABS reporting data (budgetary resources); given it is using data ONLY BEFORE
+    FY 2022 (i.e. the date 2021-09-30 and before) it SHOULD NOT accumulate monthly period reporting data."""
     resp = client.get(URL.format(code="001", filter=""))
     expected_results = [
         {
-            "fiscal_year": FY,
+            "fiscal_year": FY2021,
             "agency_budgetary_resources": Decimal("4.00"),
-            "total_budgetary_resources": Decimal(f"{FY}.00"),
+            "total_budgetary_resources": Decimal(f"{FY2021}.00"),
             "agency_total_obligated": Decimal("3.00"),
             "agency_obligation_by_period": [
                 {"obligated": Decimal("8883.00"), "period": 3},
@@ -229,15 +233,62 @@ def test_budgetary_resources(client, data_fixture):
             ],
         },
         {
-            "fiscal_year": PRIOR_FY,
+            "fiscal_year": FY2020,
             "agency_budgetary_resources": Decimal("15.00"),
-            "total_budgetary_resources": Decimal(f"{PRIOR_FY}.00"),
+            "total_budgetary_resources": Decimal(f"{FY2020}.00"),
             "agency_total_obligated": Decimal("5.00"),
             "agency_obligation_by_period": [{"period": 12, "obligated": Decimal("5.00")}],
         },
     ]
     for year in range(2017, current_fiscal_year() + 1):
-        if year != FY and year != PRIOR_FY:
+        if year != FY2021 and year != FY2020:
+            expected_results.append(
+                {
+                    "fiscal_year": year,
+                    "agency_budgetary_resources": None,
+                    "total_budgetary_resources": Decimal(f"{year}.00"),
+                    "agency_total_obligated": None,
+                    "agency_obligation_by_period": [],
+                }
+            )
+    expected_results = sorted(expected_results, key=lambda x: x["fiscal_year"], reverse=True)
+    assert resp.data == {
+        "toptier_code": "001",
+        "agency_data_by_year": expected_results,
+        "messages": [],
+    }
+
+
+@pytest.mark.django_db
+def test_budgetary_resources_after_2022(client, after_2022_data_fixture):
+    """Test accumulation of agency DABS reporting data (budgetary resources); given it is using data AFTER FY 2022
+    (i.e. the date 2021-10-01 and after) it SHOULD ALSO accumulate monthly period reporting data."""
+    resp = client.get(URL.format(code="001", filter=""))
+    expected_results = [
+        {
+            "fiscal_year": FY2022,
+            "agency_budgetary_resources": Decimal("4.00"),
+            "total_budgetary_resources": Decimal(f"{FY2022}.00"),
+            "agency_total_obligated": Decimal("3.00"),
+            "agency_obligation_by_period": [
+                {"obligated": Decimal("8883.00"), "period": 3},
+                {"obligated": Decimal("8886.00"), "period": 6},
+                # THIS is the difference. Monthly reporting period data are collected AFTER FY 2022, not just quarterly
+                {"obligated": Decimal("8887.00"), "period": 7},
+                {"obligated": Decimal("8889.00"), "period": 9},
+                {"obligated": Decimal("3.00"), "period": 12},
+            ],
+        },
+        {
+            "fiscal_year": FY2021,
+            "agency_budgetary_resources": Decimal("15.00"),
+            "total_budgetary_resources": Decimal(f"{FY2021}.00"),
+            "agency_total_obligated": Decimal("5.00"),
+            "agency_obligation_by_period": [{"period": 12, "obligated": Decimal("5.00")}],
+        },
+    ]
+    for year in range(2017, current_fiscal_year() + 1):
+        if year != FY2022 and year != FY2021:
             expected_results.append(
                 {
                     "fiscal_year": year,
