@@ -141,8 +141,24 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("legal_entity_address_line3", "legal_entity_address_line3", "STRING"),
     TransactionColumn("legal_entity_city_name", "legal_entity_city_name", "STRING"),
     TransactionColumn("legal_entity_congressional", "legal_entity_congressional", "STRING"),
-    TransactionColumn("legal_entity_country_code", "legal_entity_country_code", "STRING"),
-    TransactionColumn("legal_entity_country_name", "legal_entity_country_name", "STRING"),
+    TransactionColumn(
+        "legal_entity_country_code",
+        "legal_entity_country_code",
+        "STRING",
+        scalar_transformation="CASE {input} \
+            WHEN 'UNITED STATES' THEN 'USA' \
+            ELSE {input} \
+            END",
+    ),
+    TransactionColumn(
+        "legal_entity_country_name",
+        "legal_entity_country_name",
+        "STRING",
+        scalar_transformation="CASE {input} \
+            WHEN 'USA' THEN 'UNITED STATES' \
+            ELSE {input} \
+            END",
+    ),
     TransactionColumn("legal_entity_county_code", "legal_entity_county_code", "STRING"),
     TransactionColumn("legal_entity_county_name", "legal_entity_county_name", "STRING"),
     TransactionColumn("legal_entity_state_code", "legal_entity_state_code", "STRING"),
@@ -208,8 +224,24 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("place_of_perf_country_desc", "place_of_perf_country_desc", "STRING"),
     TransactionColumn("place_of_perfor_state_desc", "place_of_perfor_state_desc", "STRING"),
     TransactionColumn("place_of_perform_city_name", "place_of_perform_city_name", "STRING"),
-    TransactionColumn("place_of_perform_country_c", "place_of_perform_country_c", "STRING"),
-    TransactionColumn("place_of_perform_country_n", "place_of_perform_country_n", "STRING"),
+    TransactionColumn(
+        "place_of_perform_country_c",
+        "place_of_perform_country_c",
+        "STRING",
+        scalar_transformation="CASE {input} \
+            WHEN 'UNITED STATES' THEN 'USA' \
+            ELSE {input} \
+            END",
+    ),
+    TransactionColumn(
+        "place_of_perform_country_n",
+        "place_of_perform_country_n",
+        "STRING",
+        scalar_transformation="CASE {input} \
+            WHEN 'USA' THEN 'UNITED STATES' \
+            ELSE {input} \
+            END",
+    ),
     TransactionColumn("place_of_perform_county_co", "place_of_perform_county_co", "STRING"),
     TransactionColumn("place_of_perform_county_na", "place_of_perform_county_na", "STRING"),
     TransactionColumn("place_of_perform_state_nam", "place_of_perform_state_nam", "STRING"),
