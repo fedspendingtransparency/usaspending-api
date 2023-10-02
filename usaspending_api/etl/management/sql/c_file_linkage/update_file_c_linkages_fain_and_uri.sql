@@ -9,7 +9,7 @@ SET
         FROM
             vw_awards AS aw
         WHERE
-            aw.fain = faba.fain
+            UPPER(aw.fain) = UPPER(faba.fain)
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(
@@ -25,7 +25,7 @@ WHERE
             GROUP BY fain
             HAVING count(*) = 1
         ) AS aw_sub
-        ON aw_sub.fain = faba_sub.fain
+        ON UPPER(aw_sub.fain) = UPPER(faba_sub.fain)
         WHERE
             faba_sub.fain IS NOT NULL
             AND faba_sub.uri IS NOT NULL
@@ -45,7 +45,7 @@ SET
         FROM
             {file_d_table} AS aw
         WHERE
-            aw.uri = faba.uri
+            UPPER(aw.uri) = UPPER(faba.uri)
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(
@@ -61,7 +61,7 @@ WHERE
             GROUP BY uri
             HAVING count(*) = 1
         ) AS aw_sub
-        ON aw_sub.uri = faba_sub.uri
+        ON UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
         WHERE
             faba_sub.fain IS NOT NULL
             AND faba_sub.uri IS NOT NULL

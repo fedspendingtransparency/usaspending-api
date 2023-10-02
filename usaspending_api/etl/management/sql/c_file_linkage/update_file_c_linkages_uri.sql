@@ -8,7 +8,7 @@ SET
         FROM
             {file_d_table} AS aw
         WHERE
-            aw.uri = faba.uri
+            UPPER(aw.uri) = UPPER(faba.uri)
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(
@@ -24,7 +24,7 @@ WHERE
             GROUP BY uri
             HAVING count(*) = 1
         ) AS aw_sub
-        ON aw_sub.uri = faba_sub.uri
+        ON UPPER(aw_sub.uri) = UPPER(faba_sub.uri)
         WHERE
             faba_sub.uri IS NOT NULL
             AND faba_sub.fain IS NULL

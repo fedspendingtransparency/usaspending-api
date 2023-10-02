@@ -9,8 +9,8 @@ SET
         FROM
             {file_d_table} AS aw
         WHERE
-            aw.piid = faba.piid
-            AND aw.parent_award_piid = faba.parent_award_id
+            UPPER(aw.piid) = UPPER(faba.piid)
+            AND UPPER(aw.parent_award_piid) = UPPER(faba.parent_award_id)
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(
@@ -26,7 +26,8 @@ WHERE
 				GROUP BY piid, parent_award_piid
 				HAVING count(*) = 1
 		) as aw_sub
-		ON aw_sub.piid = faba_sub.piid AND aw_sub.parent_award_piid = faba_sub.parent_award_id
+		ON UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
+        AND UPPER(aw_sub.parent_award_piid) = UPPER(faba_sub.parent_award_id)
         WHERE
             faba_sub.piid IS NOT NULL
             AND faba_sub.award_id IS NULL
@@ -46,7 +47,7 @@ SET
         FROM
             {file_d_table} AS aw
         WHERE
-            aw.piid = faba.piid
+            UPPER(aw.piid) = UPPER(faba.piid)
     )
 WHERE
     faba.financial_accounts_by_awards_id = ANY(
@@ -62,7 +63,7 @@ WHERE
             GROUP BY piid
             HAVING count(*) = 1
         ) as aw_sub
-            ON aw_sub.piid = faba_sub.piid
+            ON UPPER(aw_sub.piid) = UPPER(faba_sub.piid)
         WHERE
             faba_sub.piid IS NOT NULL
             AND faba_sub.award_id IS NULL
