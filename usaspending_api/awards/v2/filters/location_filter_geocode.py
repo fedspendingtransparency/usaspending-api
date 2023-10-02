@@ -48,9 +48,6 @@ def geocode_filter_locations(scope: str, values: list) -> Q:
                     district_qs = Q(**{f"{scope}_congressional_code_current__in": location_values["district_current"]})
                 if location_values["district_original"]:
                     district_qs = Q(**{f"{scope}_congressional_code__in": location_values["district_original"]})
-                # TODO: To be removed in DEV-9966
-                if location_values["district"]:
-                    district_qs = Q(**{f"{scope}_congressional_code__in": location_values["district"]})
                 if location_values["city"]:
                     city_qs = Q(**{f"{scope}_city_name__in": location_values["city"]})
                 state_inner_qs &= county_qs | district_qs | city_qs
@@ -77,7 +74,7 @@ def validate_location_keys(values):
             raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
         if district_current is not None and district_original is not None:
             raise InvalidParameterException(DUPLICATE_DISTRICT_LOCATION_PARAMETERS)
-        if ("country" not in v) or (("district" in v or "county" in v) and "state" not in v):
+        if ("country" not in v) or ("county" in v and "state" not in v):
             location_error_handling(v.keys())
 
 
@@ -93,8 +90,6 @@ def create_nested_object(values):
         county = v.get("county")
         district_original = v.get("district_original")
         district_current = v.get("district_current")
-        # TODO: To be removed in DEV-9966
-        district = v.get("district")
         state = v.get("state")
         zip = v.get("zip")
         # First level in location filtering in country
@@ -117,10 +112,8 @@ def create_nested_object(values):
 
         # If we have a state, add it to the list
         if state and nested_locations[country].get(state) is None:
-            # TODO: To be removed in DEV-9966 (remove mention of "district")
             nested_locations[country][state] = {
                 "county": [],
-                "district": [],
                 "district_original": [],
                 "district_current": [],
                 "city": [],
@@ -140,10 +133,6 @@ def create_nested_object(values):
                 get_fields_list("district_original", district_original)
             )
 
-        # TODO: To be removed in DEV-9966
-        if district:
-            nested_locations[country][state]["district"].extend(get_fields_list("district", district))
-
         if city and state:
             nested_locations[country][state]["city"].append(city)
         elif city:
@@ -154,11 +143,11 @@ def create_nested_object(values):
 
 def location_error_handling(fields):
     """ Raise the relevant error for location keys. """
-    # Request must have country, and can only have 3 fields, and must have state if there is county or district
+    # Request must have country, and can only have 3 fields, and must have state if there is county
     if "country" not in fields:
         raise InvalidParameterException("Invalid filter:  Missing necessary location field: country.")
 
-    if "state" not in fields and ("county" in fields or "district" in fields):
+    if "state" not in fields and ("county" in fields):
         raise InvalidParameterException("Invalid filter:  Missing necessary location field: state.")
 
 

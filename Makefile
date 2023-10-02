@@ -22,7 +22,7 @@ endif
 #### Variables used in this Makefile.
 #### Uppercased are environment vars, or make-specific vars. All others should be lower-snake-case
 ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
-PYTHON_VERSION ?= 3.7.13  # default version if not set in .env or an env var
+PYTHON_VERSION ?= 3.8.16  # default version if not set in .env or an env var
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_spark := Dockerfile.spark
