@@ -81,11 +81,12 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 	)
 
 .PHONY: requirements-dev.txt
-requirements-dev.txt: .venv ## Install or upgrade (to newer version) pip packages in dev virtual env if requirements-dev.txt file changed
-	@( \
+upgrade :=  #unset it
+requirements-dev.txt: .venv ## Install pip packages in dev virtual env if requirements-dev.txt file changed. Add upgrade=true to upgrade required packages to newest version (can be lengthy)
+	( \
 		src_roots=(${src_root_paths}); \
 		for src_root in "$${src_roots[@]}"; do \
-			pip install --upgrade --upgrade-strategy eager --editable "$${src_root}[dev]"; \
+			pip install ${if ${upgrade},--upgrade,} --editable "$${src_root}[dev]"; \
 		done; \
 	)
 
