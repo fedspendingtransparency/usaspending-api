@@ -157,9 +157,17 @@ Deployed production API endpoints and docs are found by following links here: `h
 
 ### Test Setup
 
-To run all USAspending tests in the docker services run
+1. Build the base `usaspending-backend` Docker image (the test container is based on this Docker image). In the parent **usaspending-api** directory run:
 
+    ```
+    docker build -t usaspending-backend .
+    ```
+
+2. To run all USAspending tests in the docker services run
+
+    ```
     docker-compose run --rm -e DATA_BROKER_DATABASE_URL='' usaspending-test
+    ```
 
 _NOTE: If an env var named `DATA_BROKER_DATABASE_URL` is set, Broker Integration tests will attempt to be run as well. If doing so, Broker dependencies must be met (see below) or ALL tests will fail hard. Running the above command with `-e DATA_BROKER_DATABASE_URL=''` is a precaution to keep them excluded, unless you really want them (see below if so)._
 
