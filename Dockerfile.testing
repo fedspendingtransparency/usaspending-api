@@ -15,4 +15,4 @@ WORKDIR /usaspending-api
 #   to a `/usaspending-api` parent directory which is the name of an installed Django app.
 RUN mv /dockermount/* /usaspending-api/
 
-RUN pip install -r requirements/requirements-testing.txt
+RUN pip install -r requirements/requirements-dev.txt

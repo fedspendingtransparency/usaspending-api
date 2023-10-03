@@ -1,7 +1,0 @@
-docker==5.0.3
-mock==3.0.5
-model-bakery==1.5.*
-pyspark==3.2.1
-pytest-cov==2.10.1
-pytest-django==4.2.0
-pytest==6.2.*
