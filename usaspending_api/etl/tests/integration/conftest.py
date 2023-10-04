@@ -10,18 +10,18 @@ __all__ = [
 ]
 
 
-import logging
-import time
+# import logging
+# import time
 
-import pytest
+# import pytest
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
-@pytest.hookimpl(hookwrapper=True)
-def pytest_fixture_setup(fixturedef, request):
-    start = time.time()
-    yield
-    end = time.time()
+# @pytest.hookimpl(hookwrapper=True)
+# def pytest_fixture_setup(fixturedef, request):
+#     start = time.time()
+#     yield
+#     end = time.time()
 
-    logger.info("pytest_fixture_setup" f", request={request}" f", time={round(end - start)}")
+#     logger.info("pytest_fixture_setup" f", request={request}" f", time={round(end - start)}")

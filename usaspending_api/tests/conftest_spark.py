@@ -46,15 +46,14 @@ SPARK_SESSION_JARS = [
 
 DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
-import time
+# import time
 
-
-@hookimpl(hookwrapper=True)
-def pytest_fixture_setup(fixturedef, request):
-    start = time.time()
-    yield
-    end = time.time()
-    logging.info(f"Fixtures Hook: request={request}" f", time={end - start:.3f}")
+# @hookimpl(hookwrapper=True)
+# def pytest_fixture_setup(fixturedef, request):
+#     start = time.time()
+#     yield
+#     end = time.time()
+#     logging.info(f"Fixtures Hook: request={request}" f", time={end - start:.3f}")
 
 
 @fixture(scope="session")
