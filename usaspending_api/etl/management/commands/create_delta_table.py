@@ -1,3 +1,4 @@
+import logging
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -76,6 +77,8 @@ class Command(BaseCommand):
         table_spec = TABLE_SPEC[destination_table]
         destination_database = options["alt_db"] or table_spec["destination_database"]
         destination_table_name = options["alt_name"] or destination_table
+
+        logging.info(f"Creating Table: {destination_table} Location: {destination_database} _++_")
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")

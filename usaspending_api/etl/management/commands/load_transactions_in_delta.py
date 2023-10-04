@@ -4,6 +4,7 @@ import re
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
+import time
 
 from django.core.management import BaseCommand, call_command
 from django.db import connection
@@ -120,6 +121,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        start = time.time()
+        logging.info(f"Run Duration Started: function=load_transactions_in_delta - {options['etl_level']} -->")
         with self.prepare_spark():
             self.etl_level = options["etl_level"]
             self.spark_s3_bucket = options["spark_s3_bucket"]
@@ -133,6 +136,11 @@ class Command(BaseCommand):
             if self.etl_level == "initial_run":
                 self.logger.info("Running initial setup")
                 self.initial_run(next_last_load)
+                end = time.time()
+                logging.info(
+                    f"Run Duration Ended: function=load_transactions_in_delta - {options['etl_level']} -->"
+                    f", time={end - start:.3f}"
+                )
                 return
 
             if self.etl_level == "award_id_lookup":
@@ -168,6 +176,12 @@ class Command(BaseCommand):
                 self.update_awards()
 
             update_last_load_date(self.etl_level, next_last_load)
+
+        end = time.time()
+        logging.info(
+            f"Run Duration Ended: function=load_transactions_in_delta - {options['etl_level']} -->"
+            f", time={end - start:.3f}"
+        )
 
     @contextmanager
     def prepare_spark(self):

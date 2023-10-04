@@ -2,6 +2,8 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+import time
+import logging
 import dateutil
 import re
 import pyspark
@@ -194,26 +196,36 @@ class TableLoadInfo:
 
 
 def load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_raw_tables=None):
+    start = time.time()
+    logging.info(f"Run Duration Started: function=load_tables_to_delta")
     if load_source_tables:
         load_delta_table_from_postgres("published_fabs", s3_data_bucket)
         load_delta_table_from_postgres("detached_award_procurement", s3_data_bucket)
 
     if load_other_raw_tables:
+        start = time.time()
         for item in load_other_raw_tables:
             if isinstance(item, TableLoadInfo):
+
                 load_dict_to_delta_table(item.spark, s3_data_bucket, "raw", item.table_name, item.data, item.overwrite)
             else:
                 load_delta_table_from_postgres(item, s3_data_bucket)
+    end = time.time()
+    logging.info(f"Run Duration Ended: function=load_tables_to_delta" f", time={end - start:.3f}")
 
 
 class TestInitialRun:
     @staticmethod
     def initial_run(s3_data_bucket, load_source_tables=True, load_other_raw_tables=None, initial_copy=True):
+        start = time.time()
+        logging.info(f"Run Duration Started: function=TestInitialRun.initial_run**")
         load_tables_to_delta(s3_data_bucket, load_source_tables, load_other_raw_tables)
         call_params = ["load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_data_bucket]
         if not initial_copy:
             call_params.append("--no-initial-copy")
         call_command(*call_params)
+        end = time.time()
+        logging.info(f"Run Duration Ended: function=TestInitialRun.initial_run**" f", time={end - start:.3f}")
 
     @staticmethod
     def verify_transaction_ids(spark, expected_transaction_id_lookup, expected_last_load=None):
@@ -319,6 +331,8 @@ class TestInitialRun:
         expected_last_load_transaction_fabs=None,
         expected_last_load_transaction_fpds=None,
     ):
+        start = time.time()
+        logging.info(f"Run Duration Started: function=TestInitialRun.verify")
         TestInitialRun.verify_lookup_info(
             spark,
             expected_transaction_id_lookup,
@@ -361,6 +375,9 @@ class TestInitialRun:
                         raise e
                 else:
                     TestInitialRun.verify_raw_vs_int_tables(spark, table_name, col_names)
+
+        end = time.time()
+        logging.info(f"Run Duration Ended: function=TestInitialRun.verify" f", time={end - start:.3f}")
 
     @mark.django_db(transaction=True)
     def test_edge_cases_using_only_source_tables(
