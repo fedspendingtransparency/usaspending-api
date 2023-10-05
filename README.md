@@ -27,7 +27,7 @@ _**If not using Docker, you'll need to install app components on your machine:**
     - Linux users already know their package manager (`yum`, `apt`, `pacman`, etc.)
 - [`PostgreSQL`](https://www.postgresql.org/download/) version 13.x (with a dedicated `data_store_api` database)
 - [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 7.1
-- `Python` version 3.7 environment
+- `Python` version 3.8 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
   - See [Required Python Libraries](#required-python-libraries) for an example using `pyenv`
 
@@ -157,9 +157,17 @@ Deployed production API endpoints and docs are found by following links here: `h
 
 ### Test Setup
 
-To run all USAspending tests in the docker services run
+1. Build the base `usaspending-backend` Docker image (the test container is based on this Docker image). In the parent **usaspending-api** directory run:
 
+    ```
+    docker build -t usaspending-backend .
+    ```
+
+2. To run all USAspending tests in the docker services run
+
+    ```
     docker-compose run --rm -e DATA_BROKER_DATABASE_URL='' usaspending-test
+    ```
 
 _NOTE: If an env var named `DATA_BROKER_DATABASE_URL` is set, Broker Integration tests will attempt to be run as well. If doing so, Broker dependencies must be met (see below) or ALL tests will fail hard. Running the above command with `-e DATA_BROKER_DATABASE_URL=''` is a precaution to keep them excluded, unless you really want them (see below if so)._
 

@@ -520,9 +520,7 @@ class Command(BaseCommand):
         self.spark.sql("DELETE FROM int.award_ids_delete_modified")
 
     def source_subquery_sql(self, transaction_type=None):
-        def build_date_format_sql(
-            col: TransactionColumn, is_casted_to_date: bool = True, is_result_aliased: bool = True
-        ) -> str:
+        def build_date_format_sql(col: TransactionColumn, is_casted_to_date: bool = True) -> str:
             """Builder function to wrap a column in date-parsing logic.
 
             It will either parse it in mmddYYYY format with - or / as a required separator, or in YYYYmmdd format
@@ -530,7 +528,6 @@ class Command(BaseCommand):
             Args:
                 is_casted_to_date (bool): if true, the parsed result will be cast to DATE to provide a DATE datatype,
                     otherwise it remains a STRING in YYYY-mm-dd format
-                is_result_aliased (bool) if true, aliases the parsing result with the given ``col``'s ``dest_name``
             """
             # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
             #   and the timestamp allows for an optional UTC offset.  In any case, the timestamp is ignored, though.
@@ -568,43 +565,43 @@ class Command(BaseCommand):
                 CASE WHEN regexp({bronze_table_name}.{col.source}, '{regexp_mmddYYYY}')
                           THEN {mmddYYYY_fmt}
                      ELSE {YYYYmmdd_fmt}
-                END{' AS ' + col.dest_name if is_result_aliased else ''}
+                END
             """
 
             return sql_snippet
 
-        def handle_column(col, bronze_table_name, is_result_aliased=True):
+        def handle_column(col: TransactionColumn, bronze_table_name, is_result_aliased=True):
+            """
+            Args:
+                is_result_aliased (bool) if true, aliases the parsing result with the given ``col``'s ``dest_name``
+            """
             if col.handling == "cast":
-                retval = (
-                    f"CAST({bronze_table_name}.{col.source} AS {col.delta_type})"
-                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
-                )
+                retval = f"CAST({bronze_table_name}.{col.source} AS {col.delta_type})"
             elif col.handling == "literal":
                 # Use col.source directly as the value
-                retval = f"{col.source}{' AS ' + col.dest_name if is_result_aliased else ''}"
+                retval = f"{col.source}"
             elif col.handling == "parse_string_datetime_to_date":
                 # These are string fields that actually hold DATES/TIMESTAMPS and need to be cast as dates.
                 # However, they may not be properly parsed when calling CAST(... AS DATE).
-                retval = build_date_format_sql(col, is_casted_to_date=True, is_result_aliased=is_result_aliased)
+                retval = build_date_format_sql(col, is_casted_to_date=True)
             elif col.handling == "string_datetime_remove_timestamp":
                 # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
                 # even though they remain as strings
-                retval = build_date_format_sql(col, is_casted_to_date=False, is_result_aliased=is_result_aliased)
+                retval = build_date_format_sql(col, is_casted_to_date=False)
             elif col.delta_type.upper() == "STRING":
                 # Capitalize and remove leading & trailing whitespace from all string values
-                retval = (
-                    f"ucase(trim({bronze_table_name}.{col.source}))"
-                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
-                )
+                retval = f"ucase(trim({bronze_table_name}.{col.source}))"
             elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
                 # Unless specified, convert any nulls to false for boolean columns
-                retval = (
-                    f"COALESCE({bronze_table_name}.{col.source}, FALSE)"
-                    f"{' AS ' + col.dest_name if is_result_aliased else ''}"
-                )
+                retval = f"COALESCE({bronze_table_name}.{col.source}, FALSE)"
             else:
-                retval = f"{bronze_table_name}.{col.source}{' AS ' + col.dest_name if is_result_aliased else ''}"
+                retval = f"{bronze_table_name}.{col.source}"
 
+            # Handle scalar transformations if the column requires it
+            if col.scalar_transformation is not None:
+                retval = col.scalar_transformation.format(input=retval)
+
+            retval = f"{retval}{' AS ' + col.dest_name if is_result_aliased else ''}"
             return retval
 
         def select_columns_transaction_fabs_fpds(bronze_table_name):
