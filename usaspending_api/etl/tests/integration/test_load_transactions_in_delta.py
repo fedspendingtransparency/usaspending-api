@@ -6,6 +6,7 @@ import time
 import logging
 import dateutil
 import re
+from mock import patch
 import pyspark
 
 from copy import deepcopy
@@ -801,15 +802,38 @@ class TestInitialRunNoPostgresLoader:
     # This test will only load the source tables from postgres, and NOT use the Postgres transaction loader
     # to populate any other Delta tables, so can only test for NULLs originating in Delta.
     @mark.django_db(transaction=True)
+    @patch('usaspending_api.etl.management.commands.load_transactions_in_delta.Command.find_orphaned_transactions_in_transaction_normalize')
     def test_nulls_in_trans_norm_unique_award_key_from_delta(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
     ):
         # Only load the source tables from Postgres.
-        load_tables_to_delta(s3_unittest_data_bucket)
+        # load_tables_to_delta(
+        #     s3_unittest_data_bucket
+        # )  # -- Ensure the table still exists but don't need to load all data
 
-        # Directly load the contents of raw.transaction_normalized to Delta
-        load_dict_to_delta_table(
-            spark, s3_unittest_data_bucket, "raw", "transaction_normalized", self.initial_transaction_normalized
+        # # Directly load the contents of raw.transaction_normalized to Delta
+        # load_dict_to_delta_table(
+        #     spark, s3_unittest_data_bucket, "raw", "transaction_normalized", self.initial_transaction_normalized
+        # )
+
+        tables_needed = ["published_fabs", "detached_award_procurement", "transaction_normalized"]
+        for table in tables_needed:
+            call_command(
+                "create_delta_table",
+                "--destination-table",
+                table,
+                "--alt-db",
+                "raw",
+                "--spark-s3-bucket",
+                s3_unittest_data_bucket,
+            )
+
+        spark.sql(
+            """
+            INSERT INTO raw.transaction_normalized VALUES
+            ('2022-10-31', NULL, NULL, 5, NULL, ARRAY(), NULL, '2022-11-01T00:00:00+00:00', NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, TRUE, NULL, NULL, NULL, NULL, NULL, NULL, 'AWARD_ASSIST_0002_TRANS_0002', NULL, NULL, 'AWARD_ASSIST_0003', '2022-11-01T00:00:00+00:00', NULL),
+            ('2022-10-31', NULL, NULL, 6, NULL, ARRAY(), NULL, '2022-11-01T00:00:00+00:00', NULL, NULL, NULL, NULL, NULL, NULL, 6, NULL, TRUE, NULL, NULL, NULL, NULL, NULL, NULL, 'AWARD_PROCURE_0002_TRANS_0002', NULL, NULL, 'AWARD_PROCURE_0002', '2022-11-01T00:00:00+00:00', NULL);
+            """
         )
 
         spark.sql(
@@ -822,7 +846,11 @@ class TestInitialRunNoPostgresLoader:
 
         with raises(ValueError, match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
             call_command(
-                "load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_unittest_data_bucket
+                "load_transactions_in_delta",
+                "--etl-level",
+                "initial_run",
+                "--spark-s3-bucket",
+                s3_unittest_data_bucket,
             )
 
         spark.sql(
