@@ -1633,7 +1633,9 @@ def test_load_table_to_from_delta_for_transaction_search(
     # verify_delta_table_loaded_from_delta(spark, "transaction_search", jdbc_inserts=True)  # test alt write strategy
 
 
+# Skip this, don't do a pass as it is slower
 @mark.django_db(transaction=True)
+@mark.skip("Whole test is commented out so just skip")
 def test_load_table_to_from_delta_for_transaction_search_testing(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
 ):

@@ -802,20 +802,12 @@ class TestInitialRunNoPostgresLoader:
     # This test will only load the source tables from postgres, and NOT use the Postgres transaction loader
     # to populate any other Delta tables, so can only test for NULLs originating in Delta.
     @mark.django_db(transaction=True)
-    @patch('usaspending_api.etl.management.commands.load_transactions_in_delta.Command.find_orphaned_transactions_in_transaction_normalize')
+    @patch(
+        "usaspending_api.etl.management.commands.load_transactions_in_delta.Command.find_orphaned_transactions_in_transaction_normalized",
+    )
     def test_nulls_in_trans_norm_unique_award_key_from_delta(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+        self, txn_normalized_patch, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
     ):
-        # Only load the source tables from Postgres.
-        # load_tables_to_delta(
-        #     s3_unittest_data_bucket
-        # )  # -- Ensure the table still exists but don't need to load all data
-
-        # # Directly load the contents of raw.transaction_normalized to Delta
-        # load_dict_to_delta_table(
-        #     spark, s3_unittest_data_bucket, "raw", "transaction_normalized", self.initial_transaction_normalized
-        # )
-
         tables_needed = ["published_fabs", "detached_award_procurement", "transaction_normalized"]
         for table in tables_needed:
             call_command(
