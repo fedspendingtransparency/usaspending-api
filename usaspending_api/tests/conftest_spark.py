@@ -59,8 +59,16 @@ DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
 
 @fixture(scope="session")
-def s3_unittest_data_bucket_setup_and_teardown(worker_id):
-    """Create a test bucket so the tests can use it"""
+def s3_unittest_data_bucket_setup_and_teardown(worker_id: str) -> str:
+    """Create a test bucket so the tests can use it
+
+    Args:
+        worker_id: ID of worker if this session is one of multiple in a parallel pytest-xdist run, used as a suffix
+        to the unit test S3 bucket if provided.
+
+    Returns:
+        unittest_data_bucket: Bucket name of the unit test S3 bucket created for this pytest session
+    """
     worker_prefix = "" if (not worker_id or worker_id == "master") else worker_id + "-"
     unittest_data_bucket = "unittest-data-{}".format(worker_prefix + str(uuid.uuid4()))
 
@@ -239,6 +247,16 @@ def delta_lake_unittest_schema(spark: SparkSession, hive_unittest_metastore_db):
 
 @fixture
 def populate_broker_data(broker_server_dblink_setup):
+    """Fixture to INSERT data stubbed out in JSON files into the Broker database, to be used by tests that consume
+    Broker data.
+
+    Data will be committed to the Broker DB during the test, then removed in the "tear down" phase of this fixture by
+    table TRUNCATE statements.
+
+    Args:
+        broker_server_dblink_setup: Fixture this one depends on, to ensure that a DB Link connection exists between
+            USAspending test DB and broker test DB
+    """
     broker_data = {
         "sam_recipient": json.loads(Path("usaspending_api/recipient/tests/data/broker_sam_recipient.json").read_text()),
         "subaward": json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text()),
@@ -271,6 +289,7 @@ def populate_broker_data(broker_server_dblink_setup):
 
 
 def _build_usas_data_for_spark():
+    """Create Django model data to be saved to Postgres, which will then get ingested into Delta Lake"""
     # Create recipient data for two transactions; the other two will generate ad hoc
     baker.make(
         "recipient.RecipientLookup",
@@ -1211,6 +1230,7 @@ def _build_usas_data_for_spark():
 @fixture
 @mark.django_db
 def populate_usas_data():
+    """Fixture to create Django model data to be saved to Postgres, which will then get ingested into Delta Lake"""
     _build_usas_data_for_spark()
     update_awards()
     yield

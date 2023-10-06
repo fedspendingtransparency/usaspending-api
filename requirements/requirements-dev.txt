@@ -6,6 +6,7 @@ flake8==3.8.4
 importlib-metadata<5  # need to pin <5 while flake8 is on 3.8.4
 mock==5.1.*
 model-bakery==1.13.*
+pip==23.2.*
 pre-commit==1.20.0
 pyspark==3.2.1
 pytest==7.4.*

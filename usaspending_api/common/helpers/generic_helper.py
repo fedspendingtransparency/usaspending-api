@@ -108,7 +108,16 @@ def convert_matview_to_view(matview_sql):
     return sql
 
 
-def get_temp_matview_sql_files_dict(matview_dir: Path):
+def get_temp_matview_sql_files_dict(matview_dir: Path) -> List[dict]:
+    """Get mapping of matviews to SQL file definitions
+
+    Args:
+        matview_dir: Directory where matview definition SQL files were built out
+
+    Returns:
+        A List of dict objects, one for each matview, keyed by matview name pointing to their SQL file definition
+
+    """
     temp_sql_files = [
         {"name": key, "sql_file": matview_dir / val["sql_filename"]} for key, val in MATERIALIZED_VIEWS.items()
     ]
@@ -118,7 +127,15 @@ def get_temp_matview_sql_files_dict(matview_dir: Path):
     return temp_sql_files
 
 
-def generate_matviews(materialized_views_as_traditional_views=False, parallel_worker_id: str = None):
+def generate_matviews(materialized_views_as_traditional_views: bool = False, parallel_worker_id: str = None) -> None:
+    """Build out matview definitions as SQL files, then create matviews in the database and materialize them.
+
+    Args:
+        materialized_views_as_traditional_views: False if they should be just DB VIEWs; True if they should be real
+            MATERIALIZED VIEWs. Defaults to False.
+        parallel_worker_id: Under pytest-xdist parallel test sessions, use the worker as a suffix to the temp
+            directory in which the sql is built to not cause concurrent File I/O conflicts/race conditions
+    """
     with connection.cursor() as cursor:
         cursor.execute(CREATE_READONLY_SQL)
         cursor.execute(DEPENDENCY_FILEPATH.read_text())

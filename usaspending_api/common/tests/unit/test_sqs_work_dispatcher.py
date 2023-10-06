@@ -45,6 +45,11 @@ def _patch_get_sqs_queue(fake_sqs_queue, monkeypatch):
 
 
 def test_fake_sqs_queue_fixture(fake_sqs_queue):
+    """Ensure the fixture used in this and other tests yields a properly constructed instance of a fake queue for test
+
+    Args:
+        fake_sqs_queue: The fake queue yielded by the fixture this test depends on
+    """
     should_be_fake = fake_sqs_queue
     # Check that the patch worked, and the fake unit test queue is returned
     assert should_be_fake.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME

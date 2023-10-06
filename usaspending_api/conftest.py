@@ -62,7 +62,13 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
     """A global built-in fixture to pytest that is called at collection, providing a hook to modify collected items.
 
     In this case, used to add specific marks on tests to allow running groups/sub-groups of tests. These marks added
-    here need to be declared for pytest in pyproject.toml"""
+    here need to be declared for pytest in pyproject.toml
+
+    Args:
+        session: pytest test session object, holding details of the invoked pytest run
+        config: pytest Config object, holding config details of the inovked pytest run
+        items: List of tests of type ``pytest.Item`` that were collected for this pytest session
+    """
     for item in items:
         if (
             # For fixtures that setup or interact with a DB
