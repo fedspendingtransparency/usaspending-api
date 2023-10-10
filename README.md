@@ -117,7 +117,7 @@ _**Executing individual data-loaders** to load in data is also possible, but req
 Some of the API endpoints reach into Elasticsearch for data.
 
 ```shell
-$ docker-compose --profile usaspending up usaspending-es`
+$ docker-compose --profile usaspending up usaspending-es
 ```
 ... will create and start a single-node Elasticsearch cluster as a docker container with data persisted to a docker volume.
 
