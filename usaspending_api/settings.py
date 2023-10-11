@@ -15,6 +15,7 @@ from usaspending_api.config import CONFIG
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
 
+
 # Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
 
@@ -122,9 +123,7 @@ AGENCY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/reference_data/agency_codes.csv"
 DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/Data_Dictionary_Crosswalk.xlsx"
 
 # S3 Bucket and Key to retrieve the Data Dictionary
-DATA_DICTIONARY_S3_BUCKET_NAME = (
-    f"dti-da-public-files-{'nonprod' if DOWNLOAD_ENV not in ('production', 'staging') else 'prod'}"
-)
+DATA_DICTIONARY_S3_BUCKET_NAME = f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
 DATA_DICTIONARY_S3_KEY = "user_reference_docs/Data_Dictionary_Crosswalk.xlsx"
 
 # Local download files
