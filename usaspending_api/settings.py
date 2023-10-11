@@ -15,7 +15,6 @@ from usaspending_api.config import CONFIG
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
 
-
 # Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
 
