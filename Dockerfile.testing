@@ -1,0 +1,18 @@
+# Dockerfile for usaspending-test image
+
+# If any changes are made to the usaspending-backend image (Dockerfile) then this image needs to be rebuilt to stay in sync.
+
+# If you do not already have the `usaspending-backend` image locally you can build it by running:
+#       docker compose --profile usaspending build
+# in the parent usaspending-api directory.
+
+FROM usaspending-backend:latest
+
+WORKDIR /usaspending-api
+
+# Prevent a Pytest RuntimeError where it expects the parent directory to be the name of an installed Django app
+# This will cause a RuntimeError because `dockermount` isn't the name of an installed Django app, so we move the files
+#   to a `/usaspending-api` parent directory which is the name of an installed Django app.
+RUN mv /dockermount/* /usaspending-api/
+
+RUN pip install -r requirements/requirements-dev.txt

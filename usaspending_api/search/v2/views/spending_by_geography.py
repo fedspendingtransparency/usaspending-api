@@ -18,7 +18,6 @@ from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_t
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import (
-    deprecated_district_field_in_location_object,
     get_generic_filters_message,
 )
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -207,13 +206,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             "results": result,
             "messages": get_generic_filters_message(original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]),
         }
-
-        # Add filter field deprecation notices
-
-        # TODO: To be removed in DEV-9966
-        messages = raw_response.get("messages", [])
-        deprecated_district_field_in_location_object(messages, original_filters)
-        raw_response["messages"] = messages
 
         return Response(raw_response)
 

@@ -49,8 +49,10 @@ services:
   usaspending-test:
     profiles:
       - test  # must pass --profile test to docker-compose for this to come up, or use docker-compose run
-    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    build: .
+    image: usaspending-testing  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
+    build:
+      context: .
+      dockerfile: Dockerfile.testing
     container_name: usaspending-test
     volumes:
      - .:/dockermount
@@ -60,7 +62,7 @@ services:
     depends_on:
       - usaspending-db
       - usaspending-es
-    command: pytest
+    command: make tests
     environment:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOST}:${ES_PORT}
@@ -192,9 +194,11 @@ services:
     profiles:  # must pass one of these with --profile to docker-compose
       - s3
       - spark
+      - test
     image: minio/minio:RELEASE.2022-04-12T06-55-35Z
     container_name: minio
     volumes:
+      - .:/dockermount
       - type: bind
         source: ${MINIO_DATA_DIR:-../data/s3}
         target: /data
@@ -204,7 +208,13 @@ services:
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
-    command: server --address ":10001" --console-address ":10002" /data
+    entrypoint: >
+      /bin/sh -c "
+        # Create the bucket within MinIO and file path for the data dict
+        mkdir -p data/dti-da-public-files-nonprod/user_reference_docs
+        cp dockermount/usaspending_api/data/Data_Dictionary_Crosswalk.xlsx data/dti-da-public-files-nonprod/user_reference_docs/Data_Dictionary_Crosswalk.xlsx
+        minio server --address ":10001" --console-address ":10002" /data
+      "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-10001}/minio/health/live"]
       interval: 30s
@@ -214,6 +224,7 @@ services:
   spark-master:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
+      - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -243,6 +254,7 @@ services:
   spark-worker:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
+      - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -269,6 +281,7 @@ services:
   spark-history-server:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
+      - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
@@ -313,6 +326,7 @@ services:
   spark-submit:
     profiles:
       - spark  # must pass --profile spark to docker-compose for this to come up
+      - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     # build context path needs to be relative to project root, from where docker-compose will be run
     build:
