@@ -59,16 +59,40 @@ def test_raise_if_award_types_not_valid_subset():
 
 
 def test_raise_if_sort_key_not_valid():
-    example_award_fields = [
+    example_contract_award_codes = ["A", "B"]
+    example_idv_award_codes = ["IDV_A", "IDV_B"]
+    example_loan_award_codes = ["07", "08"]
+    example_non_loan_assist_award_codes = ["09"]
+
+    example_base_award_fields = [
         "Award ID",
         "Recipient Name",
+        "Awarding Agency",
+        "Awarding Sub Agency",
+    ]
+
+    example_contract_award_fields = [
         "Start Date",
         "End Date",
         "Award Amount",
-        "Awarding Agency",
-        "Awarding Sub Agency",
         "Contract Award Type",
-    ]
+    ] + example_base_award_fields
+
+    example_idv_award_fields = [
+        "Start Date",
+        "End Date",
+        "Award Amount",
+        "Last Date to Order",
+    ] + example_base_award_fields
+
+    example_loan_award_fields = ["Issued Date", "Loan Value"] + example_base_award_fields
+
+    example_non_loan_assist_award_fields = [
+        "Start Date",
+        "End Date",
+        "Award Amount",
+        "Award Type",
+    ] + example_base_award_fields
 
     example_subaward_fields = [
         "Sub-Award ID",
@@ -81,35 +105,135 @@ def test_raise_if_sort_key_not_valid():
         "Sub-Award Type",
     ]
 
-    assert raise_if_sort_key_not_valid(sort_key="Award ID", field_list=example_award_fields, is_subaward=False) is None
-    assert raise_if_sort_key_not_valid(sort_key="End Date", field_list=example_award_fields, is_subaward=False) is None
     assert (
-        raise_if_sort_key_not_valid(sort_key="Awarding Agency", field_list=example_subaward_fields, is_subaward=True)
+        raise_if_sort_key_not_valid(
+            sort_key="Award ID",
+            field_list=example_contract_award_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=False,
+        )
         is None
     )
     assert (
-        raise_if_sort_key_not_valid(sort_key="Sub-Award ID", field_list=example_subaward_fields, is_subaward=True)
+        raise_if_sort_key_not_valid(
+            sort_key="End Date",
+            field_list=example_contract_award_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=False,
+        )
+        is None
+    )
+    assert (
+        raise_if_sort_key_not_valid(
+            sort_key="Awarding Agency",
+            field_list=example_subaward_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=True,
+        )
+        is None
+    )
+    assert (
+        raise_if_sort_key_not_valid(
+            sort_key="Sub-Award ID",
+            field_list=example_subaward_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=True,
+        )
+        is None
+    )
+    assert (
+        raise_if_sort_key_not_valid(
+            sort_key="Last Date to Order",
+            field_list=example_idv_award_fields,
+            award_type_codes=example_idv_award_codes,
+            is_subaward=False,
+        )
+        is None
+    )
+    assert (
+        raise_if_sort_key_not_valid(
+            sort_key="Issued Date",
+            field_list=example_loan_award_fields,
+            award_type_codes=example_loan_award_codes,
+            is_subaward=False,
+        )
+        is None
+    )
+    assert (
+        raise_if_sort_key_not_valid(
+            sort_key="Award Type",
+            field_list=example_non_loan_assist_award_fields,
+            award_type_codes=example_non_loan_assist_award_codes,
+            is_subaward=False,
+        )
         is None
     )
 
     with pytest.raises(InvalidParameterException):
         # Valid mapping, but missing from the field list
-        raise_if_sort_key_not_valid(sort_key="Description", field_list=example_award_fields, is_subaward=False)
+        raise_if_sort_key_not_valid(
+            sort_key="Description",
+            field_list=example_contract_award_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=False,
+        )
 
     with pytest.raises(InvalidParameterException):
-        raise_if_sort_key_not_valid(sort_key="Bad Key", field_list=example_award_fields, is_subaward=False)
+        raise_if_sort_key_not_valid(
+            sort_key="Bad Key",
+            field_list=example_contract_award_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=False,
+        )
 
     with pytest.raises(InvalidParameterException):
-        raise_if_sort_key_not_valid(sort_key="", field_list=example_award_fields, is_subaward=False)
+        raise_if_sort_key_not_valid(
+            sort_key="",
+            field_list=example_contract_award_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=False,
+        )
 
     with pytest.raises(InvalidParameterException):
-        raise_if_sort_key_not_valid(sort_key=None, field_list=example_award_fields, is_subaward=False)
+        raise_if_sort_key_not_valid(
+            sort_key=None,
+            field_list=example_contract_award_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=False,
+        )
 
     with pytest.raises(InvalidParameterException):
-        raise_if_sort_key_not_valid(sort_key="Bad Key", field_list=example_subaward_fields, is_subaward=True)
+        raise_if_sort_key_not_valid(
+            sort_key="Bad Key",
+            field_list=example_subaward_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=True,
+        )
 
     with pytest.raises(InvalidParameterException):
-        raise_if_sort_key_not_valid(sort_key="Description", field_list=example_subaward_fields, is_subaward=True)
+        raise_if_sort_key_not_valid(
+            sort_key="Description",
+            field_list=example_subaward_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=True,
+        )
+
+    # Check that it won't allow a sort key that isn't in a specific award mapping
+    with pytest.raises(InvalidParameterException):
+        raise_if_sort_key_not_valid(
+            sort_key="Issued Date",
+            field_list=example_contract_award_fields,
+            award_type_codes=example_contract_award_codes,
+            is_subaward=False,
+        )
+
+    with pytest.raises(InvalidParameterException):
+        raise_if_sort_key_not_valid(
+            sort_key="Start Date",
+            field_list=example_loan_award_fields,
+            award_type_codes=example_loan_award_codes,
+            is_subaward=False,
+        )
 
 
 def test_get_queryset():
