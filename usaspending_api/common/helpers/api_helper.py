@@ -11,6 +11,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     loan_type_mapping,
     other_type_mapping,
     procurement_type_mapping,
+    non_loan_assistance_type_mapping,
 )
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups, subaward_types_are_valid_groups
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
@@ -77,7 +78,7 @@ def raise_if_award_types_not_valid_subset(award_type_codes, is_subaward=False):
             raise UnprocessableEntityException(json.loads(error_msg))
 
 
-def raise_if_sort_key_not_valid(sort_key, field_list, is_subaward=False):
+def raise_if_sort_key_not_valid(sort_key, field_list, award_type_codes, is_subaward=False):
     """Test to ensure sort key is present for the group of Awards or Sub-Awards
 
     Raise API exception if sort key is not present
@@ -87,12 +88,18 @@ def raise_if_sort_key_not_valid(sort_key, field_list, is_subaward=False):
         msg_prefix = "Sub-"
         field_external_name_list = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
     else:
-        field_external_name_list = (
-            list(contracts_mapping.keys())
-            + list(loan_mapping.keys())
-            + list(non_loan_assist_mapping.keys())
-            + list(idv_mapping.keys())
-        )
+        if set(award_type_codes) <= set(contract_type_mapping):
+            msg_prefix = "Contract "
+            field_external_name_list = list(contracts_mapping.keys())
+        elif set(award_type_codes) <= set(loan_type_mapping):
+            msg_prefix = "Loan "
+            field_external_name_list = list(loan_mapping.keys())
+        elif set(award_type_codes) <= set(idv_type_mapping):
+            msg_prefix = "IDVs "
+            field_external_name_list = list(idv_mapping.keys())
+        elif set(award_type_codes) <= set(non_loan_assistance_type_mapping):
+            msg_prefix = "Non-Loan Assistance "
+            field_external_name_list = list(non_loan_assist_mapping.keys())
 
     if sort_key not in field_external_name_list:
         raise InvalidParameterException(
