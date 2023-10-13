@@ -1,10 +1,20 @@
 import pytest
 
-from usaspending_api.awards.v2.lookups.lookups import contract_subaward_mapping
-from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
+from usaspending_api.awards.v2.lookups.lookups import contract_subaward_mapping, grant_subaward_mapping
+from usaspending_api.common.helpers.api_helper import (
+    raise_if_award_types_not_valid_subset,
+    raise_if_sort_key_not_valid,
+    get_award_type_and_mapping_values,
+)
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.v2.views.spending_by_award import SpendingByAwardVisualizationViewSet, GLOBAL_MAP
 from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
+    contracts_mapping,
+    idv_mapping,
+    loan_mapping,
+    non_loan_assist_mapping,
+)
 
 
 def instantiate_view_for_tests():
@@ -232,6 +242,45 @@ def test_raise_if_sort_key_not_valid():
             sort_key="Start Date",
             field_list=example_loan_award_fields,
             award_type_codes=example_loan_award_codes,
+            is_subaward=False,
+        )
+
+
+def test_get_award_type_and_mapping_values():
+    example_contract_award_codes = ["A", "B"]
+    example_idv_award_codes = ["IDV_A", "IDV_B"]
+    example_loan_award_codes = ["07", "08"]
+    example_non_loan_assist_award_codes = ["09"]
+    invalid_award_type_codes = ["07", "A"]
+
+    subaward_results = get_award_type_and_mapping_values(
+        award_type_codes=example_contract_award_codes, is_subaward=True
+    )
+    assert subaward_results == (
+        "Sub-Award",
+        (list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())),
+    )
+
+    contract_results = get_award_type_and_mapping_values(
+        award_type_codes=example_contract_award_codes, is_subaward=False
+    )
+    assert contract_results == ("Contract Award", list(contracts_mapping.keys()))
+
+    idv_results = get_award_type_and_mapping_values(award_type_codes=example_idv_award_codes, is_subaward=False)
+    assert idv_results == ("IDV Award", list(idv_mapping.keys()))
+
+    loan_results = get_award_type_and_mapping_values(award_type_codes=example_loan_award_codes, is_subaward=False)
+    assert loan_results == ("Loan Award", list(loan_mapping.keys()))
+
+    non_loan_assist_results = get_award_type_and_mapping_values(
+        award_type_codes=example_non_loan_assist_award_codes, is_subaward=False
+    )
+    assert non_loan_assist_results == ("Non-Loan Assistance Award", list(non_loan_assist_mapping.keys()))
+
+    # Check that it will throw an exception if the award codes do not match any award type mappings
+    with pytest.raises(InvalidParameterException):
+        get_award_type_and_mapping_values(
+            award_type_codes=invalid_award_type_codes,
             is_subaward=False,
         )
 

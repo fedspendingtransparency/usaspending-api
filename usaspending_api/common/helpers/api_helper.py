@@ -83,30 +83,44 @@ def raise_if_sort_key_not_valid(sort_key, field_list, award_type_codes, is_subaw
 
     Raise API exception if sort key is not present
     """
-    msg_prefix = ""
-    if is_subaward:
-        msg_prefix = "Sub-"
-        field_external_name_list = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
-    else:
-        if set(award_type_codes) <= set(contract_type_mapping):
-            msg_prefix = "Contract "
-            field_external_name_list = list(contracts_mapping.keys())
-        elif set(award_type_codes) <= set(loan_type_mapping):
-            msg_prefix = "Loan "
-            field_external_name_list = list(loan_mapping.keys())
-        elif set(award_type_codes) <= set(idv_type_mapping):
-            msg_prefix = "IDVs "
-            field_external_name_list = list(idv_mapping.keys())
-        elif set(award_type_codes) <= set(non_loan_assistance_type_mapping):
-            msg_prefix = "Non-Loan Assistance "
-            field_external_name_list = list(non_loan_assist_mapping.keys())
+    award_type, field_external_name_list = get_award_type_and_mapping_values(award_type_codes, is_subaward)
 
     if sort_key not in field_external_name_list:
         raise InvalidParameterException(
-            "Sort value '{}' not found in {}Award mappings: {}".format(sort_key, msg_prefix, field_external_name_list)
+            "Sort value '{}' not found in {} mappings: {}".format(sort_key, award_type, field_external_name_list)
         )
 
     if sort_key not in field_list:
         raise InvalidParameterException(
             "Sort value '{}' not found in requested fields: {}".format(sort_key, field_list)
         )
+
+
+def get_award_type_and_mapping_values(award_type_codes: list, is_subaward: bool):
+    """Returns a tuple including the type of award and the award mapping values based on the
+    input provided.
+
+    If the input doesn't match any award type mappings:
+        Raise an exception JSON response.
+    """
+    if is_subaward:
+        award_type = "Sub-Award"
+        award_type_mapping_values = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
+    elif set(award_type_codes) <= set(contract_type_mapping):
+        award_type = "Contract Award"
+        award_type_mapping_values = list(contracts_mapping.keys())
+    elif set(award_type_codes) <= set(loan_type_mapping):
+        award_type = "Loan Award"
+        award_type_mapping_values = list(loan_mapping.keys())
+    elif set(award_type_codes) <= set(idv_type_mapping):
+        award_type = "IDV Award"
+        award_type_mapping_values = list(idv_mapping.keys())
+    elif set(award_type_codes) <= set(non_loan_assistance_type_mapping):
+        award_type = "Non-Loan Assistance Award"
+        award_type_mapping_values = list(non_loan_assist_mapping.keys())
+    else:
+        raise InvalidParameterException(
+            "Award type codes '{}' did not match any award mappings.".format(award_type_codes)
+        )
+
+    return award_type, award_type_mapping_values
