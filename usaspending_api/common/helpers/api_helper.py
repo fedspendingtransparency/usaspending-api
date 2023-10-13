@@ -1,4 +1,5 @@
 import json
+from typing import List, Tuple
 from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
@@ -96,12 +97,18 @@ def raise_if_sort_key_not_valid(sort_key, field_list, award_type_codes, is_subaw
         )
 
 
-def get_award_type_and_mapping_values(award_type_codes: list, is_subaward: bool):
-    """Returns a tuple including the type of award and the award mapping values based on the
-    input provided.
+def get_award_type_and_mapping_values(award_type_codes: List[str], is_subaward: bool) -> Tuple[str, List[str]]:
+    """Returns a tuple including the type of award and the award mapping values based on the input provided.
+    If the input doesn't match any award type mappings then it will raise an exception JSON response.
 
-    If the input doesn't match any award type mappings:
-        Raise an exception JSON response.
+    Args:
+        award_type_codes: List of award type codes
+        is_subaward: Boolean based on if its a subaward
+
+    Returns:
+        A tuple of two items
+            - First element is a string that describes the award type
+            - Second element is a list of strings that are the values from the corresponding award mapping
     """
     if is_subaward:
         award_type = "Sub-Award"
