@@ -930,58 +930,23 @@ class TestTransactionIdLookup:
         expected_initial_award_id_lookup,
         expected_transaction_id_lookup_pops,
     ):
-        # 1. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
-        # initial_run, then transaction_id_lookup
 
+        # 1. Test deleting the transaction(s) with the last transaction ID(s) from the appropriate raw table,
+        # followed by a call to load_transaction_in_delta with etl-level of transaction_id_lookup
+        # 2. Test for a single inserted transaction, and another call to load_transaction_in_delta with etl-level of
+        # transaction_id_lookup.
+
+        # Call load_transactions_in_delta with the etl-level set to the proper sequencing of initial_run
         # Since these tests only care about the condition of the transaction_id_lookup table after various
         # operations, only load the essential tables to Delta, and don't copy the raw transaction tables to int.
         TestInitialRun.initial_run(s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
-        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
-        # With no deletes or inserts yet, the transaction_id_lookup table should be the same as after the initial run.
-        # Also, the last load dates for the id lookup tables should match the load dates of the source tables.
-        kwargs = {
-            "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
-        }
-        TestInitialRun.verify(spark, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup, **kwargs)
-
-        # 2. Test deleting the transaction(s) with the last transaction ID(s) from the appropriate raw table,
-        # followed by a call to load_transaction_in_delta with etl-level of transaction_id_lookup
         spark.sql(
             """
             DELETE FROM raw.detached_award_procurement
             WHERE detached_award_procurement_id = 4 OR detached_award_procurement_id = 5
             """
         )
-        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
-
-        # Verify transaction_id_lookup table
-        query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
-        delta_data = [row.asDict() for row in spark.sql(query).collect()]
-
-        expected_transaction_id_lookup = deepcopy(expected_initial_transaction_id_lookup)
-        expected_transaction_id_lookup.pop()
-        expected_transaction_id_lookup.pop()
-        assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
-
-        # Also, make sure transaction_id_seq hasn't gone backwards
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT nextval('transaction_id_seq')")
-            # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
-            max_transaction_id = cursor.fetchone()[0]
-        assert max_transaction_id == (len(initial_assists) + len(initial_procures))
-
-        # Since this test just called nextval(), need to reset the sequence with the is_called flag set to false
-        # so that the next call to nextval() will return the same value as previously.
-        with connection.cursor() as cursor:
-            cursor.execute(f"SELECT setval('transaction_id_seq', {max_transaction_id}, false)")
-
-        # 3. Test for a single inserted transaction, and another call to load_transaction_in_delta with etl-level of
-        # transaction_id_lookup.
 
         # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
         # Postgres table, and then push the updated table to Delta.
@@ -1000,6 +965,10 @@ class TestTransactionIdLookup:
         query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
         delta_data = [row.asDict() for row in spark.sql(query).collect()]
 
+        expected_transaction_id_lookup = deepcopy(expected_initial_transaction_id_lookup)
+        expected_transaction_id_lookup.pop()
+        expected_transaction_id_lookup.pop()
+
         expected_transaction_id_lookup.append(
             {
                 "transaction_id": 11,
@@ -1007,14 +976,33 @@ class TestTransactionIdLookup:
                 "transaction_unique_id": new_assist["afa_generated_unique"].upper(),
             }
         )
-        assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
 
+        # Verify the data has been loaded and changed correctly
         # Although the last load date for the source_assistance_transaction was updated above, the code in
         # load_transactions_in_delta takes the minimum last load date of that table and of the
         # source_procurement_transaction table, which has not been updated since the initial load of both tables.
-        assert get_last_load_date("transaction_id_lookup") == initial_source_table_load_datetime
+        kwargs = {
+            "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
+            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
+            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+        }
+        TestInitialRun.verify(spark, expected_transaction_id_lookup, expected_initial_award_id_lookup, **kwargs)
 
-        # 4. Make inserts to and deletes from the raw tables, call load_transaction_in_delta with etl-level of
+        # Also, make sure transaction_id_seq hasn't gone backwards
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT nextval('transaction_id_seq')")
+            # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
+            max_transaction_id = cursor.fetchone()[0]
+        assert max_transaction_id == (len(initial_assists) + len(initial_procures) + 1)  # Add one for the insert
+
+        # Since this test just called nextval(), need to reset the sequence with the is_called flag set to false
+        # so that the next call to nextval() will return the same value as previously.
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT setval('transaction_id_seq', {max_transaction_id}, false)")
+
+        # 3. Make inserts to and deletes from the raw tables, call load_transaction_in_delta with etl-level of
         # transaction_id_lookup, and test that the results are as expected.
         last_procure_load_datetime = datetime.now(timezone.utc)
         insert_datetime = last_procure_load_datetime + timedelta(minutes=-15)
