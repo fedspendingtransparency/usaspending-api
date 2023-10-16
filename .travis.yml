@@ -123,6 +123,7 @@ jobs:
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
   - name: Unit Tests - Using Signal Handling
     env:
+    - PYTEST_XDIST_NUMPROCESSES=0
     - PYTEST_SETUP_TEST_DATABASES=false
     - PYTEST_PRELOAD_SPARK_JARS=false
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
