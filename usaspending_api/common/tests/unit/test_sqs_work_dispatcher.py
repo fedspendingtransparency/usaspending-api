@@ -44,6 +44,7 @@ def _patch_get_sqs_queue(fake_sqs_queue, monkeypatch):
     assert should_be_fake.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_fake_sqs_queue_fixture(fake_sqs_queue):
     """Ensure the fixture used in this and other tests yields a properly constructed instance of a fake queue for test
 
@@ -58,6 +59,7 @@ def test_fake_sqs_queue_fixture(fake_sqs_queue):
     assert should_be_fake._QUEUE_DATA_FILE.split("/")[-1].split("_")[0] == should_be_fake._FAKE_AWS_ACCT
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_dispatch_with_default_numeric_message_body_succeeds(fake_sqs_queue):
     """SQSWorkDispatcher can execute work on a numeric message body successfully
 
@@ -91,6 +93,7 @@ def test_dispatch_with_default_numeric_message_body_succeeds(fake_sqs_queue):
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_dispatch_with_single_dict_item_message_transformer_succeeds(fake_sqs_queue):
     """SQSWorkDispatcher can execute work on a numeric message body provided from the message
     transformer as a dict
@@ -127,6 +130,7 @@ def test_dispatch_with_single_dict_item_message_transformer_succeeds(fake_sqs_qu
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_dispatch_with_multi_arg_message_transformer_succeeds(fake_sqs_queue):
     """SQSWorkDispatcher can execute work when a message_transformer provides tuple-based args to use
 
@@ -161,6 +165,7 @@ def test_dispatch_with_multi_arg_message_transformer_succeeds(fake_sqs_queue):
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_dispatch_with_multi_kwarg_message_transformer_succeeds(fake_sqs_queue):
     """SQSWorkDispatcher can execute work when a message_transformer provides dict-based args to use
 
@@ -197,6 +202,7 @@ def test_dispatch_with_multi_kwarg_message_transformer_succeeds(fake_sqs_queue):
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_additional_job_args_can_be_passed(fake_sqs_queue):
     """Additional args can be passed to the job to execute
 
@@ -231,6 +237,7 @@ def test_additional_job_args_can_be_passed(fake_sqs_queue):
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_additional_job_kwargs_can_be_passed(fake_sqs_queue):
     """Additional args can be passed to the job to execute
 
@@ -265,6 +272,7 @@ def test_additional_job_kwargs_can_be_passed(fake_sqs_queue):
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_additional_job_kwargs_can_be_passed_alongside_dict_args_from_message_transformer(fake_sqs_queue):
     """Additional args can be passed to the job to execute.
 
@@ -299,6 +307,7 @@ def test_additional_job_kwargs_can_be_passed_alongside_dict_args_from_message_tr
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_dispatching_by_message_attribute_succeeds_with_job_args(fake_sqs_queue):
     """SQSWorkDispatcher can read a message attribute to determine which function to call
 
@@ -348,6 +357,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args(fake_sqs_queue)
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_dispatching_by_message_attribute_succeeds_with_job_kwargs(fake_sqs_queue):
     """SQSWorkDispatcher can read a message attribute to determine which function to call
 
@@ -399,6 +409,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_kwargs(fake_sqs_queu
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs(fake_sqs_queue):
     """SQSWorkDispatcher can read a message attribute to determine which function to call
 
@@ -452,6 +463,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs(
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs_and_additional(fake_sqs_queue):
     """SQSWorkDispatcher can read a message attribute to determine which function to call
 
@@ -525,6 +537,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs_
     assert dispatcher._worker_process.exitcode == 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_faulty_queue_connection_raises_correct_exception(fake_sqs_queue):
     """When a queue cannot be connected to, it raises the appropriate exception"""
     try:
@@ -548,6 +561,7 @@ def test_faulty_queue_connection_raises_correct_exception(fake_sqs_queue):
         )
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_failed_job_detected(fake_sqs_queue):
     """SQSWorkDispatcher handles failed work within the child process
 
@@ -575,6 +589,7 @@ def test_failed_job_detected(fake_sqs_queue):
     assert dispatcher._worker_process.exitcode > 0
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_separate_signal_handlers_for_child_process(fake_sqs_queue):
     """Demonstrate (via log output) that a forked child process will inherit signal-handling of the parent
     process, but that can be overridden, while maintaining the original signal handling of the parent.
@@ -617,6 +632,7 @@ def test_separate_signal_handlers_for_child_process(fake_sqs_queue):
     fire_alarm()  # prove that clearing in one child process, left the handler intact in the parent process
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_terminated_job_triggers_exit_signal_handling_with_retry(fake_sqs_queue):
     """The child worker process is terminated, and exits indicating the exit signal of the termination. The
     parent monitors this, and initiates exit-handling. Because the dispatcher allows retries, this message
@@ -662,6 +678,7 @@ def test_terminated_job_triggers_exit_signal_handling_with_retry(fake_sqs_queue)
         _fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_terminated_job_triggers_exit_signal_handling_to_dlq(fake_sqs_queue):
     """The child worker process is terminated, and exits indicating the exit signal of the termination. The
     parent monitors this, and initiates exit-handling. Because the dispatcher does not allow retries, the
@@ -712,6 +729,7 @@ def test_terminated_job_triggers_exit_signal_handling_to_dlq(fake_sqs_queue):
         _fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_terminated_parent_dispatcher_exits_with_negative_signal_code(fake_sqs_queue):
     """After a parent dispatcher process receives an exit signal, and kills its child worker process, it itself
     exits. Verify that the exit code it exits with is the negative value of the signal received, consistent with
@@ -802,6 +820,7 @@ def test_terminated_parent_dispatcher_exits_with_negative_signal_code(fake_sqs_q
         _fail_runaway_processes(logger, dispatcher=parent_dispatcher)
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_exit_handler_can_receive_queue_message_as_arg(fake_sqs_queue):
     """Verify that exit_handlers provided whose signatures allow keyword args can receive the queue message
     as a keyword arg
@@ -875,6 +894,7 @@ def test_exit_handler_can_receive_queue_message_as_arg(fake_sqs_queue):
         _fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_default_to_queue_long_poll_works(fake_sqs_queue):
     """Same as testing exit handling when allowing retries, but not setting the long_poll_seconds value,
     to leave it to the default setting.
@@ -917,6 +937,7 @@ def test_default_to_queue_long_poll_works(fake_sqs_queue):
         _fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_hanging_cleanup_of_signaled_child_fails_dispatcher_and_sends_to_dlq(fake_sqs_queue):
     """When detecting the child worker process received an exit signal, and the parent dispatcher
     process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
@@ -1003,6 +1024,7 @@ def test_hanging_cleanup_of_signaled_child_fails_dispatcher_and_sends_to_dlq(fak
         _fail_runaway_processes(logger, worker=dispatcher._worker_process, terminator=terminator)
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(fake_sqs_queue):
     """When detecting the parent dispatcher process received an exit signal, and the parent dispatcher
     process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
@@ -1215,11 +1237,7 @@ def _hanging_cleanup_if_worker_alive(
         work_tracking_queue.put(payload, block=True, timeout=cleanup_timeout / 2)
 
 
-@pytest.mark.skipif(
-    condition=is_pytest_xdist_parallel_sessions(),
-    reason="Flakey test that seems to fail with a race condition when run concurrently with other tests (using xdist). "
-    "Needs investigation.",
-)
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queue):
     """Simulate an exit_handler that interferes with work that was being done by the worker, to see that we can
     kill it and resume trying the exit handler.
@@ -1358,11 +1376,7 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queu
         _fail_runaway_processes(logger, dispatcher=parent_dispatcher)
 
 
-@pytest.mark.skipif(
-    condition=is_pytest_xdist_parallel_sessions(),
-    reason="Flakey test that seems to fail with a race condition when run concurrently with other tests (using xdist). "
-    "Needs investigation.",
-)
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_cleanup_second_try_succeeds_after_killing_worker_with_retry(fake_sqs_queue):
     """Same as :meth:`test_cleanup_second_try_succeeds_after_killing_worker_with_dlq`, but this queue allows
     retries. Changes asserts to ensure the message gets retried after cleanup.
@@ -1493,6 +1507,7 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_retry(fake_sqs_qu
     _fail_runaway_processes(logger, dispatcher=parent_dispatcher)
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_worker_process_error_exception_data(fake_sqs_queue):
     unknown_worker = "Unknown Worker"
     no_queue_message = "Queue Message None or not provided"

@@ -2,6 +2,8 @@
 DJANGO_SETTINGS_MODULE = "usaspending_api.settings"
 addopts = "--cov=usaspending_api"
 markers = [
+    "signal_handling: Mark all tests that import the signal library and invoke signals. This MUST be done on the main thread, and can cause errors if pytest-xdist subordinates parellel test sessions to background threads.",
+
     # These are "auto" marked based on fixture usage. See conftest.py pytest_collection_modifyitems
     "spark: Mark all tests using the spark fixture. Can be selected with -m spark or deselected with -m (not spark)",
     "database: Mark all integration tests using a database. Can be selected with -m database or deselected with -m (not database)",
