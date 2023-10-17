@@ -27,7 +27,7 @@ from usaspending_api.common.sqs.sqs_work_dispatcher import (
 )
 from time import sleep
 
-from usaspending_api.conftest_helpers import get_unittest_fake_sqs_queue, is_pytest_xdist_parallel_sessions
+from usaspending_api.conftest_helpers import get_unittest_fake_sqs_queue
 
 
 @pytest.fixture()
