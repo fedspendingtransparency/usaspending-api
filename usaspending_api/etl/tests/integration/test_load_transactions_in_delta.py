@@ -964,8 +964,25 @@ class TestTransactionIdLookup:
         # 1. Test calling load_transactions_in_delta with etl-level of transaction_id_lookup without first
         # calling calling load_transactions_in_delta with etl-level of initial_run
 
-        # First, load the source tables to Delta.
-        load_tables_to_delta(s3_unittest_data_bucket)
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
 
         with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_id_lookup"):
             call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
@@ -1173,8 +1190,25 @@ class TestAwardIdLookup:
         # 1. Test calling load_transactions_in_delta with etl-level of award_id_lookup without first
         # calling calling load_transactions_in_delta with etl-level of initial_run
 
-        # First, load the source tables to Delta
-        load_tables_to_delta(s3_unittest_data_bucket)
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
 
         with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.award_id_lookup"):
             call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
