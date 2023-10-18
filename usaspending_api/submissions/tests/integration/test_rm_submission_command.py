@@ -57,6 +57,7 @@ def test_verify_fixture(client, submission_data):
     verify_zero_count(SUBMISSION_MODELS, 456, eq_zero=False)
 
 
+@pytest.mark.signal_handling  # see mark doc in pyproject.toml
 @pytest.mark.django_db
 def test_rm_submission(client, submission_data):
     call_command("rm_submission", 123)

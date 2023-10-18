@@ -144,11 +144,27 @@ jobs:
     - PYTEST_INCLUDE_GLOB=**/tests/integration/*
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION='(not spark)'
+    - PYTEST_MARK_EXPRESSION='(not spark and not signal_handling)'
     workspaces:
       use: [ pip,docker ]
       create:
         name: ws3
+        paths:
+          - coverage.*.xml
+    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
+  - name: Non-Spark Integration Tests - Using Signal Handling
+    env:
+    - PYTEST_XDIST_NUMPROCESSES=0
+    - PYTEST_SETUP_TEST_DATABASES=true
+    - PYTEST_PRELOAD_SPARK_JARS=false
+    - PYTEST_INCLUDE_GLOB=**/tests/integration/*
+    - PYTEST_EXCLUDE_GLOB=
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION='(signal_handling and not spark)'
+    workspaces:
+      use: [ pip,docker ]
+      create:
+        name: ws4
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
@@ -164,7 +180,7 @@ jobs:
     workspaces:
       use: [ pip,docker ]
       create:
-        name: ws4
+        name: ws5
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
@@ -181,7 +197,7 @@ jobs:
     workspaces:
       use: [ pip,docker ]
       create:
-        name: ws5
+        name: ws6
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
@@ -197,7 +213,7 @@ jobs:
     workspaces:
       use: [ pip,docker ]
       create:
-        name: ws6
+        name: ws7
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
@@ -206,7 +222,7 @@ jobs:
     env:
     - IS_CODE_COVERAGE_REPORT=true
     workspaces:
-      use: [ws1,ws2,ws3,ws4,ws5,ws6]
+      use: [ws1,ws2,ws3,ws4,ws5,ws6,ws7]
     before_install: ""  # override default to no-op
     install: ""  # override default to no-op
     before_script:

@@ -77,6 +77,7 @@ class TestWithMultipleDatabases(TestCase):
                     )
                     cursor.execute(insert_sql)
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_transaction_obligated_amount(self):
         """ Test load submission management command for File C transaction_obligated_amount NaNs """
         call_command("load_submission", "-9999")
@@ -88,6 +89,7 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_file_c_fain_and_uri(self):
         """
         Test load submission management command for File C records with FAIN and URI
@@ -122,6 +124,7 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_file_c_uri(self):
         """
         Test load submission management command for File C records with only a URI
@@ -140,6 +143,7 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_file_c_fain(self):
         """
         Test load submission management command for File C records with only a FAIN
@@ -158,6 +162,7 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_file_c_piid_with_parent_piid(self):
         """
         Test load submission management command for File C records with only a piid and parent piid
@@ -182,6 +187,7 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_file_c_piid_with_no_parent_piid(self):
         """
         Test load submission management command for File C records with only a piid and no parent piid
@@ -206,6 +212,7 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_file_c_piid_with_unmatched_parent_piid(self):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data
@@ -230,6 +237,7 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_file_c_no_d_linkage(self):
         """
         Test load submission management command for File C records that are not expected to be linked to Award data
@@ -254,6 +262,7 @@ class TestWithMultipleDatabases(TestCase):
 
         assert expected_results == actual_results
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_file_c_zero_and_null_amount_rows_ignored(self):
         """
         Test that 'published_award_financial` rows that have a zero or null for both
