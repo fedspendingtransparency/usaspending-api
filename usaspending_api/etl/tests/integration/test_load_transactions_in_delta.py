@@ -371,7 +371,28 @@ class TestInitialRun:
     ):
         # 1. Call initial run with no raw tables, except for published_fabs and detached_award_procurement.
         # Also, don't do initial copy of tables
-        TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        # load_source_tables is False because this test is handling it above
+        # These tables do not need to be populated with data for this test.
+        TestInitialRun.initial_run(s3_unittest_data_bucket, load_source_tables=False, initial_copy=False)
         kwargs = {
             "expected_last_load_transaction_id_lookup": BEGINNING_OF_TIME,
             "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
@@ -384,12 +405,26 @@ class TestInitialRun:
         # 2. Call initial run with existing, but empty raw.transaction_normalized and raw.awards tables
 
         # Make sure raw.transaction_normalized and raw.awards exist
-        for table_name in ("transaction_normalized", "awards"):
-            call_command(
-                "create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_unittest_data_bucket
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["transaction_normalized"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="transaction_normalized",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
             )
+        )
+        spark.sql(
+            TABLE_SPEC["awards"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="awards",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
         # Don't reload the source tables, though.
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, load_source_tables=False)
         TestInitialRun.verify(spark, [], [], **kwargs)
 
 
