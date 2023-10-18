@@ -1,4 +1,5 @@
 import json
+from typing import List, Tuple
 from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
@@ -11,6 +12,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     loan_type_mapping,
     other_type_mapping,
     procurement_type_mapping,
+    non_loan_assistance_type_mapping,
 )
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups, subaward_types_are_valid_groups
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
@@ -77,29 +79,55 @@ def raise_if_award_types_not_valid_subset(award_type_codes, is_subaward=False):
             raise UnprocessableEntityException(json.loads(error_msg))
 
 
-def raise_if_sort_key_not_valid(sort_key, field_list, is_subaward=False):
+def raise_if_sort_key_not_valid(sort_key, field_list, award_type_codes, is_subaward=False):
     """Test to ensure sort key is present for the group of Awards or Sub-Awards
 
     Raise API exception if sort key is not present
     """
-    msg_prefix = ""
-    if is_subaward:
-        msg_prefix = "Sub-"
-        field_external_name_list = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
-    else:
-        field_external_name_list = (
-            list(contracts_mapping.keys())
-            + list(loan_mapping.keys())
-            + list(non_loan_assist_mapping.keys())
-            + list(idv_mapping.keys())
-        )
+    award_type, field_external_name_list = get_award_type_and_mapping_values(award_type_codes, is_subaward)
 
     if sort_key not in field_external_name_list:
         raise InvalidParameterException(
-            "Sort value '{}' not found in {}Award mappings: {}".format(sort_key, msg_prefix, field_external_name_list)
+            "Sort value '{}' not found in {} mappings: {}".format(sort_key, award_type, field_external_name_list)
         )
 
     if sort_key not in field_list:
         raise InvalidParameterException(
             "Sort value '{}' not found in requested fields: {}".format(sort_key, field_list)
         )
+
+
+def get_award_type_and_mapping_values(award_type_codes: List[str], is_subaward: bool) -> Tuple[str, List[str]]:
+    """Returns a tuple including the type of award and the award mapping values based on the input provided.
+    If the input doesn't match any award type mappings then it will raise an exception JSON response.
+
+    Args:
+        award_type_codes: List of award type codes
+        is_subaward: Boolean based on if its a subaward
+
+    Returns:
+        A tuple of two items
+            - First element is a string that describes the award type
+            - Second element is a list of strings that are the values from the corresponding award mapping
+    """
+    if is_subaward:
+        award_type = "Sub-Award"
+        award_type_mapping_values = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
+    elif set(award_type_codes) <= set(contract_type_mapping):
+        award_type = "Contract Award"
+        award_type_mapping_values = list(contracts_mapping.keys())
+    elif set(award_type_codes) <= set(loan_type_mapping):
+        award_type = "Loan Award"
+        award_type_mapping_values = list(loan_mapping.keys())
+    elif set(award_type_codes) <= set(idv_type_mapping):
+        award_type = "IDV Award"
+        award_type_mapping_values = list(idv_mapping.keys())
+    elif set(award_type_codes) <= set(non_loan_assistance_type_mapping):
+        award_type = "Non-Loan Assistance Award"
+        award_type_mapping_values = list(non_loan_assist_mapping.keys())
+    else:
+        raise InvalidParameterException(
+            "Award type codes '{}' did not match any award mappings.".format(award_type_codes)
+        )
+
+    return award_type, award_type_mapping_values
