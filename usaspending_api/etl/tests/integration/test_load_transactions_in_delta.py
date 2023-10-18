@@ -15,6 +15,7 @@ from model_bakery import baker
 from pyspark.sql import SparkSession
 from pytest import fixture, mark, raises
 from typing import Any, Dict, Optional, Sequence
+from unittest.mock import patch
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.helpers.spark_helpers import load_dict_to_delta_table
@@ -22,6 +23,8 @@ from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_d
 from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTION_FABS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
+from usaspending_api.config import CONFIG
+from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
 
 BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
 initial_datetime = datetime(2022, 10, 31, tzinfo=timezone.utc)
@@ -784,22 +787,75 @@ class TestInitialRunNoPostgresLoader:
     # This test will only load the source tables from postgres, and NOT use the Postgres transaction loader
     # to populate any other Delta tables, so can only test for NULLs originating in Delta.
     @mark.django_db(transaction=True)
+    @patch("usaspending_api.etl.management.commands.load_transactions_in_delta.Command._insert_orphaned_transactions")
     def test_nulls_in_trans_norm_unique_award_key_from_delta(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self,
+        orphaned_txns_patch,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        populate_initial_source_tables_pg,
     ):
-        # Only load the source tables from Postgres.
-        load_tables_to_delta(s3_unittest_data_bucket)
-
-        # Directly load the contents of raw.transaction_normalized to Delta
-        load_dict_to_delta_table(
-            spark, s3_unittest_data_bucket, "raw", "transaction_normalized", self.initial_transaction_normalized
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
         )
-
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["transaction_normalized"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="transaction_normalized",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
         spark.sql(
             """
-            UPDATE raw.transaction_normalized
-            SET unique_award_key = NULL
-            WHERE id = 5
+                INSERT INTO raw.transaction_normalized
+                    VALUES('2022-10-31'
+                        , NULL
+                        , NULL
+                        , 5
+                        , NULL
+                        , ARRAY()
+                        , NULL
+                        , '2022-11-01T00:00:00+00:00'
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , 5
+                        , NULL
+                        , TRUE
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , 'AWARD_ASSIST_0002_TRANS_0002'
+                        , NULL
+                        , NULL
+                        , NULL
+                        , '2022-11-01T00:00:00+00:00'
+                        , NULL
+                    )
             """
         )
 
@@ -810,9 +866,37 @@ class TestInitialRunNoPostgresLoader:
 
         spark.sql(
             """
-            UPDATE raw.transaction_normalized
-            SET unique_award_key = NULL
-            WHERE id = 6
+                INSERT INTO raw.transaction_normalized
+                    VALUES('2022-10-31'
+                        , NULL
+                        , NULL
+                        , 6
+                        , NULL
+                        , ARRAY()
+                        , NULL
+                        , '2022-11-01T00:00:00+00:00'
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , 6
+                        , NULL
+                        , TRUE
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , 'AWARD_PROCURE_0002_TRANS_0002'
+                        , NULL
+                        , NULL
+                        , NULL
+                        , '2022-11-01T00:00:00+00:00'
+                        , NULL
+                    )
             """
         )
 
