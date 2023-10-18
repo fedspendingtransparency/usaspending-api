@@ -1425,8 +1425,25 @@ class TransactionFabsFpdsCore:
         self.expected_initial_transaction_fpds = expected_initial_transaction_fpds
 
     def unexpected_paths_source_tables_only_test_core(self):
-        # First, load the source tables to Delta
-        load_tables_to_delta(self.s3_data_bucket)
+        raw_db = "raw"
+        self.spark.sql(f"create database if not exists {raw_db};")
+        self.spark.sql(f"use {raw_db};")
+        self.spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=self.s3_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        self.spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=self.s3_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
 
         # 1. Test calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s before calling with
         # etl-level of initial_run.
