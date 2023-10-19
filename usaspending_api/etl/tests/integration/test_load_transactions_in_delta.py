@@ -8,7 +8,7 @@ import pyspark
 
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from django.db import connection
 from django.core.management import call_command
 from model_bakery import baker
