@@ -1153,7 +1153,7 @@ class TestTransactionIdLookup:
             _INITIAL_ASSISTS,
             True,
         )
-        # Second, load other raw tables
+        # Trigger initial run of load transactions in delta. This step is required as it creates various data sources.
         TestInitialRun.initial_run(
             s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
@@ -1447,10 +1447,11 @@ class TestAwardIdLookup:
             _INITIAL_ASSISTS,
             True,
         )
-        # Second, load other raw tables
+        # Trigger initial run of load transactions in delta. This step is required as it creates various data sources.
         TestInitialRun.initial_run(
             s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
+
         call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # With no deletes or inserts, the award_id_lookup table should be the same as after the initial run.
