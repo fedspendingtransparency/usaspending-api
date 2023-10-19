@@ -226,11 +226,10 @@ class Command(BaseCommand):
         #       returned by a SELECT subquery inside the 'IN').  Thus, this code should return a dataframe directly,
         #       create a temporary view from the dataframe in award_id_lookup_post_delete, and use that temporary
         #       view to either do a subquery in the 'IN' clause or to JOIN against.
-        if table_exists:
-            possibly_modified_award_ids = [str(row["award_id"]) for row in self.spark.sql(sql).collect()]
-        else:
+        if not table_exists:
             raise Exception(f"Table: int.{self.etl_level} does not exist.")
 
+        possibly_modified_award_ids = [str(row["award_id"]) for row in self.spark.sql(sql).collect()]
         return possibly_modified_award_ids
 
     def delete_records_sql(self):
@@ -293,18 +292,18 @@ class Command(BaseCommand):
                 WHERE awards.id IS NOT NULL AND award_id_lookup.award_id IS NULL
             """
 
-        if table_exists:
-            sql = f"""
-                MERGE INTO int.{self.etl_level}
-                USING (
-                    {subquery}
-                ) AS deleted_records
-                ON {self.etl_level}.{id_col} = deleted_records.id_to_remove
-                WHEN MATCHED
-                THEN DELETE
-            """
-        else:
+        if not table_exists:
             raise Exception(f"Table: int.{self.etl_level} does not exist.")
+
+        sql = f"""
+            MERGE INTO int.{self.etl_level}
+            USING (
+                {subquery}
+            ) AS deleted_records
+            ON {self.etl_level}.{id_col} = deleted_records.id_to_remove
+            WHEN MATCHED
+            THEN DELETE
+        """
 
         return sql
 
