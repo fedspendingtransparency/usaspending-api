@@ -38,6 +38,8 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "results": [
             {"amount": 550055.0, "code": "SC", "id": None, "name": "South Carolina"},
             {"amount": 5500.0, "code": "WA", "id": None, "name": "Washington"},
+            {"amount": 20.0, "code": None, "id": None, "name": None},
+            {"amount": 10.0, "code": None, "id": None, "name": None},
         ],
         "messages": [get_time_period_message()],
     }
