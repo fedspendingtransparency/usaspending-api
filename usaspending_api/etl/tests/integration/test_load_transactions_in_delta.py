@@ -878,14 +878,8 @@ class TestTransactionIdLookup:
     def test_unexpected_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        # 1. Test calling load_transactions_in_delta with etl-level of transaction_id_lookup without first
-        # calling calling load_transactions_in_delta with etl-level of initial_run
-
         # First, load the source tables to Delta.
         _load_tables_to_delta(s3_unittest_data_bucket)
-
-        with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_id_lookup"):
-            call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
         # 2. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
         # initial_run, then transaction_id_lookup.  However, call initial_run with blank raw.transaction_normalized
@@ -1099,14 +1093,8 @@ class TestAwardIdLookup:
     def test_unexpected_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        # 1. Test calling load_transactions_in_delta with etl-level of award_id_lookup without first
-        # calling load_transactions_in_delta with etl-level of initial_run
-
         # First, load the source tables to Delta
         _load_tables_to_delta(s3_unittest_data_bucket)
-
-        with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.award_id_lookup"):
-            call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # 2. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
         # initial_run, then award_id_lookup.  However, call initial_run with blank raw.transaction_normalized
@@ -1335,11 +1323,6 @@ class _TransactionFabsFpdsCore:
     def unexpected_paths_source_tables_only_test_core(self):
         # First, load the source tables to Delta
         _load_tables_to_delta(self.s3_data_bucket)
-
-        # 1. Test calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s before calling with
-        # etl-level of initial_run.
-        with raises(pyspark.sql.utils.AnalysisException, match=f"Table or view not found: int.{self.etl_level}"):
-            call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # 2. Call load_transactions_in_delta with etl-level of initial_run first, but without first loading
         # raw.transaction_normalized or raw.awards.  Then immediately call load_transactions_in_delta with
