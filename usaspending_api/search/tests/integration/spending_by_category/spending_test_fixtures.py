@@ -492,7 +492,7 @@ def awards_and_transactions(db):
         generated_pragmatic_obligation=10,
         action_date="2020-01-07",
         pop_state_code="ND",
-        pop_state_name="NORTH DAKOTA"
+        pop_state_name="NORTH DAKOTA",
     )
     baker.make(
         "search.TransactionSearch",
@@ -501,7 +501,7 @@ def awards_and_transactions(db):
         generated_pragmatic_obligation=20,
         action_date="2020-01-07",
         pop_state_code="TX",
-        pop_state_name="TEXAS"
+        pop_state_name="TEXAS",
     )
 
     # Subawards

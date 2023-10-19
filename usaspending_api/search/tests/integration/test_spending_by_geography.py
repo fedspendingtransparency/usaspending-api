@@ -899,7 +899,7 @@ def test_correct_response_without_geo_filters(
         _test_correct_response_for_recipient_location_district_without_geo_filters,
         _test_correct_response_for_recipient_location_state_without_geo_filters,
         _test_correct_response_for_recipient_location_country_without_geo_filters,
-        _test_correct_response_for_place_of_performance_state_without_country_code
+        _test_correct_response_for_place_of_performance_state_without_country_code,
     ]
 
     for test in test_cases:
@@ -1042,7 +1042,7 @@ def _test_correct_response_for_place_of_performance_state_without_geo_filters(cl
                 "display_name": "Texas",
                 "per_capita": 0.2,
                 "population": 100,
-                "shape_code": "TX"
+                "shape_code": "TX",
             },
             {
                 "aggregated_amount": 5500.0,
@@ -1311,7 +1311,7 @@ def _test_correct_response_for_place_of_performance_state_without_country_code(c
                 "filters": {
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2022-09-30"}],
                 },
-                "subawards": False
+                "subawards": False,
             }
         ),
     )
@@ -1328,7 +1328,7 @@ def _test_correct_response_for_place_of_performance_state_without_country_code(c
             },
             {
                 "aggregated_amount": 550055.0,
-                "display_name": 'South Carolina',
+                "display_name": "South Carolina",
                 "per_capita": 550.06,
                 "population": 1000,
                 "shape_code": "SC",
@@ -1338,15 +1338,15 @@ def _test_correct_response_for_place_of_performance_state_without_country_code(c
                 "display_name": "Texas",
                 "per_capita": 0.2,
                 "population": 100,
-                "shape_code": "TX"
+                "shape_code": "TX",
             },
             {
                 "aggregated_amount": 5500.0,
                 "display_name": "Washington",
                 "per_capita": 0.55,
                 "population": 10000,
-                "shape_code": "WA"
-            }
+                "shape_code": "WA",
+            },
         ],
         "messages": [get_time_period_message()],
     }
