@@ -899,6 +899,7 @@ def test_correct_response_without_geo_filters(
         _test_correct_response_for_recipient_location_district_without_geo_filters,
         _test_correct_response_for_recipient_location_state_without_geo_filters,
         _test_correct_response_for_recipient_location_country_without_geo_filters,
+        _test_correct_response_for_place_of_performance_state_without_country_code
     ]
 
     for test in test_cases:
@@ -1023,11 +1024,25 @@ def _test_correct_response_for_place_of_performance_state_without_geo_filters(cl
         "geo_layer": "state",
         "results": [
             {
+                "aggregated_amount": 10.0,
+                "display_name": "North Dakota",
+                "per_capita": 1.0,
+                "population": 10,
+                "shape_code": "ND",
+            },
+            {
                 "aggregated_amount": 550055.0,
                 "display_name": "South Carolina",
                 "per_capita": 550.06,
                 "population": 1000,
                 "shape_code": "SC",
+            },
+            {
+                "aggregated_amount": 20.0,
+                "display_name": "Texas",
+                "per_capita": 0.2,
+                "population": 100,
+                "shape_code": "TX"
             },
             {
                 "aggregated_amount": 5500.0,
@@ -1271,6 +1286,67 @@ def _test_correct_response_for_place_of_perforance_country_without_geo_filters(c
                 "population": None,
                 "shape_code": "USA",
             },
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
+
+
+def _test_correct_response_for_place_of_performance_state_without_country_code(client):
+    # Ensure that ALL domestic ES records are returned for a given state/territory even if
+    #   there's no pop_country_code on that record. Any pop_state_code is enough to know
+    #   that the record is a domestic record.
+
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "state",
+                "filters": {
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2022-09-30"}],
+                },
+                "subawards": False
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "state",
+        "results": [
+            {
+                "aggregated_amount": 10.0,
+                "display_name": "North Dakota",
+                "per_capita": 1.0,
+                "population": 10,
+                "shape_code": "ND",
+            },
+            {
+                "aggregated_amount": 550055.0,
+                "display_name": 'South Carolina',
+                "per_capita": 550.06,
+                "population": 1000,
+                "shape_code": "SC",
+            },
+            {
+                "aggregated_amount": 20.0,
+                "display_name": "Texas",
+                "per_capita": 0.2,
+                "population": 100,
+                "shape_code": "TX"
+            },
+            {
+                "aggregated_amount": 5500.0,
+                "display_name": "Washington",
+                "per_capita": 0.55,
+                "population": 10000,
+                "shape_code": "WA"
+            }
         ],
         "messages": [get_time_period_message()],
     }

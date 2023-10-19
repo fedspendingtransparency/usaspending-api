@@ -484,6 +484,26 @@ def awards_and_transactions(db):
         recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
     )
 
+    # Transactions with state codes, but no country code
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=998,
+        federal_action_obligation=10,
+        generated_pragmatic_obligation=10,
+        action_date="2020-01-07",
+        pop_state_code="ND",
+        pop_state_name="NORTH DAKOTA"
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=999,
+        federal_action_obligation=20,
+        generated_pragmatic_obligation=20,
+        action_date="2020-01-07",
+        pop_state_code="TX",
+        pop_state_name="TEXAS"
+    )
+
     # Subawards
     baker.make(
         "search.SubawardSearch",
@@ -568,6 +588,23 @@ def awards_and_transactions(db):
         county_name="Washington",
         latest_population=10000,
     )
+    baker.make(
+        "references.PopCounty",
+        id=6,
+        state_code="38",
+        state_name="North Dakota",
+        county_number="000",
+        latest_population=10,
+    )
+    baker.make(
+        "references.PopCounty",
+        id=7,
+        state_code="48",
+        state_name="Texas",
+        county_number="000",
+        latest_population=100,
+    )
+
     # References Population Congressional District
     baker.make(
         "references.PopCongressionalDistrict",
