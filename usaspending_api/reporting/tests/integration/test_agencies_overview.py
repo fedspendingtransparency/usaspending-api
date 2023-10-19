@@ -73,9 +73,9 @@ def setup_test_data(db):
         published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07",
         submission_window_id=dabs.id,
     )
-    baker.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True)
-    baker.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True)
-    baker.make("references.Agency", id=3, toptier_agency_id=3, toptier_flag=True)
+    baker.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True, _fill_optional=True)
+    baker.make("references.Agency", id=2, toptier_agency_id=2, toptier_flag=True, _fill_optional=True)
+    baker.make("references.Agency", id=3, toptier_agency_id=3, toptier_flag=True, _fill_optional=True)
     agencies = [
         baker.make(
             "references.ToptierAgency", toptier_agency_id=1, toptier_code="123", abbreviation="ABC", name="Test Agency"

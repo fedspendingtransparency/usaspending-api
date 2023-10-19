@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, call
 
 import boto3
 from model_bakery import baker
+from pyspark.context import SparkContext
 from pyspark.sql import SparkSession, Row
 from pytest import fixture, mark
 from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
@@ -24,6 +25,16 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.etl.spark import _USAS_RDS_REF_TABLES, _BROKER_REF_TABLES, create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
+
+
+def test_jvm_sparksession(spark: SparkSession):
+    with SparkContext._lock:
+        # Check the Singleton instance populated if there's an active SparkContext
+        assert SparkContext._active_spark_context is not None
+        sc = SparkContext._active_spark_context
+        assert sc._jvm
+        assert sc._jvm.SparkSession
+        assert not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
 
 
 def test_hive_metastore_db(spark: SparkSession, s3_unittest_data_bucket, hive_unittest_metastore_db):
@@ -117,7 +128,7 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 
 @fixture()
 def _transaction_and_award_test_data(db):
-    agency1 = baker.make("references.Agency")
+    agency1 = baker.make("references.Agency", _fill_optional=True)
     awd1 = baker.make("search.AwardSearch", award_id=1, awarding_agency_id=agency1.id)
     baker.make(
         "search.TransactionSearch",

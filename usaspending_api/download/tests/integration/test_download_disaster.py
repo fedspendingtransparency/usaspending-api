@@ -1,10 +1,14 @@
 import json
+from unittest.mock import Mock
+
 import pytest
 import re
 
 from model_bakery import baker
 from rest_framework import status
 
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.references.models import DisasterEmergencyFundCode
@@ -431,6 +435,7 @@ def awards_and_transactions():
 
 @pytest.mark.django_db(transaction=True)
 def test_csv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = _post(client, def_codes=["L"])
@@ -453,6 +458,7 @@ def test_csv_download_success(client, monkeypatch, awards_and_transactions, elas
 
 @pytest.mark.django_db(transaction=True)
 def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L"], file_format="tsv")
 
@@ -464,6 +470,7 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
 
 @pytest.mark.django_db(transaction=True)
 def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L"], file_format="pstxt")
 
@@ -475,6 +482,7 @@ def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, el
 
 @pytest.mark.django_db(transaction=True)
 def test_download_failure_with_two_defc(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L", "M"])
 

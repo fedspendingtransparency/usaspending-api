@@ -13,6 +13,7 @@ in the IDV world but has been added for testing purposes.  Hope this helps.
   I3   I4   I5   C6                  I7        I8        C9        C10
                                   C11 C12   C13 C14      C15
 """
+import pytest
 from model_bakery import baker
 
 
@@ -22,7 +23,8 @@ PARENTS = {3: 1, 4: 1, 5: 1, 6: 1, 7: 2, 8: 2, 9: 2, 10: 2, 11: 7, 12: 7, 13: 8,
 RECIPIENT_HASH_PREFIX = "d0de516c-54af-4999-abda-428ce877"
 
 
-def create_idv_test_data():
+@pytest.fixture
+def create_idv_test_data(db):
     defc_a = baker.make("references.DisasterEmergencyFundCode", code="A")
 
     dsws = baker.make(

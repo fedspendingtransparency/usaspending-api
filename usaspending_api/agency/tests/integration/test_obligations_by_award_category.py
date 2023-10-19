@@ -11,7 +11,7 @@ url = "/api/v2/agency/{toptier_code}/obligations_by_award_category/{filter}"
 
 
 @pytest.fixture
-def transaction_search_1():
+def transaction_search_1(db):
 
     # Submission
     dsws = baker.make(
@@ -38,8 +38,12 @@ def transaction_search_1():
         toptier_code="002",
     )
 
-    awarding_agency_1 = baker.make("references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True)
-    awarding_agency_2 = baker.make("references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True)
+    awarding_agency_1 = baker.make(
+        "references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True, _fill_optional=True
+    )
+    awarding_agency_2 = baker.make(
+        "references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True, _fill_optional=True
+    )
 
     # Awards
     award_contract = baker.make("search.AwardSearch", award_id=1, category="contract")

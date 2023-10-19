@@ -21,8 +21,11 @@ endif
 #### VARS ##############################################################################################################
 #### Variables used in this Makefile.
 #### Uppercased are environment vars, or make-specific vars. All others should be lower-snake-case
-ENV_CODE ?= lcl  # default ENV_CODE to lcl if not set
-PYTHON_VERSION ?= 3.8.16  # default version if not set in .env or an env var
+
+# default ENV_CODE to lcl if not set
+ENV_CODE ?= lcl
+# default version if not set in .env or an env var
+PYTHON_VERSION ?= 3.8.16
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_spark := Dockerfile.spark
@@ -65,18 +68,26 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 	fi;
 
 .venv: ## Ensure a virtual environment is established at .venv
+	@( \
+		set -x; \
+		test -d .venv || python3 -m venv .venv/${venv_name}; \
+	)
+
+.PHONY: requirements-dev
+upgrade :=  #unset it
+requirements-dev: .venv ## Install pip packages in dev virtual env. Add upgrade=true to upgrade required packages to newest version (can be lengthy)
+	# Because this depends on .venv, the virtual env should exist to activate
 	# This will "activate" the virtual env only for the duration of the scripts in the parens-scope
 	# Then when this make rule recipe is complete, the virtual env will be dropped
 	# But it IS there and populated
 	# Must _manually_ reactivate the virtual env to interact with it on the command line
 	@( \
-		set -x; \
-		test -d .venv || python3 -m venv .venv/${venv_name}; \
 		source .venv/${venv_name}/bin/activate; \
 		echo "virtual env at .venv/${venv_name} activated (temporarily)"; \
+		pip install $$(cat requirements/requirements-dev.txt | grep 'pip=='); \
 		src_roots=(${src_root_paths}); \
 		for src_root in "$${src_roots[@]}"; do \
-			pip install --editable "$${src_root}[dev]"; \
+			pip install ${if ${upgrade},--upgrade,} --editable "$${src_root}[dev]"; \
 		done; \
 	)
 
@@ -88,7 +99,7 @@ activate: ## Spit out the command to run to activate the virtual env, since you 
 	@echo ".venv/${venv_name}/bin/activate"
 
 .PHONY: local-dev-setup
-local-dev-setup: .python-version .venv check-dependencies .ivy2 ## Setup python, virtual environment, and pip dependencies, then check version info
+local-dev-setup: .python-version requirements-dev check-dependencies .ivy2 ## Setup python, virtual environment, and pip dependencies, then check version info
 
 .PHONY: check-dependencies
 check-dependencies: ## Prints out the versions of dependencies in use
@@ -107,9 +118,22 @@ print('Hadoop ' + spark.sparkContext._gateway.jvm.org.apache.hadoop.util.Version
 env-code:  ## Print the value of ENV_CODE environment variable
 	@echo ${ENV_CODE}
 
+.PHONY: test-dbs
+createdb :=  #unset it
+test-dbs:  ## Trigger the setup of multiple test DBs that can be reused with pytest --numprocesses. Add createdb=true to force (re-)creation of Test DBs rather than reuse.
+	pytest ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
+
+.PHONY: test-spark-deps
+test-spark-deps:  ## Trigger a singular test in one pytest session that does nothing but cause Maven dependencies to be downloaded and cached through Ivy; reduces contention when parallel spark builds need the depdencies
+	pytest --no-cov --disable-warnings -r=fEs --verbosity=3 'usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars'
+
 .PHONY: tests
-tests:  ## Run automated unit/integration tests
-	@pytest -rP -vv
+tests: local-dev-setup test-dbs test-spark-deps ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
+	pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args}
+
+.PHONY: tests-failed
+tests-failed: local-dev-setup test-dbs test-spark-deps ## Re-run only automated unit/integration tests that failed on the previous run. Configured for verbose logging to get more detail on failures. logging. add args="..." to append additional pytest args
+	pytest --last-failed --reuse-db --numprocesses=auto --dist=worksteal -rP -vvv ${args}
 
 .PHONY: confirm-clean-all
 no-prompt := 'false'
@@ -128,7 +152,8 @@ ifeq ($(strip ${dry-run}),'false')
 	rm -f .python-version
 	rm -rf .venv
 	@git clean -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'
-	if command -v deactivate &> /dev/null; then deactivate; fi;
+	deactivate || true
+	#if command -v deactivate &> /dev/null; then deactivate; fi;
 else  # this is a dry-run, spit out what would be removed
 	@printf "Would remove .python-version\nWould remove .venv\n"
 	@git clean --dry-run -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'

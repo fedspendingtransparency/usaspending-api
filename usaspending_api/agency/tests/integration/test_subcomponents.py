@@ -70,9 +70,11 @@ def test_invalid_agency(client, bureau_data):
 @pytest.mark.django_db
 def test_exclusion_bureau_codes(client):
     # Setup all Data (no bureau)
-    ta1 = baker.make("references.ToptierAgency", name="Agency 1", toptier_code="001")
-    sa1 = baker.make("references.SubtierAgency", name="Agency 1", subtier_code="0001")
-    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
+    ta1 = baker.make("references.ToptierAgency", name="Agency 1", toptier_code="001", _fill_optional=True)
+    sa1 = baker.make("references.SubtierAgency", name="Agency 1", subtier_code="0001", _fill_optional=True)
+    baker.make(
+        "references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1, _fill_optional=True
+    )
 
     fa1 = baker.make(
         "accounts.FederalAccount", account_title="FA 1", federal_account_code="001-0000", parent_toptier_agency=ta1
