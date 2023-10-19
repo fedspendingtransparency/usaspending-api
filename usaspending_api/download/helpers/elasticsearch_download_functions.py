@@ -106,14 +106,14 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             wait_start_time = time.time()
             time_to_wait_in_seconds = 60 * 10
             is_lookup_replicated = (
-                DownloadJobLookup.objects.using(settings.DOWNLOAD_DATABASE_ALIAS)
+                DownloadJobLookup.objects.using(settings.DOWNLOAD_DB_ALIAS)
                 .filter(download_job_id=download_job.download_job_id)
                 .exists()
             )
             while not is_lookup_replicated and time.time() - wait_start_time < time_to_wait_in_seconds:
                 time.sleep(30)  # Wait 30 seconds before checking again; should catch majority of cases
                 is_lookup_replicated = (
-                    DownloadJobLookup.objects.using(settings.DOWNLOAD_DATABASE_ALIAS)
+                    DownloadJobLookup.objects.using(settings.DOWNLOAD_DB_ALIAS)
                     .filter(download_job_id=download_job.download_job_id)
                     .exists()
                 )

@@ -29,7 +29,7 @@ DATE_IN_THE_FUTURE = "2553-04-01"
 
 
 @pytest.fixture
-def basic_idvs():
+def basic_idvs(db):
     defc_a = baker.make("references.DisasterEmergencyFundCode", code="A")
 
     standard_sub_window_schedule(DATE_IN_THE_PAST)
@@ -207,7 +207,7 @@ def basic_idvs():
 
 
 @pytest.fixture
-def idv_with_unreleased_submissions():
+def idv_with_unreleased_submissions(db):
     defc_a = baker.make("references.DisasterEmergencyFundCode", code="A")
 
     standard_sub_window_schedule(DATE_IN_THE_FUTURE)
@@ -215,7 +215,7 @@ def idv_with_unreleased_submissions():
 
 
 @pytest.fixture
-def idv_with_released_submissions():
+def idv_with_released_submissions(db):
     defc_a = baker.make("references.DisasterEmergencyFundCode", code="A")
 
     standard_sub_window_schedule(DATE_IN_THE_PAST)

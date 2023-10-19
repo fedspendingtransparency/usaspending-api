@@ -31,10 +31,10 @@ def _build_dabs_reporting_data(fy_reported):
         submission_fiscal_quarter=1,
         submission_reveal_date="2020-10-09",
     )
-    ta1 = baker.make("references.ToptierAgency", toptier_code="001")
-    ta2 = baker.make("references.ToptierAgency", toptier_code="002")
-    baker.make("references.Agency", toptier_flag=True, toptier_agency=ta1)
-    baker.make("references.Agency", toptier_flag=True, toptier_agency=ta2)
+    ta1 = baker.make("references.ToptierAgency", toptier_code="001", _fill_optional=True)
+    ta2 = baker.make("references.ToptierAgency", toptier_code="002", _fill_optional=True)
+    baker.make("references.Agency", toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
+    baker.make("references.Agency", toptier_flag=True, toptier_agency=ta2, _fill_optional=True)
     tas1 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta1)
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta2)
     sa1_3 = baker.make(

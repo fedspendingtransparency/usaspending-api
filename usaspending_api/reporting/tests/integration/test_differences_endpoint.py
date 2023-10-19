@@ -26,8 +26,10 @@ def differences_data():
         quarter_format_flag=False,
         submission_window=dabs1,
     )
-    ta1 = baker.make("references.ToptierAgency", toptier_code="001")
-    baker.make("references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True)
+    ta1 = baker.make("references.ToptierAgency", toptier_code="001", _fill_optional=True)
+    baker.make(
+        "references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True, _fill_optional=True
+    )
     tas1 = baker.make("accounts.TreasuryAppropriationAccount")
     baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
     baker.make(

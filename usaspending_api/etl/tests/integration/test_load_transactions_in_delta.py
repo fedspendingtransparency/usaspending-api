@@ -1,4 +1,4 @@
-"""Automated Unit Tests for the the loading of transaction and award tables in Delta Lake.
+"""Automated Unit Tests for the loading of transaction and award tables in Delta Lake.
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
@@ -23,26 +23,25 @@ from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTI
 from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 
-BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
-initial_datetime = datetime(2022, 10, 31, tzinfo=timezone.utc)
-initial_source_table_load_datetime = initial_datetime + timedelta(hours=12)
-
-initial_assists = [
+_BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_INITIAL_DATETIME = datetime(2022, 10, 31, tzinfo=timezone.utc)
+_INITIAL_SOURCE_TABLE_LOAD_DATETIME = _INITIAL_DATETIME + timedelta(hours=12)
+_INITIAL_ASSISTS = [
     {
         "published_fabs_id": 1,
         "afa_generated_unique": "award_assist_0001_trans_0001",
-        "action_date": initial_datetime.isoformat(),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.isoformat(),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "is_active": True,
         "unique_award_key": "award_assist_0001",
     },
     {
         "published_fabs_id": 2,
         "afa_generated_unique": "award_assist_0002_trans_0001",
-        "action_date": initial_datetime.isoformat(),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.isoformat(),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "is_active": True,
         "unique_award_key": "award_assist_0002",
     },
@@ -50,9 +49,9 @@ initial_assists = [
         "published_fabs_id": 3,
         "afa_generated_unique": "award_assist_0002_trans_0002",
         # Deliberately formatting this action_date somewhat unusually.
-        "action_date": initial_datetime.strftime("%Y%m%d"),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.strftime("%Y%m%d"),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "is_active": True,
         "unique_award_key": "award_assist_0002",
     },
@@ -60,76 +59,73 @@ initial_assists = [
         "published_fabs_id": 4,
         "afa_generated_unique": "award_assist_0003_trans_0001",
         # Deliberately formatting this action_date somewhat unusually.
-        "action_date": initial_datetime.strftime("%Y%m%d"),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.strftime("%Y%m%d"),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "is_active": True,
         "unique_award_key": "award_assist_0003",
     },
     {
         "published_fabs_id": 5,
         "afa_generated_unique": "award_assist_0003_trans_0002",
-        "action_date": initial_datetime.isoformat(),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.isoformat(),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "is_active": True,
         "unique_award_key": "award_assist_0003",
     },
 ]
-
-initial_procures = [
+_INITIAL_PROCURES = [
     {
         "detached_award_procurement_id": 1,
         "detached_award_proc_unique": "award_procure_0001_trans_0001",
-        "action_date": initial_datetime.isoformat(),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.isoformat(),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "unique_award_key": "award_procure_0001",
     },
     {
         "detached_award_procurement_id": 2,
         "detached_award_proc_unique": "award_procure_0002_trans_0001",
-        "action_date": initial_datetime.isoformat(),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.isoformat(),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "unique_award_key": "award_procure_0002",
     },
     {
         "detached_award_procurement_id": 3,
         "detached_award_proc_unique": "award_procure_0002_trans_0002",
         # Deliberately formatting this action_date somewhat unusually.
-        "action_date": initial_datetime.strftime("%Y%m%d"),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.strftime("%Y%m%d"),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "unique_award_key": "award_procure_0002",
     },
     {
         "detached_award_procurement_id": 4,
         "detached_award_proc_unique": "award_procure_0003_trans_0001",
         # Deliberately formatting this action_date somewhat unusually.
-        "action_date": initial_datetime.strftime("%Y%m%d"),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.strftime("%Y%m%d"),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "unique_award_key": "award_procure_0003",
     },
     {
         "detached_award_procurement_id": 5,
         "detached_award_proc_unique": "award_procure_0003_trans_0002",
-        "action_date": initial_datetime.isoformat(),
-        "created_at": initial_datetime,
-        "updated_at": initial_datetime,
+        "action_date": _INITIAL_DATETIME.isoformat(),
+        "created_at": _INITIAL_DATETIME,
+        "updated_at": _INITIAL_DATETIME,
         "unique_award_key": "award_procure_0003",
     },
 ]
-
-new_assist = {
+_NEW_ASSIST = {
     "published_fabs_id": 6,
     "afa_generated_unique": "award_assist_0004_trans_0001",
     "is_active": True,
     "unique_award_key": "award_assist_0004",
 }
-
-new_procure = {
+_NEW_PROCURE = {
     "detached_award_procurement_id": 6,
     "detached_award_proc_unique": "award_procure_0004_trans_0001",
     "unique_award_key": "award_procure_0004",
@@ -137,9 +133,10 @@ new_procure = {
 
 
 @fixture
-def populate_initial_source_tables_pg():
+@mark.django_db
+def _populate_initial_source_tables_pg():
     # Populate transactions.SourceAssistanceTransaction and associated broker.ExternalDataType data in Postgres
-    for assist in initial_assists:
+    for assist in _INITIAL_ASSISTS:
         baker.make("transactions.SourceAssistanceTransaction", **assist)
 
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
@@ -147,12 +144,14 @@ def populate_initial_source_tables_pg():
         "broker.ExternalDataType",
         name="source_assistance_transaction",
         external_data_type_id=11,
-        update_date=initial_source_table_load_datetime,
+        update_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME,
     )
-    baker.make("broker.ExternalDataLoadDate", last_load_date=initial_source_table_load_datetime, external_data_type=edt)
+    baker.make(
+        "broker.ExternalDataLoadDate", last_load_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME, external_data_type=edt
+    )
 
     # Populate transactions.SourceProcurementTransaction and associated broker.ExternalDataType data in Postgres
-    for procure in initial_procures:
+    for procure in _INITIAL_PROCURES:
         baker.make("transactions.SourceProcurementTransaction", **procure)
 
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
@@ -160,15 +159,17 @@ def populate_initial_source_tables_pg():
         "broker.ExternalDataType",
         name="source_procurement_transaction",
         external_data_type_id=10,
-        update_date=initial_source_table_load_datetime,
+        update_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME,
     )
-    baker.make("broker.ExternalDataLoadDate", last_load_date=initial_source_table_load_datetime, external_data_type=edt)
+    baker.make(
+        "broker.ExternalDataLoadDate", last_load_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME, external_data_type=edt
+    )
 
     # Also need to populate values for es_deletes, int.transaction_[fabs|fpds|normalized], int.awards,
     #   and id lookup tables in broker.ExternalData[Type|LoadDate] tables
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt = baker.make("broker.ExternalDataType", name="es_deletes", external_data_type_id=102, update_date=None)
-    baker.make("broker.ExternalDataLoadDate", last_load_date=BEGINNING_OF_TIME, external_data_type=edt)
+    baker.make("broker.ExternalDataLoadDate", last_load_date=_BEGINNING_OF_TIME, external_data_type=edt)
 
     for table_name, id in zip(
         (
@@ -182,25 +183,25 @@ def populate_initial_source_tables_pg():
         range(201, 207),
     ):
         edt = baker.make("broker.ExternalDataType", name=table_name, external_data_type_id=id, update_date=None)
-        baker.make("broker.ExternalDataLoadDate", last_load_date=BEGINNING_OF_TIME, external_data_type=edt)
+        baker.make("broker.ExternalDataLoadDate", last_load_date=_BEGINNING_OF_TIME, external_data_type=edt)
 
 
 @dataclass
-class TableLoadInfo:
+class _TableLoadInfo:
     spark: SparkSession
     table_name: str
     data: Sequence[Dict[str, Any]]
     overwrite: Optional[bool] = False
 
 
-def load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_raw_tables=None):
+def _load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_raw_tables=None):
     if load_source_tables:
         load_delta_table_from_postgres("published_fabs", s3_data_bucket)
         load_delta_table_from_postgres("detached_award_procurement", s3_data_bucket)
 
     if load_other_raw_tables:
         for item in load_other_raw_tables:
-            if isinstance(item, TableLoadInfo):
+            if isinstance(item, _TableLoadInfo):
                 load_dict_to_delta_table(item.spark, s3_data_bucket, "raw", item.table_name, item.data, item.overwrite)
             else:
                 load_delta_table_from_postgres(item, s3_data_bucket)
@@ -209,7 +210,7 @@ def load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_raw
 class TestInitialRun:
     @staticmethod
     def initial_run(s3_data_bucket, load_source_tables=True, load_other_raw_tables=None, initial_copy=True):
-        load_tables_to_delta(s3_data_bucket, load_source_tables, load_other_raw_tables)
+        _load_tables_to_delta(s3_data_bucket, load_source_tables, load_other_raw_tables)
         call_params = ["load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_data_bucket]
         if not initial_copy:
             call_params.append("--no-initial-copy")
@@ -364,17 +365,17 @@ class TestInitialRun:
 
     @mark.django_db(transaction=True)
     def test_edge_cases_using_only_source_tables(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # 1. Call initial run with no raw tables, except for published_fabs and detached_award_procurement.
         # Also, don't do initial copy of tables
         TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
         kwargs = {
-            "expected_last_load_transaction_id_lookup": BEGINNING_OF_TIME,
-            "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         TestInitialRun.verify(spark, [], [], **kwargs)
 
@@ -392,21 +393,21 @@ class TestInitialRun:
 
 # Even though all the tests that use the Postgres loader have been removed, these variables are still
 # needed for some tests.
-class InitialRunWithPostgresLoader:
+class _InitialRunWithPostgresLoader:
     expected_initial_transaction_id_lookup = [
         {
             "transaction_id": id,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[id - 1]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[id - 1]["afa_generated_unique"].upper(),
         }
-        for id in range(1, len(initial_assists) + 1)
+        for id in range(1, len(_INITIAL_ASSISTS) + 1)
     ] + [
         {
             "transaction_id": id,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[id - 6]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[id - 6]["detached_award_proc_unique"].upper(),
         }
-        for id in range(len(initial_assists) + 1, len(initial_assists) + len(initial_procures) + 1)
+        for id in range(len(_INITIAL_ASSISTS) + 1, len(_INITIAL_ASSISTS) + len(_INITIAL_PROCURES) + 1)
     ]
 
     expected_initial_award_id_lookup = [
@@ -416,18 +417,18 @@ class InitialRunWithPostgresLoader:
             "transaction_unique_id": assist["afa_generated_unique"].upper(),
             "generated_unique_award_id": assist["unique_award_key"].upper(),
         }
-        for assist in initial_assists
+        for assist in _INITIAL_ASSISTS
     ] + [
         {
             "award_id": (
                 int(procure["unique_award_key"].split("_")[-1])
-                + max([int(assist["unique_award_key"].split("_")[-1]) for assist in initial_assists])
+                + max([int(assist["unique_award_key"].split("_")[-1]) for assist in _INITIAL_ASSISTS])
             ),
             "is_fpds": True,
             "transaction_unique_id": procure["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": procure["unique_award_key"].upper(),
         }
-        for procure in initial_procures
+        for procure in _INITIAL_PROCURES
     ]
 
     expected_initial_transaction_fabs = [
@@ -438,7 +439,7 @@ class InitialRunWithPostgresLoader:
             "transaction_id": assist["published_fabs_id"],
             "unique_award_key": assist["unique_award_key"].upper(),
         }
-        for assist in initial_assists
+        for assist in _INITIAL_ASSISTS
     ]
 
     expected_initial_transaction_fpds = [
@@ -446,10 +447,10 @@ class InitialRunWithPostgresLoader:
             **procure,
             "action_date": dateutil.parser.parse(procure["action_date"]).date().isoformat(),
             "detached_award_proc_unique": procure["detached_award_proc_unique"].upper(),
-            "transaction_id": procure["detached_award_procurement_id"] + len(initial_assists),
+            "transaction_id": procure["detached_award_procurement_id"] + len(_INITIAL_ASSISTS),
             "unique_award_key": procure["unique_award_key"].upper(),
         }
-        for procure in initial_procures
+        for procure in _INITIAL_PROCURES
     ]
 
 
@@ -458,52 +459,52 @@ class TestInitialRunNoPostgresLoader:
         {
             "transaction_id": 1,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[0]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 2,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[0]["detached_award_proc_unique"].upper(),
         },
         {
             "transaction_id": 3,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[1]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 4,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[1]["detached_award_proc_unique"].upper(),
         },
         {
             "transaction_id": 5,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[2]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 6,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[2]["detached_award_proc_unique"].upper(),
         },
         {
             "transaction_id": 7,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[3]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 8,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[4]["afa_generated_unique"].upper(),
         },
         {
             "transaction_id": 9,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[3]["detached_award_proc_unique"].upper(),
         },
         {
             "transaction_id": 10,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[4]["detached_award_proc_unique"].upper(),
         },
     ]
 
@@ -511,114 +512,114 @@ class TestInitialRunNoPostgresLoader:
         {
             "award_id": 1,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
-            "generated_unique_award_id": initial_assists[0]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[0]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_ASSISTS[0]["unique_award_key"].upper(),
         },
         {
             "award_id": 2,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
-            "generated_unique_award_id": initial_assists[1]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[1]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_ASSISTS[1]["unique_award_key"].upper(),
         },
         {
             "award_id": 2,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
-            "generated_unique_award_id": initial_assists[2]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[2]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_ASSISTS[2]["unique_award_key"].upper(),
         },
         {
             "award_id": 3,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
-            "generated_unique_award_id": initial_procures[0]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[0]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_PROCURES[0]["unique_award_key"].upper(),
         },
         {
             "award_id": 4,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
-            "generated_unique_award_id": initial_procures[1]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[1]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_PROCURES[1]["unique_award_key"].upper(),
         },
         {
             "award_id": 4,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
-            "generated_unique_award_id": initial_procures[2]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[2]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_PROCURES[2]["unique_award_key"].upper(),
         },
         {
             "award_id": 5,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
-            "generated_unique_award_id": initial_assists[3]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[3]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_ASSISTS[3]["unique_award_key"].upper(),
         },
         {
             "award_id": 5,
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
-            "generated_unique_award_id": initial_assists[4]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[4]["afa_generated_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_ASSISTS[4]["unique_award_key"].upper(),
         },
         {
             "award_id": 6,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
-            "generated_unique_award_id": initial_procures[3]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[3]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_PROCURES[3]["unique_award_key"].upper(),
         },
         {
             "award_id": 6,
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
-            "generated_unique_award_id": initial_procures[4]["unique_award_key"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[4]["detached_award_proc_unique"].upper(),
+            "generated_unique_award_id": _INITIAL_PROCURES[4]["unique_award_key"].upper(),
         },
     ]
 
-    initial_award_trans_norm_update_create_date = initial_datetime + timedelta(days=1)
+    initial_award_trans_norm_update_create_date = _INITIAL_DATETIME + timedelta(days=1)
 
     initial_awards = [
         {
             "id": 1,
             "update_date": initial_award_trans_norm_update_create_date,
-            "generated_unique_award_id": initial_assists[0]["unique_award_key"].upper(),
+            "generated_unique_award_id": _INITIAL_ASSISTS[0]["unique_award_key"].upper(),
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[0]["afa_generated_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 2,
             "update_date": initial_award_trans_norm_update_create_date,
-            "generated_unique_award_id": initial_assists[1]["unique_award_key"].upper(),
+            "generated_unique_award_id": _INITIAL_ASSISTS[1]["unique_award_key"].upper(),
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[1]["afa_generated_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 3,
             "update_date": initial_award_trans_norm_update_create_date,
-            "generated_unique_award_id": initial_procures[0]["unique_award_key"].upper(),
+            "generated_unique_award_id": _INITIAL_PROCURES[0]["unique_award_key"].upper(),
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[0]["detached_award_proc_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 4,
             "update_date": initial_award_trans_norm_update_create_date,
-            "generated_unique_award_id": initial_procures[1]["unique_award_key"].upper(),
+            "generated_unique_award_id": _INITIAL_PROCURES[1]["unique_award_key"].upper(),
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[1]["detached_award_proc_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 5,
             "update_date": initial_award_trans_norm_update_create_date,
-            "generated_unique_award_id": initial_assists[3]["unique_award_key"].upper(),
+            "generated_unique_award_id": _INITIAL_ASSISTS[3]["unique_award_key"].upper(),
             "is_fpds": False,
-            "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[3]["afa_generated_unique"].upper(),
             "subaward_count": 0,
         },
         {
             "id": 6,
             "update_date": initial_award_trans_norm_update_create_date,
-            "generated_unique_award_id": initial_procures[3]["unique_award_key"].upper(),
+            "generated_unique_award_id": _INITIAL_PROCURES[3]["unique_award_key"].upper(),
             "is_fpds": True,
-            "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[3]["detached_award_proc_unique"].upper(),
             "subaward_count": 0,
         },
     ]
@@ -628,111 +629,111 @@ class TestInitialRunNoPostgresLoader:
             "id": 1,
             "award_id": 1,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_assists[0]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[0]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_assists[0]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[0]["afa_generated_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": initial_assists[0]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_ASSISTS[0]["unique_award_key"].upper(),
         },
         {
             "id": 2,
             "award_id": 3,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_procures[0]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_PROCURES[0]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_procures[0]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[0]["detached_award_proc_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": initial_procures[0]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_PROCURES[0]["unique_award_key"].upper(),
         },
         {
             "id": 3,
             "award_id": 2,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_assists[1]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[1]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_assists[1]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[1]["afa_generated_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": initial_assists[1]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_ASSISTS[1]["unique_award_key"].upper(),
         },
         {
             "id": 4,
             "award_id": 4,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_procures[1]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_PROCURES[1]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_procures[1]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[1]["detached_award_proc_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": initial_procures[1]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_PROCURES[1]["unique_award_key"].upper(),
         },
         {
             "id": 5,
             "award_id": 2,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_assists[2]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[2]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_assists[2]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[2]["afa_generated_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": initial_assists[2]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_ASSISTS[2]["unique_award_key"].upper(),
         },
         {
             "id": 6,
             "award_id": 4,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_procures[2]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_PROCURES[2]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_procures[2]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[2]["detached_award_proc_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": initial_procures[2]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_PROCURES[2]["unique_award_key"].upper(),
         },
         {
             "id": 7,
             "award_id": 5,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_assists[3]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[3]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_assists[3]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[3]["afa_generated_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": initial_assists[3]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_ASSISTS[3]["unique_award_key"].upper(),
         },
         {
             "id": 8,
             "award_id": 5,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_assists[4]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[4]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_assists[4]["afa_generated_unique"].upper(),
+            "transaction_unique_id": _INITIAL_ASSISTS[4]["afa_generated_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": False,
-            "unique_award_key": initial_assists[4]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_ASSISTS[4]["unique_award_key"].upper(),
         },
         {
             "id": 9,
             "award_id": 6,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_procures[3]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_PROCURES[3]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_procures[3]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[3]["detached_award_proc_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": initial_procures[3]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_PROCURES[3]["unique_award_key"].upper(),
         },
         {
             "id": 10,
             "award_id": 6,
             "business_categories": [],
-            "action_date": dateutil.parser.parse(initial_procures[3]["action_date"]).date(),
+            "action_date": dateutil.parser.parse(_INITIAL_PROCURES[3]["action_date"]).date(),
             "create_date": initial_award_trans_norm_update_create_date,
-            "transaction_unique_id": initial_procures[4]["detached_award_proc_unique"].upper(),
+            "transaction_unique_id": _INITIAL_PROCURES[4]["detached_award_proc_unique"].upper(),
             "update_date": initial_award_trans_norm_update_create_date,
             "is_fpds": True,
-            "unique_award_key": initial_procures[4]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_PROCURES[4]["unique_award_key"].upper(),
         },
     ]
 
@@ -744,14 +745,14 @@ class TestInitialRunNoPostgresLoader:
             "transaction_id": (assist["published_fabs_id"] - 1) * 2 + 1,
             "unique_award_key": assist["unique_award_key"].upper(),
         }
-        for assist in initial_assists[:4]
+        for assist in _INITIAL_ASSISTS[:4]
     ] + [
         {
-            **initial_assists[4],
-            "action_date": dateutil.parser.parse(initial_assists[4]["action_date"]).date().isoformat(),
-            "afa_generated_unique": initial_assists[4]["afa_generated_unique"].upper(),
+            **_INITIAL_ASSISTS[4],
+            "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[4]["action_date"]).date().isoformat(),
+            "afa_generated_unique": _INITIAL_ASSISTS[4]["afa_generated_unique"].upper(),
             "transaction_id": 8,
-            "unique_award_key": initial_assists[4]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_ASSISTS[4]["unique_award_key"].upper(),
         }
     ]
 
@@ -763,21 +764,21 @@ class TestInitialRunNoPostgresLoader:
             "transaction_id": procure["detached_award_procurement_id"] * 2,
             "unique_award_key": procure["unique_award_key"].upper(),
         }
-        for procure in initial_procures[:3]
+        for procure in _INITIAL_PROCURES[:3]
     ] + [
         {
-            **initial_procures[3],
-            "action_date": dateutil.parser.parse(initial_procures[3]["action_date"]).date().isoformat(),
-            "detached_award_proc_unique": initial_procures[3]["detached_award_proc_unique"].upper(),
+            **_INITIAL_PROCURES[3],
+            "action_date": dateutil.parser.parse(_INITIAL_PROCURES[3]["action_date"]).date().isoformat(),
+            "detached_award_proc_unique": _INITIAL_PROCURES[3]["detached_award_proc_unique"].upper(),
             "transaction_id": 9,
-            "unique_award_key": initial_procures[3]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_PROCURES[3]["unique_award_key"].upper(),
         },
         {
-            **initial_procures[4],
-            "action_date": dateutil.parser.parse(initial_procures[4]["action_date"]).date().isoformat(),
-            "detached_award_proc_unique": initial_procures[4]["detached_award_proc_unique"].upper(),
+            **_INITIAL_PROCURES[4],
+            "action_date": dateutil.parser.parse(_INITIAL_PROCURES[4]["action_date"]).date().isoformat(),
+            "detached_award_proc_unique": _INITIAL_PROCURES[4]["detached_award_proc_unique"].upper(),
             "transaction_id": 10,
-            "unique_award_key": initial_procures[4]["unique_award_key"].upper(),
+            "unique_award_key": _INITIAL_PROCURES[4]["unique_award_key"].upper(),
         },
     ]
 
@@ -785,10 +786,10 @@ class TestInitialRunNoPostgresLoader:
     # to populate any other Delta tables, so can only test for NULLs originating in Delta.
     @mark.django_db(transaction=True)
     def test_nulls_in_trans_norm_unique_award_key_from_delta(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # Only load the source tables from Postgres.
-        load_tables_to_delta(s3_unittest_data_bucket)
+        _load_tables_to_delta(s3_unittest_data_bucket)
 
         # Directly load the contents of raw.transaction_normalized to Delta
         load_dict_to_delta_table(
@@ -823,26 +824,26 @@ class TestInitialRunNoPostgresLoader:
 
     @mark.django_db(transaction=True)
     def test_happy_path_scenarios(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # 1. Call initial_run, but set no-initial-copy
 
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
-            TableLoadInfo(spark, "transaction_normalized", self.initial_transaction_normalized),
-            TableLoadInfo(spark, "awards", self.initial_awards),
+            _TableLoadInfo(spark, "transaction_normalized", self.initial_transaction_normalized),
+            _TableLoadInfo(spark, "awards", self.initial_awards),
         ]
         # Don't call Postgres loader, though.
         TestInitialRun.initial_run(
             s3_unittest_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
         kwargs = {
-            "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         TestInitialRun.verify(
             spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, **kwargs
@@ -853,14 +854,14 @@ class TestInitialRunNoPostgresLoader:
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
-            TableLoadInfo(spark, "transaction_fabs", self.initial_transaction_fabs),
-            TableLoadInfo(spark, "transaction_fpds", self.initial_transaction_fpds),
+            _TableLoadInfo(spark, "transaction_fabs", self.initial_transaction_fabs),
+            _TableLoadInfo(spark, "transaction_fpds", self.initial_transaction_fpds),
         ]
         # Don't call Postgres loader or re-load the source tables, though.
         TestInitialRun.initial_run(s3_unittest_data_bucket, False, load_other_raw_tables)
-        kwargs["expected_last_load_transaction_normalized"] = initial_source_table_load_datetime
-        kwargs["expected_last_load_transaction_fabs"] = initial_source_table_load_datetime
-        kwargs["expected_last_load_transaction_fpds"] = initial_source_table_load_datetime
+        kwargs["expected_last_load_transaction_normalized"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        kwargs["expected_last_load_transaction_fabs"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        kwargs["expected_last_load_transaction_fpds"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         TestInitialRun.verify(
             spark,
             self.expected_initial_transaction_id_lookup,
@@ -875,13 +876,13 @@ class TestInitialRunNoPostgresLoader:
 class TestTransactionIdLookup:
     @mark.django_db(transaction=True)
     def test_unexpected_paths(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # 1. Test calling load_transactions_in_delta with etl-level of transaction_id_lookup without first
         # calling calling load_transactions_in_delta with etl-level of initial_run
 
         # First, load the source tables to Delta.
-        load_tables_to_delta(s3_unittest_data_bucket)
+        _load_tables_to_delta(s3_unittest_data_bucket)
 
         with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.transaction_id_lookup"):
             call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
@@ -900,29 +901,29 @@ class TestTransactionIdLookup:
         # Don't reload the source tables, and don't do initial copy of transaction tables, though.
         TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
         kwargs = {
-            "expected_last_load_transaction_id_lookup": BEGINNING_OF_TIME,
-            "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         TestInitialRun.verify(spark, [], [], **kwargs)
 
         # Then, call load_transactions_in_delta with etl-level of transaction_id_lookup.
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
-        # The expected transaction_id_lookup table should be the same as in InitialRunWithPostgresLoader,
+        # The expected transaction_id_lookup table should be the same as in _InitialRunWithPostgresLoader,
         # but all of the transaction ids should be 1 larger than expected there.
-        expected_transaction_id_lookup = deepcopy(InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup)
+        expected_transaction_id_lookup = deepcopy(_InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup)
         for item in expected_transaction_id_lookup:
             item["transaction_id"] += 1
         # Also, the last load date for the transaction_id_lookup table should be updated to the date of the
         # initial loads.
-        kwargs["expected_last_load_transaction_id_lookup"] = initial_source_table_load_datetime
+        kwargs["expected_last_load_transaction_id_lookup"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         TestInitialRun.verify(spark, expected_transaction_id_lookup, [], **kwargs)
 
-    def happy_path_test_core(
-        self,
+    @staticmethod
+    def _happy_path_test_core(
         spark,
         s3_data_bucket,
         load_other_raw_tables,
@@ -941,11 +942,11 @@ class TestTransactionIdLookup:
         # With no deletes or inserts yet, the transaction_id_lookup table should be the same as after the initial run.
         # Also, the last load dates for the id lookup tables should match the load dates of the source tables.
         kwargs = {
-            "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         TestInitialRun.verify(spark, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup, **kwargs)
 
@@ -973,7 +974,7 @@ class TestTransactionIdLookup:
             cursor.execute("SELECT nextval('transaction_id_seq')")
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             max_transaction_id = cursor.fetchone()[0]
-        assert max_transaction_id == (len(initial_assists) + len(initial_procures))
+        assert max_transaction_id == (len(_INITIAL_ASSISTS) + len(_INITIAL_PROCURES))
 
         # Since this test just called nextval(), need to reset the sequence with the is_called flag set to false
         # so that the next call to nextval() will return the same value as previously.
@@ -987,7 +988,7 @@ class TestTransactionIdLookup:
         # Postgres table, and then push the updated table to Delta.
         last_assist_load_datetime = datetime.now(timezone.utc)
         insert_datetime = last_assist_load_datetime + timedelta(minutes=-15)
-        assist = deepcopy(new_assist)
+        assist = deepcopy(_NEW_ASSIST)
         assist.update(
             {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
         )
@@ -1004,7 +1005,7 @@ class TestTransactionIdLookup:
             {
                 "transaction_id": 11,
                 "is_fpds": False,
-                "transaction_unique_id": new_assist["afa_generated_unique"].upper(),
+                "transaction_unique_id": _NEW_ASSIST["afa_generated_unique"].upper(),
             }
         )
         assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
@@ -1012,13 +1013,13 @@ class TestTransactionIdLookup:
         # Although the last load date for the source_assistance_transaction was updated above, the code in
         # load_transactions_in_delta takes the minimum last load date of that table and of the
         # source_procurement_transaction table, which has not been updated since the initial load of both tables.
-        assert get_last_load_date("transaction_id_lookup") == initial_source_table_load_datetime
+        assert get_last_load_date("transaction_id_lookup") == _INITIAL_SOURCE_TABLE_LOAD_DATETIME
 
         # 4. Make inserts to and deletes from the raw tables, call load_transaction_in_delta with etl-level of
         # transaction_id_lookup, and test that the results are as expected.
         last_procure_load_datetime = datetime.now(timezone.utc)
         insert_datetime = last_procure_load_datetime + timedelta(minutes=-15)
-        procure = deepcopy(new_procure)
+        procure = deepcopy(_NEW_PROCURE)
         procure.update(
             {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
         )
@@ -1051,7 +1052,7 @@ class TestTransactionIdLookup:
             {
                 "transaction_id": 12,
                 "is_fpds": True,
-                "transaction_unique_id": new_procure["detached_award_proc_unique"].upper(),
+                "transaction_unique_id": _NEW_PROCURE["detached_award_proc_unique"].upper(),
             }
         )
         assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
@@ -1060,18 +1061,18 @@ class TestTransactionIdLookup:
 
     @mark.django_db(transaction=True)
     def test_happy_path_scenarios_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
-            TableLoadInfo(
+            _TableLoadInfo(
                 spark, "transaction_normalized", TestInitialRunNoPostgresLoader.initial_transaction_normalized
             ),
-            TableLoadInfo(spark, "awards", TestInitialRunNoPostgresLoader.initial_awards),
+            _TableLoadInfo(spark, "awards", TestInitialRunNoPostgresLoader.initial_awards),
         ]
 
-        self.happy_path_test_core(
+        self._happy_path_test_core(
             spark,
             s3_unittest_data_bucket,
             load_other_raw_tables,
@@ -1084,13 +1085,13 @@ class TestTransactionIdLookup:
 class TestAwardIdLookup:
     @mark.django_db(transaction=True)
     def test_unexpected_paths(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # 1. Test calling load_transactions_in_delta with etl-level of award_id_lookup without first
-        # calling calling load_transactions_in_delta with etl-level of initial_run
+        # calling load_transactions_in_delta with etl-level of initial_run
 
         # First, load the source tables to Delta
-        load_tables_to_delta(s3_unittest_data_bucket)
+        _load_tables_to_delta(s3_unittest_data_bucket)
 
         with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.award_id_lookup"):
             call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
@@ -1109,11 +1110,11 @@ class TestAwardIdLookup:
         # Don't reload the source tables, and don't do initial copy of transaction tables, though.
         TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
         kwargs = {
-            "expected_last_load_transaction_id_lookup": BEGINNING_OF_TIME,
-            "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         TestInitialRun.verify(spark, [], [], **kwargs)
 
@@ -1122,15 +1123,15 @@ class TestAwardIdLookup:
 
         # The expected award_id_lookup table should be the same as in TestInitialRunWithPostgresLoader,
         # but all of the award ids should be 1 larger than expected there.
-        expected_award_id_lookup = deepcopy(InitialRunWithPostgresLoader.expected_initial_award_id_lookup)
+        expected_award_id_lookup = deepcopy(_InitialRunWithPostgresLoader.expected_initial_award_id_lookup)
         for item in expected_award_id_lookup:
             item["award_id"] += 1
         # Also, the last load date for the award_id_lookup table should be updated to the date of the initial loads.
-        kwargs["expected_last_load_award_id_lookup"] = initial_source_table_load_datetime
+        kwargs["expected_last_load_award_id_lookup"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         TestInitialRun.verify(spark, [], expected_award_id_lookup, **kwargs)
 
-    def happy_path_test_core(
-        self,
+    @staticmethod
+    def _happy_path_test_core(
         spark,
         s3_data_bucket,
         load_other_raw_tables,
@@ -1150,11 +1151,11 @@ class TestAwardIdLookup:
         # With no deletes or inserts, the award_id_lookup table should be the same as after the initial run.
         # Also, the last load dates for the id lookup tables should match the load dates of the source tables.
         kwargs = {
-            "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         TestInitialRun.verify(spark, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup, **kwargs)
 
@@ -1201,7 +1202,7 @@ class TestAwardIdLookup:
         # all of them), so using model baker to add new rows to Postgres table, and then pushing new table to Delta.
         last_assist_load_datetime = datetime.now(timezone.utc)
         insert_datetime = last_assist_load_datetime + timedelta(minutes=-15)
-        assist = deepcopy(new_assist)
+        assist = deepcopy(_NEW_ASSIST)
         assist.update(
             {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
         )
@@ -1218,8 +1219,8 @@ class TestAwardIdLookup:
             {
                 "award_id": 7,
                 "is_fpds": False,
-                "transaction_unique_id": new_assist["afa_generated_unique"].upper(),
-                "generated_unique_award_id": new_assist["unique_award_key"].upper(),
+                "transaction_unique_id": _NEW_ASSIST["afa_generated_unique"].upper(),
+                "generated_unique_award_id": _NEW_ASSIST["unique_award_key"].upper(),
             }
         )
         assert equal_datasets(expected_award_id_lookup, delta_data, "")
@@ -1227,7 +1228,7 @@ class TestAwardIdLookup:
         # Although the last load date for the source_assistance_transaction was updated above, the code in
         # load_transactions_in_delta takes the minimum last load date of that table and of the
         # source_procurement_transaction table, which has not been updated since the initial load of both tables.
-        assert get_last_load_date("award_id_lookup") == initial_source_table_load_datetime
+        assert get_last_load_date("award_id_lookup") == _INITIAL_SOURCE_TABLE_LOAD_DATETIME
 
         # Also, test that int.award_ids_delete_modified is still empty, since no transactions were deleted since
         # the last check.
@@ -1239,7 +1240,7 @@ class TestAwardIdLookup:
         # tracked the appropriate delete.
         last_procure_load_datetime = datetime.now(timezone.utc)
         insert_datetime = last_procure_load_datetime + timedelta(minutes=-15)
-        procure = deepcopy(new_procure)
+        procure = deepcopy(_NEW_PROCURE)
         procure.update(
             {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
         )
@@ -1272,8 +1273,8 @@ class TestAwardIdLookup:
             {
                 "award_id": 8,
                 "is_fpds": True,
-                "transaction_unique_id": new_procure["detached_award_proc_unique"].upper(),
-                "generated_unique_award_id": new_procure["unique_award_key"].upper(),
+                "transaction_unique_id": _NEW_PROCURE["detached_award_proc_unique"].upper(),
+                "generated_unique_award_id": _NEW_PROCURE["unique_award_key"].upper(),
             }
         )
         assert equal_datasets(expected_award_id_lookup, delta_data, "")
@@ -1287,18 +1288,18 @@ class TestAwardIdLookup:
 
     @mark.django_db(transaction=True)
     def test_happy_path_scenarios_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
-            TableLoadInfo(
+            _TableLoadInfo(
                 spark, "transaction_normalized", TestInitialRunNoPostgresLoader.initial_transaction_normalized
             ),
-            TableLoadInfo(spark, "awards", TestInitialRunNoPostgresLoader.initial_awards),
+            _TableLoadInfo(spark, "awards", TestInitialRunNoPostgresLoader.initial_awards),
         ]
 
-        self.happy_path_test_core(
+        self._happy_path_test_core(
             spark,
             s3_unittest_data_bucket,
             load_other_raw_tables,
@@ -1309,7 +1310,7 @@ class TestAwardIdLookup:
         )
 
 
-class TransactionFabsFpdsCore:
+class _TransactionFabsFpdsCore:
 
     new_transaction_fabs_fpds_id = 6
     new_transaction_id = 11
@@ -1342,7 +1343,7 @@ class TransactionFabsFpdsCore:
 
     def unexpected_paths_source_tables_only_test_core(self):
         # First, load the source tables to Delta
-        load_tables_to_delta(self.s3_data_bucket)
+        _load_tables_to_delta(self.s3_data_bucket)
 
         # 1. Test calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s before calling with
         # etl-level of initial_run.
@@ -1357,15 +1358,15 @@ class TransactionFabsFpdsCore:
 
         # Verify the transaction and award id lookup tables and other int transaction tables.  They should all be empty.
         kwargs = {
-            "expected_last_load_transaction_id_lookup": BEGINNING_OF_TIME,
-            "expected_last_load_award_id_lookup": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         # Even though nothing will have been loaded to that table, the table whose etl_level has been called will
         # have its last load date set to the date of the source tables' load.
-        kwargs[f"expected_last_load_{self.etl_level}"] = initial_source_table_load_datetime
+        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         TestInitialRun.verify(self.spark, [], [], **kwargs)
 
         # 3. With raw.transaction_normalized and raw.awards still not created, call load_transactions_in_delta
@@ -1373,20 +1374,20 @@ class TransactionFabsFpdsCore:
 
         # Since the call to load_transactions_in_delta with etl-level of transaction_f[ab|pd]s above succeeded, we first
         # need to reset the last load date on transaction_fabs
-        update_last_load_date(self.etl_level, BEGINNING_OF_TIME)
+        update_last_load_date(self.etl_level, _BEGINNING_OF_TIME)
 
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
-        # The expected transaction_id_lookup table should be the same as in InitialRunWithPostgresLoader,
+        # The expected transaction_id_lookup table should be the same as in _InitialRunWithPostgresLoader,
         # but all of the transaction ids should be 1 larger than expected there.
-        expected_transaction_id_lookup = deepcopy(InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup)
+        expected_transaction_id_lookup = deepcopy(_InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup)
         for item in expected_transaction_id_lookup:
             item["transaction_id"] += 1
         # Also, the last load date of the transaction_id_lookup table and of the table whose etl_level is being
         # called should be updated to the load time of the source tables
-        kwargs["expected_last_load_transaction_id_lookup"] = initial_source_table_load_datetime
-        kwargs[f"expected_last_load_{self.etl_level}"] = initial_source_table_load_datetime
+        kwargs["expected_last_load_transaction_id_lookup"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         TestInitialRun.verify(
             self.spark,
             expected_transaction_id_lookup,
@@ -1398,7 +1399,7 @@ class TransactionFabsFpdsCore:
         )
 
         # Verify key fields in transaction_f[ab|pd]s table.  Note that the transaction_ids should be 1 more than
-        # in those from InitialRunWithPostgresLoader
+        # in those from _InitialRunWithPostgresLoader
         query = f"SELECT {', '.join(self.compare_fields)} FROM int.{self.etl_level} ORDER BY {self.pk_field}"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
 
@@ -1424,13 +1425,13 @@ class TransactionFabsFpdsCore:
         # load_transactions_in_delta with etl-level of transaction_fabs to populate int.transaction_fabs correctly with
         # the initial data.
         kwargs = {
-            "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_transaction_normalized": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        kwargs[f"expected_last_load_{self.etl_level}"] = initial_source_table_load_datetime
+        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         TestInitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
@@ -1513,12 +1514,11 @@ class TransactionFabsFpdsCore:
         expected_transaction_fabs_fpds[-1]["updated_at"] = insert_update_datetime
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
-    @staticmethod
-    def unexpected_paths_no_pg_loader_test(transaction_fabs_fpds_core):
-        transaction_fabs_fpds_core.unexpected_paths_test_core(
+    def unexpected_paths_no_pg_loader_test_core(self):
+        self.unexpected_paths_test_core(
             [
-                TableLoadInfo(
-                    transaction_fabs_fpds_core.spark,
+                _TableLoadInfo(
+                    self.spark,
                     "transaction_normalized",
                     TestInitialRunNoPostgresLoader.initial_transaction_normalized,
                 )
@@ -1545,13 +1545,13 @@ class TransactionFabsFpdsCore:
         # Verify the tables.  The transaction and award id lookup tables should be the same as during the initial run.
         # The transaction_normalized and transaction_f[ab|pd]s tables should have been copied from raw to int.
         kwargs = {
-            "expected_last_load_transaction_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_award_id_lookup": initial_source_table_load_datetime,
-            "expected_last_load_transaction_normalized": initial_source_table_load_datetime,
-            "expected_last_load_transaction_fabs": BEGINNING_OF_TIME,
-            "expected_last_load_transaction_fpds": BEGINNING_OF_TIME,
+            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_normalized": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        kwargs[f"expected_last_load_{self.etl_level}"] = initial_source_table_load_datetime
+        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         TestInitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
@@ -1694,32 +1694,29 @@ class TransactionFabsFpdsCore:
 
         # Verify that the last_load_dates of the transaction_id_lookup table and the table whose etl_level has been
         # called did NOT change, since only one of the broker source tables' last load date was changed.
-        assert get_last_load_date("transaction_id_lookup") == initial_source_table_load_datetime
-        assert get_last_load_date(self.etl_level) == initial_source_table_load_datetime
+        assert get_last_load_date("transaction_id_lookup") == _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        assert get_last_load_date(self.etl_level) == _INITIAL_SOURCE_TABLE_LOAD_DATETIME
 
-    @staticmethod
-    def happy_paths_no_pg_loader_test(
-        transaction_fabs_fpds_core,
+    def happy_paths_no_pg_loader_test_core(
+        self,
         initial_transaction_fabs_fpds,
         expected_transaction_id_lookup_pops,
         expected_transaction_id_lookup_append,
         expected_transaction_fabs_fpds_append,
     ):
-        transaction_fabs_fpds_core.happy_paths_test_core(
+        self.happy_paths_test_core(
             (
-                TableLoadInfo(
-                    transaction_fabs_fpds_core.spark,
+                _TableLoadInfo(
+                    self.spark,
                     "transaction_normalized",
                     TestInitialRunNoPostgresLoader.initial_transaction_normalized,
                 ),
-                TableLoadInfo(
-                    transaction_fabs_fpds_core.spark,
-                    transaction_fabs_fpds_core.etl_level,
+                _TableLoadInfo(
+                    self.spark,
+                    self.etl_level,
                     initial_transaction_fabs_fpds,
                 ),
-                TableLoadInfo(
-                    transaction_fabs_fpds_core.spark, "awards", TestInitialRunNoPostgresLoader.initial_awards
-                ),
+                _TableLoadInfo(self.spark, "awards", TestInitialRunNoPostgresLoader.initial_awards),
             ),
             TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
             TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup,
@@ -1736,11 +1733,11 @@ class TestTransactionFabs:
     usas_source_table_name = "published_fabs"
     broker_source_table_name = "source_assistance_transaction"
     baker_table = "transactions.SourceAssistanceTransaction"
-    compare_fields = InitialRunWithPostgresLoader.expected_initial_transaction_fabs[0].keys()
+    compare_fields = _InitialRunWithPostgresLoader.expected_initial_transaction_fabs[0].keys()
     new_afa_generated_unique = "award_assist_0004_trans_0001"
     new_unique_award_key = "award_assist_0004"
     baker_kwargs = {
-        "published_fabs_id": TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
+        "published_fabs_id": _TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
         "afa_generated_unique": new_afa_generated_unique,
         "is_active": True,
         "unique_award_key": new_unique_award_key,
@@ -1752,12 +1749,12 @@ class TestTransactionFabs:
     expected_transaction_fabs_fpds_append = {
         "afa_generated_unique": new_afa_generated_unique.upper(),
         "is_active": True,
-        "published_fabs_id": TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
+        "published_fabs_id": _TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
         "unique_award_key": new_unique_award_key.upper(),
     }
 
-    def generate_transaction_fabs_fpds_core(self, spark, s3_data_bucket, expected_initial_transaction_fabs):
-        return TransactionFabsFpdsCore(
+    def _generate_transaction_fabs_fpds_core(self, spark, s3_data_bucket, expected_initial_transaction_fabs):
+        return _TransactionFabsFpdsCore(
             spark,
             s3_data_bucket,
             self.etl_level,
@@ -1773,31 +1770,30 @@ class TestTransactionFabs:
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_source_tables_only(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        transaction_fabs_fpds_core = self.generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunWithPostgresLoader.expected_initial_transaction_fabs
+        transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
+            spark, s3_unittest_data_bucket, _InitialRunWithPostgresLoader.expected_initial_transaction_fabs
         )
         transaction_fabs_fpds_core.unexpected_paths_source_tables_only_test_core()
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        TransactionFabsFpdsCore.unexpected_paths_no_pg_loader_test(
-            self.generate_transaction_fabs_fpds_core(
-                spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fabs
-            )
+        transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
+            spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fabs
         )
+        transaction_fabs_fpds_core.unexpected_paths_no_pg_loader_test_core()
 
     @mark.django_db(transaction=True)
     def test_happy_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        TransactionFabsFpdsCore.happy_paths_no_pg_loader_test(
-            self.generate_transaction_fabs_fpds_core(
-                spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fabs
-            ),
+        transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
+            spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fabs
+        )
+        transaction_fabs_fpds_core.happy_paths_no_pg_loader_test_core(
             TestInitialRunNoPostgresLoader.initial_transaction_fabs,
             (2, 3),
             self.expected_transaction_id_lookup_append,
@@ -1812,11 +1808,11 @@ class TestTransactionFpds:
     usas_source_table_name = "detached_award_procurement"
     broker_source_table_name = "source_procurement_transaction"
     baker_table = "transactions.SourceProcurementTransaction"
-    compare_fields = InitialRunWithPostgresLoader.expected_initial_transaction_fpds[0].keys()
+    compare_fields = _InitialRunWithPostgresLoader.expected_initial_transaction_fpds[0].keys()
     new_detached_award_proc_unique = "award_procure_0004_trans_0001"
     new_unique_award_key = "award_procure_0004"
     baker_kwargs = {
-        "detached_award_procurement_id": TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
+        "detached_award_procurement_id": _TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
         "detached_award_proc_unique": new_detached_award_proc_unique,
         "unique_award_key": new_unique_award_key,
     }
@@ -1826,12 +1822,12 @@ class TestTransactionFpds:
     }
     expected_transaction_fabs_fpds_append = {
         "detached_award_proc_unique": new_detached_award_proc_unique.upper(),
-        "detached_award_procurement_id": TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
+        "detached_award_procurement_id": _TransactionFabsFpdsCore.new_transaction_fabs_fpds_id,
         "unique_award_key": new_unique_award_key.upper(),
     }
 
-    def generate_transaction_fabs_fpds_core(self, spark, s3_data_bucket, expected_initial_transaction_fpds):
-        return TransactionFabsFpdsCore(
+    def _generate_transaction_fabs_fpds_core(self, spark, s3_data_bucket, expected_initial_transaction_fpds):
+        return _TransactionFabsFpdsCore(
             spark,
             s3_data_bucket,
             self.etl_level,
@@ -1847,31 +1843,30 @@ class TestTransactionFpds:
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_source_tables_only(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        transaction_fabs_fpds_core = self.generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunWithPostgresLoader.expected_initial_transaction_fpds
+        transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
+            spark, s3_unittest_data_bucket, _InitialRunWithPostgresLoader.expected_initial_transaction_fpds
         )
         transaction_fabs_fpds_core.unexpected_paths_source_tables_only_test_core()
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        TransactionFabsFpdsCore.unexpected_paths_no_pg_loader_test(
-            self.generate_transaction_fabs_fpds_core(
-                spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fpds
-            )
+        transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
+            spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fpds
         )
+        transaction_fabs_fpds_core.unexpected_paths_no_pg_loader_test_core()
 
     @mark.django_db(transaction=True)
     def test_happy_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, populate_initial_source_tables_pg
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        TransactionFabsFpdsCore.happy_paths_no_pg_loader_test(
-            self.generate_transaction_fabs_fpds_core(
-                spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fpds
-            ),
+        transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
+            spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fpds
+        )
+        transaction_fabs_fpds_core.happy_paths_no_pg_loader_test_core(
             TestInitialRunNoPostgresLoader.initial_transaction_fpds,
             (3, 4),
             self.expected_transaction_id_lookup_append,

@@ -423,6 +423,7 @@ def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_in
     assert len(resp.data["results"]) == 2
 
 
+@pytest.mark.django_db
 def test_messages_not_nested(client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 

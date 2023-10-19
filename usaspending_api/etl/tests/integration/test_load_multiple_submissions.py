@@ -323,6 +323,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
     def tearDown(self):
         self._nuke_broker_data()
 
+    @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_all_the_things(self):
         """
         Because we are using TransactionTestCase we're going to run all of our tests in one method to

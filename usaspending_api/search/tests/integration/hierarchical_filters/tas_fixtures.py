@@ -46,7 +46,12 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
             toptier_code = aid
         existing_ta = ToptierAgency.objects.filter(toptier_code=toptier_code).first()
         if existing_ta is None:
-            ta = baker.make("references.ToptierAgency", toptier_agency_id=count + award_id, toptier_code=toptier_code)
+            ta = baker.make(
+                "references.ToptierAgency",
+                toptier_agency_id=count + award_id,
+                toptier_code=toptier_code,
+                _fill_optional=True,
+            )
         else:
             ta = existing_ta
         existing_fa = FederalAccount.objects.filter(agency_identifier=aid, main_account_code=main).first()
@@ -164,7 +169,7 @@ def award(db, id):
 
 
 def agency(db, agency_id, toptier_code):
-    baker.make("references.ToptierAgency", toptier_agency_id=agency_id, toptier_code=toptier_code)
+    baker.make("references.ToptierAgency", toptier_agency_id=agency_id, toptier_code=toptier_code, _fill_optional=True)
 
 
 def tas(db, award_id, fa_id, index):

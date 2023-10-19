@@ -105,7 +105,15 @@ FILTER_OBJ = {
 }
 
 
-TS = None
+@pytest.fixture(scope="module")
+def tinyshield():
+    """We want this test to fail if either AWARD_FILTERS has an invalid model,
+    OR if the logic of the check_models function has been corrupted.
+    It will fail if an exception is raised. Otherwise it will define the ts fixture object
+    so we can use it in the remaining tests."""
+    ts = TinyShield(copy.deepcopy(AWARD_FILTER))
+    yield ts
+
 
 """
 Because these functions all raise Exceptions on failure, all we need to do to write the unit tests is call the function.
@@ -145,32 +153,25 @@ def test_validate_object():
     validate_object(OBJECT_RULE)
 
 
-def test_check_models():
-    """We want this test to fail if either AWARD_FILTERS has an invalid model,
-    OR if the logic of the check_models function has been corrupted.
-    It will fail if an exception is raised. Otherwise it will define the global TS object
-    so we can use it in the remaining tests."""
-    global TS
-    TS = TinyShield(copy.deepcopy(AWARD_FILTER))
-
-
-def test_recurse_append():
+def test_recurse_appendt(tinyshield):
     mydict = {}
     struct = ["level1", "level2"]
     data = "foobar"
-    TS.recurse_append(struct, mydict, data)
+    tinyshield.recurse_append(struct, mydict, data)
     assert mydict == {"level1": {"level2": "foobar"}}
 
 
-def test_parse_request():
+def test_parse_request(tinyshield):
     request = FILTER_OBJ
-    TS.parse_request(request)
-    assert all("value" in item for item in TS.rules)
+    tinyshield.parse_request(request)
+    assert all("value" in item for item in tinyshield.rules)
 
 
-def test_enforce_rules():
-    TS.enforce_rules()
-    assert TS.data == FILTER_OBJ
+def test_enforce_rules(tinyshield):
+    request = FILTER_OBJ
+    tinyshield.parse_request(request)
+    tinyshield.enforce_rules()
+    assert tinyshield.data == FILTER_OBJ
 
 
 # Test the "any" rule.

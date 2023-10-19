@@ -1,3 +1,5 @@
+import copy
+
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.download.v2 import download_column_historical_lookups
@@ -9,7 +11,7 @@ class DownloadSource:
         self.model_type = model_type
         self.file_type = file_type
         self.source_type = source_type
-        self.query_paths = download_column_historical_lookups.query_paths[model_type][file_type]
+        self.query_paths = copy.deepcopy(download_column_historical_lookups.query_paths)[model_type][file_type]
         self.human_names = list(self.query_paths.keys())
         if agency_id == "all":
             self.agency_code = agency_id
