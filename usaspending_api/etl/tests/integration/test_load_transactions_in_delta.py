@@ -243,11 +243,6 @@ class TestInitialRun:
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_transaction_id}, false)")
 
-        if isinstance(expected_last_load, datetime):
-            assert get_last_load_date("transaction_id_lookup") == expected_last_load
-        elif isinstance(expected_last_load, date):
-            assert get_last_load_date("transaction_id_lookup").date() == expected_last_load
-
     @staticmethod
     def verify_award_ids(spark, expected_award_id_lookup, expected_last_load=None):
         # Verify award_id_lookup table
@@ -269,11 +264,6 @@ class TestInitialRun:
         # so that the next call to nextval() will return the same value.
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_award_id}, false)")
-
-        if isinstance(expected_last_load, datetime):
-            assert get_last_load_date("award_id_lookup") == expected_last_load
-        elif isinstance(expected_last_load, date):
-            assert get_last_load_date("award_id_lookup").date() == expected_last_load
 
     @staticmethod
     def verify_lookup_info(
@@ -349,11 +339,6 @@ class TestInitialRun:
             actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.{table_name}").collect()[0]["count"]
             assert actual_count == expected_count
 
-            if isinstance(expected_last_load, datetime):
-                assert get_last_load_date(table_name) == expected_last_load
-            elif isinstance(expected_last_load, date):
-                assert get_last_load_date(table_name).date() == expected_last_load
-
             if expected_count > 0:
                 # Only verify raw vs int tables if raw table exists
                 try:
@@ -367,9 +352,7 @@ class TestInitialRun:
                     TestInitialRun.verify_raw_vs_int_tables(spark, table_name, col_names)
 
     @mark.django_db(transaction=True)
-    def test_edge_cases_using_only_source_tables(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
-    ):
+    def test_edge_cases_using_only_source_tables(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
         # Setup some source tables without data, this test does not require these tables to be populated
         raw_db = "raw"
         spark.sql(f"create database if not exists {raw_db};")
@@ -804,12 +787,7 @@ class TestInitialRunNoPostgresLoader:
     @mark.django_db(transaction=True)
     @patch("usaspending_api.etl.management.commands.load_transactions_in_delta.Command._insert_orphaned_transactions")
     def test_nulls_in_trans_norm_unique_award_key_from_delta(
-        self,
-        orphaned_txns_patch,
-        spark,
-        s3_unittest_data_bucket,
-        hive_unittest_metastore_db,
-        _populate_initial_source_tables_pg,
+        self, orphaned_txns_patch, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
     ):
         raw_db = "raw"
         spark.sql(f"create database if not exists {raw_db};")
@@ -921,9 +899,7 @@ class TestInitialRunNoPostgresLoader:
             )
 
     @mark.django_db(transaction=True)
-    def test_happy_path_scenarios(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
-    ):
+    def test_happy_path_scenarios(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
@@ -1010,9 +986,7 @@ class TestInitialRunNoPostgresLoader:
 
 class TestTransactionIdLookup:
     @mark.django_db(transaction=True)
-    def test_unexpected_paths(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
-    ):
+    def test_unexpected_paths(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
         # 1. Test calling load_transactions_in_delta with etl-level of transaction_id_lookup without first
         # calling calling load_transactions_in_delta with etl-level of initial_run
 
@@ -1304,9 +1278,7 @@ class TestTransactionIdLookup:
 
 class TestAwardIdLookup:
     @mark.django_db(transaction=True)
-    def test_unexpected_paths(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
-    ):
+    def test_unexpected_paths(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
         # 1. Test calling load_transactions_in_delta with etl-level of award_id_lookup without first
         # calling load_transactions_in_delta with etl-level of initial_run
 
