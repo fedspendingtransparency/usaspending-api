@@ -1328,7 +1328,8 @@ class TestAwardIdLookup:
         # 1. Test calling load_transactions_in_delta with etl-level of award_id_lookup without first
         # calling load_transactions_in_delta with etl-level of initial_run
 
-        # Setup some source tables without data, this test does not require these tables to be populated
+        # First, setup some source tables with data, without loading these Delta Tables from Postgres
+        # for efficiency reasons.
         raw_db = "raw"
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
@@ -1347,6 +1348,22 @@ class TestAwardIdLookup:
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
             )
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_unittest_data_bucket,
+            "raw",
+            "detached_award_procurement",
+            _INITIAL_PROCURES,
+            True,
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_unittest_data_bucket,
+            "raw",
+            "published_fabs",
+            _INITIAL_ASSISTS,
+            True,
         )
 
         with raises(pyspark.sql.utils.AnalysisException, match="Table or view not found: int.award_id_lookup"):
