@@ -341,7 +341,10 @@ class _PlaceOfPerformanceScope(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
-        pop_scope_query = ES_Q("match", pop_country_code="USA")
+        # If an ES record has a pop_country_code of "USA" OR if it has any value for the pop_state_code field
+        #   then it's considered domestic. Since we only support domestic states/territories then any
+        #   pop_state_code value means the pop_country_code would be "USA".
+        pop_scope_query = ES_Q("match", pop_country_code="USA") | ES_Q("exists", field="pop_state_code")
 
         if filter_value == "domestic":
             return pop_scope_query

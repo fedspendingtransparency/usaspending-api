@@ -269,6 +269,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "name": "RECIPIENT 2",
                 "recipient_id": "7976667a-dd95-2b65-5f4e-e340c686a346-R",
             },
+            {"amount": 30.0, "code": "Recipient not provided", "name": None, "recipient_id": None},
             {
                 "amount": 5.0,
                 "code": "Recipient not provided",
