@@ -787,7 +787,12 @@ class TestInitialRunNoPostgresLoader:
     @mark.django_db(transaction=True)
     @patch("usaspending_api.etl.management.commands.load_transactions_in_delta.Command._insert_orphaned_transactions")
     def test_nulls_in_trans_norm_unique_award_key_from_delta(
-        self, orphaned_txns_patch, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+        self,
+        orphaned_txns_patch,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         raw_db = "raw"
         spark.sql(f"create database if not exists {raw_db};")
@@ -899,7 +904,9 @@ class TestInitialRunNoPostgresLoader:
             )
 
     @mark.django_db(transaction=True)
-    def test_happy_path_scenarios(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    def test_happy_path_scenarios(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+    ):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
@@ -986,7 +993,9 @@ class TestInitialRunNoPostgresLoader:
 
 class TestTransactionIdLookup:
     @mark.django_db(transaction=True)
-    def test_unexpected_paths(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    def test_unexpected_paths(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+    ):
         # 1. Test calling load_transactions_in_delta with etl-level of transaction_id_lookup without first
         # calling calling load_transactions_in_delta with etl-level of initial_run
 
@@ -1278,7 +1287,9 @@ class TestTransactionIdLookup:
 
 class TestAwardIdLookup:
     @mark.django_db(transaction=True)
-    def test_unexpected_paths(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    def test_unexpected_paths(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+    ):
         # 1. Test calling load_transactions_in_delta with etl-level of award_id_lookup without first
         # calling load_transactions_in_delta with etl-level of initial_run
 
@@ -1565,9 +1576,7 @@ class TestAwardIdLookup:
         assert equal_datasets([{"award_id": partially_deleted_award_id}], delta_data, "")
 
     @mark.django_db(transaction=True)
-    def test_happy_path_scenarios_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
-    ):
+    def test_happy_path_scenarios_no_pg_loader(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
