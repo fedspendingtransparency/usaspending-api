@@ -881,7 +881,7 @@ class TestTransactionIdLookup:
         # First, load the source tables to Delta.
         _load_tables_to_delta(s3_unittest_data_bucket)
 
-        # 2. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
+        # 1. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
         # initial_run, then transaction_id_lookup.  However, call initial_run with blank raw.transaction_normalized
         # and raw.awards tables.
 
@@ -1096,7 +1096,7 @@ class TestAwardIdLookup:
         # First, load the source tables to Delta
         _load_tables_to_delta(s3_unittest_data_bucket)
 
-        # 2. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
+        # 1. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
         # initial_run, then award_id_lookup.  However, call initial_run with blank raw.transaction_normalized
         # and raw.awards tables.
 
@@ -1324,7 +1324,7 @@ class _TransactionFabsFpdsCore:
         # First, load the source tables to Delta
         _load_tables_to_delta(self.s3_data_bucket)
 
-        # 2. Call load_transactions_in_delta with etl-level of initial_run first, but without first loading
+        # 1. Call load_transactions_in_delta with etl-level of initial_run first, but without first loading
         # raw.transaction_normalized or raw.awards.  Then immediately call load_transactions_in_delta with
         # etl-level of transaction_f[ab|pd]s.
         TestInitialRun.initial_run(self.s3_data_bucket)
@@ -1343,7 +1343,7 @@ class _TransactionFabsFpdsCore:
         kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         TestInitialRun.verify(self.spark, [], [], **kwargs)
 
-        # 3. With raw.transaction_normalized and raw.awards still not created, call load_transactions_in_delta
+        # 2. With raw.transaction_normalized and raw.awards still not created, call load_transactions_in_delta
         # with etl-level of transaction_id_lookup, and then again with etl-level of transaction_f[ab|pd]s.
 
         # Since the call to load_transactions_in_delta with etl-level of transaction_f[ab|pd]s above succeeded, we first
