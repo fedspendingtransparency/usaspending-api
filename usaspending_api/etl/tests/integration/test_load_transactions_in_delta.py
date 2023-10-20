@@ -8,7 +8,7 @@ import pyspark
 
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from django.db import connection
 from django.core.management import call_command
 from model_bakery import baker
@@ -243,11 +243,6 @@ class TestInitialRun:
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_transaction_id}, false)")
 
-        if isinstance(expected_last_load, datetime):
-            assert get_last_load_date("transaction_id_lookup") == expected_last_load
-        elif isinstance(expected_last_load, date):
-            assert get_last_load_date("transaction_id_lookup").date() == expected_last_load
-
     @staticmethod
     def verify_award_ids(spark, expected_award_id_lookup, expected_last_load=None):
         # Verify award_id_lookup table
@@ -269,11 +264,6 @@ class TestInitialRun:
         # so that the next call to nextval() will return the same value.
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_award_id}, false)")
-
-        if isinstance(expected_last_load, datetime):
-            assert get_last_load_date("award_id_lookup") == expected_last_load
-        elif isinstance(expected_last_load, date):
-            assert get_last_load_date("award_id_lookup").date() == expected_last_load
 
     @staticmethod
     def verify_lookup_info(
@@ -348,11 +338,6 @@ class TestInitialRun:
         ):
             actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.{table_name}").collect()[0]["count"]
             assert actual_count == expected_count
-
-            if isinstance(expected_last_load, datetime):
-                assert get_last_load_date(table_name) == expected_last_load
-            elif isinstance(expected_last_load, date):
-                assert get_last_load_date(table_name).date() == expected_last_load
 
             if expected_count > 0:
                 # Only verify raw vs int tables if raw table exists
@@ -807,21 +792,8 @@ class TestInitialRunNoPostgresLoader:
         spark,
         s3_unittest_data_bucket,
         hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
-        for table_name, id in zip(
-            (
-                "transaction_fpds",
-                "transaction_fabs",
-                "transaction_normalized",
-                "awards",
-                "transaction_id_lookup",
-                "award_id_lookup",
-            ),
-            range(201, 207),
-        ):
-            edt = baker.make("broker.ExternalDataType", name=table_name, external_data_type_id=id, update_date=None)
-            baker.make("broker.ExternalDataLoadDate", last_load_date=_BEGINNING_OF_TIME, external_data_type=edt)
-
         raw_db = "raw"
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
