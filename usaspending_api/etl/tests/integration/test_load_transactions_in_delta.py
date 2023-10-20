@@ -1576,7 +1576,9 @@ class TestAwardIdLookup:
         assert equal_datasets([{"award_id": partially_deleted_award_id}], delta_data, "")
 
     @mark.django_db(transaction=True)
-    def test_happy_path_scenarios_no_pg_loader(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    def test_happy_path_scenarios_no_pg_loader(
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+    ):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
