@@ -135,6 +135,12 @@ class Command(BaseCommand):
                 self.initial_run(next_last_load)
                 return
 
+            # Do this check now to avoid uncaught errors later when running queries
+            # Use 'int' because that is what will be targeted for deletes/updates/etc.
+            table_exists = self.spark._jsparkSession.catalog().tableExists(f"int.{self.etl_level}")
+            if not table_exists:
+                raise Exception(f"Table: int.{self.etl_level} does not exist.")
+
             if self.etl_level == "award_id_lookup":
                 self.logger.info(f"Running pre-delete SQL for '{self.etl_level}' ETL")
                 possibly_modified_award_ids = self.award_id_lookup_pre_delete()
