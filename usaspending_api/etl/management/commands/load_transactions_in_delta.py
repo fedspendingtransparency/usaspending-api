@@ -1155,25 +1155,7 @@ class Command(BaseCommand):
                     # Don't try to handle anything else
                     raise e
             else:
-                # First, find orphaned transactions
-                self.logger.info(
-                    "Finding orphaned transactions in raw.transaction_normalized (those with missing records in "
-                    "the source tables)"
-                )
-                self.spark.sql(
-                    """
-                        INSERT OVERWRITE temp.orphaned_transaction_info
-                            SELECT tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
-                            FROM raw.transaction_normalized AS tn
-                            LEFT JOIN raw.detached_award_procurement AS dap ON (
-                                tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
-                            )
-                            LEFT JOIN raw.published_fabs AS pfabs ON (
-                                tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
-                            )
-                            WHERE dap.detached_award_proc_unique IS NULL AND pfabs.afa_generated_unique IS NULL
-                    """
-                )
+                self._insert_orphaned_transactions()
 
                 # Extend the orphaned transactions to any transactions found in raw.transaction_normalized that
                 # don't have a corresponding entry in raw.transaction_fabs|fpds.  Beyond the records found above,
@@ -1556,3 +1538,24 @@ class Command(BaseCommand):
                             # es_deletes should remain in lockstep with transaction load dates, so if they are reset,
                             # it should be reset
                             update_last_load_date("es_deletes", next_last_load)
+
+    def _insert_orphaned_transactions(self):
+        # First, find orphaned transactions
+        self.logger.info(
+            "Finding orphaned transactions in raw.transaction_normalized (those with missing records in "
+            "the source tables)"
+        )
+        self.spark.sql(
+            """
+                INSERT OVERWRITE temp.orphaned_transaction_info
+                    SELECT tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
+                    FROM raw.transaction_normalized AS tn
+                    LEFT JOIN raw.detached_award_procurement AS dap ON (
+                        tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+                    )
+                    LEFT JOIN raw.published_fabs AS pfabs ON (
+                        tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+                    )
+                    WHERE dap.detached_award_proc_unique IS NULL AND pfabs.afa_generated_unique IS NULL
+            """
+        )

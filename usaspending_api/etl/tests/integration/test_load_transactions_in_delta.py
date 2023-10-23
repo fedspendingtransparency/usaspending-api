@@ -8,13 +8,14 @@ import pyspark
 
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from django.db import connection
 from django.core.management import call_command
 from model_bakery import baker
 from pyspark.sql import SparkSession
 from pytest import fixture, mark, raises
 from typing import Any, Dict, Optional, Sequence
+from unittest.mock import patch
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.helpers.spark_helpers import load_dict_to_delta_table
@@ -22,6 +23,8 @@ from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_d
 from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTION_FABS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
+from usaspending_api.config import CONFIG
+from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
 
 _BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
 _INITIAL_DATETIME = datetime(2022, 10, 31, tzinfo=timezone.utc)
@@ -240,11 +243,6 @@ class TestInitialRun:
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_transaction_id}, false)")
 
-        if isinstance(expected_last_load, datetime):
-            assert get_last_load_date("transaction_id_lookup") == expected_last_load
-        elif isinstance(expected_last_load, date):
-            assert get_last_load_date("transaction_id_lookup").date() == expected_last_load
-
     @staticmethod
     def verify_award_ids(spark, expected_award_id_lookup, expected_last_load=None):
         # Verify award_id_lookup table
@@ -266,11 +264,6 @@ class TestInitialRun:
         # so that the next call to nextval() will return the same value.
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('award_id_seq', {max_award_id}, false)")
-
-        if isinstance(expected_last_load, datetime):
-            assert get_last_load_date("award_id_lookup") == expected_last_load
-        elif isinstance(expected_last_load, date):
-            assert get_last_load_date("award_id_lookup").date() == expected_last_load
 
     @staticmethod
     def verify_lookup_info(
@@ -346,11 +339,6 @@ class TestInitialRun:
             actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.{table_name}").collect()[0]["count"]
             assert actual_count == expected_count
 
-            if isinstance(expected_last_load, datetime):
-                assert get_last_load_date(table_name) == expected_last_load
-            elif isinstance(expected_last_load, date):
-                assert get_last_load_date(table_name).date() == expected_last_load
-
             if expected_count > 0:
                 # Only verify raw vs int tables if raw table exists
                 try:
@@ -364,12 +352,35 @@ class TestInitialRun:
                     TestInitialRun.verify_raw_vs_int_tables(spark, table_name, col_names)
 
     @mark.django_db(transaction=True)
-    def test_edge_cases_using_only_source_tables(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
-    ):
-        # 1. Call initial run with no raw tables, except for published_fabs and detached_award_procurement.
-        # Also, don't do initial copy of tables
-        TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
+    def test_edge_cases_using_only_source_tables(self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+        # Setup some source tables without data, this test does not require these tables to be populated
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        call_command(
+            "load_transactions_in_delta",
+            "--etl-level",
+            "initial_run",
+            "--spark-s3-bucket",
+            s3_unittest_data_bucket,
+            "--no-initial-copy",
+        )
         kwargs = {
             "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
             "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
@@ -377,17 +388,6 @@ class TestInitialRun:
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        TestInitialRun.verify(spark, [], [], **kwargs)
-
-        # 2. Call initial run with existing, but empty raw.transaction_normalized and raw.awards tables
-
-        # Make sure raw.transaction_normalized and raw.awards exist
-        for table_name in ("transaction_normalized", "awards"):
-            call_command(
-                "create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_unittest_data_bucket
-            )
-        # Don't reload the source tables, though.
-        TestInitialRun.initial_run(s3_unittest_data_bucket, False)
         TestInitialRun.verify(spark, [], [], **kwargs)
 
 
@@ -785,22 +785,75 @@ class TestInitialRunNoPostgresLoader:
     # This test will only load the source tables from postgres, and NOT use the Postgres transaction loader
     # to populate any other Delta tables, so can only test for NULLs originating in Delta.
     @mark.django_db(transaction=True)
+    @patch("usaspending_api.etl.management.commands.load_transactions_in_delta.Command._insert_orphaned_transactions")
     def test_nulls_in_trans_norm_unique_award_key_from_delta(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        orphaned_txns_patch,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
-        # Only load the source tables from Postgres.
-        _load_tables_to_delta(s3_unittest_data_bucket)
-
-        # Directly load the contents of raw.transaction_normalized to Delta
-        load_dict_to_delta_table(
-            spark, s3_unittest_data_bucket, "raw", "transaction_normalized", self.initial_transaction_normalized
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
         )
-
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["transaction_normalized"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="transaction_normalized",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
         spark.sql(
             """
-            UPDATE raw.transaction_normalized
-            SET unique_award_key = NULL
-            WHERE id = 5
+                INSERT INTO raw.transaction_normalized
+                    VALUES('2022-10-31'
+                        , NULL
+                        , NULL
+                        , 5
+                        , NULL
+                        , ARRAY()
+                        , NULL
+                        , '2022-11-01T00:00:00+00:00'
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , 5
+                        , NULL
+                        , TRUE
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , 'AWARD_ASSIST_0002_TRANS_0002'
+                        , NULL
+                        , NULL
+                        , NULL
+                        , '2022-11-01T00:00:00+00:00'
+                        , NULL
+                    )
             """
         )
 
@@ -811,9 +864,37 @@ class TestInitialRunNoPostgresLoader:
 
         spark.sql(
             """
-            UPDATE raw.transaction_normalized
-            SET unique_award_key = NULL
-            WHERE id = 6
+                INSERT INTO raw.transaction_normalized
+                    VALUES('2022-10-31'
+                        , NULL
+                        , NULL
+                        , 6
+                        , NULL
+                        , ARRAY()
+                        , NULL
+                        , '2022-11-01T00:00:00+00:00'
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , 6
+                        , NULL
+                        , TRUE
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , NULL
+                        , 'AWARD_PROCURE_0002_TRANS_0002'
+                        , NULL
+                        , NULL
+                        , NULL
+                        , '2022-11-01T00:00:00+00:00'
+                        , NULL
+                    )
             """
         )
 
@@ -826,17 +907,54 @@ class TestInitialRunNoPostgresLoader:
     def test_happy_path_scenarios(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        # 1. Call initial_run, but set no-initial-copy
-
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
             _TableLoadInfo(spark, "transaction_normalized", self.initial_transaction_normalized),
             _TableLoadInfo(spark, "awards", self.initial_awards),
         ]
-        # Don't call Postgres loader, though.
+        # Setup some source tables with data, without loading these Delta Tables from Postgres
+        # for efficiency reasons.
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_unittest_data_bucket,
+            "raw",
+            "detached_award_procurement",
+            _INITIAL_PROCURES,
+            True,
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_unittest_data_bucket,
+            "raw",
+            "published_fabs",
+            _INITIAL_ASSISTS,
+            True,
+        )
         TestInitialRun.initial_run(
-            s3_unittest_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False
+            s3_unittest_data_bucket,
+            load_source_tables=False,
+            load_other_raw_tables=load_other_raw_tables,
+            initial_copy=False,
         )
         kwargs = {
             "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
@@ -878,22 +996,69 @@ class TestTransactionIdLookup:
     def test_unexpected_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        # First, load the source tables to Delta.
-        _load_tables_to_delta(s3_unittest_data_bucket)
+        # Setup some source tables with data, without loading these Delta Tables from Postgres
+        # for efficiency reasons.
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_unittest_data_bucket,
+            "raw",
+            "detached_award_procurement",
+            _INITIAL_PROCURES,
+            True,
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_unittest_data_bucket,
+            "raw",
+            "published_fabs",
+            _INITIAL_ASSISTS,
+            True,
+        )
 
         # 1. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
         # initial_run, then transaction_id_lookup.  However, call initial_run with blank raw.transaction_normalized
         # and raw.awards tables.
 
         # First, create blank raw.transaction_normalized and raw.awards tables
-        for table_name in ("transaction_normalized", "awards"):
-            call_command(
-                "create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_unittest_data_bucket
+        spark.sql(
+            TABLE_SPEC["transaction_normalized"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="transaction_normalized",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
             )
+        )
+        spark.sql(
+            TABLE_SPEC["awards"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="awards",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
 
         # Then, call load_transactions_in_delta with etl-level of initial_run and verify.
         # Don't reload the source tables, and don't do initial copy of transaction tables, though.
-        TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, load_source_tables=False, initial_copy=False)
         kwargs = {
             "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
             "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
@@ -925,10 +1090,59 @@ class TestTransactionIdLookup:
         expected_initial_award_id_lookup,
         expected_transaction_id_lookup_pops,
     ):
-        # Call load_transactions_in_delta with the etl-level set to the proper sequencing of initial_run
-        # Since these tests only care about the condition of the transaction_id_lookup table after various
-        # operations, only load the essential tables to Delta, and don't copy the raw transaction tables to int.
-        TestInitialRun.initial_run(s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
+        # First, setup some source tables with data, without loading these Delta Tables from Postgres
+        # for efficiency reasons.
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_data_bucket,
+            "raw",
+            "detached_award_procurement",
+            _INITIAL_PROCURES,
+            True,
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_data_bucket,
+            "raw",
+            "published_fabs",
+            _INITIAL_ASSISTS,
+            True,
+        )
+        # Trigger initial run of load transactions in delta. This step is required as it creates various data sources.
+        TestInitialRun.initial_run(
+            s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
+        )
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+
+        # With no deletes or inserts yet, the transaction_id_lookup table should be the same as after the initial run.
+        # Also, the last load dates for the id lookup tables should match the load dates of the source tables.
+        kwargs = {
+            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
+            "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
+        }
+        TestInitialRun.verify(spark, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup, **kwargs)
 
         # 1. Test deleting the transaction(s) with the last transaction ID(s) from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of transaction_id_lookup
@@ -1093,22 +1307,69 @@ class TestAwardIdLookup:
     def test_unexpected_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        # First, load the source tables to Delta
-        _load_tables_to_delta(s3_unittest_data_bucket)
+        # First, setup some source tables with data, without loading these Delta Tables from Postgres
+        # for efficiency reasons.
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_unittest_data_bucket,
+            "raw",
+            "detached_award_procurement",
+            _INITIAL_PROCURES,
+            True,
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_unittest_data_bucket,
+            "raw",
+            "published_fabs",
+            _INITIAL_ASSISTS,
+            True,
+        )
 
         # 1. Test calling load_transactions_in_delta with the etl-level set to the proper sequencing of
         # initial_run, then award_id_lookup.  However, call initial_run with blank raw.transaction_normalized
         # and raw.awards tables.
 
         # First, create blank raw.transaction_normalized and raw.awards tables
-        for table_name in ("transaction_normalized", "awards"):
-            call_command(
-                "create_delta_table", "--destination-table", table_name, "--spark-s3-bucket", s3_unittest_data_bucket
+        spark.sql(
+            TABLE_SPEC["transaction_normalized"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="transaction_normalized",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
             )
+        )
+        spark.sql(
+            TABLE_SPEC["awards"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="awards",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_unittest_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
 
         # Then, call load_transactions_in_delta with etl-level of initial_run and verify.
         # Don't reload the source tables, and don't do initial copy of transaction tables, though.
-        TestInitialRun.initial_run(s3_unittest_data_bucket, initial_copy=False)
+        TestInitialRun.initial_run(s3_unittest_data_bucket, load_source_tables=False, initial_copy=False)
         kwargs = {
             "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
             "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
@@ -1140,11 +1401,48 @@ class TestAwardIdLookup:
         expected_award_id_lookup_pops,
         partially_deleted_award_id,
     ):
-        # Call load_transactions_in_delta with the etl-level set to the proper sequencing of initial_run, then award_id_lookup
-        # Since these tests only care about the condition of the award_id_lookup table after various
-        # operations, only load the essential tables to Delta, and don't copy the raw transaction tables to int.
-        TestInitialRun.initial_run(s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
-
+        # First, setup some source tables with data, without loading these Delta Tables from Postgres
+        # for efficiency reasons.
+        raw_db = "raw"
+        spark.sql(f"create database if not exists {raw_db};")
+        spark.sql(f"use {raw_db};")
+        spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=s3_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_data_bucket,
+            "raw",
+            "detached_award_procurement",
+            _INITIAL_PROCURES,
+            True,
+        )
+        load_dict_to_delta_table(
+            spark,
+            s3_data_bucket,
+            "raw",
+            "published_fabs",
+            _INITIAL_ASSISTS,
+            True,
+        )
+        # Trigger initial run of load transactions in delta. This step is required as it creates various data sources.
+        TestInitialRun.initial_run(
+            s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
+        )
+        
         # 1. Test deleting the transactions with the last award ID from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of award_id_lookup
         # 2. Test for a single inserted transaction, and another call to load_transaction_in_delta with etl-level of
@@ -1321,8 +1619,26 @@ class _TransactionFabsFpdsCore:
         self.expected_initial_transaction_fpds = expected_initial_transaction_fpds
 
     def unexpected_paths_source_tables_only_test_core(self):
-        # First, load the source tables to Delta
-        _load_tables_to_delta(self.s3_data_bucket)
+        # Setup some source tables without data, this test does not require these tables to be populated
+        raw_db = "raw"
+        self.spark.sql(f"create database if not exists {raw_db};")
+        self.spark.sql(f"use {raw_db};")
+        self.spark.sql(
+            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="published_fabs",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=self.s3_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+        self.spark.sql(
+            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+                DESTINATION_TABLE="detached_award_procurement",
+                DESTINATION_DATABASE=raw_db,
+                SPARK_S3_BUCKET=self.s3_data_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
 
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, but without first loading
         # raw.transaction_normalized or raw.awards.  Then immediately call load_transactions_in_delta with
