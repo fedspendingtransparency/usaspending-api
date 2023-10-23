@@ -24,11 +24,15 @@ def agency_data(helpers):
         justification="BECAUSE",
         icon_filename="HAI.jpg",
     )
-    ta2 = baker.make("references.ToptierAgency", toptier_code="002")
-    sa1 = baker.make("references.SubtierAgency", subtier_code="ST1")
-    sa2 = baker.make("references.SubtierAgency", subtier_code="ST2")
-    a1 = baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1)
-    baker.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2)
+    ta2 = baker.make("references.ToptierAgency", toptier_code="002", _fill_optional=True)
+    sa1 = baker.make("references.SubtierAgency", subtier_code="ST1", _fill_optional=True)
+    sa2 = baker.make("references.SubtierAgency", subtier_code="ST2", _fill_optional=True)
+    a1 = baker.make(
+        "references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1, _fill_optional=True
+    )
+    baker.make(
+        "references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2, _fill_optional=True
+    )
     dabs = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_reveal_date="2020-10-09",

@@ -40,6 +40,7 @@ from usaspending_api.transactions.delta_models.transaction_fpds import (
     TRANSACTION_FPDS_COLUMNS,
 )
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
+from usaspending_api.transactions.delta_models import DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS, PUBLISHED_FABS_COLUMNS
 
 
 def get_active_spark_context() -> Optional[SparkContext]:
@@ -72,7 +73,11 @@ def stop_spark_context() -> bool:
         # Check the Singleton instance populated if there's an active SparkContext
         if SparkContext._active_spark_context is not None:
             sc = SparkContext._active_spark_context
-            if sc._jvm and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped():
+            if (
+                sc._jvm
+                and sc._jvm.SparkSession
+                and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
+            ):
                 try:
                     sc.stop()
                 except Exception:
@@ -568,6 +573,8 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
     table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
     table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
     table_to_col_names_dict["financial_accounts_by_awards"] = list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS)
+    table_to_col_names_dict["detached_award_procurement"] = list(DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS)
+    table_to_col_names_dict["published_fabs"] = list(PUBLISHED_FABS_COLUMNS)
 
     table_to_col_info_dict = {}
     for tbl_name, col_info in zip(
