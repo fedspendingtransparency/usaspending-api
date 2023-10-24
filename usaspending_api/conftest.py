@@ -513,7 +513,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
 
     # Python script in broker-code that will run migrations and other db setup in the broker test DB
     broker_db_setup_cmd = rf"""                                                                   \
-        python {broker_src_target}/{broker_config_dir}/scripts/setup_all_db.py --dbname {broker_test_db_name};
+        python {broker_src_target}/{broker_config_dir}/scripts/setup/setup_all_db.py --dbname {broker_test_db_name};
     """
 
     broker_container_command = "sh -cex '" + broker_config_file_cmds + broker_db_config_cmds + broker_db_setup_cmd + "'"
