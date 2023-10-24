@@ -222,7 +222,7 @@ jobs:
     env:
     - IS_CODE_COVERAGE_REPORT=true
     workspaces:
-      use: [ws1,ws2,ws3,ws4,ws5,ws6,ws7]
+      use: [ws6,ws1,ws2,ws3,ws4,ws5,ws7] # WS6 is a very long running test module, we need to run it first
     before_install: ""  # override default to no-op
     install: ""  # override default to no-op
     before_script:
