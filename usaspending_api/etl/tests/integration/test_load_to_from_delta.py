@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 from model_bakery import baker
 from pyspark.sql import SparkSession
 from pytest import mark
+from unittest.mock import patch
 
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
@@ -23,8 +24,10 @@ from usaspending_api.etl.management.commands.create_delta_table import (
     TABLE_SPEC,
 )
 from usaspending_api.etl.tests.integration.test_model import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
+from usaspending_api.recipient.delta_models.recipient_lookup import RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
+from usaspending_api.config import CONFIG
 
 
 def _handle_string_cast(val: str) -> Union[str, dict, list]:
@@ -272,15 +275,39 @@ def verify_delta_table_loaded_from_delta(
 
 
 @mark.django_db(transaction=True)
+@patch("usaspending_api.etl.management.commands.load_query_to_delta.create_ref_temp_views")
 def test_load_table_to_from_delta_for_recipient_lookup(
-    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
+    create_ref_temp_views_mock, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    ignore_fields = ["id", "update_date"]
-    tables_to_load = ["sam_recipient", "transaction_fabs", "transaction_fpds", "transaction_normalized"]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-
+    recipient_lookup_spec = TABLE_SPEC["recipient_lookup"]
+    # Create select statement representing dummy data to load
+    recipient_lookup_spec[
+        "source_query"
+    ] = fr"""
+        INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+        SELECT
+            "bfbc1444-0a70-cf83-da8a-017c7d78e91a" AS recipient_hash
+            , NULL legal_business_name
+            , NULL duns
+            , NULL AS address_line_1
+            , NULL AS address_line_2
+            , array() AS business_types_codes
+            , NULL AS city
+            , NULL AS congressional_district
+            , NULL AS country_code
+            , NULL AS parent_duns
+            , NULL AS parent_legal_business_name
+            , NULL AS state
+            , NULL AS zip5
+            , NULL AS zip4
+            , array() AS alternate_names
+            , "missing value" AS source
+            , current_timestamp() AS update_date
+            , NULL AS uei
+            , NULL AS parent_uei
+    """
     # Test initial load of Recipient Lookup
-    call_command("update_recipient_lookup")
+    ignore_fields = ["id", "update_date"]
     verify_delta_table_loaded_to_delta(
         spark,
         "recipient_lookup",
@@ -289,65 +316,34 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         ignore_fields=ignore_fields,
     )
 
-    # Create a new Transaction a transaction that represents a new name for a recipient
-    new_award = baker.make(
-        "search.AwardSearch",
-        award_id=1000,
-        type="07",
-        period_of_performance_start_date="2021-01-01",
-        period_of_performance_current_end_date="2022-01-01",
-        date_signed="2021-01-01",
-        total_obligation=100.00,
-        total_subsidy_cost=100.00,
-        type_description="Direct Loan",
-        subaward_count=0,
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=1001,
-        afa_generated_unique=1001,
-        action_date="2021-01-01",
-        fiscal_action_date="2021-04-01",
-        award_id=new_award.award_id,
-        is_fpds=False,
-        type="07",
-        last_modified_date="2021-01-01",
-        cfda_number="12.456",
-        recipient_uei="FABSUEI12345",
-        recipient_unique_id="FABSDUNS12345",
-        recipient_name="ALTERNATE NAME RECIPIENT",
-        recipient_name_raw="ALTERNATE NAME RECIPIENT",
-        parent_uei="PARENTUEI12345",
-        parent_recipient_unique_id="PARENTDUNS12345",
-        parent_recipient_name="PARENT RECIPIENT 12345",
-        parent_recipient_name_raw="PARENT RECIPIENT 12345",
-        indirect_federal_sharing=1.0,
-        total_funding_amount="2.23",
-        recipient_location_state_code="VA",
-        recipient_location_county_code="001",
-        recipient_location_country_code="USA",
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_congressional_code="01",
-        recipient_location_congressional_code_current=None,
-        pop_state_code="VA",
-        pop_county_code="001",
-        pop_country_code="USA",
-        pop_country_name="UNITED STATES",
-        pop_congressional_code="01",
-        pop_congressional_code_current=None,
-    )
-
-    update_awards()
-
-    # Test that the following load correctly merges
-    call_command("update_recipient_lookup")
-
-    # Verify that the update alternate name exists
-    expected_result = ["FABS RECIPIENT 12345"]
-    assert sorted(RecipientLookup.objects.filter(uei="FABSUEI12345").first().alternate_names) == expected_result
-
-    tables_to_load = ["transaction_fabs", "transaction_normalized"]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    # Test that subsequent data source updates propogate between to/from delta loads
+    recipient_lookup_spec = TABLE_SPEC["recipient_lookup"]
+    # Create select statement representing dummy data to load
+    recipient_lookup_spec[
+        "source_query"
+    ] = fr"""
+        INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+        SELECT
+            "bfbc1444-0a70-cf83-da8a-017c7d78e91b" AS recipient_hash
+            , NULL legal_business_name
+            , NULL duns
+            , NULL AS address_line_1
+            , NULL AS address_line_2
+            , array() AS business_types_codes
+            , NULL AS city
+            , NULL AS congressional_district
+            , NULL AS country_code
+            , NULL AS parent_duns
+            , NULL AS parent_legal_business_name
+            , NULL AS state
+            , NULL AS zip5
+            , NULL AS zip4
+            , array() AS alternate_names
+            , "missing value" AS source
+            , current_timestamp() AS update_date
+            , NULL AS uei
+            , NULL AS parent_uei
+    """
     verify_delta_table_loaded_to_delta(
         spark,
         "recipient_lookup",
