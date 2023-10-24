@@ -144,6 +144,10 @@ def delete_tables_for_tests():
     except Exception:
         pass
 
+@pytest.fixture
+def delete_tables_after_test():
+    yield
+    delete_tables_for_tests()
 
 def add_view_protection():
     """
