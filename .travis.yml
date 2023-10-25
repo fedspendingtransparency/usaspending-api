@@ -140,7 +140,7 @@ jobs:
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
   - name: Spark Integration Tests - test_load_to_from_delta.py
     env:
-    - PYTEST_XDIST_NUMPROCESSES=0
+    - PYTEST_XDIST_NUMPROCESSES=2
     - PYTEST_SETUP_TEST_DATABASES=true
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'

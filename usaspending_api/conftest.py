@@ -145,12 +145,6 @@ def delete_tables_for_tests():
         pass
 
 
-@pytest.fixture
-def delete_tables_after_test():
-    yield
-    delete_tables_for_tests()
-
-
 def add_view_protection():
     """
     When unit testing transaction_search is created as a single view. Views can't be deleted from, so a custom rule
