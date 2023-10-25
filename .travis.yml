@@ -184,7 +184,7 @@ jobs:
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
-  - name: Spark Integration Tests - test_load_transactions_in_delta.py
+  - name: Spark Integration Tests - test_load_transactions_in_delta_lookup.py
     env:
     # Concurrent sessions does not seem to be efficient for this test. Keeping at 1 session
     - PYTEST_XDIST_NUMPROCESSES=0
@@ -192,12 +192,29 @@ jobs:
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
     - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=test_load_transactions_in_delta.py
+    - PYTEST_MATCH_EXPRESSION=test_load_transactions_in_delta_lookup.py
     - PYTEST_MARK_EXPRESSION=spark
     workspaces:
       use: [ pip,docker ]
       create:
         name: ws6
+        paths:
+          - coverage.*.xml
+    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
+  - name: Spark Integration Tests - test_load_transactions_in_delta_fabs_fpds.py
+    env:
+    # Concurrent sessions does not seem to be efficient for this test. Keeping at 1 session
+    - PYTEST_XDIST_NUMPROCESSES=0
+    - PYTEST_SETUP_TEST_DATABASES=true
+    - PYTEST_PRELOAD_SPARK_JARS=true
+    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+    - PYTEST_EXCLUDE_GLOB=
+    - PYTEST_MATCH_EXPRESSION=test_load_transactions_in_delta_fabs_fpds.py
+    - PYTEST_MARK_EXPRESSION=spark
+    workspaces:
+      use: [ pip,docker ]
+      create:
+        name: ws7
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
@@ -208,12 +225,12 @@ jobs:
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
     - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION='(not test_load_to_from_delta.py and not test_load_transactions_in_delta.py)'
+    - PYTEST_MATCH_EXPRESSION='(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookup.py and not test_load_transactions_in_delta_fabs_fpds.py)'
     - PYTEST_MARK_EXPRESSION=spark
     workspaces:
       use: [ pip,docker ]
       create:
-        name: ws7
+        name: ws8
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
@@ -222,7 +239,7 @@ jobs:
     env:
     - IS_CODE_COVERAGE_REPORT=true
     workspaces:
-      use: [ws1,ws2,ws3,ws4,ws5,ws6,ws7]
+      use: [ws1,ws2,ws3,ws4,ws5,ws6,ws7,ws8]
     before_install: ""  # override default to no-op
     install: ""  # override default to no-op
     before_script:
