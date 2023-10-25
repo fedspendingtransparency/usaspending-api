@@ -323,7 +323,7 @@ def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
         name=f"Agency 001",
         toptier_code=f"001",
     )
-    baker.make("references.Agency", toptier_agency=ta1, toptier_flag=True)
+    baker.make("references.Agency", toptier_agency=ta1, toptier_flag=True, _fill_optional=True)
     defc_m = baker.make(
         "references.DisasterEmergencyFundCode",
         code="M",
@@ -387,7 +387,7 @@ def _normal_faba(award):
         name=f"Agency 00{award.award_id}",
         toptier_code=f"00{award.award_id}",
     )
-    baker.make("references.Agency", toptier_agency=ta1, toptier_flag=True)
+    baker.make("references.Agency", toptier_agency=ta1, toptier_flag=True, _fill_optional=True)
     defc_m = baker.make(
         "references.DisasterEmergencyFundCode",
         code="M",

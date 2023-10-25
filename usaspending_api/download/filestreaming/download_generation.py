@@ -170,7 +170,9 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     return finish_download(download_job)
 
 
-def get_download_sources(json_request: dict, download_job: DownloadJob = None, origination: Optional[str] = None):
+def get_download_sources(
+    json_request: dict, download_job: DownloadJob = None, origination: Optional[str] = None
+) -> List[DownloadSource]:
     download_sources = []
     for download_type in json_request["download_types"]:
         agency_id = json_request.get("agency", "all")
@@ -368,7 +370,17 @@ def build_data_file_name(source, download_job, piid, assistance_id):
     return file_name_pattern.format(**file_name_values)
 
 
-def parse_source(source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format):
+def parse_source(
+    source: DownloadSource,
+    columns: Optional[List[str]],
+    download_job: DownloadJob,
+    working_dir: str,
+    piid: str,
+    assistance_id: str,
+    zip_file_path: str,
+    limit: int,
+    file_format: str,
+):
     """Write to delimited text file(s) and zip file(s) using the source data"""
 
     data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
@@ -671,7 +683,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         source_path=source_path,
     ), tracer.trace(
         name="postgres.query",
-        service=f"{settings.DOWNLOAD_DATABASE_ALIAS}db",
+        service=f"{settings.DOWNLOAD_DB_ALIAS}db",
         resource=download_sql,
         span_type=SpanTypes.SQL,
     ), tracer.trace(

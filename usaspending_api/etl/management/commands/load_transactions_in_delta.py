@@ -135,6 +135,12 @@ class Command(BaseCommand):
                 self.initial_run(next_last_load)
                 return
 
+            # Do this check now to avoid uncaught errors later when running queries
+            # Use 'int' because that is what will be targeted for deletes/updates/etc.
+            table_exists = self.spark._jsparkSession.catalog().tableExists(f"int.{self.etl_level}")
+            if not table_exists:
+                raise Exception(f"Table: int.{self.etl_level} does not exist.")
+
             if self.etl_level == "award_id_lookup":
                 self.logger.info(f"Running pre-delete SQL for '{self.etl_level}' ETL")
                 possibly_modified_award_ids = self.award_id_lookup_pre_delete()
@@ -1149,25 +1155,7 @@ class Command(BaseCommand):
                     # Don't try to handle anything else
                     raise e
             else:
-                # First, find orphaned transactions
-                self.logger.info(
-                    "Finding orphaned transactions in raw.transaction_normalized (those with missing records in "
-                    "the source tables)"
-                )
-                self.spark.sql(
-                    """
-                        INSERT OVERWRITE temp.orphaned_transaction_info
-                            SELECT tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
-                            FROM raw.transaction_normalized AS tn
-                            LEFT JOIN raw.detached_award_procurement AS dap ON (
-                                tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
-                            )
-                            LEFT JOIN raw.published_fabs AS pfabs ON (
-                                tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
-                            )
-                            WHERE dap.detached_award_proc_unique IS NULL AND pfabs.afa_generated_unique IS NULL
-                    """
-                )
+                self._insert_orphaned_transactions()
 
                 # Extend the orphaned transactions to any transactions found in raw.transaction_normalized that
                 # don't have a corresponding entry in raw.transaction_fabs|fpds.  Beyond the records found above,
@@ -1550,3 +1538,24 @@ class Command(BaseCommand):
                             # es_deletes should remain in lockstep with transaction load dates, so if they are reset,
                             # it should be reset
                             update_last_load_date("es_deletes", next_last_load)
+
+    def _insert_orphaned_transactions(self):
+        # First, find orphaned transactions
+        self.logger.info(
+            "Finding orphaned transactions in raw.transaction_normalized (those with missing records in "
+            "the source tables)"
+        )
+        self.spark.sql(
+            """
+                INSERT OVERWRITE temp.orphaned_transaction_info
+                    SELECT tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
+                    FROM raw.transaction_normalized AS tn
+                    LEFT JOIN raw.detached_award_procurement AS dap ON (
+                        tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
+                    )
+                    LEFT JOIN raw.published_fabs AS pfabs ON (
+                        tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
+                    )
+                    WHERE dap.detached_award_proc_unique IS NULL AND pfabs.afa_generated_unique IS NULL
+            """
+        )

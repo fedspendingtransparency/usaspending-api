@@ -1,20 +1,21 @@
+import pytest
 from model_bakery import baker
 from usaspending_api.awards.models import TransactionNormalized
 from usaspending_api.references.models import ToptierAgency, SubtierAgency
 
 
-def set_up_related_award_objects():
+@pytest.fixture
+def set_up_related_award_objects(db):
 
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
 
-    duns = {"awardee_or_recipient_uniqu": 123, "legal_business_name": "Sams Club"}
-    baker.make("recipient.DUNS", **duns)
-    baker.make("references.SubtierAgency", **subag)
-    baker.make("references.ToptierAgency", **subag)
+    baker.make("recipient.DUNS", legal_business_name="Sams Club", _fill_optional=True)
+    baker.make("references.SubtierAgency", **subag, _fill_optional=True)
+    baker.make("references.ToptierAgency", **subag, _fill_optional=True)
 
     ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
 
-    baker.make("references.Agency", **ag)
+    baker.make("references.Agency", **ag, _fill_optional=True)
     cont_data = {
         "pk": 1,
         "transaction_id": 1,

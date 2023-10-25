@@ -30,7 +30,9 @@ def setup_test_data(db):
         reporting_fiscal_period=12,
         published_date="2021-02-11",
     )
-    agency = baker.make("references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency")
+    agency = baker.make(
+        "references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency", _fill_optional=True
+    )
 
     treas_accounts = [
         baker.make(
