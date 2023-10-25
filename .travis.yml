@@ -106,7 +106,7 @@ jobs:
     - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   - stage: Automated Tests
     # NOTE: See conftest.py pytest_collection_modifyitems for how Marks are assigned to tests
-  - name: Spark Integration Tests - test_load_transactions_in_delta_lookup.py
+    name: Spark Integration Tests - test_load_transactions_in_delta_lookup.py
     env:
     # Concurrent sessions does not seem to be efficient for this test. Keeping at 1 session
     - PYTEST_XDIST_NUMPROCESSES=0
@@ -163,7 +163,7 @@ jobs:
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
     - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION='(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookup.py and not test_load_transactions_in_delta_fabs_fpds.py)'
+    - PYTEST_MATCH_EXPRESSION='(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)'
     - PYTEST_MARK_EXPRESSION=spark
     workspaces:
       use: [ pip,docker ]
