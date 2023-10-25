@@ -106,84 +106,6 @@ jobs:
     - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   - stage: Automated Tests
     # NOTE: See conftest.py pytest_collection_modifyitems for how Marks are assigned to tests
-    name: Unit Tests
-    env:
-    - PYTEST_SETUP_TEST_DATABASES=false
-    - PYTEST_PRELOAD_SPARK_JARS=false
-    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
-    - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
-    - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION='(not spark and not database and not elasticsearch and not signal_handling)'
-    workspaces:
-      use: [ pip,docker ]
-      create:
-        name: ws1
-        paths:
-          - coverage.*.xml
-    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
-  - name: Unit Tests - Using Signal Handling
-    env:
-    - PYTEST_XDIST_NUMPROCESSES=0
-    - PYTEST_SETUP_TEST_DATABASES=false
-    - PYTEST_PRELOAD_SPARK_JARS=false
-    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
-    - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
-    - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION='(signal_handling)'
-    workspaces:
-      use: [ pip,docker ]
-      create:
-        name: ws2
-        paths:
-          - coverage.*.xml
-    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
-  - name: Non-Spark Integration Tests
-    env:
-    - PYTEST_SETUP_TEST_DATABASES=true
-    - PYTEST_PRELOAD_SPARK_JARS=false
-    - PYTEST_INCLUDE_GLOB=**/tests/integration/*
-    - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION='(not spark and not signal_handling)'
-    workspaces:
-      use: [ pip,docker ]
-      create:
-        name: ws3
-        paths:
-          - coverage.*.xml
-    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
-  - name: Non-Spark Integration Tests - Using Signal Handling
-    env:
-    - PYTEST_XDIST_NUMPROCESSES=0
-    - PYTEST_SETUP_TEST_DATABASES=true
-    - PYTEST_PRELOAD_SPARK_JARS=false
-    - PYTEST_INCLUDE_GLOB=**/tests/integration/*
-    - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=
-    - PYTEST_MARK_EXPRESSION='(signal_handling and not spark)'
-    workspaces:
-      use: [ pip,docker ]
-      create:
-        name: ws4
-        paths:
-          - coverage.*.xml
-    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
-  - name: Spark Integration Tests - test_load_to_from_delta.py
-    env:
-    - PYTEST_XDIST_NUMPROCESSES=2
-    - PYTEST_SETUP_TEST_DATABASES=true
-    - PYTEST_PRELOAD_SPARK_JARS=true
-    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
-    - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=test_load_to_from_delta.py
-    - PYTEST_MARK_EXPRESSION=spark
-    workspaces:
-      use: [ pip,docker ]
-      create:
-        name: ws5
-        paths:
-          - coverage.*.xml
-    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
   - name: Spark Integration Tests - test_load_transactions_in_delta_lookup.py
     env:
     # Concurrent sessions does not seem to be efficient for this test. Keeping at 1 session
@@ -192,12 +114,12 @@ jobs:
     - PYTEST_PRELOAD_SPARK_JARS=true
     - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
     - PYTEST_EXCLUDE_GLOB=
-    - PYTEST_MATCH_EXPRESSION=test_load_transactions_in_delta_lookup.py
+    - PYTEST_MATCH_EXPRESSION=test_load_transactions_in_delta_lookups.py
     - PYTEST_MARK_EXPRESSION=spark
     workspaces:
       use: [ pip,docker ]
       create:
-        name: ws6
+        name: ws1
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
@@ -214,10 +136,26 @@ jobs:
     workspaces:
       use: [ pip,docker ]
       create:
-        name: ws7
+        name: ws2
         paths:
           - coverage.*.xml
     # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
+  - name: Spark Integration Tests - test_load_to_from_delta.py
+    env:
+    - PYTEST_XDIST_NUMPROCESSES=2
+    - PYTEST_SETUP_TEST_DATABASES=true
+    - PYTEST_PRELOAD_SPARK_JARS=true
+    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+    - PYTEST_EXCLUDE_GLOB=
+    - PYTEST_MATCH_EXPRESSION=test_load_to_from_delta.py
+    - PYTEST_MARK_EXPRESSION=spark
+    workspaces:
+      use: [ pip,docker ]
+      create:
+        name: ws3
+        paths:
+          - coverage.*.xml
+      # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
   - name: Spark Integration Tests - Other
     env:
     - PYTEST_XDIST_NUMPROCESSES=4
@@ -227,6 +165,68 @@ jobs:
     - PYTEST_EXCLUDE_GLOB=
     - PYTEST_MATCH_EXPRESSION='(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookup.py and not test_load_transactions_in_delta_fabs_fpds.py)'
     - PYTEST_MARK_EXPRESSION=spark
+    workspaces:
+      use: [ pip,docker ]
+      create:
+        name: ws4
+        paths:
+          - coverage.*.xml
+    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
+  - name: Non-Spark Integration Tests
+    env:
+    - PYTEST_SETUP_TEST_DATABASES=true
+    - PYTEST_PRELOAD_SPARK_JARS=false
+    - PYTEST_INCLUDE_GLOB=**/tests/integration/*
+    - PYTEST_EXCLUDE_GLOB=
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION='(not spark and not signal_handling)'
+    workspaces:
+      use: [ pip,docker ]
+      create:
+        name: ws5
+        paths:
+          - coverage.*.xml
+    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
+  - name: Non-Spark Integration Tests - Using Signal Handling
+    env:
+    - PYTEST_XDIST_NUMPROCESSES=0
+    - PYTEST_SETUP_TEST_DATABASES=true
+    - PYTEST_PRELOAD_SPARK_JARS=false
+    - PYTEST_INCLUDE_GLOB=**/tests/integration/*
+    - PYTEST_EXCLUDE_GLOB=
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION='(signal_handling and not spark)'
+    workspaces:
+      use: [ pip,docker ]
+      create:
+        name: ws6
+        paths:
+          - coverage.*.xml
+    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
+  - name: Unit Tests
+    env:
+    - PYTEST_SETUP_TEST_DATABASES=false
+    - PYTEST_PRELOAD_SPARK_JARS=false
+    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+    - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION='(not spark and not database and not elasticsearch and not signal_handling)'
+    workspaces:
+      use: [ pip,docker ]
+      create:
+        name: ws7
+        paths:
+          - coverage.*.xml
+    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
+  - name: Unit Tests - Using Signal Handling
+    env:
+    - PYTEST_XDIST_NUMPROCESSES=0
+    - PYTEST_SETUP_TEST_DATABASES=false
+    - PYTEST_PRELOAD_SPARK_JARS=false
+    - PYTEST_INCLUDE_GLOB='test_*.py *_test.py'
+    - PYTEST_EXCLUDE_GLOB=**/tests/integration/*
+    - PYTEST_MATCH_EXPRESSION=
+    - PYTEST_MARK_EXPRESSION='(signal_handling)'
     workspaces:
       use: [ pip,docker ]
       create:
