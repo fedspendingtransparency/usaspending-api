@@ -273,7 +273,11 @@ def verify_delta_table_loaded_from_delta(
 @mark.django_db(transaction=True)
 @patch("usaspending_api.etl.management.commands.load_query_to_delta.create_ref_temp_views")
 def test_load_table_to_from_delta_for_recipient_lookup(
-    create_ref_temp_views_mock, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+    create_ref_temp_views_mock,
+    spark,
+    s3_unittest_data_bucket,
+    populate_usas_data_and_recipients_from_broker,
+    hive_unittest_metastore_db,
 ):
     recipient_lookup_spec = TABLE_SPEC["recipient_lookup"]
     # Create select statement representing dummy data to load
