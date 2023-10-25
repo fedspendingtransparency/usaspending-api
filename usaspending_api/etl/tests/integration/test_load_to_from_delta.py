@@ -389,7 +389,6 @@ def test_load_table_to_from_delta_for_recipient_profile(
         "transaction_normalized",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-    call_command("update_recipient_lookup")
     verify_delta_table_loaded_to_delta(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta", ignore_fields=["id"]
     )
