@@ -15,8 +15,8 @@ from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_looku
     _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
     _InitialRunWithPostgresLoader,
     _TableLoadInfo,
-    TestInitialRun,
-    TestInitialRunNoPostgresLoader,
+    TestInitialRun as InitialRun,  # Remove 'test' prefix to avoid pytest running these tests twice
+    TestInitialRunNoPostgresLoader as InitialRunNoPostgresLoader,  # Remove 'test' prefix to avoid pytest running these tests twice
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
@@ -78,7 +78,7 @@ class _TransactionFabsFpdsCore:
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, but without first loading
         # raw.transaction_normalized or raw.awards.  Then immediately call load_transactions_in_delta with
         # etl-level of transaction_f[ab|pd]s.
-        TestInitialRun.initial_run(self.s3_data_bucket)
+        InitialRun.initial_run(self.s3_data_bucket)
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Verify the transaction and award id lookup tables and other int transaction tables.  They should all be empty.
@@ -92,7 +92,7 @@ class _TransactionFabsFpdsCore:
         # Even though nothing will have been loaded to that table, the table whose etl_level has been called will
         # have its last load date set to the date of the source tables' load.
         kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
-        TestInitialRun.verify(self.spark, [], [], **kwargs)
+        InitialRun.verify(self.spark, [], [], **kwargs)
 
         # 2. With raw.transaction_normalized and raw.awards still not created, call load_transactions_in_delta
         # with etl-level of transaction_id_lookup, and then again with etl-level of transaction_f[ab|pd]s.
@@ -113,7 +113,7 @@ class _TransactionFabsFpdsCore:
         # called should be updated to the load time of the source tables
         kwargs["expected_last_load_transaction_id_lookup"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
-        TestInitialRun.verify(
+        InitialRun.verify(
             self.spark,
             expected_transaction_id_lookup,
             [],
@@ -142,7 +142,7 @@ class _TransactionFabsFpdsCore:
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, making sure to load
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
         # Then immediately call load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
-        TestInitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
+        InitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
@@ -157,7 +157,7 @@ class _TransactionFabsFpdsCore:
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
-        TestInitialRun.verify(
+        InitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
             expected_initial_award_id_lookup,
@@ -212,7 +212,7 @@ class _TransactionFabsFpdsCore:
 
         # Verify the transaction and award id lookup tables.  Without a call to load_transactions_in_delta with an
         # --etl-level of transaction_id_lookup or award_id_lookup, they should be the same as during the initial run.
-        TestInitialRun.verify(
+        InitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
             expected_initial_award_id_lookup,
@@ -245,11 +245,11 @@ class _TransactionFabsFpdsCore:
                 _TableLoadInfo(
                     self.spark,
                     "transaction_normalized",
-                    TestInitialRunNoPostgresLoader.initial_transaction_normalized,
+                    InitialRunNoPostgresLoader.initial_transaction_normalized,
                 )
             ],
-            TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
-            TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup,
+            InitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
+            InitialRunNoPostgresLoader.expected_initial_award_id_lookup,
         )
 
     def happy_paths_test_core(
@@ -263,7 +263,7 @@ class _TransactionFabsFpdsCore:
     ):
         # 1, Test calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s after calling with
         # etl-levels of initial_run and transaction_id_lookup.
-        TestInitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables)
+        InitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables)
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
@@ -277,7 +277,7 @@ class _TransactionFabsFpdsCore:
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
-        TestInitialRun.verify(
+        InitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
             expected_initial_award_id_lookup,
@@ -434,17 +434,17 @@ class _TransactionFabsFpdsCore:
                 _TableLoadInfo(
                     self.spark,
                     "transaction_normalized",
-                    TestInitialRunNoPostgresLoader.initial_transaction_normalized,
+                    InitialRunNoPostgresLoader.initial_transaction_normalized,
                 ),
                 _TableLoadInfo(
                     self.spark,
                     self.etl_level,
                     initial_transaction_fabs_fpds,
                 ),
-                _TableLoadInfo(self.spark, "awards", TestInitialRunNoPostgresLoader.initial_awards),
+                _TableLoadInfo(self.spark, "awards", InitialRunNoPostgresLoader.initial_awards),
             ),
-            TestInitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
-            TestInitialRunNoPostgresLoader.expected_initial_award_id_lookup,
+            InitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
+            InitialRunNoPostgresLoader.expected_initial_award_id_lookup,
             expected_transaction_id_lookup_pops,
             expected_transaction_id_lookup_append,
             expected_transaction_fabs_fpds_append,
@@ -507,7 +507,7 @@ class TestTransactionFabs:
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fabs
+            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fabs
         )
         transaction_fabs_fpds_core.unexpected_paths_no_pg_loader_test_core()
 
@@ -516,10 +516,10 @@ class TestTransactionFabs:
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fabs
+            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fabs
         )
         transaction_fabs_fpds_core.happy_paths_no_pg_loader_test_core(
-            TestInitialRunNoPostgresLoader.initial_transaction_fabs,
+            InitialRunNoPostgresLoader.initial_transaction_fabs,
             (2, 3),
             self.expected_transaction_id_lookup_append,
             self.expected_transaction_fabs_fpds_append,
@@ -580,7 +580,7 @@ class TestTransactionFpds:
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fpds
+            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fpds
         )
         transaction_fabs_fpds_core.unexpected_paths_no_pg_loader_test_core()
 
@@ -589,10 +589,10 @@ class TestTransactionFpds:
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, TestInitialRunNoPostgresLoader.initial_transaction_fpds
+            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fpds
         )
         transaction_fabs_fpds_core.happy_paths_no_pg_loader_test_core(
-            TestInitialRunNoPostgresLoader.initial_transaction_fpds,
+            InitialRunNoPostgresLoader.initial_transaction_fpds,
             (3, 4),
             self.expected_transaction_id_lookup_append,
             self.expected_transaction_fabs_fpds_append,
