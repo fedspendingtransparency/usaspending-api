@@ -273,7 +273,7 @@ def verify_delta_table_loaded_from_delta(
 @mark.django_db(transaction=True)
 @patch("usaspending_api.etl.management.commands.load_query_to_delta.create_ref_temp_views")
 def test_load_table_to_from_delta_for_recipient_lookup(
-    create_ref_temp_views_mock, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, delete_tables_after_test
+    create_ref_temp_views_mock, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     recipient_lookup_spec = TABLE_SPEC["recipient_lookup"]
     # Create select statement representing dummy data to load
@@ -389,6 +389,7 @@ def test_load_table_to_from_delta_for_recipient_profile(
         "transaction_normalized",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    call_command("update_recipient_lookup")
     verify_delta_table_loaded_to_delta(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta", ignore_fields=["id"]
     )
