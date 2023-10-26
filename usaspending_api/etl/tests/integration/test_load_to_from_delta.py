@@ -357,7 +357,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     )  # test alt write strategy
 
     recipient_lookup_spec["source_query"] = og_source_query
-    spark.sql(f'DELETE FROM {recipient_lookup_spec['destination_database']}.recipient_lookup;')
+    spark.sql(f"DELETE FROM {recipient_lookup_spec['destination_database']}.recipient_lookup;")
 
 
 @mark.django_db(transaction=True)
