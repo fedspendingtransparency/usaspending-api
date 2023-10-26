@@ -178,18 +178,8 @@ def is_test_db_setup_trigger(request: pytest.FixtureRequest) -> bool:
 def db_table_cleanup():
     yield
     tables = [
-        "awards",
-        "financial_accounts_by_awards",
         "recipient_lookup",
         "recipient_profile",
-        "sam_recipient",
-        "transaction_current_cd_lookup",
-        "transaction_fabs",
-        "transaction_fpds",
-        "transaction_normalized",
-        "zips",
-        "transaction_search",
-        "award_search",
     ]
     try:
         for table in tables:

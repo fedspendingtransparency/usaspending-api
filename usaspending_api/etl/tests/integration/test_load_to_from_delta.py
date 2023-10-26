@@ -386,6 +386,7 @@ def test_load_table_to_from_delta_for_recipient_profile(
     create_ref_temp_views_mock, spark, db_table_cleanup, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     recipient_profile_spec = TABLE_SPEC["recipient_profile"]
+    og_source_query = recipient_profile_spec["source_query"]
     # Test that subsequent data source updates propogate between to/from delta loads
     # Create select statement representing dummy data to load
     recipient_profile_spec[
@@ -414,6 +415,8 @@ def test_load_table_to_from_delta_for_recipient_profile(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta", ignore_fields=["id"]
     )
     verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True, ignore_fields=["id"])
+
+    recipient_profile_spec["source_query"] = og_source_query
 
 
 @mark.django_db(transaction=True)
