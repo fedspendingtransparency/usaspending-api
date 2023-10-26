@@ -177,7 +177,7 @@ def is_test_db_setup_trigger(request: pytest.FixtureRequest) -> bool:
 @pytest.fixture
 def db_table_cleanup():
     yield
-    tables_to_delete = [
+    tables = [
         "awards",
         "financial_accounts_by_awards",
         "recipient_lookup",
@@ -191,7 +191,11 @@ def db_table_cleanup():
         "transaction_search",
         "award_search",
     ]
-    delete_tables_for_tests(tables_to_delete)
+    try:
+        for table in tables:
+            execute_sql_simple(f"DELETE FROM {table};")
+    except Exception:
+        pass
 
 
 @pytest.fixture(scope="session")
