@@ -176,6 +176,7 @@ def is_test_db_setup_trigger(request: pytest.FixtureRequest) -> bool:
 
 @pytest.fixture
 def db_table_cleanup():
+    yield
     tables_to_delete = [
         "awards",
         "financial_accounts_by_awards",
