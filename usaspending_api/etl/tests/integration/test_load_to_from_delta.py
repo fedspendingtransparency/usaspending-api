@@ -271,11 +271,10 @@ def verify_delta_table_loaded_from_delta(
 
 
 @mark.django_db(transaction=True)
-@mark.parametrize("django_db_setup", ["django_db_do_init_data=False"], indirect=True)
 @patch("usaspending_api.etl.management.commands.load_query_to_delta.create_ref_temp_views")
 def test_load_table_to_from_delta_for_recipient_lookup(
     create_ref_temp_views_mock,
-    django_db_setup,
+    db_table_cleanup,
     spark,
     s3_unittest_data_bucket,
     hive_unittest_metastore_db,
@@ -383,9 +382,8 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
 
 @mark.django_db(transaction=True)
 @patch("usaspending_api.etl.management.commands.load_query_to_delta.create_ref_temp_views")
-@mark.parametrize("django_db_setup", ["django_db_do_init_data=False"], indirect=True)
 def test_load_table_to_from_delta_for_recipient_profile(
-    create_ref_temp_views_mock, spark, django_db_setup, s3_unittest_data_bucket, hive_unittest_metastore_db
+    create_ref_temp_views_mock, spark, db_table_cleanup, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     recipient_profile_spec = TABLE_SPEC["recipient_profile"]
     # Test that subsequent data source updates propogate between to/from delta loads

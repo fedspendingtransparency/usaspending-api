@@ -131,14 +131,15 @@ def pytest_addoption(parser):
     parser.addoption("--local", action="store", default="true")
 
 
-def delete_tables_for_tests():
+def delete_tables_for_tests(tables=None):
     """
     The transaction_search/award_search tables are created from data coming from various based tables.
     When unit testing these tables, we can easily account for that logic using a single view.
     To prevent a naming conflict, the unused Django managed table is deleted while testing.
     """
     try:
-        tables = []
+        if tables is None:
+            tables = []
         for table in tables:
             execute_sql_simple(f"DROP TABLE IF EXISTS {table} CASCADE;")
     except Exception:
@@ -171,6 +172,25 @@ def is_test_db_setup_trigger(request: pytest.FixtureRequest) -> bool:
         and request.node.items[0].originalname == TEST_DB_SETUP_TEST_NAME
         and request.config.option.reuse_db
     )
+
+
+@pytest.fixture
+def db_table_cleanup():
+    tables_to_delete = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_current_cd_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+        "zips",
+        "transaction_search",
+        "award_search",
+    ]
+    delete_tables_for_tests(tables_to_delete)
 
 
 @pytest.fixture(scope="session")
@@ -240,16 +260,15 @@ def django_db_setup(
             delete_tables_for_tests()
             # If using parallel test runners through pytest-xdist, pass the unique worker ID to handle matview SQL
             # files distinctly for each one
-            if django_db_do_init_data:
-                generate_matviews(
-                    materialized_views_as_traditional_views=True,
-                    parallel_worker_id=getattr(request.config, "workerinput", {}).get("workerid"),
-                )
-                ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
-                ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
-                add_view_protection()
-                ensure_business_categories_functions_exist()
-                call_command("load_broker_static_data")
+            generate_matviews(
+                materialized_views_as_traditional_views=True,
+                parallel_worker_id=getattr(request.config, "workerinput", {}).get("workerid"),
+            )
+            ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
+            ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
+            add_view_protection()
+            ensure_business_categories_functions_exist()
+            call_command("load_broker_static_data")
 
             # This is necessary for any script/code run in a test that bases its database connection off the postgres
             # config. This resolves the issue by temporarily mocking the DATABASE_URL to accurately point to the test
