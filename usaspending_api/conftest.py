@@ -182,6 +182,7 @@ def django_db_setup(
     django_db_keepdb: bool,
     django_db_createdb: bool,
     django_db_modify_db_settings: None,  # will call the overridden (below) version of this fixture
+    django_db_do_init_data: bool = True,  # will cause setup to include initializing some data
 ):
     """This is an override of the original implementation in the https://github.com/pytest-dev/pytest-django plugin
     from file /pytest-django/fixtures.py.
@@ -239,15 +240,16 @@ def django_db_setup(
             delete_tables_for_tests()
             # If using parallel test runners through pytest-xdist, pass the unique worker ID to handle matview SQL
             # files distinctly for each one
-            generate_matviews(
-                materialized_views_as_traditional_views=True,
-                parallel_worker_id=getattr(request.config, "workerinput", {}).get("workerid"),
-            )
-            ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
-            ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
-            add_view_protection()
-            ensure_business_categories_functions_exist()
-            call_command("load_broker_static_data")
+            if django_db_do_init_data:
+                generate_matviews(
+                    materialized_views_as_traditional_views=True,
+                    parallel_worker_id=getattr(request.config, "workerinput", {}).get("workerid"),
+                )
+                ensure_view_exists(settings.ES_TRANSACTIONS_ETL_VIEW_NAME)
+                ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
+                add_view_protection()
+                ensure_business_categories_functions_exist()
+                call_command("load_broker_static_data")
 
             # This is necessary for any script/code run in a test that bases its database connection off the postgres
             # config. This resolves the issue by temporarily mocking the DATABASE_URL to accurately point to the test

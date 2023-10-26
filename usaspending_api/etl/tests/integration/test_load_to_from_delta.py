@@ -271,15 +271,17 @@ def verify_delta_table_loaded_from_delta(
 
 
 @mark.django_db(transaction=True)
+@mark.parametrize("django_db_setup", ["django_db_do_init_data=False"], indirect=True)
 @patch("usaspending_api.etl.management.commands.load_query_to_delta.create_ref_temp_views")
 def test_load_table_to_from_delta_for_recipient_lookup(
     create_ref_temp_views_mock,
+    django_db_setup,
     spark,
     s3_unittest_data_bucket,
     hive_unittest_metastore_db,
 ):
     recipient_lookup_spec = TABLE_SPEC["recipient_lookup"]
-    og_source_query = TABLE_SPEC["recipient_lookup"]["source_query"]
+    og_source_query = recipient_lookup_spec["source_query"]
     # Create select statement representing dummy data to load
     recipient_lookup_spec[
         "source_query"
@@ -357,7 +359,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(
     )  # test alt write strategy
 
     recipient_lookup_spec["source_query"] = og_source_query
-    spark.sql(f"DELETE FROM {recipient_lookup_spec['destination_database']}.recipient_lookup;")
 
 
 @mark.django_db(transaction=True)
@@ -381,19 +382,36 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
 
 
 @mark.django_db(transaction=True)
+@patch("usaspending_api.etl.management.commands.load_query_to_delta.create_ref_temp_views")
+@mark.parametrize("django_db_setup", ["django_db_do_init_data=False"], indirect=True)
 def test_load_table_to_from_delta_for_recipient_profile(
-    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
+    create_ref_temp_views_mock, spark, django_db_setup, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    tables_to_load = [
-        "awards",
-        "financial_accounts_by_awards",
-        "recipient_lookup",
-        "sam_recipient",
-        "transaction_fabs",
-        "transaction_fpds",
-        "transaction_normalized",
-    ]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    recipient_profile_spec = TABLE_SPEC["recipient_profile"]
+    # Test that subsequent data source updates propogate between to/from delta loads
+    # Create select statement representing dummy data to load
+    recipient_profile_spec[
+        "source_query"
+    ] = fr"""
+        INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+        SELECT
+            NULL AS id
+            , "R" AS recipient_level
+            , "bfbc1444-0a70-cf83-da8a-017c7d78e91b" AS recipient_hash
+            , NULL recipient_unique_id
+            , NULL recipient_name
+            , array() AS recipient_affiliations
+            , 0 AS last_12_months
+            , 0 AS last_12_contracts
+            , 0 AS last_12_direct_payments
+            , 0 AS last_12_grants
+            , 0 AS last_12_loans
+            , 0 AS last_12_months_count
+            , 0 AS last_12_other
+            , array() AS award_types
+            , NULL AS uei
+            , NULL AS parent_uei
+    """
     verify_delta_table_loaded_to_delta(
         spark, "recipient_profile", s3_unittest_data_bucket, load_command="load_query_to_delta", ignore_fields=["id"]
     )
