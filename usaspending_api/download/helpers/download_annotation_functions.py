@@ -346,14 +346,6 @@ def transaction_search_annotations(filters: dict, file_type: str = None):
             output_field=TextField(),
         ),
     }
-    # Only d2 should have a value for this column
-    if file_type == "d2":
-        annotation_fields["generated_pragmatic_obligations"] = Case(
-            When(
-                Q(**{f'{FABS_TO_TRANSACTION_SEARCH_COL_MAP["assistance_type"]}__in': ["07", "08"]}),
-                then=F("original_loan_subsidy_cost"),
-            )
-        )
     annotation_fields.update(TXN_SEARCH_CD_DISPLAY_ANNOTATIONS)
     return annotation_fields
 
