@@ -18,7 +18,6 @@ from django.db.models import (
     When,
 )
 
-from usaspending_api.awards.models.transaction_fabs import FABS_TO_TRANSACTION_SEARCH_COL_MAP
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.awards.models.transaction_normalized import NORM_TO_TRANSACTION_SEARCH_COL_MAP
 from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault, CFDAs
