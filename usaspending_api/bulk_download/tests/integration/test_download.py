@@ -342,7 +342,7 @@ def test_download_awards_with_all_award_types(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 9
-    assert resp.json()["total_columns"] == 639
+    assert resp.json()["total_columns"] == 640
 
 
 @pytest.mark.django_db(transaction=True)
@@ -365,7 +365,7 @@ def test_download_awards_with_all_prime_awards(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 6
-    assert resp.json()["total_columns"] == 406
+    assert resp.json()["total_columns"] == 407
 
 
 @pytest.mark.django_db(transaction=True)
@@ -483,7 +483,7 @@ def test_download_awards_with_domestic_scope(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 4
-    assert resp.json()["total_columns"] == 639
+    assert resp.json()["total_columns"] == 640
 
 
 @pytest.mark.django_db(transaction=True)
@@ -532,7 +532,7 @@ def test_download_awards_with_foreign_scope(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 5
-    assert resp.json()["total_columns"] == 639
+    assert resp.json()["total_columns"] == 640
 
 
 @pytest.mark.django_db(transaction=True)
