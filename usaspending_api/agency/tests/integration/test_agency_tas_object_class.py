@@ -21,9 +21,9 @@ def tas_submissions_across_multiple_years():
         period_end_date=f"{CURRENT_FISCAL_YEAR}-10-01",
     )
 
-    ta1 = baker.make("references.ToptierAgency", toptier_code="007")
+    ta1 = baker.make("references.ToptierAgency", toptier_code="007", _fill_optional=True)
 
-    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1)
+    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
 
     sub1 = baker.make(
         "submissions.SubmissionAttributes",

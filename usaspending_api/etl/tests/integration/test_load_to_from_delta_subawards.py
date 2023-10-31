@@ -18,7 +18,7 @@ from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
 def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,
-    populate_usas_data,
+    populate_usas_data_and_recipients_from_broker,
     hive_unittest_metastore_db,
 ):
     tables_to_load = [

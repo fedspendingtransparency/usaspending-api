@@ -3,7 +3,7 @@ import pytest
 
 from rest_framework import status
 
-from usaspending_api.awards.tests.unit.test_subawards import (
+from usaspending_api.awards.tests.integration.test_subawards import (
     create_subaward_test_data,
     subaward_1,
     subaward_2,

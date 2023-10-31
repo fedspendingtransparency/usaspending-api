@@ -6,12 +6,16 @@ import os
 from django.core.management import call_command
 from csv import reader
 from model_bakery import baker
+from unittest.mock import Mock
 
+from usaspending_api import settings
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
-CSV_DIR = "csv_downloads"
-TODAY = datetime.datetime.strftime(datetime.date.today(), "%Y%m%d")
+# Make sure UTC or test will fail later in the day
+TODAY = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y%m%d")
 
 
 def generate_contract_data(fiscal_year, i):
@@ -415,10 +419,14 @@ def monthly_download_data(db, monkeypatch):
     for js in JOB_STATUS:
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
-    baker.make("references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency")
-    baker.make("references.Agency", pk=1, toptier_agency_id=1)
-    baker.make("references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2")
-    baker.make("references.Agency", pk=2, toptier_agency_id=2)
+    baker.make(
+        "references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency", _fill_optional=True
+    )
+    baker.make("references.Agency", pk=1, toptier_agency_id=1, _fill_optional=True)
+    baker.make(
+        "references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2", _fill_optional=True
+    )
+    baker.make("references.Agency", pk=2, toptier_agency_id=2, _fill_optional=True)
     i = 1
     for fiscal_year in range(2001, 2021):
         baker.make(
@@ -521,36 +529,34 @@ def monthly_download_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME", "whatever")
 
 
-def test_all_agencies(client, monthly_download_data, monkeypatch):
+def test_all_agencies(client, fake_csv_local_path, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command("populate_monthly_files", "--fiscal_year=2020", "--local", "--clobber")
-    file_list = os.listdir(CSV_DIR)
+    file_list = os.listdir(fake_csv_local_path)
 
     assert f"FY2020_All_Contracts_Full_{TODAY}.zip" in file_list
     assert f"FY2020_All_Assistance_Full_{TODAY}.zip" in file_list
-    os.remove(os.path.normpath(f"{CSV_DIR}/FY2020_All_Contracts_Full_{TODAY}.zip"))
-    os.remove(os.path.normpath(f"{CSV_DIR}/FY2020_All_Assistance_Full_{TODAY}.zip"))
 
 
-def test_specific_agency(client, monthly_download_data, monkeypatch):
+def test_specific_agency(client, fake_csv_local_path, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     contract_data = generate_contract_data(2020, 1)
-    assistance_data = generate_assistance_data
+    assistance_data = generate_assistance_data(2020, 1)
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
-    file_list = os.listdir(CSV_DIR)
+    file_list = os.listdir(fake_csv_local_path)
 
     assistance_csv_1 = f"FY2020_001_Assistance_Full_{TODAY}_1.csv"
     assistance_zip_1 = f"FY2020_001_Assistance_Full_{TODAY}.zip"
-    assistance_zip_2 = f"FY2020_002_Assistance_Full_{TODAY}.zip"
     contracts_csv_1 = f"FY2020_001_Contracts_Full_{TODAY}_1.csv"
     contracts_zip_1 = f"FY2020_001_Contracts_Full_{TODAY}.zip"
-    contracts_zip_2 = f"FY2020_002_Contracts_Full_{TODAY}.zip"
 
     assert contracts_zip_1 in file_list
     assert assistance_zip_1 in file_list
 
-    with zipfile.ZipFile(os.path.normpath(f"{CSV_DIR}/{contracts_zip_1}"), "r") as zip_ref:
-        zip_ref.extractall(CSV_DIR)
-        assert contracts_csv_1 in os.listdir(CSV_DIR)
-    with open(os.path.normpath(f"{CSV_DIR}/{contracts_csv_1}"), "r") as contract_file:
+    with zipfile.ZipFile(os.path.normpath(f"{fake_csv_local_path}/{contracts_zip_1}"), "r") as zip_ref:
+        zip_ref.extractall(fake_csv_local_path)
+        assert contracts_csv_1 in os.listdir(fake_csv_local_path)
+    with open(os.path.normpath(f"{fake_csv_local_path}/{contracts_csv_1}"), "r") as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
         for row in csv_reader:
@@ -562,10 +568,10 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
             row_count += 1
     assert row_count >= 1
 
-    with zipfile.ZipFile(os.path.normpath(f"{CSV_DIR}/{assistance_zip_1}"), "r") as zip_ref:
-        zip_ref.extractall(CSV_DIR)
-        assert assistance_csv_1 in os.listdir(CSV_DIR)
-    with open(os.path.normpath(f"{CSV_DIR}/{assistance_csv_1}"), "r") as assistance_file:
+    with zipfile.ZipFile(os.path.normpath(f"{fake_csv_local_path}/{assistance_zip_1}"), "r") as zip_ref:
+        zip_ref.extractall(fake_csv_local_path)
+        assert assistance_csv_1 in os.listdir(fake_csv_local_path)
+    with open(os.path.normpath(f"{fake_csv_local_path}/{assistance_csv_1}"), "r") as assistance_file:
         csv_reader = reader(assistance_file)
         row_count = 0
         for row in csv_reader:
@@ -577,11 +583,9 @@ def test_specific_agency(client, monthly_download_data, monkeypatch):
             row_count += 1
         assert row_count >= 1
 
-    for f in (contracts_zip_1, assistance_zip_1, contracts_csv_1, assistance_csv_1, assistance_zip_2, contracts_zip_2):
-        os.remove(os.path.normpath(f"{CSV_DIR}/{f}"))
 
-
-def test_agency_no_data(client, monthly_download_data, monkeypatch):
+def test_agency_no_data(client, fake_csv_local_path, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2022", "--local", "--clobber")
     contracts_zip = f"FY2022_002_Contracts_Full_{TODAY}.zip"
     contracts_csv_1 = f"FY2022_002_Contracts_Full_{TODAY}_1.csv"
@@ -590,25 +594,25 @@ def test_agency_no_data(client, monthly_download_data, monkeypatch):
 
     for zip_file, csv_file in [(contracts_zip, contracts_csv_1), (assistance_zip, assistance_csv_1)]:
 
-        with zipfile.ZipFile(os.path.normpath(f"{CSV_DIR}/{zip_file}"), "r") as zip_ref:
-            zip_ref.extractall(CSV_DIR)
-            assert csv_file in os.listdir(CSV_DIR), f"{csv_file} was not generated or extracted"
+        with zipfile.ZipFile(os.path.normpath(f"{fake_csv_local_path}/{zip_file}"), "r") as zip_ref:
+            zip_ref.extractall(fake_csv_local_path)
+            assert csv_file in os.listdir(fake_csv_local_path), f"{csv_file} was not generated or extracted"
 
-        with open(os.path.normpath(f"{CSV_DIR}/{csv_file}"), "r") as csv_file:
+        with open(os.path.normpath(f"{fake_csv_local_path}/{csv_file}"), "r") as csv_file:
             csv_reader = reader(csv_file)
             row_count = 0
-            for row in csv_reader:
+            for _ in csv_reader:
                 row_count += 1
             assert row_count == 1, f"{csv_file} was not empty"
 
-    for f in (contracts_zip, assistance_zip, contracts_csv_1, assistance_csv_1):
-        os.remove(os.path.normpath(f"{CSV_DIR}/{f}"))
 
-
-def test_fiscal_years(client, monthly_download_data, monkeypatch):
+def test_fiscal_years(client, fake_csv_local_path, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
+    # contract_data = generate_contract_data(2020, 1)
+    # assistance_data = generate_assistance_data(2020, 1)
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
     call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2004", "--local", "--clobber")
-    file_list = os.listdir(CSV_DIR)
+    file_list = os.listdir(fake_csv_local_path)
     expected_files = (
         f"FY2004_001_Contracts_Full_{TODAY}.zip",
         f"FY2004_001_Assistance_Full_{TODAY}.zip",
@@ -618,10 +622,10 @@ def test_fiscal_years(client, monthly_download_data, monkeypatch):
 
     for expected_file in expected_files:
         assert expected_file in file_list
-        os.remove(os.path.normpath(f"{CSV_DIR}/{expected_file}"))
 
 
-def test_award_type(client, monthly_download_data, monkeypatch):
+def test_award_type(client, fake_csv_local_path, monthly_download_data, monkeypatch):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command(
         "populate_monthly_files",
         "--agencies=1",
@@ -630,8 +634,7 @@ def test_award_type(client, monthly_download_data, monkeypatch):
         "--local",
         "--clobber",
     )
-    file_list = os.listdir(CSV_DIR)
+    file_list = os.listdir(fake_csv_local_path)
 
     assert f"FY2020_001_Assistance_Full_{TODAY}.zip" in file_list
     assert f"FY2020_001_Contracts_Full_{TODAY}.zip" not in file_list
-    os.remove(os.path.normpath(f"{CSV_DIR}/FY2020_001_Assistance_Full_{TODAY}.zip"))

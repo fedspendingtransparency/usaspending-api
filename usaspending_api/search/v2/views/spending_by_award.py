@@ -111,7 +111,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return Response(self.populate_response(results=[], has_next=False))
 
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
-        raise_if_sort_key_not_valid(self.pagination["sort_key"], self.fields, self.is_subaward)
+        raise_if_sort_key_not_valid(
+            self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.is_subaward
+        )
 
         if self.is_subaward:
             raw_response = self.create_response_for_subawards(self.construct_queryset())
