@@ -460,7 +460,7 @@ def test_download_awards_with_domestic_scope(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 4
-    assert resp.json()["total_columns"] == 639
+    assert resp.json()["total_columns"] == 640
 
     # Place of Performance Scope
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
