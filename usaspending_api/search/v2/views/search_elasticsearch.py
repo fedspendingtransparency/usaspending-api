@@ -65,8 +65,15 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                 )
             )
 
-        if validated_payload["sort"] not in validated_payload["fields"]:
-            raise InvalidParameterException("Sort value not found in fields: {}".format(validated_payload["sort"]))
+        payload_sort_key = validated_payload["sort"]
+        if payload_sort_key not in validated_payload["fields"]:
+            raise InvalidParameterException("Sort value not found in fields: {}".format(payload_sort_key))
+
+        permitted_sort_values= TRANSACTIONS_LOOKUP
+        print(permitted_sort_values)
+        print(payload_sort_key in permitted_sort_values)
+        if payload_sort_key not in TRANSACTIONS_LOOKUP:
+            raise InvalidParameterException(f"Sort value is not currently supported: {payload_sort_key}. Allowed values are: [{', '.join(permitted_sort_values.keys())}]")
 
         if "filters" in validated_payload and "no intersection" in validated_payload["filters"]["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
