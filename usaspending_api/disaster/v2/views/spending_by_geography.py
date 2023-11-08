@@ -117,7 +117,7 @@ class SpendingByGeographyViewSet(DisasterBase):
             raise UnprocessableEntityException(
                 f"Unrecognized value '{self.spending_type}' for field " f"'spending_type'"
             )
-
+        self.filters['recipient_scope'] = "domestic"
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
         result = self.query_elasticsearch(filter_query)
 

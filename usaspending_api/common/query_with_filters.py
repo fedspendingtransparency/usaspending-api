@@ -495,12 +495,10 @@ class _DisasterEmergencyFundCodes(_Filter):
     def _generate_covid_iija_es_queries_transactions(cls, def_code_field, covid_filters, iija_filters):
         covid_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
-            & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
             for def_code, enactment_date in covid_filters.items()
         ]
         iija_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
-            & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
             for def_code, enactment_date in iija_filters.items()
         ]
 
@@ -552,9 +550,18 @@ class _DisasterEmergencyFundCodes(_Filter):
 
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
         if query_type == _QueryType.TRANSACTIONS:
-            covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_transactions(
+            covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_other(
                 def_code_field, covid_filters, iija_filters
             )
+
+            covid_nonzero_limit = _NonzeroFields.generate_elasticsearch_query(
+                ["total_covid_outlay", "total_covid_obligation"], query_type
+            )
+            covid_nonzero_query = ES_Q(
+                "bool", must=[covid_nonzero_limit], should=covid_es_queries, minimum_should_match=1
+            )
+
+            def_codes_query.append(ES_Q("bool", should=covid_nonzero_query, minimum_should_match=1))
 
             if covid_es_queries or iija_es_queries:
                 covid_iija_queries = covid_es_queries + iija_es_queries
