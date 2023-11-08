@@ -150,9 +150,14 @@ def django_db_setup(
             old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
-            test_broker_db = f"test_{CONFIG.BROKER_DB_NAME}"
-            CONFIG.DATA_BROKER_DATABASE_URL = get_broker_dsn_string()
-            CONFIG.BROKER_DB_NAME = test_broker_db
+            # Only build the Broker DSN if a `DATA_BROKER_DATABASE_URL` value exists
+            # `get_broker_dsn_string()` will raise an exception if it can't build the
+            #   Broker DSN which will cause the Broker tests to ERROR instead of
+            #   being skipped as expected.
+            if "data_broker" in settings.DATABASES:
+                test_broker_db = f"test_{CONFIG.BROKER_DB_NAME}"
+                CONFIG.DATA_BROKER_DATABASE_URL = get_broker_dsn_string()
+                CONFIG.BROKER_DB_NAME = test_broker_db
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down
     def reset_postgres_dsn():
