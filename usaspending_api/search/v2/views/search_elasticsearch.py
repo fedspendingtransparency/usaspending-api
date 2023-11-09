@@ -69,7 +69,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         if payload_sort_key not in validated_payload["fields"]:
             raise InvalidParameterException("Sort value not found in fields: {}".format(payload_sort_key))
 
-        permitted_sort_values= TRANSACTIONS_LOOKUP
+        permitted_sort_values = TRANSACTIONS_LOOKUP
         print(permitted_sort_values)
         print(payload_sort_key in permitted_sort_values)
         if payload_sort_key not in TRANSACTIONS_LOOKUP:
