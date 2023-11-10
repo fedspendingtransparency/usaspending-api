@@ -89,7 +89,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                     },
                 }
             )
-        sorts = {TRANSACTIONS_LOOKUP[validated_payload["sort"]]: validated_payload["order"]}
+        sorts = {TRANSACTIONS_LOOKUP[payload_sort_key]: validated_payload["order"]}
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
         upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
         validated_payload["filters"]["keyword_search"] = [
