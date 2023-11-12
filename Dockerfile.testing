@@ -20,4 +20,4 @@ RUN export PATH=$JAVA_HOME/bin:$PATHv
 #   to a `/usaspending-api` parent directory which is the name of an installed Django app.
 RUN mv /dockermount/* /usaspending-api/
 
-RUN pip install -r requirements/requirements-dev.txt
+RUN python3 -m pip install -r requirements/requirements-dev.txt
