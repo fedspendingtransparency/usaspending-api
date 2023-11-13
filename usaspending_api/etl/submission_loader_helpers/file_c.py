@@ -114,7 +114,7 @@ def get_file_c(submission_attributes, db_cursor, chunk_size):
     return PublishedAwardFinancial(submission_attributes, db_cursor, chunk_size)
 
 
-def load_file_c(submission_attributes, db_cursor, published_award_financial):
+def load_file_c(submission_attributes, db_cursor, published_award_financial, skip_c_to_d_linkage):
     """
     Process and load file C broker data.
     Note: this should run AFTER the D1 and D2 files are loaded because we try to join to those records to retrieve some
@@ -136,8 +136,9 @@ def load_file_c(submission_attributes, db_cursor, published_award_financial):
 
     _save_file_c_rows(published_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse)
 
-    update_c_to_d_linkages("contract", False, submission_attributes.submission_id)
-    update_c_to_d_linkages("assistance", False, submission_attributes.submission_id)
+    if not skip_c_to_d_linkage:
+        update_c_to_d_linkages("contract", False, submission_attributes.submission_id)
+        update_c_to_d_linkages("assistance", False, submission_attributes.submission_id)
 
     for tas, count in skipped_tas.items():
         logger.info(f"Skipped {count:,} rows due to {tas}")
