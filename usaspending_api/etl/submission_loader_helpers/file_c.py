@@ -136,7 +136,9 @@ def load_file_c(submission_attributes, db_cursor, published_award_financial, ski
 
     _save_file_c_rows(published_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse)
 
-    if not skip_c_to_d_linkage:
+    if skip_c_to_d_linkage:
+        logger.info("Skipping c_to_d_linkage process as requested.")
+    else:
         update_c_to_d_linkages("contract", False, submission_attributes.submission_id)
         update_c_to_d_linkages("assistance", False, submission_attributes.submission_id)
 
