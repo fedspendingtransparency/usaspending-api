@@ -11,6 +11,7 @@ from datetime import date
 from unittest.mock import MagicMock, call
 
 import boto3
+from django.conf import settings
 from model_bakery import baker
 from pyspark.context import SparkContext
 from pyspark.sql import SparkSession, Row
@@ -252,6 +253,10 @@ def test_spark_write_to_s3_delta_from_db(
     assert spark.sql("select count(*) from vw_transaction_fpds").collect()[0][0] == 1
 
 
+@mark.skipif(
+    "data_broker" not in settings.DATABASES,
+    reason="'data_broker' database not configured in django settings.DATABASES."
+)
 @mark.django_db(transaction=True)
 def test_create_ref_temp_views(spark: SparkSession):
     # Add dummy data to each test views
