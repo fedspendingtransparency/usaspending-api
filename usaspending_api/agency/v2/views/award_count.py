@@ -85,7 +85,9 @@ class AwardCount(AgencyBase):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         for awarding_toptier_agency_name in self._toptier_awarding_agencies_to_include:
-            awarding_toptier_agency_code = ToptierAgency.objects.filter(name=awarding_toptier_agency_name).first().toptier_code
+            awarding_toptier_agency_code = (
+                ToptierAgency.objects.filter(name=awarding_toptier_agency_name).first().toptier_code
+            )
             filters.update(self._generate_filters(awarding_toptier_agency_name))
             filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **filter_options)
             s = AwardSearch().filter(filter_query)
