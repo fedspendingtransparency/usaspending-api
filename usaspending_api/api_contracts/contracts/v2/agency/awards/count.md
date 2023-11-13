@@ -23,7 +23,7 @@ Return the count of Awards under the Agency
 
 + Response 200 (application/json)
     + Attributes
-        + `results` (required, array[AgencyAwardCountResult], fixed-type)
+        + `results` (required, array[AgencyResult], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
@@ -44,10 +44,11 @@ Return the count of Awards under the Agency
 # Data Structures
 
 ## AgencyResult (object)
-+ `AwardTypeResult`
-+ `Awarding Toptier Agency Name`
++ `award_types` (required, AwardTypes, fixed-type)
++ `awarding_toptier_agency_name` (required, string)
++ `awarding_toptier_agency_code` (required, string)
 
-## AwardTypeResult (object)
+## AwardTypes (object)
 + `grants` (required, number)
 + `loans` (required, number)
 + `contracts` (required, number)

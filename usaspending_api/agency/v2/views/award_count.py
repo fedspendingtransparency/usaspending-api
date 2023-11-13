@@ -7,6 +7,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.references.models.toptier_agency import ToptierAgency
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
@@ -60,6 +61,7 @@ class AwardCount(AgencyBase):
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         self._fy_end = get_fiscal_year_end_datetime(self.fiscal_year).date()
         self._fy_start = get_fiscal_year_start_datetime(self.fiscal_year).date()
+
         results = self.query_elasticsearch_for_prime_awards({})
 
         raw_response = {"results": results, "messages": []}
@@ -83,6 +85,7 @@ class AwardCount(AgencyBase):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         for awarding_toptier_agency_name in self._toptier_awarding_agencies_to_include:
+            awarding_toptier_agency_code = ToptierAgency.objects.filter(name=awarding_toptier_agency_name).first().toptier_code
             filters.update(self._generate_filters(awarding_toptier_agency_name))
             filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **filter_options)
             s = AwardSearch().filter(filter_query)
@@ -103,6 +106,7 @@ class AwardCount(AgencyBase):
 
             response = {
                 "awarding_toptier_agency_name": awarding_toptier_agency_name,
+                "awarding_toptier_agency_code": awarding_toptier_agency_code,
                 "contracts": contracts,
                 "direct_payments": direct_payments,
                 "grants": grants,
