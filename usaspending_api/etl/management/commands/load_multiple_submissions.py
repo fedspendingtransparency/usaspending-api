@@ -89,6 +89,17 @@ class Command(BaseCommand):
                 f"Default is {self.file_c_chunk_size:,}."
             ),
         )
+        parser.add_argument(
+            "--skip-c-to-d-linkage",
+            action="store_true",
+            help=(
+                "This flag skips the step to perform File C to D Linkages, which updates the "
+                "`award_id` field on File C records. File C to D linkages also take place in "
+                "subsequent Databricks steps in the pipeline and only takes place in this "
+                "command for earlier data consistency. It can safely be skipped in the case of "
+                "long running submissions.",
+            ),
+        )
 
         parser.epilog = (
             "And to answer your next question, yes this can be run standalone.  The parallelization "
@@ -130,6 +141,7 @@ class Command(BaseCommand):
         self.start_datetime = options.get("start_datetime")
         self.report_queue_status_only = options.get("report_queue_status_only")
         self.file_c_chunk_size = options.get("file_c_chunk_size")
+        self.skip_c_to_d_linkage = options["skip_c_to_d_linkage"]
         self.processor_id = f"{now()}/{get_random_string(length=12)}"
 
         logger.info(f'processor_id = "{self.processor_id}"')
@@ -238,6 +250,8 @@ class Command(BaseCommand):
         args = ["--file-c-chunk-size", self.file_c_chunk_size, "--skip-final-of-fy-calculation"]
         if force_reload:
             args.append("--force-reload")
+        if self.skip_c_to_d_linkage:
+            args.append("--skip-c-to-d-linkage")
         self.start_heartbeat_timer(submission_id)
         try:
             call_command("load_submission", submission_id, *args)
