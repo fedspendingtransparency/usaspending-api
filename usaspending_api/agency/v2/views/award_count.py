@@ -4,7 +4,6 @@ from typing import Any
 from rest_framework.request import Request
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -12,17 +11,20 @@ from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from django.conf import settings
-from django.db.models import Count
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from elasticsearch_dsl import Q
-from usaspending_api.common.helpers.fiscal_year_helpers import (get_fiscal_year_end_datetime, get_fiscal_year_start_datetime)
+from usaspending_api.common.helpers.fiscal_year_helpers import (
+    get_fiscal_year_end_datetime,
+    get_fiscal_year_start_datetime,
+)
+
 
 class AwardCount(AgencyBase):
     """
     Obtain the count of awards for a specific agency in a single fiscal year
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/award_count/count.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/awards/count.md"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -36,10 +38,7 @@ class AwardCount(AgencyBase):
         award_types_counted = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
         award_types_counted.update(self.query_elasticsearch_for_prime_awards(filters))
 
-        raw_response = {
-            "results": award_types_counted,
-            "messages": []
-        }
+        raw_response = {"results": award_types_counted, "messages": []}
 
         return Response(raw_response)
 
@@ -48,7 +47,6 @@ class AwardCount(AgencyBase):
             "agencies": [{"type": self.agency_type, "tier": "toptier", "toptier_code": self.toptier_code}],
             "time_period": [{"start_date": self._fy_start, "end_date": self._fy_end}],
         }
-
 
     def query_elasticsearch_for_prime_awards(self, filters) -> list:
         filter_options = {}
