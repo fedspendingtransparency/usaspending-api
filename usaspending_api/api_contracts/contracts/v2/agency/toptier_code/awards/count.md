@@ -14,6 +14,7 @@ Return the count of Awards under the Agency
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "number"
             }
+
     + Parameters
         + `toptier_code`: 086 (required, number)
             The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
@@ -35,17 +36,17 @@ Return the count of Awards under the Agency
 
     + Body
 
-        {
-            "results": {
-                "contracts": 2724,
-                "idvs": 45,
-                "grants": 0,
-                "direct_payments": 0,
-                "loans": 0,
-                "other": 0
-            },
-            "messages": []
-        }
+            {
+                "results": {
+                    "contracts": 2724,
+                    "idvs": 45,
+                    "grants": 0,
+                    "direct_payments": 0,
+                    "loans": 0,
+                    "other": 0
+                },
+                "messages": []
+            }
 
 # Data Structures
 
