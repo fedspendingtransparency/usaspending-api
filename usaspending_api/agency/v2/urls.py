@@ -37,6 +37,7 @@ urlpatterns = [
             [
                 path("", AgencyOverview.as_view()),
                 path("awards/", Awards.as_view()),
+                path("awards/count/", AwardCount.as_view()),
                 path("awards/new/count/", NewAwardCount.as_view()),
                 path("budget_function/", BudgetFunctionList.as_view()),
                 path("budget_function/count/", BudgetFunctionCount.as_view()),
@@ -54,7 +55,6 @@ urlpatterns = [
                 re_path(
                     "sub_components/(?P<bureau_slug>[a-z0-9]+(?:-[a-z0-9]*)*)/", BureauFederalAccountList.as_view()
                 ),
-                path("award_count/", AwardCount.as_view()),
             ]
         ),
     ),
