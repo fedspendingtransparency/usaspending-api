@@ -2,7 +2,7 @@ import logging
 
 from datetime import datetime, MAXYEAR, MINYEAR
 from dateutil.relativedelta import relativedelta
-from fiscalyear import FiscalDate, FiscalDateTime
+from fiscalyear import FiscalDate, FiscalDateTime, FiscalYear
 from typing import Optional, Tuple
 from django.db.models import Q, Max
 from usaspending_api.common.helpers.generic_helper import validate_date, min_and_max_from_date_ranges
@@ -11,6 +11,34 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 logger = logging.getLogger(__name__)
 
+
+def get_fiscal_year_end_datetime(fiscal_year: int) -> FiscalDateTime:
+    """Provides a fiscal year date time end date given a fiscal year
+
+    Args:
+        fiscal_year: The fiscal year in which you want to
+        obtain a end date for.
+
+    Returns:
+        FiscalDateTime: The datetime representing the end of the fiscal year
+        provided.
+    """
+    fiscal_year = FiscalYear(fiscal_year)
+    return fiscal_year.end
+
+def get_fiscal_year_start_datetime(fiscal_year: int) -> FiscalDateTime:
+    """Provides a fiscal year date time start date given a fiscal year
+
+    Args:
+        fiscal_year: The fiscal year in which you want to
+        obtain a start date for.
+
+    Returns:
+        FiscalDateTime: The datetime representing the start of the fiscal year
+        provided.
+    """
+    fiscal_year = FiscalYear(fiscal_year)
+    return fiscal_year.start
 
 def current_fiscal_date() -> FiscalDateTime:
     """FiscalDateTime.today() returns calendar date! Add 3 months to convert to fiscal"""

@@ -1,6 +1,6 @@
 from typing import Any
 
-from fiscalyear import FiscalYear
+
 from rest_framework.request import Request
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
@@ -15,6 +15,7 @@ from django.conf import settings
 from django.db.models import Count
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from elasticsearch_dsl import Q
+from usaspending_api.common.helpers.fiscal_year_helpers import (get_fiscal_year_end_datetime, get_fiscal_year_start_datetime)
 
 class AwardCount(AgencyBase):
     """
@@ -29,15 +30,10 @@ class AwardCount(AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        # TODO validate fiscal year
-        # TODO: move this to the fiscal year helper module
-        fiscal_year = FiscalYear(self.fiscal_year)
-        self._fy_end = fiscal_year.end.date()
-        self._fy_start = fiscal_year.start.date()
+        self._fy_end = get_fiscal_year_end_datetime(self.fiscal_year).date()
+        self._fy_start = get_fiscal_year_start_datetime(self.fiscal_year).date()
         filters = self._generate_filters()
-        # TODO: filter response by toptier agency code
-        award_types_counted = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0, "subcontracts": 0, "subgrants": 0}
-        # award_types_counted.update(self.handle_subawards(filters))
+        award_types_counted = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
         award_types_counted.update(self.query_elasticsearch_for_prime_awards(filters))
 
         raw_response = {
@@ -53,28 +49,6 @@ class AwardCount(AgencyBase):
             "time_period": [{"start_date": self._fy_start, "end_date": self._fy_end}],
         }
 
-    @staticmethod
-    def handle_subawards(filters: dict) -> dict:
-        """Turn the filters into the result dictionary when dealing with Sub-Awards
-
-        Note: Due to how the Django ORM joins to the awards table as an
-        INNER JOIN, it is necessary to explicitly enforce the aggregations
-        to only count Sub-Awards that are linked to a Prime Award.
-
-        Remove the filter and update if we can move away from this behavior.
-        """
-        queryset = (
-            subaward_filter(filters)
-            .filter(award_id__isnull=False)
-            .values("prime_award_group")
-            .annotate(count=Count("broker_subaward_id"))
-        )
-
-        results = {}
-        results["subgrants"] = sum([sub["count"] for sub in queryset if sub["prime_award_group"] == "grant"])
-        results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["prime_award_group"] == "procurement"])
-
-        return results
 
     def query_elasticsearch_for_prime_awards(self, filters) -> list:
         filter_options = {}
