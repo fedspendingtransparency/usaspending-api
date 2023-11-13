@@ -39,7 +39,7 @@ def get_fiscal_year_start_datetime(fiscal_year: int) -> FiscalDateTime:
         provided.
     """
     fiscal_year = FiscalYear(fiscal_year)
-    return fiscal_year.start()
+    return fiscal_year.start
 
 
 def current_fiscal_date() -> FiscalDateTime:

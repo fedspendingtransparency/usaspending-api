@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Overview of awards for Agency [/api/v2/agency/{toptier_code}/awards/count{?fiscal_year,agency_type}]
+# Overview of awards for Agency [/api/v2/agency/awards/count{?fiscal_year}]
 
 Return the count of Awards under the Agency
 
@@ -16,21 +16,14 @@ Return the count of Awards under the Agency
             }
 
     + Parameters
-        + `toptier_code`: 086 (required, number)
-            The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
+
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
-        + `agency_type` (optional, enum[string])
-            The agency type to pull the count for.
-            + Default: `awarding`
-            + Members
-                + `awarding`
-                + `funding`
 
 
 + Response 200 (application/json)
     + Attributes
-        + `results` (required, array[AwardTypeResult], fixed-type)
+        + `results` (required, array[AgencyAwardCountResult], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
@@ -50,6 +43,10 @@ Return the count of Awards under the Agency
 
 # Data Structures
 
+## AgencyResult (object)
++ `AwardTypeResult`
++ `Awarding Toptier Agency Name`
+
 ## AwardTypeResult (object)
 + `grants` (required, number)
 + `loans` (required, number)
@@ -57,3 +54,5 @@ Return the count of Awards under the Agency
 + `direct_payments` (required, number)
 + `other` (required, number)
 + `idvs` (required, number)
+
+

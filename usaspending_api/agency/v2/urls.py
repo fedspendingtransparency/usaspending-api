@@ -31,13 +31,13 @@ urlpatterns = [
         r"^treasury_account/(?P<tas>{})/program_activity/$".format(tas_with_slashes_pattern),
         TASProgramActivityList.as_view(),
     ),
+    path("awards/count/", AwardCount.as_view()),
     re_path(
         "(?P<toptier_code>[0-9]{3,4})/",
         include(
             [
                 path("", AgencyOverview.as_view()),
                 path("awards/", Awards.as_view()),
-                path("awards/count/", AwardCount.as_view()),
                 path("awards/new/count/", NewAwardCount.as_view()),
                 path("budget_function/", BudgetFunctionList.as_view()),
                 path("budget_function/count/", BudgetFunctionCount.as_view()),
