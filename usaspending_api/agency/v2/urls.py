@@ -1,5 +1,6 @@
 from django.urls import include, path, re_path
 from usaspending_api.agency.v2.views.agency_overview import AgencyOverview
+from usaspending_api.agency.v2.views.award_count import AwardCount
 from usaspending_api.agency.v2.views.awards import Awards
 from usaspending_api.agency.v2.views.budget_function_count import BudgetFunctionCount
 from usaspending_api.agency.v2.views.budget_function import BudgetFunctionList
@@ -53,6 +54,7 @@ urlpatterns = [
                 re_path(
                     "sub_components/(?P<bureau_slug>[a-z0-9]+(?:-[a-z0-9]*)*)/", BureauFederalAccountList.as_view()
                 ),
+                path("award_count/", AwardCount.as_view()),
             ]
         ),
     ),
