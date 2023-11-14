@@ -255,7 +255,7 @@ def test_spark_write_to_s3_delta_from_db(
 
 @mark.skipif(
     "data_broker" not in settings.DATABASES,
-    reason="'data_broker' database not configured in django settings.DATABASES."
+    reason="'data_broker' database not configured in django settings.DATABASES.",
 )
 @mark.django_db(transaction=True)
 def test_create_ref_temp_views(spark: SparkSession):
