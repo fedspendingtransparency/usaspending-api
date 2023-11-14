@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Funding [/api/v2/search/spending_by_transaction/]
+# Spending By Transaction [/api/v2/search/spending_by_transaction/]
 
 ## POST
 
