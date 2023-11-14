@@ -1868,6 +1868,7 @@ query_paths = {
                 ("original_loan_subsidy_cost", NORM_TO_TRANSACTION_SEARCH_COL_MAP["original_loan_subsidy_cost"]),
                 ("total_face_value_of_loan", "award__total_loan_value"),
                 ("total_loan_subsidy_cost", "award__total_subsidy_cost"),
+                ("generated_pragmatic_obligations", "generated_pragmatic_obligation"),
                 ("disaster_emergency_fund_codes_for_overall_award", None),  # Annotation is used to create this column
                 (
                     "outlayed_amount_from_COVID-19_supplementals_for_overall_award",

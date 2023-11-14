@@ -270,19 +270,20 @@ def django_db_setup(
             old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
-            test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("NAME")
-            if test_broker_db is None:
-                raise ValueError(
-                    f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} came back as None. Check config."
+            if "data_broker" in settings.DATABASES:
+                test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("NAME")
+                if test_broker_db is None:
+                    raise ValueError(
+                        f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} came back as None. Check config."
+                    )
+                if "test" not in test_broker_db:
+                    raise ValueError(
+                        f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} does not contain 'test' when expected to."
+                    )
+                CONFIG.BROKER_DB_NAME = test_broker_db
+                CONFIG.DATA_BROKER_DATABASE_URL = build_dsn_string(
+                    {**settings.DATABASES[settings.DATA_BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
                 )
-            if "test" not in test_broker_db:
-                raise ValueError(
-                    f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} does not contain 'test' when expected to."
-                )
-            CONFIG.BROKER_DB_NAME = test_broker_db
-            CONFIG.DATA_BROKER_DATABASE_URL = build_dsn_string(
-                {**settings.DATABASES[settings.DATA_BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
-            )
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down
     def reset_postgres_dsn():
