@@ -117,7 +117,7 @@ _**Executing individual data-loaders** to load in data is also possible, but req
 Some of the API endpoints reach into Elasticsearch for data.
 
 ```shell
-$ docker-compose --profile usaspending up usaspending-es`
+$ docker-compose --profile usaspending up usaspending-es
 ```
 ... will create and start a single-node Elasticsearch cluster as a docker container with data persisted to a docker volume.
 
@@ -163,8 +163,12 @@ Deployed production API endpoints and docs are found by following links here: `h
     docker build -t usaspending-backend .
     ```
 
-2. To run all USAspending tests in the docker services run
+2. Start the Spark containers for the Spark related tests
+    ```
+    docker-compose --profile spark up -d
+    ```
 
+3. To run all USAspending tests in the docker services run
     ```
     docker-compose run --rm -e DATA_BROKER_DATABASE_URL='' usaspending-test
     ```
