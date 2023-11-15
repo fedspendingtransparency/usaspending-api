@@ -13,6 +13,7 @@ from model_bakery import baker
 from pyspark.sql import SparkSession
 from pytest import mark
 
+from django.conf import settings
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
 
@@ -736,6 +737,10 @@ def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, p
     )
 
 
+@mark.skipif(
+    "data_broker" not in settings.DATABASES,
+    reason="'data_broker' database not configured in django settings.DATABASES.",
+)
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_summary_state_view(
     spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
