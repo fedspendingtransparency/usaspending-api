@@ -9,13 +9,12 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.references.models.toptier_agency import ToptierAgency
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from django.conf import settings
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from elasticsearch_dsl import Q
+from elasticsearch_dsl import Q, A
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     get_fiscal_year_end_datetime,
     get_fiscal_year_start_datetime,
@@ -129,6 +128,7 @@ class AwardCount(PaginationMixin, AgencyBase):
         s = AwardSearch().filter(filter_query).sort(*sorts)
 
         s.aggs.bucket("agencies", "terms", field="awarding_toptier_agency_name.keyword", size=999999)
+        s.aggs["agencies"].bucket("codes", "terms", field="awarding_toptier_agency_code.keyword", size=999999)
         s.aggs["agencies"].bucket(
             "types",
             "filters",
@@ -137,15 +137,18 @@ class AwardCount(PaginationMixin, AgencyBase):
         results = s.handle_execute()
 
         response = []
-        for agency in results.aggregations.agencies.buckets:
-            contracts = agency.types.buckets.contracts.doc_count
-            idvs = agency.types.buckets.idvs.doc_count
-            grants = agency.types.buckets.grants.doc_count
-            direct_payments = agency.types.buckets.direct_payments.doc_count
-            loans = agency.types.buckets.loans.doc_count
-            other = agency.types.buckets.other_financial_assistance.doc_count
+        for agency_bucket_element in results.aggregations.agencies.buckets:
+            for agency_code_bucket_element in agency_bucket_element.codes.buckets:
+                agency_code = agency_code_bucket_element.key
+            contracts = agency_bucket_element.types.buckets.contracts.doc_count
+            idvs = agency_bucket_element.types.buckets.idvs.doc_count
+            grants = agency_bucket_element.types.buckets.grants.doc_count
+            direct_payments = agency_bucket_element.types.buckets.direct_payments.doc_count
+            loans = agency_bucket_element.types.buckets.loans.doc_count
+            other = agency_bucket_element.types.buckets.other_financial_assistance.doc_count
             agency_response = {
-                "awarding_toptier_agency_name": agency.key,
+                "awarding_toptier_agency_name": agency_bucket_element.key,
+                "awarding_toptier_agency_code": agency_code,
                 "contracts": contracts,
                 "direct_payments": direct_payments,
                 "grants": grants,
