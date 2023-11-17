@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Overview of awards for Agency [/api/v2/agency/awards/count{?fiscal_year}]
+# Count of awards for Agencies [/api/v2/agency/awards/count{?fiscal_year,group}]
 
-Return the count of Awards under the Agency
+Return the count of Awards under Agencies
 
 ## GET
 
@@ -16,13 +16,34 @@ Return the count of Awards under the Agency
             }
 
     + Parameters
-
+        + `group`: (optional, enum[GroupType])
+            The agencies to return award counts for. Defaults to "all".
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
-
+        + `order` (optional, enum[string])
+            Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
+            + Default: `desc`
+            + Members
+                + `desc`
+                + `asc`
+        + `sort` (optional, enum[string])
+            Optional parameter indicating what value results should be sorted by.
+            + Default: `obligated_amount`
+            + Members
+                + `name`
+                + `obligated_amount`
+                + `gross_outlay_amount`
+        + `page` (optional, number)
+            The page number that is currently returned.
+            + Default: 1
+        + `limit` (optional, number)
+            How many results are returned
+            + Default: 10
 
 + Response 200 (application/json)
     + Attributes
+        + `page_metadata` (required, PageMetadata, fixed-type)
+            Information used for pagination of results.
         + `results` (required, array[AgencyResult], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -30,18 +51,37 @@ Return the count of Awards under the Agency
     + Body
 
             {
-                "results": {
+                "page_metadata": {
+                    "limit": 1,
+                    "page": 1,
+                    "next": 2,
+                    "previous": null,
+                    "hasNext": false,
+                    "hasPrevious": false,
+                    "count": 10
+                },
+                "results": [
+                    {
+                    "awarding_toptier_agency_name": "Department of Defense",
+                    "awarding_toptier_agency_code": "079",
                     "contracts": 2724,
                     "idvs": 45,
                     "grants": 0,
                     "direct_payments": 0,
                     "loans": 0,
                     "other": 0
-                },
+                    }
+                ],
                 "messages": []
             }
 
 # Data Structures
+
+## GroupType (object)
++ `cfo` (optional, string)
+    Only return award counts for CFO designated agencies
++ `all` (optional, string)
+    Return award counts for all awarding toptier agencies.
 
 ## AgencyResult (object)
 + `award_types` (required, AwardTypes, fixed-type)
@@ -56,4 +96,12 @@ Return the count of Awards under the Agency
 + `other` (required, number)
 + `idvs` (required, number)
 
+## PageMetadata (object)
++ `limit` (required, number)
++ `page` (required, number)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
++ `hasNext` (required, boolean)
++ `hasPrevious` (required, boolean)
++ `total` (required, number)
 

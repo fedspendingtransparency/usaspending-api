@@ -29,7 +29,7 @@ class GroupEnum(Enum):
 
 class AwardCount(PaginationMixin, AgencyBase):
     """
-    Obtain the count of awards for a specific agency in a single fiscal year.
+    Obtain a count of Awards types for agencies in a single fiscal year.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/awards/count.md"
