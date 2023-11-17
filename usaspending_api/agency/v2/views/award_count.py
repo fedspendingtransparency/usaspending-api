@@ -108,7 +108,7 @@ class AwardCount(PaginationMixin, AgencyBase):
         filter_options["time_period_obj"] = new_awards_only_decorator
         filters.update({"time_period": [{"start_date": self._fy_start, "end_date": self._fy_end}]})
         if self.group == GroupEnum.CFO.value:
-                filters.update({"agencies": [{"type": "awarding", "tier": "toptier", "name": awarding_toptier_agency_name} for awarding_toptier_agency_name in self._toptier_cfo_agency_names]})
+            filters.update({"agencies": [{"type": "awarding", "tier": "toptier", "name": awarding_toptier_agency_name} for awarding_toptier_agency_name in self._toptier_cfo_agency_names]})
         agency_award_count_results = self._get_award_counts_response(filters, filter_options)
         return agency_award_count_results
 
