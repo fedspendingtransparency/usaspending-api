@@ -88,7 +88,7 @@ class AwardCount(PaginationMixin, AgencyBase):
         self._fy_start = get_fiscal_year_start_datetime(self.fiscal_year).date()
         results = self.query_elasticsearch_for_prime_awards({})
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
-        results = results[self.pagination.lower_limit : self.pagination.upper_limit],
+        results = (results[self.pagination.lower_limit : self.pagination.upper_limit],)
         return Response(
             {
                 "results": results[: self.pagination.limit],
@@ -108,7 +108,14 @@ class AwardCount(PaginationMixin, AgencyBase):
         filter_options["time_period_obj"] = new_awards_only_decorator
         filters.update({"time_period": [{"start_date": self._fy_start, "end_date": self._fy_end}]})
         if self.group == GroupEnum.CFO.value:
-            filters.update({"agencies": [{"type": "awarding", "tier": "toptier", "name": awarding_toptier_agency_name} for awarding_toptier_agency_name in self._toptier_cfo_agency_names]})
+            filters.update(
+                {
+                    "agencies": [
+                        {"type": "awarding", "tier": "toptier", "name": awarding_toptier_agency_name}
+                        for awarding_toptier_agency_name in self._toptier_cfo_agency_names
+                    ]
+                }
+            )
         agency_award_count_results = self._get_award_counts_response(filters, filter_options)
         return agency_award_count_results
 

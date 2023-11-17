@@ -16,8 +16,13 @@ Return the count of Awards under Agencies
             }
 
     + Parameters
-        + `group`: (optional, enum[GroupType])
+        + `group`: (optional, enum[string])
             The agencies to return award counts for. Defaults to "all".
+          + Members
+            +  `cfo`
+                Only return award counts for CFO designated agencies
+            + `all`
+                Return award counts for all awarding toptier agencies.
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
         + `order` (optional, enum[string])
@@ -76,12 +81,6 @@ Return the count of Awards under Agencies
             }
 
 # Data Structures
-
-## GroupType (object)
-+ `cfo` (optional, string)
-    Only return award counts for CFO designated agencies
-+ `all` (optional, string)
-    Return award counts for all awarding toptier agencies.
 
 ## AgencyResult (object)
 + `award_types` (required, AwardTypes, fixed-type)
