@@ -14,7 +14,7 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from django.conf import settings
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from elasticsearch_dsl import Q, A
+from elasticsearch_dsl import Q
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     get_fiscal_year_end_datetime,
     get_fiscal_year_start_datetime,
@@ -132,7 +132,7 @@ class AwardCount(PaginationMixin, AgencyBase):
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **filter_options)
         record_num = (self.pagination.page - 1) * self.pagination.limit
         sorts = [{self.default_sort_column: self.pagination.sort_order}]
-        s = AwardSearch().filter(filter_query).sort(*sorts)
+        s = AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination.limit]
 
         s.aggs.bucket("agencies", "terms", field="awarding_toptier_agency_name.keyword", size=999999)
         s.aggs["agencies"].bucket("codes", "terms", field="awarding_toptier_agency_code.keyword", size=999999)
