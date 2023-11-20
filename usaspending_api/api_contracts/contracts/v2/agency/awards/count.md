@@ -19,7 +19,7 @@ Return the count of Awards under Agencies
         + `group`: (optional, enum[string])
             The agencies to return award counts for. Defaults to "all".
             + Members
-                +  `cfo`
+                + `cfo`
                     Only return award counts for CFO designated agencies
                 + `all`
                     Return award counts for all awarding toptier agencies.
@@ -104,4 +104,3 @@ Return the count of Awards under Agencies
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
-
