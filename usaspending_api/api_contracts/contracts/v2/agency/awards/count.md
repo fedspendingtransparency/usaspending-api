@@ -16,8 +16,7 @@ Return the count of Awards under Agencies
             }
 
     + Parameters
-        + `group`: (optional, enum[string])
-            The agencies to return award counts for. Defaults to "all".
+        + `group`: (optional, enum[string], fixed-type)
             + Members
                 + `cfo`
                     Only return award counts for CFO designated agencies
