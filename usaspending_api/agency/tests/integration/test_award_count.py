@@ -52,7 +52,7 @@ def award_data(db):
         latest_transaction_id=10,
         awarding_agency_id=ag1.id,
         awarding_toptier_agency_code=ta1.toptier_code,
-        awarding_toptier_agency_name='Department of Defense',
+        awarding_toptier_agency_name='Department',
         funding_agency_id=ag2.id,
         funding_toptier_agency_code=ta2.toptier_code,
     )
@@ -66,7 +66,7 @@ def award_data(db):
         latest_transaction_id=20,
         awarding_agency_id=ag1.id,
         awarding_toptier_agency_code=ta1.toptier_code,
-        awarding_toptier_agency_name='Department of Defense',
+        awarding_toptier_agency_name='Department',
         funding_agency_id=ag2.id,
         funding_toptier_agency_code=ta2.toptier_code,
     )
@@ -80,7 +80,7 @@ def award_data(db):
         latest_transaction_id=30,
         awarding_agency_id=ag1.id,
         awarding_toptier_agency_code=ta1.toptier_code,
-        awarding_toptier_agency_name='Department of Defense',
+        awarding_toptier_agency_name='Department',
         funding_agency_id=ag2.id,
         funding_toptier_agency_code=ta2.toptier_code,
     )
@@ -94,7 +94,7 @@ def award_data(db):
         latest_transaction_id=40,
         awarding_agency_id=ag1.id,
         awarding_toptier_agency_code=ta1.toptier_code,
-        awarding_toptier_agency_name='Department of Defense',
+        awarding_toptier_agency_name='Department',
         funding_agency_id=ag2.id,
         funding_toptier_agency_code=ta2.toptier_code,
     )
@@ -108,7 +108,7 @@ def award_data(db):
         latest_transaction_id=50,
         awarding_agency_id=ag1.id,
         awarding_toptier_agency_code=ta1.toptier_code,
-        awarding_toptier_agency_name='Department of Defense',
+        awarding_toptier_agency_name='Department',
         funding_agency_id=ag2.id,
         funding_toptier_agency_code=ta2.toptier_code,
     )
@@ -122,7 +122,7 @@ def award_data(db):
         latest_transaction_id=60,
         awarding_agency_id=ag3.id,
         awarding_toptier_agency_code=ta3.toptier_code,
-        awarding_toptier_agency_name='Department of Agriculture',
+        awarding_toptier_agency_name='Department of Commerce',
         funding_agency_id=ag2.id,
         funding_toptier_agency_code=ta2.toptier_code,
     )
@@ -151,7 +151,6 @@ def test_award_count_specific_year(client, monkeypatch, award_data, helpers, ela
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.get(url.format(filters="?fiscal_year=2019"))
-    print(resp.data)
     results = resp.data['results']
     assert resp.status_code == status.HTTP_200_OK
     assert len(results) == 1
@@ -162,3 +161,11 @@ def test_award_count_specific_year(client, monkeypatch, award_data, helpers, ela
     assert len(results) == 1
 
 
+@pytest.mark.django_db
+def test_award_count_cfo_agencies_only(client, monkeypatch, award_data, helpers, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = client.get(url.format(filters="?group=cfo"))
+    results = resp.data['results']
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(results) == 1
