@@ -2165,7 +2165,7 @@ query_paths = {
                 ("subaward_recipient_cd_current", None),  # Annotation is used to create this column
                 ("subawardee_foreign_postal_code", "sub_legal_entity_foreign_posta"),
                 ("subawardee_business_types", "sub_business_types"),
-                ("subaward_primary_place_of_performance_address_line_1", "place_of_perform_street"),
+                (None, "place_of_perform_street"),
                 ("subaward_primary_place_of_performance_city_name", "sub_place_of_perform_city_name"),
                 (
                     "subaward_primary_place_of_performance_state_code",
@@ -2328,7 +2328,7 @@ query_paths = {
                 ("subaward_recipient_cd_current", None),  # Annotation is used to create this column
                 ("subawardee_foreign_postal_code", "sub_legal_entity_foreign_posta"),
                 ("subawardee_business_types", "sub_business_types"),
-                ("subaward_primary_place_of_performance_address_line_1", "place_of_perform_street"),
+                (None, "place_of_perform_street"),
                 ("subaward_primary_place_of_performance_city_name", "sub_place_of_perform_city_name"),
                 (
                     "subaward_primary_place_of_performance_state_code",
