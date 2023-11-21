@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Count of awards for Agencies [/api/v2/agency/awards/count{?fiscal_year,group}]
 
-Return the count of Awards under Agencies
+Returns the count of Awards grouped by Award Type under Agencies
 
 ## GET
 

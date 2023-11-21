@@ -164,6 +164,7 @@ def test_award_count_specific_year(client, monkeypatch, award_data, helpers, ela
 @pytest.mark.django_db
 def test_award_count_cfo_agencies_only(client, monkeypatch, award_data, helpers, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    helpers.mock_current_fiscal_year(monkeypatch)
 
     resp = client.get(url.format(filters="?group=cfo"))
     results = resp.data["results"]
