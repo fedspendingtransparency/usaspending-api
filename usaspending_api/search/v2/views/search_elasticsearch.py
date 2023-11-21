@@ -37,7 +37,6 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-
         models = [
             {
                 "name": "fields",
@@ -65,8 +64,15 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                 )
             )
 
-        if validated_payload["sort"] not in validated_payload["fields"]:
-            raise InvalidParameterException("Sort value not found in fields: {}".format(validated_payload["sort"]))
+        payload_sort_key = validated_payload["sort"]
+        if payload_sort_key not in validated_payload["fields"]:
+            raise InvalidParameterException("Sort value not found in fields: {}".format(payload_sort_key))
+
+        permitted_sort_values = TRANSACTIONS_LOOKUP
+        if payload_sort_key not in TRANSACTIONS_LOOKUP:
+            raise InvalidParameterException(
+                f"Sort value is not currently supported: {payload_sort_key}. Allowed values are: [{', '.join(permitted_sort_values.keys())}]"
+            )
 
         if "filters" in validated_payload and "no intersection" in validated_payload["filters"]["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
@@ -83,7 +89,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                     },
                 }
             )
-        sorts = {TRANSACTIONS_LOOKUP[validated_payload["sort"]]: validated_payload["order"]}
+        sorts = {TRANSACTIONS_LOOKUP[payload_sort_key]: validated_payload["order"]}
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
         upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
         validated_payload["filters"]["keyword_search"] = [
@@ -168,7 +174,6 @@ class SpendingByTransactionCountVisualizaitonViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-
         models = [
             {
                 "name": "keywords",
