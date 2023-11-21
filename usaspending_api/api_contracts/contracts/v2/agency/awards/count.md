@@ -16,13 +16,12 @@ Returns the count of Awards grouped by Award Type under Agencies
             }
 
     + Parameters
-        + `group`: (optional, enum[string], fixed-type)
+        + `group` (optional, enum[string])
+            Use `cfo` to get results where CFO designated agencies are returned. Otherwise use `all`.
+            + Default: `all`
             + Members
                 + `cfo`
-                    Only return award counts for CFO designated agencies
                 + `all`
-                    Return award counts for all awarding toptier agencies.
-            + Default: `all`
         + `fiscal_year` (optional, number)
             The desired appropriations fiscal year. Defaults to the current FY
         + `order` (optional, enum[string])
