@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# IDV Funding [/api/v2/search/spending_by_transaction_count/]
+# Spending By Transaction Count [/api/v2/search/spending_by_transaction_count/]
 
 ## POST
 
