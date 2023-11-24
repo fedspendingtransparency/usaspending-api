@@ -111,9 +111,24 @@ class TestWithMultipleDatabases(TestCase):
         baker.make("search.TransactionSearch", transaction_id=-999)
         baker.make("search.TransactionSearch", transaction_id=-1999)
 
+        # Test loading submission with File C to D Linkage
         call_command("load_submission", "-9999")
 
         expected_results = {"award_ids": [-1999, -999]}
+        actual_results = {
+            "award_ids": sorted(
+                list(
+                    FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+                )
+            )
+        }
+
+        assert expected_results == actual_results
+
+        # Call with Skipping C to D Linkage
+        call_command("load_submission", "-9999", "--force-reload", "--skip-c-to-d-linkage")
+
+        expected_results = {"award_ids": []}
         actual_results = {
             "award_ids": sorted(
                 list(
@@ -132,9 +147,22 @@ class TestWithMultipleDatabases(TestCase):
         baker.make("search.AwardSearch", award_id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
         baker.make("search.TransactionSearch", transaction_id=-997)
 
+        # Test loading submission with File C to D Linkage
         call_command("load_submission", "-9999")
 
         expected_results = {"award_ids": [-997]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
+
+        assert expected_results == actual_results
+
+        # Call with Skipping C to D Linkage
+        call_command("load_submission", "-9999", "--force-reload", "--skip-c-to-d-linkage")
+
+        expected_results = {"award_ids": []}
         actual_results = {
             "award_ids": list(
                 FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
@@ -151,9 +179,22 @@ class TestWithMultipleDatabases(TestCase):
         baker.make("search.AwardSearch", award_id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
         baker.make("search.TransactionSearch", transaction_id=-997)
 
+        # Test loading submission with File C to D Linkage
         call_command("load_submission", "-9999")
 
         expected_results = {"award_ids": [-997]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
+
+        assert expected_results == actual_results
+
+        # Call with Skipping C to D Linkage
+        call_command("load_submission", "-9999", "--force-reload", "--skip-c-to-d-linkage")
+
+        expected_results = {"award_ids": []}
         actual_results = {
             "award_ids": list(
                 FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
@@ -176,9 +217,22 @@ class TestWithMultipleDatabases(TestCase):
         )
         baker.make("search.TransactionSearch", transaction_id=-997)
 
+        # Test loading submission with File C to D Linkage
         call_command("load_submission", "-9999")
 
         expected_results = {"award_ids": [-997, -997]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
+
+        assert expected_results == actual_results
+
+        # Call with Skipping C to D Linkage
+        call_command("load_submission", "-9999", "--force-reload", "--skip-c-to-d-linkage")
+
+        expected_results = {"award_ids": []}
         actual_results = {
             "award_ids": list(
                 FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
@@ -201,9 +255,22 @@ class TestWithMultipleDatabases(TestCase):
         )
         baker.make("search.TransactionSearch", transaction_id=-998)
 
+        # Test loading submission with File C to D Linkage
         call_command("load_submission", "-9999")
 
         expected_results = {"award_ids": [-998]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
+
+        assert expected_results == actual_results
+
+        # Call with Skipping C to D Linkage
+        call_command("load_submission", "-9999", "--force-reload", "--skip-c-to-d-linkage")
+
+        expected_results = {"award_ids": []}
         actual_results = {
             "award_ids": list(
                 FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
@@ -226,9 +293,22 @@ class TestWithMultipleDatabases(TestCase):
         )
         baker.make("search.TransactionSearch", transaction_id=-1234)
 
+        # Test loading submission with File C to D Linkage
         call_command("load_submission", "-9999")
 
         expected_results = {"award_ids": [-1001]}
+        actual_results = {
+            "award_ids": list(
+                FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)
+            )
+        }
+
+        assert expected_results == actual_results
+
+        # Call with Skiping C to D Linkage
+        call_command("load_submission", "-9999", "--force-reload", "--skip-c-to-d-linkage")
+
+        expected_results = {"award_ids": []}
         actual_results = {
             "award_ids": list(
                 FinancialAccountsByAwards.objects.filter(award_id__isnull=False).values_list("award_id", flat=True)

@@ -56,6 +56,17 @@ class Command(load_base.Command):
             ),
         )
         parser.add_argument(
+            "--skip-c-to-d-linkage",
+            action="store_true",
+            help=(
+                "This flag skips the step to perform File C to D Linkages, which updates the "
+                "`award_id` field on File C records. File C to D linkages also take place in "
+                "subsequent Databricks steps in the pipeline and only takes place in this "
+                "command for earlier data consistency. It can safely be skipped in the case of "
+                "long running submissions.",
+            ),
+        )
+        parser.add_argument(
             "--file-c-chunk-size",
             type=int,
             default=self.file_c_chunk_size,
@@ -72,6 +83,7 @@ class Command(load_base.Command):
         self.force_reload = options["force_reload"]
         self.file_c_chunk_size = options["file_c_chunk_size"]
         self.skip_final_of_fy_calculation = options["skip_final_of_fy_calculation"]
+        self.skip_c_to_d_linkage = options["skip_c_to_d_linkage"]
         self.db_cursor = db_cursor
 
         logger.info(f"Starting processing for submission {self.submission_id}...")
@@ -137,7 +149,7 @@ class Command(load_base.Command):
         )
         logger.info("Loading File C data")
         start_time = datetime.now()
-        load_file_c(submission_attributes, self.db_cursor, published_award_financial)
+        load_file_c(submission_attributes, self.db_cursor, published_award_financial, self.skip_c_to_d_linkage)
         logger.info(f"Finished loading File C data, took {datetime.now() - start_time}")
 
         if self.skip_final_of_fy_calculation:
