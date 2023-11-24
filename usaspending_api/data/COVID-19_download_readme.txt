@@ -2,7 +2,7 @@
 
 This ZIP file was generated from the COVID-19 Profile page on USAspending.gov, located at https://www.usaspending.gov/disaster/covid-19.
 
-Data Element Definitions: A searchable Data Dictionary that defines every data element in the included files can be found here: https://www.usaspending.gov/download_center/data_dictionary. We have also included a copy in this download for convenience. The dictionary is updated periodically as the data model is improved or download headers change.
+Data Element Definitions: A searchable Data Dictionary that defines every data element in the included files can be found here: https://files.usaspending.gov/docs/Data_Dictionary_Crosswalk.xlsx. We have also included a copy in this download for convenience. The dictionary is updated periodically as the data model is improved or download headers change.
 
 Split Files: The # in all filenames defaults to 1; if the number of rows in a given file is large enough to warrant breaking it into multiple files, then additional files will be present and appended with 2, 3, etc. instead.
 
@@ -63,4 +63,4 @@ The data in this file is primarily sourced from that reported by prime grant rec
 
 File: Data_Dictionary_Crosswalk.xlsx
 
-This file contains the data dictionary covering all elements available for download from USAspending.gov. You can find an online and up-to-date version of the data dictionary here: https://www.usaspending.gov/download_center/data_dictionary
+This file contains the data dictionary covering all elements available for download from USAspending.gov. You can find an online and up-to-date version of the data dictionary here: https://files.usaspending.gov/docs/Data_Dictionary_Crosswalk.xlsx
