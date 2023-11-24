@@ -14,7 +14,6 @@ Returns the count of Awards grouped by Award Type under Agencies
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "number"
             }
-
     + Parameters
         + `group` (optional, enum[string])
             Use `cfo` to get results where CFO designated agencies are returned. Otherwise use `all`.
