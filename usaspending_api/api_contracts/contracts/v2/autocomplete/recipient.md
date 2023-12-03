@@ -30,10 +30,26 @@ This route sends a request to the backend to retrieve recipients matching the sp
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[RecipientMatch], fixed-type)
+    + Body
+
+            {
+                "results": [
+                    {
+                        "recipient_name": "ABC Holdings Inc.",
+                        "recipient_levels": ["P", "R"],
+                        "uei": "ABCDEF12345"
+                    },
+                    {
+                        "recipient_name": "XYZ Holdings",
+                        "recipient_levels": ["C"],
+                        "uei": "ASDFGH67890"
+                    }
+                ]
+            }
 
 # Data Structures
 
 ## RecipientMatch (object)
 + `recipient_name` (required, string)
-+ `recipient_level` (required, array[string])
++ `recipient_levels` (required, array[string])
 + `uei` (optional, string)
