@@ -143,7 +143,7 @@ class SpendingByGeographyViewSet(DisasterBase):
         # When the geo layer is state, the final grain of the response is county, state.
         alt_agg_keys = {
             "recipient_location_state_agg_key": "recipient_location_county_fips",
-            "pop_state_agg_key": "pop_county_fips"
+            "pop_state_agg_key": "pop_county_fips",
         }
         if self.agg_key in alt_agg_keys:
             unique_terms_agg_key = alt_agg_keys[self.agg_key]
