@@ -134,8 +134,19 @@ class SpendingByGeographyViewSet(DisasterBase):
         # Create the initial search using filters
         search = AwardSearch().filter(filter_query)
 
+        unique_terms_agg_key = self.agg_key
+        # These agg keys define fields in the index that should be used instead
+        # of the actual agg key to determine the number of unique (terms) buckets
+        # within the actual agg_key. If you don't see the field in this dictionary
+        # then use the actual agg key.
+        alt_agg_keys = {
+            "recipient_location_county_agg_key": "recipient_location_county_fips",
+            "pop_county_agg_key": "pop_county_fips"
+        }
+        if self.agg_key in alt_agg_keys:
+            unique_terms_agg_key = alt_agg_keys[self.agg_key]
         # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
-        bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.agg_key}.hash")
+        bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{unique_terms_agg_key}.hash")
 
         if bucket_count == 0:
             return None
