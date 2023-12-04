@@ -10,6 +10,8 @@ AWARD_SEARCH_COLUMNS = {
     "category": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "derived_type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "derived_type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False}, 
     "is_fpds": {"delta": "boolean", "postgres": "boolean", "gold": True},
     "generated_unique_award_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "display_award_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -169,6 +171,14 @@ award_search_load_sql_string = rf"""
   awards.category,
   awards.type,
   awards.type_description,
+  CASE
+    WHEN awards.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') THEN '-1'
+    ELSE awards.type
+  END AS derived_type,
+  CASE
+    WHEN awards.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') THEN 'NOT SPECIFIED'
+    ELSE awards.type_description
+  END AS derived_type_description,
   awards.is_fpds,
   awards.generated_unique_award_id,
   CASE
