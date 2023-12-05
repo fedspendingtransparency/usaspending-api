@@ -1,5 +1,6 @@
 from django.urls import include, path, re_path
 from usaspending_api.agency.v2.views.agency_overview import AgencyOverview
+from usaspending_api.agency.v2.views.award_count import AwardCount
 from usaspending_api.agency.v2.views.awards import Awards
 from usaspending_api.agency.v2.views.budget_function_count import BudgetFunctionCount
 from usaspending_api.agency.v2.views.budget_function import BudgetFunctionList
@@ -30,6 +31,7 @@ urlpatterns = [
         r"^treasury_account/(?P<tas>{})/program_activity/$".format(tas_with_slashes_pattern),
         TASProgramActivityList.as_view(),
     ),
+    path("awards/count/", AwardCount.as_view()),
     re_path(
         "(?P<toptier_code>[0-9]{3,4})/",
         include(
