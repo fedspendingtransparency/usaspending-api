@@ -141,12 +141,13 @@ class SpendingByGeographyViewSet(DisasterBase):
         # then use the actual agg key.
         # It's important to identify the number of unique terms by the grain of the results retured.
         # When the geo layer is state, the final grain of the response is county, state.
-        alt_agg_keys = {
-            "recipient_location_state_agg_key": "recipient_location_county_fips",
-            "pop_state_agg_key": "pop_county_fips",
+        alt_sub_agg_keys = {
+            "recipient_location_county_agg_key": "recipient_location_county_fips",
+            "pop_county_agg_key": "pop_county_fips",
         }
-        if self.agg_key in alt_agg_keys:
-            unique_terms_agg_key = alt_agg_keys[self.agg_key]
+        # We are using sub agg key here because agg key is the same when geo layer is county or state
+        if self.sub_agg_key in alt_sub_agg_keys:
+            unique_terms_agg_key = alt_sub_agg_keys[self.sub_agg_key]
         # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
         bucket_count = get_number_of_unique_terms_for_awards(filter_query, unique_terms_agg_key)
 
