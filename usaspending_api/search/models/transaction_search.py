@@ -70,6 +70,8 @@ class TransactionSearch(models.Model):
     is_fpds = models.BooleanField(blank=False, null=False)
     type = models.TextField(null=True)
     type_description = models.TextField(null=True)
+    derived_type = models.TextField(null=True)
+    derived_type_description = models.TextField(null=True)
     action_type = models.TextField(null=True)
     action_type_description = models.TextField(null=True)
     award_category = models.TextField(null=True)
