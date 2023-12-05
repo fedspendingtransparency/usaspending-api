@@ -139,6 +139,14 @@
           }
         }
       },
+      "derived_type_description": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
       "award_category": {
         "type": "keyword"
       },
@@ -438,6 +446,10 @@
         }
       },
       "type": {
+        "type": "keyword",
+        "null_value": "NULL"
+      },
+      "derived_type": {
         "type": "keyword",
         "null_value": "NULL"
       },
