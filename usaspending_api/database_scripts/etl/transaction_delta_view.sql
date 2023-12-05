@@ -36,6 +36,8 @@ SELECT
   "ordering_period_end_date",
   "type",
   "type_description",
+  "derived_type",
+  "derived_type_description",
   "award_category",
   "transaction_description",
   "award_amount",
