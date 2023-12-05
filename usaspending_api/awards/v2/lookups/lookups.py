@@ -107,6 +107,8 @@ award_type_mapping = {
     "B": "Purchase Order",
     "C": "Delivery Order",
     "D": "Definitive Contract",
+    # -1 is a derived type that we added as a "catch-all" for any invalid `type` values
+    "-1": "Not Specified",
     # While these types exist, they should not be included when returning all award types
     # 'E': 'Unknown Type',
     # 'F': 'Cooperative Agreement',
@@ -128,7 +130,7 @@ idv_type_mapping = {
 grant_type_mapping = {"02": "Block Grant", "03": "Formula Grant", "04": "Project Grant", "05": "Cooperative Agreement"}
 direct_payment_type_mapping = {"06": "Direct Payment for Specified Use", "10": "Direct Payment with Unrestricted Use"}
 loan_type_mapping = {"07": "Direct Loan", "08": "Guaranteed/Insured Loan"}
-# -1 is a derived type that we added as a "catch-all" for any `type` that is submitted that is not a valid value
+# -1 is a derived type that we added as a "catch-all" for any invalid `type` values
 other_type_mapping = {"09": "Insurance", "11": "Other Financial Assistance", "-1": "Not Specified"}
 assistance_type_mapping = {
     **grant_type_mapping,
