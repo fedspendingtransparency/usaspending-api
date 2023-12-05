@@ -11,7 +11,7 @@ AWARD_SEARCH_COLUMNS = {
     "type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "derived_type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "derived_type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False}, 
+    "derived_type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "is_fpds": {"delta": "boolean", "postgres": "boolean", "gold": True},
     "generated_unique_award_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "display_award_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
