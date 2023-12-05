@@ -128,7 +128,8 @@ idv_type_mapping = {
 grant_type_mapping = {"02": "Block Grant", "03": "Formula Grant", "04": "Project Grant", "05": "Cooperative Agreement"}
 direct_payment_type_mapping = {"06": "Direct Payment for Specified Use", "10": "Direct Payment with Unrestricted Use"}
 loan_type_mapping = {"07": "Direct Loan", "08": "Guaranteed/Insured Loan"}
-other_type_mapping = {"09": "Insurance", "11": "Other Financial Assistance"}
+# -1 is a derived type that we added as a "catch-all" for any `type` that is submitted that is not a valid value
+other_type_mapping = {"09": "Insurance", "11": "Other Financial Assistance", "-1": "Not Specified"}
 assistance_type_mapping = {
     **grant_type_mapping,
     **direct_payment_type_mapping,
