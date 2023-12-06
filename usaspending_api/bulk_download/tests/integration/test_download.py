@@ -342,7 +342,7 @@ def test_download_awards_with_all_award_types(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 9
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 638
 
 
 @pytest.mark.django_db(transaction=True)
@@ -411,7 +411,7 @@ def test_download_awards_with_all_sub_awards(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1
-    assert resp.json()["total_columns"] == 233
+    assert resp.json()["total_columns"] == 231
 
 
 @pytest.mark.django_db(transaction=True)
@@ -434,7 +434,7 @@ def test_download_awards_with_some_sub_awards(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == 114
+    assert resp.json()["total_columns"] == 113
 
 
 @pytest.mark.django_db(transaction=True)
@@ -460,7 +460,7 @@ def test_download_awards_with_domestic_scope(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 4
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 638
 
     # Place of Performance Scope
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -483,7 +483,7 @@ def test_download_awards_with_domestic_scope(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 4
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 638
 
 
 @pytest.mark.django_db(transaction=True)
@@ -509,7 +509,7 @@ def test_download_awards_with_foreign_scope(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 5
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 638
 
     # Place of Performance Scope
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -532,7 +532,7 @@ def test_download_awards_with_foreign_scope(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 5
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 638
 
 
 @pytest.mark.django_db(transaction=True)
