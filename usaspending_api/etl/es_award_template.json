@@ -46,18 +46,18 @@
       "category": {
         "type": "text"
       },
+      "type_raw": {
+        "type": "keyword",
+        "null_value": "NULL"
+      },
+      "type_description_raw": {
+        "type": "keyword"
+      },
       "type": {
         "type": "keyword",
         "null_value": "NULL"
       },
       "type_description": {
-        "type": "keyword"
-      },
-      "derived_type": {
-        "type": "keyword",
-        "null_value": "NULL"
-      },
-      "derived_type_description": {
         "type": "keyword"
       },
       "piid": {

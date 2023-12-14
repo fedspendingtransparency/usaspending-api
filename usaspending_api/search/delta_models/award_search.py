@@ -8,6 +8,8 @@ AWARD_SEARCH_COLUMNS = {
     "latest_transaction_search_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "earliest_transaction_search_id": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
     "category": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "type_raw": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "type_description_raw": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "is_fpds": {"delta": "boolean", "postgres": "boolean", "gold": True},
@@ -139,8 +141,6 @@ AWARD_SEARCH_COLUMNS = {
     "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
-    "derived_type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "derived_type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
@@ -169,8 +169,24 @@ award_search_load_sql_string = rf"""
   awards.latest_transaction_id AS latest_transaction_search_id,
   awards.earliest_transaction_id AS earliest_transaction_search_id,
   awards.category,
-  awards.type,
-  awards.type_description,
+  awards.type AS type_raw,
+  awards.type_description AS type_description_raw,
+  CASE
+    WHEN (
+        awards.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D')
+        OR
+        awards.type IS NULL
+    ) THEN '-1'
+    ELSE awards.type
+  END AS type,
+  CASE
+    WHEN (
+        awards.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D')
+        OR
+        awards.type IS NULL
+    ) THEN 'NOT SPECIFIED'
+    ELSE awards.type_description
+  END AS type_description,
   awards.is_fpds,
   awards.generated_unique_award_id,
   CASE
@@ -365,15 +381,7 @@ award_search_load_sql_string = rf"""
   IIJA_DEFC.iija_spending_by_defc,
   IIJA_DEFC.total_iija_outlay,
   IIJA_DEFC.total_iija_obligation,
-  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays,
-  CASE
-    WHEN awards.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') THEN '-1'
-    ELSE awards.type
-  END AS derived_type,
-  CASE
-    WHEN awards.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') THEN 'NOT SPECIFIED'
-    ELSE awards.type_description
-  END AS derived_type_description,
+  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays
 FROM
   int.awards
 INNER JOIN

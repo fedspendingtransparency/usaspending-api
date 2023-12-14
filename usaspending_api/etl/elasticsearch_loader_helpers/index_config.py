@@ -37,7 +37,7 @@ def create_award_type_aliases(client, config):
         if config["verbose"]:
             msg = f"Putting alias '{alias_name}' on {config['index_name']} with award codes {award_type_codes}"
             logger.info(format_log(msg, action="ES Alias"))
-        alias_body = {"filter": {"terms": {"derived_type": award_type_codes}}}
+        alias_body = {"filter": {"terms": {"type": award_type_codes}}}
         put_alias(client, config["index_name"], alias_name, alias_body)
 
 

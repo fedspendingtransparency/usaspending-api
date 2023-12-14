@@ -2,14 +2,14 @@
 Look ups for elasticsearch fields to be displayed for the front end
 """
 from copy import deepcopy
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 
+from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 
 TRANSACTIONS_LOOKUP = {
     "Recipient Name": "recipient_name.keyword",
     "Action Date": "action_date",
     "Transaction Amount": "federal_action_obligation",
-    "Award Type": "derived_type_description.keyword",
+    "Award Type": "type_description.keyword",
     "Awarding Agency": "awarding_toptier_agency_name.keyword",
     "Awarding Sub Agency": "awarding_subtier_agency_name.keyword",
     "Funding Agency": "funding_toptier_agency_name",
@@ -61,7 +61,7 @@ contracts_mapping = {
         "End Date": "period_of_performance_current_end_date",
         "Award Amount": "total_obligation",
         "Total Outlays": "total_outlays",
-        "Contract Award Type": "derived_type_description",
+        "Contract Award Type": "type_description",
     },
 }
 idv_mapping = {
@@ -70,7 +70,7 @@ idv_mapping = {
         "Start Date": "period_of_performance_start_date",
         "Award Amount": "total_obligation",
         "Total Outlays": "total_outlays",
-        "Contract Award Type": "derived_type_description",
+        "Contract Award Type": "type_description",
         "Last Date to Order": "ordering_period_end_date",
     },
 }
@@ -91,7 +91,7 @@ non_loan_assist_mapping = {
         "End Date": "period_of_performance_current_end_date",
         "Award Amount": "total_obligation",
         "Total Outlays": "total_outlays",
-        "Award Type": "derived_type_description",
+        "Award Type": "type_description",
         "SAI Number": "sai_number.keyword",
         "CFDA Number": "cfda_number.keyword",
     },
@@ -112,5 +112,5 @@ KEYWORD_DATATYPE_FIELDS = [
     "recipient_name.keyword",
     "awarding_toptier_agency_name.keyword",
     "awarding_subtier_agency_name.keyword",
-    "derived_type_description.keyword",
+    "type_description.keyword",
 ]

@@ -139,7 +139,7 @@
           }
         }
       },
-      "derived_type_description": {
+      "type_description_raw": {
         "type": "text",
         "fields": {
           "keyword": {
@@ -449,7 +449,7 @@
         "type": "keyword",
         "null_value": "NULL"
       },
-      "derived_type": {
+      "type_raw": {
         "type": "keyword",
         "null_value": "NULL"
       },

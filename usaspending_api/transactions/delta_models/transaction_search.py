@@ -51,10 +51,10 @@ TRANSACTION_SEARCH_COLUMNS = {
     # Typing
     # while is_fpds is gold, it also can't be NULL
     "is_fpds": {"delta": "BOOLEAN NOT NULL", "postgres": "BOOLEAN NOT NULL", "gold": False},
+    "type_raw": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "type_description_raw": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "derived_type": {"delta": "STRING", "postgres": "TEXT", "gold": False},
-    "derived_type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "action_type": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "action_type_description": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "award_category": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -458,16 +458,20 @@ transaction_search_load_sql_string = rf"""
 
         -- Typing
         transaction_normalized.is_fpds,
-        transaction_normalized.type,
-        transaction_normalized.type_description,
+        transaction_normalized.type AS type_raw,
+        transaction_normalized.type_description AS type_description_raw,
         CASE
-            WHEN transaction_normalized.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') THEN '-1'
+            WHEN (
+                transaction_normalized.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') OR transaction_normalized.type is NULL
+            ) THEN '-1'
             ELSE transaction_normalized.type
-        END AS derived_type,
+        END AS type,
         CASE
-            WHEN transaction_normalized.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') THEN 'NOT SPECIFIED'
+            WHEN (
+                transaction_normalized.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') OR transaction_normalized.type is NULL
+            ) THEN 'NOT SPECIFIED'
             ELSE transaction_normalized.type_description
-        END AS derived_type_description,
+        END AS type_description,
         transaction_normalized.action_type,
         transaction_normalized.action_type_description,
         awards.category AS award_category,

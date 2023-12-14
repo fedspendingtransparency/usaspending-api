@@ -1,8 +1,8 @@
 from django.contrib.postgres.fields import ArrayField
+from django.db import models
+from django.db.models import F, Q
 from django.db.models.functions import Upper
 from django_cte import CTEManager
-from django.db import models
-from django.db.models import Q, F
 
 from usaspending_api.awards.models import Award
 
@@ -13,8 +13,8 @@ class AwardSearch(models.Model):
     category = models.TextField(null=True, db_index=True)
     type = models.TextField(null=True, db_index=True)
     type_description = models.TextField(null=True)
-    derived_type = models.TextField(null=True, db_index=True)
-    derived_type_description = models.TextField(null=True)
+    type_raw = models.TextField(null=True, db_index=True)
+    type_description_raw = models.TextField(null=True)
     generated_unique_award_id = models.TextField(null=False, unique=True)
     display_award_id = models.TextField(null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)

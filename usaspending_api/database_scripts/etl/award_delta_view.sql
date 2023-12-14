@@ -7,8 +7,10 @@ SELECT
   "display_award_id",
 
   "category",
+  "type_raw",
+  "type_description_raw",
   "type",
-  "type_description",
+  "type_description"
   "piid",
   "fain",
   "uri",
@@ -109,9 +111,7 @@ SELECT
 
   "iija_spending_by_defc"::JSON,
   "total_iija_outlay",
-  "total_iija_obligation",
-  "derived_type",
-  "derived_type_description"
+  "total_iija_obligation"
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';
