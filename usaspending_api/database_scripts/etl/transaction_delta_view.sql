@@ -37,7 +37,7 @@ SELECT
   "type_raw",
   "type_description_raw",
   "type",
-  "description",
+  "type_description",
   "award_category",
   "transaction_description",
   "award_amount",
