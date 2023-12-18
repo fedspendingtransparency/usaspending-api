@@ -176,7 +176,7 @@ services:
         hard: -1
     volumes:
       - type: volume
-        source: local_opensearch_data
+        source: local_es_data
         target: /usr/share/opensearch/data
     ports:
       - 9200:9200
