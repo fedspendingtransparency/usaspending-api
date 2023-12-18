@@ -10,7 +10,7 @@ SELECT
   "type_raw",
   "type_description_raw",
   "type",
-  "type_description"
+  "type_description",
   "piid",
   "fain",
   "uri",
