@@ -442,6 +442,7 @@ def _build_usas_data_for_spark():
         latest_transaction_id=2,
         earliest_transaction_search_id=1,
         latest_transaction_search_id=2,
+        type_raw="07",
         type="07",
         category="loans",
         generated_unique_award_id="UNIQUE AWARD KEY B",
@@ -537,6 +538,7 @@ def _build_usas_data_for_spark():
     cont_award = baker.make(
         "search.AwardSearch",
         award_id=2,
+        type_raw="A",
         type="A",
         category="contract",
         generated_unique_award_id="UNIQUE AWARD KEY C",
@@ -623,6 +625,7 @@ def _build_usas_data_for_spark():
         latest_transaction_id=434,
         earliest_transaction_search_id=434,
         latest_transaction_search_id=434,
+        type_raw="A",
         type="A",
         category="contract",
         period_of_performance_start_date="2020-01-01",
@@ -681,6 +684,15 @@ def _build_usas_data_for_spark():
         covid_spending_by_defc=None,
         recipient_location_county_fips=None,
         pop_county_fips=None,
+    )
+    # Award with an invalid type that should be changed to -1
+    baker.make(
+        "search.AwardSearch",
+        award_id=4,
+        generated_unique_award_id="UNIQUE AWARD INVALID TYPE",
+        is_fpds=False,
+        type_raw="123",
+        type="-1",
     )
 
     baker.make(
