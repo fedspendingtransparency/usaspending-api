@@ -1,3 +1,5 @@
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+
 AWARD_SEARCH_COLUMNS = {
     "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
@@ -146,6 +148,8 @@ AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.ite
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
 AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["gold"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 
+ALL_AWARD_TYPES = list(award_type_mapping.keys())
+
 award_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
@@ -173,7 +177,7 @@ award_search_load_sql_string = rf"""
   awards.type_description AS type_description_raw,
   CASE
     WHEN (
-        awards.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D')
+        awards.type NOT IN ({", ".join([f"'{award_type}'" for award_type in ALL_AWARD_TYPES])})
         OR
         awards.type IS NULL
     ) THEN '-1'
@@ -181,7 +185,7 @@ award_search_load_sql_string = rf"""
   END AS type,
   CASE
     WHEN (
-        awards.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D')
+        awards.type NOT IN ({", ".join([f"'{award_type}'" for award_type in ALL_AWARD_TYPES])})
         OR
         awards.type IS NULL
     ) THEN 'NOT SPECIFIED'

@@ -1,3 +1,5 @@
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+
 # The order of these fields should always match the order of the
 # SELECT statement in "transaction_search_load_sql_string"
 TRANSACTION_SEARCH_COLUMNS = {
@@ -393,6 +395,8 @@ TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_S
 TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 
+ALL_AWARD_TYPES = list(award_type_mapping.keys())
+
 transaction_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS.items()])}
@@ -462,13 +466,13 @@ transaction_search_load_sql_string = rf"""
         transaction_normalized.type_description AS type_description_raw,
         CASE
             WHEN (
-                transaction_normalized.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') OR transaction_normalized.type is NULL
+                transaction_normalized.type NOT IN ({", ".join([f"'{award_type}'" for award_type in ALL_AWARD_TYPES])}) OR transaction_normalized.type is NULL
             ) THEN '-1'
             ELSE transaction_normalized.type
         END AS type,
         CASE
             WHEN (
-                transaction_normalized.type NOT IN ('IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'A', 'B', 'C', 'D') OR transaction_normalized.type is NULL
+                transaction_normalized.type NOT IN ({", ".join([f"'{award_type}'" for award_type in ALL_AWARD_TYPES])}) OR transaction_normalized.type is NULL
             ) THEN 'NOT SPECIFIED'
             ELSE transaction_normalized.type_description
         END AS type_description,
