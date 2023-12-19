@@ -179,3 +179,4 @@ List of filterable award types
 - IDV_C
 - IDV_D
 - IDV_E
+- -1

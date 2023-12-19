@@ -45,7 +45,8 @@ This endpoint returns a JSON object representing the grouping of award types.
                 },
                 "other_financial_assistance": {
                     "09": "Insurance",
-                    "11": "Other Financial Assistance"
+                    "11": "Other Financial Assistance",
+                    "-1": "Not Specified"
                 },
                 "direct_payments": {
                     "06": "Direct Payment for Specified Use",
