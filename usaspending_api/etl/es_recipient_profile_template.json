@@ -1,0 +1,63 @@
+{
+  "settings": {
+    "index.mapping.ignore_malformed": true,
+    "index.max_result_window": null,
+    "index.refresh_interval": -1,
+    "index": {
+      "number_of_shards": 5,
+      "number_of_replicas": 0,
+      "sort.field": [
+        "federal_action_obligation.keyword",
+        "action_date"
+      ],
+      "sort.order": [
+        "desc",
+        "desc"
+      ],
+      "sort.missing": [
+        "_last",
+        "_last"
+      ]
+    },
+    "analysis": {
+      "analyzer": {
+        "stemmer_analyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "singular_stemmer"
+          ]
+        }
+      },
+      "filter": {
+        "singular_stemmer": {
+          "type": "stemmer",
+          "name": "minimal_english"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "recipient_name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "uei": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "recipient_levels": {
+        "type": "keyword"
+      }
+    }
+  }
+}
