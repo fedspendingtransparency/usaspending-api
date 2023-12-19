@@ -685,16 +685,6 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips=None,
         pop_county_fips=None,
     )
-    # Award with an invalid type that should be changed to -1
-    baker.make(
-        "search.AwardSearch",
-        award_id=4,
-        generated_unique_award_id="UNIQUE AWARD INVALID TYPE",
-        is_fpds=False,
-        type_raw="123",
-        type="-1",
-        subaward_count=0,
-    )
 
     baker.make(
         "search.TransactionSearch",
