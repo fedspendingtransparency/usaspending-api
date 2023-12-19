@@ -693,6 +693,7 @@ def _build_usas_data_for_spark():
         is_fpds=False,
         type_raw="123",
         type="-1",
+        subaward_count=0,
     )
 
     baker.make(
