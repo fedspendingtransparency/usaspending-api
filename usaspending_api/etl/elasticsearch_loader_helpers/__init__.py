@@ -1,5 +1,5 @@
-from django.apps import apps
 from django import setup as django_setup
+from django.apps import apps
 
 # Ensure Django is setup before importing/using ths module. Why? -->
 # This module is used by other application functions, which are pickled and transported to worker machines
@@ -12,38 +12,39 @@ if not apps.ready:  # an indicator of whether Django has already been setup in t
     django_setup()
 
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
-    delete_docs_by_unique_key,
     delete_awards,
+    delete_docs_by_unique_key,
     delete_transactions,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
     count_of_records_to_process,
     count_of_records_to_process_in_delta,
     extract_records,
-    obtain_extract_partition_sql,
     obtain_extract_all_partitions_sql,
+    obtain_extract_partition_sql,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
+    check_new_index_name_is_ok,
     create_award_type_aliases,
     create_index,
     set_final_index_config,
     swap_aliases,
     toggle_refresh_off,
     toggle_refresh_on,
-    check_new_index_name_is_ok,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.load_data import load_data
 from usaspending_api.etl.elasticsearch_loader_helpers.transform_data import (
     transform_award_data,
     transform_covid19_faba_data,
+    transform_recipient_profile_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
+    TaskSpec,
     chunks,
     execute_sql_statement,
     format_log,
     gen_random_name,
-    TaskSpec,
 )
 
 __all__ = [
@@ -70,5 +71,6 @@ __all__ = [
     "check_new_index_name_is_ok",
     "transform_award_data",
     "transform_covid19_faba_data",
+    "transform_recipient_profile_data",
     "transform_transaction_data",
 ]
