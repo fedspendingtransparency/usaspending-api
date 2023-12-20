@@ -1,23 +1,24 @@
 import logging
-
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
+from time import perf_counter
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from time import perf_counter
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import drop_etl_view
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
+    check_new_index_name_is_ok,
     execute_sql_statement,
     format_log,
     toggle_refresh_off,
     transform_award_data,
     transform_covid19_faba_data,
+    transform_recipient_profile_data,
     transform_transaction_data,
-    check_new_index_name_is_ok,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
     AbstractElasticsearchIndexerController,
@@ -25,8 +26,9 @@ from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_AWARDS_UNIQUE_KEY_FIELD,
-    ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
     ES_COVID19_FABA_UNIQUE_KEY_FIELD,
+    ES_RECIPIENT_UNIQUE_KEY_FIELD,
+    ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
 )
 
 logger = logging.getLogger("script")
@@ -75,7 +77,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             type=str,
             required=True,
             help="Select which data the ETL will process.",
-            choices=["transaction", "award", "covid19-faba"],
+            choices=["transaction", "award", "covid19-faba", "recipient"],
         )
         parser.add_argument(
             "--processes",
@@ -210,7 +212,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
             raise SystemExit(1)
     else:
         if config["index_name"] and es_client.indices.exists(config["index_name"]):
-            logger.error(f"Data load into existing index. Change index name or run an incremental load")
+            logger.error("Data load into existing index. Change index name or run an incremental load")
             raise SystemExit(1)
 
     if config["starting_date"] < config["initial_datetime"]:
@@ -221,7 +223,63 @@ def parse_cli_args(options: dict, es_client) -> dict:
 
 
 def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
-    """Set values based on env vars and when the script started"""
+    """
+    Define the configurations for creating and populating each Elasticsearch index.
+
+        Config options:
+            base_table: Database table used to populate the Elasticsearch index.
+
+            base_table_id: The `id` column of the base_table.
+
+            create_award_type_aliases:
+
+            data_transform_func: Python function to call to format/convert/aggregate/drop the database data before it's
+                pushed to the Elasticsearch index.
+
+            data_type:
+
+            execute_sql_func: Function that will execute the appropriate SQL to retrieve data from the database to
+                populate the Elasticsearch index.
+
+                Default value: execute_sql_statement
+
+            extra_null_partition:
+
+            field_for_es_id: Field that will be used as the `id` value in the Elasticsearch index.
+
+            initial_datetime: Earliest date to return results for.
+                Default value: settings.API_SEARCH_MIN_DATE  (10/01/2007)
+
+            max_query_size: The maximum number of Elasticsearch results that can be retrieved in a single request.
+                Note: Setting this too high will hurt Elasticsearch performance.
+                Note: This should be defined in settings.py
+
+                Default value: 50000
+
+            optional_predicate: Optional SQl clause to add to the `sql_view` SQL statement.
+
+            primary_key:
+
+            query_alias_prefix: String used as a prefix for the Elasticsearch aliases.
+                Note: This should be defined in settings.py
+
+            required_index_name: Name of the Elasticsearch index.
+                Note: This should be defined in settings.py
+
+            sql_view: Name of the SQL View that will be used to populate the Elasticsearch index.
+                Note: This should be defined in settings.py
+
+            stored_date_key: The `name` in the `external_data_type` table to use when referencing this Elasticsearch
+                index. This table, in combination with the `external_data_load_date` table, are used to keep track
+                of when data was last loaded into a destination (database table or Elasticsearch index).
+
+            unique_key_field: Name of the Elasticsearch field that will be unique across all records.
+
+            write_alias: Name to use for the Elasticsearch alias that wil be used to write data.
+                Note: This should be defined in settings.py
+    """
+
+    # Set values based on env vars and when the script started
     default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     if arg_parse_options["load_type"] == "award":
         config = {
@@ -275,7 +333,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": True,
             "field_for_es_id": "financial_account_distinct_award_key",
-            "initial_datetime": datetime.strptime(f"2020-04-01+0000", "%Y-%m-%d%z"),
+            "initial_datetime": datetime.strptime("2020-04-01+0000", "%Y-%m-%d%z"),
             "max_query_size": settings.ES_COVID19_FABA_MAX_RESULT_WINDOW,
             "optional_predicate": "",
             "primary_key": "award_id",
@@ -285,6 +343,27 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "stored_date_key": ...,
             "unique_key_field": ES_COVID19_FABA_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_COVID19_FABA_WRITE_ALIAS,
+        }
+    elif arg_parse_options["load_type"] == "recipient":
+        config = {
+            "base_table": "recipient_profile",
+            "base_table_id": "id",
+            "create_award_type_aliases": False,
+            "data_transform_func": transform_recipient_profile_data,
+            "data_type": "recipient",
+            "execute_sql_func": execute_sql_statement,
+            "extra_null_partition": False,
+            "field_for_es_id": "recipient_hash",
+            "initial_datetime": default_datetime,
+            "max_query_size": settings.ES_RECIPIENTS_MAX_RESULT_WINDOW,
+            "optional_predicate": "",
+            "primary_key": "id",
+            "query_alias_prefix": settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX,
+            "required_index_name": settings.ES_RECIPIENTS_NAME_SUFFIX,
+            "sql_view": settings.ES_RECIPIENTS_ETL_VIEW_NAME,
+            "stored_date_key": ...,
+            "unique_key_field": ES_RECIPIENT_UNIQUE_KEY_FIELD,
+            "write_alias": settings.ES_RECIPIENTS_WRITE_ALIAS,
         }
     else:
         raise RuntimeError(f"Configuration is not configured for --load-type={arg_parse_options['load_type']}")

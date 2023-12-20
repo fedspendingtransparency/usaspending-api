@@ -39,6 +39,9 @@
   },
   "mappings": {
     "properties": {
+      "recipient_hash": {
+        "type": "keyword"
+      },
       "recipient_name": {
         "type": "text",
         "fields": {
