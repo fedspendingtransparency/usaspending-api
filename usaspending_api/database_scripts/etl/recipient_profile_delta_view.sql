@@ -4,5 +4,8 @@ CREATE VIEW recipient_profile_delta_view AS
 SELECT
   "recipient_name",
   "uei",
-  "recipient_level",
+  ARRAY_AGG("recipient_level") AS "recipient_levels"
 FROM "recipient_profile"
+GROUP BY
+  "recipient_name",
+  "uei"
