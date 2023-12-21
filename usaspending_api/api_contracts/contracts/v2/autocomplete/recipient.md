@@ -37,12 +37,17 @@ This route sends a request to the backend to retrieve recipients matching the sp
                 "results": [
                     {
                         "recipient_name": "ABC Holdings Inc.",
-                        "recipient_levels": ["P", "R"],
+                        "recipient_level": "P",
+                        "uei": "ABCDEF12345"
+                    },
+                    {
+                        "recipient_name": "ABC Holdings Inc.",
+                        "recipient_level": "R",
                         "uei": "ABCDEF12345"
                     },
                     {
                         "recipient_name": "XYZ Holdings",
-                        "recipient_levels": ["C"],
+                        "recipient_level": "C",
                         "uei": "ASDFGH67890"
                     }
                 ]
@@ -52,5 +57,5 @@ This route sends a request to the backend to retrieve recipients matching the sp
 
 ## RecipientMatch (object)
 + `recipient_name` (required, string)
-+ `recipient_levels` (required, array[string])
++ `recipient_level` (required, string)
 + `uei` (optional, string)
