@@ -353,7 +353,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "data_type": "recipient",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,
-            "field_for_es_id": "recipient_hash",
+            "field_for_es_id": "id",
             "initial_datetime": default_datetime,
             "max_query_size": settings.ES_RECIPIENTS_MAX_RESULT_WINDOW,
             "optional_predicate": "",
