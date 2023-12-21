@@ -1822,6 +1822,10 @@ query_paths = {
                     "native_hawaiian_servicing_institution",
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["native_hawaiian_servicing"],
                 ),
+                (
+                    "initial_report_date",
+                    "initial_report_date"
+                ),
                 ("school_of_forestry", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["school_of_forestry"]),
                 ("veterinary_college", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["veterinary_college"]),
                 ("dot_certified_disadvantage", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["dot_certified_disadvantage"]),
