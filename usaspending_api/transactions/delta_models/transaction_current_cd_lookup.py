@@ -16,6 +16,20 @@ transaction_current_cd_lookup_create_sql_string = fr"""
 """
 
 transaction_current_cd_lookup_load_sql_string = fr"""
+    WITH cd_city_grouped_rownum AS (
+      SELECT
+        *,
+        ROW_NUMBER() OVER (PARTITION BY(city_name, state_abbreviation) ORDER BY city_name, state_abbreviation ASC) AS row_num
+      FROM global_temp.cd_city_grouped
+    ),
+    cd_city_grouped_distinct AS (
+        SELECT
+            city_name,
+            state_abbreviation,
+            congressional_district_no
+        FROM cd_city_grouped_rownum
+        WHERE row_num = 1
+    )
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS])}
@@ -97,12 +111,12 @@ transaction_current_cd_lookup_load_sql_string = fr"""
             AND rl_cd_zips_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
         )
     LEFT OUTER JOIN
-        global_temp.cd_city_grouped pop_cd_city_grouped ON (
+        cd_city_grouped_distinct pop_cd_city_grouped ON (
             pop_cd_city_grouped.city_name=UPPER(TRIM(TRAILING FROM COALESCE(transaction_fpds.place_of_perform_city_name, transaction_fabs.place_of_performance_city)))
             AND pop_cd_city_grouped.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
         )
     LEFT OUTER JOIN
-        global_temp.cd_city_grouped rl_cd_city_grouped ON (
+        cd_city_grouped_distinct rl_cd_city_grouped ON (
             rl_cd_city_grouped.city_name=UPPER(TRIM(TRAILING FROM COALESCE(transaction_fpds.legal_entity_city_name, transaction_fabs.legal_entity_city_name)))
             AND rl_cd_city_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
         )

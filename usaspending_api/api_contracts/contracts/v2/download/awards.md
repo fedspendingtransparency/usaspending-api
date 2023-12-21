@@ -109,7 +109,8 @@ This route sends a request to the backend to begin generating a zipfile of award
                             "IDV_B_C",
                             "IDV_C",
                             "IDV_D",
-                            "IDV_E"
+                            "IDV_E",
+                            "-1"
                         ],
                         "keywords": [
                             "Defense"
