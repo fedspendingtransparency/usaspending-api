@@ -137,10 +137,7 @@ def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[d
 
 
 def transform_recipient_profile_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
-    for record in records:
-        print(record)
-
-    return [{}]
+    return records
 
 
 def transform_data(
