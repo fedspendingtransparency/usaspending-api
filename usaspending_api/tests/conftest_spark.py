@@ -14,8 +14,11 @@ from pytest import fixture, mark
 
 from usaspending_api import settings
 from usaspending_api.common.etl.spark import create_ref_temp_views
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session, stop_spark_context
-from usaspending_api.common.helpers.spark_helpers import is_spark_context_stopped
+from usaspending_api.common.helpers.spark_helpers import (
+    configure_spark_session,
+    is_spark_context_stopped,
+    stop_spark_context,
+)
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.management.commands.create_delta_table import (
@@ -439,6 +442,7 @@ def _build_usas_data_for_spark():
         latest_transaction_id=2,
         earliest_transaction_search_id=1,
         latest_transaction_search_id=2,
+        type_raw="07",
         type="07",
         category="loans",
         generated_unique_award_id="UNIQUE AWARD KEY B",
@@ -534,6 +538,7 @@ def _build_usas_data_for_spark():
     cont_award = baker.make(
         "search.AwardSearch",
         award_id=2,
+        type_raw="A",
         type="A",
         category="contract",
         generated_unique_award_id="UNIQUE AWARD KEY C",
@@ -620,6 +625,7 @@ def _build_usas_data_for_spark():
         latest_transaction_id=434,
         earliest_transaction_search_id=434,
         latest_transaction_search_id=434,
+        type_raw="A",
         type="A",
         category="contract",
         period_of_performance_start_date="2020-01-01",
@@ -700,6 +706,7 @@ def _build_usas_data_for_spark():
         fain=asst_award.fain,
         uri=asst_award.uri,
         is_fpds=False,
+        type_raw="07",
         type="07",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
@@ -802,6 +809,7 @@ def _build_usas_data_for_spark():
         fain=asst_award.fain,
         uri=asst_award.uri,
         is_fpds=False,
+        type_raw="07",
         type="07",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
@@ -905,6 +913,7 @@ def _build_usas_data_for_spark():
         fain=cont_award.fain,
         uri=cont_award.uri,
         is_fpds=True,
+        type_raw="A",
         type="A",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
@@ -998,6 +1007,7 @@ def _build_usas_data_for_spark():
         fain=cont_award.fain,
         uri=cont_award.uri,
         is_fpds=True,
+        type_raw="A",
         type="A",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
@@ -1086,6 +1096,7 @@ def _build_usas_data_for_spark():
         piid=cont_award2.piid,
         fain=cont_award2.fain,
         uri=cont_award2.uri,
+        type_raw="A",
         type="A",
         awarding_agency_id=agency.id,
         funding_agency_id=agency.id,

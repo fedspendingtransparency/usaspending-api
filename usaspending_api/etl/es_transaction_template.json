@@ -139,6 +139,14 @@
           }
         }
       },
+      "type_description_raw": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
       "award_category": {
         "type": "keyword"
       },
@@ -438,6 +446,10 @@
         }
       },
       "type": {
+        "type": "keyword",
+        "null_value": "NULL"
+      },
+      "type_raw": {
         "type": "keyword",
         "null_value": "NULL"
       },
