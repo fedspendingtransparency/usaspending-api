@@ -1,8 +1,8 @@
 from django.contrib.postgres.fields import ArrayField
+from django.db import models
+from django.db.models import F, Q
 from django.db.models.functions import Upper
 from django_cte import CTEManager
-from django.db import models
-from django.db.models import Q, F
 
 from usaspending_api.awards.models import Award
 
@@ -11,6 +11,8 @@ class AwardSearch(models.Model):
     treasury_account_identifiers = ArrayField(models.IntegerField(), default=list, null=True)
     award = models.OneToOneField(Award, on_delete=models.DO_NOTHING, primary_key=True, related_name="%(class)s")
     category = models.TextField(null=True, db_index=True)
+    type_raw = models.TextField(null=True, db_index=True)
+    type_description_raw = models.TextField(null=True)
     type = models.TextField(null=True, db_index=True)
     type_description = models.TextField(null=True)
     generated_unique_award_id = models.TextField(null=False, unique=True)
