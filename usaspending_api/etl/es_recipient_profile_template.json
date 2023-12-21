@@ -21,30 +21,31 @@
     },
     "analysis": {
       "analyzer": {
-        "stemmer_analyzer": {
-          "tokenizer": "standard",
+        "contains_analyzer": {
+          "type": "custom",
+          "tokenizer": "ngram",
           "filter": [
-            "lowercase",
-            "singular_stemmer"
+            "uppercase"
           ]
-        }
-      },
-      "filter": {
-        "singular_stemmer": {
-          "type": "stemmer",
-          "name": "minimal_english"
         }
       }
     }
   },
   "mappings": {
     "properties": {
+      "id": {
+        "type": "integer"
+      },
       "recipient_hash": {
         "type": "keyword"
       },
       "recipient_name": {
         "type": "text",
         "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
           "keyword": {
             "type": "keyword"
           }
@@ -53,12 +54,16 @@
       "uei": {
         "type": "text",
         "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
           "keyword": {
             "type": "keyword"
           }
         }
       },
-      "recipient_levels": {
+      "recipient_level": {
         "type": "keyword"
       }
     }
