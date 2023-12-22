@@ -1,6 +1,8 @@
+from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -313,6 +315,9 @@ class Command(BaseCommand):
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
+        # Set start time to later be stored as new last load date
+        start_time = datetime.now(timezone.utc)
+
         self.spark = get_active_spark_session()
         spark_created_by_command = False
         if not self.spark:
@@ -336,6 +341,10 @@ class Command(BaseCommand):
         if table_spec.get("user_defined_functions"):
             for udf_args in table_spec["user_defined_functions"]:
                 self.spark.udf.register(**udf_args)
+        
+        # Resolve External Load Date if it exists. If a key exists but no date, use epoch to start fresh
+        last_load_date_key = table_spec.get("last_load_date_key")
+        self.last_load_date = get_last_load_date(last_load_date_key, default=datetime.utcfromtimestamp(0)) if last_load_date_key else None
 
         create_ref_temp_views(self.spark, create_broker_views=True)
 
@@ -350,6 +359,10 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
+        # Only update the last load date if the key existed in the TABLE_SPEC
+        if last_load_date_key:
+            update_last_load_date(last_load_date_key, start_time)
+
     def run_spark_sql(self, query):
         jdbc_conn_props = get_jdbc_connection_properties()
         self.spark.sql(
@@ -357,6 +370,7 @@ class Command(BaseCommand):
                 DESTINATION_DATABASE=self.destination_database,
                 DESTINATION_TABLE=self.destination_table_name,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                LAST_LOAD_DATE=self.last_load_date,
                 JDBC_DRIVER=jdbc_conn_props["driver"],
                 JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
                 JDBC_URL=get_broker_jdbc_url(),
