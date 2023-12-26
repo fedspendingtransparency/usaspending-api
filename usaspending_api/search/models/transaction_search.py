@@ -39,6 +39,7 @@ class TransactionSearch(models.Model):
     etl_update_date = models.DateTimeField(null=True)
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
+    initial_report_date = models.DateTimeField(null=True)
 
     # Agencies
     awarding_agency_code = models.TextField(null=True)
@@ -319,7 +320,6 @@ class TransactionSearch(models.Model):
     native_american_owned_busi = models.BooleanField(null=True)
     native_hawaiian_owned_busi = models.BooleanField(null=True)
     native_hawaiian_servicing = models.BooleanField(null=True)
-    initial_report_date = models.TextField(null=True)
     nonprofit_organization = models.BooleanField(null=True)
     number_of_actions = models.TextField(null=True)
     number_of_offers_received = models.TextField(null=True)

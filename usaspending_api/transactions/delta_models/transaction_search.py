@@ -803,7 +803,10 @@ transaction_search_load_sql_string = rf"""
         transaction_fpds.native_american_owned_busi,
         transaction_fpds.native_hawaiian_owned_busi,
         transaction_fpds.native_hawaiian_servicing,
-        COALESCE(transaction_fabs.created_at, transaction_fpds.initial_report_date) AS initial_report_date,
+        COALESCE(
+            CAST(transaction_fpds.initial_report_date AS TIMESTAMP),
+            transaction_fabs.created_at
+        ) AS initial_report_date
         transaction_fpds.nonprofit_organization,
         transaction_fpds.number_of_actions,
         transaction_fpds.number_of_offers_received,
