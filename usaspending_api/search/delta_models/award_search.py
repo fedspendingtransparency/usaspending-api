@@ -496,9 +496,9 @@ LEFT OUTER JOIN (
 LEFT OUTER JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
-        COLLECT_SET(
+        CAST(SORT_ARRAY(COLLECT_SET(
             TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS covid_spending_by_defc,
+        )) AS STRING) AS covid_spending_by_defc,
         sum(GROUPED_BY_DEFC.outlay) AS total_covid_outlay,
         sum(GROUPED_BY_DEFC.obligation) AS total_covid_obligation
     FROM (
@@ -535,9 +535,9 @@ LEFT OUTER JOIN (
 LEFT OUTER JOIN (
     SELECT
         GROUPED_BY_DEFC.award_id,
-        COLLECT_SET(
+        CAST(SORT_ARRAY(COLLECT_SET(
             TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS iija_spending_by_defc,
+        )) AS STRING) AS iija_spending_by_defc,
         sum(GROUPED_BY_DEFC.outlay) AS total_iija_outlay,
         sum(GROUPED_BY_DEFC.obligation) AS total_iija_obligation
     FROM (
@@ -596,7 +596,7 @@ LEFT JOIN (
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,
-    COLLECT_SET(
+    SORT_ARRAY(COLLECT_SET(
       DISTINCT CONCAT(
         'agency=', COALESCE(agency.toptier_code, ''),
         'faaid=', COALESCE(fa.agency_identifier, ''),
@@ -609,8 +609,8 @@ LEFT OUTER JOIN (
         'epoa=', COALESCE(taa.ending_period_of_availability, ''),
         'a=', COALESCE(taa.availability_type_code, '')
       )
-    ) AS tas_paths,
-    COLLECT_SET(
+    )) AS tas_paths,
+    SORT_ARRAY(COLLECT_SET(
       CONCAT(
         'aid=', COALESCE(taa.agency_id, ''),
         'main=', COALESCE(taa.main_account_code, ''),
@@ -620,14 +620,14 @@ LEFT OUTER JOIN (
         'epoa=', COALESCE(taa.ending_period_of_availability, ''),
         'a=', COALESCE(taa.availability_type_code, '')
       )
-    ) AS tas_components,
+    )) AS tas_components,
     -- "CASE" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
     CASE
         WHEN SIZE(COLLECT_SET(faba.disaster_emergency_fund_code)) > 0
             THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
         ELSE NULL
     END AS disaster_emergency_fund_codes,
-    COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers
+    SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) AS treasury_account_identifiers
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
