@@ -1,8 +1,6 @@
-from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -315,9 +313,6 @@ class Command(BaseCommand):
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
-        # Set start time to later be stored as new last load date
-        start_time = datetime.now(timezone.utc)
-
         self.spark = get_active_spark_session()
         spark_created_by_command = False
         if not self.spark:
@@ -354,10 +349,6 @@ class Command(BaseCommand):
 
         if spark_created_by_command:
             self.spark.stop()
-
-        # Only update the last load date if the key existed in the TABLE_SPEC
-        if last_load_date_key:
-            update_last_load_date(last_load_date_key, start_time)
 
     def run_spark_sql(self, query):
         jdbc_conn_props = get_jdbc_connection_properties()
