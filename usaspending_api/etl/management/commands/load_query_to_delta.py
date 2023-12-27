@@ -341,10 +341,6 @@ class Command(BaseCommand):
         if table_spec.get("user_defined_functions"):
             for udf_args in table_spec["user_defined_functions"]:
                 self.spark.udf.register(**udf_args)
-        
-        # Resolve External Load Date if it exists. If a key exists but no date, use epoch to start fresh
-        last_load_date_key = table_spec.get("last_load_date_key")
-        self.last_load_date = get_last_load_date(last_load_date_key, default=datetime.utcfromtimestamp(0)) if last_load_date_key else None
 
         create_ref_temp_views(self.spark, create_broker_views=True)
 
@@ -370,7 +366,6 @@ class Command(BaseCommand):
                 DESTINATION_DATABASE=self.destination_database,
                 DESTINATION_TABLE=self.destination_table_name,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
-                LAST_LOAD_DATE=self.last_load_date,
                 JDBC_DRIVER=jdbc_conn_props["driver"],
                 JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
                 JDBC_URL=get_broker_jdbc_url(),

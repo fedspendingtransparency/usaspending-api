@@ -150,20 +150,22 @@ AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["gold"] for k, v in AWARD_SEARCH_COLU
 
 ALL_AWARD_TYPES = list(award_type_mapping.keys())
 
+# Skip these columns when determining which columns have changed
+MERGE_COLUMNS_TO_SKIP = ["covid_spending_by_defc", "iija_spending_by_defc"]
+
 award_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
 """
 
-award_search_load_sql_string = rf"""
-    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
-        (
-            {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
-        )
-    SELECT
+award_search_load_sql_string = [
+rf"""
+CREATE OR REPLACE TEMPORARY VIEW temp_award_search_view AS (
+  SELECT
   TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
   awards.data_source AS data_source,
@@ -260,7 +262,7 @@ award_search_load_sql_string = rf"""
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
        ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
-    END)), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5') AS STRING) AS recipient_hash,
+    END)), '^([0-9a-f]{{8}})([0-9a-f]{{4}})([0-9a-f]{{4}})([0-9a-f]{{4}})([0-9a-f]{{12}})$', '\$1-\$2-\$3-\$4-\$5') AS STRING) AS recipient_hash,
   RECIPIENT_HASH_AND_LEVELS.recipient_levels,
   UPPER(COALESCE(recipient_lookup.legal_business_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   UPPER(COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) as raw_recipient_name,
@@ -403,7 +405,7 @@ LEFT OUTER JOIN
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
        ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
-    END)), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
+    END)), '^([0-9a-f]{{8}})([0-9a-f]{{4}})([0-9a-f]{{4}})([0-9a-f]{{4}})([0-9a-f]{{12}})$', '$1-$2-$3-$4-$5')
 LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
@@ -636,4 +638,26 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
+)
+""",
+f"""
+MERGE INTO rpt.award_search AS t
+USING (SELECT * FROM temp_award_search_view) AS s
+ON t.award_id = s.award_id
+WHEN MATCHED AND 
+  ({" OR ".join([f"s.{col} != t.{col}" for col in AWARD_SEARCH_POSTGRES_GOLD_COLUMNS if col not in MERGE_COLUMNS_TO_SKIP])})
+  THEN UPDATE SET *
+WHEN NOT MATCHED THEN INSERT *
+-- The following line can replace the second delete after upgrading to Databricks runtime 12.1
+-- https://docs.databricks.com/en/sql/language-manual/delta-merge-into.html
+-- WHEN NOT MATCHED BY SOURCE THEN DELETE
+""",
 """
+DELETE FROM rpt.award_search
+WHERE award_id IN (
+  SELECT t.award_id
+  FROM rpt.award_search AS t
+  LEFT ANTI JOIN int.awards AS s ON t.award_id = s.id
+);
+"""
+]
