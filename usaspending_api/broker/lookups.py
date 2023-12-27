@@ -27,8 +27,6 @@ EXTERNAL_DATA_TYPE = [
     LookupType(204, "awards", "Awards in Delta"),
     LookupType(205, "transaction_id_lookup", "Transaction IDs in Delta"),
     LookupType(206, "award_id_lookup", "Award IDs in Delta"),
-    # Delta Gold Table ETL
-    LookupType(210, "award_search", "Award Search table in Delta"),
 ]
 EXTERNAL_DATA_TYPE_DICT = {item.name: item.id for item in EXTERNAL_DATA_TYPE}
 EXTERNAL_DATA_TYPE_DICT_ID = {item.id: item.name for item in EXTERNAL_DATA_TYPE}
