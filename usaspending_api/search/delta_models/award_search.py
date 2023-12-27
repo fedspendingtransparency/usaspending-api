@@ -262,7 +262,7 @@ CREATE OR REPLACE TEMPORARY VIEW temp_award_search_view AS (
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
        ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
-    END)), '^([0-9a-f]{{8}})([0-9a-f]{{4}})([0-9a-f]{{4}})([0-9a-f]{{4}})([0-9a-f]{{12}})$', '\$1-\$2-\$3-\$4-\$5') AS STRING) AS recipient_hash,
+    END)), '^([0-9a-f]{{{{8}}}})([0-9a-f]{{{{4}}}})([0-9a-f]{{{{4}}}})([0-9a-f]{{{{4}}}})([0-9a-f]{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5') AS STRING) AS recipient_hash,
   RECIPIENT_HASH_AND_LEVELS.recipient_levels,
   UPPER(COALESCE(recipient_lookup.legal_business_name, transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) AS recipient_name,
   UPPER(COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal)) as raw_recipient_name,
@@ -405,7 +405,7 @@ LEFT OUTER JOIN
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
        WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
        ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
-    END)), '^([0-9a-f]{{8}})([0-9a-f]{{4}})([0-9a-f]{{4}})([0-9a-f]{{4}})([0-9a-f]{{12}})$', '$1-$2-$3-$4-$5')
+    END)), '^([0-9a-f]{{{{8}}}})([0-9a-f]{{{{4}}}})([0-9a-f]{{{{4}}}})([0-9a-f]{{{{4}}}})([0-9a-f]{{{{12}}}})$', '$1-$2-$3-$4-$5')
 LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
