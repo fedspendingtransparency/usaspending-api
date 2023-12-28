@@ -48,6 +48,13 @@ class Command(BaseCommand):
             help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
             "name",
         )
+        parser.add_argument(
+            "--enable-cdf",
+            action="store_true",
+            required=False,
+            help="Whether or not the table will be created with the Change Data Feed feature enabled. (Databricks "
+            "Specific)",
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -89,6 +96,7 @@ class Command(BaseCommand):
                 DESTINATION_DATABASE=destination_database,
                 SPARK_S3_BUCKET=spark_s3_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=options["enable_cdf"],
             )
         )
 

@@ -381,6 +381,7 @@ transaction_fpds_sql_string = rf"""
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = {{CHANGE_DATA_FEED}})
     """
 
 # Mapping from raw.detached_award_procurement to int.transaction_normalized columns, where a simple mapping exists

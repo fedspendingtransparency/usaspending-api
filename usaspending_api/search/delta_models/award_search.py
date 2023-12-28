@@ -156,13 +156,11 @@ award_search_create_sql_string = rf"""
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
-    TBLPROPERTIES (delta.enableChangeDataFeed = true)
+    TBLPROPERTIES (delta.enableChangeDataFeed = {{CHANGE_DATA_FEED}})
 """
 
-award_search_load_sql_string = [
-rf"""
-CREATE OR REPLACE TEMPORARY VIEW temp_award_search_view AS (
-  SELECT
+_base_load_sql_string = rf"""
+SELECT
   TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
   awards.data_source AS data_source,
@@ -635,26 +633,41 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
-)
-""",
-f"""
-MERGE INTO rpt.award_search AS t
-USING (SELECT * FROM temp_award_search_view) AS s
-ON t.award_id = s.award_id
-WHEN MATCHED AND 
-  ({" OR ".join([f"s.{col} != t.{col}" for col in AWARD_SEARCH_POSTGRES_GOLD_COLUMNS])})
-  THEN UPDATE SET *
-WHEN NOT MATCHED THEN INSERT *
--- The following line can replace the second delete after upgrading to Databricks runtime 12.1
--- https://docs.databricks.com/en/sql/language-manual/delta-merge-into.html
--- WHEN NOT MATCHED BY SOURCE THEN DELETE
-""",
 """
-DELETE FROM rpt.award_search
-WHERE award_id IN (
-  SELECT t.award_id
-  FROM rpt.award_search AS t
-  LEFT ANTI JOIN int.awards AS s ON t.award_id = s.id
-);
-"""
+
+award_search_incremental_load_sql_string = [
+    f"""
+    CREATE OR REPLACE TEMPORARY VIEW temp_award_search_view AS (
+        {_base_load_sql_string}
+    )
+    """
+    ,
+    f"""
+    MERGE INTO rpt.award_search AS t
+    USING (SELECT * FROM temp_award_search_view) AS s
+    ON t.award_id = s.award_id
+    WHEN MATCHED AND 
+      ({" OR ".join([f"s.{col} != t.{col}" for col in AWARD_SEARCH_POSTGRES_GOLD_COLUMNS])})
+      THEN UPDATE SET *
+    WHEN NOT MATCHED THEN INSERT *
+    -- The following line can replace the second delete after upgrading to Databricks runtime 12.1
+    -- https://docs.databricks.com/en/sql/language-manual/delta-merge-into.html
+    -- WHEN NOT MATCHED BY SOURCE THEN DELETE
+    """,
+    """
+    DELETE FROM rpt.award_search
+    WHERE award_id IN (
+      SELECT t.award_id
+      FROM rpt.award_search AS t
+      LEFT ANTI JOIN int.awards AS s ON t.award_id = s.id
+    );
+    """
 ]
+
+award_search_load_sql_string = f"""
+INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+    (
+        {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
+    )
+    {_base_load_sql_string}
+"""
