@@ -354,7 +354,6 @@ class Command(BaseCommand):
 
         create_ref_temp_views(self.spark, create_broker_views=True)
 
-        load_query = table_spec["source_query"]
         if isinstance(load_query, list):
             for index, query in enumerate(load_query):
                 logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
