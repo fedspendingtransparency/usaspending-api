@@ -150,9 +150,6 @@ AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["gold"] for k, v in AWARD_SEARCH_COLU
 
 ALL_AWARD_TYPES = list(award_type_mapping.keys())
 
-# Skip these columns when determining which columns have changed
-MERGE_COLUMNS_TO_SKIP = ["covid_spending_by_defc", "iija_spending_by_defc"]
-
 award_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
@@ -645,7 +642,7 @@ MERGE INTO rpt.award_search AS t
 USING (SELECT * FROM temp_award_search_view) AS s
 ON t.award_id = s.award_id
 WHEN MATCHED AND 
-  ({" OR ".join([f"s.{col} != t.{col}" for col in AWARD_SEARCH_POSTGRES_GOLD_COLUMNS if col not in MERGE_COLUMNS_TO_SKIP])})
+  ({" OR ".join([f"s.{col} != t.{col}" for col in AWARD_SEARCH_POSTGRES_GOLD_COLUMNS])})
   THEN UPDATE SET *
 WHEN NOT MATCHED THEN INSERT *
 -- The following line can replace the second delete after upgrading to Databricks runtime 12.1
