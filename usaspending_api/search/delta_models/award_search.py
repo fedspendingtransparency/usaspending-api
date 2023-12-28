@@ -410,7 +410,7 @@ LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
     (SELECT
-      award_id, COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title))) as cfdas
+      award_id, SORT_ARRAY(COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title)))) as cfdas
       FROM
          int.transaction_fabs tf
        INNER JOIN int.transaction_normalized tn ON
