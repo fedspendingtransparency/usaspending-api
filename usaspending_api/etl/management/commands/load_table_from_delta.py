@@ -231,7 +231,7 @@ class Command(BaseCommand):
             self._write_to_postgres(spark, df, qualified_temp_table, table_spec, options, delta_column_names, postgres_seq_last_value=postgres_seq_last_value)
 
             self.logger.info(
-                f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {qualified_temp_table} using {options['strategy']} " f"strategy"
+                f"LOAD (FINISH): Loaded data from Delta table {self.delta_table} to {qualified_temp_table} using {options['strategy']} " f"strategy"
             )
 
             if self.qualified_postgres_table:
