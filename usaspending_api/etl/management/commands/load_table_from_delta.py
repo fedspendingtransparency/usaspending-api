@@ -169,8 +169,10 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         delta_table = options["delta_table"]
-        incremental = options["incremental"]
         table_spec = TABLE_SPEC[delta_table]
+
+        # TODO - Check whether changes have reached threshold ignoring incremental
+        incremental = options["incremental"]
 
         # Delta side
         self.destination_database = options["alt_delta_db"] or table_spec["destination_database"]
@@ -205,7 +207,6 @@ class Command(BaseCommand):
 
             # TODO Call _write_to_postgres()
 
-            # TODO Update latest versions
 
         else:
             temp_table_suffix = "temp"
@@ -241,6 +242,8 @@ class Command(BaseCommand):
                     f" please run the following additional command to complete the process: "
                     f" 'copy_table_metadata --source-table {self.qualified_postgres_table} --dest-table {qualified_temp_table}'."
                 )
+
+        # TODO Update latest versions
 
         # We're done with spark at this point
         if spark_created_by_command:
@@ -377,7 +380,7 @@ class Command(BaseCommand):
         return last_value
     
     def _write_to_postgres(self, spark, df, qualified_temp_table, table_spec, options, column_names, postgres_seq_last_value=None):
-        # Write to Postgres
+        # TODO - Write Pydoc for this Method
         use_jdbc_inserts = options["jdbc_inserts"]
         strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
         self.logger.info(
