@@ -191,7 +191,7 @@ class Command(BaseCommand):
         temp_table_suffix = "temp"
 
        # TODO - Call Prepare Destination Table (multiple times for different scenarios) 
-        qualified_temp_table = self._prepare_destination_table(self, temp_schema, temp_table_suffix, table_spec)
+        qualified_temp_table = self._prepare_destination_table(temp_schema, temp_table_suffix, table_spec)
 
         # Read from Delta
         df = spark.table(delta_table)
