@@ -32,6 +32,7 @@ from usaspending_api.search.delta_models.award_search import (
     award_search_incremental_load_sql_string,
     award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
+    award_search_incremental_delete_temp_schema,
 )
 from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
@@ -77,6 +78,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "incremental_delete_temp_schema": award_search_incremental_delete_temp_schema,
     },
     "recipient_lookup": {
         "model": RecipientLookup,

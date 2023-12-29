@@ -103,12 +103,12 @@ class Command(BaseCommand):
             "--reset-sequence",
             action="store_true",
             help="In the case of a Postgres sequence for the provided 'delta-table' the sequence will be reset to 1. "
-            "If the job fails for some unexpected reason then the sequence will be reset to the previous value.",
+            "If the job fails for some unexpected reason then the sequence will be reset to the previous value. "
+            "Should not be used with the incremental flag.",
         )
         parser.add_argument(
             "--incremental",
             action="store_true",
-            required=False,
             help="Instead of writing the full table to temporary tables in Postgres, use Change Data Feed to "
             "determine changes, and write those to staging tables in Postgres.",
         )
@@ -169,15 +169,15 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         delta_table = options["delta_table"]
+        incremental = options["incremental"]
         table_spec = TABLE_SPEC[delta_table]
 
         # Delta side
-        destination_database = options["alt_delta_db"] or table_spec["destination_database"]
+        self.destination_database = options["alt_delta_db"] or table_spec["destination_database"]
         delta_table_name = options["alt_delta_name"] or delta_table
-        delta_table = f"{destination_database}.{delta_table_name}" if destination_database else delta_table_name
+        self.delta_table = f"{self.destination_database}.{delta_table_name}" if self.destination_database else delta_table_name
 
         # Postgres side - source
-        postgres_model = table_spec["model"]
         delta_column_names = table_spec.get("column_names")
         postgres_schema = table_spec["source_database"] or table_spec["swap_schema"]
         self.postgres_table_name = table_spec["source_table"] or table_spec["swap_table"]
@@ -186,84 +186,68 @@ class Command(BaseCommand):
         if self.postgres_table_name:
             self.qualified_postgres_table = f"{postgres_schema}.{self.postgres_table_name}" if postgres_schema else self.postgres_table_name
 
-        # Postgres side - temp
+        # Create Necessary Temporary Tables
         temp_schema = "temp"
-        temp_table_suffix = "temp"
+        if incremental:
+            upsert_table_suffix = "temp_upserts"
+            delete_table_suffix = "temp_deletes"
 
-       # TODO - Call Prepare Destination Table (multiple times for different scenarios) 
-        qualified_temp_table = self._prepare_destination_table(temp_schema, temp_table_suffix, table_spec)
+            # Upsert Schema (matches base table)
+            upsert_temp_table = self._prepare_temp_table(temp_schema, upsert_table_suffix, table_spec)
+            
+            # Delete Schema
+            delete_schema = table_spec["incremental_delete_temp_schema"]
+            delete_temp_table = self._prepare_temp_table(temp_schema, delete_table_suffix, table_spec, schema_override=delete_schema)
 
-        # Read from Delta
-        df = spark.table(delta_table)
+            # TODO Query new table to get latest versions
 
-        # Make sure that the column order defined in the Delta table schema matches
-        # that of the Spark dataframe used to pull from the Postgres table. While not
-        # always needed, this should help to prevent any future mismatch between the two.
-        if delta_column_names:
-            df = df.select(delta_column_names)
+            # TODO Create Dataframes to pass into _write_to_postgres()
 
-        # Reset the sequence before load for a table if it exists
-        if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
-            postgres_seq_last_value = self._set_sequence_value(table_spec["postgres_seq_name"])
+            # TODO Call _write_to_postgres()
+
+            # TODO Update latest versions
+
         else:
-            postgres_seq_last_value = None
+            temp_table_suffix = "temp"
 
-        # Write to Postgres
-        use_jdbc_inserts = options["jdbc_inserts"]
-        strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
-        self.logger.info(
-            f"LOAD (START): Loading data from Delta table {delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
-        )
+            qualified_temp_table = self._prepare_temp_table(temp_schema, temp_table_suffix, table_spec)
 
-        try:
-            if use_jdbc_inserts:
-                self._write_with_jdbc_inserts(
-                    spark,
-                    df,
-                    qualified_temp_table,
-                    split_df_by_special_cols=True,
-                    postgres_model=postgres_model,
-                    overwrite=False,
-                )
+            # TODO Write code that calls _write_to_postgres()
+            # Read from Delta
+            df = spark.table(delta_table)
+
+            # Make sure that the column order defined in the Delta table schema matches
+            # that of the Spark dataframe used to pull from the Postgres table. While not
+            # always needed, this should help to prevent any future mismatch between the two.
+            if delta_column_names:
+                df = df.select(delta_column_names)
+
+            # Reset the sequence before load for a table if it exists
+            if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
+                postgres_seq_last_value = self._set_sequence_value(table_spec["postgres_seq_name"])
             else:
-                if not delta_column_names:
-                    raise RuntimeError("delta_column_names None or empty, but are required to map CSV cols to table cols")
-                spark_s3_bucket_name = options["spark_s3_bucket"]
-                self._write_with_sql_bulk_copy_csv(
-                    spark,
-                    df,
-                    delta_db=destination_database,
-                    delta_table_name=delta_table_name,
-                    qualified_temp_table=qualified_temp_table,
-                    ordered_col_names=delta_column_names,
-                    spark_s3_bucket_name=spark_s3_bucket_name,
-                    keep_csv_files=True if options["keep_csv_files"] else False,
-                )
-        except Exception as exc:
-            if postgres_seq_last_value:
-                self.logger.error(
-                    f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
-                )
-                self._set_sequence_value(table_spec["postgres_seq_name"], postgres_seq_last_value)
-            raise Exception(exc)
+                postgres_seq_last_value = None
+            
+            self._write_to_postgres(spark, df, qualified_temp_table, table_spec, options, delta_column_names, postgres_seq_last_value=postgres_seq_last_value)
 
-        self.logger.info(
-            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
-        )
+            self.logger.info(
+                f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {qualified_temp_table} using {options['strategy']} " f"strategy"
+            )
+
+            if self.qualified_postgres_table:
+                self.logger.info(
+                    f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
+                    f" metadata portion of the table download to a separate script. If not already done so,"
+                    f" please run the following additional command to complete the process: "
+                    f" 'copy_table_metadata --source-table {self.qualified_postgres_table} --dest-table {qualified_temp_table}'."
+                )
 
         # We're done with spark at this point
         if spark_created_by_command:
             spark.stop()
 
-        if self.qualified_postgres_table:
-            self.logger.info(
-                f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
-                f" metadata portion of the table download to a separate script. If not already done so,"
-                f" please run the following additional command to complete the process: "
-                f" 'copy_table_metadata --source-table {self.qualified_postgres_table} --dest-table {qualified_temp_table}'."
-            )
-    
-    def _prepare_destination_table(self, temp_schema, temp_table_suffix, table_spec):
+    def _prepare_temp_table(self, temp_schema, temp_table_suffix, table_spec, schema_override=None):
+        # TODO - Create Pydoc for this method
 
         temp_table_suffix_appendage = f"_{temp_table_suffix}" if {temp_table_suffix} else ""
         temp_table_name = f"{self.postgres_table_name}{temp_table_suffix_appendage}"
@@ -315,7 +299,13 @@ class Command(BaseCommand):
                     )
                     for pt in table_spec["postgres_partition_spec"]["partitions"]
                 ]
-            if self.qualified_postgres_table:
+            if schema_override:
+                create_temp_sql = f"""
+                    CREATE TABLE {qualified_temp_table} (
+                        {", ".join([f'{key} {val}' for key, val in schema_override.items()])}
+                    ) {partition_clause} {storage_parameters}
+                """
+            elif self.qualified_postgres_table:
                 create_temp_sql = f"""
                     CREATE TABLE {qualified_temp_table} (
                         LIKE {self.qualified_postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
@@ -329,8 +319,8 @@ class Command(BaseCommand):
                 """
             else:
                 raise RuntimeError(
-                    "make_new_table=True but neither a postgres_table or postgres_schema_def is "
-                    "populated for the target delta table in the TABLE_SPEC"
+                    "Neither a postgres_table or postgres_schema_def is populated for the target "
+                    "delta table in the TABLE_SPEC and no schema override is provided"
                 )
             with db.connection.cursor() as cursor:
                 self.logger.info(f"Creating {qualified_temp_table}")
@@ -385,13 +375,53 @@ class Command(BaseCommand):
             last_value = cursor.fetchone()[0]
             cursor.execute(f"ALTER SEQUENCE IF EXISTS {seq_name} RESTART WITH {new_seq_val}")
         return last_value
+    
+    def _write_to_postgres(self, spark, df, qualified_temp_table, table_spec, options, column_names, postgres_seq_last_value=None):
+        # Write to Postgres
+        use_jdbc_inserts = options["jdbc_inserts"]
+        strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
+        self.logger.info(
+            f"LOAD (START): Loading data from Delta table {self.delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
+        )
+
+        try:
+            if use_jdbc_inserts:
+                self._write_with_jdbc_inserts(
+                    spark,
+                    df,
+                    qualified_temp_table,
+                    split_df_by_special_cols=True,
+                    postgres_model=table_spec["model"],
+                    overwrite=False,
+                )
+            else:
+                if not column_names:
+                    raise RuntimeError("delta_column_names None or empty, but are required to map CSV cols to table cols")
+                spark_s3_bucket_name = options["spark_s3_bucket"]
+                self._write_with_sql_bulk_copy_csv(
+                    spark,
+                    df,
+                    delta_db=self.destination_database,
+                    delta_s3_path=qualified_temp_table,
+                    qualified_temp_table=qualified_temp_table,
+                    ordered_col_names=column_names,
+                    spark_s3_bucket_name=spark_s3_bucket_name,
+                    keep_csv_files=True if options["keep_csv_files"] else False,
+                )
+        except Exception as exc:
+            if postgres_seq_last_value:
+                self.logger.error(
+                    f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
+                )
+                self._set_sequence_value(table_spec["postgres_seq_name"], postgres_seq_last_value)
+            raise Exception(exc)
 
     def _write_with_sql_bulk_copy_csv(
         self,
         spark: SparkSession,
         df: DataFrame,
         delta_db: str,
-        delta_table_name: str,
+        delta_s3_path: str,
         qualified_temp_table: str,
         ordered_col_names: List[str],
         spark_s3_bucket_name: str,
@@ -429,7 +459,7 @@ class Command(BaseCommand):
             spark (SparkSession): the active SparkSession to work within
             df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
             delta_db (str): the Delta Lake database in which to find the Delta table as source of the DataFrame
-            delta_table_name (str): the Delta table used as source of the DataFrame
+            delta_s3_path (str): the unique qualifier of the path in S3 to store temporary CSV files
             qualified_temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
                 where the CSV data will be written to with COPY
             ordered_col_names (List[str]): Ordered list of column names that must match the order of columns in the CSV
@@ -440,10 +470,10 @@ class Command(BaseCommand):
                 sub-folder of a "temp" folder. Be mindful of cleaning these up if setting to True. If False,
                 the same output path is used for each write and nukes-and-paves the files in that output path.
         """
-        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_db}/{delta_table_name}/"
+        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_db}/{delta_s3_path}/"
         if keep_csv_files:
             csv_path = (
-                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/"
+                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_s3_path}/"
                 f"{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
             )
         s3_bucket_with_csv_path = f"s3a://{spark_s3_bucket_name}/{csv_path}"
