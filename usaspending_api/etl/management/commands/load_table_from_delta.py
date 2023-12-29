@@ -168,15 +168,15 @@ class Command(BaseCommand):
         self.logger = get_jvm_logger(spark, __name__)
 
         # Resolve Parameters
-        delta_table = options["delta_table"]
-        table_spec = TABLE_SPEC[delta_table]
+        target_table = options["delta_table"]
+        table_spec = TABLE_SPEC[target_table]
 
         # TODO - Check whether changes have reached threshold ignoring incremental
         incremental = options["incremental"]
 
         # Delta side
         self.destination_database = options["alt_delta_db"] or table_spec["destination_database"]
-        delta_table_name = options["alt_delta_name"] or delta_table
+        delta_table_name = options["alt_delta_name"] or target_table 
         self.delta_table = f"{self.destination_database}.{delta_table_name}" if self.destination_database else delta_table_name
 
         # Postgres side - source
@@ -213,9 +213,8 @@ class Command(BaseCommand):
 
             qualified_temp_table = self._prepare_temp_table(temp_schema, temp_table_suffix, table_spec)
 
-            # TODO Write code that calls _write_to_postgres()
             # Read from Delta
-            df = spark.table(delta_table)
+            df = spark.table(self.delta_table)
 
             # Make sure that the column order defined in the Delta table schema matches
             # that of the Spark dataframe used to pull from the Postgres table. While not
