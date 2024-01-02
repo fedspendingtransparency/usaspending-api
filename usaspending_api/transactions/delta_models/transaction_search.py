@@ -435,8 +435,8 @@ transaction_search_load_sql_string = rf"""
         transaction_normalized.period_of_performance_start_date,
         transaction_normalized.period_of_performance_current_end_date,
         COALESCE(
-            CAST(transaction_fabs.created_at AS DATE)
-            CAST(transaction_fpds.initial_report_date AS DATE),
+            CAST(transaction_fabs.created_at AS DATE),
+            CAST(transaction_fpds.initial_report_date AS DATE)
         ) AS initial_report_date,
 
         -- Agencies
