@@ -437,7 +437,7 @@ transaction_search_load_sql_string = rf"""
         COALESCE(
             CAST(transaction_fabs.created_at AS DATE)
             CAST(transaction_fpds.initial_report_date AS DATE),
-        ) AS initial_report_date
+        ) AS initial_report_date,
 
         -- Agencies
         COALESCE(transaction_fabs.awarding_agency_code, transaction_fpds.awarding_agency_code) AS awarding_agency_code,
