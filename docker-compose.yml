@@ -184,11 +184,11 @@ services:
   usaspending-kibana-es:
     profiles:
       - usaspending  # must pass --profile usaspending to docker-compose for this to come up
-    image: docker.elastic.co/kibana/kibana-oss:7.1.1
-    container_name: usaspending-kibana-es
+    image: opensearchproject/opensearch-dashboards:2.9.0     #docker.elastic.co/kibana/kibana-oss:7.1.1
+    container_name: usaspending-opensearch-dashboards      #usaspending-kibana-es
     # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
     environment:
-      - ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
+      - OPENSEARCH_HOSTS="http://docker.for.mac.localhost:9200"    #ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
     ports:
       - 5601:5601
 
