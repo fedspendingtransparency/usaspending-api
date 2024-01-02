@@ -308,8 +308,10 @@ class Command(BaseCommand):
         load_query = table_spec["source_query"]
 
         if options["incremental"]:
-            if not "source_query_incremental" in table_spec:
-                raise ArgumentError("When performing incremental loads, `soruce_query_incremental` must be present in TABLE_SPEC")
+            if "source_query_incremental" not in table_spec:
+                raise ArgumentError(
+                    "When performing incremental loads, `soruce_query_incremental` must be present in TABLE_SPEC"
+                )
             load_query = table_spec["source_query_incremental"]
 
         self.spark = get_active_spark_session()

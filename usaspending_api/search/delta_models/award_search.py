@@ -639,13 +639,12 @@ award_search_incremental_load_sql_string = [
     CREATE OR REPLACE TEMPORARY VIEW temp_award_search_view AS (
         {_base_load_sql_string}
     )
-    """
-    ,
+    """,
     f"""
     MERGE INTO rpt.award_search AS t
     USING (SELECT * FROM temp_award_search_view) AS s
     ON t.award_id = s.award_id
-    WHEN MATCHED AND 
+    WHEN MATCHED AND
       ({" OR ".join([f"s.{col} != t.{col}" for col in AWARD_SEARCH_DELTA_COLUMNS])})
       THEN UPDATE SET *
     WHEN NOT MATCHED THEN INSERT *
@@ -660,7 +659,7 @@ award_search_incremental_load_sql_string = [
       FROM rpt.award_search AS t
       LEFT ANTI JOIN int.awards AS s ON t.award_id = s.id
     );
-    """
+    """,
 ]
 
 award_search_load_sql_string = f"""
