@@ -7,31 +7,6 @@ from django.db import connection
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
 
-TEMP_TABLE_NAME = "temp_population_load"
-TEMP_TABLE_SQL = "CREATE TABLE {table} ({columns});"
-
-# {CSV column header: DB column name}
-COUNTY_COLUMNS_MAPPER = {
-    "state_code": "state_code",
-    "county_code": "county_number",
-    "state_name": "state_name",
-    "county_name": "county_name",
-    "population": "latest_population",
-}
-
-# {CSV column header: DB column name}
-DISTRICT_COLUMNS_MAPPER = {
-    "state_code": "state_code",
-    "state_name": "state_name",
-    "state_abbreviation": "state_abbreviation",
-    "congressional_district": "congressional_district",
-    "population": "latest_population",
-}
-
-
-logger = logging.getLogger("script")
-
-
 class Command(BaseCommand):
     help = "Load CSV files containing population data. "
 
