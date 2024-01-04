@@ -1,11 +1,13 @@
 import logging
-from typing import List
 
 from django.core.management.base import BaseCommand
-from django.db import connection
 
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
+from usaspending_api.references.management.commands.load_population_data.loader_factories import CountyPopulationLoaderFactory, DistrictPopulationLoaderFactory
+
+
+logger = logging.getLogger("script")
+
 
 class Command(BaseCommand):
     help = "Load CSV files containing population data. "
@@ -21,41 +23,25 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.type = options["type"]
-        logger.info(f"Loading {self.type} Population data from {options['file']}")
+        file = options['file']
+        logger.info(f"Loading {self.type} Population data from {file}")
+
+        loader_factory = None
+        if options['file'] ==  "county":
+            loader_factory = CountyPopulationLoaderFactory()
+        elif options['file'] == "district":
+            loader_factory = DistrictPopulationLoaderFactory()
+        else:
+            raise RuntimeError(f'No loader factory found for the provided "--file" argument: {file}')
+        loader = loader_factory.create_population_loader()
+
         csv_dict_list = read_csv_file_as_list_of_dictionaries(options["file"])
         if csv_dict_list:
             cols = csv_dict_list[0].keys()
         else:
             raise RuntimeError(f"No data in CSV {options['file']}")
 
-        self.drop_temp_table()
-        self.create_table(columns=cols)
-        self.load_data(csv_dict_list)
-        self.drop_temp_table()
-
-    def drop_temp_table(self):
-        logger.info(f"Dropping temp table {TEMP_TABLE_NAME}")
-        with connection.cursor() as cursor:
-            cursor.execute(f"DROP TABLE IF EXISTS {TEMP_TABLE_NAME}")
-
-    def create_table(self, columns: List[str]) -> None:
-        logger.info(f"Creating temp table {TEMP_TABLE_NAME}")
-        with connection.cursor() as cursor:
-            cursor.execute(f"DROP TABLE IF EXISTS {TEMP_TABLE_NAME}")
-            cursor.execute(
-                TEMP_TABLE_SQL.format(table=TEMP_TABLE_NAME, columns=",".join([f"{c} TEXT" for c in columns]))
-            )
-
-    def load_data(self, data: List[dict]) -> None:
-        model = PopCongressionalDistrict
-        mapper = DISTRICT_COLUMNS_MAPPER
-        if self.type == "county":
-            model = PopCounty
-            mapper = COUNTY_COLUMNS_MAPPER
-
-        logger.info(f"Attempting to load {len(data)} records into {model.__name__}")
-
-        model.objects.all().delete()
-
-        model.objects.bulk_create([model(**{col: row[csv] for csv, col in mapper.items()}) for row in data])
-        logger.info("Success? Please Verify")
+        loader.drop_temp_tables()
+        loader.create_tables(columns=cols)
+        loader.load_data(csv_dict_list)
+        loader.drop_temp_tables()
