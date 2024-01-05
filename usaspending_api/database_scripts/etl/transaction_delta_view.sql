@@ -34,6 +34,8 @@ SELECT
   "period_of_performance_start_date",
   "period_of_performance_current_end_date",
   "ordering_period_end_date",
+  "type_raw",
+  "type_description_raw",
   "type",
   "type_description",
   "award_category",

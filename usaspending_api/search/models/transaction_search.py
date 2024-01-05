@@ -39,6 +39,7 @@ class TransactionSearch(models.Model):
     etl_update_date = models.DateTimeField(null=True)
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
+    initial_report_date = models.DateField(null=True)
 
     # Agencies
     awarding_agency_code = models.TextField(null=True)
@@ -68,6 +69,8 @@ class TransactionSearch(models.Model):
 
     # Typing
     is_fpds = models.BooleanField(blank=False, null=False)
+    type_raw = models.TextField(null=True)
+    type_description_raw = models.TextField(null=True)
     type = models.TextField(null=True)
     type_description = models.TextField(null=True)
     action_type = models.TextField(null=True)
