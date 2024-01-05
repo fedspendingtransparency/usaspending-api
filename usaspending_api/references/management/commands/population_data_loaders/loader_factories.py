@@ -1,4 +1,5 @@
-from usaspending_api.references.management.commands.load_population_data.loaders import (
+from usaspending_api.references.management.commands.population_data_loaders.loaders import (
+    CountryPopulationLoader,
     DistrictPopulationLoader,
     Loader,
     CountyPopulationLoader,
@@ -40,7 +41,7 @@ class CountyPopulationLoaderFactory(PopulationLoaderFactory):
         return loader
 
 
-class DistrictPopulationLoaderFactory:
+class DistrictPopulationLoaderFactory(PopulationLoaderFactory):
     def __init__(self):
         self._district_columns_mapper = {
             "state_code": "state_code",
@@ -54,4 +55,11 @@ class DistrictPopulationLoaderFactory:
     def create_population_loader(self):
         logger = logging.getLogger("script")
         loader = DistrictPopulationLoader(self._district_columns_mapper, logger)
+        return loader
+
+class CountryPopulationLoaderFactory(PopulationLoaderFactory):
+
+    def create_population_loader(self):
+        logger = logging.getLogger("script")
+        loader = CountryPopulationLoader(None, logger)
         return loader
