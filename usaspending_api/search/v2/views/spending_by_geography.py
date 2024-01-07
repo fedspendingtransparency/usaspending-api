@@ -417,13 +417,13 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             country_queryset = country_queryset.filter(**{f"{loc_lookup}__in": self.geo_layer_filters})
 
             ref_countries = RefCountryCode.objects.filter(country_code__in=self.geo_layer_filters).values(
-                "country_code", "country_name"
+                "country_code", "country_name", "latest_population"
             )
         # If no specific countries were provided, then get all subawards grouped by country
         else:
-            ref_countries = RefCountryCode.objects.all().values("country_code", "country_name")
+            ref_countries = RefCountryCode.objects.all().values("country_code", "country_name", "latest_population")
 
-        ref_countries = {country["country_code"]: country["country_name"] for country in ref_countries}
+        ref_countries = {country["country_code"]: {"country_name": country["country_name"], "population": country["latest_population"]} for country in ref_countries}
         # Sum the `subaward_amount` columns and exclude any subawards with $0 amounts
         country_queryset = country_queryset.annotate(transaction_amount=Sum("subaward_amount")).exclude(
             transaction_amount=0
@@ -433,11 +433,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         for x in country_queryset:
             shape_code = x[loc_lookup]
             per_capita = None
-            # TODO: to be populated in DEV-10132
-            population = None
+            population = ref_countries.get(shape_code, None)["population"]
             if population:
                 per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
-            display_name = ref_countries.get(shape_code, None)
+            display_name = ref_countries.get(shape_code, None)["country_name"]
 
             results.append(
                 {
@@ -519,8 +518,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     shape_code=F("country_code"),
                     display_name=F("country_name"),
                     geo_code=F("country_code"),
-                    # TODO: to be populated in DEV-10132
-                    population=Value(None, output_field=IntegerField()),
+                    population=F("latest_population"),
                 )
                 .values("geo_code", "display_name", "shape_code", "population")
             )
