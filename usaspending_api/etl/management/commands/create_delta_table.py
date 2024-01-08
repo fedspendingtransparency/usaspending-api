@@ -51,7 +51,6 @@ class Command(BaseCommand):
         parser.add_argument(
             "--enable-cdf",
             action="store_true",
-            required=False,
             help="Whether or not the table will be created with the Change Data Feed feature enabled. (Databricks "
             "Specific)",
         )

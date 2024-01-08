@@ -64,6 +64,7 @@ class _TransactionFabsFpdsCore:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=self.s3_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         self.spark.sql(
@@ -72,6 +73,7 @@ class _TransactionFabsFpdsCore:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=self.s3_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
 
