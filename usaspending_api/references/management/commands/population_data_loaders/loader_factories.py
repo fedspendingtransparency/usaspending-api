@@ -51,14 +51,13 @@ class DistrictPopulationLoaderFactory(PopulationLoaderFactory):
             "population": "latest_population",
         }
 
-
     def create_population_loader(self):
         logger = logging.getLogger("script")
         loader = DistrictPopulationLoader(self._district_columns_mapper, logger)
         return loader
 
-class CountryPopulationLoaderFactory(PopulationLoaderFactory):
 
+class CountryPopulationLoaderFactory(PopulationLoaderFactory):
     def create_population_loader(self):
         logger = logging.getLogger("script")
         loader = CountryPopulationLoader(None, logger)

@@ -3,7 +3,11 @@ import logging
 from django.core.management.base import BaseCommand
 
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-from usaspending_api.references.management.commands.population_data_loaders.loader_factories import CountryPopulationLoaderFactory, CountyPopulationLoaderFactory, DistrictPopulationLoaderFactory
+from usaspending_api.references.management.commands.population_data_loaders.loader_factories import (
+    CountryPopulationLoaderFactory,
+    CountyPopulationLoaderFactory,
+    DistrictPopulationLoaderFactory,
+)
 
 
 logger = logging.getLogger("script")
@@ -23,11 +27,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.type = options["type"]
-        file = options['file']
+        file = options["file"]
         logger.info(f"Loading {self.type} Population data from {file}")
 
         loader_factory = None
-        if self.type ==  "county":
+        if self.type == "county":
             loader_factory = CountyPopulationLoaderFactory()
         elif self.type == "district":
             loader_factory = DistrictPopulationLoaderFactory()
