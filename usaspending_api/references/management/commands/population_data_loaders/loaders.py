@@ -74,7 +74,7 @@ class DistrictPopulationLoader(GenericPopulationLoader):
     district population data.
     """
 
-    def load_data(self, data, model):
+    def load_data(self, data, model=None):
         model = PopCongressionalDistrict
         super().load_data(data, model)
 
@@ -84,7 +84,7 @@ class CountyPopulationLoader(GenericPopulationLoader):
     county population data.
     """
 
-    def load_data(self, data, model):
+    def load_data(self, data, model=None):
         model = PopCounty
         super().load_data(data, model)
 
