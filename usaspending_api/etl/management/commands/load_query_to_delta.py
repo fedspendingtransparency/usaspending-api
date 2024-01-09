@@ -82,6 +82,7 @@ TABLE_SPEC = {
         "model": RecipientLookup,
         "is_from_broker": False,
         "source_query": recipient_lookup_load_sql_string_list,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -102,6 +103,7 @@ TABLE_SPEC = {
         "model": RecipientProfile,
         "is_from_broker": False,
         "source_query": recipient_profile_load_sql_strings,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -122,6 +124,7 @@ TABLE_SPEC = {
         "model": SummaryStateView,
         "is_from_broker": False,
         "source_query": summary_state_view_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -142,6 +145,7 @@ TABLE_SPEC = {
         "model": None,
         "is_from_broker": True,
         "source_query": sam_recipient_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "int",
@@ -162,6 +166,7 @@ TABLE_SPEC = {
         "model": TransactionSearch,
         "is_from_broker": False,
         "source_query": transaction_search_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -182,6 +187,7 @@ TABLE_SPEC = {
         "model": TransactionSearch,
         "is_from_broker": False,
         "source_query": transaction_search_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -209,6 +215,7 @@ TABLE_SPEC = {
         "model": None,
         "is_from_broker": False,
         "source_query": transaction_current_cd_lookup_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "int",
@@ -229,6 +236,7 @@ TABLE_SPEC = {
         "model": SubawardSearch,
         "is_from_broker": False,
         "source_query": subaward_search_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -308,7 +316,7 @@ class Command(BaseCommand):
         load_query = table_spec["source_query"]
 
         if options["incremental"]:
-            if "source_query_incremental" not in table_spec:
+            if not table_spec["source_query_incremental"]:
                 raise ArgumentError(
                     "When performing incremental loads, `soruce_query_incremental` must be present in TABLE_SPEC"
                 )
