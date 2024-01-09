@@ -645,7 +645,7 @@ award_search_incremental_load_sql_string = [
     USING (SELECT * FROM temp_award_search_view) AS s
     ON t.award_id = s.award_id
     WHEN MATCHED AND
-      ({" OR ".join([f"s.{col} != t.{col}" for col in AWARD_SEARCH_DELTA_COLUMNS])})
+      ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in AWARD_SEARCH_DELTA_COLUMNS])})
       THEN UPDATE SET *
     WHEN NOT MATCHED THEN INSERT *
     -- The following line can replace the second delete after upgrading to Databricks runtime 12.1
