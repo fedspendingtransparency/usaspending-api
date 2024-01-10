@@ -130,7 +130,6 @@ class CountryPopulationLoader(GenericPopulationLoader):
         self._logger.info(f"Attempting to load {len(data)} records into {model.__name__}")
 
         for row in data:
-            print(row)
             record = model.objects.get(country_code=row["country_code"])
             record.latest_population = row["population"]
             record.save()
