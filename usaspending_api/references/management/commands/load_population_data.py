@@ -50,4 +50,4 @@ class Command(BaseCommand):
         loader.drop_temp_tables()
         loader.create_tables(columns=cols)
         loader.load_data(csv_dict_list)
-        loader.drop_temp_tables()
+        loader.cleanup()

@@ -16,18 +16,36 @@ class Loader(ABC):
 
     @abstractmethod
     def drop_temp_tables(self) -> None:
+        """Drops any tables that were temporarily created to support
+        this data load.
+        """
         pass
 
     @abstractmethod
     def create_tables(self, columns: List[str]) -> None:
+        """Creates any tables that are needed to support this data load.
+
+        Args:
+            columns: Columns defines the columns that will be loaded to.
+        """
         pass
 
     @abstractmethod
     def load_data(self, data: List[dict], model: models = None) -> None:
+        """Handles the loading of population data.
+
+        Args:
+            data: The population data that will be loaded.
+            model: The model that defines the population object
+                that this population loader will load. Defaults to None.
+        """
         pass
 
     @abstractmethod
     def cleanup(self) -> None:
+        """Cleans up any tables or objects that were temporarily created to support
+        this data load.
+        """
         pass
 
 
