@@ -7,6 +7,8 @@ SELECT
   "display_award_id",
 
   "category",
+  "type_raw",
+  "type_description_raw",
   "type",
   "type_description",
   "piid",
