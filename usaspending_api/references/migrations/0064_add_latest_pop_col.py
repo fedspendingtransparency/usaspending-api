@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('references', '0063_add_enactment_date_to_defc'),
+        ("references", "0063_add_enactment_date_to_defc"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='refcountrycode',
-            name='latest_population',
+            model_name="refcountrycode",
+            name="latest_population",
             field=models.BigIntegerField(null=True),
         ),
     ]
