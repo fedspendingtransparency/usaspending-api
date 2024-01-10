@@ -96,7 +96,6 @@ def test_district_population_loader_create_tables(connection_mock):
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.RefCountryCode")
 def test_country_population_loader_load_data_missing_countries_error(django_model_mock, connection_mock):
-    cursor_mock = connection_mock.cursor.return_value.__enter__.return_value
     django_model_mock.__name__ = "RefCountryCode"
     django_model_mock.objects.all.return_value.distinct.return_value = ["USA", "CAN", "MEX"]
     column_mapper = MagicMock()

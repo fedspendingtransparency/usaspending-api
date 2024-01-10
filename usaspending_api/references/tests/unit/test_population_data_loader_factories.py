@@ -1,6 +1,5 @@
 from unittest.mock import patch, MagicMock
 import unittest
-import pytest
 from usaspending_api.references.management.commands.population_data_loaders.loader_factories import (
     CountryPopulationLoaderFactory,
     CountyPopulationLoaderFactory,
@@ -10,7 +9,6 @@ from usaspending_api.references.management.commands.population_data_loaders.load
     CountryPopulationLoader,
     CountyPopulationLoader,
     DistrictPopulationLoader,
-    GenericPopulationLoader,
 )
 
 
