@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from django.conf import settings
-from django.db.models import F, FloatField, IntegerField, QuerySet, Sum, TextField, Value
+from django.db.models import F, FloatField, QuerySet, Sum, TextField, Value
 from django.db.models.functions import Cast, Concat
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
