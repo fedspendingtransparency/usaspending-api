@@ -38,7 +38,7 @@ class Command(BaseCommand):
         elif self.type == "country":
             loader_factory = CountryPopulationLoaderFactory()
         else:
-            raise RuntimeError(f'No loader factory found for the provided "--file" argument: {file}')
+            raise RuntimeError(f'No loader factory found for the provided "--type" argument: {self.type}')
         loader = loader_factory.create_population_loader()
 
         csv_dict_list = read_csv_file_as_list_of_dictionaries(options["file"])
