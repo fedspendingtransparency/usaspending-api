@@ -22,7 +22,7 @@ class Command(BaseCommand):
             "--type",
             choices=["county", "district", "country"],
             required=True,
-            help="Load either a county file or a congressional district file from census.gov",
+            help="Load county, congressional district, or country population data. Data sources vary between choices.",
         )
 
     def handle(self, *args, **options):
