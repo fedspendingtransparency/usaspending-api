@@ -7,6 +7,7 @@ from collections import namedtuple
 
 LookupType = namedtuple("LookupType", ["id", "name", "desc"])
 
+# External Data Load Date
 EXTERNAL_DATA_TYPE = [
     LookupType(1, "fpds", "FPDS transactions from Broker"),
     LookupType(2, "fabs", "FABS transactions from Broker"),
@@ -30,3 +31,8 @@ EXTERNAL_DATA_TYPE = [
 ]
 EXTERNAL_DATA_TYPE_DICT = {item.name: item.id for item in EXTERNAL_DATA_TYPE}
 EXTERNAL_DATA_TYPE_DICT_ID = {item.id: item.name for item in EXTERNAL_DATA_TYPE}
+
+# Delta Table Load Version
+DELTA_TABLE_LOAD_VERSION_TYPE = [
+    LookupType(1, "award_search", "Award Search Gold Table")
+]
