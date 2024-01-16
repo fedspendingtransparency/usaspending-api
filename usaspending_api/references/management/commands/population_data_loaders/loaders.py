@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import datetime
 from django.db import connection
 from logging import Logger
 from typing import List
