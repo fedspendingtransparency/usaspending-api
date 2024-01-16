@@ -11,7 +11,7 @@ import logging
 class PopulationLoaderFactory(ABC):
     """The creator class declares the factory method that must
     return an object of a Loaders class. The creator's subclasses
-    usually provide the implementation of this method.
+    usually choose which subclass of the Loader superclass to return.
     """
 
     @abstractmethod
