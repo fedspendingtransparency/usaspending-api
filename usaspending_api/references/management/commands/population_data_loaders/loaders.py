@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import datetime
 from django.db import connection
 from logging import Logger
 from typing import List
@@ -106,9 +107,6 @@ class CountyPopulationLoader(GenericPopulationLoader):
         model = PopCounty
         super().load_data(data, model)
 
-    def cleanup(self):
-        self.drop_temp_tables()
-
 
 class CountryPopulationLoader(GenericPopulationLoader):
     """A concrete implemention of the generic population loader. Suitable for loading
@@ -131,8 +129,15 @@ class CountryPopulationLoader(GenericPopulationLoader):
 
         for row in data:
             record = model.objects.get(country_code=row["country_code"])
-            record.latest_population = row["population"]
-            record.save()
+            data_file_population = row["population"]
+            # Only update the update_date attribute of this record when the population value actually changes
+            # This class assumes that update_date has the auto_now property set to True
+            # by checking if the population value changes and only saving the record when it does
+            # we take advantage of the knowledge of an external class to ensure that the update_date
+            # value doesn't change.
+            if record.latest_population != data_file_population:
+                record.latest_population = row["population"]
+                record.save()
         self._logger.info("Success? Please Verify")
 
     def drop_temp_tables(self):
