@@ -17,7 +17,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     toggle_refresh_off,
     transform_award_data,
     transform_covid19_faba_data,
-    transform_recipient_profile_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
@@ -234,7 +233,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             create_award_type_aliases:
 
             data_transform_func: Python function to call to format/convert/aggregate/drop the database data before it's
-                pushed to the Elasticsearch index.
+                pushed to the Elasticsearch index. Can also be `None` if no data transforming needs to happen.
 
             data_type:
 
@@ -349,7 +348,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table": "recipient_profile",
             "base_table_id": "id",
             "create_award_type_aliases": False,
-            "data_transform_func": transform_recipient_profile_data,
+            "data_transform_func": None,
             "data_type": "recipient",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,

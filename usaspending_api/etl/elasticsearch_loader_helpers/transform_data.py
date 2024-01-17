@@ -136,10 +136,6 @@ def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[d
     return list(results.values())  # don't need the dict key, return a list of the dict values
 
 
-def transform_recipient_profile_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
-    return records
-
-
 def transform_data(
     worker: TaskSpec,
     records: List[dict],
