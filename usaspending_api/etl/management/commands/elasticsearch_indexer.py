@@ -339,7 +339,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "query_alias_prefix": settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_COVID19_FABA_NAME_SUFFIX,
             "sql_view": settings.ES_COVID19_FABA_ETL_VIEW_NAME,
-            "stored_date_key": ...,
+            "stored_date_key": None,
             "unique_key_field": ES_COVID19_FABA_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_COVID19_FABA_WRITE_ALIAS,
         }
@@ -360,7 +360,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "query_alias_prefix": settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_RECIPIENTS_NAME_SUFFIX,
             "sql_view": settings.ES_RECIPIENTS_ETL_VIEW_NAME,
-            "stored_date_key": ...,
+            "stored_date_key": None,
             "unique_key_field": ES_RECIPIENT_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_RECIPIENTS_WRITE_ALIAS,
         }
