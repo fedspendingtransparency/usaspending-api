@@ -5,19 +5,7 @@
     "index.refresh_interval": -1,
     "index": {
       "number_of_shards": 5,
-      "number_of_replicas": 0,
-      "sort.field": [
-        "recipient_name.keyword",
-        "uei.keyword"
-      ],
-      "sort.order": [
-        "desc",
-        "desc"
-      ],
-      "sort.missing": [
-        "_last",
-        "_last"
-      ]
+      "number_of_replicas": 0
     },
     "analysis": {
       "analyzer": {
