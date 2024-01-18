@@ -398,6 +398,7 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "",
         "",
         f"{HOST}/award/CONT_AWD_1_0_0/" if "localhost" in HOST else f"https://{HOST}/award/CONT_AWD_1_0_0/",
+        "",
         "2020-05-07",
     ]
     call_command("populate_monthly_delta_files", "--agencies=1", "--debugging_skip_deleted", "--last_date=2020-12-31")

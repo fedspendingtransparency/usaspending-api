@@ -2,7 +2,7 @@
   "settings": {
     "index.mapping.ignore_malformed": true,
     "index.max_result_window": null,
-    "index.mapping.nested_objects.limit": 12000,
+    "index.mapping.nested_objects.limit": 25000,
     "index.refresh_interval": -1,
     "index": {
       "number_of_shards" : 5,

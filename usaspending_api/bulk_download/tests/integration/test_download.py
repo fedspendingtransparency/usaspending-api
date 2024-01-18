@@ -365,7 +365,7 @@ def test_download_awards_with_all_prime_awards(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 6
-    assert resp.json()["total_columns"] == 407
+    assert resp.json()["total_columns"] == 409
 
 
 @pytest.mark.django_db(transaction=True)
@@ -388,7 +388,7 @@ def test_download_awards_with_some_prime_awards(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3
-    assert resp.json()["total_columns"] == 296
+    assert resp.json()["total_columns"] == 297
 
 
 @pytest.mark.django_db(transaction=True)
@@ -411,7 +411,7 @@ def test_download_awards_with_all_sub_awards(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 3  # 2 awards, but 1 file with 2 rows and 1 file with 1
-    assert resp.json()["total_columns"] == 233
+    assert resp.json()["total_columns"] == 231
 
 
 @pytest.mark.django_db(transaction=True)
@@ -434,7 +434,7 @@ def test_download_awards_with_some_sub_awards(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 2
-    assert resp.json()["total_columns"] == 114
+    assert resp.json()["total_columns"] == 113
 
 
 @pytest.mark.django_db(transaction=True)

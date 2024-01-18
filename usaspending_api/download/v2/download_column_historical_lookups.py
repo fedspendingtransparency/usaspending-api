@@ -1847,6 +1847,7 @@ query_paths = {
                 ("highly_compensated_officer_5_name", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["officer_5_name"]),
                 ("highly_compensated_officer_5_amount", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["officer_5_amount"]),
                 ("usaspending_permalink", None),  # to be filled in by annotation
+                ("initial_report_date", "initial_report_date"),
                 ("last_modified_date", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["last_modified"]),
             ]
         ),
@@ -2022,6 +2023,7 @@ query_paths = {
                 ("highly_compensated_officer_5_name", FABS_TO_TRANSACTION_SEARCH_COL_MAP["officer_5_name"]),
                 ("highly_compensated_officer_5_amount", FABS_TO_TRANSACTION_SEARCH_COL_MAP["officer_5_amount"]),
                 ("usaspending_permalink", None),  # to be filled in by annotation
+                ("initial_report_date", "initial_report_date"),
                 ("last_modified_date", FABS_TO_TRANSACTION_SEARCH_COL_MAP["modified_at"]),
             ]
         ),
@@ -2165,7 +2167,6 @@ query_paths = {
                 ("subaward_recipient_cd_current", None),  # Annotation is used to create this column
                 ("subawardee_foreign_postal_code", "sub_legal_entity_foreign_posta"),
                 ("subawardee_business_types", "sub_business_types"),
-                ("subaward_primary_place_of_performance_address_line_1", "place_of_perform_street"),
                 ("subaward_primary_place_of_performance_city_name", "sub_place_of_perform_city_name"),
                 (
                     "subaward_primary_place_of_performance_state_code",
@@ -2328,7 +2329,6 @@ query_paths = {
                 ("subaward_recipient_cd_current", None),  # Annotation is used to create this column
                 ("subawardee_foreign_postal_code", "sub_legal_entity_foreign_posta"),
                 ("subawardee_business_types", "sub_business_types"),
-                ("subaward_primary_place_of_performance_address_line_1", "place_of_perform_street"),
                 ("subaward_primary_place_of_performance_city_name", "sub_place_of_perform_city_name"),
                 (
                     "subaward_primary_place_of_performance_state_code",
