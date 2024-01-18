@@ -216,8 +216,8 @@ class Command(BaseCommand):
                 ) WHERE row_num = 1
             """)
 
-            upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')")
-            delete_df = distinct_df.filter("_change_type IN ('delete')")
+            upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')").drop("_change_type")
+            delete_df = distinct_df.filter("_change_type IN ('delete')").drop("_change_type")
 
             # Call _write_to_postgres()
             self._write_to_postgres(spark, upsert_df, upsert_temp_table, table_spec, options, delta_column_names)
