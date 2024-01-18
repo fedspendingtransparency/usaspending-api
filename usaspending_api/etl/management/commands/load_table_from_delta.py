@@ -13,6 +13,7 @@ from pyspark.sql import SparkSession, DataFrame
 from typing import Dict, Optional, List
 from datetime import datetime
 
+from usaspending_api.broker.helpers.last_delta_table_load_version import get_last_delta_table_load_versions, update_last_live_load_version, update_last_staging_load_version
 from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
 from usaspending_api.common.etl.spark import convert_array_cols_to_string
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -201,12 +202,27 @@ class Command(BaseCommand):
             delete_schema = table_spec["incremental_delete_temp_schema"]
             delete_temp_table = self._prepare_temp_table(temp_schema, delete_table_suffix, table_spec, schema_override=delete_schema)
 
-            # TODO Query new table to get latest versions
+            # Query new table to get latest versions
+            last_staging_version, last_live_version = get_last_delta_table_load_versions("award_search")
 
-            # TODO Create Dataframes to pass into _write_to_postgres()
+            # Create Dataframes to pass into _write_to_postgres()
+            # TODO - Refactor to get a distinct set of records windowed by latest version
+            distinct_df = spark.sql(f"""
+                SELECT * EXCEPT(_commit_timestamp, _commit_version, row_num) FROM (
+                    SELECT * ,
+                    ROW_NUMBER() OVER (PARTITION BY award_id ORDER BY _commit_version DESC) AS row_num
+                    FROM table_changes('{self.qualified_postgres_table}', {last_staging_version})
+                    WHERE _change_type in ('insert', 'update_postimage', 'delete')
+                ) WHERE row_num = 1)
+            """)
 
-            # TODO Call _write_to_postgres()
+            upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')")
+            delete_df = distinct_df.filter("_change_type IN ('delete')")
 
+            # Call _write_to_postgres()
+            self._write_to_postgres(spark, upsert_df, upsert_temp_table, table_spec, options, delta_column_names)
+
+            self._write_to_postgres(spark, delete_df, delete_temp_table, table_spec, options, delete_schema.keys())
 
         else:
             temp_table_suffix = "temp"
