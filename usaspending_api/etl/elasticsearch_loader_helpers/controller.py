@@ -1,16 +1,18 @@
 import logging
-
 from abc import ABC, abstractmethod
-from django.core.management import call_command
 from math import ceil
-from multiprocessing import Pool, Event, Value
+from multiprocessing import Event, Pool, Value
 from time import perf_counter
-from typing import Tuple, Dict
+from typing import Dict, Tuple
+
+from django.core.management import call_command
 
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
+from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 from usaspending_api.etl.elasticsearch_loader_helpers import (
+    TaskSpec,
     count_of_records_to_process,
     create_index,
     delete_awards,
@@ -22,10 +24,8 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     obtain_extract_partition_sql,
     set_final_index_config,
     swap_aliases,
-    TaskSpec,
     toggle_refresh_on,
 )
-from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 
 logger = logging.getLogger("script")
 
@@ -247,7 +247,10 @@ def extract_transform_load(task: TaskSpec) -> None:
 
     client = instantiate_elasticsearch_client()
     try:
-        records = task.transform_func(task, extract_records(task))
+        if task.transform_func:
+            records = task.transform_func(task, extract_records(task))
+        else:
+            records = extract_records(task)
         if abort.is_set():
             f"Prematurely ending partition #{task.partition_number} due to error in another process"
             logger.warning(format_log(msg, name=task.name))

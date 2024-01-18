@@ -13,6 +13,9 @@ def setup_elasticsearch_test(monkeypatch, index_fixture, **options):
     elif index_fixture.index_type == "transaction":
         search_wrapper = "TransactionSearch"
         query_alias = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX
+    elif index_fixture.index_type == "recipient":
+        search_wrapper = "RecipientSearch"
+        query_alias = settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX
     else:
         raise Exception("Invalid index type")
 
