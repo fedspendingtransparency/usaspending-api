@@ -213,7 +213,7 @@ class Command(BaseCommand):
                     ROW_NUMBER() OVER (PARTITION BY award_id ORDER BY _commit_version DESC) AS row_num
                     FROM table_changes('{self.qualified_postgres_table}', {last_staging_version})
                     WHERE _change_type in ('insert', 'update_postimage', 'delete')
-                ) WHERE row_num = 1)
+                ) WHERE row_num = 1
             """)
 
             upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')")
