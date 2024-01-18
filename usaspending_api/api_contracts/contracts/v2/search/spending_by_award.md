@@ -84,11 +84,50 @@ List of table columns
 - `Award Amount`
 - `Awarding Agency`
 - `Awarding Sub Agency`
-- `Contract Award Type`
 - `Award Type`
 - `Funding Agency`
 - `Funding Sub Agency`
+- `Contract Award Type`
 
+### (Optional)
+- `COVID-19 Obligations`
+- `COVID-19 Outlays`
+- `Infrastructure Obligations`
+- `Infrastructure Outlays`
+- `Place of Performance City Code`
+- `Place of Performance State Code`
+- `Place of Performance Country Code"`
+- `Place of Performance Zip5`
+
+Based on different award types, additional fields can be requested
+### Grants
+- `No Additional options`
+
+### Loan Awards
+- `Issued Date`
+- `Loan Value`
+- `Subsidy Cost`
+
+### Direct Payments
+-  `No Additional options`
+
+### Other Awards
+-  `No Additional options`
+
+### Contract Subawards
+- `Sub-Award ID`
+- `Sub-Award Type`
+- `Sub-Awardee Name`
+- `Sub-Award Date`
+- `Sub-Award Amount`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Prime Award ID`
+- `Prime Recipient Name`
+- `prime_award_recipient_id`
+
+### Grant Subawards
+-  `No Additional options, same as Contract Subawards`
 
 ## SpendingByAwardResponse (object)
 + `internal_id` (required, number)
