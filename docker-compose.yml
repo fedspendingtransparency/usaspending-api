@@ -62,7 +62,7 @@ services:
      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - usaspending-db
-      - usaspending-es
+      - usaspending-opensearch
     command: make tests
     environment:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
@@ -87,7 +87,7 @@ services:
      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - usaspending-db
-      - usaspending-es
+      - usaspending-opensearch
     command:
       - sh
       - -c
@@ -121,7 +121,7 @@ services:
       - 8000:8000
     depends_on:
       - usaspending-db
-      - usaspending-es
+      - usaspending-opensearch
     restart: on-failure:3 # 3 max attempt, and then it will stop restarting
     # Must wait on postgres db to be up (~9s)
     command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
@@ -148,7 +148,7 @@ services:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
 
-  usaspending-es:
+  usaspending-opensearch:
     profiles:
       - usaspending  # must pass --profile usaspending to docker-compose for this to come up
       - test
@@ -166,10 +166,10 @@ services:
     command: >
       /bin/sh -c "
         if [ ! -d /usr/share/opensearch/plugins/mapper-murmur3 ]; then
-          wget --no-check-certificate https://github.com/opensearch-project/mapper-murmur3/releases/download/v1.1.0/opensearch-mapper-murmur3-1.1.0.zip
+          curl https://github.com/opensearch-project/mapper-murmur3/releases/download/v1.1.0/opensearch-mapper-murmur3-1.1.0.zip -O
           ./bin/opensearch-plugin install file:///usr/share/opensearch/opensearch-mapper-murmur3-1.1.0.zip
         fi
-        /usr/local/bin/docker-entrypoint.sh"
+        /user/share/opensearch/opensearch-docker-entrypoint.sh"
     ulimits:
       memlock:
         soft: -1
