@@ -169,15 +169,16 @@ class Command(BaseCommand):
         self.logger = get_jvm_logger(spark, __name__)
 
         # Resolve Parameters
-        source_delta_table = options["delta_table"]
+        self.options = options
+        source_delta_table = self.options["delta_table"]
         self.table_spec = TABLE_SPEC[source_delta_table]
 
         # TODO - Check whether changes have reached threshold ignoring incremental
-        incremental = options["incremental"]
+        incremental = self.options["incremental"]
 
         # Delta side
-        self.source_delta_table_name = options["alt_delta_name"] or source_delta_table 
-        self.source_delta_database = options["alt_delta_db"] or self.table_spec["destination_database"]
+        self.source_delta_table_name = self.options["alt_delta_name"] or source_delta_table 
+        self.source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
         self.qualified_source_delta_table = f"{self.source_delta_database}.{self.source_delta_table_name}"
 
         # Postgres side
@@ -229,7 +230,7 @@ class Command(BaseCommand):
             df = spark.table(self.source_delta_table)
 
             # Reset the sequence before load for a table if it exists
-            if options["reset_sequence"] and self.table_spec.get("postgres_seq_name"):
+            if self.options["reset_sequence"] and self.table_spec.get("postgres_seq_name"):
                 postgres_seq_last_value = self._set_sequence_value(self.table_spec["postgres_seq_name"])
             else:
                 postgres_seq_last_value = None
@@ -237,7 +238,7 @@ class Command(BaseCommand):
             self._write_to_postgres(spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=postgres_seq_last_value)
 
             self.logger.info(
-                f"LOAD (FINISH): Loaded data from Delta table {self.source_delta_table} to {qualified_temp_table} using {options['strategy']} " f"strategy"
+                f"LOAD (FINISH): Loaded data from Delta table {self.source_delta_table} to {qualified_temp_table} using {self.options['strategy']} " f"strategy"
             )
 
             if self.qualified_postgres_table:
