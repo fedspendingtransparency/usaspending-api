@@ -76,7 +76,49 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 ## SpendingByAwardFields (array)
 List of table columns
 
-### Default
+### Awards
+
+#### Base fields
+- `Award ID`
+- `Recipient Name`
+- `Start Date`
+- `End Date`
+- `Award Amount`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Award Type`
+- `Contract Award Type`
+
+Award Type Codes
+- `A`: `BPA Call`
+- `B`: `Purchase Order`
+- `C`: `Delivery Order`
+- `D`: `Definitive Contract`
+- `IDV_A`: `GWAC Government Wide Acquisition Contract`
+- `IDV_B`: `IDC Multi-Agency Contract, Other Indefinite Delivery Contract`
+- `IDV_B_A`: `IDC Indefinite Delivery Contract / Requirements`
+- `IDV_B_B`: `IDC Indefinite Delivery Contract / Indefinite Quantity`
+- `IDV_B_C`: `IDC Indefinite Delivery Contract / Definite Quantity`
+- `IDV_C`: `FSS Federal Supply Schedule`
+- `IDV_D`: `BOA Basic Ordering Agreement`
+- `IDV_E`: `BPA Blanket Purchase Agreement`
+
+#### Optional Fields
+- `Total Outlays`
+- `Description`
+- `def_codes`
+- `COVID-19 Obligations`
+- `COVID-19 Outlays`
+- `Infrastructure Obligations`
+- `Infrastructure Outlays`
+- `Place of Performance City Code`
+- `Place of Performance State Code`
+- `Place of Performance Country Code`
+- `Place of Performance Zip5`
+- `Base Obligation Date`
+
+
+#### Grant Awards
 - `Award ID`
 - `Recipient Name`
 - `Start Date`
@@ -87,34 +129,70 @@ List of table columns
 - `Award Type`
 - `Funding Agency`
 - `Funding Sub Agency`
-- `Contract Award Type`
 
-### (Optional)
-- `COVID-19 Obligations`
-- `COVID-19 Outlays`
-- `Infrastructure Obligations`
-- `Infrastructure Outlays`
-- `Place of Performance City Code`
-- `Place of Performance State Code`
-- `Place of Performance Country Code"`
-- `Place of Performance Zip5`
+Grant Award Type Codes
+- `02`: `Block Grant`
+- `03`: `Formula Grant`
+- `04`: `Project Grant`
+- `05`: `Cooperative Agreement`
 
-Based on different award types, additional fields can be requested
-### Grants
-- `No Additional options`
-
-### Loan Awards
+#### Loan Awards 
+- `Award ID`
+- `Recipient Name`
 - `Issued Date`
 - `Loan Value`
 - `Subsidy Cost`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Funding Agency`
+- `Funding Sub Agency`
+- `SAI Number`
+- `CFDA Number`
 
-### Direct Payments
--  `No Additional options`
+Loan Awards Type Codes
+- `07`: `Direct Loan`
+- `08`: `Guaranteed/Insured Loan`
 
-### Other Awards
--  `No Additional options`
+#### Direct Payment Awards
+- `Award ID`
+- `Recipient Name`
+- `Start Date`
+- `End Date`
+- `Award Amount`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Award Type`
+- `Funding Agency`
+- `Funding Sub Agency`
+- `SAI Number`
+- `CFDA Number`
 
-### Contract Subawards
+Direct Payment Awards Type Codes
+- `06`: `Direct Payment for Specified Use`
+- `10`: `Direct Payment with Unrestricted Use`
+
+#### Other Awards 
+- `Award ID`
+- `Recipient Name`
+- `Start Date`
+- `End Date`
+- `Award Amount`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Award Type`
+- `Funding Agency`
+- `Funding Sub Agency`
+- `SAI Number`
+- `CFDA Number`
+
+Other Awards Type Codes
+- `09`: `Insurance`
+- `11`: `Other Financial Assistance`
+- `-1`: `Not Specified`
+
+### Subaward
+
+#### Contract Subawards
 - `Sub-Award ID`
 - `Sub-Award Type`
 - `Sub-Awardee Name`
@@ -126,8 +204,25 @@ Based on different award types, additional fields can be requested
 - `Prime Recipient Name`
 - `prime_award_recipient_id`
 
-### Grant Subawards
--  `No Additional options, same as Contract Subawards`
+Contract Subawards Type Codes
+- Subawards can use the same type codes as awards (A, B, C, D &/or IDVs),
+but the field subawards has to be set to "True" to include subaward results
+
+#### Grant Subawards
+- `Sub-Award ID`
+- `Sub-Award Type`
+- `Sub-Awardee Name`
+- `Sub-Award Date`
+- `Sub-Award Amount`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `Prime Award ID`
+- `Prime Recipient Name`
+- `prime_award_recipient_id`
+
+Grant Subawards Type Codes
+- Subawards can use the same type codes as awards, (02, 03, 04, or 05),
+but the field subawards has to be set to "True" to include subaward results
 
 ## SpendingByAwardResponse (object)
 + `internal_id` (required, number)

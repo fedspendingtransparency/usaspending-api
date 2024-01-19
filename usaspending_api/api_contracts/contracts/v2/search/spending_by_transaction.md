@@ -289,17 +289,7 @@ List of filterable award types
 ## FieldNameObject (array)
 List of column names to request
 
-### Sample
-- `Action Date`
-- `Award ID`
-- `Award Type`
-- `Awarding Agency`
-- `Awarding Sub Agency`
-- `Mod`
-- `Recipient Name`
-- `Transaction Amount`
-
-### Default
+#### Base fields
 - `Action Date` 
 - `Award ID` 
 - `Award Type` 
@@ -311,44 +301,13 @@ List of column names to request
 - `internal_id` 
 - `generated_internal_id` 
 - `Issued Date` 
-- `Last Date to Order` - for some reason all the data had this field set to null regardless of contract type
+- `Last Date to Order` 
 - `Loan Value` 
 - `Mod` 
 - `Recipient Name` 
 - `Subsidy Cost` 
 - `Transaction Amount` 
-
-### Optional 
-
-
-A list of remaining fields that I have come across spread out over the codebase
-but it seems like they are not valid fields as the error 500 is returned
-- `Place of Performance City Code`
-- `Place of Performance State Code`
-- `Place of Performance Country Code`
-- `Place of Performance Zip5`
-
-- `SAI Number`
-- `CFDA Number`
-- `Total Outlays`
-- `Contract Award Type`
-- `Recipient DUNS Number`
-- `recipient_id`
-- `Awarding Agency Code`
-- `Awarding Sub Agency Code`
-- `Funding Agency Code`
-- `Funding Sub Agency Code`
-- `Description`
-- `Last Modified Date`
-- `Base Obligation Date`
-- `prime_award_recipient_id`
-- `generated_internal_id`
 - `def_codes`
-- `COVID-19 Obligations`
-- `COVID-19 Outlays`
-- `Infrastructure Obligations`
-- `Infrastructure Outlays`
-
 
 
 ## AdvancedFilterObject (object)
