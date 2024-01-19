@@ -636,7 +636,7 @@ class Command(BaseCommand):
             # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
             self.logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
             # TODO - Remove this temporary logging
-            self.logger.info(split_df.show())
+            self.logger.info(f"DF length: {split_df.count()}")
             split_df.write.jdbc(
                 url=get_usas_jdbc_url(),
                 table=qualified_temp_table,
