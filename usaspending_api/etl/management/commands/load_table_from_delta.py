@@ -166,7 +166,7 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
-        self.logger = get_jvm_logger(spark, __name__)
+        self.logger = logging.getLogger("script")
 
         # Resolve Parameters
         self.options = options
