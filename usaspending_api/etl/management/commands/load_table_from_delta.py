@@ -217,7 +217,7 @@ class Command(BaseCommand):
             delete_df = distinct_df.filter("_change_type IN ('delete')")
 
             # Call _write_to_postgres()
-            self._write_to_postgres(spark, upsert_df, qualified_upsert_temp_table)
+            self._write_to_postgres(spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def)
             self._write_to_postgres(spark, delete_df, qualified_delete_temp_table, delete_schema_def)
 
         else:
