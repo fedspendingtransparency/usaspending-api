@@ -409,7 +409,7 @@ class Command(BaseCommand):
                 self._write_with_sql_bulk_copy_csv(
                     spark,
                     df,
-                    delta_db=self.source_destination_database,
+                    delta_db=self.qualified_source_delta_table,
                     delta_s3_path=qualified_temp_table,
                     qualified_temp_table=qualified_temp_table,
                     ordered_col_names=column_names,
