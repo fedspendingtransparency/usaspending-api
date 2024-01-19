@@ -394,7 +394,7 @@ class Command(BaseCommand):
         df = df.select(column_names)
 
         try:
-            if self.options["jdbc_inserts"]
+            if self.options["jdbc_inserts"]:
                 self._write_with_jdbc_inserts(
                     spark,
                     df,
