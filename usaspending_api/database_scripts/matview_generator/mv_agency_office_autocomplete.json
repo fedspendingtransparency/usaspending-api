@@ -107,5 +107,7 @@
     "    subtier_name, ",
     "    office_name, ",
     "    office_code "
+  ],
+  "indexes": [
   ]
 }
