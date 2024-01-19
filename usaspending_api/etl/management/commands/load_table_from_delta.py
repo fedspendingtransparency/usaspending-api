@@ -177,9 +177,9 @@ class Command(BaseCommand):
         incremental = self.options["incremental"]
 
         # Delta side
-        self.source_delta_table_name = self.options["alt_delta_name"] or source_delta_table 
+        source_delta_table_name = self.options["alt_delta_name"] or source_delta_table 
         self.source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
-        self.qualified_source_delta_table = f"{self.source_delta_database}.{self.source_delta_table_name}"
+        self.qualified_source_delta_table = f"{self.source_delta_database}.{source_delta_table_name}"
 
         # Postgres side
         postgres_schema = self.table_spec["source_database"] or self.table_spec["swap_schema"]
@@ -227,18 +227,23 @@ class Command(BaseCommand):
             qualified_temp_table = self._prepare_temp_table(temp_schema, temp_table_suffix)
 
             # Read from Delta
-            df = spark.table(self.source_delta_table)
+            df = spark.table(source_delta_table)
 
             # Reset the sequence before load for a table if it exists
             if self.options["reset_sequence"] and self.table_spec.get("postgres_seq_name"):
                 postgres_seq_last_value = self._set_sequence_value(self.table_spec["postgres_seq_name"])
             else:
                 postgres_seq_last_value = None
-            
+
+            use_jdbc_inserts = self.options["jdbc_inserts"]
+            strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
+            self.logger.info(
+                f"LOAD (START): Loading data from Delta table {source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
+            )
             self._write_to_postgres(spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=postgres_seq_last_value)
 
             self.logger.info(
-                f"LOAD (FINISH): Loaded data from Delta table {self.source_delta_table} to {qualified_temp_table} using {self.options['strategy']} " f"strategy"
+                f"LOAD (FINISH): Loaded data from Delta table {source_delta_table} to {qualified_temp_table} using {self.options['strategy']} " f"strategy"
             )
 
             if self.qualified_postgres_table:
@@ -380,11 +385,7 @@ class Command(BaseCommand):
     
     def _write_to_postgres(self, spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=None):
         # TODO - Write Pydoc for this Method
-        use_jdbc_inserts = self.options["jdbc_inserts"]
-        strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
-        self.logger.info(
-            f"LOAD (START): Loading data from Delta table {self.source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
-        )
+
 
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
@@ -393,7 +394,7 @@ class Command(BaseCommand):
         df = df.select(column_names)
 
         try:
-            if use_jdbc_inserts:
+            if self.options["jdbc_inserts"]
                 self._write_with_jdbc_inserts(
                     spark,
                     df,
