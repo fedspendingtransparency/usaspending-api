@@ -614,6 +614,10 @@ class Command(BaseCommand):
 
         col_type_mapping = list(postgres_schema_def.items())
 
+        # TODO - Remove this temporary logging
+        self.logger.info("Full Dataframe: ")
+        self.logger.info(df)
+
         # We are taking control of destination table creation, and not letting Spark auto-create it based
         # on inference from the source DataFrame's schema, there could be incompatible col data types that need
         # special handling. Get those columns and handle each.
@@ -630,6 +634,8 @@ class Command(BaseCommand):
         for i, split_df in enumerate(split_dfs):
             # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
             self.logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
+            # TODO - Remove this temporary logging
+            self.logger.info(split_df)
             split_df.write.jdbc(
                 url=get_usas_jdbc_url(),
                 table=qualified_temp_table,
