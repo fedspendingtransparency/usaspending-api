@@ -6,7 +6,6 @@ class AgencyOfficeAutocompleteMatview(models.Model):
     Supports Award Search 2.0 Agency and Office autocomplete.
     """
 
-    agency_office_autocomplete_id = models.IntegerField(primary_key=True)
     toptier_flag = models.BooleanField()
     toptier_agency_id = models.IntegerField()
     toptier_code = models.TextField(null=True)

@@ -77,7 +77,6 @@
     "        ta.toptier_code not in ('000', '067') ",
     ") ",
     "select ",
-    "    min(ca.agency_id) as agency_office_autocomplete_id, ",
     "    bool_or(ca.toptier_flag) as toptier_flag, ",
     "    ca.toptier_agency_id, ",
     "    ca.toptier_code, ",
@@ -108,12 +107,5 @@
     "    subtier_name, ",
     "    office_name, ",
     "    office_code "
-  ],
-  "indexes": [
-    {
-      "name": "agency_office_autocomplete_id",
-      "unique": true,
-      "columns": [{"name": "agency_office_autocomplete_id"}]
-    }
   ]
 }
