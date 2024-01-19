@@ -624,6 +624,7 @@ class Command(BaseCommand):
         for column_name, column_type in col_type_mapping:
             if column_type in SPECIAL_TYPES_MAPPING:
                 special_columns[column_name] = column_type
+        self.logger.info(f"Special Columns: {special_columns}")
         split_dfs = self._split_dfs(df, list(special_columns))
         split_df_count = len(split_dfs)
         if split_df_count > 1 and save_mode != "append":
