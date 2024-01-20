@@ -84,7 +84,7 @@ class BaseAutocompleteViewSet(APIView):
         return Response({"results": results})
 
     def agency_office_autocomplete(self, request):
-        """Returns a collection of agencies, sub-agencies, and offices that match the given request."""
+        """Returns a collection of agencies, sub-agencies, and offices that match the request."""
 
         search_text, limit = self.get_request_payload(request)
 
