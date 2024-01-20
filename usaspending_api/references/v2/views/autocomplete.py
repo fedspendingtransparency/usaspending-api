@@ -6,7 +6,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import Cfda, Definition, NAICS, PSC
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
-from usaspending_api.search.models import AgencyAutocompleteMatview
+from usaspending_api.search.models import AgencyAutocompleteMatview, AgencyOfficeAutocompleteMatview
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -83,6 +83,53 @@ class BaseAutocompleteViewSet(APIView):
 
         return Response({"results": results})
 
+    def agency_office_autocomplete(self, request):
+        """Returns a collection of agencies, sub-agencies, and offices that match the given request."""
+
+        search_text, limit = self.get_request_payload(request)
+
+        agency_filter = Q(**{self.filter_field: True}) & (
+            Q(toptier_abbreviation__icontains=search_text)
+            | Q(toptier_name__icontains=search_text)
+            | Q(subtier_name__icontains=search_text)
+            | Q(subtier_abbreviation__icontains=search_text)
+            | Q(subtier_name__icontains=search_text)
+        )
+
+        agencies_offices_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(agency_filter)
+
+        distinct_toptier_agency_matches = agencies_offices_search_text_matches.distinct()
+
+        toptier_agency_results = {"toptier_agency": []}
+        for toptier_agency in distinct_toptier_agency_matches[:limit]:
+            subtier_agency_children = (
+                AgencyOfficeAutocompleteMatview.objects.filter(
+                    Q(toptier_code=toptier_agency["toptier_code"])
+                    & Q(toptier_abbreviation=toptier_agency["toptier_abbreviation"])
+                    & Q(toptier_name=toptier_agency["toptier_name"])
+                )
+                .values("subtier_abbreviation", "subtier_name", "subtier_code")
+                .distinct()
+            )
+            toptier_result = {
+                "abbreviation": toptier_agency["toptier_abbreviation"],
+                "code": toptier_agency["toptier_code"],
+                "name": toptier_agency["toptier_name"],
+                "subtier_agencies": [],
+            }
+            for subtier_agency in subtier_agency_children:
+                subtier_result = {
+                    "abbreviation": subtier_agency["subtier_abbreviation"],
+                    "code": subtier_agency["subtier_code"],
+                    "name": subtier_agency["subtier_name"],
+                }
+                toptier_result["subtier_agencies"].append(subtier_result)
+            toptier_agency_results["toptier_agency"].append(toptier_result)
+
+        results = toptier_agency_results
+
+        return Response({"results": results})
+
 
 class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     """
@@ -95,6 +142,20 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     @cache_response()
     def post(self, request):
         return self.agency_autocomplete(request)
+
+
+class AwardingAgencyOfficeAutocompleteViewSet(BaseAutocompleteViewSet):
+    """
+    This route sends a request to the backend to retrieve awarding
+    agencies and offices matching the specified search text.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/awarding_agency_office.md"
+    filter_field = "has_awarding_data"
+
+    @cache_response()
+    def post(self, request):
+        return self.agency_office_autocomplete(request)
 
 
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -207,7 +268,6 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-
         search_text, limit = self.get_request_payload(request)
 
         queryset = Definition.objects.all()

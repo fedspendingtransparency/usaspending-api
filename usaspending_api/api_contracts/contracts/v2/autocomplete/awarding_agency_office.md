@@ -23,7 +23,7 @@ This route sends a request to the backend to retrieve awarding agencies and offi
     + Attributes (object)
         + `limit` (optional, number)
         + `search_text` (required, string)
-            Search text can be an office or agency name, or it can be an agency abbreviation. For example, try searching for DoD and Department of Defense.
+            Search text can be an office or agency name, or it can be an agency abbreviation. For example, try searching for DoD and Department of Defence.
     + Body
 
             {
@@ -38,36 +38,33 @@ This route sends a request to the backend to retrieve awarding agencies and offi
 
 ## AwardingAgencyOfficeMatchObject (object)
 + `toptier_agency` (required, object)
-    + `toptier_code` (required, string)
     + `abbreviation` (required, string, nullable)
+    + `code` (required, string)
     + `name` (required, string)
     + `subtier_agencies` (required, array[SubAgenciesChildObject])
     + `offices` (required, array[OfficesChildObject])
 + `subtier_agency` (required, object)
-    + `id` (required, number)
     + `abbreviation` (required, string, nullable)
+    + `code` (required, string)
     + `name` (required, string)
     + `toptier_agencies` (required, array[AgenciesChildObject])
     + `offices` (required, array[OfficesChildObject])
 + `office` (required, object)
-    + `id` (required, number)
     + `code` (required, string, nullable)
     + `name` (required, string)
     + `toptier_agencies` (required, array[AgenciesChildObject])
     + `subtier_agencies` (required, array[SubAgenciesChildObject])
 
 ## SubAgenciesChildObject (object)
-+ `id` (required, number)
 + `abbreviation` (required, string, nullable)
++ `code` (required, string, nullable)
 + `name` (required, string)
 
 ## AgenciesChildObject (object)
-+ `id` (required, number)
-+ `toptier_code` (required, string)
 + `abbreviation` (required, string, nullable)
++ `code` (required, string)
 + `name` (required, string)
 
 ## OfficesChildObject (object)
-+ `id` (required, number)
 + `code` (required, string, nullable)
 + `name` (required, string)
