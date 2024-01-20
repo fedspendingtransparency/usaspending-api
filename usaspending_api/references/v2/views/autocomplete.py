@@ -88,35 +88,31 @@ class BaseAutocompleteViewSet(APIView):
 
         search_text, limit = self.get_request_payload(request)
 
-        agency_filter = Q(**{self.filter_field: True}) & (
-            Q(toptier_abbreviation__icontains=search_text)
-            | Q(toptier_name__icontains=search_text)
-            | Q(subtier_name__icontains=search_text)
-            | Q(subtier_abbreviation__icontains=search_text)
-            | Q(subtier_name__icontains=search_text)
+        toptier_agency_filter = Q(**{self.filter_field: True}) & (
+            Q(toptier_abbreviation__icontains=search_text) | Q(toptier_name__icontains=search_text)
         )
 
-        agencies_offices_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(agency_filter)
+        agencies_offices_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(toptier_agency_filter)
 
-        distinct_toptier_agency_matches = agencies_offices_search_text_matches.distinct()
+        distinct_toptier_agency_matches = agencies_offices_search_text_matches.values(
+            "toptier_code", "toptier_abbreviation", "toptier_name"
+        ).distinct()
 
         toptier_agency_results = {"toptier_agency": []}
         for toptier_agency in distinct_toptier_agency_matches[:limit]:
-            subtier_agency_children = (
-                AgencyOfficeAutocompleteMatview.objects.filter(
-                    Q(toptier_code=toptier_agency["toptier_code"])
-                    & Q(toptier_abbreviation=toptier_agency["toptier_abbreviation"])
-                    & Q(toptier_name=toptier_agency["toptier_name"])
-                )
-                .values("subtier_abbreviation", "subtier_name", "subtier_code")
-                .distinct()
-            )
             toptier_result = {
                 "abbreviation": toptier_agency["toptier_abbreviation"],
                 "code": toptier_agency["toptier_code"],
                 "name": toptier_agency["toptier_name"],
                 "subtier_agencies": [],
+                "offices": [],
             }
+            children = AgencyOfficeAutocompleteMatview.objects.filter(
+                Q(toptier_code__exact=toptier_agency["toptier_code"])
+                & Q(toptier_abbreviation__exact=toptier_agency["toptier_abbreviation"])
+                & Q(toptier_name__exact=toptier_agency["toptier_name"])
+            )
+            subtier_agency_children = children.values("subtier_abbreviation", "subtier_name", "subtier_code").distinct()
             for subtier_agency in subtier_agency_children:
                 subtier_result = {
                     "abbreviation": subtier_agency["subtier_abbreviation"],
@@ -124,7 +120,21 @@ class BaseAutocompleteViewSet(APIView):
                     "name": subtier_agency["subtier_name"],
                 }
                 toptier_result["subtier_agencies"].append(subtier_result)
+            office_children = children.values("office_name", "office_code").distinct()
+            for office in office_children:
+                office_result = {
+                    "code": office["office_code"],
+                    "name": office["office_name"],
+                }
+                toptier_result["offices"].append(office_result)
             toptier_agency_results["toptier_agency"].append(toptier_result)
+
+        # subtier_agency_filter = Q(**{self.filter_field: True}) & (
+        #     Q(toptier_abbreviation__icontains=search_text)
+        #     | Q(toptier_name__icontains=search_text)
+        #     | Q(subtier_name__icontains=search_text)
+        #     | Q(subtier_abbreviation__icontains=search_text)
+        # )
 
         results = toptier_agency_results
 
