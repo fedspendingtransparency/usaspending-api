@@ -12,6 +12,7 @@ logger = logging.getLogger("script")
 ES_AWARDS_UNIQUE_KEY_FIELD = "generated_unique_award_id"
 ES_TRANSACTIONS_UNIQUE_KEY_FIELD = "generated_unique_transaction_id"
 ES_COVID19_FABA_UNIQUE_KEY_FIELD = "distinct_award_key"
+ES_RECIPIENT_UNIQUE_KEY_FIELD = "recipient_hash"
 
 
 def create_index(index, client):
@@ -32,7 +33,6 @@ def put_alias(client, index, alias_name, alias_body):
 
 def create_award_type_aliases(client, config):
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
-
         alias_name = f"{config['query_alias_prefix']}-{award_type}"
         if config["verbose"]:
             msg = f"Putting alias '{alias_name}' on {config['index_name']} with award codes {award_type_codes}"
@@ -124,7 +124,7 @@ def swap_aliases(client, config):
 
 def toggle_refresh_off(client, index):
     client.indices.put_settings({"refresh_interval": "-1"}, index)
-    message = f'Set "refresh_interval": "-1" to turn auto refresh off'
+    message = 'Set "refresh_interval": "-1" to turn auto refresh off'
     logger.info(format_log(message, action="ES Settings"))
 
 
