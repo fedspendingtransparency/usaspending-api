@@ -12,6 +12,7 @@ class AgencyOfficeAutocompleteMatview(models.Model):
     toptier_abbreviation = models.TextField(null=True)
     toptier_name = models.TextField()
     subtier_abbreviation = models.TextField(null=True)
+    subtier_name = models.TextField()
     subtier_code = models.TextField()
     has_awarding_data = models.BooleanField()
     has_funding_data = models.BooleanField()
@@ -27,6 +28,7 @@ class AgencyOfficeAutocompleteMatview(models.Model):
                 "toptier_abbreviation",
                 "toptier_name",
                 "subtier_abbreviation",
+                "subtier_name",
                 "subtier_code",
                 "office_code",
                 "office_name",
