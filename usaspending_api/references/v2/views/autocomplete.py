@@ -104,13 +104,9 @@ class BaseAutocompleteViewSet(APIView):
         # Beginning toptier object response derivation
         toptier_agency_results = {"toptier_agency": []}
         for toptier_agency in distinct_toptier_agency_matches[:limit]:
-            toptier_result = {
-                "abbreviation": toptier_agency["toptier_abbreviation"],
-                "code": toptier_agency["toptier_code"],
-                "name": toptier_agency["toptier_name"],
-                "subtier_agencies": [],
-                "offices": [],
-            }
+            toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
+            toptier_result["subtier_agencies"] = []
+            toptier_result["offices"] = []
             children = AgencyOfficeAutocompleteMatview.objects.filter(
                 Q(toptier_code__exact=toptier_agency["toptier_code"])
                 & Q(toptier_abbreviation__exact=toptier_agency["toptier_abbreviation"])
@@ -126,11 +122,7 @@ class BaseAutocompleteViewSet(APIView):
                 .distinct()
             )
             for subtier_agency in subtier_agency_children:
-                subtier_result = {
-                    "abbreviation": subtier_agency["subtier_abbreviation"],
-                    "code": subtier_agency["subtier_code"],
-                    "name": subtier_agency["subtier_name"],
-                }
+                subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
                 toptier_result["subtier_agencies"].append(subtier_result)
             office_children = (
                 children.filter(Q(office_name__isnull=False) & Q(office_code__isnull=False))
@@ -138,10 +130,7 @@ class BaseAutocompleteViewSet(APIView):
                 .distinct()
             )
             for office in office_children:
-                office_result = {
-                    "code": office["office_code"],
-                    "name": office["office_name"],
-                }
+                office_result = self._agency_office_office_response_object(office)
                 toptier_result["offices"].append(office_result)
             toptier_agency_results["toptier_agency"].append(toptier_result)
 
@@ -163,13 +152,9 @@ class BaseAutocompleteViewSet(APIView):
         # Beginning subtier object response derivation
         subtier_agency_results = {"subtier_agency": []}
         for subtier_agency in distinct_subtier_agency_matches[:limit]:
-            subtier_result = {
-                "abbreviation": subtier_agency["subtier_abbreviation"],
-                "code": subtier_agency["subtier_code"],
-                "name": subtier_agency["subtier_name"],
-                "toptier_agencies": [],
-                "offices": [],
-            }
+            subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
+            subtier_result["toptier_agencies"] = []
+            subtier_result["offices"] = []
             children = AgencyOfficeAutocompleteMatview.objects.filter(
                 Q(subtier_code__exact=subtier_agency["subtier_code"])
                 & Q(subtier_abbreviation__exact=subtier_agency["subtier_abbreviation"])
@@ -185,11 +170,7 @@ class BaseAutocompleteViewSet(APIView):
                 .distinct()
             )
             for toptier_agency in toptier_agency_children:
-                toptier_result = {
-                    "abbreviation": toptier_agency["toptier_abbreviation"],
-                    "code": toptier_agency["toptier_code"],
-                    "name": toptier_agency["toptier_name"],
-                }
+                toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
                 subtier_result["toptier_agencies"].append(toptier_result)
             office_children = (
                 children.filter(Q(office_name__isnull=False) & Q(office_code__isnull=False))
@@ -197,10 +178,7 @@ class BaseAutocompleteViewSet(APIView):
                 .distinct()
             )
             for office in office_children:
-                office_result = {
-                    "code": office["office_code"],
-                    "name": office["office_name"],
-                }
+                office_result = self._agency_office_office_response_object(office)
                 subtier_result["offices"].append(office_result)
             subtier_agency_results["subtier_agency"].append(subtier_result)
 
@@ -216,12 +194,9 @@ class BaseAutocompleteViewSet(APIView):
         # Beginning office object response derivation
         office_results = {"office": []}
         for office in distinct_office_matches[:limit]:
-            office_result = {
-                "code": office["office_code"],
-                "name": office["office_name"],
-                "toptier_agencies": [],
-                "subtier_agencies": [],
-            }
+            office_result = self._agency_office_office_response_object(office)
+            office_result["toptier_agencies"] = []
+            office_result["subtier_agencies"] = []
             children = AgencyOfficeAutocompleteMatview.objects.filter(
                 Q(office_code__exact=office["office_code"]) & Q(office_name=office["office_name"])
             )
@@ -235,11 +210,7 @@ class BaseAutocompleteViewSet(APIView):
                 .distinct()
             )
             for toptier_agency in toptier_agency_children:
-                toptier_result = {
-                    "abbreviation": toptier_agency["toptier_abbreviation"],
-                    "code": toptier_agency["toptier_code"],
-                    "name": toptier_agency["toptier_name"],
-                }
+                toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
                 office_result["toptier_agencies"].append(toptier_result)
             subtier_agency_children = (
                 children.filter(
@@ -251,17 +222,54 @@ class BaseAutocompleteViewSet(APIView):
                 .distinct()
             )
             for subtier_agency in subtier_agency_children:
-                subtier_result = {
-                    "abbreviation": subtier_agency["subtier_abbreviation"],
-                    "code": subtier_agency["subtier_code"],
-                    "name": subtier_agency["subtier_name"],
-                }
+                subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
                 office_result["subtier_agencies"].append(subtier_result)
             office_results["office"].append(office_result)
 
         results = {**toptier_agency_results, **subtier_agency_results, **office_results}
 
         return Response({"results": results})
+
+    def _agency_office_subtier_agency_response_object(self, record: dict) -> dict:
+        """Using the provided record, converts the subtier agency data
+        into an object for the api response.
+
+        Args:
+            record: The record to extract values from.
+        """
+        object = {
+            "abbreviation": record["subtier_abbreviation"],
+            "code": record["subtier_code"],
+            "name": record["subtier_name"],
+        }
+        return object
+
+    def _agency_office_toptier_agency_response_object(self, record: dict) -> dict:
+        """Using the provided record, converts the toptier agency data
+        into an object for the api response.
+
+        Args:
+            record: The record to extract values from.
+        """
+        object = {
+            "abbreviation": record["toptier_abbreviation"],
+            "code": record["toptier_code"],
+            "name": record["toptier_name"],
+        }
+        return object
+
+    def _agency_office_office_response_object(self, record: dict) -> dict:
+        """Using the provided record, converts the office data
+        into an object for the api response.
+
+        Args:
+            record: The record to extract values from.
+        """
+        object = {
+            "code": record["office_code"],
+            "name": record["office_name"],
+        }
+        return object
 
 
 class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
