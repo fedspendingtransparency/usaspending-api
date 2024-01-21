@@ -291,6 +291,20 @@ class AwardingAgencyOfficeAutocompleteViewSet(BaseAutocompleteViewSet):
         return self.agency_office_autocomplete(request)
 
 
+class FundingAgencyOfficeAutocompleteViewSet(BaseAutocompleteViewSet):
+    """
+    This route sends a request to the backend to retrieve funding
+    agencies and offices matching the specified search text.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/funding_agency_office.md"
+    filter_field = "has_funding_data"
+
+    @cache_response()
+    def post(self, request):
+        return self.agency_office_autocomplete(request)
+
+
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     """
     This route sends a request to the backend to retrieve funding agencies matching the specified search text.
