@@ -57,7 +57,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/accounts/sub/](/api/v2/autocomplete/accounts/sub/)|POST| Returns Treasury Account Symbol Sub-Account Code (SUB) filtered by other components provided in the request filter |
 |[/api/v2/autocomplete/awarding_agency/](/api/v2/autocomplete/awarding_agency/)|POST| Returns awarding agencies matching the specified search text |
 |[/api/v2/autocomplete/awarding_agency_office/](/api/v2/autocomplete/awarding_agency_office/)|POST| Returns awarding agencies and office matching the specified search text |
-|[/api/v2/autocomplete/funding_agency_office/](/api/v2/autocomplete/awarding_agency_office/)|POST| Returns funding agencies and office matching the specified search text |
+|[/api/v2/autocomplete/funding_agency_office/](/api/v2/autocomplete/funding_agency_office/)|POST| Returns funding agencies and office matching the specified search text |
 |[/api/v2/autocomplete/cfda/](/api/v2/autocomplete/cfda/)|POST| Returns CFDA programs matching the specified search text |
 |[/api/v2/autocomplete/city/](/api/v2/autocomplete/city/)|POST| Returns city names matching the search text, sorted by relevance |
 |[/api/v2/autocomplete/funding_agency/](/api/v2/autocomplete/funding_agency/)|POST| Returns funding agencies matching the specified search text |
