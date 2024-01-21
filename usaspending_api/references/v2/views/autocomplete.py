@@ -87,21 +87,24 @@ class BaseAutocompleteViewSet(APIView):
         """Returns a collection of agencies, sub-agencies, and offices that match the request."""
 
         search_text, limit = self.get_request_payload(request)
+        # It's important to order by toptier fields so that results are deterministic between objects.
+        # For that reason we define one set of order by arguments to be re-used throughout this method.
+        order_by = ["-toptier_flag", Upper("toptier_name"), Upper("subtier_name")]
 
+        # Begin deriving toptier agency objects for response
         toptier_agency_filter = Q(**{self.filter_field: True}) & (
             Q(toptier_abbreviation__icontains=search_text) | Q(toptier_name__icontains=search_text)
         )
 
         toptier_agency_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(
             toptier_agency_filter
-        ).order_by("-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
+        ).order_by(*order_by)
 
         # Using distinct is important because the mat-view is at an office grain
         distinct_toptier_agency_matches = toptier_agency_search_text_matches.values(
             "toptier_code", "toptier_abbreviation", "toptier_name"
         ).distinct()
 
-        # Beginning toptier object response derivation
         toptier_agency_results = {"toptier_agency": []}
         for toptier_agency in distinct_toptier_agency_matches[:limit]:
             toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
@@ -134,22 +137,20 @@ class BaseAutocompleteViewSet(APIView):
                 toptier_result["offices"].append(office_result)
             toptier_agency_results["toptier_agency"].append(toptier_result)
 
+        # Begin deriving subteir agency objects for response
         subtier_agency_filter = Q(**{self.filter_field: True}) & (
             Q(subtier_abbreviation__icontains=search_text) | Q(subtier_name__icontains=search_text)
         )
 
         subtier_agency_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(
             subtier_agency_filter
-        ).order_by(
-            "-toptier_flag", Upper("toptier_name"), Upper("subtier_name")
-        )  # It's important to order by toptier fields so that results are deterministic between objects
+        ).order_by(*order_by)
 
         # Using distinct is important because the mat-view is at an office grain
         distinct_subtier_agency_matches = subtier_agency_search_text_matches.values(
             "subtier_code", "subtier_abbreviation", "subtier_name"
         ).distinct()
 
-        # Beginning subtier object response derivation
         subtier_agency_results = {"subtier_agency": []}
         for subtier_agency in distinct_subtier_agency_matches[:limit]:
             subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
@@ -182,16 +183,14 @@ class BaseAutocompleteViewSet(APIView):
                 subtier_result["offices"].append(office_result)
             subtier_agency_results["subtier_agency"].append(subtier_result)
 
+        # Begin deriving office objects for response
         office_filter = Q(**{self.filter_field: True}) & (Q(office_name__icontains=search_text))
 
-        office_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(office_filter).order_by(
-            "-toptier_flag", Upper("toptier_name"), Upper("subtier_name")
-        )  # It's important to order by toptier fields so that results are deterministic between objects
+        office_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(office_filter).order_by(*order_by)
 
         # Using distinct is important because the mat-view is at an office grain
         distinct_office_matches = office_search_text_matches.values("office_code", "office_name").distinct()
 
-        # Beginning office object response derivation
         office_results = {"office": []}
         for office in distinct_office_matches[:limit]:
             office_result = self._agency_office_office_response_object(office)
@@ -226,6 +225,7 @@ class BaseAutocompleteViewSet(APIView):
                 office_result["subtier_agencies"].append(subtier_result)
             office_results["office"].append(office_result)
 
+        # Assemble all objects into the final response
         results = {**toptier_agency_results, **subtier_agency_results, **office_results}
 
         return Response({"results": results})
