@@ -27,7 +27,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.config import CONFIG
 from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
-from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
@@ -113,6 +113,14 @@ class Command(BaseCommand):
             help="Instead of writing the full table to temporary tables in Postgres, use Change Data Feed to "
             "determine changes, and write those to staging tables in Postgres.",
         )
+        parser.add_argument(
+            "--incremental-threshold",
+            type=float,
+            default=.5,
+            help="A percentage represented as a decimal controlling the threshold. When the ratio of changed records to "
+            "total records in the `delta_table` surpasses this threshold, this command will fall back on performing a "
+            "full table load, even if the `--incremental` flag is used.",
+        )
 
     def _split_dfs(self, df, special_columns):
         """Split a DataFrame into DataFrame subsets based on presence of NULL values in certain special columns
@@ -178,53 +186,78 @@ class Command(BaseCommand):
 
         # Delta side
         source_delta_table_name = self.options["alt_delta_name"] or source_delta_table 
-        self.source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
-        self.qualified_source_delta_table = f"{self.source_delta_database}.{source_delta_table_name}"
+        source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
+        self.qualified_source_delta_table = f"{source_delta_database}.{source_delta_table_name}"
+        partition_column = self.table_spec["partition_column"]
+        delta_table_load_version_key = self.table_spec["delta_table_load_version_key"]
 
         # Postgres side
         postgres_schema = self.table_spec["source_database"] or self.table_spec["swap_schema"]
         postgres_schema_def = self.table_spec["source_schema"]
         self.postgres_table_name = self.table_spec["source_table"] or self.table_spec["swap_table"]
         self.qualified_postgres_table = f"{postgres_schema}.{self.postgres_table_name}"
+        postgres_temp_schema = "temp"
 
-        # Create Necessary Temporary Tables
-        temp_schema = "temp"
+        # Determine the latest version of the Delta Table at the time this command is running. This will later
+        # be stored as the latest version stored to the staging table, regardless of whether we update incrementally
+        # or repopulate the entire table
+        last_update_version = spark.sql(f"DESCRIBE HISTORY {self.qualified_source_delta_table}").select("verison").first()[0]
+
+        updated_incrementally = False
         if incremental:
-            upsert_table_suffix = "temp_upserts"
-            delete_table_suffix = "temp_deletes"
 
-            # Upsert Schema (matches base table)
-            qualified_upsert_temp_table = self._prepare_temp_table(temp_schema, upsert_table_suffix)
-            
-            # Delete Schema
-            delete_schema_def = self.table_spec["incremental_delete_temp_schema"]
-            qualified_delete_temp_table = self._prepare_temp_table(temp_schema, delete_table_suffix, schema_override=delete_schema_def)
+            # Validate that necessary TABLE_SPEC fields are present for incremental loads
+            if not ("incremental_delete_temp_schema" and "delta_table_load_version_key"):
+                self.logger.error(f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads")
+                self.logger.error(f"Values are required for fields: `incremental_delete_temp_schema`, and `delta_table_load_version_key`")
 
-            # Query new table to get latest versions
-            last_staging_version, last_live_version = get_last_delta_table_load_versions("award_search")
+            # Retrieve information about which versions of the Delta Table have been loaded where. We'll use
+            # the `last_live_version` to query changes because we want all the data that has not persisted
+            # to the live table, regardless of what has been previously written to the staging table because it
+            # will be overwritten. 
+            last_staging_version, last_live_version = get_last_delta_table_load_versions(delta_table_load_version_key)
 
-            # Create Dataframes to pass into _write_to_postgres()
-            # TODO - Refactor to get a distinct set of records windowed by latest version
+            # Create a Dataframe with a unique list of entities (based on the table's unique key) that have been
+            # updated since this command was last run using Delta's Change Data Feed feature. If an entity
+            # has been updated multiple times, the latest update will be selected.
+            # 
+            # This will be used to determine if the number of updated records exceeds the update threshold, and 
+            # (if not) it will serve as the basis for dataframes to be written to Postgres with incremental changes.
+
             distinct_df = spark.sql(f"""
                 SELECT * EXCEPT(_commit_timestamp, _commit_version, row_num) FROM (
                     SELECT * ,
-                    ROW_NUMBER() OVER (PARTITION BY award_id ORDER BY _commit_version DESC) AS row_num
-                    FROM table_changes('{self.qualified_postgres_table}', {last_staging_version})
+                    ROW_NUMBER() OVER (PARTITION BY {partition_column} ORDER BY _commit_version DESC) AS row_num
+                    FROM table_changes('{self.qualified_postgres_table}', {last_live_version})
                     WHERE _change_type in ('insert', 'update_postimage', 'delete')
                 ) WHERE row_num = 1
             """)
 
-            upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')")
-            delete_df = distinct_df.filter("_change_type IN ('delete')")
+            if not self._surpassed_update_threshold(distinct_df):
+                upsert_table_suffix = "temp_upserts"
+                delete_table_suffix = "temp_deletes"
 
-            # Call _write_to_postgres()
-            self._write_to_postgres(spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def)
-            self._write_to_postgres(spark, delete_df, qualified_delete_temp_table, delete_schema_def)
+                # Upsert Schema (matches base table)
+                qualified_upsert_temp_table = self._prepare_temp_table(postgres_temp_schema, upsert_table_suffix)
+                
+                # Delete Schema
+                delete_schema_def = self.table_spec["incremental_delete_temp_schema"]
+                qualified_delete_temp_table = self._prepare_temp_table(postgres_temp_schema, delete_table_suffix, schema_override=delete_schema_def)
 
-        else:
+                # Split the Dataframe into two based on the type of update that was made
+                upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')")
+                delete_df = distinct_df.filter("_change_type IN ('delete')")
+
+                # Call _write_to_postgres()
+                self._write_to_postgres(spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def)
+                self._write_to_postgres(spark, delete_df, qualified_delete_temp_table, delete_schema_def)
+
+                updated_incrementally = True
+
+        if not updated_incrementally:
             temp_table_suffix = "temp"
 
-            qualified_temp_table = self._prepare_temp_table(temp_schema, temp_table_suffix)
+            qualified_temp_table = self._prepare_temp_table(postgres_temp_schema, temp_table_suffix)
 
             # Read from Delta
             df = spark.table(source_delta_table)
@@ -254,11 +287,31 @@ class Command(BaseCommand):
                     f" 'copy_table_metadata --source-table {self.qualified_postgres_table} --dest-table {qualified_temp_table}'."
                 )
 
-        # TODO Update latest versions
+        if delta_table_load_version_key:
+            update_last_staging_load_version(delta_table_load_version_key, last_update_version)
 
         # We're done with spark at this point
         if spark_created_by_command:
             spark.stop()
+
+    def _surpassed_update_threshold(self, spark, distinct_df):
+            # TODO - Pydoc 
+            # Determine incremental update feasibility. If more than 50% of records have been updated, we fall back
+            # on the full refresh strategy of this command.
+            threshold = self.options["incremental_threshold"]
+            threshold_surpassed = False
+
+            total_record_count = spark.sql(f"SELECT COUNT(*) FROM {self.qualified_source_delta_table}").collect()[0]
+
+            records_changed = distinct_df.count()
+
+            if records_changed / total_record_count > .5:
+                self.logger.warning(f"Exceeded threshold of {threshold:.0%} for incremental updates")
+                self.logger.warning(f"---- Total Records  in  {self.qualified_source_delta_table}: {total_record_count}")
+                self.logger.warning(f"---- Records Changed in {self.qualified_source_delta_table}: {total_record_count}")
+                threshold_surpassed = True
+            
+            return threshold_surpassed
 
     def _prepare_temp_table(self, temp_schema, temp_table_suffix, schema_override=None):
         # TODO - Create Pydoc for this method
@@ -396,11 +449,9 @@ class Command(BaseCommand):
         try:
             if self.options["jdbc_inserts"]:
                 self._write_with_jdbc_inserts(
-                    spark,
                     df,
                     qualified_temp_table,
                     postgres_schema_def,
-                    overwrite=False,
                 )
             else:
                 if not postgres_schema_def:
@@ -581,11 +632,9 @@ class Command(BaseCommand):
 
     def _write_with_jdbc_inserts(
         self,
-        spark: SparkSession,
         df: DataFrame,
         qualified_temp_table: str,
         postgres_schema_def: Dict,
-        overwrite: bool = False,
     ):
         """
         Write-from-delta-to-postgres strategy that leverages the native Spark ``DataFrame.write.jdbc`` approach.
@@ -599,24 +648,13 @@ class Command(BaseCommand):
         - which means the DB could be processing 20*1000 = 20,000 INSERT statements concurrently
 
         Args:
-            spark (SparkSession): the active SparkSession to work within
             df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
             qualified_temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
                 where the CSV data will be written to with COPY
             postgres_schema_def (Dict): Schema of table being written to
-            overwrite (bool): Defaults to False. Controls whether the table should be truncated first before
-            INSERTing (if True), or if INSERTs should append on existing data in the table (if False). NOTE: The table
-            may already have been TRUNCATEd as part of the setup of this job before it gets to this step of writing
-            to it.
         """
         special_columns = {}
-        save_mode = "overwrite" if overwrite else "append"
-
         col_type_mapping = list(postgres_schema_def.items())
-
-        # TODO - Remove this temporary logging
-        self.logger.info("Full Dataframe: ")
-        self.logger.info(df.show())
 
         # We are taking control of destination table creation, and not letting Spark auto-create it based
         # on inference from the source DataFrame's schema, there could be incompatible col data types that need
@@ -627,20 +665,14 @@ class Command(BaseCommand):
         self.logger.info(f"Special Columns: {special_columns}")
         split_dfs = self._split_dfs(df, list(special_columns))
         split_df_count = len(split_dfs)
-        if split_df_count > 1 and save_mode != "append":
-            raise RuntimeError(
-                "Multiple DataFrame subsets need to be appended to the destination "
-                "table back-to-back but the write was set to overwrite, which is incorrect."
-            )
+
         for i, split_df in enumerate(split_dfs):
             # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
             self.logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
-            # TODO - Remove this temporary logging
-            self.logger.info(f"DF length: {split_df.count()}")
             split_df.write.jdbc(
                 url=get_usas_jdbc_url(),
                 table=qualified_temp_table,
-                mode=save_mode,
+                mode="append",
                 properties=get_jdbc_connection_properties(),
             )
             self.logger.info(f"LOAD: Part {i + 1} of {split_df_count} loaded (note: unequal part sizes)")
