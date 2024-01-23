@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.generic_helper import deprecated_api_endpoint_message
 from usaspending_api.references.models import Cfda, Definition, NAICS, PSC
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 from usaspending_api.search.models import AgencyAutocompleteMatview, AgencyOfficeAutocompleteMatview
@@ -81,6 +82,10 @@ class BaseAutocompleteViewSet(APIView):
             for agency in agencies[:limit]
         ]
 
+        results = {"results": results}
+        messages = results.get("messages", [])
+        deprecated_api_endpoint_message(messages)
+        results["messages"] = messages
         return Response({"results": results})
 
     def agency_office_autocomplete(self, request):

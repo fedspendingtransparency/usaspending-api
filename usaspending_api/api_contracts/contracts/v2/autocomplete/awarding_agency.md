@@ -3,6 +3,9 @@ HOST: https://api.usaspending.gov
 
 # Awarding Agency Autocomplete [/api/v2/autocomplete/awarding_agency/]
 
+*Deprecated: Please see the following API contract for the new awarding and funding endpoints (respectively) [usaspending_api/api_contracts/contracts/v2/autocomplete/awarding_agency_office.md](./awarding_agency_office.md) and [usaspending_api/api_contracts/contracts/v2/autocomplete/funding_agency_office.md](./funding_agency_office.md)*
+
+
 This endpoint is used by the Awarding Agency autocomplete filter on the Advanced Search page.
 
 ## POST
