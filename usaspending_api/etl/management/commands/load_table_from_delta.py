@@ -198,14 +198,17 @@ class Command(BaseCommand):
         self.qualified_postgres_table = f"{postgres_schema}.{self.postgres_table_name}"
         postgres_temp_schema = "temp"
 
+        # Used later for logging
+        strategy = "JDBC INSERTs" if self.options["jdbc_inserts"] else "SQL bulk COPY CSV"
+
         # Determine the latest version of the Delta Table at the time this command is running. This will later
-        # be stored as the latest version stored to the staging table, regardless of whether we update incrementally
+        # be stored as the latest version written to the staging table, regardless of whether we update incrementally
         # or repopulate the entire table
         last_update_version = spark.sql(f"DESCRIBE HISTORY {self.qualified_source_delta_table}").select("version").first()[0]
 
         updated_incrementally = False
-        if incremental:
 
+        if incremental:
             # Validate that necessary TABLE_SPEC fields are present for incremental loads
             if not ("incremental_delete_temp_schema" and "delta_table_load_version_key"):
                 self.logger.error(f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads")
@@ -218,11 +221,12 @@ class Command(BaseCommand):
             last_staging_version, last_live_version = get_last_delta_table_load_versions(delta_table_load_version_key)
 
             # Create a Dataframe with a unique list of entities (based on the table's unique key) that have been
-            # updated since this command was last run using Delta's Change Data Feed feature. If an entity
-            # has been updated multiple times, the latest update will be selected.
-            # 
+            # updated since this command was last run. If an entity has been updated multiple times, the latest
+            # update will be selected. This utilizes Delta Lake's Change Data Feed feature.
             # This will be used to determine if the number of updated records exceeds the update threshold, and 
-            # (if not) it will serve as the basis for dataframes to be written to Postgres with incremental changes.
+            # (if not exceeding) it will serve as the basis for dataframes to be written to Postgres with incremental
+            # changes.
+
             distinct_df = spark.sql(f"""
                 SELECT * EXCEPT(_commit_timestamp, _commit_version, row_num) FROM (
                     SELECT * ,
@@ -231,6 +235,16 @@ class Command(BaseCommand):
                     WHERE _change_type in ('insert', 'update_postimage', 'delete')
                 ) WHERE row_num = 1
             """)
+
+            self.logger.info(f"""
+                SELECT * EXCEPT(_commit_timestamp, _commit_version, row_num) FROM (
+                    SELECT * ,
+                    ROW_NUMBER() OVER (PARTITION BY {', '.join(unique_identifiers)} ORDER BY _commit_version DESC) AS row_num
+                    FROM table_changes('{self.qualified_postgres_table}', {last_live_version})
+                    WHERE _change_type in ('insert', 'update_postimage', 'delete')
+                ) WHERE row_num = 1
+            """)
+
 
             if not self._surpassed_update_threshold(spark, distinct_df):
                 upsert_table_suffix = "temp_upserts"
@@ -267,15 +281,13 @@ class Command(BaseCommand):
             else:
                 postgres_seq_last_value = None
 
-            use_jdbc_inserts = self.options["jdbc_inserts"]
-            strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
             self.logger.info(
-                f"LOAD (START): Loading data from Delta table {source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
+                f"LOAD (START): Loading full Delta table {source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
             )
             self._write_to_postgres(spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=postgres_seq_last_value)
 
             self.logger.info(
-                f"LOAD (FINISH): Loaded data from Delta table {source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
+                f"LOAD (FINISH): Loaded full Delta table {source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
             )
 
             if self.qualified_postgres_table:
