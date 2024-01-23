@@ -33,6 +33,8 @@ This route sends a request to the backend to retrieve awarding agencies and offi
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[AwardingAgencyOfficeMatchObject], fixed-type)
+        + `messages` (required, array[string], fixed-type)
+        An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 

@@ -110,9 +110,7 @@ class BaseAutocompleteViewSet(APIView):
         for toptier_agency in toptier_agency_search_text_matches:
             # This key is created so that we can treat multiple records with the same
             # toptier values as a single result
-            key = (
-                toptier_agency["toptier_abbreviation"] + toptier_agency["toptier_code"] + toptier_agency["toptier_name"]
-            )
+            key = f'{toptier_agency["toptier_abbreviation"]}{toptier_agency["toptier_code"]}{toptier_agency["toptier_name"]}'
             if key not in toptier_agency_tracker:
                 toptier_agency_tracker[key] = {}
                 toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
@@ -207,7 +205,9 @@ class BaseAutocompleteViewSet(APIView):
         # Assemble all objects into the final response
         results = {**toptier_agency_results, **subtier_agency_results, **office_results}
 
-        return Response({"results": results})
+        results = {"results": results}
+        results["messages"] = []
+        return Response(results)
 
     def _agency_office_subtier_agency_response_object(self, record: dict) -> dict:
         """Using the provided record, converts the subtier agency data

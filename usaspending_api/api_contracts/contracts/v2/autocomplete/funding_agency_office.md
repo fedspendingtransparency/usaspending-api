@@ -33,6 +33,8 @@ This route sends a request to the backend to retrieve funding agencies and offic
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[FundingAgencyOfficeMatchObject], fixed-type)
+        + `messages` (required, array[string], fixed-type)
+        An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 
