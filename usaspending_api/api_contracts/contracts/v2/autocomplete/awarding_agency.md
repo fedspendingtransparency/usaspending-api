@@ -3,7 +3,7 @@ HOST: https://api.usaspending.gov
 
 # Awarding Agency Autocomplete [/api/v2/autocomplete/awarding_agency/]
 
-*Deprecated: Please see the following API contract for the new awarding and funding endpoints (respectively) [usaspending_api/api_contracts/contracts/v2/autocomplete/awarding_agency_office.md](./awarding_agency_office.md) and [usaspending_api/api_contracts/contracts/v2/autocomplete/funding_agency_office.md](./funding_agency_office.md)*
+*Deprecated: Please see the following API contract for the new awarding endpoint [usaspending_api/api_contracts/contracts/v2/autocomplete/awarding_agency_office.md](./awarding_agency_office.md).*
 
 
 This endpoint is used by the Awarding Agency autocomplete filter on the Advanced Search page.
@@ -32,6 +32,8 @@ This route sends a request to the backend to retrieve awarding agencies matching
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[AwardingAgencyMatchObject], fixed-type)
+        + `messages` (required, array[string], fixed-type)
+        An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
 # Data Structures
 
