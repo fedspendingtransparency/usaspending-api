@@ -78,7 +78,7 @@ The SpendingByAward API can accept any of the following fields based on whether 
 Awards are searched by default, however the subawards can be searched by setting the subawards field to "True". 
 
 ### Awards
-Awards can be searched by using the Award type codes (A, B, C, D, IDV_A, IDV_B, IDV_B_A, IDV_B_B, IDV_B_C, IDV_C, IDV_D, IDV_E) and accept any of the following fields
+Award based searches have a base set of fields that are valid for all award types, however there are some type specific fields that are only valid for certain award types, which have been described further below. 
 
 #### Base fields
 - `Award ID`
