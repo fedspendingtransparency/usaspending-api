@@ -74,9 +74,11 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 # Data Structures
 
 ## SpendingByAwardFields (array)
-List of table columns
+The SpendingByAward API can accept any of the following fields based on whether awards or subawards are being searched.
+Awards are searched by default, however the subawards can be searched by setting the subawards field to "True". 
 
 ### Awards
+Awards can be searched by using the Award type codes (A, B, C, D, IDV_A, IDV_B, IDV_B_A, IDV_B_B, IDV_B_C, IDV_C, IDV_D, IDV_E) and accept any of the following fields
 
 #### Base fields
 - `Award ID`
@@ -88,22 +90,6 @@ List of table columns
 - `Awarding Sub Agency`
 - `Award Type`
 - `Contract Award Type`
-
-Award Type Codes
-- `A`: `BPA Call`
-- `B`: `Purchase Order`
-- `C`: `Delivery Order`
-- `D`: `Definitive Contract`
-- `IDV_A`: `GWAC Government Wide Acquisition Contract`
-- `IDV_B`: `IDC Multi-Agency Contract, Other Indefinite Delivery Contract`
-- `IDV_B_A`: `IDC Indefinite Delivery Contract / Requirements`
-- `IDV_B_B`: `IDC Indefinite Delivery Contract / Indefinite Quantity`
-- `IDV_B_C`: `IDC Indefinite Delivery Contract / Definite Quantity`
-- `IDV_C`: `FSS Federal Supply Schedule`
-- `IDV_D`: `BOA Basic Ordering Agreement`
-- `IDV_E`: `BPA Blanket Purchase Agreement`
-
-#### Optional Fields
 - `Total Outlays`
 - `Description`
 - `def_codes`
@@ -118,76 +104,37 @@ Award Type Codes
 - `Base Obligation Date`
 
 #### Grant Awards
-- `Award ID`
-- `Recipient Name`
-- `Start Date`
-- `End Date`
-- `Award Amount`
-- `Awarding Agency`
-- `Awarding Sub Agency`
-- `Award Type`
+Grant Awards can be searched for specifically by using the Grant Type Codes (02, 03, 04, or 05) and the following fields are additional fields that can be requested. 
+
 - `Funding Agency`
 - `Funding Sub Agency`
 
-Grant Award Type Codes
-- `02`: `Block Grant`
-- `03`: `Formula Grant`
-- `04`: `Project Grant`
-- `05`: `Cooperative Agreement`
-
 #### Loan Awards 
-- `Award ID`
-- `Recipient Name`
+Loan Awards can be searched for specifically by using the Loan Type Codes (07 or 08) and the following fields are additional fields that can be requested. 
+
 - `Issued Date`
 - `Loan Value`
 - `Subsidy Cost`
-- `Awarding Agency`
-- `Awarding Sub Agency`
 - `Funding Agency`
 - `Funding Sub Agency`
 - `SAI Number`
 - `CFDA Number`
-
-Loan Awards Type Codes
-- `07`: `Direct Loan`
-- `08`: `Guaranteed/Insured Loan`
 
 #### Direct Payment Awards
-- `Award ID`
-- `Recipient Name`
-- `Start Date`
-- `End Date`
-- `Award Amount`
-- `Awarding Agency`
-- `Awarding Sub Agency`
-- `Award Type`
+Direct Payment Awards can be searched for specifically by using the Direct Payment Awards Type Codes (06 or 10) and the following fields are additional fields that can be requested. 
+
 - `Funding Agency`
 - `Funding Sub Agency`
 - `SAI Number`
 - `CFDA Number`
-
-Direct Payment Awards Type Codes
-- `06`: `Direct Payment for Specified Use`
-- `10`: `Direct Payment with Unrestricted Use`
 
 #### Other Awards 
-- `Award ID`
-- `Recipient Name`
-- `Start Date`
-- `End Date`
-- `Award Amount`
-- `Awarding Agency`
-- `Awarding Sub Agency`
-- `Award Type`
+Other Awards can be searched for specifically by using the Other Awards Type Codes (09, 11, or -1) and the following fields are additional fields that can be requested. 
+
 - `Funding Agency`
 - `Funding Sub Agency`
 - `SAI Number`
 - `CFDA Number`
-
-Other Awards Type Codes
-- `09`: `Insurance`
-- `11`: `Other Financial Assistance`
-- `-1`: `Not Specified`
 
 ### Subaward
 

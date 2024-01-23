@@ -289,7 +289,6 @@ List of filterable award types
 ## FieldNameObject (array)
 List of column names to request
 
-#### Base fields
 - `Action Date` 
 - `Award ID` 
 - `Award Type` 
