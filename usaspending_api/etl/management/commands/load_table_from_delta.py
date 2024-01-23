@@ -263,8 +263,8 @@ class Command(BaseCommand):
                 delete_df = distinct_df.filter("_change_type IN ('delete')")
 
                 # Call _write_to_postgres()
-                self._write_to_postgres(spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def)
-                self._write_to_postgres(spark, delete_df, qualified_delete_temp_table, delete_schema_def)
+                self._write_to_postgres(spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def, self.table_spec["column_names"])
+                self._write_to_postgres(spark, delete_df, qualified_delete_temp_table, delete_schema_def, list(delete_schema_def))
 
                 updated_incrementally = True
 
@@ -287,7 +287,7 @@ class Command(BaseCommand):
                 f"strategy"
             )
             self._write_to_postgres(
-                spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=postgres_seq_last_value
+                spark, df, qualified_temp_table, postgres_schema_def, self.table_spec["column_names"], postgres_seq_last_value
             )
 
             self.logger.info(
@@ -478,10 +478,11 @@ class Command(BaseCommand):
 
     def _write_to_postgres(
         self,
-        spark: (SparkSession),
-        df: (DataFrame),
-        qualified_temp_table: (str),
-        postgres_schema_def: (dict),
+        spark: SparkSession,
+        df: DataFrame,
+        qualified_temp_table: str,
+        postgres_schema_def: dict,
+        delta_column_names: List[str],
         postgres_seq_last_value=None,
     ):
         """
@@ -498,6 +499,7 @@ class Command(BaseCommand):
             qualified_temp_table (str): The fully qualified Postgres table name to write the data to (<schema>.<table_name>)
             postgres_scheme_def (dict): Schema definition for Postgres table being written to in dictionary format. Key value
                 pairs contain column name and column types, respectively. Only used for JDBC insert strategy
+            delta_column_names (List[str]): List of Delta columns to read from Dataframe before writing to Postgres.
             postgres_seq_last_value (int): Last value of the Postgres Sequence. This is provided, so it can be reset to this
                 value in the case of an error
         """
@@ -505,8 +507,7 @@ class Command(BaseCommand):
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
         # always needed, this should help to prevent any future mismatch between the two.
-        column_names = list(postgres_schema_def.keys())
-        df = df.select(column_names)
+        df = df.select(delta_column_names)
 
         try:
             if self.options["jdbc_inserts"]:
@@ -521,7 +522,7 @@ class Command(BaseCommand):
                     df,
                     delta_s3_path=qualified_temp_table,
                     qualified_temp_table=qualified_temp_table,
-                    ordered_col_names=column_names,
+                    ordered_col_names=delta_column_names,
                     spark_s3_bucket_name=self.options["spark_s3_bucket"],
                     keep_csv_files=True if self.options["keep_csv_files"] else False,
                 )
