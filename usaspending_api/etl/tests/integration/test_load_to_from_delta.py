@@ -187,7 +187,6 @@ def verify_delta_table_loaded_to_delta(
         # which uses unique_identifiers instead
         sort_columns = TABLE_SPEC[delta_table_name]["unique_identifiers"]
 
-
     if dummy_data is None:
         # get the postgres data to compare
         model = TABLE_SPEC[delta_table_name]["model"]

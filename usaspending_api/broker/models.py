@@ -36,5 +36,4 @@ class DeltaTableLoadVersion(models.Model):
     class Meta:
         managed = True
         # Schema is set to `public` in migration `0003_deltatableloadversion`
-        db_table = 'delta_table_load_version'
-
+        db_table = "delta_table_load_version"

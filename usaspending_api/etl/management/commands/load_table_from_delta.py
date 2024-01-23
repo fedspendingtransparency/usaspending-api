@@ -7,13 +7,15 @@ import psycopg2
 
 from django import db
 from django.core.management.base import BaseCommand
-from django.db.models import Model
 from math import ceil
 from pyspark.sql import SparkSession, DataFrame
 from typing import Dict, Optional, List
 from datetime import datetime
 
-from usaspending_api.broker.helpers.last_delta_table_load_version import get_last_delta_table_load_versions, update_last_live_load_version, update_last_staging_load_version
+from usaspending_api.broker.helpers.last_delta_table_load_version import (
+    get_last_delta_table_load_versions,
+    update_last_staging_load_version,
+)
 from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
 from usaspending_api.common.etl.spark import convert_array_cols_to_string
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -22,7 +24,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
@@ -116,7 +117,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--incremental-threshold",
             type=float,
-            default=.5,
+            default=0.5,
             help="A percentage represented as a decimal controlling the threshold. When the ratio of changed records to "
             "total records in the `delta_table` surpasses this threshold, this command will fall back on performing a "
             "full table load, even if the `--incremental` flag is used.",
@@ -185,7 +186,7 @@ class Command(BaseCommand):
         incremental = self.options["incremental"]
 
         # Delta side
-        source_delta_table_name = self.options["alt_delta_name"] or source_delta_table 
+        source_delta_table_name = self.options["alt_delta_name"] or source_delta_table
         self.source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
         self.qualified_source_delta_table = f"{self.source_delta_database}.{source_delta_table_name}"
         unique_identifiers = self.table_spec["unique_identifiers"]
@@ -204,37 +205,45 @@ class Command(BaseCommand):
         # Determine the latest version of the Delta Table at the time this command is running. This will later
         # be stored as the latest version written to the staging table, regardless of whether we update incrementally
         # or repopulate the entire table
-        last_update_version = spark.sql(f"DESCRIBE HISTORY {self.qualified_source_delta_table}").select("version").first()[0]
+        last_update_version = (
+            spark.sql(f"DESCRIBE HISTORY {self.qualified_source_delta_table}").select("version").first()[0]
+        )
 
         updated_incrementally = False
 
         if incremental:
             # Validate that necessary TABLE_SPEC fields are present for incremental loads
             if not ("incremental_delete_temp_schema" and "delta_table_load_version_key"):
-                self.logger.error(f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads")
-                self.logger.error(f"Values are required for fields: `incremental_delete_temp_schema` and `delta_table_load_version_key`")
+                self.logger.error(
+                    f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads"
+                )
+                self.logger.error(
+                    f"Values are required for fields: `incremental_delete_temp_schema` and `delta_table_load_version_key`"
+                )
 
             # Retrieve information about which versions of the Delta Table have been loaded where. We'll use
             # the `last_live_version` to query changes because we want all the data that has not persisted
             # to the live table, regardless of what has been previously written to the staging table because it
-            # will be overwritten. 
+            # will be overwritten.
             last_staging_version, last_live_version = get_last_delta_table_load_versions(delta_table_load_version_key)
 
             # Create a Dataframe with a unique list of entities (based on the table's unique key) that have been
             # updated since this command was last run. If an entity has been updated multiple times, the latest
             # update will be selected. This utilizes Delta Lake's Change Data Feed feature.
-            # This will be used to determine if the number of updated records exceeds the update threshold, and 
+            # This will be used to determine if the number of updated records exceeds the update threshold, and
             # (if not exceeding) it will serve as the basis for dataframes to be written to Postgres with incremental
             # changes.
 
-            distinct_df = spark.sql(f"""
+            distinct_df = spark.sql(
+                f"""
                 SELECT * EXCEPT(_commit_timestamp, _commit_version, row_num) FROM (
                     SELECT * ,
                     ROW_NUMBER() OVER (PARTITION BY {', '.join(unique_identifiers)} ORDER BY _commit_version DESC) AS row_num
                     FROM table_changes('{self.qualified_postgres_table}', {last_live_version})
                     WHERE _change_type in ('insert', 'update_postimage', 'delete')
                 ) WHERE row_num = 1
-            """)
+            """
+            )
 
             if not self._surpassed_update_threshold(spark, distinct_df):
                 upsert_table_suffix = "temp_upserts"
@@ -242,10 +251,12 @@ class Command(BaseCommand):
 
                 # Upsert Schema (matches base table)
                 qualified_upsert_temp_table = self._prepare_temp_table(postgres_temp_schema, upsert_table_suffix)
-                
+
                 # Delete Schema
                 delete_schema_def = self.table_spec["incremental_delete_temp_schema"]
-                qualified_delete_temp_table = self._prepare_temp_table(postgres_temp_schema, delete_table_suffix, schema_override=delete_schema_def)
+                qualified_delete_temp_table = self._prepare_temp_table(
+                    postgres_temp_schema, delete_table_suffix, schema_override=delete_schema_def
+                )
 
                 # Split the Dataframe into two based on the type of update that was made
                 upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')")
@@ -272,12 +283,16 @@ class Command(BaseCommand):
                 postgres_seq_last_value = None
 
             self.logger.info(
-                f"LOAD (START): Loading full Delta table {source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
+                f"LOAD (START): Loading full Delta table {source_delta_table} to {qualified_temp_table} using {strategy} "
+                f"strategy"
             )
-            self._write_to_postgres(spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=postgres_seq_last_value)
+            self._write_to_postgres(
+                spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=postgres_seq_last_value
+            )
 
             self.logger.info(
-                f"LOAD (FINISH): Loaded full Delta table {source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
+                f"LOAD (FINISH): Loaded full Delta table {source_delta_table} to {qualified_temp_table} using {strategy} "
+                f"strategy"
             )
 
             if self.qualified_postgres_table:
@@ -299,7 +314,7 @@ class Command(BaseCommand):
         """
         Determines whether the number of records in the incoming DF exceeds the threshold of allowable
         changes when compared to total number records in the table being copied. The threshold percentage
-        is based on the `incremental_parameter` parameter for the job. 
+        is based on the `incremental_parameter` parameter for the job.
 
         Args:
             spark (SparkSession): the active SparkSession to work within
@@ -320,7 +335,7 @@ class Command(BaseCommand):
             self.logger.warning(f"---- Total Records  in  {self.qualified_source_delta_table}: {total_record_count}")
             self.logger.warning(f"---- Records Changed in {self.qualified_source_delta_table}: {total_record_count}")
             threshold_surpassed = True
-        
+
         return threshold_surpassed
 
     def _prepare_temp_table(self, temp_schema: str, temp_table_suffix: str, schema_override=None):
@@ -328,7 +343,7 @@ class Command(BaseCommand):
         Creates a temporary table in the Postgres database. This table will either be based on the
         the Delta Table being copied from's corresponding Postgres table (`self.qualified_postgres_table`)
         or a provided `schema_override` schema.
-        
+
         NOTES:
         - If the temporary table already exists, it will be dropped and recreated.
         - If the corresponding Postgres table is partitioned, the temporary table will also be partitioned
@@ -460,8 +475,15 @@ class Command(BaseCommand):
             last_value = cursor.fetchone()[0]
             cursor.execute(f"ALTER SEQUENCE IF EXISTS {seq_name} RESTART WITH {new_seq_val}")
         return last_value
-    
-    def _write_to_postgres(self, spark: (SparkSession), df: (DataFrame), qualified_temp_table: (str), postgres_schema_def: (dict), postgres_seq_last_value=None):
+
+    def _write_to_postgres(
+        self,
+        spark: (SparkSession),
+        df: (DataFrame),
+        qualified_temp_table: (str),
+        postgres_schema_def: (dict),
+        postgres_seq_last_value=None,
+    ):
         """
         Writes to Postgres using one of two methods (JDBC inserts or Bulk Copy CSV) based on the `--jdbc-inserts` option
         for this command. When the option is True, this method writes using the JDBC inserts strategy. When False, it
@@ -479,7 +501,6 @@ class Command(BaseCommand):
             postgres_seq_last_value (int): Last value of the Postgres Sequence. This is provided, so it can be reset to this
                 value in the case of an error
         """
-
 
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
@@ -619,7 +640,9 @@ class Command(BaseCommand):
         file_count = len(gzipped_csv_files)
         self.logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
 
-        self.logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {qualified_temp_table} table")
+        self.logger.info(
+            f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {qualified_temp_table} table"
+        )
 
         db_dsn = get_database_dsn_string()
         with psycopg2.connect(dsn=db_dsn) as connection:
@@ -662,7 +685,9 @@ class Command(BaseCommand):
             ),
         ).collect()
 
-        self.logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {qualified_temp_table} table")
+        self.logger.info(
+            f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {qualified_temp_table} table"
+        )
 
     def _write_with_jdbc_inserts(
         self,
