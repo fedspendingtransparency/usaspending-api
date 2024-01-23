@@ -263,8 +263,12 @@ class Command(BaseCommand):
                 delete_df = distinct_df.filter("_change_type IN ('delete')")
 
                 # Call _write_to_postgres()
-                self._write_to_postgres(spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def, self.table_spec["column_names"])
-                self._write_to_postgres(spark, delete_df, qualified_delete_temp_table, delete_schema_def, list(delete_schema_def))
+                self._write_to_postgres(
+                    spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def, self.table_spec["column_names"]
+                )
+                self._write_to_postgres(
+                    spark, delete_df, qualified_delete_temp_table, delete_schema_def, list(delete_schema_def)
+                )
 
                 updated_incrementally = True
 
@@ -287,7 +291,12 @@ class Command(BaseCommand):
                 f"strategy"
             )
             self._write_to_postgres(
-                spark, df, qualified_temp_table, postgres_schema_def, self.table_spec["column_names"], postgres_seq_last_value
+                spark,
+                df,
+                qualified_temp_table,
+                postgres_schema_def,
+                self.table_spec["column_names"],
+                postgres_seq_last_value,
             )
 
             self.logger.info(
