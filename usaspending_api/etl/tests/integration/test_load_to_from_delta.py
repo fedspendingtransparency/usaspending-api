@@ -177,15 +177,24 @@ def verify_delta_table_loaded_to_delta(
     else:
         expected_table_name = delta_table_name.split(".")[-1]
 
-    partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
+    # Resolve Column(s) to sort on in order to compare results
+    partition_column = TABLE_SPEC[delta_table_name].get("partition_column")
+    if partition_column:
+        # Make sure sort_columns is in list format
+        sort_columns = [partition_column]
+    else:
+        # If partition_column doesn't exist, we must be using a load_query_to_delta TABLE_SPEC,
+        # which uses unique_identifiers instead
+        sort_columns = TABLE_SPEC[delta_table_name]["unique_identifiers"]
+
+
     if dummy_data is None:
         # get the postgres data to compare
         model = TABLE_SPEC[delta_table_name]["model"]
         is_from_broker = TABLE_SPEC[delta_table_name]["is_from_broker"]
         if model:
             dummy_query = model.objects
-            if partition_col is not None:
-                dummy_query = dummy_query.order_by(partition_col)
+            dummy_query = dummy_query.order_by(*sort_columns)
             dummy_data = list(dummy_query.all().values())
         elif is_from_broker:
             # model can be None if loading from the Broker
@@ -193,8 +202,7 @@ def verify_delta_table_loaded_to_delta(
             source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
             with broker_connection.cursor() as cursor:
                 dummy_query = f"SELECT * from {source_broker_name}"
-                if partition_col is not None:
-                    dummy_query = f"{dummy_query} ORDER BY {partition_col}"
+                dummy_query = f"{dummy_query} ORDER BY {', '.join(sort_columns)}"
                 cursor.execute(dummy_query)
                 dummy_data = dictfetchall(cursor)
         else:
@@ -206,8 +214,7 @@ def verify_delta_table_loaded_to_delta(
     # get the spark data to compare
     # NOTE: The ``use <db>`` from table create/load is still in effect for this verification. So no need to call again
     received_query = f"SELECT * from {expected_table_name}"
-    if partition_col is not None:
-        received_query = f"{received_query} ORDER BY {partition_col}"
+    received_query = f"{received_query} ORDER BY {', '.join(sort_columns)}"
     received_data = [row.asDict() for row in spark.sql(received_query).collect()]
 
     assert equal_datasets(dummy_data, received_data, TABLE_SPEC[delta_table_name]["custom_schema"], ignore_fields)
@@ -253,9 +260,9 @@ def verify_delta_table_loaded_from_delta(
     else:
         tmp_table_name = f"{temp_schema}.{expected_table_name}_temp"
     postgres_query = f"SELECT * FROM {tmp_table_name}"
-    partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
-    if partition_col is not None:
-        postgres_query = f"{postgres_query} ORDER BY {partition_col}"
+    unique_identifiers = TABLE_SPEC[delta_table_name]["unique_identifiers"]
+    if unique_identifiers is not None:
+        postgres_query = f"{postgres_query} ORDER BY {', '.join(unique_identifiers)}"
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             cursor.execute(postgres_query)
@@ -263,8 +270,8 @@ def verify_delta_table_loaded_from_delta(
 
     # get the spark data to compare
     delta_query = f"SELECT * FROM {expected_table_name}"
-    if partition_col is not None:
-        delta_query = f"{delta_query} ORDER BY {partition_col}"
+    if unique_identifiers is not None:
+        delta_query = f"{delta_query} ORDER BY {', '.join(unique_identifiers)}"
     delta_data = [row.asDict() for row in spark.sql(delta_query).collect()]
 
     assert equal_datasets(

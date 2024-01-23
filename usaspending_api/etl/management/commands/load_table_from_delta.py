@@ -188,7 +188,7 @@ class Command(BaseCommand):
         source_delta_table_name = self.options["alt_delta_name"] or source_delta_table 
         source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
         self.qualified_source_delta_table = f"{source_delta_database}.{source_delta_table_name}"
-        partition_column = self.table_spec["partition_column"]
+        unique_identifiers = self.table_spec["unique_identifiers"]
         delta_table_load_version_key = self.table_spec["delta_table_load_version_key"]
 
         # Postgres side
@@ -201,7 +201,7 @@ class Command(BaseCommand):
         # Determine the latest version of the Delta Table at the time this command is running. This will later
         # be stored as the latest version stored to the staging table, regardless of whether we update incrementally
         # or repopulate the entire table
-        last_update_version = spark.sql(f"DESCRIBE HISTORY {self.qualified_source_delta_table}").select("verison").first()[0]
+        last_update_version = spark.sql(f"DESCRIBE HISTORY {self.qualified_source_delta_table}").select("version").first()[0]
 
         updated_incrementally = False
         if incremental:
@@ -209,7 +209,7 @@ class Command(BaseCommand):
             # Validate that necessary TABLE_SPEC fields are present for incremental loads
             if not ("incremental_delete_temp_schema" and "delta_table_load_version_key"):
                 self.logger.error(f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads")
-                self.logger.error(f"Values are required for fields: `incremental_delete_temp_schema`, and `delta_table_load_version_key`")
+                self.logger.error(f"Values are required for fields: `incremental_delete_temp_schema` and `delta_table_load_version_key`")
 
             # Retrieve information about which versions of the Delta Table have been loaded where. We'll use
             # the `last_live_version` to query changes because we want all the data that has not persisted
@@ -223,11 +223,10 @@ class Command(BaseCommand):
             # 
             # This will be used to determine if the number of updated records exceeds the update threshold, and 
             # (if not) it will serve as the basis for dataframes to be written to Postgres with incremental changes.
-
             distinct_df = spark.sql(f"""
                 SELECT * EXCEPT(_commit_timestamp, _commit_version, row_num) FROM (
                     SELECT * ,
-                    ROW_NUMBER() OVER (PARTITION BY {partition_column} ORDER BY _commit_version DESC) AS row_num
+                    ROW_NUMBER() OVER (PARTITION BY {', '.join(unique_identifiers)} ORDER BY _commit_version DESC) AS row_num
                     FROM table_changes('{self.qualified_postgres_table}', {last_live_version})
                     WHERE _change_type in ('insert', 'update_postimage', 'delete')
                 ) WHERE row_num = 1
@@ -276,7 +275,7 @@ class Command(BaseCommand):
             self._write_to_postgres(spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=postgres_seq_last_value)
 
             self.logger.info(
-                f"LOAD (FINISH): Loaded data from Delta table {source_delta_table} to {qualified_temp_table} using {self.options['strategy']} " f"strategy"
+                f"LOAD (FINISH): Loaded data from Delta table {source_delta_table} to {qualified_temp_table} using {strategy} " f"strategy"
             )
 
             if self.qualified_postgres_table:
