@@ -110,5 +110,10 @@
     "    office_code "
   ],
   "indexes": [
+    {
+      "name": "agency_office_autocomplete_id",
+      "unique": true,
+      "columns": [{"name": "agency_office_autocomplete_id"}]
+    }
   ]
 }
