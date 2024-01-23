@@ -186,8 +186,8 @@ class Command(BaseCommand):
 
         # Delta side
         source_delta_table_name = self.options["alt_delta_name"] or source_delta_table 
-        source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
-        self.qualified_source_delta_table = f"{source_delta_database}.{source_delta_table_name}"
+        self.source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
+        self.qualified_source_delta_table = f"{self.source_delta_database}.{source_delta_table_name}"
         unique_identifiers = self.table_spec["unique_identifiers"]
         delta_table_load_version_key = self.table_spec["delta_table_load_version_key"]
 
@@ -295,27 +295,51 @@ class Command(BaseCommand):
         if spark_created_by_command:
             spark.stop()
 
-    def _surpassed_update_threshold(self, spark, distinct_df):
-            # TODO - Pydoc 
-            # Determine incremental update feasibility. If more than 50% of records have been updated, we fall back
-            # on the full refresh strategy of this command.
-            threshold = self.options["incremental_threshold"]
-            threshold_surpassed = False
+    def _surpassed_update_threshold(self, spark: SparkSession, df: DataFrame) -> bool:
+        """
+        Determines whether the number of records in the incoming DF exceeds the threshold of allowable
+        changes when compared to total number records in the table being copied. The threshold percentage
+        is based on the `incremental_parameter` parameter for the job. 
 
-            total_record_count = spark.sql(f"SELECT COUNT(*) FROM {self.qualified_source_delta_table}").first()[0]
+        Args:
+            spark (SparkSession): the active SparkSession to work within
+            distinct_df (DataFrame): Dataframe containing changed records from table
+        Returns:
+            threshold_surpassed (bool): Whether or not the number of changes has exceeded the threshold
+        """
 
-            records_changed = distinct_df.count()
+        threshold = self.options["incremental_threshold"]
+        threshold_surpassed = False
 
-            if records_changed / total_record_count > .5:
-                self.logger.warning(f"Exceeded threshold of {threshold:.0%} for incremental updates")
-                self.logger.warning(f"---- Total Records  in  {self.qualified_source_delta_table}: {total_record_count}")
-                self.logger.warning(f"---- Records Changed in {self.qualified_source_delta_table}: {total_record_count}")
-                threshold_surpassed = True
-            
-            return threshold_surpassed
+        total_record_count = spark.sql(f"SELECT COUNT(*) FROM {self.qualified_source_delta_table}").first()[0]
 
-    def _prepare_temp_table(self, temp_schema, temp_table_suffix, schema_override=None):
-        # TODO - Create Pydoc for this method
+        records_changed = df.count()
+
+        if records_changed / total_record_count > threshold:
+            self.logger.warning(f"Exceeded threshold of {threshold:.0%} for incremental updates")
+            self.logger.warning(f"---- Total Records  in  {self.qualified_source_delta_table}: {total_record_count}")
+            self.logger.warning(f"---- Records Changed in {self.qualified_source_delta_table}: {total_record_count}")
+            threshold_surpassed = True
+        
+        return threshold_surpassed
+
+    def _prepare_temp_table(self, temp_schema: str, temp_table_suffix: str, schema_override=None):
+        """
+        Creates a temporary table in the Postgres database. This table will either be based on the
+        the Delta Table being copied from's corresponding Postgres table (`self.qualified_postgres_table`)
+        or a provided `schema_override` schema.
+        
+        NOTES:
+        - If the temporary table already exists, it will be dropped and recreated.
+        - If the corresponding Postgres table is partitioned, the temporary table will also be partitioned
+
+        Args:
+            temp_schema (str): Destination schema in Postgres in which to create the temporary table
+            temp_table_suffix (str): String appended to table name to differentiate between tables
+            schema_override (dict): Key value pairs with column names and column types (respectively) to define
+                the schema of the temporary table. If not provided, the table will be based on the schema of the
+                Delta table being copied from's corresponding Postgres table
+        """
 
         temp_table_suffix_appendage = f"_{temp_table_suffix}"
         temp_table_name = f"{self.postgres_table_name}{temp_table_suffix_appendage}"
@@ -437,8 +461,24 @@ class Command(BaseCommand):
             cursor.execute(f"ALTER SEQUENCE IF EXISTS {seq_name} RESTART WITH {new_seq_val}")
         return last_value
     
-    def _write_to_postgres(self, spark, df, qualified_temp_table, postgres_schema_def, postgres_seq_last_value=None):
-        # TODO - Write Pydoc for this Method
+    def _write_to_postgres(self, spark: (SparkSession), df: (DataFrame), qualified_temp_table: (str), postgres_schema_def: (dict), postgres_seq_last_value=None):
+        """
+        Writes to Postgres using one of two methods (JDBC inserts or Bulk Copy CSV) based on the `--jdbc-inserts` option
+        for this command. When the option is True, this method writes using the JDBC inserts strategy. When False, it
+        writes with the Bulk Copy CSV strategy.
+
+        If an error occurs during either, and a previous sequence value for the Postgres table is provided, it will
+        reset the sequence value.
+
+        Args:
+            spark (SparkSession): the active SparkSession to work within
+            df (DataFrame): Dataframe containing data to write to the table
+            qualified_temp_table (str): The fully qualified Postgres table name to write the data to (<schema>.<table_name>)
+            postgres_scheme_def (dict): Schema definition for Postgres table being written to in dictionary format. Key value
+                pairs contain column name and column types, respectively. Only used for JDBC insert strategy
+            postgres_seq_last_value (int): Last value of the Postgres Sequence. This is provided, so it can be reset to this
+                value in the case of an error
+        """
 
 
         # Make sure that the column order defined in the Delta table schema matches
@@ -455,17 +495,12 @@ class Command(BaseCommand):
                     postgres_schema_def,
                 )
             else:
-                if not postgres_schema_def:
-                    raise RuntimeError("postgres_schema_def None or empty, but is required to map CSV cols to table cols")
-                spark_s3_bucket_name = self.options["spark_s3_bucket"]
                 self._write_with_sql_bulk_copy_csv(
                     spark,
                     df,
-                    delta_db=self.qualified_source_delta_table,
-                    delta_s3_path=qualified_temp_table,
                     qualified_temp_table=qualified_temp_table,
                     ordered_col_names=column_names,
-                    spark_s3_bucket_name=spark_s3_bucket_name,
+                    spark_s3_bucket_name=self.options["spark_s3_bucket"],
                     keep_csv_files=True if self.options["keep_csv_files"] else False,
                 )
         except Exception as exc:
@@ -480,7 +515,6 @@ class Command(BaseCommand):
         self,
         spark: SparkSession,
         df: DataFrame,
-        delta_db: str,
         delta_s3_path: str,
         qualified_temp_table: str,
         ordered_col_names: List[str],
@@ -518,7 +552,6 @@ class Command(BaseCommand):
         Args:
             spark (SparkSession): the active SparkSession to work within
             df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
-            delta_db (str): the Delta Lake database in which to find the Delta table as source of the DataFrame
             delta_s3_path (str): the unique qualifier of the path in S3 to store temporary CSV files
             qualified_temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
                 where the CSV data will be written to with COPY
@@ -530,10 +563,10 @@ class Command(BaseCommand):
                 sub-folder of a "temp" folder. Be mindful of cleaning these up if setting to True. If False,
                 the same output path is used for each write and nukes-and-paves the files in that output path.
         """
-        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_db}/{delta_s3_path}/"
+        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{self.source_delta_database}/{delta_s3_path}/"
         if keep_csv_files:
             csv_path = (
-                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_s3_path}/"
+                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{self.source_delta_database}/{delta_s3_path}/"
                 f"{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
             )
         s3_bucket_with_csv_path = f"s3a://{spark_s3_bucket_name}/{csv_path}"
