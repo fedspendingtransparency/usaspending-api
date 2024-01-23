@@ -117,7 +117,6 @@ Award Type Codes
 - `Place of Performance Zip5`
 - `Base Obligation Date`
 
-
 #### Grant Awards
 - `Award ID`
 - `Recipient Name`
@@ -204,10 +203,6 @@ Other Awards Type Codes
 - `Prime Recipient Name`
 - `prime_award_recipient_id`
 
-Contract Subawards Type Codes
-- Subawards can use the same type codes as awards (A, B, C, D &/or IDVs),
-but the field subawards has to be set to "True" to include subaward results
-
 #### Grant Subawards
 - `Sub-Award ID`
 - `Sub-Award Type`
@@ -219,10 +214,6 @@ but the field subawards has to be set to "True" to include subaward results
 - `Prime Award ID`
 - `Prime Recipient Name`
 - `prime_award_recipient_id`
-
-Grant Subawards Type Codes
-- Subawards can use the same type codes as awards, (02, 03, 04, or 05),
-but the field subawards has to be set to "True" to include subaward results
 
 ## SpendingByAwardResponse (object)
 + `internal_id` (required, number)
