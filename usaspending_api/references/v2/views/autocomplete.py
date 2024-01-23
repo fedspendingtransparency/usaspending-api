@@ -96,134 +96,108 @@ class BaseAutocompleteViewSet(APIView):
             Q(toptier_abbreviation__icontains=search_text) | Q(toptier_name__icontains=search_text)
         )
 
-        toptier_agency_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(
-            toptier_agency_filter
-        ).order_by(*order_by)
+        toptier_agency_search_text_matches = (
+            AgencyOfficeAutocompleteMatview.objects.filter(toptier_agency_filter).order_by(*order_by).values().all()
+        )
 
-        # Using distinct is important because the mat-view is at an office grain
-        distinct_toptier_agency_matches = toptier_agency_search_text_matches.values(
-            "toptier_code", "toptier_abbreviation", "toptier_name"
-        ).distinct()
+        toptier_agency_tracker = {}
+        subtiers_already_added = []
+        for toptier_agency in toptier_agency_search_text_matches:
+            # This key is created so that we can treat multiple records with the same
+            # toptier values as a single result
+            key = (
+                toptier_agency["toptier_abbreviation"] + toptier_agency["toptier_code"] + toptier_agency["toptier_name"]
+            )
+            if key not in toptier_agency_tracker:
+                toptier_agency_tracker[key] = {}
+                toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
+                toptier_agency_tracker[key] = toptier_result
+                # This list is reset so that we can track which subtiers have already
+                # been added to the results for the distinct pair of toptier values of the current iteration.
+                # It's needed because our mat view is at the office grain.
+                subtiers_already_added = []
+            if "subtier_agencies" not in toptier_agency_tracker[key]:
+                toptier_agency_tracker[key]["subtier_agencies"] = []
+            if "offices" not in toptier_agency_tracker[key]:
+                toptier_agency_tracker[key]["offices"] = []
+            subtier_result = self._agency_office_subtier_agency_response_object(toptier_agency)
+            sub_key = "".join(subtier_result)
+            if sub_key not in subtiers_already_added:
+                toptier_agency_tracker[key]["subtier_agencies"].append(subtier_result)
+                subtiers_already_added.append(sub_key)
+            if toptier_agency["office_name"] is not None and toptier_agency["office_code"] is not None:
+                office_result = self._agency_office_office_response_object(toptier_agency)
+                toptier_agency_tracker[key]["offices"].append(office_result)
 
-        toptier_agency_results = {"toptier_agency": []}
-        for toptier_agency in distinct_toptier_agency_matches[:limit]:
-            toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
-            toptier_result["subtier_agencies"] = []
-            toptier_result["offices"] = []
-            children = AgencyOfficeAutocompleteMatview.objects.filter(
-                Q(toptier_code__exact=toptier_agency["toptier_code"])
-                & Q(toptier_abbreviation__exact=toptier_agency["toptier_abbreviation"])
-                & Q(toptier_name__exact=toptier_agency["toptier_name"])
-            )
-            subtier_agency_children = (
-                children.filter(
-                    Q(subtier_abbreviation__isnull=False)
-                    & Q(subtier_name__isnull=False)
-                    & Q(subtier_code__isnull=False)
-                )
-                .values("subtier_abbreviation", "subtier_name", "subtier_code")
-                .distinct()
-            )
-            for subtier_agency in subtier_agency_children:
-                subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
-                toptier_result["subtier_agencies"].append(subtier_result)
-            office_children = (
-                children.filter(Q(office_name__isnull=False) & Q(office_code__isnull=False))
-                .values("office_name", "office_code")
-                .distinct()
-            )
-            for office in office_children:
-                office_result = self._agency_office_office_response_object(office)
-                toptier_result["offices"].append(office_result)
-            toptier_agency_results["toptier_agency"].append(toptier_result)
+        toptier_agency_tracker = list(toptier_agency_tracker.values())[:limit]
+        toptier_agency_results = {"toptier_agency": toptier_agency_tracker}
 
         # Begin deriving subteir agency objects for response
         subtier_agency_filter = Q(**{self.filter_field: True}) & (
             Q(subtier_abbreviation__icontains=search_text) | Q(subtier_name__icontains=search_text)
         )
 
-        subtier_agency_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(
-            subtier_agency_filter
-        ).order_by(*order_by)
+        subtier_agency_search_text_matches = (
+            AgencyOfficeAutocompleteMatview.objects.filter(subtier_agency_filter).order_by(*order_by).values().all()
+        )
 
-        # Using distinct is important because the mat-view is at an office grain
-        distinct_subtier_agency_matches = subtier_agency_search_text_matches.values(
-            "subtier_code", "subtier_abbreviation", "subtier_name"
-        ).distinct()
+        subtier_agency_tracker = {}
+        toptiers_already_added = []
+        for subtier_agency in subtier_agency_search_text_matches:
+            # This key is created so that we can treat multiple records with the same
+            # subtier values as a single result
+            key = f'{subtier_agency["subtier_abbreviation"]}{subtier_agency["subtier_code"]}{subtier_agency["subtier_name"]}'
+            if key not in subtier_agency_tracker:
+                subtier_agency_tracker[key] = {}
+                subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
+                subtier_agency_tracker[key] = subtier_result
+                # This list is reset so that we can track which toptiers have already
+                # been added to the results for the distinct pair of subtier values of the current iteration.
+                # It's needed because our mat view is at the office grain.
+                toptiers_already_added = []
+            if "toptier_agencies" not in subtier_agency_tracker[key]:
+                subtier_agency_tracker[key]["toptier_agencies"] = []
+            if "offices" not in subtier_agency_tracker[key]:
+                subtier_agency_tracker[key]["offices"] = []
+            toptier_result = self._agency_office_toptier_agency_response_object(subtier_agency)
+            toptier_key = "".join(toptier_result)
+            if toptier_key not in toptiers_already_added:
+                subtier_agency_tracker[key]["toptier_agencies"].append(toptier_result)
+                toptiers_already_added.append(sub_key)
+            if toptier_agency["office_name"] is not None and toptier_agency["office_code"] is not None:
+                office_result = self._agency_office_office_response_object(subtier_agency)
+                subtier_agency_tracker[key]["offices"].append(office_result)
 
-        subtier_agency_results = {"subtier_agency": []}
-        for subtier_agency in distinct_subtier_agency_matches[:limit]:
-            subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
-            subtier_result["toptier_agencies"] = []
-            subtier_result["offices"] = []
-            children = AgencyOfficeAutocompleteMatview.objects.filter(
-                Q(subtier_code__exact=subtier_agency["subtier_code"])
-                & Q(subtier_abbreviation__exact=subtier_agency["subtier_abbreviation"])
-                & Q(subtier_name__exact=subtier_agency["subtier_name"])
-            )
-            toptier_agency_children = (
-                children.filter(
-                    Q(toptier_abbreviation__isnull=False)
-                    & Q(toptier_name__isnull=False)
-                    & Q(toptier_code__isnull=False)
-                )
-                .values("toptier_abbreviation", "toptier_name", "toptier_code")
-                .distinct()
-            )
-            for toptier_agency in toptier_agency_children:
-                toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
-                subtier_result["toptier_agencies"].append(toptier_result)
-            office_children = (
-                children.filter(Q(office_name__isnull=False) & Q(office_code__isnull=False))
-                .values("office_name", "office_code")
-                .distinct()
-            )
-            for office in office_children:
-                office_result = self._agency_office_office_response_object(office)
-                subtier_result["offices"].append(office_result)
-            subtier_agency_results["subtier_agency"].append(subtier_result)
+        subtier_agency_tracker = list(subtier_agency_tracker.values())[:limit]
+        subtier_agency_results = {"subtier_agency": subtier_agency_tracker}
 
         # Begin deriving office objects for response
         office_filter = Q(**{self.filter_field: True}) & (Q(office_name__icontains=search_text))
 
-        office_search_text_matches = AgencyOfficeAutocompleteMatview.objects.filter(office_filter).order_by(*order_by)
+        office_search_text_matches = (
+            AgencyOfficeAutocompleteMatview.objects.filter(office_filter).order_by(*order_by).values().all()
+        )
 
-        # Using distinct is important because the mat-view is at an office grain
-        distinct_office_matches = office_search_text_matches.values("office_code", "office_name").distinct()
+        office_tracker = {}
+        for office in office_search_text_matches:
+            # This key is created so that we can treat multiple records with the same
+            # office values as a single result
+            key = office["office_code"] + office["office_name"]
+            if key not in office_tracker:
+                office_tracker[key] = {}
+                office_result = self._agency_office_office_response_object(office)
+                office_tracker[key] = office_result
+            if "subtier_agencies" not in office_tracker[key]:
+                office_tracker[key]["subtier_agencies"] = []
+            if "toptier_agencies" not in office_tracker[key]:
+                office_tracker[key]["toptier_agencies"] = []
+            subtier_result = self._agency_office_subtier_agency_response_object(office)
+            office_tracker[key]["subtier_agencies"].append(subtier_result)
+            toptier_result = self._agency_office_toptier_agency_response_object(office)
+            office_tracker[key]["toptier_agencies"].append(toptier_result)
 
-        office_results = {"office": []}
-        for office in distinct_office_matches[:limit]:
-            office_result = self._agency_office_office_response_object(office)
-            office_result["toptier_agencies"] = []
-            office_result["subtier_agencies"] = []
-            children = AgencyOfficeAutocompleteMatview.objects.filter(
-                Q(office_code__exact=office["office_code"]) & Q(office_name=office["office_name"])
-            )
-            toptier_agency_children = (
-                children.filter(
-                    Q(toptier_abbreviation__isnull=False)
-                    & Q(toptier_name__isnull=False)
-                    & Q(toptier_code__isnull=False)
-                )
-                .values("toptier_abbreviation", "toptier_name", "toptier_code")
-                .distinct()
-            )
-            for toptier_agency in toptier_agency_children:
-                toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
-                office_result["toptier_agencies"].append(toptier_result)
-            subtier_agency_children = (
-                children.filter(
-                    Q(subtier_abbreviation__isnull=False)
-                    & Q(subtier_name__isnull=False)
-                    & Q(subtier_code__isnull=False)
-                )
-                .values("subtier_abbreviation", "subtier_name", "subtier_code")
-                .distinct()
-            )
-            for subtier_agency in subtier_agency_children:
-                subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
-                office_result["subtier_agencies"].append(subtier_result)
-            office_results["office"].append(office_result)
+        office_tracker = list(office_tracker.values())[:limit]
+        office_results = {"office": office_tracker}
 
         # Assemble all objects into the final response
         results = {**toptier_agency_results, **subtier_agency_results, **office_results}
