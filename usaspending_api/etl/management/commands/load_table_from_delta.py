@@ -519,6 +519,7 @@ class Command(BaseCommand):
                 self._write_with_sql_bulk_copy_csv(
                     spark,
                     df,
+                    delta_s3_path=qualified_temp_table,
                     qualified_temp_table=qualified_temp_table,
                     ordered_col_names=column_names,
                     spark_s3_bucket_name=self.options["spark_s3_bucket"],
