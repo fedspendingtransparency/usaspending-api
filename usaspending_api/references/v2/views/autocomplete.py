@@ -145,7 +145,6 @@ class BaseAutocompleteViewSet(APIView):
         )
 
         subtier_agency_tracker = {}
-        toptiers_already_added = []
         for subtier_agency in subtier_agency_search_text_matches:
             # This key is created so that we can treat multiple records with the same
             # subtier values as a single result
@@ -154,19 +153,10 @@ class BaseAutocompleteViewSet(APIView):
                 subtier_agency_tracker[key] = {}
                 subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
                 subtier_agency_tracker[key] = subtier_result
-                # This list is reset so that we can track which toptiers have already
-                # been added to the results for the distinct pair of subtier values of the current iteration.
-                # It's needed because our mat view is at the office grain.
-                toptiers_already_added = []
-            if "toptier_agencies" not in subtier_agency_tracker[key]:
-                subtier_agency_tracker[key]["toptier_agencies"] = []
             if "offices" not in subtier_agency_tracker[key]:
                 subtier_agency_tracker[key]["offices"] = []
             toptier_result = self._agency_office_toptier_agency_response_object(subtier_agency)
-            toptier_key = "".join(toptier_result)
-            if toptier_key not in toptiers_already_added:
-                subtier_agency_tracker[key]["toptier_agencies"].append(toptier_result)
-                toptiers_already_added.append(sub_key)
+            subtier_agency_tracker[key]["toptier_agency"] = toptier_result
             if toptier_agency["office_name"] is not None and toptier_agency["office_code"] is not None:
                 office_result = self._agency_office_office_response_object(subtier_agency)
                 subtier_agency_tracker[key]["offices"].append(office_result)
@@ -190,14 +180,10 @@ class BaseAutocompleteViewSet(APIView):
                 office_tracker[key] = {}
                 office_result = self._agency_office_office_response_object(office)
                 office_tracker[key] = office_result
-            if "subtier_agencies" not in office_tracker[key]:
-                office_tracker[key]["subtier_agencies"] = []
-            if "toptier_agencies" not in office_tracker[key]:
-                office_tracker[key]["toptier_agencies"] = []
             subtier_result = self._agency_office_subtier_agency_response_object(office)
-            office_tracker[key]["subtier_agencies"].append(subtier_result)
+            office_tracker[key]["subtier_agency"] = subtier_result
             toptier_result = self._agency_office_toptier_agency_response_object(office)
-            office_tracker[key]["toptier_agencies"].append(toptier_result)
+            office_tracker[key]["toptier_agency"] = toptier_result
 
         office_tracker = list(office_tracker.values())[:limit]
         office_results = {"office": office_tracker}
