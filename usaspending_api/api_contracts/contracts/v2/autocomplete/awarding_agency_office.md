@@ -49,13 +49,13 @@ This route sends a request to the backend to retrieve awarding agencies and offi
     + `abbreviation` (required, string, nullable)
     + `code` (required, string)
     + `name` (required, string)
-    + `toptier_agency` (required, object[AgenciesChildObject])
+    + `toptier_agency` (required, AgenciesChildObject)
     + `offices` (required, array[OfficesChildObject])
 + `office` (required, object)
     + `code` (required, string, nullable)
     + `name` (required, string)
-    + `toptier_agency` (required, object[AgenciesChildObject])
-    + `subtier_agency` (required, object[SubAgenciesChildObject])
+    + `toptier_agency` (required, AgenciesChildObject)
+    + `subtier_agency` (required, SubAgenciesChildObject)
 
 ## SubAgenciesChildObject (object)
 + `abbreviation` (required, string, nullable)
@@ -68,5 +68,5 @@ This route sends a request to the backend to retrieve awarding agencies and offi
 + `name` (required, string)
 
 ## OfficesChildObject (object)
-+ `code` (required, string, nullable)
++ `code` (required, string)
 + `name` (required, string)

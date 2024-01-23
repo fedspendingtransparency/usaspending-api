@@ -1,9 +1,6 @@
 import pytest
-
 from model_bakery import baker
 from rest_framework import status
-
-from usaspending_api.search.models import AgencyAutocompleteMatview
 
 
 @pytest.fixture
@@ -43,7 +40,7 @@ def agency_office_data(db):
         certified_date=tn.action_date,
     )
 
-    o = baker.make(
+    baker.make(
         "references.Office",
         id=1,
         agency_code="ROATSSUIAR",
@@ -123,7 +120,7 @@ def agency_office_data(db):
         certified_date=tn.action_date,
     )
 
-    o = baker.make(
+    baker.make(
         "references.Office",
         id=3,
         agency_code="asdhg",
