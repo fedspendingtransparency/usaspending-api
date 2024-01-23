@@ -236,16 +236,6 @@ class Command(BaseCommand):
                 ) WHERE row_num = 1
             """)
 
-            self.logger.info(f"""
-                SELECT * EXCEPT(_commit_timestamp, _commit_version, row_num) FROM (
-                    SELECT * ,
-                    ROW_NUMBER() OVER (PARTITION BY {', '.join(unique_identifiers)} ORDER BY _commit_version DESC) AS row_num
-                    FROM table_changes('{self.qualified_postgres_table}', {last_live_version})
-                    WHERE _change_type in ('insert', 'update_postimage', 'delete')
-                ) WHERE row_num = 1
-            """)
-
-
             if not self._surpassed_update_threshold(spark, distinct_df):
                 upsert_table_suffix = "temp_upserts"
                 delete_table_suffix = "temp_deletes"
@@ -312,7 +302,7 @@ class Command(BaseCommand):
             threshold = self.options["incremental_threshold"]
             threshold_surpassed = False
 
-            total_record_count = spark.sql(f"SELECT COUNT(*) FROM {self.qualified_source_delta_table}").collect()[0]
+            total_record_count = spark.sql(f"SELECT COUNT(*) FROM {self.qualified_source_delta_table}").first()[0]
 
             records_changed = distinct_df.count()
 
