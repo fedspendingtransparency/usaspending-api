@@ -220,3 +220,92 @@ def test_awarding_agency_office_autocomplete_success(client, agency_office_data)
 
     assert resp.data["results"]["office"][0]["subtier_agency"]["name"] == "Match all three"
     assert resp.data["results"]["office"][0]["subtier_agency"]["code"] == "hasdf"
+
+
+@pytest.mark.django_db
+def test_funding_agency_office_autocomplete_success(client, agency_office_data):
+    resp = client.post(
+        "/api/v2/autocomplete/funding_agency_office/",
+        content_type="application/json",
+        data={"search_text": "Really Old Agency That Shouldn't Show Up In Any Results"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]["toptier_agency"]) == 1
+    assert len(resp.data["results"]["subtier_agency"]) == 0
+    assert len(resp.data["results"]["office"]) == 0
+    assert (
+        resp.data["results"]["toptier_agency"][0]["name"] == "Really Old Agency That Shouldn't Show Up In Any Results"
+    )
+    assert resp.data["results"]["toptier_agency"][0]["code"] == "ROATSSUIAR"
+    assert len(resp.data["results"]["toptier_agency"][0]["subtier_agencies"]) == 1
+    assert len(resp.data["results"]["toptier_agency"][0]["offices"]) == 1
+
+    # Test for when search text matches a toptier with no office
+    resp = client.post(
+        "/api/v2/autocomplete/funding_agency_office/",
+        content_type="application/json",
+        data={"search_text": "Department of Defense"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]["toptier_agency"]) == 1
+    assert len(resp.data["results"]["subtier_agency"]) == 0
+    assert len(resp.data["results"]["office"]) == 0
+    assert resp.data["results"]["toptier_agency"][0]["name"] == "Department of Defense"
+    assert resp.data["results"]["toptier_agency"][0]["code"] == "ASDF"
+    assert len(resp.data["results"]["toptier_agency"][0]["subtier_agencies"]) == 1
+    assert len(resp.data["results"]["toptier_agency"][0]["offices"]) == 0
+
+    # Test toptier agency, subtier agency, and office match search text
+    # Test for when search text matches a toptier with no office
+    resp = client.post(
+        "/api/v2/autocomplete/funding_agency_office/",
+        content_type="application/json",
+        data={"search_text": "Match all three"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]["toptier_agency"]) == 1
+    assert len(resp.data["results"]["subtier_agency"]) == 1
+    assert len(resp.data["results"]["office"]) == 1
+
+    # Response schema validation
+    assert set(["subtier_agency", "toptier_agency", "code", "name"]) == set(resp.data["results"]["office"][0].keys())
+    assert set(["toptier_agency", "offices", "abbreviation", "name", "code"]) == set(
+        resp.data["results"]["subtier_agency"][0].keys()
+    )
+    assert set(["subtier_agencies", "offices", "abbreviation", "name", "code"]) == set(
+        resp.data["results"]["toptier_agency"][0].keys()
+    )
+
+    # Toptier agency object validation
+    assert resp.data["results"]["toptier_agency"][0]["name"] == "toptier_agency_id is 3"
+    assert resp.data["results"]["toptier_agency"][0]["abbreviation"] == "Match all three"
+    assert resp.data["results"]["toptier_agency"][0]["code"] == "asdhg"
+    assert len(resp.data["results"]["toptier_agency"][0]["subtier_agencies"]) == 1
+    assert len(resp.data["results"]["toptier_agency"][0]["offices"]) == 1
+
+    assert len(resp.data["results"]["toptier_agency"][0]["subtier_agencies"]) == 1
+    assert resp.data["results"]["toptier_agency"][0]["subtier_agencies"][0]["name"] == "Match all three"
+    assert resp.data["results"]["toptier_agency"][0]["subtier_agencies"][0]["code"] == "hasdf"
+
+    assert len(resp.data["results"]["toptier_agency"][0]["offices"]) == 1
+    assert resp.data["results"]["toptier_agency"][0]["offices"][0]["name"] == "Match all three"
+    assert resp.data["results"]["toptier_agency"][0]["offices"][0]["code"] == "12111"
+
+    # Subtier agency object validation
+    assert resp.data["results"]["subtier_agency"][0]["name"] == "Match all three"
+    assert resp.data["results"]["subtier_agency"][0]["code"] == "hasdf"
+    assert resp.data["results"]["subtier_agency"][0]["toptier_agency"]["name"] == "toptier_agency_id is 3"
+    assert resp.data["results"]["subtier_agency"][0]["toptier_agency"]["code"] == "asdhg"
+    assert len(resp.data["results"]["subtier_agency"][0]["offices"]) == 1
+    assert resp.data["results"]["subtier_agency"][0]["offices"][0]["name"] == "Match all three"
+    assert resp.data["results"]["subtier_agency"][0]["offices"][0]["code"] == "12111"
+
+    # Office object validation
+    assert resp.data["results"]["office"][0]["name"] == "Match all three"
+    assert resp.data["results"]["office"][0]["code"] == "12111"
+
+    assert resp.data["results"]["office"][0]["toptier_agency"]["name"] == "toptier_agency_id is 3"
+    assert resp.data["results"]["office"][0]["toptier_agency"]["code"] == "asdhg"
+
+    assert resp.data["results"]["office"][0]["subtier_agency"]["name"] == "Match all three"
+    assert resp.data["results"]["office"][0]["subtier_agency"]["code"] == "hasdf"
