@@ -232,7 +232,7 @@ class Command(BaseCommand):
                 ) WHERE row_num = 1
             """)
 
-            if not self._surpassed_update_threshold(distinct_df):
+            if not self._surpassed_update_threshold(spark, distinct_df):
                 upsert_table_suffix = "temp_upserts"
                 delete_table_suffix = "temp_deletes"
 
