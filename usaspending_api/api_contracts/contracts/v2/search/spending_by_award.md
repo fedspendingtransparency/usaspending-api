@@ -83,56 +83,66 @@ Award based searches have a base set of fields that are valid for all award type
 #### Base fields
 - `Award ID`
 - `Recipient Name`
-- `Start Date`
-- `End Date`
-- `Award Amount`
+- `Recipient DUNS Number`
+- `recipient_id`
 - `Awarding Agency`
+- `Awarding Agency Code`
 - `Awarding Sub Agency`
-- `Award Type`
-- `Contract Award Type`
-- `Total Outlays`
+- `Awarding Sub Agency Code`
+- `Funding Agency`
+- `Funding Agency Code`
+- `Funding Sub Agency`
+- `Funding Sub Agency Code`
+- `Place of Performance City Code`
+- `Place of Performance State Code`
+- `Place of Performance Country Code`
+- `Place of Performance Zip5`
 - `Description`
+- `Last Modified Date`
+- `Base Obligation Date`
+- `prime_award_recipient_id`
+- `generated_internal_id`
 - `def_codes`
 - `COVID-19 Obligations`
 - `COVID-19 Outlays`
 - `Infrastructure Obligations`
 - `Infrastructure Outlays`
-- `Place of Performance City Code`
-- `Place of Performance State Code`
-- `Place of Performance Country Code`
-- `Place of Performance Zip5`
-- `Base Obligation Date`
 
-#### Grant Awards
-Grant Awards can be searched for specifically by using the Grant Type Codes (02, 03, 04, or 05) and the following fields are additional fields that can be requested. 
+#### Contracts 
+Contracts can be searched for specifically by using the Contract Type Codes (A, B, C, or D) and the following fields are additional fields that can be requested. 
 
-- `Funding Agency`
-- `Funding Sub Agency`
+- `Start Date`
+- `End Date`
+- `Award Amount`
+- `Total Outlays`
+- `Contract Award Type`
 
-#### Loan Awards 
-Loan Awards can be searched for specifically by using the Loan Type Codes (07 or 08) and the following fields are additional fields that can be requested. 
+#### IDV 
+IDV can be searched for specifically by using the IDV Type Codes (IDV_A, IDV_B, IDV_B_A, IDV_B_B, IDV_B_C, IDV_C, IDV_D or IDV_E) and the following fields are additional fields that can be requested. 
+
+- `Start Date`
+- `Award Amount`
+- `Total Outlays`
+- `Contract Award Type`
+- `Last Date to Order`
+
+#### Loan 
+Loans can be searched for specifically by using the Loan Type Codes (07 or 08) and the following fields are additional fields that can be requested. 
 
 - `Issued Date`
 - `Loan Value`
 - `Subsidy Cost`
-- `Funding Agency`
-- `Funding Sub Agency`
 - `SAI Number`
 - `CFDA Number`
 
-#### Direct Payment Awards
-Direct Payment Awards can be searched for specifically by using the Direct Payment Awards Type Codes (06 or 10) and the following fields are additional fields that can be requested. 
+#### Non Loan Assistance
+Non Loan Assistance Awards can be searched for specifically by using the Non Loan Assistance Type Codes. The Non Loan Assist Type Codes include Grant Type Codes (02, 03, 04 or 05), Direct Payments (06 or 10), and Other Type Codes (09, 11, or -1). The following fields are additional fields that can be requested. 
 
-- `Funding Agency`
-- `Funding Sub Agency`
-- `SAI Number`
-- `CFDA Number`
-
-#### Other Awards 
-Other Awards can be searched for specifically by using the Other Awards Type Codes (09, 11, or -1) and the following fields are additional fields that can be requested. 
-
-- `Funding Agency`
-- `Funding Sub Agency`
+- `Start Date`
+- `End Date`
+- `Award Amount`
+- `Total Outlays`
+- `Award Type`
 - `SAI Number`
 - `CFDA Number`
 
