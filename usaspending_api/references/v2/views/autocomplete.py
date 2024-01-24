@@ -86,7 +86,7 @@ class BaseAutocompleteViewSet(APIView):
         messages = results.get("messages", [])
         deprecated_api_endpoint_message(messages)
         results["messages"] = messages
-        return Response({"results": results})
+        return Response(results)
 
     def agency_office_autocomplete(self, request):
         """Returns a collection of agencies, sub-agencies, and offices that match the request."""
