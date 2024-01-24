@@ -25,7 +25,6 @@ logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-
     help = "Create, Run, Verify Materialized View SQL"
 
     def faux_init(self, args):
