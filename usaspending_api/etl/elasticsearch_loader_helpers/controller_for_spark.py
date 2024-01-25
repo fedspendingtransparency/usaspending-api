@@ -15,6 +15,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     count_of_records_to_process_in_delta,
     delete_awards,
     delete_transactions,
+    extract_records,
     format_log,
     load_data,
     obtain_extract_all_partitions_sql,
@@ -208,7 +209,10 @@ def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[i
     client = instantiate_elasticsearch_client()
     try:
         extracted_data = [row.asDict() for row in partition_data]
-        records = task.transform_func(task, extracted_data)
+        if task.transform_func:
+            records = task.transform_func(task, extracted_data)
+        else:
+            records = extract_records(task)
         if len(records) > 0:
             success, fail = load_data(task, records, client)
         else:
