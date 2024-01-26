@@ -247,7 +247,7 @@ def extract_transform_load(task: TaskSpec) -> None:
 
     client = instantiate_elasticsearch_client()
     try:
-        if task.transform_func:
+        if task.transform_func is not None:
             records = task.transform_func(task, extract_records(task))
         else:
             records = extract_records(task)

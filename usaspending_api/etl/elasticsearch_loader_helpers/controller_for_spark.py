@@ -207,7 +207,7 @@ def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[i
 
     client = instantiate_elasticsearch_client()
     try:
-        if task.transform_func:
+        if task.transform_func is not None:
             records = task.transform_func(task, [row.asDict() for row in partition_data])
         else:
             records = [row.asDict() for row in partition_data]
