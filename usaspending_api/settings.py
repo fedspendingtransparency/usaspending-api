@@ -162,6 +162,12 @@ ES_RECIPIENTS_NAME_SUFFIX = "recipients"
 ES_RECIPIENTS_QUERY_ALIAS_PREFIX = "recipient-query"
 ES_RECIPIENTS_WRITE_ALIAS = "recipient-load-alias"
 
+ES_LOCATIONS_ETL_VIEW_NAME = "location_delta_view"
+ES_LOCATIONS_MAX_RESULT_WINDOW = 50000
+ES_LOCATIONS_NAME_SUFFIX = "locations"
+ES_LOCATIONS_QUERY_ALIAS_PREFIX = "location-query"
+ES_LOCATIONS_WRITE_ALIAS = "location-load-alias"
+
 ES_TIMEOUT = 90
 ES_REPOSITORY = ""
 ES_ROUTING_FIELD = "recipient_agg_key"
