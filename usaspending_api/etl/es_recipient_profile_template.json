@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "index.mapping.ignore_malformed": true,
+    "index.max_result_window": null,
+    "index.refresh_interval": -1,
+    "index": {
+      "number_of_shards": 5,
+      "number_of_replicas": 0
+    },
+    "analysis": {
+      "analyzer": {
+        "contains_analyzer": {
+          "type": "custom",
+          "tokenizer": "ngram",
+          "filter": [
+            "uppercase"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "recipient_hash": {
+        "type": "keyword"
+      },
+      "recipient_name": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "uei": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "recipient_level": {
+        "type": "keyword"
+      }
+    }
+  }
+}

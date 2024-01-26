@@ -52,13 +52,13 @@ def validate_date(date):
 
 
 def check_valid_toptier_agency(agency_id):
-    """ Check if the ID provided (corresponding to Agency.id) is a valid toptier agency """
+    """Check if the ID provided (corresponding to Agency.id) is a valid toptier agency"""
     agency = Agency.objects.filter(id=agency_id, toptier_flag=True).first()
     return agency is not None
 
 
 def generate_date_from_string(date_str):
-    """ Expects a string with format YYYY-MM-DD. returns datetime.date """
+    """Expects a string with format YYYY-MM-DD. returns datetime.date"""
     try:
         return datetime.date(*[int(x) for x in date_str.split("-")])
     except Exception as e:
@@ -83,7 +83,7 @@ def min_and_max_from_date_ranges(filter_time_periods: list) -> tuple:
 
 
 def within_one_year(d1, d2):
-    """ includes leap years """
+    """includes leap years"""
     year_range = list(range(d1.year, d2.year + 1))
     if len(year_range) > 2:
         return False
@@ -343,3 +343,12 @@ def sort_with_null_last(to_sort, sort_key, sort_order, tie_breaker=None):
         key=lambda x: ((x[sort_key] is None) == (sort_order == "asc"), x[sort_key], x[tie_breaker]),
         reverse=(sort_order == "desc"),
     )
+
+
+def deprecated_api_endpoint_message(messages: List[str]):
+    """Adds a deprecation message (when needed) indicating that the endpoint is deprecated.
+    Args:
+        message: The existing message list to add additional messages to
+    """
+    deprecation_message = f"This endpoint is DEPRECATED. Please refer to the api contracts."
+    messages.append(deprecation_message)

@@ -1,16 +1,12 @@
 import logging
-
 from ssl import CERT_NONE
-from typing import Optional, Union, Callable
+from typing import Callable, Optional, Union
 
 from django.conf import settings
+from elasticsearch import ConnectionError, ConnectionTimeout, Elasticsearch, NotFoundError, TransportError
 from elasticsearch.connection import create_ssl_context
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.response import Response
-from elasticsearch import ConnectionError, Elasticsearch
-from elasticsearch import ConnectionTimeout
-from elasticsearch import NotFoundError
-from elasticsearch import TransportError
 
 logger = logging.getLogger("console")
 
@@ -116,3 +112,11 @@ class AccountSearch(_Search):
     @staticmethod
     def type_as_string():
         return "account_search"
+
+
+class RecipientSearch(_Search):
+    _index_name = f"{settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "recipient_search"

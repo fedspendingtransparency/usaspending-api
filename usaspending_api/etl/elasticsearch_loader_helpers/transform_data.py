@@ -1,17 +1,16 @@
 import logging
-
-from django.conf import settings
 from time import perf_counter
 from typing import Callable, Dict, List, Optional
 
+from django.conf import settings
+
 from usaspending_api.etl.elasticsearch_loader_helpers import aggregate_key_functions as funcs
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
+    TaskSpec,
     convert_json_array_to_list_of_str,
     convert_json_data_to_dict,
     format_log,
-    TaskSpec,
 )
-
 
 logger = logging.getLogger("script")
 
@@ -93,7 +92,7 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
 
 
 def transform_covid19_faba_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
-    logger.info(format_log(f"Transforming data", name=worker.name, action="Transform"))
+    logger.info(format_log("Transforming data", name=worker.name, action="Transform"))
     start = perf_counter()
     results = {}
 
@@ -145,7 +144,7 @@ def transform_data(
     drop_fields: List[str],
     routing_field: Optional[str] = None,
 ) -> List[dict]:
-    logger.info(format_log(f"Transforming data", name=worker.name, action="Transform"))
+    logger.info(format_log("Transforming data", name=worker.name, action="Transform"))
 
     start = perf_counter()
 
