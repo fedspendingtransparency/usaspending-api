@@ -10,9 +10,28 @@ from usaspending_api.search.v2.es_sanitization import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
 
 models = [
-    {"key": "search_text", "name": "search_text", "type": "text", "text_type": "search", "optional": False},
-    {"key": "limit", "name": "limit", "type": "integer", "max": 500, "optional": True, "default": 10},
-    {"key": "recipient_levels", "name": "recipient_levels", "type": "array", "items": {"type": "string"}, "optional": True},
+    {
+        "name": "search_text", 
+        "key": "search_text", 
+        "type": "text", 
+        "text_type": "search", 
+        "optional": False},
+    {
+        "name": "limit", 
+        "key": "limit", 
+        "type": "integer", 
+        "max": 500, 
+        "optional": True, 
+        "default": 10},
+    {
+        "name": "recipient_levels",
+        "key": "recipient_levels",  
+        "type": "array", 
+        "array_type":"text", 
+        "text_type": "search", 
+        "items": {"type": "string"}, 
+        "optional": True
+     },
 ]
 
 @validate_post_request(models)
@@ -26,10 +45,15 @@ class RecipientAutocompleteViewSet(APIView):
     @cache_response()
     def post(self, request, format=None):
         search_text, recipient_levels = prepare_search_terms(request.data)
+        print("SEARCH TEXT", search_text)
+        print("RECIPIENT LEVELS", recipient_levels)
         limit = request.data["limit"]
+        print("LIMIT", limit)
 
         query = create_elasticsearch_query(search_text, recipient_levels, limit)
+        print("QUERY:", query)
         sorted_results = query_elasticsearch(query)
+        print("Sorted Results:", sorted_results)
         response = OrderedDict([("count", len(sorted_results)), ("results", sorted_results[:limit])])
 
         return Response(response)
@@ -41,6 +65,7 @@ def prepare_search_terms(request_data):
 
 def create_elasticsearch_query(search_text, recipient_levels, limit):
     query = create_es_search(search_text, recipient_levels)
+    print("CREATE ES SEARCH: ", query)
     query.aggs.bucket("recipients", A("terms", field="recipient_name.keyword", size=limit))
     return query
 
@@ -51,11 +76,24 @@ def create_es_search(search_text, recipient_levels):
     if recipient_levels:
         # Only return the matches where the `recipient_level` field contains the filter value from
         #   the HTTP request.
+        # query = ES_Q(
+        #     "bool",
+        #     must=[
+        #         ES_Q("match", recipient_level="C"),
+        #         ES_Q("query_string", query=f"*{search_text}*", fields=ES_RECIPIENT_SEARCH_FIELDS)
+        #     ]
+        # )
+
+         # Use a bool query with should clauses for each recipient level
+        should_clauses = [
+            ES_Q("match", recipient_level=level)
+            for level in recipient_levels
+        ]
         query = ES_Q(
             "bool",
             must=[
-                ES_Q("match", recipient_level="C"),
-                ES_Q("query_string", query=f"*{search_text}*", fields=ES_RECIPIENT_SEARCH_FIELDS)
+                *should_clauses,
+                ES_Q("query_string", query=f"*{search_text}*", fields=ES_RECIPIENT_SEARCH_FIELDS),
             ]
         )
     else:
