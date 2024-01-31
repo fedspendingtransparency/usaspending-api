@@ -25,6 +25,14 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
+            "mv_agency_office_autocomplete",
+            {
+                "model": mv.AgencyOfficeAutocompleteMatview,
+                "json_filepath": str(JSON_DIR / "mv_agency_office_autocomplete.json"),
+                "sql_filename": "mv_agency_office_autocomplete.sql",
+            },
+        ),
+        (
             "summary_state_view",
             {
                 "model": mv.SummaryStateView,

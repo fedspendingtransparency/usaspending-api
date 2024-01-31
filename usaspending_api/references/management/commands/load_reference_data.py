@@ -62,6 +62,11 @@ class Command(BaseCommand):
             file="https://files.usaspending.gov/reference_data/census_2021_population_congressional_district.csv",
             type="district",
         )
+        call_command(
+            "load_population_data",
+            file="https://files.usaspending.gov/reference_data/latest_country_population_data.csv",
+            type="country",
+        )
 
         self.logger.info("Loading descriptions of commonly used terms")
         call_command("load_glossary")
