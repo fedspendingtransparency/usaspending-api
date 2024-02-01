@@ -134,8 +134,8 @@ class CountryPopulationLoader(GenericPopulationLoader):
             # by checking if the population value changes and only saving the record when it does
             # we take advantage of the knowledge of an external class to ensure that the update_date
             # value doesn't change.
-            if record.latest_population != data_file_population:
-                record.latest_population = row["population"]
+            if str(record.latest_population) != str(data_file_population):
+                record.latest_population = data_file_population
                 record.save()
         self._logger.info("Success? Please Verify")
 
