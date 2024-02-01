@@ -219,6 +219,23 @@ def test_create_and_load_new_recipient_index(recipient_data_fixture, elasticsear
     assert es_recipient_docs == original_db_recipients_count
 
 
+def test_create_and_load_new_location_index(location_data_fixture, elasticsearch_location_index, monkeypatch):
+    """Test the `elasticsearch_indexer` Django management command to create and load a new locations index"""
+
+    client: Elasticsearch = elasticsearch_location_index.client
+
+    # Ensure index is not yet created
+    assert not client.indices.exists(elasticsearch_location_index.index_name)
+
+    original_db_locations_count = ...  # TODO: update this with a count from the DB
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_location_index)
+    assert client.indices.exists(elasticsearch_location_index.index_name)
+
+    es_location_docs = client.count(index=elasticsearch_location_index.index_name)["count"]
+    assert es_location_docs == original_db_locations_count
+
+
 def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
     """Test the ``elasticsearch_loader`` django management command to create a new transactions index and load it
     with data from the DB
