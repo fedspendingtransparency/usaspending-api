@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Funding Agency Autocomplete [/api/v2/autocomplete/funding_agency/]
+# Funding Agency Autocomplete [/api/v2/autocomplete/funding_agency]
 
 *Deprecated: Please see the following API contract for the new funding endpoint [usaspending_api/api_contracts/contracts/v2/autocomplete/funding_agency_office.md](./funding_agency_office.md).*
 

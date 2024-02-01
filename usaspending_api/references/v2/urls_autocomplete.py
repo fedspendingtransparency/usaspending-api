@@ -23,8 +23,8 @@ from usaspending_api.common.views import RemovedEndpointView
 
 
 urlpatterns = [
-    re_path(r"^awarding_agency/$", AwardingAgencyAutocompleteViewSet.as_view()),
-    re_path(r"^funding_agency/$", FundingAgencyAutocompleteViewSet.as_view()),
+    re_path(r"^awarding_agency$", AwardingAgencyAutocompleteViewSet.as_view()),
+    re_path(r"^funding_agency$", FundingAgencyAutocompleteViewSet.as_view()),
     re_path(r"^awarding_agency_office/$", AwardingAgencyOfficeAutocompleteViewSet.as_view()),
     re_path(r"^funding_agency_office/$", FundingAgencyOfficeAutocompleteViewSet.as_view()),
     re_path(r"^cfda", CFDAAutocompleteViewSet.as_view()),

@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Awarding Agency Autocomplete [/api/v2/autocomplete/awarding_agency/]
+# Awarding Agency Autocomplete [/api/v2/autocomplete/awarding_agency]
 
 *Deprecated: Please see the following API contract for the new awarding endpoint [usaspending_api/api_contracts/contracts/v2/autocomplete/awarding_agency_office.md](./awarding_agency_office.md).*
 
