@@ -1,27 +1,26 @@
 from django.urls import re_path
+
 from usaspending_api.references.v2.views.autocomplete import (
     AwardingAgencyAutocompleteViewSet,
-    FundingAgencyAutocompleteViewSet,
+    AwardingAgencyOfficeAutocompleteViewSet,
     CFDAAutocompleteViewSet,
+    FundingAgencyAutocompleteViewSet,
+    FundingAgencyOfficeAutocompleteViewSet,
+    GlossaryAutocompleteViewSet,
     NAICSAutocompleteViewSet,
     PSCAutocompleteViewSet,
-    GlossaryAutocompleteViewSet,
-    AwardingAgencyOfficeAutocompleteViewSet,
-    FundingAgencyOfficeAutocompleteViewSet,
 )
 from usaspending_api.references.v2.views.city import CityAutocompleteViewSet
 from usaspending_api.references.v2.views.recipients import RecipientAutocompleteViewSet
 from usaspending_api.references.v2.views.tas_autocomplete import (
-    TASAutocompleteATA,
+    TASAutocompleteA,
     TASAutocompleteAID,
+    TASAutocompleteATA,
     TASAutocompleteBPOA,
     TASAutocompleteEPOA,
-    TASAutocompleteA,
     TASAutocompleteMAIN,
     TASAutocompleteSUB,
 )
-from usaspending_api.common.views import RemovedEndpointView
-
 
 urlpatterns = [
     re_path(r"^awarding_agency/$", AwardingAgencyAutocompleteViewSet.as_view()),
