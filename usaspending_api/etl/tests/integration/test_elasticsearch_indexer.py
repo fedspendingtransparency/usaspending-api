@@ -2,6 +2,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from django.db.models import F
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_bakery import baker
@@ -162,6 +163,53 @@ def recipient_data_fixture(db):
     )
 
 
+@pytest.fixture
+def location_data_fixture(db):
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=100,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION100",
+        pop_country_name="UNITED STATES",
+        pop_state_name="California",
+        pop_city_name="Los Angeles",
+        pop_county_name="Los Angeles",
+        pop_zip5=90001,
+        pop_congressional_code_current="34",
+        pop_congressional_code="34",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="Nevada",
+        recipient_location_city_name="Las Vegas",
+        recipient_location_county_name="Clark",
+        recipient_location_zip5=88901,
+        recipient_location_congressional_code_current="01",
+        recipient_location_congressional_code="01",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=101,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION101",
+        pop_country_name="DENMARK",
+        pop_state_name=None,
+        pop_city_name=None,
+        pop_county_name=None,
+        pop_zip5=None,
+        pop_congressional_code_current=None,
+        pop_congressional_code=None,
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="Texas",
+        recipient_location_city_name="Dallas",
+        recipient_location_county_name="Dallas",
+        recipient_location_zip5=75001,
+        recipient_location_congressional_code_current="30",
+        recipient_location_congressional_code="30",
+    )
+    baker.make("recipient.StateData", id=1, fips="06", code="CA", name="California", type="state", year=2024)
+    baker.make("recipient.StateData", id=2, fips="32", code="NV", name="Nevada", type="state", year=2024)
+    baker.make("recipient.StateData", id=3, fips="48", code="TX", name="Texas", type="state", year=2024)
+
+
 def mock_execute_sql(sql, results, verbosity=None):
     """SQL method is being mocked here since the `execute_sql_statement` used
     doesn't use the same DB connection to avoid multiprocessing errors
@@ -227,7 +275,13 @@ def test_create_and_load_new_location_index(location_data_fixture, elasticsearch
     # Ensure index is not yet created
     assert not client.indices.exists(elasticsearch_location_index.index_name)
 
-    original_db_locations_count = ...  # TODO: update this with a count from the DB
+    pop_ts = TransactionSearch.objects.annotate(countries=F("pop_country_name"), states=F("pop_state_name")).values(
+        "countries", "states"
+    )
+    rl_ts = TransactionSearch.objects.annotate(
+        countries=F("recipient_location_country_name"), states=F("recipient_location_state_name")
+    ).values("countries", "states")
+    original_db_locations_count = pop_ts.union(rl_ts).count()
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_location_index)
     assert client.indices.exists(elasticsearch_location_index.index_name)
