@@ -15,9 +15,7 @@ with locations_cte as (
 			when
 				pop_country_name = 'UNITED STATES'
 				and
-				LENGTH(pop_state_name) > 2  -- filter out state codes that were inserted as state names
-				and
-				pop_state_name ~ '[^0-9]'  -- filter out fips codes that were inserted as state names
+				pop_state_name in (select upper(name) from state_data)
 			then
 				pop_state_name
 			else
@@ -29,7 +27,7 @@ with locations_cte as (
 				and
 				pop_state_name is not null
 				and
-				pop_city_name ~ '^[a-zA-z]'
+				regexp_match(pop_city_name, '^[a-zA-z]') is not null
 			then
 				pop_city_name
 			else
@@ -41,7 +39,7 @@ with locations_cte as (
 				and
 				pop_state_name is not null
 				and
-				pop_county_name ~ '^[a-zA-z]'
+				regexp_match(pop_county_name, '^[a-zA-z]') is not null
 			then
 				pop_county_name
 			else
@@ -105,9 +103,7 @@ with locations_cte as (
 			when
 				recipient_location_country_name = 'UNITED STATES'
 				and
-				LENGTH(recipient_location_state_name) > 2
-				and
-				recipient_location_state_name ~ '^[a-zA-z]'
+				recipient_location_state_name in (select upper(name) from state_data)
 			then
 				recipient_location_state_name
 			else
@@ -119,7 +115,7 @@ with locations_cte as (
 				and
 				recipient_location_state_name is not null
 				and
-				recipient_location_city_name ~ '^[a-zA-z]'
+				regexp_match(recipient_location_city_name, '^[a-zA-z]') is not null
 			then
 				recipient_location_city_name
 			else
@@ -131,7 +127,7 @@ with locations_cte as (
 				and
 				recipient_location_state_name is not null
 				and
-				recipient_location_county_name ~ '^[a-zA-z]'
+				regexp_match(recipient_location_county_name, '^[a-zA-z]') is not null
 			then
 				recipient_location_county_name
 			else
