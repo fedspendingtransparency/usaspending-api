@@ -29,12 +29,13 @@ models = [
         "name": "recipient_levels",
         "key": "recipient_levels",
         "type": "array",
-        "array_type":"text",
+        "array_type": "text",
         "text_type": "search",
         "items": {"type": "string"},
         "optional": True
     },
 ]
+
 
 @validate_post_request(models)
 class RecipientAutocompleteViewSet(APIView):
@@ -52,7 +53,6 @@ class RecipientAutocompleteViewSet(APIView):
         query = create_es_search(search_text, recipient_levels, limit)
         results = query_elasticsearch(query)
         response = OrderedDict([("count", len(results)), ("results", results)])
-
         return Response(response)
 
 
@@ -60,42 +60,14 @@ def prepare_search_terms(request_data):
     fields = [request_data["search_text"], request_data.get("recipient_levels", [])]
     return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
-# search_text = "kimberly"  # Test recipient name. There is a recipient with this name and a level of "R"
+
 def create_es_search(search_text, recipient_levels, limit):
     ES_RECIPIENT_SEARCH_FIELDS = ["recipient_name", "uei"]
 
     query = ES_Q()
     # Build the should_clauses list
-    if recipient_levels:
-        recipient_should_clause = [
-            ES_Q(
-                    "bool",
-                    should=[
-                    ES_Q("match", recipient_level=level) for level in recipient_levels
-                    ],
-                    minimum_should_match=1
-            )
-        ]
-        search_text_should_clause = [
-            ES_Q(
-                "bool",
-                should=[
-                    ES_Q("query_string", query=search_text, fields=ES_RECIPIENT_SEARCH_FIELDS),
-                    ES_Q("match", recipient_name=search_text),
-                    ES_Q("match", uei=search_text)
-                ],
-                minimum_should_match=1
-            )
-        ]
-        query = ES_Q(
-            "bool",
-            must=[
-                ES_Q("bool", should=recipient_should_clause),
-                ES_Q("bool", should=search_text_should_clause)
-            ]
-        )
-    else:
-        query = ES_Q(
+    search_text_should_clause = [
+        ES_Q(
             "bool",
             should=[
                 ES_Q("query_string", query=search_text, fields=ES_RECIPIENT_SEARCH_FIELDS),
@@ -104,9 +76,33 @@ def create_es_search(search_text, recipient_levels, limit):
             ],
             minimum_should_match=1
         )
-    # .sort({"_score": {"order": "desc" }})
+    ]
+
+    if recipient_levels:
+        recipient_should_clause = [
+            ES_Q(
+                "bool",
+                should=[
+                    ES_Q("match", recipient_level=level) for level in recipient_levels
+                ],
+                minimum_should_match=1
+            )
+        ]
+
+        query = ES_Q(
+            "bool",
+            must=[
+                ES_Q("bool", should=recipient_should_clause),
+                ES_Q("bool", should=search_text_should_clause)
+            ]
+        )
+
+    else:
+        query = search_text_should_clause
+
     query = RecipientSearch().query(query)[:limit]
     return query
+
 
 def query_elasticsearch(query):
     hits = query.handle_execute()
@@ -114,6 +110,7 @@ def query_elasticsearch(query):
     if hits and hits["hits"]["total"]["value"] > 0:
         results = parse_elasticsearch_response(hits)
     return results
+
 
 def parse_elasticsearch_response(hits):
     recipients = hits["hits"]["hits"]
@@ -130,4 +127,3 @@ def parse_elasticsearch_response(hits):
             )
         )
     return results
-
