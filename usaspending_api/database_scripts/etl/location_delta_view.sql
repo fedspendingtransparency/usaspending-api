@@ -27,7 +27,7 @@ with locations_cte as (
 				and
 				pop_state_name is not null
 				and
-				regexp_match(pop_city_name, '^[a-zA-z]') is not null
+				pop_city_name ~ '^[a-zA-Z]'
 			then
 				pop_city_name
 			else
@@ -39,7 +39,7 @@ with locations_cte as (
 				and
 				pop_state_name is not null
 				and
-				regexp_match(pop_county_name, '^[a-zA-z]') is not null
+				pop_county_name ~ '^[a-zA-Z]'
 			then
 				pop_county_name
 			else
@@ -115,7 +115,7 @@ with locations_cte as (
 				and
 				recipient_location_state_name is not null
 				and
-				regexp_match(recipient_location_city_name, '^[a-zA-z]') is not null
+				recipient_location_city_name ~ '^[a-zA-Z]'
 			then
 				recipient_location_city_name
 			else
@@ -127,7 +127,7 @@ with locations_cte as (
 				and
 				recipient_location_state_name is not null
 				and
-				regexp_match(recipient_location_county_name, '^[a-zA-z]') is not null
+				recipient_location_county_name ~ '^[a-zA-Z]'
 			then
 				recipient_location_county_name
 			else
