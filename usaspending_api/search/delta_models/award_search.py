@@ -662,7 +662,7 @@ award_search_incremental_load_sql_string = [
     """,
 ]
 
-award_search_load_sql_string = f"""
+award_search_overwrite_load_sql_string = f"""
 INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
