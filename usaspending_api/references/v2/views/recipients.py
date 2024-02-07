@@ -61,7 +61,6 @@ class RecipientAutocompleteViewSet(APIView):
         response = OrderedDict([("count", len(results)), ("results", results), ("messages", [""])])
         return Response(response)
 
-
     @staticmethod
     def _prepare_search_terms(
         request_data: Dict[str, Union[str, List[str]]]
@@ -77,7 +76,6 @@ class RecipientAutocompleteViewSet(APIView):
         """
         fields = [request_data["search_text"], request_data.get("recipient_levels", [])]
         return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
-
 
     @staticmethod
     def _create_es_search(
@@ -127,8 +125,6 @@ class RecipientAutocompleteViewSet(APIView):
         query = RecipientSearch().query(query)[:limit]
         return query
 
-
-    # def _query_elasticsearch(query):
     @staticmethod
     def _query_elasticsearch(query: RecipientSearch) -> List[Dict[str, Any]]:
         """
@@ -147,8 +143,6 @@ class RecipientAutocompleteViewSet(APIView):
             results = RecipientAutocompleteViewSet._parse_elasticsearch_response(hits)
         return results
 
-
-    # def _parse_elasticsearch_response(hits):
     @staticmethod
     def _parse_elasticsearch_response(hits: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
