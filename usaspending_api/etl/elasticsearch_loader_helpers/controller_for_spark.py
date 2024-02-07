@@ -61,6 +61,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         elif self.config["load_type"] == "location":
             # Replace the Postgres regex operator with the Databricks regex operator
             identifier_replacements["~"] = "rlike"
+            identifier_replacements["state_data"] = "global_temp.state_data"
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
