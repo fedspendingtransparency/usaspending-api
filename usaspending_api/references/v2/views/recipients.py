@@ -36,7 +36,7 @@ class RecipientAutocompleteViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/recipient.md"
 
     @cache_response()
-    def post(self, request: Request, format=None) -> Response :
+    def post(self, request: Request, format=None) -> Response:
 
         """
         Handle POST requests to the endpoint.
@@ -62,9 +62,7 @@ class RecipientAutocompleteViewSet(APIView):
         return Response(response)
 
     @staticmethod
-    def _prepare_search_terms(
-        request_data: Dict[str, Union[str, List[str]]]
-    ) -> List[Union[str, List[str]]]:
+    def _prepare_search_terms(request_data: Dict[str, Union[str, List[str]]]) -> List[Union[str, List[str]]]:
         """
         Prepare search terms & recipient_levels from the request data.
 
@@ -78,11 +76,7 @@ class RecipientAutocompleteViewSet(APIView):
         return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
     @staticmethod
-    def _create_es_search(
-        search_text: str,
-        recipient_levels: List[str],
-        limit: int
-    ) -> RecipientSearch:
+    def _create_es_search(search_text: str, recipient_levels: List[str], limit: int) -> RecipientSearch:
         """
         Create an Elasticsearch search query for recipient autocomplete.
 
@@ -97,14 +91,14 @@ class RecipientAutocompleteViewSet(APIView):
         es_recipient_search_fields = ["recipient_name", "uei"]
 
         query = ES_Q(
-                "bool",
-                should=[
-                    ES_Q("query_string", query=search_text, fields=es_recipient_search_fields),
-                    ES_Q("match", recipient_name=search_text),
-                    ES_Q("match", uei=search_text),
-                ],
-                minimum_should_match=1,
-            )
+            "bool",
+            should=[
+                ES_Q("query_string", query=search_text, fields=es_recipient_search_fields),
+                ES_Q("match", recipient_name=search_text),
+                ES_Q("match", uei=search_text),
+            ],
+            minimum_should_match=1,
+        )
 
         if recipient_levels:
             recipient_should_clause = [
@@ -115,12 +109,7 @@ class RecipientAutocompleteViewSet(APIView):
                 )
             ]
             # if there are recipient levels, then any of the options from the recipient levels as well as the search text should match  # noqa: E501
-            query = ES_Q(
-                "bool", must=[
-                    ES_Q("bool", should=recipient_should_clause),
-                    ES_Q("bool", should=query)
-                ]
-            )
+            query = ES_Q("bool", must=[ES_Q("bool", should=recipient_should_clause), ES_Q("bool", should=query)])
 
         query = RecipientSearch().query(query)[:limit]
         return query
@@ -139,7 +128,13 @@ class RecipientAutocompleteViewSet(APIView):
         hits = query.handle_execute()
         results = []
         # if hits and hits["hits"]["total"]["value"] > 0:
-        if hits and "hits" in hits and "total" in hits["hits"] and "value" in hits["hits"]["total"] and hits["hits"]["total"]["value"] > 0:  # noqa: E501
+        if (
+            hits
+            and "hits" in hits
+            and "total" in hits["hits"]
+            and "value" in hits["hits"]["total"]
+            and hits["hits"]["total"]["value"] > 0
+        ):  # noqa: E501
             results = RecipientAutocompleteViewSet._parse_elasticsearch_response(hits)
         return results
 

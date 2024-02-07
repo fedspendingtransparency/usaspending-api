@@ -14,13 +14,31 @@ This route sends a request to the backend to retrieve recipients matching the sp
 
             {
                 "$schema": "http://json-schema.org/draft-04/schema#",
-                "type": "object"
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "number",
+                        "description": "The number of results to return. Default is 10. Max is 500.",
+                        "default": 10,
+                        "maximum": 500
+                    },
+                    "search_text": {
+                        "type": "string",
+                        "description": "The search text to match against recipient names or uei."
+                    },
+                    "recipient_levels": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "An array of recipient levels to filter results. E.g., ['P', 'R']"
+                    }
+                },
+                "required": ["search_text"]
             }
 
     + Attributes (object)
         + `limit` (optional, number)
-            + Default: 10
-            + Max: 500
         + `search_text` (required, string)
         + `recipient_levels` (optional, array[string])
     + Body
