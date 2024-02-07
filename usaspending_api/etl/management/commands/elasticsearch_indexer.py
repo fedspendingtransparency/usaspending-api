@@ -371,7 +371,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table_id": "transaction_id",
             "create_award_type_aliases": False,
             "data_transform_func": None,
-            "data_type": "location",  # TODO maybe this isn't correct?
+            "data_type": "location",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,
             "field_for_es_id": "id",
