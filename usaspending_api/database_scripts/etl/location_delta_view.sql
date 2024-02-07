@@ -179,7 +179,7 @@ with locations_cte as (
 		recipient_location_country_name is not null
 )
 select
-    row_number() over() as id,
+    row_number() over (order by country_name, state_name) as id,
 	country_name,
 	state_name,
 	array_agg(distinct(city_name)) filter (where city_name is not null) as cities,
