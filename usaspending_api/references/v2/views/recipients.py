@@ -1,6 +1,8 @@
 from collections import OrderedDict
+from typing import Any, Dict, List, Union
 
 from elasticsearch_dsl import Q as ES_Q
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -34,77 +36,141 @@ class RecipientAutocompleteViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/recipient.md"
 
     @cache_response()
-    def post(self, request, format=None):
-        search_text, recipient_levels = prepare_search_terms(request.data)
+    def post(self, request: Request, format=None) -> Response :
+
+        """
+        Handle POST requests to the endpoint.
+
+        Args:
+            request: The request object containing data.
+                data:{
+                    "search_text": str
+                    "recipient_levels": [""] (optional)
+                    "limit": int (optional)
+                }
+            format: The format of the response (default=None).
+
+        Returns:
+            Returns a list of Recipients matching the input search_text and recipient_levels, if passed in.
+        """
+
+        search_text, recipient_levels = self._prepare_search_terms(request.data)
         limit = request.data["limit"]
-        query = create_es_search(search_text, recipient_levels, limit)
-        results = query_elasticsearch(query)
-        response = OrderedDict([("count", len(results)), ("results", results)])
+        query = self._create_es_search(search_text, recipient_levels, limit)
+        results = self._query_elasticsearch(query)
+        response = OrderedDict([("count", len(results)), ("results", results), ("messages", [""])])
         return Response(response)
 
 
-def prepare_search_terms(request_data):
-    fields = [request_data["search_text"], request_data.get("recipient_levels", [])]
-    return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
+    @staticmethod
+    def _prepare_search_terms(
+        request_data: Dict[str, Union[str, List[str]]]
+    ) -> List[Union[str, List[str]]]:
+        """
+        Prepare search terms & recipient_levels from the request data.
+
+        Args:
+            request_data: The request data containing search text and optional recipient levels.
+
+        Returns:
+            A list containing the sanitized search text and recipient levels.
+        """
+        fields = [request_data["search_text"], request_data.get("recipient_levels", [])]
+        return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
 
-def create_es_search(search_text, recipient_levels, limit):
-    ES_RECIPIENT_SEARCH_FIELDS = ["recipient_name", "uei"]
+    @staticmethod
+    def _create_es_search(
+        search_text: str,
+        recipient_levels: List[str],
+        limit: int
+    ) -> RecipientSearch:
+        """
+        Create an Elasticsearch search query for recipient autocomplete.
 
-    query = ES_Q()
-    # Build the should_clauses list
-    search_text_should_clause = [
-        ES_Q(
-            "bool",
-            should=[
-                ES_Q("query_string", query=search_text, fields=ES_RECIPIENT_SEARCH_FIELDS),
-                ES_Q("match", recipient_name=search_text),
-                ES_Q("match", uei=search_text),
-            ],
-            minimum_should_match=1,
-        )
-    ]
+        Args:
+            search_text: The search text entered by the user.
+            recipient_levels: The list of recipient levels to filter by.
+            limit: The maximum number of results to return.
 
-    if recipient_levels:
-        recipient_should_clause = [
-            ES_Q(
-                "bool",
-                should=[ES_Q("match", recipient_level=level) for level in recipient_levels],
-                minimum_should_match=1,
-            )
-        ]
+        Returns:
+            An Elasticsearch search query.
+        """
+        es_recipient_search_fields = ["recipient_name", "uei"]
 
         query = ES_Q(
-            "bool", must=[ES_Q("bool", should=recipient_should_clause), ES_Q("bool", should=search_text_should_clause)]
-        )
+                "bool",
+                should=[
+                    ES_Q("query_string", query=search_text, fields=es_recipient_search_fields),
+                    ES_Q("match", recipient_name=search_text),
+                    ES_Q("match", uei=search_text),
+                ],
+                minimum_should_match=1,
+            )
 
-    else:
-        query = search_text_should_clause
-
-    query = RecipientSearch().query(query)[:limit]
-    return query
-
-
-def query_elasticsearch(query):
-    hits = query.handle_execute()
-    results = []
-    if hits and hits["hits"]["total"]["value"] > 0:
-        results = parse_elasticsearch_response(hits)
-    return results
-
-
-def parse_elasticsearch_response(hits):
-    recipients = hits["hits"]["hits"]
-    results = []
-    for temp in recipients:
-        recipient = temp["_source"]
-        results.append(
-            OrderedDict(
-                [
-                    ("recipient_name", recipient["recipient_name"]),
-                    ("uei", recipient["uei"]),
-                    ("recipient_level", recipient["recipient_level"]),
+        if recipient_levels:
+            recipient_should_clause = [
+                ES_Q(
+                    "bool",
+                    should=[ES_Q("match", recipient_level=level) for level in recipient_levels],
+                    minimum_should_match=1,
+                )
+            ]
+            # if there are recipient levels, then any of the options from the recipient levels as well as the search text should match  # noqa: E501
+            query = ES_Q(
+                "bool", must=[
+                    ES_Q("bool", should=recipient_should_clause),
+                    ES_Q("bool", should=query)
                 ]
             )
-        )
-    return results
+
+        query = RecipientSearch().query(query)[:limit]
+        return query
+
+
+    # def _query_elasticsearch(query):
+    @staticmethod
+    def _query_elasticsearch(query: RecipientSearch) -> List[Dict[str, Any]]:
+        """
+        Query Elasticsearch with the given search query.
+
+        Args:
+            query: The Elasticsearch search query.
+
+        Returns:
+            A dictionary containing results from the Elasticsearch search query.
+        """
+        hits = query.handle_execute()
+        results = []
+        # if hits and hits["hits"]["total"]["value"] > 0:
+        if hits and "hits" in hits and "total" in hits["hits"] and "value" in hits["hits"]["total"] and hits["hits"]["total"]["value"] > 0:  # noqa: E501
+            results = RecipientAutocompleteViewSet._parse_elasticsearch_response(hits)
+        return results
+
+
+    # def _parse_elasticsearch_response(hits):
+    @staticmethod
+    def _parse_elasticsearch_response(hits: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Parse Elasticsearch response and extract relevant information.
+
+        Args:
+            hits: The Elasticsearch response containing search hits.
+
+        Returns:
+            A dictionary containing parsed search results (recipient_name, uei, and recipient_level).
+        """
+        recipients = hits["hits"]["hits"]
+        results = []
+        for temp in recipients:
+            recipient = temp["_source"]
+            results.append(
+                OrderedDict(
+                    [
+                        ("recipient_name", recipient["recipient_name"]),
+                        ("uei", recipient["uei"]),
+                        ("recipient_level", recipient["recipient_level"]),
+                    ]
+                )
+            )
+        return results

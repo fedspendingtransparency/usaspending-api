@@ -20,6 +20,7 @@ This route sends a request to the backend to retrieve recipients matching the sp
     + Attributes (object)
         + `limit` (optional, number)
             + Default: 10
+            + Max: 500
         + `search_text` (required, string)
         + `recipient_levels` (optional, array[string])
     + Body
@@ -31,6 +32,8 @@ This route sends a request to the backend to retrieve recipients matching the sp
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (required, array[RecipientMatch], fixed-type)
+        + `messages` (required, array[string], fixed-type)
+        An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
