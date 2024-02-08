@@ -114,7 +114,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             # the config["primary_key"], which is the PK field of the parent records.
             # It is imperative that only 1 indexing operation per parent document (per primary_key value) happen,
             # and encompass all of its nested child documents, otherwise subsequent indexing of that parent document
-            # will overwrite the prior documents.
+            # will overwrite the prior documentsSELECT *    FROM covid19_faba_view .
             # For this to happen, ALL data for a parent document (primar_key) must exist in the same partition of
             # data being transformed and loaded. This can be achieved by providing the grouping to repartition,
             # so all records with that same value will end up in the same partition
