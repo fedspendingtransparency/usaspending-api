@@ -82,7 +82,6 @@ class Command(BaseCommand):
     }
     extra_filters = {
         f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True,
-
     }
     queryset = filter_function(filters)
     d1_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id, filters)
@@ -142,7 +141,9 @@ class Command(BaseCommand):
 
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
-        self.zip_file_path = self.working_dir_path / f"{self.agency_name}_unlinked_awards_{self.full_timestamp}.zip"
+        self.zip_file_path = (
+            self.working_dir_path / f"{'_'.join(self.agency_name)}_unlinked_awards_{self.full_timestamp}.zip"
+        )
         try:
             self.prep_filesystem()
             self.process_data_copy_jobs()
@@ -173,7 +174,7 @@ class Command(BaseCommand):
         return sql_file_path
 
     def process_data_copy_jobs(self):
-        logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_path}")
+        logger.info(f"Creating new unliked awards zip file: {self.zip_file_path}")
         self.filepaths_to_delete.append(self.zip_file_path)
 
         for download_source, final_name in self.download_file_list:
