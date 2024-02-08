@@ -1,37 +1,19 @@
-import json
 import logging
 
 from datetime import datetime, timezone
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils.functional import cached_property
 from pathlib import Path
 from usaspending_api.common.etl.spark import create_ref_temp_views
+from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
-    PostgresToCSVStrategy,
     SparkToCSVStrategy,
 )
-from usaspending_api.download.filestreaming.download_generation import (
-    add_data_dictionary_to_zip,
-)
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_a import file_a_sql_string
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_b import file_b_sql_string
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d1_awards import d1_awards_sql_string
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d2_awards import d2_awards_sql_string
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_contracts import f_contracts_sql_string
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_grants import f_grants_sql_string
-from usaspending_api.download.filestreaming.download_source import DownloadSource
-from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
-from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
-from usaspending_api.download.models.download_job import DownloadJob
-from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS
-from usaspending_api.references.models import DisasterEmergencyFundCode
-from usaspending_api.submissions.helpers import get_last_closed_submission_date
+from usaspending_api.download.lookups import VALUE_MAPPINGS
 from enum import Enum
-from usaspending_api.config import CONFIG
 
 
 class ComputeTypeEnum(Enum):
@@ -180,7 +162,7 @@ class Command(BaseCommand):
         for download_source, final_name in self.download_file_list:
             # TODO: Try to create something that doesn't enforce a DownloadSource for all compute types
             columns = download_source.columns(requested=None)
-            source_sql = download_source.row_emitter(columns)
+            source_sql = generate_raw_quoted_query(download_source.row_emitter(columns))
             sql_file_path = self._create_sql_file(f"{final_name}_sql", source_sql)
 
             final_path = self._create_data_csv_dest_path(final_name)
