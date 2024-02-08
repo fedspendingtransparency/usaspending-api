@@ -12,6 +12,7 @@ from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
     SparkToCSVStrategy,
 )
+from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from enum import Enum
 
