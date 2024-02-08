@@ -142,7 +142,7 @@ class Command(BaseCommand):
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
         self.zip_file_path = (
-            self.working_dir_path / f"{'_'.join(self.agency_name)}_unlinked_awards_{self.full_timestamp}.zip"
+            self.working_dir_path / f"{self.agency_name.replace(' ', '_')}_unlinked_awards_{self.full_timestamp}.zip"
         )
         try:
             self.prep_filesystem()
@@ -210,7 +210,8 @@ class Command(BaseCommand):
         short_timestamp = self.full_timestamp[:-6]
         return [
             (
-                f'{self.download_source_sql["unlinked_contracts_file_d1"]}',
+                # TODO: Try to create something that doesn't enforce a DownloadSource for all compute types
+                self.download_source_sql["unlinked_contracts_file_d1"],
                 f"{self.agency_name}_UnlinkedContracts_{short_timestamp}",
             )
         ]
