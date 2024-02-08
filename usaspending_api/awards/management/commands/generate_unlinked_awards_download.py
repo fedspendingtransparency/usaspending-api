@@ -179,7 +179,7 @@ class Command(BaseCommand):
 
         for download_source, final_name in self.download_file_list:
             # TODO: Try to create something that doesn't enforce a DownloadSource for all compute types
-            columns = download_source.columns()
+            columns = download_source.columns(requested=None)
             source_sql = download_source.row_emitter(columns)
             sql_file_path = self._create_sql_file(f"{final_name}_sql", source_sql)
 
