@@ -1,208 +1,208 @@
 DROP VIEW IF EXISTS location_delta_view;
 
 CREATE VIEW location_delta_view AS
-with locations_cte as (
-	select
-		case
-			when
+WITH locations_cte AS (
+	SELECT
+		CASE
+			WHEN
 				pop_country_name = 'UNITED STATES OF AMERICA'
-			then
+			THEN
 				'UNITED STATES'
-			else
+			ELSE
 				pop_country_name
-		end as country_name,
-		case
-			when
+		END AS country_name,
+		CASE
+			WHEN
 				pop_country_name = 'UNITED STATES'
-				and
-				pop_state_name in (select upper(name) from state_data)
-			then
+				AND
+				pop_state_name IN (SELECT UPPER(name) FROM state_data)
+			THEN
 				pop_state_name
-			else
-				null
-		end as state_name,
-		case
-			when
+			ELSE
+				NULL
+		END AS state_name,
+		CASE
+			WHEN
 				pop_country_name = 'UNITED STATES'
-				and
-				pop_state_name is not null
-				and
+				AND
+				pop_state_name IS NOT NULL
+				AND
 				pop_city_name ~ '^[a-zA-Z]'
-			then
+			THEN
 				pop_city_name
-			else
-				null
-		end as city_name,
-		case
-			when
+			ELSE
+				NULL
+		END AS city_name,
+		CASE
+			WHEN
 				pop_country_name = 'UNITED STATES'
-				and
-				pop_state_name is not null
-				and
+				AND
+				pop_state_name IS NOT NULL
+				AND
 				pop_county_name ~ '^[a-zA-Z]'
-			then
+			THEN
 				pop_county_name
-			else
-				null
-		end as county_name,
-		case
-			when
+			ELSE
+				NULL
+		END AS county_name,
+		CASE
+			WHEN
 				pop_country_name = 'UNITED STATES'
-				and
-				pop_state_name is not null
-			then
+				AND
+				pop_state_name IS NOT NULL
+			THEN
 				pop_zip5
-			else
-				null
-		end as zip_code,
-		case
-			when
+			ELSE
+				NULL
+		END AS zip_code,
+		CASE
+			WHEN
 				pop_country_name = 'UNITED STATES'
-				and
+				AND
 				(
-					sd.code is not null
-					and
-					pop_congressional_code_current is not null
+					sd.code IS NOT NULL
+					AND
+					pop_congressional_code_current IS NOT NULL
 				)
-			then
+			THEN
 				CONCAT(sd.code, pop_congressional_code_current)
-			else
-				null
-		end as current_congressional_district,
-		case
-			when
+			ELSE
+				NULL
+		END AS current_congressional_district,
+		CASE
+			WHEN
 				pop_country_name = 'UNITED STATES'
-				and
+				AND
 				(
-					sd.code is not null
-					and
-					pop_congressional_code is not null
+					sd.code IS NOT NULL
+					AND
+					pop_congressional_code IS NOT NULL
 				)
-			then
+			THEN
 				CONCAT(sd.code, pop_congressional_code)
-			else
-				null
-		end as original_congressional_district
-	from	
+			ELSE
+				NULL
+		END AS original_congressional_district
+	FROM	
 		rpt.transaction_search
-	left join
-		state_data sd on pop_state_name = upper(sd.name)
-	where
-		pop_country_name is not null
-	union
-	select
-		case
-			when
+	LEFT JOIN
+		state_data sd ON pop_state_name = UPPER(sd.name)
+	WHERE
+		pop_country_name IS NOT NULL
+	UNION
+	SELECT
+		CASE
+			WHEN
 				recipient_location_country_name = 'UNITED STATES OF AMERICA'
-			then
+			THEN
 				'UNITED STATES'
-			else
+			ELSE
 				recipient_location_country_name 
-		end as country_name,
-		case
-			when
+		END AS country_name,
+		CASE
+			WHEN
 				recipient_location_country_name = 'UNITED STATES'
-				and
-				recipient_location_state_name in (select upper(name) from state_data)
-			then
+				AND
+				recipient_location_state_name IN (SELECT UPPER(name) FROM state_data)
+			THEN
 				recipient_location_state_name
-			else
-				null 
-		end as state_name,
-		case
-			when
+			ELSE
+				NULL 
+		END AS state_name,
+		CASE
+			WHEN
 				recipient_location_country_name = 'UNITED STATES'
-				and
-				recipient_location_state_name is not null
-				and
+				AND
+				recipient_location_state_name IS NOT NULL
+				AND
 				recipient_location_city_name ~ '^[a-zA-Z]'
-			then
+			THEN
 				recipient_location_city_name
-			else
-				null
-		end as city_name,
-		case
-			when
+			ELSE
+				NULL
+		END AS city_name,
+		CASE
+			WHEN
 				recipient_location_country_name = 'UNITED STATES'
-				and
-				recipient_location_state_name is not null
-				and
+				AND
+				recipient_location_state_name IS NOT NULL
+				AND
 				recipient_location_county_name ~ '^[a-zA-Z]'
-			then
+			THEN
 				recipient_location_county_name
-			else
-				null
-		end as county_name,
-		case
-			when
+			ELSE
+				NULL
+		END AS county_name,
+		CASE
+			WHEN
 				recipient_location_country_name = 'UNITED STATES'
-				and
-				recipient_location_state_name is not null
-			then
+				AND
+				recipient_location_state_name IS NOT NULL
+			THEN
 				recipient_location_zip5
-			else
-				null
-		end as zip_code,
-		case
-			when
+			ELSE
+				NULL
+		END AS zip_code,
+		CASE
+			WHEN
 				recipient_location_country_name = 'UNITED STATES'
-				and
+				AND
 				(
-					sd.code is not null
-					and
-					recipient_location_congressional_code_current is not null
+					sd.code IS NOT NULL
+					AND
+					recipient_location_congressional_code_current IS NOT NULL
 				)
-			then
+			THEN
 				CONCAT(sd.code, recipient_location_congressional_code_current)
-			else
-				null
-		end as current_congressional_district,
-		case
-			when
+			ELSE
+				NULL
+		END AS current_congressional_district,
+		CASE
+			WHEN
 				recipient_location_country_name = 'UNITED STATES'
-				and
+				AND
 				(
-					sd.code is not null
-					and
-					recipient_location_congressional_code is not null
+					sd.code IS NOT NULL
+					AND
+					recipient_location_congressional_code IS NOT NULL
 				)
-			then
+			THEN
 				CONCAT(sd.code, recipient_location_congressional_code)
-			else
-				null
-		end as original_congressional_district
-	from
+			ELSE
+				NULL
+		END AS original_congressional_district
+	FROM
 		rpt.transaction_search
-	left join
-		state_data sd on recipient_location_state_name = upper(sd.name)
-	where
-		recipient_location_country_name is not null
+	LEFT JOIN
+		state_data sd ON recipient_location_state_name = UPPER(sd.name)
+	WHERE
+		recipient_location_country_name IS NOT NULL
 )
-select
-    row_number() over (order by country_name, state_name) as id,
+SELECT
+    ROW_NUMBER() OVER (ORDER BY country_name, state_name) AS id,
 	country_name,
 	state_name,
-	array_agg(distinct(city_name)) filter (where city_name is not null) as cities,
-	array_agg(distinct(county_name)) filter (where county_name is not null) as counties,
-	array_agg(distinct(zip_code)) filter (where zip_code is not null) as zip_codes,
-	array_agg(distinct(current_congressional_district)) filter (where current_congressional_district is not null) as current_congressional_districts,
-	array_agg(distinct(original_congressional_district)) filter (where original_congressional_district is not null) as original_congressional_districts
-from
+	array_agg(DISTINCT(city_name)) FILTER (WHERE city_name IS NOT NULL) AS cities,
+	array_agg(DISTINCT(county_name)) FILTER (WHERE county_name IS NOT NULL) AS counties,
+	array_agg(DISTINCT(zip_code)) FILTER (WHERE zip_code IS NOT NULL) AS zip_codes,
+	array_agg(DISTINCT(current_congressional_district)) FILTER (WHERE current_congressional_district IS NOT NULL) AS current_congressional_districts,
+	array_agg(DISTINCT(original_congressional_district)) FILTER (WHERE original_congressional_district IS NOT NULL) AS original_congressional_districts
+FROM
 	locations_cte
-where
+WHERE
 	-- require state name for UNITED STATES
 	(
 		country_name = 'UNITED STATES'
-		and
-		state_name is not null
+		AND
+		state_name IS NOT NULL
 	)
-	or
+    OR
 	-- only need country name for foreign countries since we don't support foreign "states"
 	(
 		country_name != 'UNITED STATES'
-		and
-		state_name is null
+		AND
+		state_name is NULL
 	)
-group by
+GROUP BY
 	country_name,
 	state_name
